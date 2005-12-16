@@ -1,0 +1,8 @@
+Layer Pairs Export File for PCB: C:\MC9328\PCD_SCHEMA\Armadeus.PcbDoc
+LayersSetName=Top_Bot_Thru_Holes|DrillFile=txt|LayerPairs=gtl,gbl
+LayersSetName=Top_Mid1_Blind_Vias|DrillFile=tx1|LayerPairs=gtl,g1
+LayersSetName=Top_Mid2_Blind_Vias|DrillFile=tx2|LayerPairs=gtl,g1,g2
+LayersSetName=Top_Mid3_Blind_Vias|DrillFile=tx3|LayerPairs=gtl,g1,g2,g3
+LayersSetName=Top_Mid4_Blind_Vias|DrillFile=tx4|LayerPairs=gtl,g1,g2,g3,g4
+LayersSetName=Mid2_Bot_Blind_Vias|DrillFile=tx5|LayerPairs=g2,g3,g4,gbl
+LayersSetName=Mid4_Bot_Blind_Vias|DrillFile=tx6|LayerPairs=g4,gbl

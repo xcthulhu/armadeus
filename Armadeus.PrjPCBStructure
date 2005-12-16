@@ -1,0 +1,15 @@
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=APD|SchDesignator=APD|FileName=APD9328_TOP.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=Connectors|SchDesignator=Connectors|FileName=APM9328_CONNECTOR.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=CPU|SchDesignator=CPU|FileName=APM9328_CPU.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=Memories|SchDesignator=Memories|FileName=APM9328_MEMORY.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=Peripherals|SchDesignator=Peripherals|FileName=APM9328_PERIPH.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_TOP.SchDoc|Designator=Power & Reset|SchDesignator=Power & Reset|FileName=APM9328_PS_Reset.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_CONNECTOR.SchDoc|Designator=LEFT_CONNECTOR|SchDesignator=LEFT_CONNECTOR|FileName=APM9328_CONNECTORL.schdoc
+Record=SheetSymbol|SourceDocument=APM9328_CONNECTOR.SchDoc|Designator=RIGHT_CONNECTOR|SchDesignator=RIGHT_CONNECTOR|FileName=APM9328_CONNECTORR.schdoc
+Record=SheetSymbol|SourceDocument=APD9328_TOP.SchDoc|Designator=ANALOG|SchDesignator=ANALOG|FileName=APD9328_ANALOG.schdoc
+Record=SheetSymbol|SourceDocument=APD9328_TOP.SchDoc|Designator=ETHERNET|SchDesignator=ETHERNET|FileName=APD9328_ETHERNET.schdoc
+Record=SheetSymbol|SourceDocument=APD9328_TOP.SchDoc|Designator=FPGA|SchDesignator=FPGA|FileName=APD9328_FPGA.schdoc
+Record=SheetSymbol|SourceDocument=APD9328_FPGA.SchDoc|Designator=FPGA_BANK|SchDesignator=FPGA_BANK|FileName=APD9328_FPGA_BANK.schdoc
+Record=SheetSymbol|SourceDocument=APD9328_FPGA.SchDoc|Designator=FPGA_SUPPLY|SchDesignator=FPGA_SUPPLY|FileName=APD9328_FPGA_SUPPLY.schdoc
+Record=TopLevelDocument|FileName=APM9328_TOP.SchDoc
+Record=FPGA_COMPONENT|BaseComponentDesignator=U13|DocumentName=APD9328_FPGA_BANK.SchDoc|LibraryReference=XC3S400-5TQ144C|SubProjectPath= |Configuration= |Description=Spartan-3 1.2V FPGA, 97 User I/Os, 144-pin TQFP, High Performance, Commercial Grade|SubPartUniqueId1=PAXNNNVA|SubPartDocPath1=APD9328_FPGA_BANK.SchDoc|SubPartUniqueId2=BMNYJXWI|SubPartDocPath2=APD9328_FPGA_SUPPLY.SchDoc
