@@ -1,96 +1,0 @@
-Protel Design System Design Rule Check
-PCB File : \MC9328\PCD_SCHEMA\Armadeus.PcbDoc
-Date     : 13/11/2005
-Time     : 15:25:19
-
-Processing Rule : Short-Circuit Constraint (Allowed=No) (All),(All)
-   Violation between Track (51.4mm,57.1mm)(51.925mm,56.575mm)  Top Layer and                      Pad U15-2(50.4999mm,56.7999mm)  Top Layer   
-   Violation between Via (51.4mm,57.1mm) Top Layer to Bottom Layer and                      Pad U15-2(50.4999mm,56.7999mm)  Top Layer   
-   Violation between Track (50.2158mm,59.525mm)(50.2158mm,59.5376mm)  Top Layer and                      Pad U15-3(50.4999mm,59.0999mm)  Top Layer   
-   Violation between Via (50.2158mm,59.5376mm) Top Layer to Bottom Layer and                      Pad U15-3(50.4999mm,59.0999mm)  Top Layer   
-   Violation between Via (66.2178mm,49.6062mm) Top Layer to Bottom Layer and                      Track (61.8266mm,49.4mm)(66.7mm,49.4mm)  MidLayer2   
-   Violation between Via (56.2864mm,34.29mm) Top Layer to Bottom Layer and                      Track (53.7068mm,34.4932mm)(56.388mm,34.4932mm)  MidLayer2   
-   Violation between Via (40.4622mm,56.1594mm) Top Layer to Bottom Layer and                      Track (39.4mm,56mm)(45.3mm,56mm)  MidLayer2   
-   Violation between Via (41.1226mm,55.9308mm) Top Layer to Bottom Layer and                      Track (39.4mm,56mm)(45.3mm,56mm)  MidLayer2   
-   Violation between Via (40.4622mm,56.1594mm) Top Layer to Bottom Layer and                      Track (38.2mm,56.3mm)(45mm,56.3mm)  MidLayer2   
-   Violation between Via (56.2864mm,34.29mm) Top Layer to Bottom Layer and                      Track (53.4mm,34.2mm)(56.85mm,34.2mm)  MidLayer2   
-   Violation between Via (56.4388mm,33.7058mm) Top Layer to Bottom Layer and                      Track (50.7mm,33.8mm)(70.4mm,33.8mm)  MidLayer2   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (60.9072mm,47.5mm)(68.5mm,47.5mm)  MidLayer4   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (61.0211mm,47.775mm)(68.725mm,47.775mm)  MidLayer4   
-   Violation between Via (66.2178mm,49.6062mm) Top Layer to Bottom Layer and                      Track (61.9282mm,49.4mm)(69.7mm,49.4mm)  MidLayer4   
-Rule Violations :14
-
-Processing Rule : Broken-Net Constraint ( (All) )
-   Violation         Net +1V2   is broken into 9 sub-nets. Routed To 50.00%
-     Subnet : C74-2         Subnet : C63-2    U13-121  C93-2         Subnet : C62-2    C92-2    U13-133       Subnet : U13-61   C94-2    C64-2         Subnet : C95-2    C65-2    U13-49        Subnet : C75-2         Subnet : U14-2         Subnet : U14-4         Subnet : R43-2       Violation         Net +1V8   is broken into 7 sub-nets. Routed To 33.33%
-     Subnet : C26-2    L1-2     R28-2    C25-2         Subnet : C2-2          Subnet : U1-D7         Subnet : U1-J8         Subnet : U1-F11        Subnet : U1-M13        Subnet : C1-2        Violation         Net +2V5   is broken into 12 sub-nets. Routed To 42.11%
-     Subnet : C59-2    C89-2    U13-120       Subnet : C71-2         Subnet : C90-2    C60-2    U13-62        Subnet : U13-48   C91-2    C61-2         Subnet : R39-2         Subnet : C88-2    C58-2    U13-134       Subnet : R38-1         Subnet : C66-2         Subnet : U14-3         Subnet : R42-2         Subnet : U15-4         Subnet : C73-2       Violation         Net +3V3   is broken into 101 sub-nets. Routed To 25.37%
-     Subnet : C37-1         Subnet : C34-1         Subnet : C68-2         Subnet : U11-20        Subnet : C81-2    U13-106  C51-2         Subnet : U12-8         Subnet : C50-2    C80-2    U13-115       Subnet : R31-2         Subnet : C40-1         Subnet : U11-36        Subnet : U11-17        Subnet : U11-16        Subnet : C82-2    U13-91   C52-2         Subnet : C49-2    C79-2    U13-126       Subnet : C48-2    C78-2    U13-138       Subnet : C36-1         Subnet : U11-5         Subnet : U11-90   C33-1         Subnet : C69-2         Subnet : U11-55        Subnet : C83-2    C53-2    U13-75        Subnet : U11-72        Subnet : U11-73        Subnet : C35-1         Subnet : L2-1          Subnet : C84-2    C54-2    U13-66        Subnet : C70-2         Subnet : R30-2         Subnet : U13-54   C85-2    C55-2         Subnet : C28-2    C30-2    U9-11         Subnet : U13-43   C86-2    C56-2         Subnet : R37-2         Subnet : R7-2          Subnet : U10-1         Subnet : R6-2          Subnet : U13-3    C77-2    C47-2         Subnet : R10-1         Subnet : R1-2          Subnet : U3-37         Subnet : U3-43         Subnet : U2-43         Subnet : R18-2         Subnet : U2-41         Subnet : U2-35         Subnet : C46-2    C76-2    U13-19        Subnet : U2-29         Subnet : U2-15         Subnet : R19-2         Subnet : C20-1    U5-16    U5-15         Subnet : U2-9          Subnet : U2-3          Subnet : U2-1          Subnet : U5-10    U5-9          Subnet : U8-1     C24-2    U8-3          Subnet : C10-2         Subnet : C13-2         Subnet : C32-1         Subnet : C12-2         Subnet : C9-2          Subnet : C14-2         Subnet : U4-15    U4-16         Subnet : C11-2         Subnet : C19-1         Subnet : C3-2          Subnet : U2-49         Subnet : U1-L5         Subnet : U1-K5         Subnet : C57-2    C87-2    U13-34        Subnet : U2-55         Subnet : U1-J5         Subnet : U1-G5         Subnet : C67-2         Subnet : U2-75         Subnet : U2-81         Subnet : U3-9          Subnet : U15-3         Subnet : C72-2         Subnet : R20-2         Subnet : R17-2         Subnet : U1-M6         Subnet : U1-L6         Subnet : C5-2          Subnet : C6-2          Subnet : U1-K8         Subnet : U1-H10        Subnet : U1-R15        Subnet : C22-1         Subnet : C31-2         Subnet : U7-3     C23-1         Subnet : C42-2         Subnet : C29-2         Subnet : U1-F5         Subnet : U1-G7         Subnet : U1-F6         Subnet : U1-E5         Subnet : U1-D5         Subnet : U1-D9         Subnet : U1-C15        Subnet : C4-2          Subnet : U6-5          Subnet : R27-2       Violation         Net A2   is broken into 2 sub-nets. Routed To 75.00%
-     Subnet : U3-27    U13-24   X1-34    U1-P5         Subnet : U2-25       Violation         Net AGND   is broken into 10 sub-nets. Routed To 0.00%
-     Subnet : R36-1         Subnet : C39-2         Subnet : C38-2         Subnet : C41-1         Subnet : C45-2         Subnet : U11-31        Subnet : U11-25        Subnet : L3-2          Subnet : U11-32        Subnet : X1-61       Violation         Net AVDD   is broken into 7 sub-nets. Routed To 33.33%
-     Subnet : R32-2         Subnet : R33-2         Subnet : C39-1    U11-27   U11-28        Subnet : U11-35   C38-1         Subnet : L2-2          Subnet : C45-1         Subnet : X1-62       Violation         Net BOOT   is broken into 2 sub-nets. Routed To 66.67%
-     Subnet : X2-119   U1-J15   U1-K11        Subnet : R1-1        Violation         Net CLKO   is broken into 3 sub-nets. Routed To 0.00%
-     Subnet : U13-55        Subnet : X2-118        Subnet : R8-2        Violation         Net CTRL1   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : U13-59   U1-M8         Subnet : X2-27       Violation         Net CTRL18   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U1-N11        Subnet : U2-28       Violation         Net D28   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U2-51         Subnet : U1-F3       Violation         Net ETH0   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : R33-1    U11-34        Subnet : X1-68       Violation         Net ETH1   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : R32-1    U11-33        Subnet : X1-67       Violation         Net ETH2   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : U11-30   R34-2         Subnet : X1-66       Violation         Net ETH3   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : R35-2    U11-29        Subnet : X1-65       Violation         Net EXTAL16M   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : X2-117        Subnet : R9-2        Violation         Net FPGA53   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U13-47        Subnet : X1-39       Violation         Net GND   is broken into 174 sub-nets. Routed To 0.00%
-     Subnet : C37-2         Subnet : C34-2         Subnet : C68-1         Subnet : U12-5         Subnet : C44-1         Subnet : C43-1         Subnet : R46-1         Subnet : C40-2         Subnet : C80-1         Subnet : C50-1         Subnet : C59-1         Subnet : U13-114       Subnet : U13-117       Subnet : C81-1         Subnet : U11-23        Subnet : U11-19        Subnet : U11-18        Subnet : C51-1         Subnet : U11-15        Subnet : U13-101       Subnet : C36-2         Subnet : U13-94        Subnet : C74-1         Subnet : C89-1         Subnet : C63-1         Subnet : C93-1         Subnet : C49-1         Subnet : C79-1         Subnet : C62-1         Subnet : C92-1         Subnet : C58-1         Subnet : U11-99        Subnet : R45-2         Subnet : C33-2         Subnet : C69-1         Subnet : C82-1         Subnet : U11-42        Subnet : C52-1         Subnet : U11-48        Subnet : C83-1         Subnet : U13-88        Subnet : U13-81        Subnet : C53-1         Subnet : U11-58        Subnet : U11-63        Subnet : C35-2         Subnet : L3-1          Subnet : C70-1         Subnet : U13-67        Subnet : C84-1         Subnet : U13-64        Subnet : C54-1         Subnet : C90-1         Subnet : U11-81        Subnet : U11-76        Subnet : C71-1         Subnet : C94-1         Subnet : C60-1         Subnet : C28-1         Subnet : C85-1         Subnet : C55-1         Subnet : C95-1         Subnet : C65-1         Subnet : C91-1         Subnet : C61-1         Subnet : C64-1         Subnet : U10-2         Subnet : R44-1         Subnet : C88-1         Subnet : C48-1         Subnet : U13-136       Subnet : U13-139       Subnet : C75-1         Subnet : C78-1         Subnet : R43-1         Subnet : R42-1         Subnet : U13-9         Subnet : U2-38         Subnet : C30-1         Subnet : U9-10         Subnet : U13-16        Subnet : U13-22        Subnet : C47-1         Subnet : C77-1         Subnet : C46-1         Subnet : C76-1         Subnet : U14-1         Subnet : U3-29         Subnet : C66-1         Subnet : U3-42         Subnet : U3-48         Subnet : R29-1         Subnet : C26-1         Subnet : C27-1         Subnet : C32-2         Subnet : C10-1         Subnet : C13-1         Subnet : C12-1         Subnet : U8-2          Subnet : C9-1          Subnet : C24-1         Subnet : C14-1         Subnet : U2-32         Subnet : U2-12         Subnet : C20-2         Subnet : U2-6          Subnet : U5-8          Subnet : R4-1          Subnet : U4-12         Subnet : U4-14         Subnet : C1-1          Subnet : C11-1         Subnet : C18-2         Subnet : C19-2         Subnet : C42-1         Subnet : C16-2         Subnet : U4-1          Subnet : C3-1          Subnet : R5-1          Subnet : C22-2         Subnet : U13-29        Subnet : U2-44         Subnet : U13-45        Subnet : U13-42        Subnet : U2-46         Subnet : C67-1         Subnet : U2-52         Subnet : U2-58         Subnet : U1-K6         Subnet : U2-72         Subnet : C57-1         Subnet : C87-1         Subnet : U2-78         Subnet : U2-84         Subnet : U2-86         Subnet : C86-1         Subnet : C73-1         Subnet : U3-21         Subnet : U3-2          Subnet : C56-1         Subnet : U15-1         Subnet : C72-1         Subnet : U1-L10        Subnet : C5-1          Subnet : U1-M11        Subnet : U1-L11        Subnet : U1-K7         Subnet : U1-J6         Subnet : C6-1          Subnet : U1-K9         Subnet : R2-1          Subnet : C7-1          Subnet : C8-1          Subnet : U1-L13        Subnet : R3-1          Subnet : U7-1          Subnet : U1-J7         Subnet : U1-H6         Subnet : U1-J9         Subnet : C2-1          Subnet : U1-G6         Subnet : U1-E6         Subnet : U1-H7         Subnet : U1-H8         Subnet : U1-G8         Subnet : U1-H9         Subnet : U1-G9         Subnet : C31-1         Subnet : C29-1         Subnet : U1-G10        Subnet : C4-1          Subnet : C23-2         Subnet : C21-1         Subnet : U6-3        Violation         Net I2C0   is broken into 4 sub-nets. Routed To 0.00%
-     Subnet : U1-J11        Subnet : U10-4         Subnet : R6-1          Subnet : X1-85       Violation         Net I2C1   is broken into 3 sub-nets. Routed To 33.33%
-     Subnet : X1-84    U1-H14        Subnet : U10-5         Subnet : R7-1        Violation         Net NetC43_2   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : C43-2    U11-21        Subnet : Q2-1        Violation         Net NetC44_2   is broken into 3 sub-nets. Routed To 0.00%
-     Subnet : Q2-2          Subnet : C44-2         Subnet : U11-22      Violation         Net NetR10_2   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : R10-2         Subnet : U3-31       Violation         Net NetR19_1   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : R19-1         Subnet : U3-53       Violation         Net NetR31_1   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : U12-1    U11-67        Subnet : R31-1       Violation         Net NetR40_2   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : R40-2         Subnet : U13-72      Violation         Net NetR44_2   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U10-3         Subnet : R44-2       Violation         Net NetR8_1   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : R8-1          Subnet : U1-P14      Violation         Net RESETN   is broken into 4 sub-nets. Routed To 25.00%
-     Subnet : U11-80        Subnet : X2-120        Subnet : U1-M14   U7-2          Subnet : U3-16       Violation         Net SSI_B0   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : U11-100       Subnet : X1-105   U1-C3       Violation         Net SSI_B1   is broken into 3 sub-nets. Routed To 33.33%
-     Subnet : U13-58        Subnet : R37-1         Subnet : U1-A2    X1-104      Violation         Net SSI_B2   is broken into 3 sub-nets. Routed To 33.33%
-     Subnet : U13-71        Subnet : R39-1         Subnet : X1-103   U1-B3       Violation         Net SSI_B3   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : U13-65        Subnet : X1-102   U1-D4       Violation         Net SSI_B5   is broken into 2 sub-nets. Routed To 50.00%
-     Subnet : R40-1         Subnet : X1-100   U1-A3       Violation         Net UART2   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U1-C9         Subnet : X2-107      Violation         Net UART3   is broken into 2 sub-nets. Routed To 0.00%
-     Subnet : U1-E9         Subnet : X2-106   Rule Violations :37
-
-Processing Rule : Clearance Constraint (Gap=0.125mm) (All),(All)
-   Violation between Track (51.4mm,57.1mm)(51.925mm,56.575mm)  Top Layer and                      Pad U15-2(50.4999mm,56.7999mm)  Top Layer   
-   Violation between Via (51.4mm,57.1mm) Top Layer to Bottom Layer and                      Pad U15-2(50.4999mm,56.7999mm)  Top Layer   
-   Violation between Track (50.2158mm,59.525mm)(50.2158mm,59.5376mm)  Top Layer and                      Pad U15-3(50.4999mm,59.0999mm)  Top Layer   
-   Violation between Via (50.2158mm,59.5376mm) Top Layer to Bottom Layer and                      Pad U15-3(50.4999mm,59.0999mm)  Top Layer   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (61.925mm,45.825mm)(61.925mm,50.4mm)  Top Layer   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (61.2692mm,43.1844mm)(61.2692mm,49.3312mm)  Top Layer   
-   Violation between Via (66.2178mm,49.6062mm) Top Layer to Bottom Layer and                      Track (61.8266mm,49.4mm)(66.7mm,49.4mm)  MidLayer2   
-   Violation between Via (56.2864mm,34.29mm) Top Layer to Bottom Layer and                      Track (53.7068mm,34.4932mm)(56.388mm,34.4932mm)  MidLayer2   
-   Violation between Via (41.1226mm,55.9308mm) Top Layer to Bottom Layer and                      Track (40.4mm,55.7mm)(45.6mm,55.7mm)  MidLayer2   
-   Violation between Via (41.1988mm,55.4482mm) Top Layer to Bottom Layer and                      Track (40.4mm,55.7mm)(45.6mm,55.7mm)  MidLayer2   
-   Violation between Via (40.4622mm,56.1594mm) Top Layer to Bottom Layer and                      Track (39.4mm,56mm)(45.3mm,56mm)  MidLayer2   
-   Violation between Via (41.1226mm,55.9308mm) Top Layer to Bottom Layer and                      Track (39.4mm,56mm)(45.3mm,56mm)  MidLayer2   
-   Violation between Via (40.4622mm,56.1594mm) Top Layer to Bottom Layer and                      Track (38.2mm,56.3mm)(45mm,56.3mm)  MidLayer2   
-   Violation between Via (56.2864mm,34.29mm) Top Layer to Bottom Layer and                      Track (53.4mm,34.2mm)(56.85mm,34.2mm)  MidLayer2   
-   Violation between Via (56.2864mm,34.29mm) Top Layer to Bottom Layer and                      Track (56.388mm,34.4932mm)(56.7944mm,34.8996mm)  MidLayer2   
-   Violation between Via (56.4388mm,33.7058mm) Top Layer to Bottom Layer and                      Track (50.7mm,33.8mm)(70.4mm,33.8mm)  MidLayer2   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (60.9072mm,47.5mm)(68.5mm,47.5mm)  MidLayer4   
-   Violation between Via (61.595mm,47.5996mm) Top Layer to Bottom Layer and                      Track (61.0211mm,47.775mm)(68.725mm,47.775mm)  MidLayer4   
-   Violation between Via (66.2178mm,49.6062mm) Top Layer to Bottom Layer and                      Track (61.9282mm,49.4mm)(69.7mm,49.4mm)  MidLayer4   
-Rule Violations :19
-
-Processing Rule : Width Constraint (Min=0.15mm) (Max=0.5mm) (Preferred=0.15mm) (All)
-Rule Violations :0
-
-Processing Rule : Height Constraint (Min=0mm) (Max=25.4mm) (Prefered=12.7mm) (All)
-Rule Violations :0
-
-Processing Rule : Hole Size Constraint (Min=0.0254mm) (Max=2.54mm) (All)
-Rule Violations :0
-
-
-Violations Detected : 70
-Time Elapsed        : 00:00:02
