@@ -1,4 +1,5 @@
 #!/bin/sh
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -58,7 +59,7 @@ logresult()
     fi
 }
 
-echo "******* create dowload folder if required ******* "
+echo "******* create download folder if required ******* "
 cd $INSTALL_DIR
 if [ ! -d $DL_DIR ]; then
 mkdir $DL_DIR
