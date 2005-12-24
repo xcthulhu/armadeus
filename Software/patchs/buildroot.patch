@@ -1,7 +1,7 @@
-diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
+diff -purN buildroot-ref/.defconfig buildroot/.defconfig
 --- buildroot-ref/.defconfig	2005-11-29 09:15:40.000000000 +0100
-+++ buildrootarm/.defconfig	2005-12-08 13:18:01.000000000 +0100
-@@ -2,55 +2,305 @@
++++ buildroot/.defconfig	2005-12-24 12:45:44.000000000 +0100
+@@ -2,55 +2,328 @@
  # Automatically generated make config: don't edit
  #
  BR2_HAVE_DOT_CONFIG=y
@@ -34,7 +34,7 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 +BR2_STAGING_DIR="$(BUILD_DIR)/staging_dir"
 +BR2_TOPDIR_PREFIX=""
 +BR2_TOPDIR_SUFFIX=""
-+BR2_JLEVEL=1
++BR2_JLEVEL=2
  
  #
  # Toolchain Options
@@ -110,11 +110,12 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 -BR2_GCC_USE_SJLJ_EXCEPTIONS="--enable-sjlj-exceptions"
 +# BR2_GCC_USE_SJLJ_EXCEPTIONS is not set
  BR2_EXTRA_GCC_CONFIG_OPTIONS=""
--# BR2_INSTALL_LIBSTDCPP is not set
+ # BR2_INSTALL_LIBSTDCPP is not set
 -BR2_HOST_CCACHE=y
 -BR2_PACKAGE_CCACHE=y
-+BR2_INSTALL_LIBSTDCPP=y
-+# BR2_INSTALL_LIBGCJ is not set
+-# BR2_PACKAGE_GDB is not set
+-# BR2_PACKAGE_GDB_SERVER is not set
+-# BR2_HOST_GDB is not set
 +# BR2_INSTALL_OBJC is not set
 +
 +#
@@ -125,12 +126,15 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 +#
 +# Gdb Options
 +#
- # BR2_PACKAGE_GDB is not set
- # BR2_PACKAGE_GDB_SERVER is not set
--# BR2_HOST_GDB is not set
++BR2_PACKAGE_GDB=y
++BR2_PACKAGE_GDB_SERVER=y
 +# BR2_PACKAGE_GDB_CLIENT is not set
++# BR2_GDB_VERSION_6_2_1 is not set
++BR2_GDB_VERSION_6_3=y
++# BR2_GDB_VERSION_SNAPSHOT is not set
++BR2_GDB_VERSION="6.3"
 +# BR2_PACKAGE_SSTRIP_TARGET is not set
-+# BR2_PACKAGE_SSTRIP_HOST is not set
++BR2_PACKAGE_SSTRIP_HOST=y
 +
 +#
 +# Common Toolchain Options
@@ -261,6 +265,7 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 +# BR2_PACKAGE_OPENSSL is not set
 +# BR2_PACKAGE_OPENVPN is not set
 +# BR2_PACKAGE_PCIUTILS is not set
++# BR2_PACKAGE_PCMCIA is not set
 +# BR2_PACKAGE_PORTAGE is not set
 +BR2_PACKAGE_PORTMAP=y
 +# BR2_PACKAGE_PPPD is not set
@@ -328,6 +333,25 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 +#
 +# Board Support Options
 +#
++BR2_PACKAGE_LINUX=y
++
++#
++# Armadeus project Specific Device Support
++#
++BR2_TARGET_ARMADEUS=y
++# BR2_TARGET_ARMADEUS_APF9328 is not set
++BR2_TARGET_ARMADEUS_APM9328=y
++BR2_TARGET_ARMADEUS_NAME="apm9328"
++# BR2_TARGET_ARMADEUS_SDRAM_8 is not set
++# BR2_TARGET_ARMADEUS_SDRAM_16 is not set
++BR2_TARGET_ARMADEUS_SDRAM_32=y
++# BR2_TARGET_ARMADEUS_SDRAM_64 is not set
++BR2_TARGET_ARMADEUS_SDRAM_SIZE="32"
++
++#
++# Package support
++#
++BR2_TARGET_U-BOOT=y
 +
 +#
 +# Generic System Support
@@ -335,179 +359,18 @@ diff -purN buildroot-ref/.defconfig buildrootarm/.defconfig
 +# BR2_TARGET_GENERIC_ACCESS_POINT is not set
 +# BR2_TARGET_GENERIC_FIREWALL is not set
 +# BR2_TARGET_GENERIC_DEV_SYSTEM is not set
-diff -purN buildroot-ref/package/busybox/busybox.config buildrootarm/package/busybox/busybox.config
---- buildroot-ref/package/busybox/busybox.config	2005-11-29 09:15:36.000000000 +0100
-+++ buildrootarm/package/busybox/busybox.config	2005-12-07 22:03:07.000000000 +0100
-@@ -74,7 +74,6 @@ CONFIG_CHMOD=y
- CONFIG_CHOWN=y
- CONFIG_CHROOT=y
- CONFIG_CMP=y
--# CONFIG_COMM is not set
- CONFIG_CP=y
- CONFIG_CUT=y
- CONFIG_DATE=y
-@@ -89,7 +88,6 @@ CONFIG_FEATURE_DU_DEFALT_BLOCKSIZE_1K=y
- CONFIG_ECHO=y
- CONFIG_FEATURE_FANCY_ECHO=y
- CONFIG_ENV=y
--# CONFIG_PRINTENV is not set
- CONFIG_EXPR=y
- CONFIG_FALSE=y
- # CONFIG_FOLD is not set
-@@ -114,7 +112,6 @@ CONFIG_MKDIR=y
- # CONFIG_MKFIFO is not set
- CONFIG_MKNOD=y
- CONFIG_MV=y
--# CONFIG_NICE is not set
- # CONFIG_OD is not set
- # CONFIG_PRINTF is not set
- CONFIG_PWD=y
-@@ -126,10 +123,7 @@ CONFIG_SHA1SUM=y
- CONFIG_SLEEP=y
- # CONFIG_FEATURE_FANCY_SLEEP is not set
- CONFIG_SORT=y
--CONFIG_SORT_BIG=y
--# CONFIG_STAT is not set
- CONFIG_STTY=y
--# CONFIG_SUM is not set
- CONFIG_SYNC=y
- CONFIG_TAIL=y
- CONFIG_FEATURE_FANCY_TAIL=y
-@@ -195,18 +189,11 @@ CONFIG_RESET=y
- CONFIG_MKTEMP=y
- # CONFIG_PIPE_PROGRESS is not set
- CONFIG_READLINK=y
--CONFIG_FEATURE_READLINK_FOLLOW=y
- CONFIG_RUN_PARTS=y
- CONFIG_START_STOP_DAEMON=y
- CONFIG_WHICH=y
- 
- #
--# Linux Ext2 FS Progs
--#
--# CONFIG_CHATTR is not set
--# CONFIG_LSATTR is not set
--
--#
- # Editors
- #
- # CONFIG_AWK is not set
-@@ -251,6 +238,7 @@ CONFIG_INIT=y
- CONFIG_FEATURE_USE_INITTAB=y
- CONFIG_FEATURE_INITRD=y
- # CONFIG_FEATURE_INIT_COREDUMPS is not set
-+CONFIG_FEATURE_INIT_SWAPON=y
- CONFIG_FEATURE_EXTRA_QUIET=y
- CONFIG_HALT=y
- CONFIG_POWEROFF=y
-@@ -266,7 +254,8 @@ CONFIG_DELGROUP=y
- CONFIG_ADDUSER=y
- CONFIG_DELUSER=y
- CONFIG_GETTY=y
--# CONFIG_FEATURE_U_W_TMP is not set
-+# CONFIG_FEATURE_UTMP is not set
-+# CONFIG_FEATURE_WTMP is not set
- CONFIG_LOGIN=y
- CONFIG_FEATURE_SECURETTY=y
- CONFIG_PASSWD=y
-@@ -287,7 +276,6 @@ CONFIG_FEATURE_SHADOWPASSWDS=y
- # CONFIG_CRONTAB is not set
- CONFIG_DC=y
- # CONFIG_DEVFSD is not set
--# CONFIG_EJECT is not set
- # CONFIG_LAST is not set
- # CONFIG_HDPARM is not set
- # CONFIG_MAKEDEVS is not set
-@@ -300,27 +288,16 @@ CONFIG_TIME=y
- #
- # Linux Module Utilities
- #
--CONFIG_INSMOD=y
--CONFIG_FEATURE_2_4_MODULES=y
--# CONFIG_FEATURE_2_6_MODULES is not set
--# CONFIG_FEATURE_INSMOD_VERSION_CHECKING is not set
--# CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS is not set
--# CONFIG_FEATURE_INSMOD_LOADINKMEM is not set
--# CONFIG_FEATURE_INSMOD_LOAD_MAP is not set
--CONFIG_LSMOD=y
--CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT=y
--CONFIG_FEATURE_QUERY_MODULE_INTERFACE=y
--CONFIG_MODPROBE=y
--CONFIG_RMMOD=y
--CONFIG_FEATURE_CHECK_TAINTED_MODULE=y
-+# CONFIG_INSMOD is not set
-+# CONFIG_LSMOD is not set
-+# CONFIG_MODPROBE is not set
-+# CONFIG_RMMOD is not set
- 
- #
- # Networking Utilities
- #
- # CONFIG_FEATURE_IPV6 is not set
- # CONFIG_ARPING is not set
--# CONFIG_ETHER_WAKE is not set
--# CONFIG_FAKEIDENTD is not set
- # CONFIG_FTPGET is not set
- # CONFIG_FTPPUT is not set
- CONFIG_HOSTNAME=y
-@@ -328,8 +305,8 @@ CONFIG_HOSTNAME=y
- CONFIG_IFCONFIG=y
- CONFIG_FEATURE_IFCONFIG_STATUS=y
- # CONFIG_FEATURE_IFCONFIG_SLIP is not set
--# CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ is not set
--# CONFIG_FEATURE_IFCONFIG_HW is not set
-+CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ=y
-+CONFIG_FEATURE_IFCONFIG_HW=y
- # CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS is not set
- CONFIG_IFUPDOWN=y
- # CONFIG_FEATURE_IFUPDOWN_IP is not set
-@@ -372,7 +349,6 @@ CONFIG_UDHCPC=y
- CONFIG_DUMPLEASES=y
- CONFIG_FEATURE_UDHCP_SYSLOG=y
- # CONFIG_FEATURE_UDHCP_DEBUG is not set
--# CONFIG_ZCIP is not set
- 
- #
- # Process Utilities
-@@ -401,7 +377,6 @@ CONFIG_ASH=y
- # Ash Shell Options
- #
- CONFIG_ASH_JOB_CONTROL=y
--# CONFIG_ASH_TIMEOUT is not set
- CONFIG_ASH_ALIAS=y
- CONFIG_ASH_MATH_SUPPORT=y
- CONFIG_ASH_MATH_SUPPORT_64=y
-@@ -466,16 +441,15 @@ CONFIG_PIVOT_ROOT=y
- CONFIG_RDATE=y
- CONFIG_SWAPONOFF=y
- CONFIG_MOUNT=y
--# CONFIG_NFSMOUNT is not set
-+CONFIG_NFSMOUNT=y
- CONFIG_UMOUNT=y
--# CONFIG_FEATURE_MOUNT_FORCE is not set
-+CONFIG_FEATURE_MOUNT_FORCE=y
- 
- #
- # Common options for mount/umount
- #
- CONFIG_FEATURE_MOUNT_LOOP=y
- # CONFIG_FEATURE_MTAB_SUPPORT is not set
--# CONFIG_READPROFILE is not set
- 
- #
- # Debugging Options
-diff -purN buildroot-ref/package/module-init-tools/Config.in buildrootarm/package/module-init-tools/Config.in
+diff -purN buildroot-ref/package/module-init-tools/Config.in buildroot/package/module-init-tools/Config.in
 --- buildroot-ref/package/module-init-tools/Config.in	2005-11-29 09:15:30.000000000 +0100
-+++ buildrootarm/package/module-init-tools/Config.in	2005-12-07 17:10:07.000000000 +0100
++++ buildroot/package/module-init-tools/Config.in	2005-12-21 16:39:18.000000000 +0100
 @@ -7,4 +7,4 @@ config BR2_PACKAGE_MODULE_INIT_TOOLS
  	  (versions 2.5.48 and above). It serves the same function that 
  	  the "modutils" package serves for Linux 2.4.
  
 -	  http://www.kernel.org/pub/linux/utils/kernel/module-init-tools/
 +	  http://www.kernel.org/pub/linux/utils/kernel/module-init-tools/old/
-diff -purN buildroot-ref/package/module-init-tools/module-init-tools.mk buildrootarm/package/module-init-tools/module-init-tools.mk
+diff -purN buildroot-ref/package/module-init-tools/module-init-tools.mk buildroot/package/module-init-tools/module-init-tools.mk
 --- buildroot-ref/package/module-init-tools/module-init-tools.mk	2005-11-29 09:15:30.000000000 +0100
-+++ buildrootarm/package/module-init-tools/module-init-tools.mk	2005-12-07 17:09:52.000000000 +0100
++++ buildroot/package/module-init-tools/module-init-tools.mk	2005-12-21 16:39:18.000000000 +0100
 @@ -4,7 +4,7 @@
  #
  #############################################################
@@ -517,190 +380,26 @@ diff -purN buildroot-ref/package/module-init-tools/module-init-tools.mk buildroo
  MODULE_INIT_TOOLS_DIR=$(BUILD_DIR)/module-init-tools-3.1
  MODULE_INIT_TOOLS_BINARY=modprobe
  MODULE_INIT_TOOLS_TARGET_BINARY=$(TARGET_DIR)/sbin/$(MODULE_INIT_TOOLS_BINARY)
-diff -purN buildroot-ref/target/generic/device_table.txt buildrootarm/target/generic/device_table.txt
---- buildroot-ref/target/generic/device_table.txt	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/device_table.txt	2005-12-04 17:21:43.000000000 +0100
-@@ -69,6 +69,7 @@
- /dev/ttyP	c	666	0	0	57	0	0	1	4
- /dev/ttyS	c	666	0	0	4	64	0	1	4
- /dev/fb		c	640	0	5	29	0	0	32	4
-+/dev/ttySMX	c	666	0	0	204	41	0	1	2
- #/dev/ttySA	c	666	0	0	204	5	0	1	3
- /dev/psaux	c	666	0	0	10	1	0	0	-
- #/dev/ppp	c	666	0	0	108	0	-	-	-
-@@ -82,8 +83,8 @@
+diff -purN buildroot-ref/target/device/Config.in buildroot/target/device/Config.in
+--- buildroot-ref/target/device/Config.in	2005-11-29 09:15:23.000000000 +0100
++++ buildroot/target/device/Config.in	2005-12-24 12:30:36.000000000 +0100
+@@ -4,6 +4,7 @@ source "target/device/Soekris/Config.in"
+ source "target/device/Hitachi/Config.in"
+ source "target/device/AMD/Config.in"
+ source "target/device/Via/Config.in"
++source "target/device/armadeus/Config.in"
  
- 
- # MTD stuff
--/dev/mtd	c	640	0	0	90	0	0	2	4
--/dev/mtdblock	b	640	0	0	31	0	0	1	4
-+/dev/mtd	c	640	0	0	90	0	0	2	8
-+/dev/mtdblock	b	640	0	0	31	0	0	1	8
- 
- #Tun/tap driver
- /dev/net	d	755	0	0	-	-	-	-	-
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/hostname buildrootarm/target/generic/target_skeleton/etc/hostname
---- buildroot-ref/target/generic/target_skeleton/etc/hostname	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/hostname	2005-12-07 09:34:14.000000000 +0100
-@@ -1 +1 @@
--uclibc
-+apf9328
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/init.d/S18pormap buildrootarm/target/generic/target_skeleton/etc/init.d/S18pormap
---- buildroot-ref/target/generic/target_skeleton/etc/init.d/S18pormap	1970-01-01 01:00:00.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/init.d/S18pormap	2005-12-08 00:42:14.000000000 +0100
-@@ -0,0 +1,53 @@
-+#!/bin/sh
-+#
-+# start/stop portmap daemon.
-+
-+test -f /sbin/portmap || exit 0
-+
-+OPTIONS=""
-+
-+case "$1" in
-+    start)
-+	pid=`pidof portmap`
-+	if [ -n "$pid" ] ; then
-+	  echo "Not starting portmap daemon.  Already running."
-+	  exit 0
-+	fi
-+	echo -n "Starting portmap daemon:"
-+	echo -n " portmap"
-+	/sbin/portmap -- $OPTIONS
-+	echo "."
-+
-+	sleep 1 # needs a short pause or pmap_set won't work. :(
-+	if [ -f /var/run/portmap.upgrade-state ]; then
-+	  echo -n "Restoring old RPC service information..."
-+	  pmap_set </var/run/portmap.upgrade-state
-+	  rm -f /var/run/portmap.upgrade-state
-+	  echo "done."
-+	else
-+	  if [ -f /var/run/portmap.state ]; then
-+	    pmap_set </var/run/portmap.state
-+	    rm -f /var/run/portmap.state
-+	  fi
-+	fi
-+
-+	;;
-+    stop)
-+	;;
-+    reload)
-+	;;
-+    force-reload)
-+	$0 restart
-+	;;
-+    restart)
-+	$0 stop
-+	$0 start
-+	;;
-+    *)
-+	echo "Usage: /etc/init.d/portmap {start|stop|reload|restart}"
-+	exit 1
-+	;;
-+esac
-+
-+exit 0
-+
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/inittab buildrootarm/target/generic/target_skeleton/etc/inittab
---- buildroot-ref/target/generic/target_skeleton/etc/inittab	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/inittab	2005-12-07 09:36:51.000000000 +0100
-@@ -24,17 +24,17 @@ null::sysinit:/sbin/route add -net 127.0
- ::sysinit:/etc/init.d/rcS
- 
- # Set up a couple of getty's
--tty1::respawn:/sbin/getty 38400 tty1
--tty2::respawn:/sbin/getty 38400 tty2
-+#tty1::respawn:/sbin/getty 38400 tty1
-+#tty2::respawn:/sbin/getty 38400 tty2
- 
- # Put a getty on the serial port
--#ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100
-+null::respawn:/sbin/getty -L ttySMX0 115200,57600,38400,230400 vt100
- 
- # Logging junk
- null::sysinit:/bin/touch /var/log/messages
- null::respawn:/sbin/syslogd -n -m 0
- null::respawn:/sbin/klogd -n
--tty3::respawn:/usr/bin/tail -f /var/log/messages
-+null::respawn:/usr/bin/tail -f /var/log/messages
- 
- # Stuff to do for the 3-finger salute
- ::ctrlaltdel:/sbin/reboot
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/issue buildrootarm/target/generic/target_skeleton/etc/issue
---- buildroot-ref/target/generic/target_skeleton/etc/issue	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/issue	2005-12-04 17:31:09.000000000 +0100
-@@ -1,4 +1,4 @@
- 
- 
--Welcome to the Erik's uClibc development environment.
-+Welcome to the Armadeus Project.
- 
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/profile buildrootarm/target/generic/target_skeleton/etc/profile
---- buildroot-ref/target/generic/target_skeleton/etc/profile	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/profile	2005-12-04 17:25:11.000000000 +0100
-@@ -13,8 +13,10 @@ if [ "$PS1" ]; then
- 
-     if [ "$BASH" ]; then
- 	export PS1="[\u@\h \W]\\$ "
--	alias ll='/bin/ls --color=tty -laFh'
--	alias ls='/bin/ls --color=tty -F'
-+#	alias ll='/bin/ls --color=tty -laFh'
-+# 	alias ls='/bin/ls --color=tty -F'
-+	alias ll='/bin/ls -laFh'
-+	alias ls='/bin/ls -F'
- 	export LS_COLORS='no=00:fi=00:di=01;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.png=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:';
-     else
-       if [ "`id -u`" -eq 0 ]; then 
-diff -purN buildroot-ref/target/generic/target_skeleton/etc/securetty buildrootarm/target/generic/target_skeleton/etc/securetty
---- buildroot-ref/target/generic/target_skeleton/etc/securetty	2005-11-29 09:15:24.000000000 +0100
-+++ buildrootarm/target/generic/target_skeleton/etc/securetty	2005-12-04 17:23:57.000000000 +0100
-@@ -10,3 +10,5 @@ ttyS0
- ttyS1
- ttyS2
- ttyS3
-+ttySMX0
-+ttySMX1
-diff -purN buildroot-ref/toolchain/uClibc/uClibc.config buildrootarm/toolchain/uClibc/uClibc.config
---- buildroot-ref/toolchain/uClibc/uClibc.config	2005-11-29 09:15:06.000000000 +0100
-+++ buildrootarm/toolchain/uClibc/uClibc.config	2005-12-07 16:59:03.000000000 +0100
-@@ -27,6 +27,20 @@
+ # This must be last
+ source "target/generic/Config.in"
+diff -purN buildroot-ref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
+--- buildroot-ref/target/jffs2/jffs2root.mk	2005-11-29 09:15:23.000000000 +0100
++++ buildroot/target/jffs2/jffs2root.mk	2005-12-22 17:12:16.000000000 +0100
+@@ -38,7 +38,7 @@ JFFS2_TARGET := $(subst ",,$(BR2_TARGET_
+ # value of MKFS_JFFS2 to either the previously installed copy or the one
+ # just built.
  #
- HAVE_ELF=y
- TARGET_ARCH="none"
-+# CONFIG_GENERIC_ARM is not set
-+# CONFIG_ARM610 is not set
-+# CONFIG_ARM710 is not set
-+# CONFIG_ARM720T is not set
-+# CONFIG_ARM920T is not set
-+# CONFIG_ARM922T is not set
-+# CONFIG_ARM926T is not set
-+# CONFIG_ARM1136JF_S is not set
-+# CONFIG_ARM_SA110 is not set
-+# CONFIG_ARM_SA1100 is not set
-+# CONFIG_ARM_XSCALE is not set
-+# ARCH_LITTLE_ENDIAN is not set
-+# ARCH_BIG_ENDIAN is not set
-+# ARCH_HAS_MMU is not set
- # ARCH_HAS_NO_MMU is not set
- UCLIBC_HAS_FLOATS=y
- HAS_FPU=y
-diff -purN buildroot-ref/toolchain/uClibc/uclibc.mk buildrootarm/toolchain/uClibc/uclibc.mk
---- buildroot-ref/toolchain/uClibc/uclibc.mk	2005-11-29 09:15:06.000000000 +0100
-+++ buildrootarm/toolchain/uClibc/uclibc.mk	2005-12-07 17:04:12.000000000 +0100
-@@ -63,6 +63,15 @@ $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)
- 		$(UCLIBC_DIR)/.config
- 	$(SED) 's,^SHARED_LIB_LOADER_PREFIX=.*,SHARED_LIB_LOADER_PREFIX=\"/lib\",g' \
- 		$(UCLIBC_DIR)/.config
-+ifeq ($(BR2_arm),y)
-+	$(SED) 's,^.*CONFIG_GENERIC_ARM.*,CONFIG_GENERIC_ARM=y,g' $(UCLIBC_DIR)/.config
-+	$(SED) 's,^.*ARCH_HAS_MMU.*,ARCH_HAS_MMU=y,g' $(UCLIBC_DIR)/.config
-+endif
-+ifeq ($(BR2_ENDIAN),"LITTLE")
-+	$(SED) 's,^.*ARCH_LITTLE_ENDIAN.*,ARCH_LITTLE_ENDIAN=y,g' $(UCLIBC_DIR)/.config
-+else
-+	$(SED) 's,^.*ARCH_BIG_ENDIAN.*,ARCH_BIG_ENDIAN=y,g' $(UCLIBC_DIR)/.config
-+endif
- ifeq ($(BR2_LARGEFILE),y)
- 	$(SED) 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=y,g' $(UCLIBC_DIR)/.config
- else
+-$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host
++$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host linux
+ 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+ 	@rm -rf $(TARGET_DIR)/usr/man
+ 	@rm -rf $(TARGET_DIR)/usr/share/man
