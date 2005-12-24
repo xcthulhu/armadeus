@@ -1,5 +1,0 @@
-# Armadeus target skeleton stuff, may be overridden
-TARGET_SKELETON=$(ARMADEUS_PATH)/rootfs/skel.tar.gz
-TARGET_SKEL_DIR=$(ARMADEUS_PATH)/rootfs/target_skeleton
-TARGET_DEVICE_TABLE=$(ARMADEUS_PATH)/rootfs/device_table.txt
-
