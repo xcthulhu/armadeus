@@ -15,7 +15,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 BUILDROOT_NAME=buildroot
-BUILDROOT_VERSION=-20051129
 
 INSTALL_DIR=`pwd`/software
 PATCH_DIR=`pwd`/software/patchs
@@ -23,8 +22,7 @@ BUILD_DIR=$INSTALL_DIR
 DL_DIR=$INSTALL_DIR/downloads                    # do not modify!!
 TAR_OPTIONS=-xvf
 
-BUILDROOT_FILE=$BUILDROOT_NAME$BUILDROOT_VERSION.tar.bz2
-BUILDROOT_WEBSITE=http://buildroot.uclibc.org/downloads/snapshots/$BUILDROOT_FILE
+BUILDROOT_FILE=$BUILDROOT_NAME.tar.bz2
 BUILDROOT_PATCH_FILE=buildroot.patch
 
 abort() {
@@ -57,7 +55,7 @@ mkdir $DL_DIR
 fi
 
 echo "************* Downloading buildroot ************* "
-testAndDownload $BUILDROOT_FILE $BUILDROOT_WEBSITE
+#testAndDownload $BUILDROOT_FILE $BUILDROOT_WEBSITE
 
 echo "************* Uncompressing buildroot ************* "
 bzcat $DL_DIR/$BUILDROOT_FILE | tar -C $BUILD_DIR $TAR_OPTIONS -
@@ -65,10 +63,9 @@ cd $BUILD_DIR/$BUILDROOT_NAME
 
 echo "************* patching buildroot ************* "
 patch -p1 < $PATCH_DIR/$BUILDROOT_PATCH_FILE
-# chmod +x $BUILD_DIR/$BUILDROOT_NAME/target/generic/target_skeleton/etc/init.d/S18pormap
 
 echo "********* Building buildroot !! Takes several hours !!! ************* "
-make
+make menuconfig
 make
 logresult $? "buildroot install failed"
 
