@@ -1,0 +1,8 @@
+
+To compile:
+make ARCH=arm CROSS_COMPILE=/local/julien/arm-toolchain/buildroot/build_arm_nofpu/staging_dir/bin/arm-linux-
+
+3 modules (gpio.ko, ppdev.ko, loadfpga.ko) will be generated, copy them in your rootfs (/lib/modules).
+copy loadgpio.sh in your /etc/init.d directory on your rootfs and launch it to insert modules and create devices file in /dev
+
+Juliem

@@ -1,0 +1,125 @@
+diff -Naur --ignore-blank-lines --exclude smbadduser --exclude gen-8bit-gap.sh samba-3.0.20/source/build.sh samba-3.0.20.apm/source/build.sh
+--- samba-3.0.20/source/build.sh	1970-01-01 01:00:00.000000000 +0100
++++ samba-3.0.20.apm/source/build.sh	2005-09-17 22:42:12.000000000 +0200
+@@ -0,0 +1,109 @@
++#!/bin/sh
++#
++#	THE ARMADEUS PROJECT
++#
++#   Copyright (C) year  The source forge armadeus project team
++#
++#  This program is free software; you can redistribute it and/or modify
++#  it under the terms of the GNU General Public License as published by
++#  the Free Software Foundation; either version 2 of the License, or
++#  (at your option) any later version.
++#  
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#  
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software 
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++#
++#
++#	1) download package from www.samba.org
++#	2) extract archive: tar fxvz samba-3.0.20.tar.gz
++#	3) copy this script into  samba-3.0.20/source
++#	SAMBA building script for APM9328 (tested with version samba-3.0.14a & samba-3.0.20)
++#	check variables $ARMADEUS_KERNEL_DIR & $ARMADEUS_TOOLS_DIR
++#
++#	Some influential environment variables to set:
++#  CC          C compiler command
++#  CFLAGS      C compiler flags
++#  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
++#              nonstandard directory <lib dir>
++#  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
++#              headers in a nonstandard directory <include dir>
++#  CPP         C preprocessor
++
++#	Kernel configuration to enable usage of SAMBA :
++#
++#	You must have a networking support (trivial).......
++#	
++#	"File systems->Network File Systems->SMB file system support" is enabled
++#	"File systems->Network File Systems->SMB file system->Use a default NLS"  is enabled
++#			"withs Default Remote NLS Option = cp437"
++#
++# 	Note that in some cases NLS default cp437 can be changed in samba configuration.. 
++#
++#	"File systems->Network File Systems->CIFS support" is enabled
++#	in "File systems->Network File Systems->Native Language Support" enable following values:
++#		Codepage 437 (United States, Canada)
++#		Codepage 850 (Europe)
++#		NLS ISO 8859-1 (Latin 1; Western European Languages)
++#
++#		optionally you may enable:
++#		NLS ISO 8859-15 (Latin 9; Western European Languages with Euro)
++#	Enable any other code pages or NLS if necessary (rare!)
++#
++
++
++
++
++
++export APM_INCLUDES=-I$ARMADEUS_KERNEL_DIR/include
++export APM_LIBS=-L$ARMADEUS_TOOLS_DIR/build_arm_nofpu/staging_dir/lib
++
++echo "clean old config if any"
++
++make distclean
++
++
++echo "Configuring  compiler"
++#
++#	For help type 
++#./configure -help
++#
++# NOTES:  	--> disable cups (compiling problem) cups is not necessary
++#		--> add option --enable-debug  if necessary!!
++# 		--host="arm-armadeus-linux-uclibc" force cross compilation and means
++#			host_cpu='arm'
++#			host_os='linux-uclibc'
++#			host_vendor='armadeus'
++# 		use -DHAVE_GETTIMEOFDAY_TZ because of gettimeofday() use a second argument 
++# 		(obsolete but defined TZ)
++#		
++
++./configure --host="arm-armadeus-linux-uclibc"  \
++ --disable-cups  --disable-pie  --with-smbmount  --with-automount --disable-xmltest \
++CC=$ARMADEUS_TOOLS_DIR/build_arm_nofpu/staging_dir/arm-linux/bin/gcc \
++CFLAGS="-Wall -Wstrict-prototypes -Os -fomit-frame-pointer -DHAVE_GETTIMEOFDAY_TZ -DHAVE_IFACE_IFCONF -DUSE_SETEUID -DHAVE_STRUCT_TIMESPEC "  \
++CPPFLAGS=$APM_INCLUDES \
++LDFLAGS=$APM_LIBS
++
++echo
++echo "Building samba"
++echo
++
++# build prototypes first
++make proto
++# build package
++make
++
++# strip files to save space :
++echo "strip binary files"
++echo
++
++$ARMADEUS_TOOLS_DIR/build_arm_nofpu/staging_dir/arm-linux/bin/strip ./bin/*
++
++# only  install usefull programs ....
++
++
+diff -Naur --ignore-blank-lines --exclude smbadduser --exclude gen-8bit-gap.sh samba-3.0.20/source/configure samba-3.0.20.apm/source/configure
+--- samba-3.0.20/source/configure	2005-08-19 21:09:01.000000000 +0200
++++ samba-3.0.20.apm/source/configure	2005-09-17 22:35:27.000000000 +0200
+@@ -18730,7 +18730,7 @@
+ case "$host_os" in
+     *linux*)
+        # glibc <= 2.3.2 has a broken getgrouplist
+-       if test "$cross_compiling" = yes; then
++       if test "$cross_compiling" = no ; then
+   { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+ See \`config.log' for more details." >&5
+ echo "$as_me: error: cannot run test program while cross compiling
