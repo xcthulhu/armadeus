@@ -1,0 +1,114 @@
+diff -purN u-boot-ref/cpu/arm720t/config.mk u-boot-cvs/cpu/arm720t/config.mk
+--- u-boot-ref/cpu/arm720t/config.mk	2002-09-05 16:51:08.000000000 +0200
++++ u-boot-cvs/cpu/arm720t/config.mk	2005-08-14 21:58:52.000000000 +0200
+@@ -23,6 +23,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4 -mtune=arm7tdmi
+diff -purN u-boot-ref/cpu/arm920t/config.mk u-boot-cvs/cpu/arm920t/config.mk
+--- u-boot-ref/cpu/arm920t/config.mk	2002-09-05 16:50:51.000000000 +0200
++++ u-boot-cvs/cpu/arm920t/config.mk	2005-08-14 22:01:08.000000000 +0200
+@@ -22,6 +22,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4
+diff -purN u-boot-ref/cpu/arm925t/config.mk u-boot-cvs/cpu/arm925t/config.mk
+--- u-boot-ref/cpu/arm925t/config.mk	2003-07-15 22:04:06.000000000 +0200
++++ u-boot-cvs/cpu/arm925t/config.mk	2005-08-14 16:40:28.000000000 +0200
+@@ -22,6 +22,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4
+diff -purN u-boot-ref/cpu/arm926ejs/config.mk u-boot-cvs/cpu/arm926ejs/config.mk
+--- u-boot-ref/cpu/arm926ejs/config.mk	2003-08-30 00:00:47.000000000 +0200
++++ u-boot-cvs/cpu/arm926ejs/config.mk	2005-08-14 16:40:19.000000000 +0200
+@@ -22,6 +22,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4
+diff -purN u-boot-ref/cpu/ixp/config.mk u-boot-cvs/cpu/ixp/config.mk
+--- u-boot-ref/cpu/ixp/config.mk	2003-10-14 21:43:56.000000000 +0200
++++ u-boot-cvs/cpu/ixp/config.mk	2005-08-14 16:40:06.000000000 +0200
+@@ -25,6 +25,6 @@
+ BIG_ENDIAN = y
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float -mbig-endian
++	-msoft-float -mbig-endian
+ 
+ PLATFORM_CPPFLAGS += -mbig-endian -mapcs-32 -march=armv4 -mtune=strongarm1100
+diff -purN u-boot-ref/cpu/lh7a40x/config.mk u-boot-cvs/cpu/lh7a40x/config.mk
+--- u-boot-ref/cpu/lh7a40x/config.mk	2004-06-09 15:37:53.000000000 +0200
++++ u-boot-cvs/cpu/lh7a40x/config.mk	2005-08-14 16:39:53.000000000 +0200
+@@ -22,6 +22,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4
+diff -purN u-boot-ref/cpu/pxa/config.mk u-boot-cvs/cpu/pxa/config.mk
+--- u-boot-ref/cpu/pxa/config.mk	2005-01-09 22:28:17.000000000 +0100
++++ u-boot-cvs/cpu/pxa/config.mk	2005-08-14 16:39:41.000000000 +0200
+@@ -23,7 +23,7 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ #PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4 -mtune=strongarm1100
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv5 -mtune=xscale
+diff -purN u-boot-ref/cpu/s3c44b0/config.mk u-boot-cvs/cpu/s3c44b0/config.mk
+--- u-boot-ref/cpu/s3c44b0/config.mk	2004-02-24 01:16:44.000000000 +0100
++++ u-boot-cvs/cpu/s3c44b0/config.mk	2005-08-14 16:39:31.000000000 +0200
+@@ -23,6 +23,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4 -mtune=arm7tdmi -msoft-float
+diff -purN u-boot-ref/cpu/sa1100/config.mk u-boot-cvs/cpu/sa1100/config.mk
+--- u-boot-ref/cpu/sa1100/config.mk	2002-09-05 16:51:11.000000000 +0200
++++ u-boot-cvs/cpu/sa1100/config.mk	2005-08-14 16:39:24.000000000 +0200
+@@ -23,6 +23,6 @@
+ #
+ 
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+-	-mshort-load-bytes -msoft-float
++	-msoft-float
+ 
+ PLATFORM_CPPFLAGS += -mapcs-32 -march=armv4 -mtune=strongarm1100
+diff -purN u-boot-ref/include/asm-arm/arch-imx/imx-regs.h u-boot-cvs/include/asm-arm/arch-imx/imx-regs.h
+--- u-boot-ref/include/asm-arm/arch-imx/imx-regs.h	2005-04-06 00:30:52.000000000 +0200
++++ u-boot-cvs/include/asm-arm/arch-imx/imx-regs.h	2005-08-21 17:38:10.000000000 +0200
+@@ -8,9 +8,7 @@
+ 
+ # ifndef __ASSEMBLY__
+ #  define __REG(x)	(*((volatile u32 *)(x)))
+-# define __REG2(x,y)	\
+-	( __builtin_constant_p(y) ? (__REG((x) + (y))) \
+-			  : (*(volatile u32 *)((u32)&__REG(x) + (y))) )
++#  define __REG2(x,y)   (*(volatile u32 *)((u32)&__REG(x) + (y)))
+ # else
+ #  define __REG(x) (x)
+ #  define __REG2(x,y) ((x)+(y))
