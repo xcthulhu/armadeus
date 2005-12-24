@@ -17,8 +17,8 @@
 BUILDROOT_NAME=buildroot
 BUILDROOT_VERSION=-20051129
 
-INSTALL_DIR=`pwd`/Software
-PATCH_DIR=`pwd`/Software/patchs
+INSTALL_DIR=`pwd`/software
+PATCH_DIR=`pwd`/software/patchs
 BUILD_DIR=$INSTALL_DIR
 DL_DIR=$INSTALL_DIR/downloads                    # do not modify!!
 TAR_OPTIONS=-xvf
