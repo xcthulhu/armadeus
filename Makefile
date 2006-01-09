@@ -27,7 +27,7 @@ BUILDROOT_DIR = software/buildroot
 BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH=software/downloads/buildroot.tar.bz2
 
-PATCH_DIR=software/patchs
+PATCH_DIR=software/patches
 BUILDROOT_PATCH_FILE=buildroot.patch
 
 TAR_OPTIONS=-xvf
