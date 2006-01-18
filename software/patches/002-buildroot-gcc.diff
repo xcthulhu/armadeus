@@ -1,0 +1,13 @@
+diff -purN buildrootref/toolchain/gcc/gcc-uclibc-3.x.mk buildroot/toolchain/gcc/gcc-uclibc-3.x.mk
+--- buildrootref/toolchain/gcc/gcc-uclibc-3.x.mk	2006-01-18 17:21:04.000000000 +0100
++++ buildroot/toolchain/gcc/gcc-uclibc-3.x.mk	2006-01-18 17:21:55.000000000 +0100
+@@ -20,7 +20,8 @@
+ GCC_VERSION:=$(strip $(GCC_VERSION))
+ 
+ #GCC_SITE:=ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(GCC_VERSION)
+-GCC_SITE:=http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(GCC_VERSION)
++#GCC_SITE:=http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(GCC_VERSION)
++GCC_SITE:=ftp://ftp.lip6.fr/pub/gcc/releases/gcc-$(GCC_VERSION)
+ 
+ #
+ # snapshots....
