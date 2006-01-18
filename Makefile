@@ -39,7 +39,7 @@ all: buildroot
 
 $(BUILDROOT_DIR)/.unpacked:
 	bzcat $(BUILDROOT_FILE_PATH) | tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
-	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) $(BUILDROOT_PATCH_FILE)
+	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) 
 	touch $(BUILDROOT_DIR)/.unpacked
 
 buildroot: $(BUILDROOT_DIR)/.unpacked
