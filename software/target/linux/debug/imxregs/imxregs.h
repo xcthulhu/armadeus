@@ -178,11 +178,12 @@ static struct reg_info regs[] =
 { "SAR10",              0x00209300, 0, 0xffffffff, 'x', "Channel 10 Source Address Register" },
 { "DAR10",              0x00209304, 0, 0xffffffff, 'x', "Channel 10 Destination Address Register" },
 { "CNTR10",             0x00209308, 0, 0xffffffff, 'x', "Channel 10 Count Register" },
-{ "PSR0_2",             0x00210000, 0, 0xffffffff, 'x', "AIPI2 Peripheral Size Register 0" },
+// NOT ACCESSIBLE IN USER MODE ??
+/*{ "PSR0_2",             0x00210000, 0, 0xffffffff, 'x', "AIPI2 Peripheral Size Register 0" },
 { "PSR1_2",             0x00210004, 0, 0xffffffff, 'x', "AIPI2 Peripheral Size Register 1" },
 { "PAR_2",              0x00210008, 0, 0xffffffff, 'x', "AIPI2 Peripheral Access Register" },
 { "PCR_2",              0x0021000C, 0, 0xffffffff, 'x', "AIPI2 Peripheral Control Register" },
-{ "TSR_2",              0x00210010, 0, 0xffffffff, 'x', "AIPI2Time-Out Status Register" },
+{ "TSR_2",              0x00210010, 0, 0xffffffff, 'x', "AIPI2 Time-Out Status Register" },*/
 // USB
 { "USB_FRAME",          0x00212000, 0, 0xffffffff, 'x', "USB Frame Number and Match Register" },
 { "USB_SPEC",           0x00212004, 0, 0xffffffff, 'x', "USB Specification and Release Number Register" },
