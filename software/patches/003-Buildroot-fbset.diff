@@ -1,0 +1,11 @@
+diff -purN -x .svn buildroot/package/Config.in software/buildroot/package/Config.in
+--- buildroot/package/Config.in	2005-11-29 09:15:40.000000000 +0100
++++ software/buildroot/package/Config.in	2006-01-20 21:45:03.000000000 +0100
+@@ -41,6 +41,7 @@ source "package/dnsmasq/Config.in"
+ source "package/dropbear/Config.in"
+ source "package/e2fsprogs/Config.in"
+ source "package/fakeroot/Config.in"
++source "package/fbset/Config.in"
+ source "package/file/Config.in"
+ source "package/freetype/Config.in"
+ source "package/gettext/Config.in"
