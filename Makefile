@@ -47,6 +47,19 @@ buildroot: $(BUILDROOT_DIR)/.unpacked
 .DEFAULT: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
+buildroot-clean:
+	@$(MAKE) -C $(BUILDROOT_DIR)  clean
+	rm -rf $(BUILDROOT_DIR)/build*
+	rm -rf $(BUILDROOT_DIR)/toolchain_build*
+	rm -rf $(BUILDROOT_DIR)/dl
+	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
+
+buildroot-patch: buildroot-clean
+	svn co svn://ericjarrige.homelinux.org/armadeus/trunk/software/buildroot buildroot
+	bzcat $(BUILDROOT_FILE_PATH) | tar -C . $(TAR_OPTIONS) -
+	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
+	touch buildroot/.unpacked
+	diff -purN -x .svn buildroot $(BUILDROOT_DIR) > newBuildroot.diff
 
 .PHONY: dummy buildroot
 
