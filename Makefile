@@ -55,6 +55,7 @@ buildroot-clean:
 	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
 
 buildroot-patch: buildroot-clean
+	rm -rf buildroot
 	svn co svn://ericjarrige.homelinux.org/armadeus/trunk/software/buildroot buildroot
 	bzcat $(BUILDROOT_FILE_PATH) | tar -C . $(TAR_OPTIONS) -
 	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
