@@ -44,6 +44,9 @@ $(BUILDROOT_DIR)/.unpacked:
 buildroot: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR)
 
+menuconfig: $(BUILDROOT_DIR)/.unpacked
+	@$(MAKE) -C $(BUILDROOT_DIR) menuconfig
+
 .DEFAULT: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
