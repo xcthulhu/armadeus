@@ -60,7 +60,7 @@ buildroot-patch: buildroot-clean
 	bzcat $(BUILDROOT_FILE_PATH) | tar -C . $(TAR_OPTIONS) -
 	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
 	touch buildroot/.unpacked
-	diff -purN -x .svn -x *~ buildroot $(BUILDROOT_DIR) > newBuildroot.diff
+	diff -purN -x .svn -x '*~' buildroot $(BUILDROOT_DIR) > newBuildroot.diff
 
 .PHONY: dummy buildroot
 

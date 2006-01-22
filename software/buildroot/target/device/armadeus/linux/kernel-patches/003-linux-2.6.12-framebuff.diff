@@ -1,6 +1,32 @@
-diff -uprN -X dontdiff linux-2.6.12/drivers/video/imxfb.c linux-2.6.12.work/drivers/video/imxfb.c
---- linux-2.6.12/drivers/video/imxfb.c	2005-06-17 21:48:29.000000000 +0200
-+++ linux-2.6.12.work/drivers/video/imxfb.c	2005-12-17 17:35:27.000000000 +0100
+diff -purN -x '*~' ref/linux-2.6.12/drivers/video/imxfb.c linux-2.6.12/drivers/video/imxfb.c
+--- ref/linux-2.6.12/drivers/video/imxfb.c	2005-06-17 21:48:29.000000000 +0200
++++ linux-2.6.12/drivers/video/imxfb.c	2006-01-22 17:50:38.000000000 +0100
+@@ -48,9 +48,9 @@
+ #include "imxfb.h"
+ 
+ static struct imxfb_rgb def_rgb_16 = {
+-	.red	= { .offset = 8,  .length = 4, },
+-	.green	= { .offset = 4,  .length = 4, },
+-	.blue	= { .offset = 0,  .length = 4, },
++	.red	= { .offset = 11,  .length = 5, },
++	.green	= { .offset = 5,  .length = 6, },
++	.blue	= { .offset = 0,  .length = 5, },
+ 	.transp = { .offset = 0,  .length = 0, },
+ };
+ 
+@@ -80,9 +80,9 @@ imxfb_setpalettereg(u_int regno, u_int r
+ 
+ #define CNVT_TOHW(val,width) ((((val)<<(width))+0x7FFF-(val))>>16)
+ 	if (regno < fbi->palette_size) {
+-		val = (CNVT_TOHW(red, 4) << 8) |
+-		      (CNVT_TOHW(green,4) << 4) |
+-		      CNVT_TOHW(blue,  4);
++		val = (CNVT_TOHW(red, 5) << 11) |
++		      (CNVT_TOHW(green,6) << 5) |
++		      CNVT_TOHW(blue,  5);
+ 
+ 		LCDC_PALETTE(regno) = val;
+ 		ret = 0;
 @@ -401,7 +401,10 @@ static void imxfb_setup_gpio(struct imxf
  	/* initialize GPIOs */
  	imx_gpio_mode(PD6_PF_LSCLK);
@@ -12,9 +38,9 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/video/imxfb.c linux-2.6.12.work/driv
  	imx_gpio_mode(PD14_PF_FLM_VSYNC);
  	imx_gpio_mode(PD13_PF_LP_HSYNC);
  	imx_gpio_mode(PD7_PF_REV);
-diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/Kconfig linux-2.6.12.work/drivers/video/logo/Kconfig
---- linux-2.6.12/drivers/video/logo/Kconfig	2005-06-17 21:48:29.000000000 +0200
-+++ linux-2.6.12.work/drivers/video/logo/Kconfig	2005-12-17 17:30:32.000000000 +0100
+diff -purN -x '*~' ref/linux-2.6.12/drivers/video/logo/Kconfig linux-2.6.12/drivers/video/logo/Kconfig
+--- ref/linux-2.6.12/drivers/video/logo/Kconfig	2005-06-17 21:48:29.000000000 +0200
++++ linux-2.6.12/drivers/video/logo/Kconfig	2006-01-22 17:22:28.000000000 +0100
 @@ -63,5 +63,12 @@ config LOGO_SUPERH_CLUT224
  	depends on LOGO && SUPERH
  	default y
@@ -28,9 +54,9 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/Kconfig linux-2.6.12.work
 +
  endmenu
  
-diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm linux-2.6.12.work/drivers/video/logo/logo_armadeus_clut224.ppm
---- linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.work/drivers/video/logo/logo_armadeus_clut224.ppm	2005-12-17 17:37:19.000000000 +0100
+diff -purN -x '*~' ref/linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm
+--- ref/linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm	2006-01-22 17:22:28.000000000 +0100
 @@ -0,0 +1,19205 @@
 +P3
 +# CREATOR: The GIMP's PNM Filter Version 1.0
@@ -19237,9 +19263,9 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/logo_armadeus_clut224.ppm
 +0
 +0
 +0
-diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/logo.c linux-2.6.12.work/drivers/video/logo/logo.c
---- linux-2.6.12/drivers/video/logo/logo.c	2005-06-17 21:48:29.000000000 +0200
-+++ linux-2.6.12.work/drivers/video/logo/logo.c	2005-12-17 17:32:16.000000000 +0100
+diff -purN -x '*~' ref/linux-2.6.12/drivers/video/logo/logo.c linux-2.6.12/drivers/video/logo/logo.c
+--- ref/linux-2.6.12/drivers/video/logo/logo.c	2005-06-17 21:48:29.000000000 +0200
++++ linux-2.6.12/drivers/video/logo/logo.c	2006-01-22 17:22:29.000000000 +0100
 @@ -33,6 +33,7 @@ extern const struct linux_logo logo_sun_
  extern const struct linux_logo logo_superh_mono;
  extern const struct linux_logo logo_superh_vga16;
@@ -19259,9 +19285,9 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/logo.c linux-2.6.12.work/
  	}
  	return logo;
  }
-diff -uprN -X dontdiff linux-2.6.12/drivers/video/logo/Makefile linux-2.6.12.work/drivers/video/logo/Makefile
---- linux-2.6.12/drivers/video/logo/Makefile	2005-06-17 21:48:29.000000000 +0200
-+++ linux-2.6.12.work/drivers/video/logo/Makefile	2005-12-17 17:31:26.000000000 +0100
+diff -purN -x '*~' ref/linux-2.6.12/drivers/video/logo/Makefile linux-2.6.12/drivers/video/logo/Makefile
+--- ref/linux-2.6.12/drivers/video/logo/Makefile	2005-06-17 21:48:29.000000000 +0200
++++ linux-2.6.12/drivers/video/logo/Makefile	2006-01-22 17:22:29.000000000 +0100
 @@ -12,6 +12,7 @@ obj-$(CONFIG_LOGO_SUN_CLUT224)		+= logo_
  obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_superh_mono.o
  obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o

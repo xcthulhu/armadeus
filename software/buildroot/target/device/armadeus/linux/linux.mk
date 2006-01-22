@@ -121,12 +121,32 @@ linux: $(STAGING_DIR)/include/linux/version.h $(TARGET_DIR)/lib/modules/$(LINUX_
 linux-source: $(DL_DIR)/$(LINUX_SOURCE)
 
 # This has been renamed so we do _NOT_ by default run this on 'make clean'
-linuxclean: clean
+linux-clean:
 	rm -f $(LINUX_KERNEL)
 	-$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) clean
 
+linux-mrproper:
+	-$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) mrproper
+	rm -rf $(LINUX_DIR)/.configured
+	rm -rf $(LINUX_DIR)/.depend_done
+
 linux-dirclean:
 	rm -rf $(LINUX_DIR)
+
+linux-patch: linux-clean linux-mrproper
+	-mkdir -p $(BUILD_DIR)/ref
+	rm -rf $(BUILD_DIR)/ref/linux-$(LINUX_VERSION)
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(BUILD_DIR)/ref $(TAR_OPTIONS) -
+ifneq ($(DOWNLOAD_LINUX_VERSION),$(LINUX_VERSION))
+	# Rename the dir from the downloaded version to the AFTER patch version
+	mv -f $(BUILD_DIR)/ref/linux-$(DOWNLOAD_LINUX_VERSION) $(BUILD_DIR)/ref/linux-$(LINUX_VERSION)
+endif
+	toolchain/patch-kernel.sh $(BUILD_DIR)/ref/linux-$(LINUX_VERSION) $(LINUX_PATCH_DIR)
+	$(SED) "s,^ARCH.*,ARCH=$(LINUX_KARCH),g;" $(BUILD_DIR)/ref/linux-$(LINUX_VERSION)/Makefile
+	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(BUILD_DIR)/ref/linux-$(LINUX_VERSION)/Makefile
+	touch $(BUILD_DIR)/ref/linux-$(LINUX_VERSION)/.unpacked
+	-(cd $(BUILD_DIR); \
+	diff -purN -x '*~' ref/linux-$(LINUX_VERSION) linux-$(LINUX_VERSION) > $(BUILD_DIR)/../newlinux.diff)
 
 ifeq ($(strip $(BR2_PACKAGE_LINUX)),y)
 TARGETS+=linux
