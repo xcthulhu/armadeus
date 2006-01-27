@@ -1,24 +1,3 @@
-diff -purN buildroot-ref/package/module-init-tools/Config.in buildroot/package/module-init-tools/Config.in
---- buildroot-ref/package/module-init-tools/Config.in	2005-11-29 09:15:30.000000000 +0100
-+++ buildroot/package/module-init-tools/Config.in	2005-12-21 16:39:18.000000000 +0100
-@@ -7,4 +7,4 @@ config BR2_PACKAGE_MODULE_INIT_TOOLS
- 	  (versions 2.5.48 and above). It serves the same function that 
- 	  the "modutils" package serves for Linux 2.4.
- 
--	  http://www.kernel.org/pub/linux/utils/kernel/module-init-tools/
-+	  http://www.kernel.org/pub/linux/utils/kernel/module-init-tools/old/
-diff -purN buildroot-ref/package/module-init-tools/module-init-tools.mk buildroot/package/module-init-tools/module-init-tools.mk
---- buildroot-ref/package/module-init-tools/module-init-tools.mk	2005-11-29 09:15:30.000000000 +0100
-+++ buildroot/package/module-init-tools/module-init-tools.mk	2005-12-21 16:39:18.000000000 +0100
-@@ -4,7 +4,7 @@
- #
- #############################################################
- MODULE_INIT_TOOLS_SOURCE=module-init-tools-3.1.tar.bz2
--MODULE_INIT_TOOLS_SITE=ftp://ftp.kernel.org/pub/linux/utils/kernel/module-init-tools/
-+MODULE_INIT_TOOLS_SITE=ftp://ftp.kernel.org/pub/linux/utils/kernel/module-init-tools/old/
- MODULE_INIT_TOOLS_DIR=$(BUILD_DIR)/module-init-tools-3.1
- MODULE_INIT_TOOLS_BINARY=modprobe
- MODULE_INIT_TOOLS_TARGET_BINARY=$(TARGET_DIR)/sbin/$(MODULE_INIT_TOOLS_BINARY)
 diff -purN -x .svn buildrootref/target/device/Config.in buildroot/target/device/Config.in
 --- buildrootref/target/device/Config.in       2006-01-27 09:15:21.000000000 +0100
 +++ buildroot/target/device/Config.in  2006-01-27 16:32:13.000000000 +0100
