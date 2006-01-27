@@ -36,9 +36,9 @@ all: buildroot
 # configuration
 # ---------------------------------------------------------------------------
 
-$(BUILDROOT_DIR)/.unpacked:
+$(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH) | tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
-	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) 
+	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff  
 	touch $(BUILDROOT_DIR)/.unpacked
 
 buildroot: $(BUILDROOT_DIR)/.unpacked
