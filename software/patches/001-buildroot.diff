@@ -19,17 +19,16 @@ diff -purN buildroot-ref/package/module-init-tools/module-init-tools.mk buildroo
  MODULE_INIT_TOOLS_DIR=$(BUILD_DIR)/module-init-tools-3.1
  MODULE_INIT_TOOLS_BINARY=modprobe
  MODULE_INIT_TOOLS_TARGET_BINARY=$(TARGET_DIR)/sbin/$(MODULE_INIT_TOOLS_BINARY)
-diff -purN buildroot-ref/target/device/Config.in buildroot/target/device/Config.in
---- buildroot-ref/target/device/Config.in	2005-11-29 09:15:23.000000000 +0100
-+++ buildroot/target/device/Config.in	2005-12-24 12:30:36.000000000 +0100
-@@ -4,6 +4,7 @@ source "target/device/Soekris/Config.in"
+diff -purN -x .svn buildrootref/target/device/Config.in buildroot/target/device/Config.in
+--- buildrootref/target/device/Config.in       2006-01-27 09:15:21.000000000 +0100
++++ buildroot/target/device/Config.in  2006-01-27 16:32:13.000000000 +0100
+@@ -1,5 +1,6 @@
+ menu "Board Support Options"
+ 
++source "target/device/armadeus/Config.in"
+ source "target/device/Soekris/Config.in"
  source "target/device/Hitachi/Config.in"
  source "target/device/AMD/Config.in"
- source "target/device/Via/Config.in"
-+source "target/device/armadeus/Config.in"
- 
- # This must be last
- source "target/generic/Config.in"
 diff -purN buildroot-ref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
 --- buildroot-ref/target/jffs2/jffs2root.mk	2005-11-29 09:15:23.000000000 +0100
 +++ buildroot/target/jffs2/jffs2root.mk	2005-12-22 17:12:16.000000000 +0100
