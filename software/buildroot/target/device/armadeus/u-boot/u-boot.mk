@@ -17,7 +17,7 @@ $(DL_DIR)/$(U-BOOT_SOURCE):
 u-boot-source: $(DL_DIR)/$(U-BOOT_SOURCE)
 
 $(U-BOOT_DIR)/.unpacked: $(DL_DIR)/$(U-BOOT_SOURCE)
-	bzcat $(DL_DIR)/$(U-BOOT_SOURCE) | tar -C $(BUILD_DIR) -xvf -
+	bzcat $(DL_DIR)/$(U-BOOT_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	toolchain/patch-kernel.sh $(U-BOOT_DIR) $(U-BOOT_PACKAGE_DIR) *.patch
 	touch $(U-BOOT_DIR)/.unpacked	
 
@@ -39,10 +39,25 @@ u-boot: $(U-BOOT_DIR)/u-boot.bin $(U-BOOT_DIR)/u-boot.brec
 
 u-boot-clean:
 	make -C $(U-BOOT_DIR) clean
-	rm $(U-BOOT_DIR)/.configured
+	rm -rf $(U-BOOT_DIR)/tools/mkbrecimage
+	rm -rf $(U-BOOT_DIR)/.configured
 
-u-boot-dirclean:
+u-boot-distclean: u-boot-clean
+	make -C $(U-BOOT_DIR) distclean
+
+u-boot-dirclean: 
 	rm -rf $(U-BOOT_DIR)
+
+u-boot-patch: u-boot-distclean
+	-mkdir -p $(BUILD_DIR)/ref
+	rm -rf $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER)
+	bzcat $(DL_DIR)/$(U-BOOT_SOURCE) | tar -C $(BUILD_DIR)/ref $(TAR_OPTIONS) -
+	toolchain/patch-kernel.sh $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER) $(U-BOOT_PACKAGE_DIR) *.patch
+	touch $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER)/.unpacked
+	-(cd $(BUILD_DIR); \
+	diff -purN -x '*~' ref/u-boot-$(U-BOOT_VER) u-boot-$(U-BOOT_VER) > $(BUILD_DIR)/../newu-boot.diff;\
+	echo -e "\n\nu-boot patch generated!\n")
+
 
 #############################################################
 #
