@@ -42,14 +42,3 @@ diff -purN buildroot-ref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2r
  	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
  	@rm -rf $(TARGET_DIR)/usr/man
  	@rm -rf $(TARGET_DIR)/usr/share/man
---- buildroot/package/sed/sed.mk	2005-11-29 09:15:28.000000000 +0100
-+++ software/buildroot/package/sed/sed.mk	2006-01-27 00:44:03.000000000 +0100
-@@ -16,7 +16,7 @@ SED_CPPFLAGS=-D_FILE_OFFSET_BITS=64
- endif
- #HOST_SED_DIR:=$(STAGING_DIR)
- HOST_SED_DIR:=$(TOOL_BUILD_DIR)
--SED:=$(HOST_SED_DIR)/bin/sed -i -e
-+SED:=$(HOST_SED_DIR)/bin/sed -i "" -e
- HOST_SED_TARGET=$(shell package/sed/sedcheck.sh)
- 
- $(DL_DIR)/$(SED_SOURCE):
