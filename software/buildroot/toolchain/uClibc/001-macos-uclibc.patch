@@ -6,7 +6,7 @@ diff -purN uClibc-0.9.28ref/utils/bswap.h uClibc-0.9.28/utils/bswap.h
  
  #if !defined(__BYTE_ORDER) && defined(BYTE_ORDER)
 -#  define __BYTE_ORDER = BYTE_ORDER
-+#  define __BYTE_ORDER BYTE_ORDER
++#define __BYTE_ORDER BYTE_ORDER
  #endif
  
  #ifndef __BYTE_ORDER
