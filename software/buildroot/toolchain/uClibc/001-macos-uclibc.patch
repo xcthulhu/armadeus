@@ -1,0 +1,20 @@
+diff -purN uClibc-0.9.28ref/utils/bswap.h uClibc-0.9.28/utils/bswap.h
+--- uClibc-0.9.28ref/utils/bswap.h	2005-08-18 00:49:41.000000000 +0200
++++ uClibc-0.9.28/utils/bswap.h	2006-01-29 04:02:18.000000000 +0100
+@@ -2,7 +2,7 @@
+ #define	_BSWAP_H 1
+ 
+ #if !defined(__BYTE_ORDER) && defined(BYTE_ORDER)
+-#  define __BYTE_ORDER = BYTE_ORDER
++#  define __BYTE_ORDER BYTE_ORDER
+ #endif
+ 
+ #ifndef __BYTE_ORDER
+@@ -33,6 +33,7 @@
+ #include <byteswap.h>
+ #else
+ #include <string.h>
++#include "elf.h"
+ static __inline__ uint32_t bswap_32(uint32_t x)
+      {
+        uint32_t res;
