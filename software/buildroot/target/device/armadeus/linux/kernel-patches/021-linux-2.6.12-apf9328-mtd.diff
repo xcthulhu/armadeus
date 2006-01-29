@@ -145,22 +145,21 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/mtd/maps/Kconfig linux-2.6.12.work/d
 --- linux-2.6.12/drivers/mtd/maps/Kconfig  2006-01-23 00:12:43.000000000 +0100
 +++ linux-2.6.12.work/drivers/mtd/maps/Kconfig  2005-12-17 17:28:23.000000000 +0100
 @@ -472,6 +472,10 @@ config MTD_SCB9328
-    tristate "CFI Flash device mapped on scb9328 board"
-    depends on ARM && MTD_CFI
+ 	tristate "CFI Flash device mapped on scb9328 board"
+ 	depends on ARM && MTD_CFI
  
 +config MTD_APF9328
 +    tristate "CFI Flash device mapped on APF9328 board"
 +    depends on ARM
 +
  config MTD_CDB89712
-    tristate "Cirrus CDB89712 evaluation board mappings"
-    depends on ARM && MTD_CFI && ARCH_CDB89712
+ 	tristate "Cirrus CDB89712 evaluation board mappings"
+ 	depends on ARM && MTD_CFI && ARCH_CDB89712
 diff -uprN -X dontdiff linux-2.6.12/drivers/mtd/maps/Makefile linux-2.6.12.work/drivers/mtd/maps/Makefile
---- linux-2.6.12/drivers/mtd/maps/Makefile 2006-01-23 00:12:43.000000000 +0100
-+++ linux-2.6.12.work/drivers/mtd/maps/Makefile 2005-12-17 17:29:28.000000000 +0100
-@@ -73,3 +73,4 @@ obj-$(CONFIG_MTD_DMV182)  += dmv182.o
- obj-$(CONFIG_MTD_SHARP_SL) += sharpsl-flash.o
- obj-$(CONFIG_MTD_MX1FS2)   += mx1fs2.o
- obj-$(CONFIG_MTD_SCB9328)  += scb9328.o
+--- linux-2.6.12/drivers/mtd/maps/Makefile 2006-01-29 22:42:54.000000000 +0100
++++ linux-2.6.12.work/drivers/mtd/maps/Makefile 2006-01-29 22:47:16.000000000 +0100
+@@ -73,3 +73,4 @@ obj-$(CONFIG_MTD_DMV182)	+= dmv182.o
+ obj-$(CONFIG_MTD_SHARP_SL)	+= sharpsl-flash.o
+ obj-$(CONFIG_MTD_MX1FS2)	+= mx1fs2.o
+ obj-$(CONFIG_MTD_SCB9328)	+= scb9328.o
 +obj-$(CONFIG_MTD_APF9328)   += apf9328.o
-\ Pas de fin de ligne à la fin du fichier.
