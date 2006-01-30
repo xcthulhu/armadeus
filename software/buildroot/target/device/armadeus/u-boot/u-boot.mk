@@ -24,7 +24,16 @@ $(U-BOOT_DIR)/.unpacked: $(DL_DIR)/$(U-BOOT_SOURCE)
 $(U-BOOT_DIR)/.configured: $(U-BOOT_DIR)/.unpacked
 	make -C $(U-BOOT_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(U-BOOT_TARGET_NAME)_config
 ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
-	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;" $(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
+	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
+		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
+endif
+
+ifneq ($(BR2_TARGET_ARMADEUS_APF9328),)
+	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APF9328,g' \
+		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
+else
+	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APM9328,g' \
+		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
 endif
 	touch $(U-BOOT_DIR)/.configured	
 
