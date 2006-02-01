@@ -6,8 +6,10 @@ diff -uprN -X dontdiff linux-2.6.12/drivers/video/imxfb.c linux-2.6.12.work/driv
  	imx_gpio_mode(PD6_PF_LSCLK);
  	imx_gpio_mode(PD10_PF_SPL_SPR);
 +#ifndef CONFIG_MACH_SCB9328
++#ifndef CONFIG_MACH_APF9328
 +    /* On apf9328, used to de)activate the display, so we need it as a normal gpio */
  	imx_gpio_mode(PD11_PF_CONTRAST);
++#endif // CONFIG_MACH_APF9328
 +#endif /* CONFIG_MACH_SCB9328 */
  	imx_gpio_mode(PD14_PF_FLM_VSYNC);
  	imx_gpio_mode(PD13_PF_LP_HSYNC);
