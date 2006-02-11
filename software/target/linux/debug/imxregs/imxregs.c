@@ -23,6 +23,8 @@
 
 #include "imxregs.h"
 
+//#define DEBUG TRUE
+
 // fd for /dev/mem
 static int fd = -1;
 
@@ -32,9 +34,9 @@ static int getmem(u32 addr)
 {
    void *map, *regaddr;
    u32 val;
-
+#ifdef DEBUG
    printf("getmem(0x%08x)\n", addr);
-
+#endif // DEBUG
    if (fd == -1) 
    {
       fd = open("/dev/mem", O_RDWR | O_SYNC);
@@ -51,7 +53,9 @@ static int getmem(u32 addr)
        perror("mmap()");
        exit(1);
    }
+#ifdef DEBUG
    printf("Mapped addr: 0x%x\n", regaddr);
+#endif // DEBUG
    regaddr = map + (addr & MAP_MASK);
 
    val = *(u32*) regaddr;
