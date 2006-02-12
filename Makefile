@@ -68,6 +68,7 @@ menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
 buildroot-clean:
+	@$(MAKE) -C $(BUILDROOT_DIR)  clean
 	rm -rf $(BUILDROOT_DIR)/build*
 	rm -rf $(BUILDROOT_DIR)/toolchain_build*
 	rm -rf $(BUILDROOT_DIR)/dl
