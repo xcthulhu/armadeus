@@ -29,9 +29,26 @@ BUILDROOT_FILE_PATH=software/downloads/buildroot.tar.bz2
 
 PATCH_DIR=software/patches
 
-TAR_OPTIONS=-xvf
+TAR_OPTIONS=--exclude=.svn -xvf 
 
 all: buildroot
+
+help:
+	@echo 'Cleaning:'
+	@echo '  buildroot-clean	- delete all non-source files in buildroot (including .config)'
+	@echo
+	@echo 'Build:'
+	@echo '  all			- everything needed (default)'
+	@echo '  <Package>		- a single package (ex: u-boot linux or buildroot'
+	@echo
+	@echo 'Configuration:'
+	@echo '  menuconfig		- interactive curses-based configurator'
+	@echo
+	@echo 'Development:'
+	@echo '  buildroot-patch	- generate patch file for buildroot'
+	@echo '  sourceball		- create a distribution tarball'
+	@echo
+
 
 # configuration
 # ---------------------------------------------------------------------------
@@ -51,7 +68,6 @@ menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
 buildroot-clean:
-	@$(MAKE) -C $(BUILDROOT_DIR)  clean
 	rm -rf $(BUILDROOT_DIR)/build*
 	rm -rf $(BUILDROOT_DIR)/toolchain_build*
 	rm -rf $(BUILDROOT_DIR)/dl
@@ -64,6 +80,12 @@ buildroot-patch: buildroot-clean
 	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
 	touch buildroot/.unpacked
 	diff -purN -x .svn -x '*~' buildroot $(BUILDROOT_DIR) > newBuildroot.diff
+
+sourceball: buildroot-clean
+	cd ..;\
+	cp -a armadeus armadeus-0.1; \
+	tar --exclude=.svn --exclude=*~ -cvjf armadeus-0.1.tar.gz armadeus-0.1;
+
 
 .PHONY: dummy buildroot
 
