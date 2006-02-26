@@ -14,10 +14,14 @@
 #   
 
 
+Automatic compiling:
+-------------------
 
-Compiling:
-----------
+-> make lcd4linux
+Files will be installated in /local/export  (your NFS export dir)
 
+Manually compiling:
+-------------------
 
 -> download package from http://sourceforge.net/project/showfiles.php?group_id=1310 ( tested with version 0.10.0 )
 
@@ -65,6 +69,7 @@ Typical problems:
 TBDL
 
 See lcd4linux documentation for more details
+See Armadeus Wiki for uptodate informations !!
 
 
 Have fun !
