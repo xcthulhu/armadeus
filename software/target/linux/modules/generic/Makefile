@@ -1,0 +1,33 @@
+#
+# Makefile for the Armadeus GPIO drivers
+#
+
+REL=2.6.10-imx1
+ifeq ($(ARMADEUS_KERNEL_DIR)),y)
+ARMADEUS_KERNEL_DIR="/Please define ARMADEUS_KERNEL_DIR before trying to compile this driver !"
+endif
+
+ifneq ($(KERNELRELEASE),)
+
+obj-m	+= genmod.o
+
+generic-objs	:= generic.o
+
+else
+#KDIR	:= /lib/modules/$(shell uname -r)/build
+#KDIR	:= /lib/modules/$(REL)/build
+KDIR    := $(ARMADEUS_KERNEL_DIR)
+PWD	:= $(shell pwd)
+
+default:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+
+clean:
+	rm -f *.*o
+
+install: genmod.ko
+	echo "Installing drivers..."
+#	cp *.ko ../../../../../software/buildroot/build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/
+    
+endif
+
