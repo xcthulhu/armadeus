@@ -28,6 +28,10 @@ default:
 
 clean:
 	rm -f *.*o
+
+install: gpio.ko
+	echo "Installing drivers..."
+#	cp *.ko ../../../../../software/buildroot/build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/
     
 endif
 
