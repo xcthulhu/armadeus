@@ -1,0 +1,10 @@
+--- package.org/Config.in	2006-03-05 19:10:33.709390028 +0100
++++ package/Config.in	2006-03-05 12:09:08.000000000 +0100
+@@ -52,6 +52,7 @@
+ source "package/iproute2/Config.in"
+ source "package/iptables/Config.in"
+ source "package/jpeg/Config.in"
++source "package/lcd4linux/Config.in"
+ source "package/less/Config.in"
+ source "package/libelf/Config.in"
+ source "package/libfloat/Config.in"
