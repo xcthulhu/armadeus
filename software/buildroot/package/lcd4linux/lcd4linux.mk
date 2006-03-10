@@ -28,7 +28,7 @@ $(LCD4LINUX_DIR)/.unpacked: $(DL_DIR)/$(LCD4LINUX_SOURCE)
 
 $(LCD4LINUX_DIR)/.patched: $(LCD4LINUX_DIR)/.unpacked
 	toolchain/patch-kernel.sh $(LCD4LINUX_DIR) package/lcd4linux $(LCD4LINUX_PATCH)
-	ln -sf $(BUILD_DIR)/linux-2.6.12/include/asm-generic/ $(BUILD_DIR)/staging_dir/lib/gcc/arm-linux-uclibc/sys-include/asm-generic
+	(if [ -d $(BUILD_DIR)/linux-2.6.12/include/asm-generic ]; then ln -sf $(BUILD_DIR)/linux-2.6.12/include/asm-generic/ $(BUILD_DIR)/staging_dir/arm-linux-uclibc/sys-include/asm-generic; fi)
 	touch $(LCD4LINUX_DIR)/.patched
 
 $(LCD4LINUX_DIR)/.configured: $(LCD4LINUX_DIR)/.patched
