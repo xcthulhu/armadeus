@@ -1,0 +1,6 @@
+config BR2_PACKAGE_IMXREGS
+	bool "imxregs"
+	default n
+	help
+	  Build imxregs debug tool. It allows you to show the iMX internal registers content directly from Linux userspace.
+
