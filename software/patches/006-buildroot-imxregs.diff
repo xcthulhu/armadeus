@@ -1,0 +1,10 @@
+--- buildroot/package.org/Config.in	2006-03-11 23:12:24.394185589 +0100
++++ buildroot/package/Config.in	2006-03-11 22:34:19.580586047 +0100
+@@ -48,6 +48,7 @@
+ source "package/gzip/Config.in"
+ source "package/hostap/Config.in"
+ source "package/hotplug/Config.in"
++source "package/imxregs/Config.in"
+ source "package/iostat/Config.in"
+ source "package/iproute2/Config.in"
+ source "package/iptables/Config.in"
