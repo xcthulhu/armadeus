@@ -1,0 +1,10 @@
+--- buildroot/package.org/Config.in	2006-03-21 22:35:29.000000000 +0100
++++ buildroot/package/Config.in	2006-03-23 21:42:04.000000000 +0100
+@@ -102,6 +102,7 @@
+ source "package/psmisc/Config.in"
+ source "package/python/Config.in"
+ source "package/qte/Config.in"
++source "package/qte_gpl/Config.in"
+ source "package/raidtools/Config.in"
+ source "package/readline/Config.in"
+ source "package/rsync/Config.in"
