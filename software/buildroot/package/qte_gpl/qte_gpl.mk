@@ -66,6 +66,16 @@ QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libqte-mt.so
 #QTE_QTOPIA_IFILE:=$(QTE_QTOPIA_DIR)/opt/Qtopia/bin/qpe
 QTE_GPL_OPIE_FILE:=$(QTE_GPL_OPIE_DIR)/bin/qpe
 
+# Directory where to install libraries
+QTE_GPL_QTE_LIB_INSTALL_DIR:=/not_defined
+BR2_QTE_GPL_C_LIB_INSTALL_DIR:=$(shell echo $(BR2_QTE_GPL_LIB_INSTALL_DIR)| sed -e 's/"//g')
+ifeq ($(BR2_QTE_GPL_NFS_DIR),y)
+QTE_GPL_QTE_LIB_INSTALL_DIR:=$(BR2_QTE_GPL_C_LIB_INSTALL_DIR)/lib
+endif
+ifeq ($(BR2_QTE_GPL_TARGET_DIR),y)
+QTE_GPL_QTE_LIB_INSTALL_DIR:=$(TARGET_DIR)/$(BR2_QTE_GPL_C_LIB_INSTALL_DIR)/lib
+endif
+
 #export QT2DIR=$(pwd)/qt-2.3.2
 #export QT3DIR=$(pwd)/qt-%{qt_version}
 #export QTEDIR=$(pwd)/qt-%{qte_version}
@@ -167,7 +177,9 @@ $(QTE_GPL_TMAKE_DIR)/.unpacked: $(DL_DIR)/$(QTE_GPL_TMAKE_SOURCE)
 $(QTE_GPL_QTE_DIR)/.unpacked: $(DL_DIR)/$(QTE_GPL_QTE_SOURCE)
 	test -d $(QTE_GPL_BUILD_DIR) || install -dm 0755 $(QTE_GPL_BUILD_DIR)
 	$(QTE_GPL_CAT) $(DL_DIR)/$(QTE_GPL_QTE_SOURCE) | tar -C $(QTE_GPL_BUILD_DIR) $(TAR_OPTIONS) -
+#ifeq ($(strip $(BR2_PACKAGE_QTE_GPL_QVFB)),y)
 	cp -r $(QTE_GPL_QTE_DIR)/ $(QTE_GPL_QTE_HOST_DIR)/
+#endif
 	touch $@
 	touch $(QTE_GPL_QTE_HOST_DIR)/.unpacked
 
@@ -311,7 +323,8 @@ $(QTE_GPL_QTE_DIR)/src-mt.mk: $(QTE_GPL_QTE_DIR)/.configured
 $(QTE_GPL_QTE_LIB): $(QTE_GPL_QTE_DIR)/src-mt.mk
 	export QTDIR=$(QTE_GPL_QTE_DIR); export QPEDIR=$(QTE_GPL_OPIE_DIR); export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; \
 	$(TARGET_CONFIGURE_OPTS) $(MAKE) $(TARGET_CC) -C $(QTE_GPL_QTE_DIR) src-mt
-	$(TARGET_CONFIGURE_OPTS) $(MAKE) $(TARGET_CC) DESTDIR=$(TARGET_DIR)/lib -C $(QTE_GPL_QTE_DIR) src-mt
+	echo "Installing Qt to [" $(QTE_GPL_QTE_LIB_INSTALL_DIR) "]"
+	$(TARGET_CONFIGURE_OPTS) $(MAKE) $(TARGET_CC) DESTDIR=$(QTE_GPL_QTE_LIB_INSTALL_DIR) -C $(QTE_GPL_QTE_DIR) src-mt
 #	$(TARGET_CONFIGURE_OPTS) $(MAKE) $(TARGET_CC) -C $(QTE_GPL_QTE_DIR) sub-examples
 	# ... and make sure it actually built... grrr... make deep-deep-deep makefile recursion for this habit
 	test -f $@
@@ -325,14 +338,18 @@ $(QTE_GPL_QTE_LIB): $(QTE_GPL_QTE_DIR)/src-mt.mk
 #	$(TARGET_CONFIGURE_OPTS) $(MAKE) CC=$(TARGET_CC) -C $(QTE_QTOPIA_DIR) install PREFIX=$(TARGET_DIR)
 
 
-###############
-## Main targets
+######################
+## Main build targets
 #
 
-qte_gpl:: $(QTE_GPL_QTE_LIB) $(QTE_GPL_QTE_HOST_LIB)
+qte_gpl:: $(QTE_GPL_QTE_LIB)
 
-ifeq ($(strip $(BR2_PACKAGE_QTE_QTOPIA)),y)
-qte:: $(QTE_QTOPIA_IFILE)
+ifeq ($(strip $(BR2_PACKAGE_QTE_GPL_QVFB)),y)
+qte_gpl:: $(QTE_GPL_QTE_HOST_LIB)
+endif
+
+ifeq ($(strip $(BR2_PACKAGE_QTE_GPL_OPIE)),y)
+qte_gpl:: $(QTE_OPIE_IFILE)
 endif
 
 # kinda no-op right now, these are built anyhow
@@ -348,6 +365,7 @@ qte_gpl-clean:
 
 qte_gpl-dirclean:
 	rm -rf $(QTE_GPL_QTE_DIR) $(QTE_GPL_QVFB_DIR) $(QTE_GPL_OPIE_DIR)
+
 
 #############################################################
 #

@@ -5,6 +5,7 @@ config BR2_PACKAGE_QTE_GPL
 	select BR2_PTHREADS_NATIVE
 	select BR2_PACKAGE_JPEG
 	select BR2_PACKAGE_LIBPNG
+	select BR2_PACKAGE_E2FSPROGS
 	help
 	  Trolltech's Qt/Embedded GPL edition and Opie.
           Offers the same APIs used in building desktop applications tailored to a smaller footprint.
@@ -46,7 +47,8 @@ config BR2_PACKAGE_QTE_GPL_QVFB
 	default y
 	depends BR2_PACKAGE_QTE_GPL
 	help
-	  Trolltech provides a Virtual Framebuffer used to simulate the embedded device during development
+	  Trolltech provides a Virtual Framebuffer used to simulate the embedded device during development.
+	  If you activate it, you will have all you need to test your Qt/E code on your host developmen system.
 
 	  http://trolltech.com/
 
@@ -104,6 +106,24 @@ config BR2_QTE_GPL_OPIE_VERSION
 config BR2_QTE_GPL_TMAKE_VERSION
         string
 	default "1.13"
+
+choice
+	prompt "Install directory for Qt/E"
+	default BR2_QTE_GPL_TARGET_DIR
+	depends BR2_PACKAGE_QTE_GPL
+	help
+	  Choose installation directory for Qt/E library
+
+	config BR2_QTE_GPL_TARGET_DIR
+		bool "Target rootfs"
+	config BR2_QTE_GPL_NFS_DIR
+		bool "Host nfs export dir"
+endchoice
+
+config BR2_QTE_GPL_LIB_INSTALL_DIR
+	string "Install dir name (a /lib dir will be created)"
+	default "/usr" 		if BR2_QTE_GPL_TARGET_DIR
+	default "/local/export" if BR2_QTE_GPL_NFS_DIR
 
 # generated from:
 # ls ~/src/buildroot/build_arm/qt-2.3.10/configs/*-static|cut -c56-|sed -e 's/-static//g'|\
