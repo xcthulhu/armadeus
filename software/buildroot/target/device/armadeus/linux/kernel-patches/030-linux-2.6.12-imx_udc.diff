@@ -1,7 +1,7 @@
 diff -urN linux-2.6.12/arch/arm/mach-imx/generic.c linux-2.6.12.work/arch/arm/mach-imx/generic.c
 --- linux-2.6.12/arch/arm/mach-imx/generic.c	2004-12-25 05:35:50.000000000 +0800
 +++ linux-2.6.12.work/arch/arm/mach-imx/generic.c	2005-06-20 15:12:26.000000000 +0800
-@@ -158,6 +158,15 @@
+@@ -159,6 +159,15 @@
  }
  EXPORT_SYMBOL(imx_get_hclk);
  
@@ -17,7 +17,7 @@ diff -urN linux-2.6.12/arch/arm/mach-imx/generic.c linux-2.6.12.work/arch/arm/ma
  static struct resource imx_mmc_resources[] = {
  	[0] = {
  		.start	= 0x00214000,
-@@ -248,11 +257,62 @@
+@@ -248,11 +273,62 @@
  	.resource	= imxfb_resources,
  };
  
@@ -84,12 +84,12 @@ diff -urN linux-2.6.12/arch/arm/mach-imx/generic.c linux-2.6.12.work/arch/arm/ma
 diff -urN linux-2.6.12/drivers/usb/gadget/ether.c linux-2.6.12.work/drivers/usb/gadget/ether.c
 --- linux-2.6.12/drivers/usb/gadget/ether.c	2004-12-25 05:35:39.000000000 +0800
 +++ linux-2.6.12.work/drivers/usb/gadget/ether.c	2005-06-20 15:12:26.000000000 +0800
-@@ -2327,6 +2327,9 @@
- 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0210);
- 	} else if (gadget_is_pxa27x(gadget)) {
- 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0211);
+@@ -2303,6 +2303,9 @@
+ 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0212);
+ 	} else if (gadget_is_at91(gadget)) {
+ 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0213);
 +	} else if (gadget_is_imx(gadget)) {
-+		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0212);
++		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0214);
 +		cdc = 0; //not support altsetting in version 0.5, mikelee
  	} else {
  		/* can't assume CDC works.  don't want to default to
@@ -99,11 +99,11 @@ diff -urN linux-2.6.12/drivers/usb/gadget/file_storage.c linux-2.6.12.work/drive
 --- linux-2.6.12/drivers/usb/gadget/file_storage.c	2004-12-25 05:36:01.000000000 +0800
 +++ linux-2.6.12.work/drivers/usb/gadget/file_storage.c	2005-06-20 15:12:26.000000000 +0800
 @@ -3741,6 +3741,8 @@
- 			mod_data.release = 0x0310;
- 		else if (gadget_is_pxa27x(fsg->gadget))
- 			mod_data.release = 0x0311;
+ 			mod_data.release = 0x0312;
+ 		else if (gadget_is_at91(fsg->gadget))
+ 			mod_data.release = 0x0313;
 +		else if (gadget_is_imx(fsg->gadget))
-+			mod_data.release = 0x0312;
++			mod_data.release = 0x0314;
  		else {
  			WARN(fsg, "controller '%s' not recognized\n",
  				fsg->gadget->name);
@@ -2327,7 +2327,7 @@ diff -urN linux-2.6.12/drivers/usb/gadget/imx_udc.h linux-2.6.12.work/drivers/us
 diff -urN linux-2.6.12/drivers/usb/gadget/Kconfig linux-2.6.12.work/drivers/usb/gadget/Kconfig
 --- linux-2.6.12/drivers/usb/gadget/Kconfig	2004-12-25 05:34:30.000000000 +0800
 +++ linux-2.6.12.work/drivers/usb/gadget/Kconfig	2005-06-20 15:12:26.000000000 +0800
-@@ -111,6 +111,26 @@
+@@ -116,6 +116,26 @@
  	default y if USB_ETH
  	default y if USB_G_SERIAL
  
@@ -2381,7 +2381,7 @@ diff -urN linux-2.6.12/drivers/usb/gadget/zero.c linux-2.6.12.work/drivers/usb/g
  
  #include <linux/config.h>
  #include <linux/module.h>
-@@ -219,8 +219,13 @@
+@@ -218,8 +218,13 @@
   * This device advertises two configurations; these numbers work
   * on a pxa250 as well as more flexible hardware.
   */
@@ -2395,12 +2395,12 @@ diff -urN linux-2.6.12/drivers/usb/gadget/zero.c linux-2.6.12.work/drivers/usb/g
  
  static struct usb_device_descriptor
  device_desc = {
-@@ -1192,6 +1197,8 @@
- 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0210);
- 	} else if (gadget_is_pxa27x(gadget)) {
- 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0211);
+@@ -1197,6 +1202,8 @@
+ 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0212);
+ 	} else if (gadget_is_at91(gadget)) {
+ 		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0213);
 +	} else if (gadget_is_imx (gadget)) {
-+		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0212);
++		device_desc.bcdDevice = __constant_cpu_to_le16 (0x0214);
  	} else {
  		/* gadget zero is so simple (for now, no altsettings) that
  		 * it SHOULD NOT have problems with bulk-capable hardware.
@@ -2417,7 +2417,7 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/hardware.h linux-2.6.12.work/inc
  # define __REG(x)	(*((volatile u32 *)IO_ADDRESS(x)))
  
  # define __REG2(x,y)	\
-@@ -83,6 +85,7 @@
+@@ -81,6 +83,7 @@
  extern unsigned int imx_get_perclk3(void); /* SSI                      */
  extern unsigned int imx_get_hclk(void);    /* SDRAM, CSI, Memory Stick,*/
                                             /* I2C, DMA                 */
