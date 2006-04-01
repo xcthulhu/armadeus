@@ -1,0 +1,20 @@
+--- qt-2.3.10/configs/linux-arm-g++-shared	2005-01-23 15:03:33.000000000 +0100
++++ qt-2.3.10.work/configs/linux-arm-g++-shared	2006-03-28 22:20:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ 
+ # Linking with support libraries
+ SYSCONF_RPATH_X11	= 
+-SYSCONF_RPATH_QT	= -Wl,-rpath,$(QTDIR)/lib
++SYSCONF_RPATH_QT	= -Wl,-rpath,$(QTDIR)/lib,-rpath-link,$(QTDIR)/../../e2fsprogs-1.38/lib/
+ SYSCONF_RPATH_QTOPIA	= -Wl,-rpath,$(QPEDIR)/lib
+ SYSCONF_RPATH_OPENGL	= -Wl,-rpath,/usr/X11R6/lib
+ 
+@@ -36,7 +36,7 @@
+ SYSCONF_LIBS_YACC	= 
+ 
+ # Linking applications
+-SYSCONF_LINK		= arm-linux-gcc
++SYSCONF_LINK		= arm-linux-g++
+ SYSCONF_LFLAGS		= 
+ SYSCONF_LIBS		= -lm
+ 

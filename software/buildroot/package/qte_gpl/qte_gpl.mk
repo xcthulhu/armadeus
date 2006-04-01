@@ -200,9 +200,10 @@ $(QTE_GPL_OPIE_DIR)/.unpacked: $(DL_DIR)/$(QTE_GPL_OPIE_SOURCE)
 ## Patches:
 #
 
-# Qt/E target patch for Opie
+# Qt/E target patch for Opie & some compilation issues
 $(QTE_GPL_QTE_DIR)/.patched: $(QTE_GPL_OPIE_DIR)/.unpacked $(QTE_GPL_QTE_DIR)/.unpacked
 	toolchain/patch-kernel.sh $(QTE_GPL_QTE_DIR) $(QTE_GPL_OPIE_DIR)/qt/qt-$(BR2_QTE_GPL_C_QTE_VERSION).patch/ qt-$(BR2_QTE_GPL_C_QTE_VERSION)-all.patch
+	toolchain/patch-kernel.sh $(QTE_GPL_QTE_DIR) package/qte_gpl/ *.patch
 	touch $@
 
 # Qt/E host patch for Opie
