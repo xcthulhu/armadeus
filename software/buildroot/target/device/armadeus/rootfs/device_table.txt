@@ -161,3 +161,6 @@
 #/dev/mcd	b	640	0	0	23	0	0	0	-
 #/dev/optcd	b	640	0	0	17	0	0	0	-
 
+# 	I2C bus interface
+ /dev/i2c-0	c 	666 	0 	0 	89 	0
+
