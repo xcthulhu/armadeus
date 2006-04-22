@@ -2454,9 +2454,9 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/hardware.h linux-2.6.12.work/inc
  #define MAXIRQNUM                       62
 
 diff -urN linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h
---- linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h	2004-12-25 05:34:26.000000000 +0800
-+++ linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h	2005-06-20 15:12:26.000000000 +0800
-@@ -166,6 +166,6 @@
+--- linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h	2004-12-25 05:34:26.000000000 +0200
++++ linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h	2005-06-20 15:12:26.000000000 +0200
+@@ -166,7 +166,7 @@
  #define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
  #define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
  #define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
@@ -2612,4 +2612,4 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h linux-2.6.12.work/inc
 +#define SPI1_RESET         __REG(IMX_SPI1_BASE + 0x1C) 
 +
  #endif				// _IMX_REGS_H
-
+ 
