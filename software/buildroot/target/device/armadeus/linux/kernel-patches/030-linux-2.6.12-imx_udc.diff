@@ -17,7 +17,7 @@ diff -urN linux-2.6.12/arch/arm/mach-imx/generic.c linux-2.6.12.work/arch/arm/ma
  static struct resource imx_mmc_resources[] = {
  	[0] = {
  		.start	= 0x00214000,
-@@ -248,11 +273,62 @@
+@@ -264,11 +273,62 @@
  	.resource	= imxfb_resources,
  };
  
@@ -98,7 +98,7 @@ diff -urN linux-2.6.12/drivers/usb/gadget/ether.c linux-2.6.12.work/drivers/usb/
 diff -urN linux-2.6.12/drivers/usb/gadget/file_storage.c linux-2.6.12.work/drivers/usb/gadget/file_storage.c
 --- linux-2.6.12/drivers/usb/gadget/file_storage.c	2004-12-25 05:36:01.000000000 +0800
 +++ linux-2.6.12.work/drivers/usb/gadget/file_storage.c	2005-06-20 15:12:26.000000000 +0800
-@@ -3741,6 +3741,8 @@
+@@ -3755,6 +3755,8 @@
  			mod_data.release = 0x0312;
  		else if (gadget_is_at91(fsg->gadget))
  			mod_data.release = 0x0313;
@@ -2443,7 +2443,7 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/hardware.h linux-2.6.12.work/inc
 +
  # define __REG(x)	(*((volatile u32 *)IO_ADDRESS(x)))
  
- # define __REG2(x,y)	\
+ # define __REG2(x,y)        (*(volatile u32 *)((u32)&__REG(x) + (y)))
 @@ -81,6 +83,7 @@
  extern unsigned int imx_get_perclk3(void); /* SSI                      */
  extern unsigned int imx_get_hclk(void);    /* SDRAM, CSI, Memory Stick,*/
@@ -2456,7 +2456,7 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/hardware.h linux-2.6.12.work/inc
 diff -urN linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h
 --- linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h	2004-12-25 05:34:26.000000000 +0800
 +++ linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h	2005-06-20 15:12:26.000000000 +0800
-@@ -166,6 +166,6
+@@ -166,6 +166,6 @@
 #define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
 #define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
 #define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
