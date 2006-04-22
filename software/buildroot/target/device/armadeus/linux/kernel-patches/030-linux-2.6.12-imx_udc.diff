@@ -2457,14 +2457,14 @@ diff -urN linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h linux-2.6.12.work/inc
 --- linux-2.6.12/include/asm-arm/arch-imx/imx-regs.h	2004-12-25 05:34:26.000000000 +0800
 +++ linux-2.6.12.work/include/asm-arm/arch-imx/imx-regs.h	2005-06-20 15:12:26.000000000 +0800
 @@ -166,6 +166,6 @@
-#define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
-#define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
-#define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
+ #define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
+ #define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
+ #define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
 -#define PB22_PFUSBD_RCV      ( GPIO_PORTB | GPIO_PF | 22 )
 +#define PB22_PF_USBD_RCV     ( GPIO_PORTB | GPIO_PF | 22 )
-#define PB23_PF_USBD_SUSPND  ( GPIO_PORTB | GPIO_PF | 23 )
-#define PB24_PF_USBD_VP      ( GPIO_PORTB | GPIO_PF | 24 )
-#define PB25_PF_USBD_VM      ( GPIO_PORTB | GPIO_PF | 25 )
+ #define PB23_PF_USBD_SUSPND  ( GPIO_PORTB | GPIO_PF | 23 )
+ #define PB24_PF_USBD_VP      ( GPIO_PORTB | GPIO_PF | 24 )
+ #define PB25_PF_USBD_VM      ( GPIO_PORTB | GPIO_PF | 25 )
 @@ -569,4 +569,146 @@
  #define  UTS_RXFULL 	 (1<<3)	 /* RxFIFO full */
  #define  UTS_SOFTRST	 (1<<0)	 /* Software reset */
