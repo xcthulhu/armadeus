@@ -5,6 +5,7 @@ config BR2_TARGET_ARMADEUS
 	bool "Board support for the Armadeus development boards"
 	depends BR2_arm
 	default n
+	select BR2_ARMADEUS_PACKAGE
 	help
 	  Armadeus arm based systems
 
@@ -53,8 +54,12 @@ config BR2_TARGET_ARMADEUS_SDRAM_SIZE
 	default "64"		if BR2_TARGET_ARMADEUS_SDRAM_64
 
 
-comment "Package support"
+config BR2_ARMADEUS_PACKAGE
+	bool "armadeus packages"
+	default n
 	depends BR2_TARGET_ARMADEUS
+
+	source package/max5821ctrl/Config.in
 
 config BR2_PACKAGE_LINUX
 	bool "linux"
