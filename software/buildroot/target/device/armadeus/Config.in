@@ -58,9 +58,9 @@ config BR2_ARMADEUS_PACKAGE
 	bool "armadeus packages"
 	default n
 	depends BR2_TARGET_ARMADEUS
-
 	source package/max5821ctrl/Config.in
-
+	comment "---
+"
 config BR2_PACKAGE_LINUX
 	bool "linux"
 	default n
