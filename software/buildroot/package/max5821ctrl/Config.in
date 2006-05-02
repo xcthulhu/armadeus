@@ -1,6 +1,8 @@
 config BR2_PACKAGE_MAX5821CTRL
 	bool "max5821ctrl"
+	depends BR2_ARMADEUS_PACKAGE
 	default y
 	help
-	  Build MAX5821 control tool. It allows you to set the I2C MAX5821 DAC directly from Linux userspace (command setDAC).
+	  Build MAX5821 control tool. It allows you to set the I2C MAX5821 DAC directly 
+	  from Linux userspace (command setDAC).
 
