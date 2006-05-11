@@ -27,13 +27,21 @@ BR2_QTE_GPL_C_QVFB_VERSION:=$(shell echo $(BR2_QTE_GPL_QVFB_VERSION)| sed -e 's/
 BR2_QTE_GPL_C_OPIE_VERSION:=$(shell echo $(BR2_QTE_GPL_OPIE_VERSION)| sed -e 's/"//g')
 BR2_QTE_GPL_C_TMAKE_VERSION:=$(shell echo $(BR2_QTE_GPL_TMAKE_VERSION)| sed -e 's/"//g')
 BR2_QTE_GPL_C_QVFB_VERSION:=2.3.2
+
 QTE_GPL_OPIE_VERSION:=1.2.0
+QTE_GPL_OPIE_QT_VERSION:=2.3.10
+QTE_GPL_QT4_VERSION:=4.0.1
 
 # Source tarball to download ---
 QTE_GPL_QTE_SOURCE:=qt-embedded-$(BR2_QTE_GPL_C_QTE_VERSION)-free.tar.gz
 QTE_GPL_TMAKE_SOURCE:=tmake-$(BR2_QTE_GPL_C_TMAKE_VERSION).tar.gz
 QTE_GPL_QVFB_SOURCE:=qt-x11-$(BR2_QTE_GPL_C_QVFB_VERSION).tar.gz
 QTE_GPL_OPIE_SOURCE:=opie-source-$(QTE_GPL_OPIE_VERSION).tar.bz2
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
+QTE_GPL_QTE_SOURCE:=qt-embedded-preview-src-$(BR2_QTE_GPL_C_QTE_VERSION).tar.gz
+#qt-embedded-preview-src-4.0.1.tar.gz
+QTE_GPL_QVFB_SOURCE:=qt-x11-opensource-desktop-4.0.0.tar.gz
+endif
 
 # Web site to load tarballs ---
 QTE_GPL_SITE:=ftp://ftp.trolltech.com/qt/source/
@@ -51,6 +59,11 @@ QTE_GPL_QTE_HOST_DIR:=$(QTE_GPL_BUILD_DIR)/qt-$(BR2_QTE_GPL_C_QTE_VERSION)-x86
 QTE_GPL_TMAKE_DIR:=$(QTE_GPL_BUILD_DIR)/tmake-$(BR2_QTE_GPL_C_TMAKE_VERSION)
 QTE_GPL_QVFB_DIR:=$(QTE_GPL_BUILD_DIR)/qt-$(BR2_QTE_GPL_C_QVFB_VERSION)
 QTE_GPL_OPIE_DIR:=$(QTE_GPL_BUILD_DIR)/opie-$(QTE_GPL_OPIE_VERSION)
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
+QTE_GPL_QTE_DIR:=$(QTE_GPL_BUILD_DIR)/qt-embedded-preview-src-$(BR2_QTE_GPL_C_QTE_VERSION)
+QTE_GPL_QVFB_DIR:=$(QTE_GPL_BUILD_DIR)/qt-x11-opensource-desktop-4.0.0
+QTE_GPL_QTE_HOST_DIR:=$(QTE_GPL_BUILD_DIR)/qt-$(BR2_QTE_GPL_C_QTE_VERSION)-x86
+endif
 
 QTE_GPL_CAT:=zcat
 QTE_GPL_OPIE_CAT:=bzcat
@@ -61,6 +74,10 @@ QTE_GPL_QVFB_BINARY:=bin/qvfb
 #QTE_QTE_LIB:=$(QTE_QTE_DIR)/lib/libqte-mt.so.$(BR2_QTE_C_QTE_VERSION)
 QTE_GPL_QTE_LIB:=$(QTE_GPL_QTE_DIR)/lib/libqte-mt.so
 QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libqte-mt.so
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
+QTE_GPL_QTE_LIB:=$(QTE_GPL_QTE_DIR)/lib/libQtCore.so
+QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libQtCore.so
+endif
 #QTE_QTE_LIB:=$(TARGET_DIR)/lib/libqte-mt.so.$(BR2_QTE_C_QTE_VERSION)
 #QTE_QTOPIA_FILE:=$(QTE_QTOPIA_DIR)/bin/qpe
 #QTE_QTOPIA_IFILE:=$(QTE_QTOPIA_DIR)/opt/Qtopia/bin/qpe
@@ -93,6 +110,10 @@ endif
 # ...since libqte* needs -luuid anyhow... 
 QTE_GPL_QTE_CONFIGURE:=-no-xft -L$(E2FSPROGS_DIR)/lib -luuid
 QTE_GPL_QVFB_CONFIGURE:=-no-xft -qvfb -no-thread
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
+# !! -release only doesn't compile !!
+QTE_GPL_QVFB_CONFIGURE:=-qvfb -debug-and-release -fast -no-tablet -no-xinerama -static
+endif
 #QTE_QTOPIA_CONFIGURE:=
 #QTE_QT3_CONFIGURE:=
 
@@ -201,6 +222,7 @@ $(QTE_GPL_OPIE_DIR)/.unpacked: $(DL_DIR)/$(QTE_GPL_OPIE_SOURCE)
 #
 
 # Qt/E target patch for Opie & some compilation issues
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_OPIE_QT_VERSION))
 $(QTE_GPL_QTE_DIR)/.patched: $(QTE_GPL_OPIE_DIR)/.unpacked $(QTE_GPL_QTE_DIR)/.unpacked
 	toolchain/patch-kernel.sh $(QTE_GPL_QTE_DIR) $(QTE_GPL_OPIE_DIR)/qt/qt-$(BR2_QTE_GPL_C_QTE_VERSION).patch/ qt-$(BR2_QTE_GPL_C_QTE_VERSION)-all.patch
 	toolchain/patch-kernel.sh $(QTE_GPL_QTE_DIR) package/qte_gpl/ *.patch
@@ -225,13 +247,14 @@ $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_UIC_BINARY): $(QTE_GPL_QTE_HOST_DIR)/.unpacked
 $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY): $(QTE_GPL_QTE_HOST_DIR)/.unpacked $(DL_DIR)/$(QTE_GPL_QVFB_VERSION)
 	test -d $(@D) || install -dm 0755 $(@D)
 	install -m 0755 $(DL_DIR)/$(QTE_GPL_QVFB_VERSION) $@
-
+endif
 
 #################
 ## Configuration
 #
 
 # Qt/Embedded for the target ---
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_OPIE_QT_VERSION))
 $(QTE_GPL_QTE_DIR)/.configured: $(QTE_GPL_QTE_DIR)/.unpacked $(QTE_GPL_TMAKE_DIR)/.unpacked $(QTE_GPL_QTE_DIR)/$(QTE_GPL_UIC_BINARY) $(QTE_GPL_OPIE_DIR)/.unpacked 
 	ln -sf $(QTE_GPL_OPIE_DIR)/qt/qconfig-qpe.h $(QTE_GPL_QTE_DIR)/src/tools/qconfig-qpe.h
 	(cd $(@D); export QTDIR=`pwd`; export TMAKEPATH=$(QTE_GPL_TMAKE_DIR)/lib/qws/linux-arm-g++; export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; export LD_LIBRARY_PATH=$$QTDIR/lib:$$LD_LIBRARY_PATH; echo 'yes' | \
@@ -249,6 +272,16 @@ $(QTE_GPL_QTE_HOST_DIR)/.configured: $(QTE_GPL_QTE_HOST_DIR)/.unpacked $(QTE_GPL
 		./configure \
 		$(QTE_GPL_QTE_CONFIGURE) -qconfig qpe -qvfb -depths 4,8,16,32 \
         );
+	touch $@
+endif
+
+# Qt 4.0.0
+$(QTE_GPL_QTE_DIR)/.configured: $(QTE_GPL_QTE_DIR)/.unpacked
+	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -embedded arm -little-endian -depths 8,16,32 -no-cups -debug-and-release -fast);
+	touch $@
+
+$(QTE_GPL_QTE_HOST_DIR)/.configured: $(QTE_GPL_QTE_HOST_DIR)/.unpacked
+	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -qvfb -fast -depths 8,16,32);
 	touch $@
 
 #ifneq ($(BR2_QTE_GPL_C_QTE_VERSION),$(BR2_QTE_C_QT3_VERSION))
@@ -298,22 +331,37 @@ $(TMAKE): $(QTE_GPL_TMAKE_DIR)/.unpacked
 #	touch $@
 #	test -f $@
 
-## Build QVfb ---
+###
+# Build QVfb ---
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
+## In this step we build and link the qvfb sources from Qt/Embedded 4.x.x against the static Qt library from Qt X11 4.x.x 
+$(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY): $(QTE_GPL_QVFB_DIR)/.configured $(QTE_GPL_QTE_DIR)/.unpacked
+#	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR) )
+	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR)/tools/qvfb )
+#	cd $(QTE_QTE_HOST_DIR)/tools/qvfb && TMAKEPATH=$(QTE_TMAKE_DIR)/lib/linux-g++ $(TMAKE) -o Makefile qvfb.pro; $(MAKE) )
+	test -d $(@D) || install -dm 0755 $(@D)
+	install -m 0755 $(QTE_GPL_QVFB_DIR)/tools/qvfb/$(@F) $@
+else
 ## In this step we build and link the qvfb sources from Qt/Embedded 2.3.10 against the static Qt library from Qt 2.3.2. 
 #$(QTE_QTE_HOST_DIR)/$(QTE_QVFB_BINARY): $(QTE_QVFB_DIR)/.make $(QTE_QTE_DIR)/.unpacked $(TMAKE)
 #	( export QTDIR=$(QTE_QVFB_DIR); export PATH=$$QTDIR/bin:$$PATH; export LD_LIBRARY_PATH=$$QTDIR/lib:$$LD_LIBRARY_PATH; export QT_THREAD_SUFFIX=-mt;\
 #	cd $(QTE_QTE_HOST_DIR)/tools/qvfb && TMAKEPATH=$(QTE_TMAKE_DIR)/lib/linux-g++ $(TMAKE) -o Makefile qvfb.pro; $(MAKE) )
 #	test -d $(@D) || install -dm 0755 $(@D)
 #	install -m 0755 $(QTE_QTE_HOST_DIR)/tools/qvfb/$(@F) $@
+endif
 
+###
 # Build Qt/Embedded for host ---
 $(QTE_GPL_QTE_HOST_LIB): $(QTE_GPL_QTE_HOST_DIR)/.configured $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
+	echo TOTO
 	export QTDIR=$(QTE_GPL_QTE_HOST_DIR); export QPEDIR=$(QTE_GPL_OPIE_DIR); export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; \
 	$(MAKE) -C $(QTE_GPL_QTE_HOST_DIR)
 	# ... and make sure it actually built... grrr... make deep-deep-deep makefile recursion for this habit
 	test -f $@
 
+###
 # Build Qt/Embedded for the target ---
+ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_OPIE_QT_VERSION))
 $(QTE_GPL_QTE_DIR)/src-mt.mk: $(QTE_GPL_QTE_DIR)/.configured
 	# I don't like the src-mk that gets built, so blow it away.  Too many includes to override yet
 	echo "SHELL=/bin/sh" > $@
@@ -329,6 +377,13 @@ $(QTE_GPL_QTE_LIB): $(QTE_GPL_QTE_DIR)/src-mt.mk
 #	$(TARGET_CONFIGURE_OPTS) $(MAKE) $(TARGET_CC) -C $(QTE_GPL_QTE_DIR) sub-examples
 	# ... and make sure it actually built... grrr... make deep-deep-deep makefile recursion for this habit
 	test -f $@
+else
+# Qt 4.0.1
+$(QTE_GPL_QTE_LIB): $(QTE_GPL_QTE_DIR)/.configured $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
+	echo $(QTE_GPL_QVFB_DIR)
+	echo $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
+	export QTDIR=$(QTE_GPL_QTE_DIR); $(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(QTE_GPL_QTE_DIR) sub-src
+endif
 
 #$(QTE_QTOPIA_FILE): $(QTE_QTOPIA_DIR)/.configured
 #	export QTDIR=$(QTE_QT3_DIR); export QPEDIR=$(QTE_QTOPIA_DIR); export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; \

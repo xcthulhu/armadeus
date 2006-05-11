@@ -32,6 +32,9 @@ choice
 
 #        config BR2_QTE_VERSION_2_3_11
 #                bool "Qt/E 2.3.11"
+
+	config BR2_QTE_GPL_VERSION_4_0_1
+		bool "Qt/E 4.0.1"
 endchoice
 
 config BR2_QTE_GPL_VERSION
@@ -40,7 +43,7 @@ config BR2_QTE_GPL_VERSION
 	default "2.3.9"		if BR2_QTE_GPL_VERSION_2_3_9
 	default "2.3.10"	if BR2_QTE_GPL_VERSION_2_3_10
 	default "2.3.11"	if BR2_QTE_GPL_VERSION_2_3_11
-
+	default "4.0.1"		if BR2_QTE_GPL_VERSION_4_0_1
 
 config BR2_PACKAGE_QTE_GPL_QVFB
 	bool "QVfb"
