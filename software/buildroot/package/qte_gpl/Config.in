@@ -81,6 +81,7 @@ config BR2_PACKAGE_QTE_GPL_OPIE
 	bool "Opie"
 	default n
 	depends BR2_PACKAGE_QTE_GPL
+	depends BR2_QTE_GPL_VERSION_2_3_10
 	help
 	  Open Palmtop Integrated Environment aka Opie
 

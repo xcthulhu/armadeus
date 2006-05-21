@@ -75,8 +75,8 @@ QTE_GPL_QVFB_BINARY:=bin/qvfb
 QTE_GPL_QTE_LIB:=$(QTE_GPL_QTE_DIR)/lib/libqte-mt.so
 QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libqte-mt.so
 ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
-QTE_GPL_QTE_LIB:=$(QTE_GPL_QTE_DIR)/lib/libQtCore.so
-QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libQtCore.so
+QTE_GPL_QTE_LIB:=$(QTE_GPL_QTE_DIR)/lib/libQtCore.so.$(QTE_GPL_QT4_VERSION)
+QTE_GPL_QTE_HOST_LIB:=$(QTE_GPL_QTE_HOST_DIR)/lib/libQtCore.so.$(QTE_GPL_QT4_VERSION)
 endif
 #QTE_QTE_LIB:=$(TARGET_DIR)/lib/libqte-mt.so.$(BR2_QTE_C_QTE_VERSION)
 #QTE_QTOPIA_FILE:=$(QTE_QTOPIA_DIR)/bin/qpe
@@ -273,16 +273,20 @@ $(QTE_GPL_QTE_HOST_DIR)/.configured: $(QTE_GPL_QTE_HOST_DIR)/.unpacked $(QTE_GPL
 		$(QTE_GPL_QTE_CONFIGURE) -qconfig qpe -qvfb -depths 4,8,16,32 \
         );
 	touch $@
-endif
-
-# Qt 4.0.0
+else
+# Qt 4.0.x for the target
 $(QTE_GPL_QTE_DIR)/.configured: $(QTE_GPL_QTE_DIR)/.unpacked
-	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -embedded arm -little-endian -depths 8,16,32 -no-cups -debug-and-release -fast);
+#	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -embedded arm -little-endian -depths 8,16,32 -no-cups -debug-and-release -fast);
+	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -embedded arm -little-endian -depths 8,16,32 -no-cups -release -fast);
 	touch $@
 
+# Qt 4.0.x for the host, to have a simulation environment ---
 $(QTE_GPL_QTE_HOST_DIR)/.configured: $(QTE_GPL_QTE_HOST_DIR)/.unpacked
-	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -qvfb -fast -depths 8,16,32);
+	(cd $(@D); export QTDIR=`pwd`; echo 'yes' | ./configure -qvfb -fast -depths 8,16,32 -no-rpath);
+	# Pffff, bug in Qt4 build:
+	( cd $(QTE_GPL_QTE_HOST_DIR)/lib; ln -sf libQtCore.so.$(QTE_GPL_QT4_VERSION) libQtCore.so )
 	touch $@
+endif
 
 #ifneq ($(BR2_QTE_GPL_C_QTE_VERSION),$(BR2_QTE_C_QT3_VERSION))
 ## this is a host-side build, so we don't use any staging dir stuff, nor any TARGET_CONFIGURE_OPTS
@@ -332,13 +336,21 @@ $(TMAKE): $(QTE_GPL_TMAKE_DIR)/.unpacked
 #	test -f $@
 
 ###
+# Build Qt/Embedded for host ---   Must be built before qvfb !! <-- Bof...
+$(QTE_GPL_QTE_HOST_LIB): $(QTE_GPL_QTE_HOST_DIR)/.configured
+	export QTDIR=$(QTE_GPL_QTE_HOST_DIR); export QPEDIR=$(QTE_GPL_OPIE_DIR); export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; \
+	$(MAKE) -C $(QTE_GPL_QTE_HOST_DIR)
+	# ... and make sure it actually built... grrr... make deep-deep-deep makefile recursion for this habit
+	test -f $@
+
+###
 # Build QVfb ---
 ifeq ($(BR2_QTE_GPL_C_QTE_VERSION),$(QTE_GPL_QT4_VERSION))
 ## In this step we build and link the qvfb sources from Qt/Embedded 4.x.x against the static Qt library from Qt X11 4.x.x 
-$(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY): $(QTE_GPL_QVFB_DIR)/.configured $(QTE_GPL_QTE_DIR)/.unpacked
-#	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR) )
-	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR)/tools/qvfb )
-#	cd $(QTE_QTE_HOST_DIR)/tools/qvfb && TMAKEPATH=$(QTE_TMAKE_DIR)/lib/linux-g++ $(TMAKE) -o Makefile qvfb.pro; $(MAKE) )
+$(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY): $(QTE_GPL_QVFB_DIR)/.configured $(QTE_GPL_QTE_DIR)/.unpacked $(QTE_GPL_QTE_HOST_LIB)
+	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR) sub-src-all-ordered )
+	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR) sub-tools-all-ordered )
+	( export QTDIR=$(QTE_GPL_QVFB_DIR); $(MAKE) -C $(QTE_GPL_QVFB_DIR)/tools/qvfb/ )
 	test -d $(@D) || install -dm 0755 $(@D)
 	install -m 0755 $(QTE_GPL_QVFB_DIR)/tools/qvfb/$(@F) $@
 else
@@ -349,15 +361,6 @@ else
 #	test -d $(@D) || install -dm 0755 $(@D)
 #	install -m 0755 $(QTE_QTE_HOST_DIR)/tools/qvfb/$(@F) $@
 endif
-
-###
-# Build Qt/Embedded for host ---
-$(QTE_GPL_QTE_HOST_LIB): $(QTE_GPL_QTE_HOST_DIR)/.configured $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
-	echo TOTO
-	export QTDIR=$(QTE_GPL_QTE_HOST_DIR); export QPEDIR=$(QTE_GPL_OPIE_DIR); export PATH=$(STAGING_DIR)/bin:$$QTDIR/bin:$$PATH; \
-	$(MAKE) -C $(QTE_GPL_QTE_HOST_DIR)
-	# ... and make sure it actually built... grrr... make deep-deep-deep makefile recursion for this habit
-	test -f $@
 
 ###
 # Build Qt/Embedded for the target ---
@@ -382,7 +385,7 @@ else
 $(QTE_GPL_QTE_LIB): $(QTE_GPL_QTE_DIR)/.configured $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
 	echo $(QTE_GPL_QVFB_DIR)
 	echo $(QTE_GPL_QTE_HOST_DIR)/$(QTE_GPL_QVFB_BINARY)
-	export QTDIR=$(QTE_GPL_QTE_DIR); $(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(QTE_GPL_QTE_DIR) sub-src
+	export QTDIR=$(QTE_GPL_QTE_DIR); $(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(QTE_GPL_QTE_DIR) sub-src-all
 endif
 
 #$(QTE_QTOPIA_FILE): $(QTE_QTOPIA_DIR)/.configured
