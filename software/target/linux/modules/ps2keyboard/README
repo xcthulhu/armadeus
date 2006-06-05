@@ -1,0 +1,8 @@
+To compile this driver (example):
+---------------------------------
+    make ARCH=arm CROSS_COMPILE=/local/julien/Armadeus/Armadeus_SVN_test/armadeus/software/buildroot/build_arm_nofpu/staging_dir/bin/arm-linux- ARMADEUS_KERNEL_DIR=/local/julien/Armadeus/Armadeus_SVN_test/armadeus/software/buildroot/build_arm_nofpu/linux-2.6.12/
+
+To install this driver:
+-----------------------
+Copy resulting *.ko files on your target rootfs
+
