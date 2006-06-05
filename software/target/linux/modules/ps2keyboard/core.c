@@ -1,0 +1,196 @@
+/*
+ * PS/2 keyboard controller driver for Armadeus APF9328 board with Spartan3 FPGA
+ *
+ *  Copyright (c) 2006 Armadeus Team
+ *
+ *  Based on the work of Vojtech Pavlik
+ */
+
+/*
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 as published by
+ * the Free Software Foundation.
+ */
+
+#include <linux/module.h>
+//#include <linux/parport.h>
+#include <linux/init.h>
+#include <linux/serio.h>
+
+#include <asm/arch/imx-regs.h>
+/*#define IMX_CS1_PHYS        0x12000000
+#define IMX_CS1_SIZE        0x01000000
+#define IMX_CS1_VIRT        0xea000000*/
+
+#define FPGA_PS2_STATUS_REGISTER (*((volatile unsigned short*)(IMX_CS1_VIRT + 0x00)))
+#define FPGA_PS2_FIFO_FULL_MASK  (0x08)
+#define FPGA_PS2_FIFO_EMPTY_MASK (0x02)
+#define FPGA_PS2_DATA_REGISTER   (*((volatile unsigned short*)(IMX_CS1_VIRT + 0x02)))
+#define FPGA_PS2_ID_REGISTER     (*((volatile unsigned short*)(IMX_CS1_VIRT + 0x08)))
+#define FPGA_PS2_ID_VALUE        (0x1234)
+
+MODULE_AUTHOR("Julien Boibessot, Michael Lerjen");
+MODULE_DESCRIPTION("Armadeus APF9328 PS/2 keyboard controller driver");
+MODULE_LICENSE("GPL");
+
+#define FPGA_PS2_DEFAULT_ADDRESS 0x12000000
+// Base address in i.MX memory map to access PS/2 interface on FPGA
+static unsigned int base_address = FPGA_PS2_DEFAULT_ADDRESS;
+module_param_named(base, base_address, uint, 0);
+MODULE_PARM_DESC(base, "Base address in i.MX memory map to access PS/2 interface on FPGA (default is 0x12000000)");
+
+static unsigned int apf9328keyboard_mode = SERIO_8042;
+module_param_named(mode, apf9328keyboard_mode, uint, 0);
+MODULE_PARM_DESC(mode, "Mode of operation: XT = 0/AT = 1 (default)");
+
+
+static int gBuffer;
+static struct serio *apf9328keyboard_port;
+static struct timer_list read_timer;
+#define DRIVER_NAME "Armadeus PS/2"
+
+
+
+// Read one entry in FPGA FIFO
+static int apf9328keyboard_read(void)
+{
+    volatile unsigned short value;
+    
+    value = FPGA_PS2_DATA_REGISTER;
+    printk(DRIVER_NAME ": value read 0x%x\n", value);
+    value = FPGA_PS2_STATUS_REGISTER;
+    printk(DRIVER_NAME ": status read 0x%x\n", value);
+    
+    return(value);
+}
+
+// Flush receive FIFO in FPGA
+static int apf9328keyboard_flush(void)
+{
+    volatile unsigned short shadow;
+    unsigned int timeout = 0;
+    
+    while( ((shadow & FPGA_PS2_FIFO_EMPTY_MASK) != 0) && (timeout <= 50) )
+    {
+        shadow = FPGA_PS2_DATA_REGISTER;
+        shadow = FPGA_PS2_STATUS_REGISTER;
+        timeout++;
+    }
+    
+    return( 0 );
+}
+
+//
+static int apf9328keyboard_write(struct serio *port, unsigned char c)
+{
+    // Not implemented yet in hardware...    
+    return( 0 );
+}
+
+// Simulated by a software interrupt (timer) at that time...
+#ifdef HARDWARE_INTERUPT_ACTIVATED
+static int apf9328keyboard_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+#else
+static void apf9328keyboard_interrupt(unsigned long arg)
+#endif // HARDWARE_INTERUPT_ACTIVATED
+{
+    //printk("RD IT: ");
+    
+    // Get data from FPGA (if there is some)
+    if( (FPGA_PS2_STATUS_REGISTER & FPGA_PS2_FIFO_EMPTY_MASK) == 0 )
+    {
+        gBuffer = apf9328keyboard_read();
+        // Apply it some processing
+        // ...
+        // Forward it to upper layer
+#ifdef HARDWARE_INTERUPT_ACTIVATED
+        serio_interrupt(apf9328keyboard_port, (gBuffer >> (2 - apf9328keyboard_mode)) & 0xff, 0, regs);
+    }
+    
+    return(IRQ_HANDLED);
+#else 
+        //serio_interrupt(apf9328keyboard_port, (gBuffer >> (2 - apf9328keyboard_mode)) & 0xff, 0, 0); UNCOMMENT THIS ONLY WHEN DATA ARE OK !!
+    }
+    // Trigger timer again
+    read_timer.expires = jiffies + HZ/20; // Schedule next interrupt in 50 msec
+    add_timer( &read_timer );
+#endif // HARDWARE_INTERUPT_ACTIVATED
+}
+
+// Check if FPGA was loaded with PS/2 IP
+static int apf9328keyboard_checkinterface(void)
+{
+    int status = 0;
+    
+    // Try to access test register
+    if( FPGA_PS2_ID_REGISTER != FPGA_PS2_ID_VALUE )
+    {
+        status = -ENOMEM;
+    }
+    else
+    {
+        // Flush Fifo
+        apf9328keyboard_flush();
+    }
+    
+    return(status);
+}
+
+// Initialize structure to communicate with upper layer: input/serio
+static struct serio * __init apf9328keyboard_allocate_serio(void)
+{
+    struct serio *serio;
+    
+    serio = kmalloc(sizeof(struct serio), GFP_KERNEL);
+    if (serio) {
+        memset(serio, 0, sizeof(struct serio));
+        serio->id.type = apf9328keyboard_mode;
+        serio->write = apf9328keyboard_write,
+        strlcpy(serio->name, "APF9328 AT/XT keyboard adapter", sizeof(serio->name));
+        strlcpy(serio->phys, "Spartan3 PS/2", sizeof(serio->phys));
+    }
+    
+    return(serio);
+}
+
+// Called on module insertion
+static int __init apf9328keyboard_init( void )
+{
+    int err;
+    
+    // Check if FPGA is correctly loaded
+    err = apf9328keyboard_checkinterface();
+    if (err) {
+        printk(KERN_WARNING DRIVER_NAME ": Unable to find PS/2 IP on FPGA !\n");
+        return(err);
+    }
+
+    // Register our driver to upper layer    
+    apf9328keyboard_port = apf9328keyboard_allocate_serio();
+    if (!apf9328keyboard_port) {
+        return(-ENOMEM);
+    }
+    serio_register_port(apf9328keyboard_port);
+    
+    // Initialize and trigger read timer
+    init_timer( &read_timer );
+    read_timer.expires = jiffies + HZ; // Schedule next interrupt in 1 sec
+    read_timer.data = 0;
+    read_timer.function = apf9328keyboard_interrupt;
+    add_timer( &read_timer );
+    
+    printk(KERN_INFO DRIVER_NAME ": APF9328KBD %s adapter OK!\n", apf9328keyboard_mode ? "AT" : "XT");
+    
+    return(0);
+}
+
+// Called on module removal
+static void __exit apf9328keyboard_exit( void )
+{
+    del_timer( &read_timer );
+    serio_unregister_port( apf9328keyboard_port );
+    printk(DRIVER_NAME ": successfully unloaded\n");
+}
+
+module_init(apf9328keyboard_init);
+module_exit(apf9328keyboard_exit);
