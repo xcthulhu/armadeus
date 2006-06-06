@@ -60,10 +60,10 @@ static int apf9328keyboard_read(void)
 {
     volatile unsigned short value;
     
-    value = FPGA_PS2_DATA_REGISTER;
-    printk(DRIVER_NAME ": value read 0x%x\n", value);
     value = FPGA_PS2_STATUS_REGISTER;
     printk(DRIVER_NAME ": status read 0x%x\n", value);
+    value = FPGA_PS2_DATA_REGISTER;
+    printk(DRIVER_NAME ": value read 0x%x\n", value);
     
     return(value);
 }
@@ -104,7 +104,7 @@ static void apf9328keyboard_interrupt(unsigned long arg)
     //printk("RD IT: ");
     
     // Get data from FPGA (if there is some)
-    if( (FPGA_PS2_STATUS_REGISTER & FPGA_PS2_FIFO_EMPTY_MASK) == 0 )
+    while( (FPGA_PS2_STATUS_REGISTER & FPGA_PS2_FIFO_EMPTY_MASK) == 0 )
     {
         gBuffer = apf9328keyboard_read();
         // Apply it some processing
@@ -116,7 +116,7 @@ static void apf9328keyboard_interrupt(unsigned long arg)
     
     return(IRQ_HANDLED);
 #else 
-        //serio_interrupt(apf9328keyboard_port, gBuffer, 0, 0); UNCOMMENT THIS ONLY WHEN DATA ARE OK !!
+        serio_interrupt(apf9328keyboard_port, gBuffer, 0, 0); //UNCOMMENT THIS ONLY WHEN DATA ARE OK !!
     }
     // Trigger timer again
     read_timer.expires = jiffies + HZ/20; // Schedule next interrupt in 50 msec
@@ -154,7 +154,7 @@ static struct serio * __init apf9328keyboard_allocate_serio(void)
     if (serio) {
         memset(serio, 0, sizeof(struct serio));
         serio->id.type = apf9328keyboard_mode;
-        serio->write = apf9328keyboard_write,
+//        serio->write = apf9328keyboard_write, UNCOMMENT THIS ONLY IF YOU WANT TO HAVE HOST TO KEYBOARD COMM (YOU WILL HAVE TO IMPLEMENTE WRITE)
         strlcpy(serio->name, "APF9328 AT/XT keyboard adapter", sizeof(serio->name));
         strlcpy(serio->phys, "Spartan3 PS/2", sizeof(serio->phys));
     }
