@@ -59,8 +59,8 @@ config BR2_ARMADEUS_PACKAGE
 	default n
 	depends BR2_TARGET_ARMADEUS
 	source package/max5821ctrl/Config.in
-	comment "---
-"
+	comment "---"
+
 config BR2_PACKAGE_LINUX
 	bool "linux"
 	default n
@@ -69,6 +69,28 @@ config BR2_PACKAGE_LINUX
 	help
 	    The Linux kernel.
 	    http://www.kernel.org/
+choice
+	prompt "Linux kernel version"
+	default BR2_PACKAGE_LINUX_VERSION_2_6_12
+	depends on BR2_PACKAGE_LINUX
+	help
+	    Linux kernel version you want to use with your Armadeus board.
+	    If you plan to use MMC/SD cards then choose 2.6.17, otherwise 2.6.12
+	    should be sufficient and is more used/tested.
+
+config BR2_PACKAGE_LINUX_VERSION_2_6_12
+	bool "2.6.12"
+config BR2_PACKAGE_LINUX_VERSION_2_6_16
+	bool "2.6.16"
+config BR2_PACKAGE_LINUX_VERSION_2_6_17
+	bool "2.6.17"
+endchoice
+
+config BR2_PACKAGE_LINUX_VERSION
+	string
+	default "2.6.12"	if BR2_PACKAGE_LINUX_VERSION_2_6_12
+	default "2.6.16"	if BR2_PACKAGE_LINUX_VERSION_2_6_16
+	default "2.6.17"	if BR2_PACKAGE_LINUX_VERSION_2_6_17
 
 config BR2_TARGET_U-BOOT
 	bool "U-Boot"

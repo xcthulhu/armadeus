@@ -1,0 +1,58 @@
+--- linux-2.6.16/arch/arm/mach-imx/apf9328.c	2006-05-21 22:04:12.000000000 +0200
++++ linux-2.6.16.work/arch/arm/mach-imx/apf9328.c	2006-04-29 18:53:11.000000000 +0200
+@@ -39,6 +39,7 @@
+ #endif // CONFIG_DM9000
+ //
+ #include <asm/arch/imxfb.h>
++#include <asm/arch/mmc.h>
+ //
+ #include "generic.h"
+ 
+@@ -145,6 +146,20 @@
+     .lcd_power = apf9328_lcd_power,
+ };
+ 
++// --- MMC RESSOURCE ---
++//#ifdef CONFIG_MMC_IMX
++static int apf9328_mmc_card_present(void)
++{
++    /* MMC/SD Card Detect is PortA 11 on APF9328*/
++    //return (SSR(0) & (1 << 11) ? 0 : 1);
++    return(1);
++}
++
++static struct imxmmc_platform_data apf9328_mmc_info = {
++       .card_present = apf9328_mmc_card_present,
++};
++//#endif
++
+ 
+ static struct platform_device *devices[] __initdata = {
+     &serial_device,
+@@ -160,9 +175,10 @@
+     
+     printk("--- Registering APF9328 ressources\n");
+     
++    // Serial
+     UFCR(IMX_UART1_BASE) = 0xa81;
+     UFCR(IMX_UART2_BASE) = 0xa81;
+-    //
++    // LCD
+     set_imx_fb_info(&apf9328_fb_info);
+     printk("Set apf9328_fb_info\n");
+     // init PORTD ....//
+@@ -170,6 +186,14 @@
+     DDIR(3) |= 0x7FFFFFC0;
+     GIUS(3) &= 0x8000003F;
+     GPR(3) &= 0x8000003F;
++    // MMC
++/*#ifdef CONFIG_MMC
++tututu*/
++    /* SD/MMC card detect */
++    printk("Set apf9328_mmc_info\n");
++    imx_gpio_mode(GPIO_PORTA | GPIO_PUEN | GPIO_IN | 11);
++    imx_set_mmc_info(&apf9328_mmc_info);
++//#endif
+ 
+     /*lResult =*/ platform_add_devices(devices, ARRAY_SIZE(devices));
+     

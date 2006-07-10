@@ -1,0 +1,97 @@
+From linux@arm.linux.org.uk Tue May  2 18:27:36 2006
+Return-Path: <linux+ppisa4lists=pikron.com@arm.linux.org.uk>
+Delivered-To: ppisa4filter@pikron.com
+Received: (qmail 14935 invoked by uid 1039); 2 May 2006 16:27:51 -0000
+Delivered-To: pikron.com-ppisa4lists@pikron.com
+Received: (qmail 14932 invoked by uid 1340); 2 May 2006 16:27:51 -0000
+Received: from 212.18.232.186 by mail (envelope-from <linux+ppisa4lists=pikron.com@arm.linux.org.uk>, uid 1039) with qmail-scanner-1.25-st-qms 
+ (ClamAV: 0.88/1434. SpamAssassin: 3.0.2. PerlScan: 1.25-st-qms.  
+ Clear:RC:0(212.18.232.186):SA:0(-2.6/5.0):. 
+ Processed in 1.749413 secs); 02 May 2006 16:27:51 -0000
+X-Spam-Status: No, hits=-2.6 required=5.0
+Received: from unknown (HELO caramon.arm.linux.org.uk) (212.18.232.186)
+  by mail.web4u.cz with (EDH-RSA-DES-CBC3-SHA encrypted) SMTP; 2 May 2006 16:27:49 -0000
+Received: from flint.arm.linux.org.uk ([2002:d412:e8ba:1:201:2ff:fe14:8fad])
+	by caramon.arm.linux.org.uk with esmtpsa (TLSv1:DES-CBC3-SHA:168)
+	(Exim 4.52)
+	id 1FaxiA-0002aS-Uu
+	for ppisa4lists@pikron.com; Tue, 02 May 2006 17:26:55 +0100
+Received: from linux by flint.arm.linux.org.uk with local (Exim 4.52)
+	id 1Faxir-0001pJ-1r; Tue, 02 May 2006 17:27:37 +0100
+Date: Tue, 2 May 2006 17:27:36 +0100
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+To: Pavel Pisa <ppisa4lists@pikron.com>
+Cc: linux-arm-kernel@lists.arm.linux.org.uk
+Subject: Re: MMC questions to correct further i.MX/MX1 SDHC driver
+Message-ID: <20060502162736.GD4236@flint.arm.linux.org.uk>
+Mail-Followup-To: Pavel Pisa <ppisa4lists@pikron.com>,
+	linux-arm-kernel@lists.arm.linux.org.uk
+References: <200604220133.51898.ppisa4lists@pikron.com> <200605021749.00801.ppisa4lists@pikron.com>
+Mime-Version: 1.0
+Content-Type: text/plain;
+  charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <200605021749.00801.ppisa4lists@pikron.com>
+User-Agent: Mutt/1.4.1i
+Sender: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Status: R
+X-Status: NC
+X-KMail-EncryptionState:  
+X-KMail-SignatureState:  
+X-KMail-MDN-Sent:  
+
+On Tue, May 02, 2006 at 05:49:00PM +0200, Pavel Pisa wrote:
+> Hello Russell,
+
+Note that you will be interested in applying this patch to your kernel.
+The data timeout for writes is far too short as the code presently
+stands.
+
+diff --git a/drivers/mmc/mmc.c b/drivers/mmc/mmc.c
+--- a/drivers/mmc/mmc.c
++++ b/drivers/mmc/mmc.c
+@@ -554,6 +554,7 @@ static void mmc_decode_csd(struct mmc_ca
+ 		csd->read_partial = UNSTUFF_BITS(resp, 79, 1);
+ 		csd->write_misalign = UNSTUFF_BITS(resp, 78, 1);
+ 		csd->read_misalign = UNSTUFF_BITS(resp, 77, 1);
++		csd->r2w_factor = UNSTUFF_BITS(resp, 26, 3);
+ 		csd->write_blkbits = UNSTUFF_BITS(resp, 22, 4);
+ 		csd->write_partial = UNSTUFF_BITS(resp, 21, 1);
+ 	} else {
+@@ -588,6 +589,7 @@ static void mmc_decode_csd(struct mmc_ca
+ 		csd->read_partial = UNSTUFF_BITS(resp, 79, 1);
+ 		csd->write_misalign = UNSTUFF_BITS(resp, 78, 1);
+ 		csd->read_misalign = UNSTUFF_BITS(resp, 77, 1);
++		csd->r2w_factor = UNSTUFF_BITS(resp, 26, 3);
+ 		csd->write_blkbits = UNSTUFF_BITS(resp, 22, 4);
+ 		csd->write_partial = UNSTUFF_BITS(resp, 21, 1);
+ 	}
+diff --git a/drivers/mmc/mmc_block.c b/drivers/mmc/mmc_block.c
+--- a/drivers/mmc/mmc_block.c
++++ b/drivers/mmc/mmc_block.c
+@@ -187,6 +187,12 @@ static int mmc_blk_issue_rq(struct mmc_q
+ 			brq.cmd.opcode = MMC_WRITE_BLOCK;
+ 			brq.data.flags |= MMC_DATA_WRITE;
+ 			brq.data.blocks = 1;
++
++			/*
++			 * Scale up the timeout by the r2w factor
++			 */
++			brq.data.timeout_ns <<= card->csd.r2w_factor;
++			brq.data.timeout_clks <<= card->csd.r2w_factor;
+ 		}
+ 
+ 		if (brq.data.blocks > 1) {
+diff --git a/include/linux/mmc/card.h b/include/linux/mmc/card.h
+--- a/include/linux/mmc/card.h
++++ b/include/linux/mmc/card.h
+@@ -28,6 +28,7 @@ struct mmc_csd {
+ 	unsigned short		cmdclass;
+ 	unsigned short		tacc_clks;
+ 	unsigned int		tacc_ns;
++	unsigned int		r2w_factor;
+ 	unsigned int		max_dtr;
+ 	unsigned int		read_blkbits;
+ 	unsigned int		write_blkbits;
+
+

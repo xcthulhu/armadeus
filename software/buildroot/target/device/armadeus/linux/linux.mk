@@ -19,22 +19,29 @@
 #  -Erik
 #
 #############################################################
+# Get linux version choosen by user (2.6.12 by default)
+ifeq ($(BR2_PACKAGE_LINUX_VERSION),)
+BR2_PACKAGE_LINUX_VERSION:=2.6.12
+endif
+# Remove " from string
+BR2_PACKAGE_C_LINUX_VERSION:=$(shell echo $(BR2_PACKAGE_LINUX_VERSION)| sed -e 's/"//g')
 # Base version of Linux kernel that we need to download
-DOWNLOAD_LINUX_VERSION=2.6.12
+DOWNLOAD_LINUX_VERSION:=$(BR2_PACKAGE_C_LINUX_VERSION)
 # Version of Linux kernel AFTER applying all patches
-LINUX_VERSION=2.6.12
+LINUX_VERSION:=$(BR2_PACKAGE_C_LINUX_VERSION)
 
 
 # File name for the Linux kernel binary
 LINUX_KERNEL=linux-kernel-$(LINUX_VERSION)-$(ARCH).bin
 
-LINUX_PACKAGE_DIR=$(ARMADEUS_PATH)/linux
+LINUX_PACKAGE_DIR:=$(ARMADEUS_PATH)/linux
 
-# Linux kernel configuration file
-LINUX_KCONFIG=$(LINUX_PACKAGE_DIR)/linux.config
+# Linux kernel configuration file ?? overwritten by apX9328/Makefile.in ??
+LINUX_KCONFIG:=$($(LINUX_PACKAGE_DIR)/linux-$(LINUX_VERSION).config)
 
 # kernel patches
-LINUX_PATCH_DIR=$(LINUX_PACKAGE_DIR)/kernel-patches
+LINUX_PATCH_DIR:=$(LINUX_PACKAGE_DIR)/kernel-patches/$(BR2_PACKAGE_C_LINUX_VERSION)
+LINUX_PATCH_FILTER:=$(BR2_PACKAGE_C_LINUX_VERSION)
 
 
 
@@ -66,7 +73,7 @@ ifneq ($(DOWNLOAD_LINUX_VERSION),$(LINUX_VERSION))
 	mv -f $(BUILD_DIR)/linux-$(DOWNLOAD_LINUX_VERSION) $(BUILD_DIR)/linux-$(LINUX_VERSION)
 endif
 	toolchain/patch-kernel.sh $(LINUX_DIR) $(LINUX_PATCH_DIR)
-	touch $(LINUX_DIR)/.unpacked
+	touch $@
 
 $(LINUX_KCONFIG):
 	@if [ ! -f "$(LINUX_KCONFIG)" ] ; then \
@@ -85,11 +92,11 @@ ifeq ($(strip $(BR2_mips)),y)
 	$(SED) "s,CONFIG_CPU_LITTLE_ENDIAN=y,# CONFIG_CPU_LITTLE_ENDIAN is not set\n# CONFIG_BINFMT_IRIX is not set," $(LINUX_DIR)/.config
 endif
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) oldconfig include/linux/version.h
-	touch $(LINUX_DIR)/.configured
+	touch $@
 
 $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) dep
-	touch $(LINUX_DIR)/.depend_done
+	touch $@
 
 $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done u-boot
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) $(LINUX_FORMAT)
