@@ -85,7 +85,7 @@ buildroot-patch: buildroot-clean
 sourceball: buildroot-clean
 	cd ..;\
 	cp -a armadeus armadeus-0.1; \
-	tar --exclude=.svn --exclude=*~ -cvjf armadeus-0.1.tar.gz armadeus-0.1;
+	tar --exclude=.svn --exclude=*~ -cvjf armadeus-0.1.tar.bz2 armadeus-0.1;
 
 
 .PHONY: dummy buildroot
