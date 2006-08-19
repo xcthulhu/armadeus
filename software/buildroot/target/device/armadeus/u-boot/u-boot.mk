@@ -31,8 +31,12 @@ endif
 ifneq ($(BR2_TARGET_ARMADEUS_APF9328),)
 	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APF9328,g' \
 		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
+	$(SED) 's,^#define CONFIG_DM9000_BASE.*,#define CONFIG_DM9000_BASE    0x15C00000,g' \
+		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
 else
 	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APM9328,g' \
+		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
+	$(SED) 's,^#define CONFIG_DM9000_BASE.*,#define CONFIG_DM9000_BASE    0x15C3FFFC,g' \
 		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
 endif
 	touch $(U-BOOT_DIR)/.configured	
