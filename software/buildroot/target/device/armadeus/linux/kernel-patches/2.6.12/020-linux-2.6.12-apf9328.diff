@@ -1008,7 +1008,7 @@ diff -uprN -X dontdiff linux-2.6.12/arch/arm/mach-imx/apf9328.c linux-2.6.12.wor
 +    imx_init_irq();
 +    set_irq_type(APF9328_UART1_IRQ, IRQT_LOW);
 +#ifdef CONFIG_DM9000
-+    set_irq_type(APF9328_ETH_IRQ, IRQT_HIGH);
++    set_irq_type(APF9328_ETH_IRQ, IRQT_LOW);
 +#endif // CONFIG_DM9000
 +}
 +
@@ -1157,8 +1157,8 @@ diff -uprN -X dontdiff linux-2.6.12/include/asm-arm/arch-imx/apf9328.h linux-2.6
 +#define APF9328_UART2_IRQ   ( IRQ_GPIOA(1) )
 +
 +// Ethernet
-+#define APF9328_ETH_VIRT ( IMX_CS4_VIRT + 0x00C3FFFC )
-+#define APF9328_ETH_PHYS ( IMX_CS4_PHYS + 0x00C3FFFC )
++#define APF9328_ETH_VIRT ( IMX_CS4_VIRT + 0x00C00000 )
++#define APF9328_ETH_PHYS ( IMX_CS4_PHYS + 0x00C00000 )
 +#define APF9328_ETH_IRQ  ( IRQ_GPIOB(14) )
 +
 +// FLASH
