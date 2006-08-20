@@ -91,6 +91,14 @@ $(LINUX_DIR)/.configured $(BUILD_DIR)/linux/.configured:  $(LINUX_DIR)/.unpacked
 ifeq ($(strip $(BR2_mips)),y)
 	$(SED) "s,CONFIG_CPU_LITTLE_ENDIAN=y,# CONFIG_CPU_LITTLE_ENDIAN is not set\n# CONFIG_BINFMT_IRIX is not set," $(LINUX_DIR)/.config
 endif
+ifneq ($(BR2_TARGET_ARMADEUS_APF9328),)
+	$(SED) 's,db->io_data = (void.*,db->io_data = (void *)(base + 2 );,g' \
+		$(LINUX_DIR)/drivers/net/dm9000.c
+else
+	$(SED) 's,db->io_data = (void.*,db->io_data = (void *)(base + 4 );,g' \
+		$(LINUX_DIR)/drivers/net/dm9000.c
+endif
+
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) oldconfig include/linux/version.h
 	touch $@
 
