@@ -865,12 +865,12 @@ diff -uprN -X dontdiff linux-2.6.17/arch/arm/mach-imx/apf9328.c linux-2.6.17.wor
 +static struct resource dm9000_resources[] = {
 +    [0] = {
 +        .start  = (APF9328_ETH_PHYS + 0),
-+        .end    = (APF9328_ETH_PHYS + 3),
++        .end    = (APF9328_ETH_PHYS + 1),
 +        .flags  = IORESOURCE_MEM,
 +    },
 +    [1] = {
-+        .start  = (APF9328_ETH_PHYS + 4),
-+        .end    = (APF9328_ETH_PHYS + 7),
++        .start  = (APF9328_ETH_PHYS + 2),
++        .end    = (APF9328_ETH_PHYS + 3),
 +        .flags  = IORESOURCE_MEM,
 +    },
 +    [2] = {
