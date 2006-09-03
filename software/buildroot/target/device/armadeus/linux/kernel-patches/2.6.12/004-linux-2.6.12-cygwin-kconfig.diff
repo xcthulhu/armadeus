@@ -1,0 +1,16 @@
+--- linux-2.6.12/scripts/kconfig/Makefile	2005-06-17 21:48:30.000000000 +0200
++++ linux-2.6.12/scripts/kconfig/Makefile	2006-08-29 22:38:59.252175600 +0200
+@@ -84,6 +84,13 @@ conf-objs	:= conf.o  zconf.tab.o
+ mconf-objs	:= mconf.o zconf.tab.o
+ kxgettext-objs	:= kxgettext.o zconf.tab.o
+ 
++IS_CYGWIN=$(shell uname | grep -i cygwin > /dev/null 2>&1 && echo yes || echo no)
++
++ifeq ($(IS_CYGWIN),yes)
++ HOSTLOADLIBES_conf := -L/lib -lintl
++ HOSTLOADLIBES_mconf := -L/lib -lintl
++endif
++
+ ifeq ($(MAKECMDGOALS),xconfig)
+ 	qconf-target := 1
+ endif
