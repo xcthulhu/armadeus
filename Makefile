@@ -28,7 +28,7 @@ BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH=software/downloads/buildroot.tar.bz2
 
 PATCH_DIR=software/patches
-
+PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
 TAR_OPTIONS=--exclude=.svn -xvf 
 
 all: buildroot
@@ -55,7 +55,11 @@ help:
 
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH) | tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
-	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff  
+	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
+	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+		$(PATCH_CYGWIN_DIR)/patch_user_cygwin.sh; \
+		$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
+	fi;
 	touch $(BUILDROOT_DIR)/.unpacked
 
 buildroot: $(BUILDROOT_DIR)/.unpacked
