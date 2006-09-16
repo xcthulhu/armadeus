@@ -4,7 +4,7 @@
  	    if [ -x /bin/sed ]; then SED="/bin/sed"; fi; fi; \
  	    mkdir -p $(HOST_SED_DIR)/bin; \
  	    rm -f $(HOST_SED_DIR)/$(SED_TARGET_BINARY); \
--	    ln -sf $$SED $(HOST_SED_DIR)/$(SED_TARGET_BINARY)
+-	    ln -s $$SED $(HOST_SED_DIR)/$(SED_TARGET_BINARY)
 +	    ln -s -f $$SED $(HOST_SED_DIR)/$(SED_TARGET_BINARY)
  
  host-sed: $(HOST_SED_TARGET)
