@@ -1,7 +1,6 @@
-diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 --- buildroot/.defconfig	2005-11-29 09:15:40.000000000 +0100
-+++ software/buildroot/.defconfig	2006-01-27 13:48:07.000000000 +0100
-@@ -2,55 +2,331 @@
++++ trunk/software/buildroot/.config	2006-09-24 15:42:16.375000000 +0200
+@@ -2,55 +2,341 @@
  # Automatically generated make config: don't edit
  #
  BR2_HAVE_DOT_CONFIG=y
@@ -87,6 +86,7 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 -BR2_GCC_VERSION_3_4_2=y
 -BR2_GCC_VERSION="3.4.2"
 -BR2_GCC_USE_SJLJ_EXCEPTIONS="--enable-sjlj-exceptions"
+-BR2_EXTRA_GCC_CONFIG_OPTIONS=""
 +# BR2_BINUTILS_VERSION_2_15_94_0_2_2 is not set
 +# BR2_BINUTILS_VERSION_2_15_97 is not set
 +# BR2_BINUTILS_VERSION_2_16 is not set
@@ -111,15 +111,13 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 +# BR2_GCC_VERSION_4_1_0 is not set
 +BR2_GCC_VERSION="3.4.3"
 +# BR2_GCC_USE_SJLJ_EXCEPTIONS is not set
- BR2_EXTRA_GCC_CONFIG_OPTIONS=""
--# BR2_INSTALL_LIBSTDCPP is not set
++BR2_EXTRA_GCC_CONFIG_OPTIONS="--disable-libstdcxx-pch"
+ # BR2_INSTALL_LIBSTDCPP is not set
 -BR2_HOST_CCACHE=y
 -BR2_PACKAGE_CCACHE=y
 -# BR2_PACKAGE_GDB is not set
 -# BR2_PACKAGE_GDB_SERVER is not set
 -# BR2_HOST_GDB is not set
-+BR2_INSTALL_LIBSTDCPP=y
-+# BR2_INSTALL_LIBGCJ is not set
 +# BR2_INSTALL_OBJC is not set
 +
 +#
@@ -134,9 +132,9 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 +BR2_PACKAGE_GDB_SERVER=y
 +BR2_PACKAGE_GDB_CLIENT=y
 +# BR2_GDB_VERSION_6_2_1 is not set
-+# BR2_GDB_VERSION_6_3 is not set
-+BR2_GDB_VERSION_SNAPSHOT=y
-+BR2_GDB_VERSION="snapshot"
++BR2_GDB_VERSION_6_3=y
++# BR2_GDB_VERSION_SNAPSHOT is not set
++BR2_GDB_VERSION="6.3"
 +# BR2_PACKAGE_SSTRIP_TARGET is not set
 +# BR2_PACKAGE_SSTRIP_HOST is not set
 +
@@ -207,10 +205,12 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 +# BR2_PACKAGE_GZIP is not set
 +# BR2_PACKAGE_HOSTAP is not set
 +# BR2_PACKAGE_HOTPLUG is not set
++# BR2_PACKAGE_IMXREGS is not set
 +# BR2_PACKAGE_IOSTAT is not set
 +# BR2_PACKAGE_IPROUTE2 is not set
 +# BR2_PACKAGE_IPTABLES is not set
 +# BR2_PACKAGE_JPEG is not set
++# BR2_PACKAGE_LCD4LINUX is not set
 +BR2_PACKAGE_LESS=y
 +# BR2_PACKAGE_LIBELF is not set
 +# BR2_PACKAGE_LIBFLOAT is not set
@@ -280,6 +280,9 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 +# BR2_PACKAGE_PYTHON is not set
 +# BR2_PACKAGE_QTE is not set
 +BR2_QTE_TMAKE_VERSION="1.13"
++# BR2_PACKAGE_QTE_GPL is not set
++BR2_QTE_GPL_TMAKE_VERSION="1.13"
++BR2_QTE_GPL_LIB_INSTALL_DIR=""
 +# BR2_PACKAGE_RAIDTOOLS is not set
 +# BR2_READLINE is not set
 +# BR2_PACKAGE_RSYNC is not set
@@ -339,24 +342,30 @@ diff -purN -x .svn -x '*~' buildroot/.defconfig software/buildroot/.defconfig
 +#
 +# Board Support Options
 +#
-+BR2_PACKAGE_LINUX=y
 +
 +#
 +# Armadeus project Specific Device Support
 +#
 +BR2_TARGET_ARMADEUS=y
-+# BR2_TARGET_ARMADEUS_APF9328 is not set
-+BR2_TARGET_ARMADEUS_APM9328=y
-+BR2_TARGET_ARMADEUS_NAME="apm9328"
++BR2_TARGET_ARMADEUS_APF9328=y
++# BR2_TARGET_ARMADEUS_APM9328 is not set
++BR2_TARGET_ARMADEUS_NAME="apf9328"
 +# BR2_TARGET_ARMADEUS_SDRAM_8 is not set
-+# BR2_TARGET_ARMADEUS_SDRAM_16 is not set
-+BR2_TARGET_ARMADEUS_SDRAM_32=y
++BR2_TARGET_ARMADEUS_SDRAM_16=y
++# BR2_TARGET_ARMADEUS_SDRAM_32 is not set
 +# BR2_TARGET_ARMADEUS_SDRAM_64 is not set
-+BR2_TARGET_ARMADEUS_SDRAM_SIZE="32"
++BR2_TARGET_ARMADEUS_SDRAM_SIZE="16"
++BR2_ARMADEUS_PACKAGE=y
++# BR2_PACKAGE_MAX5821CTRL is not set
 +
 +#
-+# Package support
++# ---
 +#
++BR2_PACKAGE_LINUX=y
++# BR2_PACKAGE_LINUX_VERSION_2_6_12 is not set
++# BR2_PACKAGE_LINUX_VERSION_2_6_16 is not set
++BR2_PACKAGE_LINUX_VERSION_2_6_17=y
++BR2_PACKAGE_LINUX_VERSION="2.6.17"
 +BR2_TARGET_U-BOOT=y
 +
 +#
