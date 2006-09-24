@@ -996,7 +996,7 @@ diff -uprN -X dontdiff linux-2.6.17/arch/arm/mach-imx/apf9328.c linux-2.6.17.wor
 +    .lower_margin   = 4,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
-+                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(2),
++                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +
 +    .lcd_power = apf9328_lcd_power,
 +};
