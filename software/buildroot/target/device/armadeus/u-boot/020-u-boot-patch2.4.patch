@@ -1,0 +1,71 @@
+diff -purN -x '*~' ref/u-boot-1.1.3/include/configs/apm9328.h u-boot-1.1.3/include/configs/apm9328.h
+--- ref/u-boot-1.1.3/include/configs/apm9328.h	2006-10-02 21:48:11.000000000 +0200
++++ u-boot-1.1.3/include/configs/apm9328.h	2006-10-02 21:31:58.000000000 +0200
+@@ -31,7 +31,7 @@
+ #ifndef __CONFIG_H
+ #define __CONFIG_H
+ 
+-#define CONFIG_IDENT_STRING	" apm9328 patch 2.3"
++#define CONFIG_IDENT_STRING	" ap9328 patch 2.4"
+ 
+ #define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
+ #define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
+@@ -86,8 +86,8 @@
+ 	CONFIG_CONSOLE " root=/dev/mtdblock4 rootfstype=jffs2 "CONFIG_MTDPARTS
+ 
+ #define CONFIG_CONSOLE "console=ttySMX0,"MK_STR(CONFIG_BAUDRATE)"n8"
+-#define CONFIG_MTDPARTS "mtdparts=scb9328_flash:256k(U-boot)ro,128k(U-boot_env)"\
+-			",256k(firmware),1536k(kernel),5632k(root),-(fs)"
++#define CONFIG_MTDPARTS "mtdparts=apf9328_flash:256k(U-boot)ro,128k(U-boot_env)"\
++			",256k(firmware),1536k(kernel),-(root)"
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"fileaddr="		MK_STR(CFG_LOAD_ADDR)		"\0"	\
+@@ -99,21 +99,27 @@
+ 	"env_addr="		MK_STR(CFG_ENV_ADDR)		"\0"	\
+ 	"env_len="		MK_STR(CFG_ENV_SIZE)		"\0"	\
+ 	"firmware_addr="	MK_STR(CONFIG_FIRMWARE_ADDR)	"\0"	\
+-	"firmware_len="		MK_STR(CONFIG_FIRMWARE_LEN)	"\0"	\
++	"firmware_len="	MK_STR(CONFIG_FIRMWARE_LEN)	"\0"	\
+ 	"kernel_addr="		MK_STR(CONFIG_KERNEL_ADDR)	"\0"	\
+ 	"kernel_len="		MK_STR(CONFIG_KERNEL_LEN)	"\0"	\
+ 	"rootfs_addr="		MK_STR(CONFIG_ROOTFS_ADDR)	"\0"	\
+ 	"rootfs_len="		MK_STR(CONFIG_ROOTFS_LEN)	"\0"	\
++	"mmcroot=/dev/mmcblk0p1\0"					\
++	"mmcrootfstype=ext2\0"						\
+ 	"addnfsargs=setenv bootargs ${bootargs} "			\
+ 		"root=/dev/nfs rw nfsroot=${serverip}:${rootpath}\0"    \
+ 	"addjffsargs=setenv bootargs ${bootargs} "			\
+ 		"root=/dev/mtdblock4 rootfstype=jffs2\0"   		\
++	"addmmcargs=setenv bootargs ${bootargs} "			\
++		"root=${mmcroot} rootfstype=${mmcrootfstype}\0"   		\
+ 	"addipargs=setenv bootargs ${bootargs} "			\
+ 		"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off \0"\
+ 	"nfsboot=setenv bootargs ${console} ${mtdparts};"		\
+ 		"run addnfsargs addipargs; bootm ${kernel_addr}\0"	\
+ 	"jffsboot=setenv bootargs ${console} ${mtdparts};"		\
+ 		"run addjffsargs addipargs; bootm ${kernel_addr}\0"	\
++	"mmcboot=setenv bootargs ${console} ${mtdparts};"		\
++		"run addmmcargs addipargs; bootm ${kernel_addr}\0"	\
+ 	"firmware_autoload=0\0"						\
+ 	"flash_uboot=protect off ${uboot_addr} +${uboot_len};"		\
+ 		"era ${uboot_addr} +${uboot_len};"			\
+@@ -137,6 +143,9 @@
+ 			"then echo Flashing rootfs succeed;"		\
+ 			"else echo Flashing rootfs failed;"		\
+ 		"fi\0"							\
++	"flash_reset_env=protect off ${env_addr} +${env_len};"		\
++		"era ${env_addr} +${env_len};"				\
++		"echo Erasinf flash environment variables done!"	\
+ 
+ #define CONFIG_BOOTCOMMAND	"run jffsboot"
+ #define CFG_AUTOLOAD		"yes"
+@@ -151,7 +160,7 @@
+ #define CONFIG_ETHADDR		00:0E:32:00:00:01
+ #define CONFIG_NETMASK		255.255.255.0
+ #define CONFIG_IPADDR		192.168.000.2
+-#define CONFIG_HOSTNAME		"apm9328dev"
++#define CONFIG_HOSTNAME		"armadeus"
+ #define CONFIG_GATEWAYIP	192.168.000.1
+ #define CONFIG_SERVERIP		192.168.000.1
+ #define CONFIG_ROOTPATH		"/tftpboot/root"
