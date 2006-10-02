@@ -30,6 +30,7 @@ tty1::respawn:/sbin/getty 38400 tty1
 # Put a getty on the serial port
 #ttyS0::respawn:/sbin/getty -L ttySMX0 115200,57600,38400,230400 vt100
 null::respawn:/sbin/getty -L ttySMX0 115200,57600,38400,230400 vt100
+#null::respawn:/sbin/getty -L ttygserial 115200 vt100
 
 # Logging junk
 null::sysinit:/bin/touch /var/log/messages
