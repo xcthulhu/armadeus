@@ -122,6 +122,6 @@ diff -purN -x '*~' ref/linux-2.6.18/drivers/usb/gadget/imx_udc.c linux-2.6.18/dr
      .driver     = {
          .owner = THIS_MODULE,
 -        .name  = "i.MX-udc",
-+        .name  = "imx-usb",
++        .name  = "imx-udc",
      },
  };
