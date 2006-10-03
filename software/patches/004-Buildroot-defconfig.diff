@@ -1,6 +1,6 @@
 --- buildroot/.defconfig	2005-11-29 09:15:40.000000000 +0100
-+++ trunk/software/buildroot/.config	2006-09-24 15:42:16.375000000 +0200
-@@ -2,55 +2,341 @@
++++ buildroot/.config	2006-10-03 22:42:23.010307300 +0200
+@@ -2,55 +2,342 @@
  # Automatically generated make config: don't edit
  #
  BR2_HAVE_DOT_CONFIG=y
@@ -115,9 +115,6 @@
  # BR2_INSTALL_LIBSTDCPP is not set
 -BR2_HOST_CCACHE=y
 -BR2_PACKAGE_CCACHE=y
--# BR2_PACKAGE_GDB is not set
--# BR2_PACKAGE_GDB_SERVER is not set
--# BR2_HOST_GDB is not set
 +# BR2_INSTALL_OBJC is not set
 +
 +#
@@ -128,13 +125,15 @@
 +#
 +# Gdb Options
 +#
-+BR2_PACKAGE_GDB=y
+ # BR2_PACKAGE_GDB is not set
+-# BR2_PACKAGE_GDB_SERVER is not set
+-# BR2_HOST_GDB is not set
 +BR2_PACKAGE_GDB_SERVER=y
 +BR2_PACKAGE_GDB_CLIENT=y
 +# BR2_GDB_VERSION_6_2_1 is not set
-+BR2_GDB_VERSION_6_3=y
-+# BR2_GDB_VERSION_SNAPSHOT is not set
-+BR2_GDB_VERSION="6.3"
++# BR2_GDB_VERSION_6_3 is not set
++BR2_GDB_VERSION_SNAPSHOT=y
++BR2_GDB_VERSION="snapshot"
 +# BR2_PACKAGE_SSTRIP_TARGET is not set
 +# BR2_PACKAGE_SSTRIP_HOST is not set
 +
@@ -365,6 +364,7 @@
 +# BR2_PACKAGE_LINUX_VERSION_2_6_12 is not set
 +# BR2_PACKAGE_LINUX_VERSION_2_6_16 is not set
 +BR2_PACKAGE_LINUX_VERSION_2_6_17=y
++# BR2_PACKAGE_LINUX_VERSION_2_6_18 is not set
 +BR2_PACKAGE_LINUX_VERSION="2.6.17"
 +BR2_TARGET_U-BOOT=y
 +
