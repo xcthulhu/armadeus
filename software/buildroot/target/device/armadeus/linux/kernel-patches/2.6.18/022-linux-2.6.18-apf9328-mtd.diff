@@ -40,7 +40,7 @@ diff -purN linux-2.6.18/drivers/mtd/maps/apf9328.c linux-2.6.18-imx/drivers/mtd/
 +    .virt        = &flash_virt,
 +    .phys        = APF9328_FLASH_PHYS,
 +    .name        = "apf9328_flash",
-+    .inval_cache = apf9328_map_inval_cache,
++    .inval_cache = scb9328_map_inval_cache,
 +    .bankwidth   = 2
 +};
 +

@@ -39,7 +39,7 @@ diff -uprN -X dontdiff linux-2.6.16/drivers/mtd/maps/apf9328.c linux-2.6.16.work
 +    .size        = APF9328_FLASH_SIZE,
 +    .virt        = &flash_virt,
 +    .phys        = APF9328_FLASH_PHYS,
-+    .name        = "apf9328_flash",
++    .name        = "scb9328_flash",
 +    .inval_cache = apf9328_map_inval_cache,
 +    .bankwidth   = 2
 +};
