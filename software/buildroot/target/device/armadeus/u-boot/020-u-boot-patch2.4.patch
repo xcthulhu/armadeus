@@ -16,7 +16,7 @@ diff -purN -x '*~' ref/u-boot-1.1.3/include/configs/apm9328.h u-boot-1.1.3/inclu
  #define CONFIG_CONSOLE "console=ttySMX0,"MK_STR(CONFIG_BAUDRATE)"n8"
 -#define CONFIG_MTDPARTS "mtdparts=scb9328_flash:256k(U-boot)ro,128k(U-boot_env)"\
 -			",256k(firmware),1536k(kernel),5632k(root),-(fs)"
-+#define CONFIG_MTDPARTS "mtdparts=apf9328_flash:256k(U-boot)ro,128k(U-boot_env)"\
++#define CONFIG_MTDPARTS "mtdparts=scb9328_flash:256k(U-boot)ro,128k(U-boot_env)"\
 +			",256k(firmware),1536k(kernel),-(root)"
  
  #define CONFIG_EXTRA_ENV_SETTINGS \
