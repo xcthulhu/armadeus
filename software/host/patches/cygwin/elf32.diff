@@ -1,0 +1,10 @@
+--- /usr/include/sys/elf32.h	2006-10-07 18:44:09.082390400 +0200
++++ elf32.h	2006-10-07 18:25:11.500000000 +0200
+@@ -42,6 +42,7 @@ typedef int32_t		Elf32_Sword;
+ typedef u_int32_t	Elf32_Word;
+ typedef u_int32_t	Elf32_Size;
+ typedef Elf32_Off	Elf32_Hashelt;
++typedef u_int32_t   Elf32_Section;
+ 
+ /*
+  * ELF header.

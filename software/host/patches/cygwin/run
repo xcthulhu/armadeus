@@ -1,0 +1,64 @@
+#!/bin/bash
+#############################################################
+#
+# Copyright (c) 2005 Armadeus
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# CYGWIN host patches for Armadeus build
+# 
+# This script performs several modifications to the cygwin 
+# environment.
+# 1. apply different patches
+# 2. add new fake root users
+# 3. add new fake groups
+# LicenceArmadeus Team
+#############################################################
+
+#add some missing elf definitions to cygwin
+patch -p0 <elf32.diff;
+
+# create new users for rootfs generation
+if [ -n $(grep 'root:\*:0:0:,S-1-5-32-0::' /etc/passwd) ]
+then
+	echo "root already present in etc/passwd"
+else
+	echo "root:*:0:0:,S-1-5-32-0::" >>/etc/passwd
+fi
+if [ -n $(grep "user1000:\*:1000:1000:,S-1-5-32-1000::" /etc/passwd) ]
+then
+	echo "user1000 already present in etc/passwd"
+else
+	echo "user1000:*:1000:1000:,S-1-5-32-1000::" >>/etc/passwd
+fi
+
+#create new groups for rootfs generation
+if [ -n $(grep "root:S-1-5-32-0:0:" /etc/group) ] 
+then 
+	echo "root already present in etc/group"
+else
+	echo "root:S-1-5-32-0:0:" >>/etc/group
+fi
+if [ -n $(grep 'root5:S-1-5-32-5:5:' /etc/group) ] 
+then
+	echo "root5 already present in etc/group"
+else
+	echo "root5:S-1-5-32-5:5:" >>/etc/group
+fi
+if [ -n $(grep 'user1000:S-1-5-32-1000:1000:' /etc/group) ]
+then
+	echo "user1000 already present in etc/group"
+else
+	echo "user1000:S-1-5-32-1000:1000:" >>/etc/group
+fi
