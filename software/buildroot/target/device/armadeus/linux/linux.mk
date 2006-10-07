@@ -41,6 +41,7 @@ LINUX_KCONFIG:=$($(LINUX_PACKAGE_DIR)/linux-$(LINUX_VERSION).config)
 
 # kernel patches
 LINUX_PATCH_DIR:=$(LINUX_PACKAGE_DIR)/kernel-patches/$(BR2_PACKAGE_C_LINUX_VERSION)
+CYGWIN_LINUX_PATCH_DIR:=$(LINUX_PATCH_DIR)/cygwin
 LINUX_PATCH_FILTER:=$(BR2_PACKAGE_C_LINUX_VERSION)
 
 
@@ -73,6 +74,9 @@ ifneq ($(DOWNLOAD_LINUX_VERSION),$(LINUX_VERSION))
 	mv -f $(BUILD_DIR)/linux-$(DOWNLOAD_LINUX_VERSION) $(BUILD_DIR)/linux-$(LINUX_VERSION)
 endif
 	toolchain/patch-kernel.sh $(LINUX_DIR) $(LINUX_PATCH_DIR)
+	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+		toolchain/patch-kernel.sh $(LINUX_DIR) $(CYGWIN_LINUX_PATCH_DIR) ; \
+	fi;
 	touch $@
 
 $(LINUX_KCONFIG):
