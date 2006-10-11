@@ -30,7 +30,8 @@ default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 clean:
-	rm -f *.*o
+	rm -f *.*o \
+    rm -f Module.symvers
 
 install: gpio.ko
 	echo "Installing drivers..."

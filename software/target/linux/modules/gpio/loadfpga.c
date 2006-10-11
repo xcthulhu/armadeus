@@ -27,8 +27,9 @@ struct semaphore fpga_sema;
 /* global variables */
 
 static unsigned long gParameters[4] = { 0, 0, 0, 0 };
+static int argc_argv;
 //static unsigned char port = PORT_A;
-MODULE_PARM( port, "1i" );
+module_param_array( gParameters, ulong, &argc_argv, 0 );
 
 #define FPGA_BUFFER_SIZE 4096
 static unsigned char gBuffer[FPGA_BUFFER_SIZE];

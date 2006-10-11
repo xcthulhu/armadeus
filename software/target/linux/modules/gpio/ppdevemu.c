@@ -25,6 +25,7 @@
 //#include "common.h"
 #include "ppdevemu.h"
 #include <asm/arch/imx-regs.h>
+#include <linux/moduleparam.h>
 
 extern void         gpioWriteOnPort( unsigned int, unsigned int );
 extern unsigned int gpioReadFromPort( unsigned int );
@@ -56,7 +57,7 @@ static unsigned int gPortCIndex = PORT_C;
 static unsigned int gPortDIndex = PORT_D;*/
 
 static unsigned char port_mode = 8; // 8bits mode by default
-MODULE_PARM( port_mode, "1i" );
+module_param( port_mode, byte, 0 );
 
 void __exit armadeus_ppdev_cleanup(void);
 
