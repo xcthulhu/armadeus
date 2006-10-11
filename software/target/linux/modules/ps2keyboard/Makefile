@@ -2,9 +2,12 @@
 # Makefile for the Armadeus FPGA "PS/2" driver
 #
 
-ifeq ($(ARMADEUS_KERNEL_DIR)),y)
-ARMADEUS_KERNEL_DIR="/Please define ARMADEUS_KERNEL_DIR envt variable before trying to compile this driver !"
-endif
+BASE_DIR="../../../../buildroot/"
+
+REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
+      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
+
+ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
 
 ifneq ($(KERNELRELEASE),)
 
@@ -24,7 +27,7 @@ clean:
 
 install: apf9328ps2.ko
 	echo "Installing drivers..."
-#	cp *.ko ../../../../../software/buildroot/build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/
+#	cp *.ko $(BASE_DIR)build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/
     
 endif
 

@@ -3,10 +3,12 @@
 #
 # unfinished state; to be continued
 
-REL=2.6.12
-#ifeq ($(ARMADEUS_KERNEL_DIR)),y)
-ARMADEUS_KERNEL_DIR=../../../../buildroot/build_arm_nofpu/linux-$(REL)
-#endif
+BASE_DIR="../../../../buildroot/"
+
+REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
+      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
+
+ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
 
 ifneq ($(KERNELRELEASE),)
 
@@ -25,7 +27,7 @@ clean:
 
 install:
 	echo "Installing drivers..."
-	echo "type: cp *.ko ../../../../../software/buildroot/build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/"
+	echo "type: cp *.ko $(BASE_DIR)build_arm_nofpu/root/lib/modules/2.6.12/kernel/drivers/"
     
 endif
 
