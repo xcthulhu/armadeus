@@ -1,0 +1,66 @@
+diff -purN -x '*~' ref/linux-2.6.18/arch/arm/mach-imx/generic.c linux-2.6.18/arch/arm/mach-imx/generic.c
+--- ref/linux-2.6.18/arch/arm/mach-imx/generic.c	2006-10-12 22:23:57.000000000 +0200
++++ linux-2.6.18/arch/arm/mach-imx/generic.c	2006-10-11 22:31:09.000000000 +0200
+@@ -187,10 +187,13 @@ static struct resource imx_mmc_resources
+ 
+ static u64 imxmmmc_dmamask = 0xffffffffUL;
+ 
++static struct imxmmc_platform_data imx_mmc_info;
++
+ static struct platform_device imx_mmc_device = {
+ 	.name		= "imx-mmc",
+ 	.id		= 0,
+ 	.dev		= {
++		.platform_data	= &imx_mmc_info,
+ 		.dma_mask = &imxmmmc_dmamask,
+ 		.coherent_dma_mask = 0xffffffff,
+ 	},
+@@ -200,7 +203,7 @@ static struct platform_device imx_mmc_de
+ 
+ void __init imx_set_mmc_info(struct imxmmc_platform_data *info)
+ {
+-	imx_mmc_device.dev.platform_data = info;
++	memcpy(&imx_mmc_info,info,sizeof(struct imxmmc_platform_data));
+ }
+ EXPORT_SYMBOL(imx_set_mmc_info);
+ 
+diff -purN -x '*~' ref/linux-2.6.18/drivers/mmc/imxmmc.c linux-2.6.18/drivers/mmc/imxmmc.c
+--- ref/linux-2.6.18/drivers/mmc/imxmmc.c	2006-10-12 22:23:43.000000000 +0200
++++ linux-2.6.18/drivers/mmc/imxmmc.c	2006-10-12 21:54:23.000000000 +0200
+@@ -902,6 +902,14 @@ static int platform_device_irq(struct pl
+ 	return NO_IRQ;
+ }
+ 
++static int imxmci_card_present(void)
++{
++    int lcardpresent = MMC_STATUS & STATUS_CARD_PRESENCE;
++	if (lcardpresent)
++	MMC_INT_MASK |= INT_MASK_AUTO_CARD_DETECT;
++    return(lcardpresent?1:0);
++}
++
+ static void imxmci_check_status(unsigned long data)
+ {
+ 	struct imxmci_host *host = (struct imxmci_host *)data;
+@@ -1012,6 +1020,9 @@ static int imxmci_probe(struct platform_
+ 	ret = request_irq(host->irq, imxmci_irq, 0, DRIVER_NAME, host);
+ 	if (ret)
+ 		goto out;
++	
++	if (!host->pdata->card_present)
++		host->pdata->card_present = imxmci_card_present;
+ 
+ 	host->present = host->pdata->card_present();
+ 	init_timer(&host->timer);
+diff -purN -x '*~' ref/linux-2.6.18/include/asm-arm/arch-imx/imx-regs.h linux-2.6.18/include/asm-arm/arch-imx/imx-regs.h
+--- ref/linux-2.6.18/include/asm-arm/arch-imx/imx-regs.h	2006-10-12 22:23:57.000000000 +0200
++++ linux-2.6.18/include/asm-arm/arch-imx/imx-regs.h	2006-10-10 22:03:56.000000000 +0200
+@@ -166,7 +166,7 @@
+ #define PB9_AF_MS_PI1        ( GPIO_PORTB | GPIO_AF | 9 )
+ #define PB10_PF_SD_DAT2      ( GPIO_PORTB | GPIO_PF | GPIO_PUEN  | 10 )
+ #define PB10_AF_MS_SCLKI     ( GPIO_PORTB | GPIO_AF | 10 )
+-#define PB11_PF_SD_DAT3      ( GPIO_PORTB | GPIO_PF | 11 )
++#define PB11_PF_SD_DAT3      ( GPIO_PORTB | GPIO_PF | GPIO_PUEN | 11 )
+ #define PB11_AF_MS_SDIO      ( GPIO_PORTB | GPIO_AF | 11 )
+ #define PB12_PF_SD_CLK       ( GPIO_PORTB | GPIO_PF | 12 )
+ #define PB12_AF_MS_SCLK0     ( GPIO_PORTB | GPIO_AF | 12 )
