@@ -34,8 +34,8 @@ diff -purN -x '*~' ref/linux-2.6.18/drivers/mmc/imxmmc.c linux-2.6.18/drivers/mm
 +static int imxmci_card_present(void)
 +{
 +    int lcardpresent = MMC_STATUS & STATUS_CARD_PRESENCE;
-+	if (lcardpresent)
-+	MMC_INT_MASK |= INT_MASK_AUTO_CARD_DETECT;
++
++
 +    return(lcardpresent?1:0);
 +}
 +
