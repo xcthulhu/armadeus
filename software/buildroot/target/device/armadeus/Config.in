@@ -75,17 +75,13 @@ choice
 	depends on BR2_PACKAGE_LINUX
 	help
 	    Linux kernel version you want to use with your Armadeus board.
-	    If you plan to use MMC/SD cards then choose 2.6.17, otherwise 2.6.12
+	    If you plan to use MMC/SD cards then choose 2.6.18.1, otherwise 2.6.12
 	    should be sufficient and is more used/tested.
 
 config BR2_PACKAGE_LINUX_VERSION_2_6_12
 	bool "2.6.12"
-config BR2_PACKAGE_LINUX_VERSION_2_6_16
-	bool "2.6.16"
 config BR2_PACKAGE_LINUX_VERSION_2_6_17
 	bool "2.6.17"
-config BR2_PACKAGE_LINUX_VERSION_2_6_18
-	bool "2.6.18"
 config BR2_PACKAGE_LINUX_VERSION_2_6_18_1
 	bool "2.6.18.1"
 endchoice
@@ -93,9 +89,7 @@ endchoice
 config BR2_PACKAGE_LINUX_VERSION
 	string
 	default "2.6.12"	if BR2_PACKAGE_LINUX_VERSION_2_6_12
-	default "2.6.16"	if BR2_PACKAGE_LINUX_VERSION_2_6_16
 	default "2.6.17"	if BR2_PACKAGE_LINUX_VERSION_2_6_17
-	default "2.6.18"	if BR2_PACKAGE_LINUX_VERSION_2_6_18
 	default "2.6.18.1"	if BR2_PACKAGE_LINUX_VERSION_2_6_18_1
 
 config BR2_TARGET_U-BOOT
