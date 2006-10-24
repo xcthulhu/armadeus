@@ -1,0 +1,73 @@
+--- linux-2.6.18/scripts/mod/sumversion.c	2006-09-20 05:42:06.000000000 +0200
++++ sumversion.c	2006-10-07 16:42:31.609375000 +0200
+@@ -7,6 +7,7 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <string.h>
++#include <limits.h>
+ #include "modpost.h"
+ 
+ /*
+--- linux-2.6.18/scripts/mod/file2alias.c	2006-09-20 05:42:06.000000000 +0200
++++ file2alias.c	2006-10-07 15:43:32.890625000 +0200
+@@ -11,7 +11,6 @@
+  */
+ 
+ #include "modpost.h"
+-
+ /* We use the ELF typedefs for kernel_ulong_t but bite the bullet and
+  * use either stdint.h or inttypes.h for the rest. */
+ #if KERNEL_ELFCLASS == ELFCLASS32
+@@ -26,18 +25,19 @@ typedef Elf64_Addr	kernel_ulong_t;
+ #else
+ #include <stdint.h>
+ #endif
+-
++#include "../../include/linux/input.h"
+ #include <ctype.h>
+ 
++/*
+ typedef uint32_t	__u32;
+ typedef uint16_t	__u16;
+ typedef unsigned char	__u8;
+-
++*/
+ /* Big exception to the "don't include kernel headers into userspace, which
+  * even potentially has different endianness and word sizes, since
+  * we handle those differences explicitly below */
+ #include "../../include/linux/mod_devicetable.h"
+-#include "../../include/linux/input.h"
++
+ 
+ #define ADD(str, sep, cond, field)                              \
+ do {                                                            \
+--- linux-2.6.18/scripts/mod/modpost.h	2006-09-20 05:42:06.000000000 +0200
++++ modpost.h	2006-10-07 18:51:20.406250000 +0200
+@@ -18,13 +18,9 @@
+ #define Elf_Sym     Elf32_Sym
+ #define Elf_Addr    Elf32_Addr
+ #define Elf_Section Elf32_Section
+-#define ELF_ST_BIND ELF32_ST_BIND
+-#define ELF_ST_TYPE ELF32_ST_TYPE
+ 
+ #define Elf_Rel     Elf32_Rel
+ #define Elf_Rela    Elf32_Rela
+-#define ELF_R_SYM   ELF32_R_SYM
+-#define ELF_R_TYPE  ELF32_R_TYPE
+ #else
+ 
+ #define Elf_Ehdr    Elf64_Ehdr
+@@ -32,13 +28,9 @@
+ #define Elf_Sym     Elf64_Sym
+ #define Elf_Addr    Elf64_Addr
+ #define Elf_Section Elf64_Section
+-#define ELF_ST_BIND ELF64_ST_BIND
+-#define ELF_ST_TYPE ELF64_ST_TYPE
+ 
+ #define Elf_Rel     Elf64_Rel
+ #define Elf_Rela    Elf64_Rela
+-#define ELF_R_SYM   ELF64_R_SYM
+-#define ELF_R_TYPE  ELF64_R_TYPE
+ #endif
+ 
+ /* The 64-bit MIPS ELF ABI uses an unusual reloc format. */
