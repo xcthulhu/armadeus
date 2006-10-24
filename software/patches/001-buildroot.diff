@@ -8,15 +8,3 @@ diff -purN -x .svn buildrootref/target/device/Config.in buildroot/target/device/
  source "target/device/Soekris/Config.in"
  source "target/device/Hitachi/Config.in"
  source "target/device/AMD/Config.in"
-diff -purN buildroot-ref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
---- buildroot-ref/target/jffs2/jffs2root.mk	2005-11-29 09:15:23.000000000 +0100
-+++ buildroot/target/jffs2/jffs2root.mk	2005-12-22 17:12:16.000000000 +0100
-@@ -38,7 +38,7 @@ JFFS2_TARGET := $(subst ",,$(BR2_TARGET_
- # value of MKFS_JFFS2 to either the previously installed copy or the one
- # just built.
- #
--$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host
-+$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host linux
- 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
- 	@rm -rf $(TARGET_DIR)/usr/man
- 	@rm -rf $(TARGET_DIR)/usr/share/man
