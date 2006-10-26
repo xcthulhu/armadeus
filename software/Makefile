@@ -58,6 +58,9 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH) $(PATCH_DIR)/*.diff
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
 	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
 		$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
+		sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
+		rm $(BUILDROOT_DIR)/.defconfig ; \
+		mv $(BUILDROOT_DIR)/.defconfig_cygwin $(BUILDROOT_DIR)/.defconfig ; \
 	fi;
 	touch $(BUILDROOT_DIR)/.unpacked
 
