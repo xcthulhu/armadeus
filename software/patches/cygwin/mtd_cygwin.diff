@@ -2,8 +2,8 @@ diff -purN ori/software/buildroot/package/mtd/mtd_cygwin.patch final/software/bu
 --- buildroot/package/mtd/mtd_cygwin.patch	1970-01-01 01:00:00.000000000 +0100
 +++ buildroot/package/mtd/mtd_cygwin.patch	2006-09-16 10:30:50.484375000 +0200
 @@ -0,0 +1,13 @@
-+--- mtd-20050122.orig/util/mkfs.jffs2.c	2004-11-27 00:00:14.000000000 +0100
-++++ mtd-20050122.orig/util/mkfs.jffs2.c	2006-09-13 22:56:46.390625000 +0200
++--- mtd_orig/util/mkfs.jffs2.c	2006-10-25 08:24:23.671875000 +0200
+++++ mtd_orig/util/mkfs.jffs2.c	2004-11-27 00:00:13.000000000 +0100
 +@@ -72,6 +72,10 @@
 + /* Do not use the wierd XPG version of basename */
 + #undef basename

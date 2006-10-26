@@ -1,38 +1,26 @@
---- buildroot/target/jffs2/jffs2root.mk	2005-11-29 09:15:24.000000000 +0100
-+++ buildroot/target/jffs2/jffs2root.mk	2006-09-16 08:08:28.046875000 +0200
-@@ -38,32 +38,13 @@
- # value of MKFS_JFFS2 to either the previously installed copy or the one
- # just built.
- #
--$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host linux
-+$(JFFS2_TARGET): host-fakeroot makedevs $(STAGING_DIR)/fakeroot.env mtd-host linux
- 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+--- buildroot/target/jffs2/jffs2root.mk	2006-10-20 09:15:08.000000000 +0200
++++ buildroot/target/jffs2/jffs2root.mk	2006-10-25 18:33:53.859375000 +0200
+@@ -44,20 +44,13 @@ $(JFFS2_TARGET): host-fakeroot makedevs 
  	@rm -rf $(TARGET_DIR)/usr/man
  	@rm -rf $(TARGET_DIR)/usr/share/man
  	@rm -rf $(TARGET_DIR)/usr/info
 -	-/sbin/ldconfig -r $(TARGET_DIR) 2>/dev/null
--	# Use fakeroot to pretend all target binaries are owned by root
--	-$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		chown -R root:root $(TARGET_DIR)
--	# Use fakeroot to pretend to create all needed device nodes
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		$(STAGING_DIR)/bin/makedevs \
--		-d $(TARGET_DEVICE_TABLE) \
--		$(TARGET_DIR)
+ 	# Use fakeroot to pretend all target binaries are owned by root
+ 	rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
+ 	touch $(STAGING_DIR)/.fakeroot.00000
+-	cat $(STAGING_DIR)/.fakeroot* > $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
+-	echo "chown -R root:root $(TARGET_DIR)" >> $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
+ 	# Use fakeroot to pretend to create all needed device nodes
+-	echo "$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)" \
+-		>> $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
 -	# Use fakeroot so mkfs.jffs2 believes the previous fakery
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		$(MKFS_JFFS2) \
--			$(JFFS2_OPTS) \
--			-d $(BUILD_DIR)/root \
--			-o $(JFFS2_TARGET)
+-	echo "$(MKFS_JFFS2) $(JFFS2_OPTS) -d $(BUILD_DIR)/root -o $(JFFS2_TARGET)" \
+-		>> $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
+-	chmod a+x $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
+-	$(STAGING_DIR)/usr/bin/fakeroot -- $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
 +	@$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)
 +	@$(MKFS_JFFS2) $(JFFS2_OPTS) -d $(BUILD_DIR)/root -o $(JFFS2_TARGET)
++	@ls -l $(JFFS2_TARGET)
+ 	-@rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))
  	@ls -l $(JFFS2_TARGET)
  
- JFFS2_COPYTO := $(strip $(subst ",,$(BR2_TARGET_ROOTFS_JFFS2_COPYTO)))

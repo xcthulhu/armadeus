@@ -1,30 +1,25 @@
---- buildroot/target/tar/tarroot.mk	2005-11-29 09:15:24.000000000 +0100
-+++ buildroot/target/tar/tarroot.mk	2006-09-16 08:09:19.765625000 +0200
-@@ -10,24 +10,9 @@
+--- buildroot/target/tar/tarroot.mk	2006-10-25 20:51:23.156250000 +0200
++++ buildroot/target/tar/tarroot.mk	2006-10-25 20:52:09.500000000 +0200
+@@ -11,20 +11,10 @@ tarroot: host-fakeroot makedevs
  	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
  	@rm -rf $(TARGET_DIR)/usr/man
  	@rm -rf $(TARGET_DIR)/usr/info
 -	-/sbin/ldconfig -r $(TARGET_DIR) 2>/dev/null
 -	# Use fakeroot to pretend all target binaries are owned by root
--	-$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		chown -R root:root $(TARGET_DIR)
+ 	rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
+ 	touch $(STAGING_DIR)/.fakeroot.00000
+-	cat $(STAGING_DIR)/.fakeroot* > $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
+-	echo "chown -R root:root $(TARGET_DIR)" >> $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
 -	# Use fakeroot to pretend to create all needed device nodes
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		$(STAGING_DIR)/bin/makedevs \
--		-d $(TARGET_DEVICE_TABLE) \
--		$(TARGET_DIR)
+-	echo "$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)" \
+-		>> $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
 -	# Use fakeroot so tar believes the previous fakery
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		tar -c$(TAR_OPTS)f $(IMAGE).tar -C $(TARGET_DIR) .
+-	echo "tar -c$(TAR_OPTS)f $(TAR_TARGET) -C $(TARGET_DIR) ." \
+-		>> $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
+-	chmod a+x $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
+-	$(STAGING_DIR)/usr/bin/fakeroot -- $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
 +	@$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)
 +	@tar -c$(TAR_OPTS)f $(IMAGE).tar -C $(TARGET_DIR) .
-+	
+ 	-@rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(TAR_TARGET))
  
  tarroot-source:
- 

@@ -1,43 +1,44 @@
---- buildroot/target/ext2/ext2root.mk	2005-11-29 09:15:23.000000000 +0100
-+++ buildroot/target/ext2/ext2root.mk	2006-09-16 08:12:19.953125000 +0200
-@@ -70,19 +70,8 @@
+--- buildroot/target/ext2/ext2root.mk	2006-10-20 09:15:08.000000000 +0200
++++ buildroot/target/ext2/ext2root.mk	2006-10-25 20:46:38.812500000 +0200
+@@ -71,16 +71,9 @@ $(EXT2_BASE): host-fakeroot makedevs gen
  	@rm -rf $(TARGET_DIR)/usr/man
  	@rm -rf $(TARGET_DIR)/usr/share/man
  	@rm -rf $(TARGET_DIR)/usr/info
 -	-/sbin/ldconfig -r $(TARGET_DIR) 2>/dev/null
 -	# Use fakeroot to pretend all target binaries are owned by root
--	-$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		chown -R root:root $(TARGET_DIR)
+ 	rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+ 	touch $(STAGING_DIR)/.fakeroot.00000
+-	cat $(STAGING_DIR)/.fakeroot* > $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+-	echo "chown -R root:root $(TARGET_DIR)" >> $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
 -	# Use fakeroot to pretend to create all needed device nodes
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
--		$(STAGING_DIR)/bin/makedevs \
--		-d $(TARGET_DEVICE_TABLE) \
--		$(TARGET_DIR)
+-	echo "$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)" \
+-		>> $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+-	# Use fakeroot so genext2fs believes the previous fakery
 +	@$(STAGING_DIR)/bin/makedevs -d $(TARGET_DEVICE_TABLE) $(TARGET_DIR)
-+
- 	# Use fakeroot so genext2fs believes the previous fakery
  ifeq ($(strip $(BR2_TARGET_ROOTFS_EXT2_BLOCKS)),0)
  	GENEXT2_REALSIZE=`LANG=C du -l -s -c -k $(TARGET_DIR) | grep total | sed -e "s/total//"`; \
-@@ -91,18 +80,12 @@
+ 	GENEXT2_ADDTOROOTSIZE=`if [ $$GENEXT2_REALSIZE -ge 20000 ] ; then echo 16384; else echo 2400; fi`; \
+@@ -88,15 +81,16 @@ ifeq ($(strip $(BR2_TARGET_ROOTFS_EXT2_B
  	GENEXT2_ADDTOINODESIZE=`find $(TARGET_DIR) | wc -l`; \
  	GENEXT2_INODES=`expr $$GENEXT2_ADDTOINODESIZE + 400`; \
  	set -x; \
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
- 	$(GENEXT2_DIR)/genext2fs \
- 		-b $$GENEXT2_SIZE \
- 		-i $$GENEXT2_INODES \
- 		-d $(TARGET_DIR) \
- 		$(EXT2_OPTS) $(EXT2_BASE)
+-	echo "$(GENEXT2_DIR)/genext2fs -b $$GENEXT2_SIZE " \
+-		"-i $$GENEXT2_INODES -d $(TARGET_DIR) " \
+-		"$(EXT2_OPTS) $(EXT2_BASE)" >> $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
++ 	$(GENEXT2_DIR)/genext2fs \
++ 		-b $$GENEXT2_SIZE \
++ 		-i $$GENEXT2_INODES \
++ 		-d $(TARGET_DIR) \
++ 		$(EXT2_OPTS) $(EXT2_BASE); \
  else
--	$(STAGING_DIR)/usr/bin/fakeroot \
--		-i $(STAGING_DIR)/fakeroot.env \
--		-s $(STAGING_DIR)/fakeroot.env -- \
- 	$(GENEXT2_DIR)/genext2fs \
- 		-d $(TARGET_DIR) \
- 		$(EXT2_OPTS) \
+-	echo "$(GENEXT2_DIR)/genext2fs -d $(TARGET_DIR) " \
+-		"$(EXT2_OPTS) $(EXT2_BASE)" >> $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
++ 	$(GENEXT2_DIR)/genext2fs \
++ 		-d $(TARGET_DIR) \
++ 		$(EXT2_OPTS);
+ endif
+-	chmod a+x $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+-	$(STAGING_DIR)/usr/bin/fakeroot -- $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+ 	-@rm -f $(STAGING_DIR)/_fakeroot.$(notdir $(EXT2_TARGET))
+ 
+ $(EXT2_BASE).gz: $(EXT2_BASE)

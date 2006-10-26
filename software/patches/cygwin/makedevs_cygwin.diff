@@ -1,14 +1,6 @@
---- buildroot/target/makedevs/makedevs.c	2005-11-29 09:15:24.000000000 +0100
-+++ buildroot/target/makedevs/makedevs.c	2006-09-08 07:53:57.625000000 +0200
-@@ -375,6 +375,7 @@
- 				bb_show_usage();
- 		}
- 	}
-+			bb_error_msg("file %s",line);
- 
- 	if (optind >= argc || (rootdir=argv[optind])==NULL) {
- 		bb_error_msg_and_die("root directory not speficied");
-@@ -405,8 +406,7 @@
+--- buildroot/target/makedevs/makedevs.c	2006-10-20 09:15:08.000000000 +0200
++++ ../eric/buildroot/target/makedevs/makedevs.c	2006-10-25 18:38:01.953125000 +0200
+@@ -405,8 +405,7 @@ int main(int argc, char **argv)
  		char user[41];
  		char group[41];
  		char *full_name;
@@ -18,16 +10,16 @@
  
  		linenum++;
  
-@@ -424,42 +424,23 @@
+@@ -424,42 +423,23 @@ int main(int argc, char **argv)
  		if (name[0] == '#') {
  			continue;
  		}
--		if (group) {
+-		if (*group) {
 -			gid = get_ug_id(group, my_getgrnam);
 -		} else {
 -			gid = getgid();
 -		}
--		if (user) {
+-		if (*user) {
 -			uid = get_ug_id(user, my_getpwnam);
 -		} else {
 -			uid = getuid();
@@ -64,7 +56,7 @@
  			if ((mode != -1) && (chmod(full_name, mode) < 0)){
  				bb_perror_msg("line %d: chmod failed for %s", linenum, full_name);
  				ret = EXIT_FAILURE;
-@@ -491,32 +472,30 @@
+@@ -491,32 +471,30 @@ int main(int argc, char **argv)
  				for (i = start; i < count; i++) {
  					sprintf(full_name_inc, "%s%d", full_name, i);
  					rdev = (major << 8) + minor + (i * increment - start);
@@ -109,12 +101,13 @@
  					ret = EXIT_FAILURE;
  				}
  			}
-@@ -525,7 +504,96 @@
+@@ -525,9 +503,96 @@ loop:
  		free(line);
  		free(full_name);
  	}
 -	fclose(table);
  
+-	system("/bin/sync");
 +	rewind(table);
 +
 +	while ((line = bb_get_chomped_line_from_file(table))) {
@@ -133,7 +126,7 @@
 +		gid_t gid;
 +
 +		linenum++;
-+
+ 
 +		if ((2 > sscanf(line, "%40s %c %o %40s %40s %u %u %u %u %u", name,
 +						&type, &mode, user, group, &major,
 +						&minor, &start, &increment, &count)) ||
