@@ -1,0 +1,11 @@
+--- buildroot/package/Makefile.in	2006-10-20 09:15:14.000000000 +0200
++++ buildroot/package/Makefile.in	2006-10-24 23:13:14.093750000 +0200
+@@ -46,7 +46,7 @@ GNU_TARGET_SUFFIX:=-$(strip $(subst ",, 
+ # Strip off the annoying quoting
+ STAGING_DIR:=$(strip $(subst ",, $(BR2_STAGING_DIR)))
+ #"
+-TARGET_PATH=$(STAGING_DIR)/bin:$(TOOL_BUILD_DIR)/bin:$(PATH)
++TARGET_PATH=$(STAGING_DIR)/bin:$(TOOL_BUILD_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
+ IMAGE:=$(BASE_DIR)/rootfs.$(ARCH)$(ARCH_FPU_SUFFIX)
+ REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)$(GNU_TARGET_SUFFIX)
+ GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux
