@@ -27,7 +27,7 @@
 #############################################################
 
 #add some missing elf definitions to cygwin
-patch -p0 <elf32.diff;
+patch -p0 < host/patches/cygwin/elf32.diff;
 
 # create new users for rootfs generation
 if [ -n $(grep 'root:\*:0:0:,S-1-5-32-0::' /etc/passwd) ]
