@@ -57,10 +57,10 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH) | tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
 	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
-		$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
-		sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
-		rm $(BUILDROOT_DIR)/.defconfig ; \
-		mv $(BUILDROOT_DIR)/.defconfig_cygwin $(BUILDROOT_DIR)/.defconfig ; \
+		svn revert . ; \
+    	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
+     	sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
+		mv -f $(BUILDROOT_DIR)/.defconfig_cygwin $(BUILDROOT_DIR)/.defconfig ; \
 	fi;
 	touch $(BUILDROOT_DIR)/.unpacked
 
@@ -74,17 +74,19 @@ menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
 buildroot-clean:
+	@$(MAKE) -C $(BUILDROOT_DIR)  clean
 	rm -rf $(BUILDROOT_DIR)/build*
 	rm -rf $(BUILDROOT_DIR)/toolchain_build*
 	rm -rf $(BUILDROOT_DIR)/dl
 	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
 
 buildroot-patch: buildroot-clean
-	@svn co svn://ericjarrige.homelinux.org/armadeus/trunk/software/buildroot ref/buildroot
-	@bzcat $(BUILDROOT_FILE_PATH) | tar --exclude=.svn -C ref $(TAR_OPTIONS) -
-	@mv -f ref/buildroot buildrootref
-	@$(BUILDROOT_DIR)/toolchain/patch-kernel.sh buildrootref $(PATCH_DIR) *.diff
-	@diff -purN -x .svn -x '*~' buildrootref $(BUILDROOT_DIR) > newBuildroot.diff
+	rm -rf buildroot
+	svn co svn://ericjarrige.homelinux.org/armadeus/trunk/software/buildroot buildroot
+	bzcat $(BUILDROOT_FILE_PATH) | tar -C . $(TAR_OPTIONS) -
+	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
+	touch buildroot/.unpacked
+	diff -purN -x .svn -x '*~' buildroot $(BUILDROOT_DIR) > newBuildroot.diff
 
 sourceball: buildroot-clean
 	cd ..;\
