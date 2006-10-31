@@ -31,6 +31,9 @@ PATCH_DIR=patches
 PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
 TAR_OPTIONS=--exclude=.svn -xvf 
 
+#used only by cygwin to restore the rights on some rootfs directories
+BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/root
+
 all: buildroot
 
 help:
@@ -65,6 +68,14 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH) $(PATCH_DIR)/*.diff
 	touch $(BUILDROOT_DIR)/.unpacked
 
 buildroot: $(BUILDROOT_DIR)/.unpacked
+	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+		if [ -e "$(BUILDROOT_ROOT_DIR)/etc" ] ; then \
+			chmod 777 $(BUILDROOT_DIR)/build_arm_nofpu/root/etc ; \
+		fi; \
+		if [ -e "$(BUILDROOT_ROOT_DIR)/etc" ] ; then \
+			chmod 777 $(BUILDROOT_DIR)/build_arm_nofpu/root/dev ; \
+		fi; \
+	fi;
 	@$(MAKE) -C $(BUILDROOT_DIR)
 
 menuconfig: $(BUILDROOT_DIR)/.unpacked
