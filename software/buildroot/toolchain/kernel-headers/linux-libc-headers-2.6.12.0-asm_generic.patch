@@ -1,7 +1,7 @@
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/4level-fixup.h linux/include/asm-generic/4level-fixup.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/4level-fixup.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/4level-fixup.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,38 @@
+diff -purN orig_linux/include/asm-generic/4level-fixup.h linux/include/asm-generic/4level-fixup.h
+--- orig_linux/include/asm-generic/4level-fixup.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/4level-fixup.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,33 @@
 +#ifndef _4LEVEL_FIXUP_H
 +#define _4LEVEL_FIXUP_H
 +
@@ -14,14 +14,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#define pud_t				pgd_t
 +
-+#define pmd_alloc(mm, pud, address)			\
-+({	pmd_t *ret;					\
-+	if (pgd_none(*pud))				\
-+ 		ret = __pmd_alloc(mm, pud, address);	\
-+ 	else						\
-+		ret = pmd_offset(pud, address);		\
-+ 	ret;						\
-+})
++#define pmd_alloc(mm, pud, address) \
++	((unlikely(pgd_none(*(pud))) && __pmd_alloc(mm, pud, address))? \
++ 		NULL: pmd_offset(pud, address))
 +
 +#define pud_alloc(mm, pgd, address)	(pgd)
 +#define pud_offset(pgd, start)		(pgd)
@@ -40,10 +35,950 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define pud_addr_end(addr, end)		(end)
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/bitops.h linux/include/asm-generic/bitops.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/bitops.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/bitops.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,81 @@
+diff -purN orig_linux/include/asm-generic/Kbuild linux/include/asm-generic/Kbuild
+--- orig_linux/include/asm-generic/Kbuild	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/Kbuild	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,12 @@
++header-y += atomic.h
++header-y += errno-base.h
++header-y += errno.h
++header-y += fcntl.h
++header-y += ioctl.h
++header-y += ipc.h
++header-y += mman.h
++header-y += signal.h
++header-y += statfs.h
++
++unifdef-y += resource.h
++unifdef-y += siginfo.h
+diff -purN orig_linux/include/asm-generic/Kbuild.asm linux/include/asm-generic/Kbuild.asm
+--- orig_linux/include/asm-generic/Kbuild.asm	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/Kbuild.asm	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,34 @@
++unifdef-y += a.out.h
++unifdef-y += auxvec.h
++unifdef-y += byteorder.h
++unifdef-y += errno.h
++unifdef-y += fcntl.h
++unifdef-y += ioctl.h
++unifdef-y += ioctls.h
++unifdef-y += ipcbuf.h
++unifdef-y += mman.h
++unifdef-y += msgbuf.h
++unifdef-y += param.h
++unifdef-y += poll.h
++unifdef-y += posix_types.h
++unifdef-y += ptrace.h
++unifdef-y += resource.h
++unifdef-y += sembuf.h
++unifdef-y += shmbuf.h
++unifdef-y += sigcontext.h
++unifdef-y += siginfo.h
++unifdef-y += signal.h
++unifdef-y += socket.h
++unifdef-y += sockios.h
++unifdef-y += stat.h
++unifdef-y += statfs.h
++unifdef-y += termbits.h
++unifdef-y += termios.h
++unifdef-y += types.h
++unifdef-y += unistd.h
++unifdef-y += user.h
++
++# These probably shouldn't be exported
++unifdef-y += shmparam.h
++unifdef-y += elf.h
++unifdef-y += page.h
+diff -purN orig_linux/include/asm-generic/atomic.h linux/include/asm-generic/atomic.h
+--- orig_linux/include/asm-generic/atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/atomic.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,117 @@
++#ifndef _ASM_GENERIC_ATOMIC_H
++#define _ASM_GENERIC_ATOMIC_H
++/*
++ * Copyright (C) 2005 Silicon Graphics, Inc.
++ *	Christoph Lameter <clameter@sgi.com>
++ *
++ * Allows to provide arch independent atomic definitions without the need to
++ * edit all arch specific atomic.h files.
++ */
++
++#include <asm/types.h>
++
++/*
++ * Suppport for atomic_long_t
++ *
++ * Casts for parameters are avoided for existing atomic functions in order to
++ * avoid issues with cast-as-lval under gcc 4.x and other limitations that the
++ * macros of a platform may have.
++ */
++
++#if BITS_PER_LONG == 64
++
++typedef atomic64_t atomic_long_t;
++
++#define ATOMIC_LONG_INIT(i)	ATOMIC64_INIT(i)
++
++static inline long atomic_long_read(atomic_long_t *l)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	return (long)atomic64_read(v);
++}
++
++static inline void atomic_long_set(atomic_long_t *l, long i)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	atomic64_set(v, i);
++}
++
++static inline void atomic_long_inc(atomic_long_t *l)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	atomic64_inc(v);
++}
++
++static inline void atomic_long_dec(atomic_long_t *l)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	atomic64_dec(v);
++}
++
++static inline void atomic_long_add(long i, atomic_long_t *l)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	atomic64_add(i, v);
++}
++
++static inline void atomic_long_sub(long i, atomic_long_t *l)
++{
++	atomic64_t *v = (atomic64_t *)l;
++
++	atomic64_sub(i, v);
++}
++
++#else
++
++typedef atomic_t atomic_long_t;
++
++#define ATOMIC_LONG_INIT(i)	ATOMIC_INIT(i)
++static inline long atomic_long_read(atomic_long_t *l)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	return (long)atomic_read(v);
++}
++
++static inline void atomic_long_set(atomic_long_t *l, long i)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	atomic_set(v, i);
++}
++
++static inline void atomic_long_inc(atomic_long_t *l)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	atomic_inc(v);
++}
++
++static inline void atomic_long_dec(atomic_long_t *l)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	atomic_dec(v);
++}
++
++static inline void atomic_long_add(long i, atomic_long_t *l)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	atomic_add(i, v);
++}
++
++static inline void atomic_long_sub(long i, atomic_long_t *l)
++{
++	atomic_t *v = (atomic_t *)l;
++
++	atomic_sub(i, v);
++}
++
++#endif
++#endif
+diff -purN orig_linux/include/asm-generic/audit_change_attr.h linux/include/asm-generic/audit_change_attr.h
+--- orig_linux/include/asm-generic/audit_change_attr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/audit_change_attr.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,18 @@
++__NR_chmod,
++__NR_fchmod,
++__NR_chown,
++__NR_fchown,
++__NR_lchown,
++__NR_setxattr,
++__NR_lsetxattr,
++__NR_fsetxattr,
++__NR_removexattr,
++__NR_lremovexattr,
++__NR_fremovexattr,
++__NR_fchownat,
++__NR_fchmodat,
++#ifdef __NR_chown32
++__NR_chown32,
++__NR_fchown32,
++__NR_lchown32,
++#endif
+diff -purN orig_linux/include/asm-generic/audit_dir_write.h linux/include/asm-generic/audit_dir_write.h
+--- orig_linux/include/asm-generic/audit_dir_write.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/audit_dir_write.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,14 @@
++__NR_rename,
++__NR_mkdir,
++__NR_rmdir,
++__NR_creat,
++__NR_link,
++__NR_unlink,
++__NR_symlink,
++__NR_mknod,
++__NR_mkdirat,
++__NR_mknodat,
++__NR_unlinkat,
++__NR_renameat,
++__NR_linkat,
++__NR_symlinkat,
+diff -purN orig_linux/include/asm-generic/audit_read.h linux/include/asm-generic/audit_read.h
+--- orig_linux/include/asm-generic/audit_read.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/audit_read.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,8 @@
++__NR_readlink,
++__NR_quotactl,
++__NR_listxattr,
++__NR_llistxattr,
++__NR_flistxattr,
++__NR_getxattr,
++__NR_lgetxattr,
++__NR_fgetxattr,
+diff -purN orig_linux/include/asm-generic/audit_write.h linux/include/asm-generic/audit_write.h
+--- orig_linux/include/asm-generic/audit_write.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/audit_write.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,11 @@
++#include <asm-generic/audit_dir_write.h>
++__NR_acct,
++__NR_swapon,
++__NR_quotactl,
++__NR_truncate,
++#ifdef __NR_truncate64
++__NR_truncate64,
++#endif
++#ifdef __NR_bind
++__NR_bind,		/* bind can affect fs object only in one way... */
++#endif
+diff -purN orig_linux/include/asm-generic/bitops/__ffs.h linux/include/asm-generic/bitops/__ffs.h
+--- orig_linux/include/asm-generic/bitops/__ffs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/__ffs.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,43 @@
++#ifndef _ASM_GENERIC_BITOPS___FFS_H_
++#define _ASM_GENERIC_BITOPS___FFS_H_
++
++#include <asm/types.h>
++
++/**
++ * __ffs - find first bit in word.
++ * @word: The word to search
++ *
++ * Undefined if no bit exists, so code should check against 0 first.
++ */
++static inline unsigned long __ffs(unsigned long word)
++{
++	int num = 0;
++
++#if BITS_PER_LONG == 64
++	if ((word & 0xffffffff) == 0) {
++		num += 32;
++		word >>= 32;
++	}
++#endif
++	if ((word & 0xffff) == 0) {
++		num += 16;
++		word >>= 16;
++	}
++	if ((word & 0xff) == 0) {
++		num += 8;
++		word >>= 8;
++	}
++	if ((word & 0xf) == 0) {
++		num += 4;
++		word >>= 4;
++	}
++	if ((word & 0x3) == 0) {
++		num += 2;
++		word >>= 2;
++	}
++	if ((word & 0x1) == 0)
++		num += 1;
++	return num;
++}
++
++#endif /* _ASM_GENERIC_BITOPS___FFS_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/atomic.h linux/include/asm-generic/bitops/atomic.h
+--- orig_linux/include/asm-generic/bitops/atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/atomic.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,191 @@
++#ifndef _ASM_GENERIC_BITOPS_ATOMIC_H_
++#define _ASM_GENERIC_BITOPS_ATOMIC_H_
++
++#include <asm/types.h>
++
++#define BITOP_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
++#define BITOP_WORD(nr)		((nr) / BITS_PER_LONG)
++
++#ifdef CONFIG_SMP
++#include <asm/spinlock.h>
++#include <asm/cache.h>		/* we use L1_CACHE_BYTES */
++
++/* Use an array of spinlocks for our atomic_ts.
++ * Hash function to index into a different SPINLOCK.
++ * Since "a" is usually an address, use one spinlock per cacheline.
++ */
++#  define ATOMIC_HASH_SIZE 4
++#  define ATOMIC_HASH(a) (&(__atomic_hash[ (((unsigned long) a)/L1_CACHE_BYTES) & (ATOMIC_HASH_SIZE-1) ]))
++
++extern raw_spinlock_t __atomic_hash[ATOMIC_HASH_SIZE] __lock_aligned;
++
++/* Can't use raw_spin_lock_irq because of #include problems, so
++ * this is the substitute */
++#define _atomic_spin_lock_irqsave(l,f) do {	\
++	raw_spinlock_t *s = ATOMIC_HASH(l);	\
++	local_irq_save(f);			\
++	__raw_spin_lock(s);			\
++} while(0)
++
++#define _atomic_spin_unlock_irqrestore(l,f) do {	\
++	raw_spinlock_t *s = ATOMIC_HASH(l);		\
++	__raw_spin_unlock(s);				\
++	local_irq_restore(f);				\
++} while(0)
++
++
++#else
++#  define _atomic_spin_lock_irqsave(l,f) do { local_irq_save(f); } while (0)
++#  define _atomic_spin_unlock_irqrestore(l,f) do { local_irq_restore(f); } while (0)
++#endif
++
++/*
++ * NMI events can occur at any time, including when interrupts have been
++ * disabled by *_irqsave().  So you can get NMI events occurring while a
++ * *_bit function is holding a spin lock.  If the NMI handler also wants
++ * to do bit manipulation (and they do) then you can get a deadlock
++ * between the original caller of *_bit() and the NMI handler.
++ *
++ * by Keith Owens
++ */
++
++/**
++ * set_bit - Atomically set a bit in memory
++ * @nr: the bit to set
++ * @addr: the address to start counting from
++ *
++ * This function is atomic and may not be reordered.  See __set_bit()
++ * if you do not require the atomic guarantees.
++ *
++ * Note: there are no guarantees that this function will not be reordered
++ * on non x86 architectures, so if you are writting portable code,
++ * make sure not to rely on its reordering guarantees.
++ *
++ * Note that @nr may be almost arbitrarily large; this function is not
++ * restricted to acting on a single-word quantity.
++ */
++static inline void set_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	*p  |= mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++}
++
++/**
++ * clear_bit - Clears a bit in memory
++ * @nr: Bit to clear
++ * @addr: Address to start counting from
++ *
++ * clear_bit() is atomic and may not be reordered.  However, it does
++ * not contain a memory barrier, so if it is used for locking purposes,
++ * you should call smp_mb__before_clear_bit() and/or smp_mb__after_clear_bit()
++ * in order to ensure changes are visible on other processors.
++ */
++static inline void clear_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	*p &= ~mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++}
++
++/**
++ * change_bit - Toggle a bit in memory
++ * @nr: Bit to change
++ * @addr: Address to start counting from
++ *
++ * change_bit() is atomic and may not be reordered. It may be
++ * reordered on other architectures than x86.
++ * Note that @nr may be almost arbitrarily large; this function is not
++ * restricted to acting on a single-word quantity.
++ */
++static inline void change_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	*p ^= mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++}
++
++/**
++ * test_and_set_bit - Set a bit and return its old value
++ * @nr: Bit to set
++ * @addr: Address to count from
++ *
++ * This operation is atomic and cannot be reordered.
++ * It may be reordered on other architectures than x86.
++ * It also implies a memory barrier.
++ */
++static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old;
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	old = *p;
++	*p = old | mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++
++	return (old & mask) != 0;
++}
++
++/**
++ * test_and_clear_bit - Clear a bit and return its old value
++ * @nr: Bit to clear
++ * @addr: Address to count from
++ *
++ * This operation is atomic and cannot be reordered.
++ * It can be reorderdered on other architectures other than x86.
++ * It also implies a memory barrier.
++ */
++static inline int test_and_clear_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old;
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	old = *p;
++	*p = old & ~mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++
++	return (old & mask) != 0;
++}
++
++/**
++ * test_and_change_bit - Change a bit and return its old value
++ * @nr: Bit to change
++ * @addr: Address to count from
++ *
++ * This operation is atomic and cannot be reordered.
++ * It also implies a memory barrier.
++ */
++static inline int test_and_change_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old;
++	unsigned long flags;
++
++	_atomic_spin_lock_irqsave(p, flags);
++	old = *p;
++	*p = old ^ mask;
++	_atomic_spin_unlock_irqrestore(p, flags);
++
++	return (old & mask) != 0;
++}
++
++#endif /* _ASM_GENERIC_BITOPS_ATOMIC_H */
+diff -purN orig_linux/include/asm-generic/bitops/ext2-atomic.h linux/include/asm-generic/bitops/ext2-atomic.h
+--- orig_linux/include/asm-generic/bitops/ext2-atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/ext2-atomic.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,22 @@
++#ifndef _ASM_GENERIC_BITOPS_EXT2_ATOMIC_H_
++#define _ASM_GENERIC_BITOPS_EXT2_ATOMIC_H_
++
++#define ext2_set_bit_atomic(lock, nr, addr)		\
++	({						\
++		int ret;				\
++		spin_lock(lock);			\
++		ret = ext2_set_bit((nr), (unsigned long *)(addr)); \
++		spin_unlock(lock);			\
++		ret;					\
++	})
++
++#define ext2_clear_bit_atomic(lock, nr, addr)		\
++	({						\
++		int ret;				\
++		spin_lock(lock);			\
++		ret = ext2_clear_bit((nr), (unsigned long *)(addr)); \
++		spin_unlock(lock);			\
++		ret;					\
++	})
++
++#endif /* _ASM_GENERIC_BITOPS_EXT2_ATOMIC_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/ext2-non-atomic.h linux/include/asm-generic/bitops/ext2-non-atomic.h
+--- orig_linux/include/asm-generic/bitops/ext2-non-atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/ext2-non-atomic.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,18 @@
++#ifndef _ASM_GENERIC_BITOPS_EXT2_NON_ATOMIC_H_
++#define _ASM_GENERIC_BITOPS_EXT2_NON_ATOMIC_H_
++
++#include <asm-generic/bitops/le.h>
++
++#define ext2_set_bit(nr,addr)	\
++	generic___test_and_set_le_bit((nr),(unsigned long *)(addr))
++#define ext2_clear_bit(nr,addr)	\
++	generic___test_and_clear_le_bit((nr),(unsigned long *)(addr))
++
++#define ext2_test_bit(nr,addr)	\
++	generic_test_le_bit((nr),(unsigned long *)(addr))
++#define ext2_find_first_zero_bit(addr, size) \
++	generic_find_first_zero_le_bit((unsigned long *)(addr), (size))
++#define ext2_find_next_zero_bit(addr, size, off) \
++	generic_find_next_zero_le_bit((unsigned long *)(addr), (size), (off))
++
++#endif /* _ASM_GENERIC_BITOPS_EXT2_NON_ATOMIC_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/ffs.h linux/include/asm-generic/bitops/ffs.h
+--- orig_linux/include/asm-generic/bitops/ffs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/ffs.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,41 @@
++#ifndef _ASM_GENERIC_BITOPS_FFS_H_
++#define _ASM_GENERIC_BITOPS_FFS_H_
++
++/**
++ * ffs - find first bit set
++ * @x: the word to search
++ *
++ * This is defined the same way as
++ * the libc and compiler builtin ffs routines, therefore
++ * differs in spirit from the above ffz (man ffs).
++ */
++static inline int ffs(int x)
++{
++	int r = 1;
++
++	if (!x)
++		return 0;
++	if (!(x & 0xffff)) {
++		x >>= 16;
++		r += 16;
++	}
++	if (!(x & 0xff)) {
++		x >>= 8;
++		r += 8;
++	}
++	if (!(x & 0xf)) {
++		x >>= 4;
++		r += 4;
++	}
++	if (!(x & 3)) {
++		x >>= 2;
++		r += 2;
++	}
++	if (!(x & 1)) {
++		x >>= 1;
++		r += 1;
++	}
++	return r;
++}
++
++#endif /* _ASM_GENERIC_BITOPS_FFS_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/ffz.h linux/include/asm-generic/bitops/ffz.h
+--- orig_linux/include/asm-generic/bitops/ffz.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/ffz.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,12 @@
++#ifndef _ASM_GENERIC_BITOPS_FFZ_H_
++#define _ASM_GENERIC_BITOPS_FFZ_H_
++
++/*
++ * ffz - find first zero in word.
++ * @word: The word to search
++ *
++ * Undefined if no zero exists, so code should check against ~0UL first.
++ */
++#define ffz(x)  __ffs(~(x))
++
++#endif /* _ASM_GENERIC_BITOPS_FFZ_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/find.h linux/include/asm-generic/bitops/find.h
+--- orig_linux/include/asm-generic/bitops/find.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/find.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,13 @@
++#ifndef _ASM_GENERIC_BITOPS_FIND_H_
++#define _ASM_GENERIC_BITOPS_FIND_H_
++
++extern unsigned long find_next_bit(const unsigned long *addr, unsigned long
++		size, unsigned long offset);
++
++extern unsigned long find_next_zero_bit(const unsigned long *addr, unsigned
++		long size, unsigned long offset);
++
++#define find_first_bit(addr, size) find_next_bit((addr), (size), 0)
++#define find_first_zero_bit(addr, size) find_next_zero_bit((addr), (size), 0)
++
++#endif /*_ASM_GENERIC_BITOPS_FIND_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/fls.h linux/include/asm-generic/bitops/fls.h
+--- orig_linux/include/asm-generic/bitops/fls.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/fls.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,41 @@
++#ifndef _ASM_GENERIC_BITOPS_FLS_H_
++#define _ASM_GENERIC_BITOPS_FLS_H_
++
++/**
++ * fls - find last (most-significant) bit set
++ * @x: the word to search
++ *
++ * This is defined the same way as ffs.
++ * Note fls(0) = 0, fls(1) = 1, fls(0x80000000) = 32.
++ */
++
++static inline int fls(int x)
++{
++	int r = 32;
++
++	if (!x)
++		return 0;
++	if (!(x & 0xffff0000u)) {
++		x <<= 16;
++		r -= 16;
++	}
++	if (!(x & 0xff000000u)) {
++		x <<= 8;
++		r -= 8;
++	}
++	if (!(x & 0xf0000000u)) {
++		x <<= 4;
++		r -= 4;
++	}
++	if (!(x & 0xc0000000u)) {
++		x <<= 2;
++		r -= 2;
++	}
++	if (!(x & 0x80000000u)) {
++		x <<= 1;
++		r -= 1;
++	}
++	return r;
++}
++
++#endif /* _ASM_GENERIC_BITOPS_FLS_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/fls64.h linux/include/asm-generic/bitops/fls64.h
+--- orig_linux/include/asm-generic/bitops/fls64.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/fls64.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,14 @@
++#ifndef _ASM_GENERIC_BITOPS_FLS64_H_
++#define _ASM_GENERIC_BITOPS_FLS64_H_
++
++#include <asm/types.h>
++
++static inline int fls64(__u64 x)
++{
++	__u32 h = x >> 32;
++	if (h)
++		return fls(h) + 32;
++	return fls(x);
++}
++
++#endif /* _ASM_GENERIC_BITOPS_FLS64_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/hweight.h linux/include/asm-generic/bitops/hweight.h
+--- orig_linux/include/asm-generic/bitops/hweight.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/hweight.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,11 @@
++#ifndef _ASM_GENERIC_BITOPS_HWEIGHT_H_
++#define _ASM_GENERIC_BITOPS_HWEIGHT_H_
++
++#include <asm/types.h>
++
++extern unsigned int hweight32(unsigned int w);
++extern unsigned int hweight16(unsigned int w);
++extern unsigned int hweight8(unsigned int w);
++extern unsigned long hweight64(__u64 w);
++
++#endif /* _ASM_GENERIC_BITOPS_HWEIGHT_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/le.h linux/include/asm-generic/bitops/le.h
+--- orig_linux/include/asm-generic/bitops/le.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/le.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,53 @@
++#ifndef _ASM_GENERIC_BITOPS_LE_H_
++#define _ASM_GENERIC_BITOPS_LE_H_
++
++#include <asm/types.h>
++#include <asm/byteorder.h>
++
++#define BITOP_WORD(nr)		((nr) / BITS_PER_LONG)
++#define BITOP_LE_SWIZZLE	((BITS_PER_LONG-1) & ~0x7)
++
++#if defined(__LITTLE_ENDIAN)
++
++#define generic_test_le_bit(nr, addr) test_bit(nr, addr)
++#define generic___set_le_bit(nr, addr) __set_bit(nr, addr)
++#define generic___clear_le_bit(nr, addr) __clear_bit(nr, addr)
++
++#define generic_test_and_set_le_bit(nr, addr) test_and_set_bit(nr, addr)
++#define generic_test_and_clear_le_bit(nr, addr) test_and_clear_bit(nr, addr)
++
++#define generic___test_and_set_le_bit(nr, addr) __test_and_set_bit(nr, addr)
++#define generic___test_and_clear_le_bit(nr, addr) __test_and_clear_bit(nr, addr)
++
++#define generic_find_next_zero_le_bit(addr, size, offset) find_next_zero_bit(addr, size, offset)
++
++#elif defined(__BIG_ENDIAN)
++
++#define generic_test_le_bit(nr, addr) \
++	test_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++#define generic___set_le_bit(nr, addr) \
++	__set_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++#define generic___clear_le_bit(nr, addr) \
++	__clear_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++
++#define generic_test_and_set_le_bit(nr, addr) \
++	test_and_set_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++#define generic_test_and_clear_le_bit(nr, addr) \
++	test_and_clear_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++
++#define generic___test_and_set_le_bit(nr, addr) \
++	__test_and_set_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++#define generic___test_and_clear_le_bit(nr, addr) \
++	__test_and_clear_bit((nr) ^ BITOP_LE_SWIZZLE, (addr))
++
++extern unsigned long generic_find_next_zero_le_bit(const unsigned long *addr,
++		unsigned long size, unsigned long offset);
++
++#else
++#error "Please fix <asm/byteorder.h>"
++#endif
++
++#define generic_find_first_zero_le_bit(addr, size) \
++        generic_find_next_zero_le_bit((addr), (size), 0)
++
++#endif /* _ASM_GENERIC_BITOPS_LE_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/minix-le.h linux/include/asm-generic/bitops/minix-le.h
+--- orig_linux/include/asm-generic/bitops/minix-le.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/minix-le.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,17 @@
++#ifndef _ASM_GENERIC_BITOPS_MINIX_LE_H_
++#define _ASM_GENERIC_BITOPS_MINIX_LE_H_
++
++#include <asm-generic/bitops/le.h>
++
++#define minix_test_and_set_bit(nr,addr)	\
++	generic___test_and_set_le_bit((nr),(unsigned long *)(addr))
++#define minix_set_bit(nr,addr)		\
++	generic___set_le_bit((nr),(unsigned long *)(addr))
++#define minix_test_and_clear_bit(nr,addr) \
++	generic___test_and_clear_le_bit((nr),(unsigned long *)(addr))
++#define minix_test_bit(nr,addr)		\
++	generic_test_le_bit((nr),(unsigned long *)(addr))
++#define minix_find_first_zero_bit(addr,size) \
++	generic_find_first_zero_le_bit((unsigned long *)(addr),(size))
++
++#endif /* _ASM_GENERIC_BITOPS_MINIX_LE_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/minix.h linux/include/asm-generic/bitops/minix.h
+--- orig_linux/include/asm-generic/bitops/minix.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/minix.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,15 @@
++#ifndef _ASM_GENERIC_BITOPS_MINIX_H_
++#define _ASM_GENERIC_BITOPS_MINIX_H_
++
++#define minix_test_and_set_bit(nr,addr)	\
++	__test_and_set_bit((nr),(unsigned long *)(addr))
++#define minix_set_bit(nr,addr)		\
++	__set_bit((nr),(unsigned long *)(addr))
++#define minix_test_and_clear_bit(nr,addr) \
++	__test_and_clear_bit((nr),(unsigned long *)(addr))
++#define minix_test_bit(nr,addr)		\
++	test_bit((nr),(unsigned long *)(addr))
++#define minix_find_first_zero_bit(addr,size) \
++	find_first_zero_bit((unsigned long *)(addr),(size))
++
++#endif /* _ASM_GENERIC_BITOPS_MINIX_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/non-atomic.h linux/include/asm-generic/bitops/non-atomic.h
+--- orig_linux/include/asm-generic/bitops/non-atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/non-atomic.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,111 @@
++#ifndef _ASM_GENERIC_BITOPS_NON_ATOMIC_H_
++#define _ASM_GENERIC_BITOPS_NON_ATOMIC_H_
++
++#include <asm/types.h>
++
++#define BITOP_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
++#define BITOP_WORD(nr)		((nr) / BITS_PER_LONG)
++
++/**
++ * __set_bit - Set a bit in memory
++ * @nr: the bit to set
++ * @addr: the address to start counting from
++ *
++ * Unlike set_bit(), this function is non-atomic and may be reordered.
++ * If it's called on the same region of memory simultaneously, the effect
++ * may be that only one operation succeeds.
++ */
++static inline void __set_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++
++	*p  |= mask;
++}
++
++static inline void __clear_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++
++	*p &= ~mask;
++}
++
++/**
++ * __change_bit - Toggle a bit in memory
++ * @nr: the bit to change
++ * @addr: the address to start counting from
++ *
++ * Unlike change_bit(), this function is non-atomic and may be reordered.
++ * If it's called on the same region of memory simultaneously, the effect
++ * may be that only one operation succeeds.
++ */
++static inline void __change_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++
++	*p ^= mask;
++}
++
++/**
++ * __test_and_set_bit - Set a bit and return its old value
++ * @nr: Bit to set
++ * @addr: Address to count from
++ *
++ * This operation is non-atomic and can be reordered.
++ * If two examples of this operation race, one can appear to succeed
++ * but actually fail.  You must protect multiple accesses with a lock.
++ */
++static inline int __test_and_set_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old = *p;
++
++	*p = old | mask;
++	return (old & mask) != 0;
++}
++
++/**
++ * __test_and_clear_bit - Clear a bit and return its old value
++ * @nr: Bit to clear
++ * @addr: Address to count from
++ *
++ * This operation is non-atomic and can be reordered.
++ * If two examples of this operation race, one can appear to succeed
++ * but actually fail.  You must protect multiple accesses with a lock.
++ */
++static inline int __test_and_clear_bit(int nr, volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old = *p;
++
++	*p = old & ~mask;
++	return (old & mask) != 0;
++}
++
++/* WARNING: non atomic and it can be reordered! */
++static inline int __test_and_change_bit(int nr,
++					    volatile unsigned long *addr)
++{
++	unsigned long mask = BITOP_MASK(nr);
++	unsigned long *p = ((unsigned long *)addr) + BITOP_WORD(nr);
++	unsigned long old = *p;
++
++	*p = old ^ mask;
++	return (old & mask) != 0;
++}
++
++/**
++ * test_bit - Determine whether a bit is set
++ * @nr: bit number to test
++ * @addr: Address to start counting from
++ */
++static inline int test_bit(int nr, const volatile unsigned long *addr)
++{
++	return 1UL & (addr[BITOP_WORD(nr)] >> (nr & (BITS_PER_LONG-1)));
++}
++
++#endif /* _ASM_GENERIC_BITOPS_NON_ATOMIC_H_ */
+diff -purN orig_linux/include/asm-generic/bitops/sched.h linux/include/asm-generic/bitops/sched.h
+--- orig_linux/include/asm-generic/bitops/sched.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops/sched.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,36 @@
++#ifndef _ASM_GENERIC_BITOPS_SCHED_H_
++#define _ASM_GENERIC_BITOPS_SCHED_H_
++
++#include <linux/compiler.h>	/* unlikely() */
++#include <asm/types.h>
++
++/*
++ * Every architecture must define this function. It's the fastest
++ * way of searching a 140-bit bitmap where the first 100 bits are
++ * unlikely to be set. It's guaranteed that at least one of the 140
++ * bits is cleared.
++ */
++static inline int sched_find_first_bit(const unsigned long *b)
++{
++#if BITS_PER_LONG == 64
++	if (unlikely(b[0]))
++		return __ffs(b[0]);
++	if (unlikely(b[1]))
++		return __ffs(b[1]) + 64;
++	return __ffs(b[2]) + 128;
++#elif BITS_PER_LONG == 32
++	if (unlikely(b[0]))
++		return __ffs(b[0]);
++	if (unlikely(b[1]))
++		return __ffs(b[1]) + 32;
++	if (unlikely(b[2]))
++		return __ffs(b[2]) + 64;
++	if (b[3])
++		return __ffs(b[3]) + 96;
++	return __ffs(b[4]) + 128;
++#else
++#error BITS_PER_LONG not defined
++#endif
++}
++
++#endif /* _ASM_GENERIC_BITOPS_SCHED_H_ */
+diff -purN orig_linux/include/asm-generic/bitops.h linux/include/asm-generic/bitops.h
+--- orig_linux/include/asm-generic/bitops.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bitops.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,32 @@
 +#ifndef _ASM_GENERIC_BITOPS_H_
 +#define _ASM_GENERIC_BITOPS_H_
 +
@@ -51,94 +986,44 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 + * For the benefit of those who are trying to port Linux to another
 + * architecture, here are some C-language equivalents.  You should
 + * recode these in the native assembly language, if at all possible.
-+ * To guarantee atomicity, these routines call cli() and sti() to
-+ * disable interrupts while they operate.  (You have to provide inline
-+ * routines to cli() and sti().)
-+ *
-+ * Also note, these routines assume that you have 32 bit longs.
-+ * You will have to change this if you are trying to port Linux to the
-+ * Alpha architecture or to a Cray.  :-)
 + * 
 + * C language equivalents written by Theodore Ts'o, 9/26/92
 + */
 +
-+extern __inline__ int set_bit(int nr,long * addr)
-+{
-+	int	mask, retval;
-+
-+	addr += nr >> 5;
-+	mask = 1 << (nr & 0x1f);
-+	cli();
-+	retval = (mask & *addr) != 0;
-+	*addr |= mask;
-+	sti();
-+	return retval;
-+}
-+
-+extern __inline__ int clear_bit(int nr, long * addr)
-+{
-+	int	mask, retval;
-+
-+	addr += nr >> 5;
-+	mask = 1 << (nr & 0x1f);
-+	cli();
-+	retval = (mask & *addr) != 0;
-+	*addr &= ~mask;
-+	sti();
-+	return retval;
-+}
-+
-+extern __inline__ int test_bit(int nr, const unsigned long * addr)
-+{
-+	int	mask;
-+
-+	addr += nr >> 5;
-+	mask = 1 << (nr & 0x1f);
-+	return ((mask & *addr) != 0);
-+}
-+
-+/*
-+ * fls: find last bit set.
-+ */
-+
-+#define fls(x) generic_fls(x)
++#include <asm-generic/bitops/atomic.h>
++#include <asm-generic/bitops/non-atomic.h>
++#include <asm-generic/bitops/__ffs.h>
++#include <asm-generic/bitops/ffz.h>
++#include <asm-generic/bitops/fls.h>
++#include <asm-generic/bitops/fls64.h>
++#include <asm-generic/bitops/find.h>
 +
 +#ifdef __KERNEL__
 +
-+/*
-+ * ffs: find first bit set. This is defined the same way as
-+ * the libc and compiler builtin ffs routines, therefore
-+ * differs in spirit from the above ffz (man ffs).
-+ */
++#include <asm-generic/bitops/sched.h>
++#include <asm-generic/bitops/ffs.h>
++#include <asm-generic/bitops/hweight.h>
 +
-+#define ffs(x) generic_ffs(x)
-+
-+/*
-+ * hweightN: returns the hamming weight (i.e. the number
-+ * of bits set) of a N-bit word
-+ */
-+
-+#define hweight32(x) generic_hweight32(x)
-+#define hweight16(x) generic_hweight16(x)
-+#define hweight8(x) generic_hweight8(x)
++#include <asm-generic/bitops/ext2-non-atomic.h>
++#include <asm-generic/bitops/ext2-atomic.h>
++#include <asm-generic/bitops/minix.h>
 +
 +#endif /* __KERNEL__ */
 +
 +#endif /* _ASM_GENERIC_BITOPS_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/bug.h linux/include/asm-generic/bug.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/bug.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/bug.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,42 @@
+diff -purN orig_linux/include/asm-generic/bug.h linux/include/asm-generic/bug.h
+--- orig_linux/include/asm-generic/bug.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/bug.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,60 @@
 +#ifndef _ASM_GENERIC_BUG_H
 +#define _ASM_GENERIC_BUG_H
 +
 +#include <linux/compiler.h>
-+#include <linux/config.h>
 +
 +#ifdef CONFIG_BUG
 +#ifndef HAVE_ARCH_BUG
 +#define BUG() do { \
-+	printk("kernel BUG at %s:%d!\n", __FILE__, __LINE__); \
++	printk("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __FUNCTION__); \
 +	panic("BUG!"); \
 +} while (0)
 +#endif
@@ -150,7 +1035,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#ifndef HAVE_ARCH_WARN_ON
 +#define WARN_ON(condition) do { \
 +	if (unlikely((condition)!=0)) { \
-+		printk("Badness in %s at %s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
++		printk("BUG: warning at %s:%d/%s()\n", __FILE__, __LINE__, __FUNCTION__); \
 +		dump_stack(); \
 +	} \
 +} while (0)
@@ -170,11 +1055,30 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif
 +#endif
 +
++#define WARN_ON_ONCE(condition)				\
++({							\
++	static int __warn_once = 1;			\
++	int __ret = 0;					\
++							\
++	if (unlikely((condition) && __warn_once)) {	\
++		__warn_once = 0;			\
++		WARN_ON(1);				\
++		__ret = 1;				\
++	}						\
++	__ret;						\
++})
++
++#ifdef CONFIG_SMP
++# define WARN_ON_SMP(x)			WARN_ON(x)
++#else
++# define WARN_ON_SMP(x)			do { } while (0)
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/cputime.h linux/include/asm-generic/cputime.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/cputime.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/cputime.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,66 @@
++
++#endif
+diff -purN orig_linux/include/asm-generic/cputime.h linux/include/asm-generic/cputime.h
+--- orig_linux/include/asm-generic/cputime.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/cputime.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,68 @@
 +#ifndef _ASM_GENERIC_CPUTIME_H
 +#define _ASM_GENERIC_CPUTIME_H
 +
@@ -201,7 +1105,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#define cputime64_zero (0ULL)
 +#define cputime64_add(__a, __b)		((__a) + (__b))
++#define cputime64_sub(__a, __b)		((__a) - (__b))
 +#define cputime64_to_jiffies64(__ct)	(__ct)
++#define jiffies64_to_cputime64(__jif)	(__jif)
 +#define cputime_to_cputime64(__ct)	((u64) __ct)
 +
 +
@@ -241,9 +1147,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define cputime64_to_clock_t(__ct)	jiffies_64_to_clock_t(__ct)
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/div64.h linux/include/asm-generic/div64.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/div64.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/div64.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/div64.h linux/include/asm-generic/div64.h
+--- orig_linux/include/asm-generic/div64.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/div64.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,58 @@
 +#ifndef _ASM_GENERIC_DIV64_H
 +#define _ASM_GENERIC_DIV64_H
@@ -303,9 +1209,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif /* BITS_PER_LONG */
 +
 +#endif /* _ASM_GENERIC_DIV64_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/dma-mapping-broken.h linux/include/asm-generic/dma-mapping-broken.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/dma-mapping-broken.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/dma-mapping-broken.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/dma-mapping-broken.h linux/include/asm-generic/dma-mapping-broken.h
+--- orig_linux/include/asm-generic/dma-mapping-broken.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/dma-mapping-broken.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,22 @@
 +#ifndef _ASM_GENERIC_DMA_MAPPING_H
 +#define _ASM_GENERIC_DMA_MAPPING_H
@@ -315,7 +1221,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +static inline void *
 +dma_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		   int flag)
++		   gfp_t flag)
 +{
 +	BUG();
 +	return NULL;
@@ -329,10 +1235,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +}
 +
 +#endif /* _ASM_GENERIC_DMA_MAPPING_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/dma-mapping.h linux/include/asm-generic/dma-mapping.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/dma-mapping.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/dma-mapping.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,309 @@
+diff -purN orig_linux/include/asm-generic/dma-mapping.h linux/include/asm-generic/dma-mapping.h
+--- orig_linux/include/asm-generic/dma-mapping.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/dma-mapping.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,308 @@
 +/* Copyright (C) 2002 by James.Bottomley@HansenPartnership.com 
 + *
 + * Implements the generic device dma API via the existing pci_ one
@@ -342,7 +1248,6 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#ifndef _ASM_GENERIC_DMA_MAPPING_H
 +#define _ASM_GENERIC_DMA_MAPPING_H
 +
-+#include <linux/config.h>
 +
 +#ifdef CONFIG_PCI
 +
@@ -370,7 +1275,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +static inline void *
 +dma_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		   unsigned int __nocast flag)
++		   gfp_t flag)
 +{
 +	BUG_ON(dev->bus != &pci_bus_type);
 +
@@ -503,7 +1408,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +static inline void *
 +dma_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle,
-+		   unsigned int __nocast flag)
++		   gfp_t flag)
 +{
 +	BUG();
 +	return NULL;
@@ -609,7 +1514,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +{
 +	/* no easy way to get cache size on all processors, so return
 +	 * the maximum possible, to be safe */
-+	return (1 << L1_CACHE_SHIFT_MAX);
++	return (1 << INTERNODE_CACHE_SHIFT);
 +}
 +
 +static inline void
@@ -642,9 +1547,22 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#endif
 +
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/errno-base.h linux/include/asm-generic/errno-base.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/errno-base.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/errno-base.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/emergency-restart.h linux/include/asm-generic/emergency-restart.h
+--- orig_linux/include/asm-generic/emergency-restart.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/emergency-restart.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,9 @@
++#ifndef _ASM_GENERIC_EMERGENCY_RESTART_H
++#define _ASM_GENERIC_EMERGENCY_RESTART_H
++
++static inline void machine_emergency_restart(void)
++{
++	machine_restart(NULL);
++}
++
++#endif /* _ASM_GENERIC_EMERGENCY_RESTART_H */
+diff -purN orig_linux/include/asm-generic/errno-base.h linux/include/asm-generic/errno-base.h
+--- orig_linux/include/asm-generic/errno-base.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/errno-base.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,39 @@
 +#ifndef _ASM_GENERIC_ERRNO_BASE_H
 +#define _ASM_GENERIC_ERRNO_BASE_H
@@ -685,9 +1603,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define	ERANGE		34	/* Math result not representable */
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/errno.h linux/include/asm-generic/errno.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/errno.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/errno.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/errno.h linux/include/asm-generic/errno.h
+--- orig_linux/include/asm-generic/errno.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/errno.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,109 @@
 +#ifndef _ASM_GENERIC_ERRNO_H
 +#define _ASM_GENERIC_ERRNO_H
@@ -798,21 +1716,224 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define	ENOTRECOVERABLE	131	/* State not recoverable */
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/hdreg.h linux/include/asm-generic/hdreg.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/hdreg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/hdreg.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,8 @@
-+#warning <asm/hdreg.h> is obsolete, please do not use it
+diff -purN orig_linux/include/asm-generic/fcntl.h linux/include/asm-generic/fcntl.h
+--- orig_linux/include/asm-generic/fcntl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/fcntl.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,148 @@
++#ifndef _ASM_GENERIC_FCNTL_H
++#define _ASM_GENERIC_FCNTL_H
 +
-+#ifndef __ASM_GENERIC_HDREG_H
-+#define __ASM_GENERIC_HDREG_H
++#include <linux/types.h>
 +
-+typedef unsigned long ide_ioreg_t;
++/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
++   located on an ext2 file system */
++#define O_ACCMODE	00000003
++#define O_RDONLY	00000000
++#define O_WRONLY	00000001
++#define O_RDWR		00000002
++#ifndef O_CREAT
++#define O_CREAT		00000100	/* not fcntl */
++#endif
++#ifndef O_EXCL
++#define O_EXCL		00000200	/* not fcntl */
++#endif
++#ifndef O_NOCTTY
++#define O_NOCTTY	00000400	/* not fcntl */
++#endif
++#ifndef O_TRUNC
++#define O_TRUNC		00001000	/* not fcntl */
++#endif
++#ifndef O_APPEND
++#define O_APPEND	00002000
++#endif
++#ifndef O_NONBLOCK
++#define O_NONBLOCK	00004000
++#endif
++#ifndef O_SYNC
++#define O_SYNC		00010000
++#endif
++#ifndef FASYNC
++#define FASYNC		00020000	/* fcntl, for BSD compatibility */
++#endif
++#ifndef O_DIRECT
++#define O_DIRECT	00040000	/* direct disk access hint */
++#endif
++#ifndef O_LARGEFILE
++#define O_LARGEFILE	00100000
++#endif
++#ifndef O_DIRECTORY
++#define O_DIRECTORY	00200000	/* must be a directory */
++#endif
++#ifndef O_NOFOLLOW
++#define O_NOFOLLOW	00400000	/* don't follow links */
++#endif
++#ifndef O_NOATIME
++#define O_NOATIME	01000000
++#endif
++#ifndef O_NDELAY
++#define O_NDELAY	O_NONBLOCK
++#endif
 +
-+#endif /* __ASM_GENERIC_HDREG_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/ide_iops.h linux/include/asm-generic/ide_iops.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/ide_iops.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/ide_iops.h	2005-06-22 21:33:06.000000000 +0200
++#define F_DUPFD		0	/* dup */
++#define F_GETFD		1	/* get close_on_exec */
++#define F_SETFD		2	/* set/clear close_on_exec */
++#define F_GETFL		3	/* get file->f_flags */
++#define F_SETFL		4	/* set file->f_flags */
++#ifndef F_GETLK
++#define F_GETLK		5
++#define F_SETLK		6
++#define F_SETLKW	7
++#endif
++#ifndef F_SETOWN
++#define F_SETOWN	8	/* for sockets. */
++#define F_GETOWN	9	/* for sockets. */
++#endif
++#ifndef F_SETSIG
++#define F_SETSIG	10	/* for sockets. */
++#define F_GETSIG	11	/* for sockets. */
++#endif
++
++/* for F_[GET|SET]FL */
++#define FD_CLOEXEC	1	/* actually anything with low bit set goes */
++
++/* for posix fcntl() and lockf() */
++#ifndef F_RDLCK
++#define F_RDLCK		0
++#define F_WRLCK		1
++#define F_UNLCK		2
++#endif
++
++/* for old implementation of bsd flock () */
++#ifndef F_EXLCK
++#define F_EXLCK		4	/* or 3 */
++#define F_SHLCK		8	/* or 4 */
++#endif
++
++/* for leases */
++#ifndef F_INPROGRESS
++#define F_INPROGRESS	16
++#endif
++
++/* operations for bsd flock(), also used by the kernel implementation */
++#define LOCK_SH		1	/* shared lock */
++#define LOCK_EX		2	/* exclusive lock */
++#define LOCK_NB		4	/* or'd with one of the above to prevent
++				   blocking */
++#define LOCK_UN		8	/* remove lock */
++
++#define LOCK_MAND	32	/* This is a mandatory flock ... */
++#define LOCK_READ	64	/* which allows concurrent read operations */
++#define LOCK_WRITE	128	/* which allows concurrent write operations */
++#define LOCK_RW		192	/* which allows concurrent read & write ops */
++
++#define F_LINUX_SPECIFIC_BASE	1024
++
++#ifndef HAVE_ARCH_STRUCT_FLOCK
++#ifndef __ARCH_FLOCK_PAD
++#define __ARCH_FLOCK_PAD
++#endif
++
++struct flock {
++	short	l_type;
++	short	l_whence;
++	off_t	l_start;
++	off_t	l_len;
++	pid_t	l_pid;
++	__ARCH_FLOCK_PAD
++};
++#endif
++
++#ifndef CONFIG_64BIT
++
++#ifndef F_GETLK64
++#define F_GETLK64	12	/*  using 'struct flock64' */
++#define F_SETLK64	13
++#define F_SETLKW64	14
++#endif
++
++#ifndef HAVE_ARCH_STRUCT_FLOCK64
++#ifndef __ARCH_FLOCK64_PAD
++#define __ARCH_FLOCK64_PAD
++#endif
++
++struct flock64 {
++	short  l_type;
++	short  l_whence;
++	loff_t l_start;
++	loff_t l_len;
++	pid_t  l_pid;
++	__ARCH_FLOCK64_PAD
++};
++#endif
++#endif /* !CONFIG_64BIT */
++
++#endif /* _ASM_GENERIC_FCNTL_H */
+diff -purN orig_linux/include/asm-generic/futex.h linux/include/asm-generic/futex.h
+--- orig_linux/include/asm-generic/futex.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/futex.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,59 @@
++#ifndef _ASM_GENERIC_FUTEX_H
++#define _ASM_GENERIC_FUTEX_H
++
++#ifdef __KERNEL__
++
++#include <linux/futex.h>
++#include <asm/errno.h>
++#include <asm/uaccess.h>
++
++static inline int
++futex_atomic_op_inuser (int encoded_op, int __user *uaddr)
++{
++	int op = (encoded_op >> 28) & 7;
++	int cmp = (encoded_op >> 24) & 15;
++	int oparg = (encoded_op << 8) >> 20;
++	int cmparg = (encoded_op << 20) >> 20;
++	int oldval = 0, ret;
++	if (encoded_op & (FUTEX_OP_OPARG_SHIFT << 28))
++		oparg = 1 << oparg;
++
++	if (! access_ok (VERIFY_WRITE, uaddr, sizeof(int)))
++		return -EFAULT;
++
++	inc_preempt_count();
++
++	switch (op) {
++	case FUTEX_OP_SET:
++	case FUTEX_OP_ADD:
++	case FUTEX_OP_OR:
++	case FUTEX_OP_ANDN:
++	case FUTEX_OP_XOR:
++	default:
++		ret = -ENOSYS;
++	}
++
++	dec_preempt_count();
++
++	if (!ret) {
++		switch (cmp) {
++		case FUTEX_OP_CMP_EQ: ret = (oldval == cmparg); break;
++		case FUTEX_OP_CMP_NE: ret = (oldval != cmparg); break;
++		case FUTEX_OP_CMP_LT: ret = (oldval < cmparg); break;
++		case FUTEX_OP_CMP_GE: ret = (oldval >= cmparg); break;
++		case FUTEX_OP_CMP_LE: ret = (oldval <= cmparg); break;
++		case FUTEX_OP_CMP_GT: ret = (oldval > cmparg); break;
++		default: ret = -ENOSYS;
++		}
++	}
++	return ret;
++}
++
++static inline int
++futex_atomic_cmpxchg_inatomic(int __user *uaddr, int oldval, int newval)
++{
++	return -ENOSYS;
++}
++
++#endif
++#endif
+diff -purN orig_linux/include/asm-generic/ide_iops.h linux/include/asm-generic/ide_iops.h
+--- orig_linux/include/asm-generic/ide_iops.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/ide_iops.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,38 @@
 +/* Generic I/O and MEMIO string operations.  */
 +
@@ -852,9 +1973,93 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +		addr += 4;
 +	}
 +}
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/iomap.h linux/include/asm-generic/iomap.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/iomap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/iomap.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/ioctl.h linux/include/asm-generic/ioctl.h
+--- orig_linux/include/asm-generic/ioctl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/ioctl.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,80 @@
++#ifndef _ASM_GENERIC_IOCTL_H
++#define _ASM_GENERIC_IOCTL_H
++
++/* ioctl command encoding: 32 bits total, command in lower 16 bits,
++ * size of the parameter structure in the lower 14 bits of the
++ * upper 16 bits.
++ * Encoding the size of the parameter structure in the ioctl request
++ * is useful for catching programs compiled with old versions
++ * and to avoid overwriting user space outside the user buffer area.
++ * The highest 2 bits are reserved for indicating the ``access mode''.
++ * NOTE: This limits the max parameter size to 16kB -1 !
++ */
++
++/*
++ * The following is for compatibility across the various Linux
++ * platforms.  The generic ioctl numbering scheme doesn't really enforce
++ * a type field.  De facto, however, the top 8 bits of the lower 16
++ * bits are indeed used as a type field, so we might just as well make
++ * this explicit here.  Please be sure to use the decoding macros
++ * below from now on.
++ */
++#define _IOC_NRBITS	8
++#define _IOC_TYPEBITS	8
++#define _IOC_SIZEBITS	14
++#define _IOC_DIRBITS	2
++
++#define _IOC_NRMASK	((1 << _IOC_NRBITS)-1)
++#define _IOC_TYPEMASK	((1 << _IOC_TYPEBITS)-1)
++#define _IOC_SIZEMASK	((1 << _IOC_SIZEBITS)-1)
++#define _IOC_DIRMASK	((1 << _IOC_DIRBITS)-1)
++
++#define _IOC_NRSHIFT	0
++#define _IOC_TYPESHIFT	(_IOC_NRSHIFT+_IOC_NRBITS)
++#define _IOC_SIZESHIFT	(_IOC_TYPESHIFT+_IOC_TYPEBITS)
++#define _IOC_DIRSHIFT	(_IOC_SIZESHIFT+_IOC_SIZEBITS)
++
++/*
++ * Direction bits.
++ */
++#define _IOC_NONE	0U
++#define _IOC_WRITE	1U
++#define _IOC_READ	2U
++
++#define _IOC(dir,type,nr,size) \
++	(((dir)  << _IOC_DIRSHIFT) | \
++	 ((type) << _IOC_TYPESHIFT) | \
++	 ((nr)   << _IOC_NRSHIFT) | \
++	 ((size) << _IOC_SIZESHIFT))
++
++/* provoke compile error for invalid uses of size argument */
++extern unsigned int __invalid_size_argument_for_IOC;
++#define _IOC_TYPECHECK(t) \
++	((sizeof(t) == sizeof(t[1]) && \
++	  sizeof(t) < (1 << _IOC_SIZEBITS)) ? \
++	  sizeof(t) : __invalid_size_argument_for_IOC)
++
++/* used to create numbers */
++#define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
++#define _IOR(type,nr,size)	_IOC(_IOC_READ,(type),(nr),(_IOC_TYPECHECK(size)))
++#define _IOW(type,nr,size)	_IOC(_IOC_WRITE,(type),(nr),(_IOC_TYPECHECK(size)))
++#define _IOWR(type,nr,size)	_IOC(_IOC_READ|_IOC_WRITE,(type),(nr),(_IOC_TYPECHECK(size)))
++#define _IOR_BAD(type,nr,size)	_IOC(_IOC_READ,(type),(nr),sizeof(size))
++#define _IOW_BAD(type,nr,size)	_IOC(_IOC_WRITE,(type),(nr),sizeof(size))
++#define _IOWR_BAD(type,nr,size)	_IOC(_IOC_READ|_IOC_WRITE,(type),(nr),sizeof(size))
++
++/* used to decode ioctl numbers.. */
++#define _IOC_DIR(nr)		(((nr) >> _IOC_DIRSHIFT) & _IOC_DIRMASK)
++#define _IOC_TYPE(nr)		(((nr) >> _IOC_TYPESHIFT) & _IOC_TYPEMASK)
++#define _IOC_NR(nr)		(((nr) >> _IOC_NRSHIFT) & _IOC_NRMASK)
++#define _IOC_SIZE(nr)		(((nr) >> _IOC_SIZESHIFT) & _IOC_SIZEMASK)
++
++/* ...and for the drivers/sound files... */
++
++#define IOC_IN		(_IOC_WRITE << _IOC_DIRSHIFT)
++#define IOC_OUT		(_IOC_READ << _IOC_DIRSHIFT)
++#define IOC_INOUT	((_IOC_WRITE|_IOC_READ) << _IOC_DIRSHIFT)
++#define IOCSIZE_MASK	(_IOC_SIZEMASK << _IOC_SIZESHIFT)
++#define IOCSIZE_SHIFT	(_IOC_SIZESHIFT)
++
++#endif /* _ASM_GENERIC_IOCTL_H */
+diff -purN orig_linux/include/asm-generic/iomap.h linux/include/asm-generic/iomap.h
+--- orig_linux/include/asm-generic/iomap.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/iomap.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,68 @@
 +#ifndef __GENERIC_IO_H
 +#define __GENERIC_IO_H
@@ -924,9 +2129,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +extern void pci_iounmap(struct pci_dev *dev, void __iomem *);
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/ipc.h linux/include/asm-generic/ipc.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/ipc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/ipc.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/ipc.h linux/include/asm-generic/ipc.h
+--- orig_linux/include/asm-generic/ipc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/ipc.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,31 @@
 +#ifndef _ASM_GENERIC_IPC_H
 +#define _ASM_GENERIC_IPC_H
@@ -959,38 +2164,44 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define IPCCALL(version,op)	((version)<<16 | (op))
 +
 +#endif	/* _ASM_GENERIC_IPC_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/local.h linux/include/asm-generic/local.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/local.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/local.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,118 @@
+diff -purN orig_linux/include/asm-generic/local.h linux/include/asm-generic/local.h
+--- orig_linux/include/asm-generic/local.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/local.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,62 @@
 +#ifndef _ASM_GENERIC_LOCAL_H
 +#define _ASM_GENERIC_LOCAL_H
 +
-+#include <linux/config.h>
 +#include <linux/percpu.h>
 +#include <linux/hardirq.h>
++#include <asm/atomic.h>
 +#include <asm/types.h>
 +
-+/* An unsigned long type for operations which are atomic for a single
-+ * CPU.  Usually used in combination with per-cpu variables. */
++/*
++ * A signed long type for operations which are atomic for a single CPU.
++ * Usually used in combination with per-cpu variables.
++ *
++ * This is the default implementation, which uses atomic_long_t.  Which is
++ * rather pointless.  The whole point behind local_t is that some processors
++ * can perform atomic adds and subtracts in a manner which is atomic wrt IRQs
++ * running on this CPU.  local_t allows exploitation of such capabilities.
++ */
 +
-+#if BITS_PER_LONG == 32
 +/* Implement in terms of atomics. */
 +
 +/* Don't use typedef: don't want them to be mixed with atomic_t's. */
 +typedef struct
 +{
-+	atomic_t a;
++	atomic_long_t a;
 +} local_t;
 +
-+#define LOCAL_INIT(i)	{ ATOMIC_INIT(i) }
++#define LOCAL_INIT(i)	{ ATOMIC_LONG_INIT(i) }
 +
-+#define local_read(l)	((unsigned long)atomic_read(&(l)->a))
-+#define local_set(l,i)	atomic_set((&(l)->a),(i))
-+#define local_inc(l)	atomic_inc(&(l)->a)
-+#define local_dec(l)	atomic_dec(&(l)->a)
-+#define local_add(i,l)	atomic_add((i),(&(l)->a))
-+#define local_sub(i,l)	atomic_sub((i),(&(l)->a))
++#define local_read(l)	atomic_long_read(&(l)->a)
++#define local_set(l,i)	atomic_long_set((&(l)->a),(i))
++#define local_inc(l)	atomic_long_inc(&(l)->a)
++#define local_dec(l)	atomic_long_dec(&(l)->a)
++#define local_add(i,l)	atomic_long_add((i),(&(l)->a))
++#define local_sub(i,l)	atomic_long_sub((i),(&(l)->a))
 +
 +/* Non-atomic variants, ie. preemption disabled and won't be touched
 + * in interrupt, etc.  Some archs can optimize this case well. */
@@ -998,68 +2209,6 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define __local_dec(l)		local_set((l), local_read(l) - 1)
 +#define __local_add(i,l)	local_set((l), local_read(l) + (i))
 +#define __local_sub(i,l)	local_set((l), local_read(l) - (i))
-+
-+#else /* ... can't use atomics. */
-+/* Implement in terms of three variables.
-+   Another option would be to use local_irq_save/restore. */
-+
-+typedef struct
-+{
-+	/* 0 = in hardirq, 1 = in softirq, 2 = usermode. */
-+	unsigned long v[3];
-+} local_t;
-+
-+#define _LOCAL_VAR(l)	((l)->v[!in_interrupt() + !in_irq()])
-+
-+#define LOCAL_INIT(i)	{ { (i), 0, 0 } }
-+
-+static inline unsigned long local_read(local_t *l)
-+{
-+	return l->v[0] + l->v[1] + l->v[2];
-+}
-+
-+static inline void local_set(local_t *l, unsigned long v)
-+{
-+	l->v[0] = v;
-+	l->v[1] = l->v[2] = 0;
-+}
-+
-+static inline void local_inc(local_t *l)
-+{
-+	preempt_disable();
-+	_LOCAL_VAR(l)++;
-+	preempt_enable();
-+}
-+
-+static inline void local_dec(local_t *l)
-+{
-+	preempt_disable();
-+	_LOCAL_VAR(l)--;
-+	preempt_enable();
-+}
-+
-+static inline void local_add(unsigned long v, local_t *l)
-+{
-+	preempt_disable();
-+	_LOCAL_VAR(l) += v;
-+	preempt_enable();
-+}
-+
-+static inline void local_sub(unsigned long v, local_t *l)
-+{
-+	preempt_disable();
-+	_LOCAL_VAR(l) -= v;
-+	preempt_enable();
-+}
-+
-+/* Non-atomic variants, ie. preemption disabled and won't be touched
-+ * in interrupt, etc.  Some archs can optimize this case well. */
-+#define __local_inc(l)		((l)->v[0]++)
-+#define __local_dec(l)		((l)->v[0]--)
-+#define __local_add(i,l)	((l)->v[0] += (i))
-+#define __local_sub(i,l)	((l)->v[0] -= (i))
-+
-+#endif /* Non-atomic implementation */
 +
 +/* Use these for per-cpu local_t variables: on some archs they are
 + * much more efficient than these naive implementations.  Note they take
@@ -1081,9 +2230,430 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define __cpu_local_sub(i, v)	__local_sub((i), &__get_cpu_var(v))
 +
 +#endif /* _ASM_GENERIC_LOCAL_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pci-dma-compat.h linux/include/asm-generic/pci-dma-compat.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pci-dma-compat.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/pci-dma-compat.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/memory_model.h linux/include/asm-generic/memory_model.h
+--- orig_linux/include/asm-generic/memory_model.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/memory_model.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,80 @@
++#ifndef __ASM_MEMORY_MODEL_H
++#define __ASM_MEMORY_MODEL_H
++
++#ifdef __KERNEL__
++#ifndef __ASSEMBLY__
++
++#if defined(CONFIG_FLATMEM)
++
++#ifndef ARCH_PFN_OFFSET
++#define ARCH_PFN_OFFSET		(0UL)
++#endif
++
++#elif defined(CONFIG_DISCONTIGMEM)
++
++#ifndef arch_pfn_to_nid
++#define arch_pfn_to_nid(pfn)	pfn_to_nid(pfn)
++#endif
++
++#ifndef arch_local_page_offset
++#define arch_local_page_offset(pfn, nid)	\
++	((pfn) - NODE_DATA(nid)->node_start_pfn)
++#endif
++
++#endif /* CONFIG_DISCONTIGMEM */
++
++/*
++ * supports 3 memory models.
++ */
++#if defined(CONFIG_FLATMEM)
++
++#define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
++#define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
++				 ARCH_PFN_OFFSET)
++#elif defined(CONFIG_DISCONTIGMEM)
++
++#define __pfn_to_page(pfn)			\
++({	unsigned long __pfn = (pfn);		\
++	unsigned long __nid = arch_pfn_to_nid(pfn);  \
++	NODE_DATA(__nid)->node_mem_map + arch_local_page_offset(__pfn, __nid);\
++})
++
++#define __page_to_pfn(pg)						\
++({	struct page *__pg = (pg);					\
++	struct pglist_data *__pgdat = NODE_DATA(page_to_nid(__pg));	\
++	(unsigned long)(__pg - __pgdat->node_mem_map) +			\
++	 __pgdat->node_start_pfn;					\
++})
++
++#elif defined(CONFIG_SPARSEMEM)
++/*
++ * Note: section's mem_map is encorded to reflect its start_pfn.
++ * section[i].section_mem_map == mem_map's address - start_pfn;
++ */
++#define __page_to_pfn(pg)					\
++({	struct page *__pg = (pg);				\
++	int __sec = page_to_section(__pg);			\
++	__pg - __section_mem_map_addr(__nr_to_section(__sec));	\
++})
++
++#define __pfn_to_page(pfn)				\
++({	unsigned long __pfn = (pfn);			\
++	struct mem_section *__sec = __pfn_to_section(__pfn);	\
++	__section_mem_map_addr(__sec) + __pfn;		\
++})
++#endif /* CONFIG_FLATMEM/DISCONTIGMEM/SPARSEMEM */
++
++#ifdef CONFIG_OUT_OF_LINE_PFN_TO_PAGE
++struct page;
++/* this is useful when inlined pfn_to_page is too big */
++extern struct page *pfn_to_page(unsigned long pfn);
++extern unsigned long page_to_pfn(struct page *page);
++#else
++#define page_to_pfn __page_to_pfn
++#define pfn_to_page __pfn_to_page
++#endif /* CONFIG_OUT_OF_LINE_PFN_TO_PAGE */
++
++#endif /* __ASSEMBLY__ */
++#endif /* __KERNEL__ */
++
++#endif
+diff -purN orig_linux/include/asm-generic/mman.h linux/include/asm-generic/mman.h
+--- orig_linux/include/asm-generic/mman.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/mman.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,42 @@
++#ifndef _ASM_GENERIC_MMAN_H
++#define _ASM_GENERIC_MMAN_H
++
++/*
++ Author: Michael S. Tsirkin <mst@mellanox.co.il>, Mellanox Technologies Ltd.
++ Based on: asm-xxx/mman.h
++*/
++
++#define PROT_READ	0x1		/* page can be read */
++#define PROT_WRITE	0x2		/* page can be written */
++#define PROT_EXEC	0x4		/* page can be executed */
++#define PROT_SEM	0x8		/* page may be used for atomic ops */
++#define PROT_NONE	0x0		/* page can not be accessed */
++#define PROT_GROWSDOWN	0x01000000	/* mprotect flag: extend change to start of growsdown vma */
++#define PROT_GROWSUP	0x02000000	/* mprotect flag: extend change to end of growsup vma */
++
++#define MAP_SHARED	0x01		/* Share changes */
++#define MAP_PRIVATE	0x02		/* Changes are private */
++#define MAP_TYPE	0x0f		/* Mask for type of mapping */
++#define MAP_FIXED	0x10		/* Interpret addr exactly */
++#define MAP_ANONYMOUS	0x20		/* don't use a file */
++
++#define MS_ASYNC	1		/* sync memory asynchronously */
++#define MS_INVALIDATE	2		/* invalidate the caches */
++#define MS_SYNC		4		/* synchronous memory sync */
++
++#define MADV_NORMAL	0		/* no further special treatment */
++#define MADV_RANDOM	1		/* expect random page references */
++#define MADV_SEQUENTIAL	2		/* expect sequential page references */
++#define MADV_WILLNEED	3		/* will need these pages */
++#define MADV_DONTNEED	4		/* don't need these pages */
++
++/* common parameters: try to keep these consistent across architectures */
++#define MADV_REMOVE	9		/* remove these pages & resources */
++#define MADV_DONTFORK	10		/* don't inherit across fork */
++#define MADV_DOFORK	11		/* do inherit across fork */
++
++/* compatibility flags */
++#define MAP_ANON	MAP_ANONYMOUS
++#define MAP_FILE	0
++
++#endif
+diff -purN orig_linux/include/asm-generic/mutex-dec.h linux/include/asm-generic/mutex-dec.h
+--- orig_linux/include/asm-generic/mutex-dec.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/mutex-dec.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,112 @@
++/*
++ * asm-generic/mutex-dec.h
++ *
++ * Generic implementation of the mutex fastpath, based on atomic
++ * decrement/increment.
++ */
++#ifndef _ASM_GENERIC_MUTEX_DEC_H
++#define _ASM_GENERIC_MUTEX_DEC_H
++
++/**
++ *  __mutex_fastpath_lock - try to take the lock by moving the count
++ *                          from 1 to a 0 value
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 1
++ *
++ * Change the count from 1 to a value lower than 1, and call <fail_fn> if
++ * it wasn't 1 originally. This function MUST leave the value lower than
++ * 1 even when the "1" assertion wasn't true.
++ */
++static inline void
++__mutex_fastpath_lock(atomic_t *count, fastcall void (*fail_fn)(atomic_t *))
++{
++	if (unlikely(atomic_dec_return(count) < 0))
++		fail_fn(count);
++	else
++		smp_mb();
++}
++
++/**
++ *  __mutex_fastpath_lock_retval - try to take the lock by moving the count
++ *                                 from 1 to a 0 value
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 1
++ *
++ * Change the count from 1 to a value lower than 1, and call <fail_fn> if
++ * it wasn't 1 originally. This function returns 0 if the fastpath succeeds,
++ * or anything the slow path function returns.
++ */
++static inline int
++__mutex_fastpath_lock_retval(atomic_t *count, fastcall int (*fail_fn)(atomic_t *))
++{
++	if (unlikely(atomic_dec_return(count) < 0))
++		return fail_fn(count);
++	else {
++		smp_mb();
++		return 0;
++	}
++}
++
++/**
++ *  __mutex_fastpath_unlock - try to promote the count from 0 to 1
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 0
++ *
++ * Try to promote the count from 0 to 1. If it wasn't 0, call <fail_fn>.
++ * In the failure case, this function is allowed to either set the value to
++ * 1, or to set it to a value lower than 1.
++ *
++ * If the implementation sets it to a value of lower than 1, then the
++ * __mutex_slowpath_needs_to_unlock() macro needs to return 1, it needs
++ * to return 0 otherwise.
++ */
++static inline void
++__mutex_fastpath_unlock(atomic_t *count, fastcall void (*fail_fn)(atomic_t *))
++{
++	smp_mb();
++	if (unlikely(atomic_inc_return(count) <= 0))
++		fail_fn(count);
++}
++
++#define __mutex_slowpath_needs_to_unlock()		1
++
++/**
++ * __mutex_fastpath_trylock - try to acquire the mutex, without waiting
++ *
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: fallback function
++ *
++ * Change the count from 1 to a value lower than 1, and return 0 (failure)
++ * if it wasn't 1 originally, or return 1 (success) otherwise. This function
++ * MUST leave the value lower than 1 even when the "1" assertion wasn't true.
++ * Additionally, if the value was < 0 originally, this function must not leave
++ * it to 0 on failure.
++ *
++ * If the architecture has no effective trylock variant, it should call the
++ * <fail_fn> spinlock-based trylock variant unconditionally.
++ */
++static inline int
++__mutex_fastpath_trylock(atomic_t *count, int (*fail_fn)(atomic_t *))
++{
++	/*
++	 * We have two variants here. The cmpxchg based one is the best one
++	 * because it never induce a false contention state.  It is included
++	 * here because architectures using the inc/dec algorithms over the
++	 * xchg ones are much more likely to support cmpxchg natively.
++	 *
++	 * If not we fall back to the spinlock based variant - that is
++	 * just as efficient (and simpler) as a 'destructive' probing of
++	 * the mutex state would be.
++	 */
++#ifdef __HAVE_ARCH_CMPXCHG
++	if (likely(atomic_cmpxchg(count, 1, 0) == 1)) {
++		smp_mb();
++		return 1;
++	}
++	return 0;
++#else
++	return fail_fn(count);
++#endif
++}
++
++#endif
+diff -purN orig_linux/include/asm-generic/mutex-null.h linux/include/asm-generic/mutex-null.h
+--- orig_linux/include/asm-generic/mutex-null.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/mutex-null.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,19 @@
++/*
++ * asm-generic/mutex-null.h
++ *
++ * Generic implementation of the mutex fastpath, based on NOP :-)
++ *
++ * This is used by the mutex-debugging infrastructure, but it can also
++ * be used by architectures that (for whatever reason) want to use the
++ * spinlock based slowpath.
++ */
++#ifndef _ASM_GENERIC_MUTEX_NULL_H
++#define _ASM_GENERIC_MUTEX_NULL_H
++
++#define __mutex_fastpath_lock(count, fail_fn)		fail_fn(count)
++#define __mutex_fastpath_lock_retval(count, fail_fn)	fail_fn(count)
++#define __mutex_fastpath_unlock(count, fail_fn)		fail_fn(count)
++#define __mutex_fastpath_trylock(count, fail_fn)	fail_fn(count)
++#define __mutex_slowpath_needs_to_unlock()		1
++
++#endif
+diff -purN orig_linux/include/asm-generic/mutex-xchg.h linux/include/asm-generic/mutex-xchg.h
+--- orig_linux/include/asm-generic/mutex-xchg.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/mutex-xchg.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,118 @@
++/*
++ * asm-generic/mutex-xchg.h
++ *
++ * Generic implementation of the mutex fastpath, based on xchg().
++ *
++ * NOTE: An xchg based implementation might be less optimal than an atomic
++ *       decrement/increment based implementation. If your architecture
++ *       has a reasonable atomic dec/inc then you should probably use
++ *	 asm-generic/mutex-dec.h instead, or you could open-code an
++ *	 optimized version in asm/mutex.h.
++ */
++#ifndef _ASM_GENERIC_MUTEX_XCHG_H
++#define _ASM_GENERIC_MUTEX_XCHG_H
++
++/**
++ *  __mutex_fastpath_lock - try to take the lock by moving the count
++ *                          from 1 to a 0 value
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 1
++ *
++ * Change the count from 1 to a value lower than 1, and call <fail_fn> if it
++ * wasn't 1 originally. This function MUST leave the value lower than 1
++ * even when the "1" assertion wasn't true.
++ */
++static inline void
++__mutex_fastpath_lock(atomic_t *count, fastcall void (*fail_fn)(atomic_t *))
++{
++	if (unlikely(atomic_xchg(count, 0) != 1))
++		fail_fn(count);
++	else
++		smp_mb();
++}
++
++/**
++ *  __mutex_fastpath_lock_retval - try to take the lock by moving the count
++ *                                 from 1 to a 0 value
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 1
++ *
++ * Change the count from 1 to a value lower than 1, and call <fail_fn> if it
++ * wasn't 1 originally. This function returns 0 if the fastpath succeeds,
++ * or anything the slow path function returns
++ */
++static inline int
++__mutex_fastpath_lock_retval(atomic_t *count, fastcall int (*fail_fn)(atomic_t *))
++{
++	if (unlikely(atomic_xchg(count, 0) != 1))
++		return fail_fn(count);
++	else {
++		smp_mb();
++		return 0;
++	}
++}
++
++/**
++ *  __mutex_fastpath_unlock - try to promote the mutex from 0 to 1
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: function to call if the original value was not 0
++ *
++ * try to promote the mutex from 0 to 1. if it wasn't 0, call <function>
++ * In the failure case, this function is allowed to either set the value to
++ * 1, or to set it to a value lower than one.
++ * If the implementation sets it to a value of lower than one, the
++ * __mutex_slowpath_needs_to_unlock() macro needs to return 1, it needs
++ * to return 0 otherwise.
++ */
++static inline void
++__mutex_fastpath_unlock(atomic_t *count, fastcall void (*fail_fn)(atomic_t *))
++{
++	smp_mb();
++	if (unlikely(atomic_xchg(count, 1) != 0))
++		fail_fn(count);
++}
++
++#define __mutex_slowpath_needs_to_unlock()		0
++
++/**
++ * __mutex_fastpath_trylock - try to acquire the mutex, without waiting
++ *
++ *  @count: pointer of type atomic_t
++ *  @fail_fn: spinlock based trylock implementation
++ *
++ * Change the count from 1 to a value lower than 1, and return 0 (failure)
++ * if it wasn't 1 originally, or return 1 (success) otherwise. This function
++ * MUST leave the value lower than 1 even when the "1" assertion wasn't true.
++ * Additionally, if the value was < 0 originally, this function must not leave
++ * it to 0 on failure.
++ *
++ * If the architecture has no effective trylock variant, it should call the
++ * <fail_fn> spinlock-based trylock variant unconditionally.
++ */
++static inline int
++__mutex_fastpath_trylock(atomic_t *count, int (*fail_fn)(atomic_t *))
++{
++	int prev = atomic_xchg(count, 0);
++
++	if (unlikely(prev < 0)) {
++		/*
++		 * The lock was marked contended so we must restore that
++		 * state. If while doing so we get back a prev value of 1
++		 * then we just own it.
++		 *
++		 * [ In the rare case of the mutex going to 1, to 0, to -1
++		 *   and then back to 0 in this few-instructions window,
++		 *   this has the potential to trigger the slowpath for the
++		 *   owner's unlock path needlessly, but that's not a problem
++		 *   in practice. ]
++		 */
++		prev = atomic_xchg(count, prev);
++		if (prev < 0)
++			prev = 0;
++	}
++	smp_mb();
++
++	return prev;
++}
++
++#endif
+diff -purN orig_linux/include/asm-generic/page.h linux/include/asm-generic/page.h
+--- orig_linux/include/asm-generic/page.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/page.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,26 @@
++#ifndef _ASM_GENERIC_PAGE_H
++#define _ASM_GENERIC_PAGE_H
++
++#ifdef __KERNEL__
++#ifndef __ASSEMBLY__
++
++#include <linux/compiler.h>
++
++/* Pure 2^n version of get_order */
++static __inline__ __attribute_const__ int get_order(unsigned long size)
++{
++	int order;
++
++	size = (size - 1) >> (PAGE_SHIFT - 1);
++	order = -1;
++	do {
++		size >>= 1;
++		order++;
++	} while (size);
++	return order;
++}
++
++#endif	/* __ASSEMBLY__ */
++#endif	/* __KERNEL__ */
++
++#endif	/* _ASM_GENERIC_PAGE_H */
+diff -purN orig_linux/include/asm-generic/pci-dma-compat.h linux/include/asm-generic/pci-dma-compat.h
+--- orig_linux/include/asm-generic/pci-dma-compat.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/pci-dma-compat.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,107 @@
 +/* include this file if the platform implements the dma_ DMA Mapping API
 + * and wants to provide the pci_ DMA Mapping API in terms of it */
@@ -1192,10 +2762,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +}
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pci.h linux/include/asm-generic/pci.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/pci.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,34 @@
+diff -purN orig_linux/include/asm-generic/pci.h linux/include/asm-generic/pci.h
+--- orig_linux/include/asm-generic/pci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/pci.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,55 @@
 +/*
 + * linux/include/asm-generic/pci.h
 + *
@@ -1220,6 +2790,27 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	region->end = res->end;
 +}
 +
++static inline void
++pcibios_bus_to_resource(struct pci_dev *dev, struct resource *res,
++			struct pci_bus_region *region)
++{
++	res->start = region->start;
++	res->end = region->end;
++}
++
++static inline struct resource *
++pcibios_select_root(struct pci_dev *pdev, struct resource *res)
++{
++	struct resource *root = NULL;
++
++	if (res->flags & IORESOURCE_IO)
++		root = &ioport_resource;
++	if (res->flags & IORESOURCE_MEM)
++		root = &iomem_resource;
++
++	return root;
++}
++
 +#define pcibios_scan_all_fns(a, b)	0
 +
 +#ifndef HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ
@@ -1230,10 +2821,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif /* HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ */
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/percpu.h linux/include/asm-generic/percpu.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/percpu.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/percpu.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,42 @@
+diff -purN orig_linux/include/asm-generic/percpu.h linux/include/asm-generic/percpu.h
+--- orig_linux/include/asm-generic/percpu.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/percpu.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,45 @@
 +#ifndef _ASM_GENERIC_PERCPU_H_
 +#define _ASM_GENERIC_PERCPU_H_
 +#include <linux/compiler.h>
@@ -1243,6 +2834,8 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +extern unsigned long __per_cpu_offset[NR_CPUS];
 +
++#define per_cpu_offset(x) (__per_cpu_offset[x])
++
 +/* Separate out the type, so (int[3], foo) works. */
 +#define DEFINE_PER_CPU(type, name) \
 +    __attribute__((__section__(".data.percpu"))) __typeof__(type) per_cpu__##name
@@ -1250,23 +2843,24 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +/* var is in discarded region: offset to particular copy we want */
 +#define per_cpu(var, cpu) (*RELOC_HIDE(&per_cpu__##var, __per_cpu_offset[cpu]))
 +#define __get_cpu_var(var) per_cpu(var, smp_processor_id())
++#define __raw_get_cpu_var(var) per_cpu(var, raw_smp_processor_id())
 +
 +/* A macro to avoid #include hell... */
 +#define percpu_modcopy(pcpudst, src, size)			\
 +do {								\
 +	unsigned int __i;					\
-+	for (__i = 0; __i < NR_CPUS; __i++)			\
-+		if (cpu_possible(__i))				\
-+			memcpy((pcpudst)+__per_cpu_offset[__i],	\
-+			       (src), (size));			\
++	for_each_possible_cpu(__i)				\
++		memcpy((pcpudst)+__per_cpu_offset[__i],		\
++		       (src), (size));				\
 +} while (0)
 +#else /* ! SMP */
 +
 +#define DEFINE_PER_CPU(type, name) \
 +    __typeof__(type) per_cpu__##name
 +
-+#define per_cpu(var, cpu)			(*((void)cpu, &per_cpu__##var))
++#define per_cpu(var, cpu)			(*((void)(cpu), &per_cpu__##var))
 +#define __get_cpu_var(var)			per_cpu__##var
++#define __raw_get_cpu_var(var)			per_cpu__##var
 +
 +#endif	/* SMP */
 +
@@ -1276,9 +2870,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define EXPORT_PER_CPU_SYMBOL_GPL(var) EXPORT_SYMBOL_GPL(per_cpu__##var)
 +
 +#endif /* _ASM_GENERIC_PERCPU_H_ */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable-nopmd.h linux/include/asm-generic/pgtable-nopmd.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable-nopmd.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/pgtable-nopmd.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/pgtable-nopmd.h linux/include/asm-generic/pgtable-nopmd.h
+--- orig_linux/include/asm-generic/pgtable-nopmd.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/pgtable-nopmd.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,65 @@
 +#ifndef _PGTABLE_NOPMD_H
 +#define _PGTABLE_NOPMD_H
@@ -1345,9 +2939,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif /* __ASSEMBLY__ */
 +
 +#endif /* _PGTABLE_NOPMD_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable-nopud.h linux/include/asm-generic/pgtable-nopud.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable-nopud.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/pgtable-nopud.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/pgtable-nopud.h linux/include/asm-generic/pgtable-nopud.h
+--- orig_linux/include/asm-generic/pgtable-nopud.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/pgtable-nopud.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,61 @@
 +#ifndef _PGTABLE_NOPUD_H
 +#define _PGTABLE_NOPUD_H
@@ -1410,10 +3004,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#endif /* __ASSEMBLY__ */
 +#endif /* _PGTABLE_NOPUD_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable.h linux/include/asm-generic/pgtable.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/pgtable.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/pgtable.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,211 @@
+diff -purN orig_linux/include/asm-generic/pgtable.h linux/include/asm-generic/pgtable.h
+--- orig_linux/include/asm-generic/pgtable.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/pgtable.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,235 @@
 +#ifndef _ASM_GENERIC_PGTABLE_H
 +#define _ASM_GENERIC_PGTABLE_H
 +
@@ -1424,7 +3018,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 + *  - update the page tables
 + *  - inform the TLB about the new one
 + *
-+ * We hold the mm semaphore for reading and vma->vm_mm->page_table_lock.
++ * We hold the mm semaphore for reading, and the pte lock.
 + *
 + * Note: the old pte is known to not be writable, so we don't need to
 + * worry about dirty bits etc getting lost.
@@ -1517,6 +3111,22 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +})
 +#endif
 +
++#ifndef __HAVE_ARCH_PTEP_GET_AND_CLEAR_FULL
++#define ptep_get_and_clear_full(__mm, __address, __ptep, __full)	\
++({									\
++	pte_t __pte;							\
++	__pte = ptep_get_and_clear((__mm), (__address), (__ptep));	\
++	__pte;								\
++})
++#endif
++
++#ifndef __HAVE_ARCH_PTE_CLEAR_FULL
++#define pte_clear_full(__mm, __address, __ptep, __full)			\
++do {									\
++	pte_clear((__mm), (__address), (__ptep));			\
++} while (0)
++#endif
++
 +#ifndef __HAVE_ARCH_PTEP_CLEAR_FLUSH
 +#define ptep_clear_flush(__vma, __address, __ptep)			\
 +({									\
@@ -1528,6 +3138,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif
 +
 +#ifndef __HAVE_ARCH_PTEP_SET_WRPROTECT
++struct mm_struct;
 +static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long address, pte_t *ptep)
 +{
 +	pte_t old_pte = *ptep;
@@ -1541,6 +3152,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#ifndef __HAVE_ARCH_PAGE_TEST_AND_CLEAR_DIRTY
 +#define page_test_and_clear_dirty(page) (0)
++#define pte_maybe_dirty(pte)		pte_dirty(pte)
++#else
++#define pte_maybe_dirty(pte)		(1)
 +#endif
 +
 +#ifndef __HAVE_ARCH_PAGE_TEST_AND_CLEAR_YOUNG
@@ -1553,6 +3167,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#ifndef __HAVE_ARCH_LAZY_MMU_PROT_UPDATE
 +#define lazy_mmu_prot_update(pte)	do { } while (0)
++#endif
++
++#ifndef __HAVE_ARCH_MOVE_PTE
++#define move_pte(pte, prot, old_addr, new_addr)	(pte)
 +#endif
 +
 +/*
@@ -1625,9 +3243,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif /* !__ASSEMBLY__ */
 +
 +#endif /* _ASM_GENERIC_PGTABLE_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/resource.h linux/include/asm-generic/resource.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/resource.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/resource.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/resource.h linux/include/asm-generic/resource.h
+--- orig_linux/include/asm-generic/resource.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/resource.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,93 @@
 +#ifndef _ASM_GENERIC_RESOURCE_H
 +#define _ASM_GENERIC_RESOURCE_H
@@ -1722,10 +3340,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif	/* __KERNEL__ */
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/rtc.h linux/include/asm-generic/rtc.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/rtc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/rtc.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,213 @@
+diff -purN orig_linux/include/asm-generic/rtc.h linux/include/asm-generic/rtc.h
+--- orig_linux/include/asm-generic/rtc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/rtc.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,214 @@
 +/* 
 + * inclue/asm-generic/rtc.h
 + *
@@ -1842,6 +3460,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +/* Set the current date and time in the real time clock. */
 +static inline int set_rtc_time(struct rtc_time *time)
 +{
++	unsigned long flags;
 +	unsigned char mon, day, hrs, min, sec;
 +	unsigned char save_control, save_freq_select;
 +	unsigned int yrs;
@@ -1859,7 +3478,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	if (yrs > 255)	/* They are unsigned */
 +		return -EINVAL;
 +
-+	spin_lock_irq(&rtc_lock);
++	spin_lock_irqsave(&rtc_lock, flags);
 +#ifdef CONFIG_MACH_DECSTATION
 +	real_yrs = yrs;
 +	leap_yr = ((!((yrs + 1900) % 4) && ((yrs + 1900) % 100)) ||
@@ -1880,7 +3499,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	 * whether the chip is in binary mode or not.
 +	 */
 +	if (yrs > 169) {
-+		spin_unlock_irq(&rtc_lock);
++		spin_unlock_irqrestore(&rtc_lock, flags);
 +		return -EINVAL;
 +	}
 +
@@ -1915,7 +3534,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	CMOS_WRITE(save_control, RTC_CONTROL);
 +	CMOS_WRITE(save_freq_select, RTC_FREQ_SELECT);
 +
-+	spin_unlock_irq(&rtc_lock);
++	spin_unlock_irqrestore(&rtc_lock, flags);
 +
 +	return 0;
 +}
@@ -1939,10 +3558,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#endif /* __KERNEL__ */
 +#endif /* __ASM_RTC_H__ */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/sections.h linux/include/asm-generic/sections.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/sections.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/sections.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,15 @@
+diff -purN orig_linux/include/asm-generic/sections.h linux/include/asm-generic/sections.h
+--- orig_linux/include/asm-generic/sections.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/sections.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,19 @@
 +#ifndef _ASM_GENERIC_SECTIONS_H_
 +#define _ASM_GENERIC_SECTIONS_H_
 +
@@ -1956,11 +3575,15 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +extern char _sextratext[] __attribute__((weak));
 +extern char _eextratext[] __attribute__((weak));
 +extern char _end[];
++extern char __per_cpu_start[], __per_cpu_end[];
++extern char __kprobes_text_start[], __kprobes_text_end[];
++extern char __initdata_begin[], __initdata_end[];
++extern char __start_rodata[], __end_rodata[];
 +
 +#endif /* _ASM_GENERIC_SECTIONS_H_ */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/siginfo.h linux/include/asm-generic/siginfo.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/siginfo.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/siginfo.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/siginfo.h linux/include/asm-generic/siginfo.h
+--- orig_linux/include/asm-generic/siginfo.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/siginfo.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,294 @@
 +#ifndef _ASM_GENERIC_SIGINFO_H
 +#define _ASM_GENERIC_SIGINFO_H
@@ -2256,10 +3879,15 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif /* __KERNEL__ */
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/signal.h linux/include/asm-generic/signal.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/signal.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/signal.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,21 @@
+diff -purN orig_linux/include/asm-generic/signal.h linux/include/asm-generic/signal.h
+--- orig_linux/include/asm-generic/signal.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/signal.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,28 @@
++#ifndef __ASM_GENERIC_SIGNAL_H
++#define __ASM_GENERIC_SIGNAL_H
++
++#include <linux/compiler.h>
++
 +#ifndef SIG_BLOCK
 +#define SIG_BLOCK          0	/* for blocking signals */
 +#endif
@@ -2281,9 +3909,11 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define SIG_IGN	((__force __sighandler_t)1)	/* ignore signal */
 +#define SIG_ERR	((__force __sighandler_t)-1)	/* error return from signal */
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/statfs.h linux/include/asm-generic/statfs.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/statfs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/statfs.h	2005-06-22 21:33:06.000000000 +0200
++
++#endif /* __ASM_GENERIC_SIGNAL_H */
+diff -purN orig_linux/include/asm-generic/statfs.h linux/include/asm-generic/statfs.h
+--- orig_linux/include/asm-generic/statfs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/statfs.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,51 @@
 +#ifndef _GENERIC_STATFS_H
 +#define _GENERIC_STATFS_H
@@ -2336,9 +3966,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +};
 +
 +#endif
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/termios.h linux/include/asm-generic/termios.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/termios.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/termios.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/termios.h linux/include/asm-generic/termios.h
+--- orig_linux/include/asm-generic/termios.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/termios.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,69 @@
 +/* termios.h: generic termios/termio user copying/translation
 + */
@@ -2409,10 +4039,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif	/* __ARCH_TERMIO_GETPUT */
 +
 +#endif /* _ASM_GENERIC_TERMIOS_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/tlb.h linux/include/asm-generic/tlb.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/tlb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/tlb.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,160 @@
+diff -purN orig_linux/include/asm-generic/tlb.h linux/include/asm-generic/tlb.h
+--- orig_linux/include/asm-generic/tlb.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/tlb.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,148 @@
 +/* asm-generic/tlb.h
 + *
 + *	Generic TLB shootdown code
@@ -2428,7 +4058,6 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#ifndef _ASM_GENERIC__TLB_H
 +#define _ASM_GENERIC__TLB_H
 +
-+#include <linux/config.h>
 +#include <linux/swap.h>
 +#include <asm/pgalloc.h>
 +#include <asm/tlbflush.h>
@@ -2438,7 +4067,11 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 + * and page free order so much..
 + */
 +#ifdef CONFIG_SMP
-+  #define FREE_PTE_NR	506
++  #ifdef ARCH_FREE_PTR_NR
++    #define FREE_PTR_NR   ARCH_FREE_PTR_NR
++  #else
++    #define FREE_PTE_NR	506
++  #endif
 +  #define tlb_fast_mode(tlb) ((tlb)->nr == ~0U)
 +#else
 +  #define FREE_PTE_NR	1
@@ -2446,16 +4079,13 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#endif
 +
 +/* struct mmu_gather is an opaque type used by the mm code for passing around
-+ * any data needed by arch specific code for tlb_remove_page.  This structure
-+ * can be per-CPU or per-MM as the page table lock is held for the duration of
-+ * TLB shootdown.
++ * any data needed by arch specific code for tlb_remove_page.
 + */
 +struct mmu_gather {
 +	struct mm_struct	*mm;
 +	unsigned int		nr;	/* set to ~0U means fast mode */
 +	unsigned int		need_flush;/* Really unmapped some ptes? */
 +	unsigned int		fullmm; /* non-zero means full mm flush */
-+	unsigned long		freed;
 +	struct page *		pages[FREE_PTE_NR];
 +};
 +
@@ -2468,7 +4098,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +static inline struct mmu_gather *
 +tlb_gather_mmu(struct mm_struct *mm, unsigned int full_mm_flush)
 +{
-+	struct mmu_gather *tlb = &per_cpu(mmu_gathers, smp_processor_id());
++	struct mmu_gather *tlb = &get_cpu_var(mmu_gathers);
 +
 +	tlb->mm = mm;
 +
@@ -2476,7 +4106,6 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	tlb->nr = num_online_cpus() > 1 ? 0U : ~0U;
 +
 +	tlb->fullmm = full_mm_flush;
-+	tlb->freed = 0;
 +
 +	return tlb;
 +}
@@ -2496,28 +4125,17 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +/* tlb_finish_mmu
 + *	Called at the end of the shootdown operation to free up any resources
-+ *	that were required.  The page table lock is still held at this point.
++ *	that were required.
 + */
 +static inline void
 +tlb_finish_mmu(struct mmu_gather *tlb, unsigned long start, unsigned long end)
 +{
-+	int freed = tlb->freed;
-+	struct mm_struct *mm = tlb->mm;
-+	int rss = get_mm_counter(mm, rss);
-+
-+	if (rss < freed)
-+		freed = rss;
-+	add_mm_counter(mm, rss, -freed);
 +	tlb_flush_mmu(tlb, start, end);
 +
 +	/* keep the page table cache within bounds */
 +	check_pgt_cache();
-+}
 +
-+static inline unsigned int
-+tlb_is_full_mm(struct mmu_gather *tlb)
-+{
-+	return tlb->fullmm;
++	put_cpu_var(mmu_gathers);
 +}
 +
 +/* tlb_remove_page
@@ -2573,10 +4191,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define tlb_migrate_finish(mm) do {} while (0)
 +
 +#endif /* _ASM_GENERIC__TLB_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/topology.h linux/include/asm-generic/topology.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/topology.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/topology.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,48 @@
+diff -purN orig_linux/include/asm-generic/topology.h linux/include/asm-generic/topology.h
+--- orig_linux/include/asm-generic/topology.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/topology.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,55 @@
 +/*
 + * linux/include/asm-generic/topology.h
 + *
@@ -2620,14 +4238,21 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#ifndef node_to_first_cpu
 +#define node_to_first_cpu(node)	(0)
 +#endif
++#ifndef pcibus_to_node
++#define pcibus_to_node(node)	(-1)
++#endif
++
 +#ifndef pcibus_to_cpumask
-+#define pcibus_to_cpumask(bus)	(cpu_online_map)
++#define pcibus_to_cpumask(bus)	(pcibus_to_node(bus) == -1 ? \
++					CPU_MASK_ALL : \
++					node_to_cpumask(pcibus_to_node(bus)) \
++				)
 +#endif
 +
 +#endif /* _ASM_GENERIC_TOPOLOGY_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/uaccess.h linux/include/asm-generic/uaccess.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/uaccess.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/uaccess.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/uaccess.h linux/include/asm-generic/uaccess.h
+--- orig_linux/include/asm-generic/uaccess.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/uaccess.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,26 @@
 +#ifndef _ASM_GENERIC_UACCESS_H_
 +#define _ASM_GENERIC_UACCESS_H_
@@ -2655,9 +4280,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +})
 +
 +#endif /* _ASM_GENERIC_UACCESS_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/unaligned.h linux/include/asm-generic/unaligned.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/unaligned.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/unaligned.h	2005-06-22 21:33:06.000000000 +0200
+diff -purN orig_linux/include/asm-generic/unaligned.h linux/include/asm-generic/unaligned.h
+--- orig_linux/include/asm-generic/unaligned.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/unaligned.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,122 @@
 +#ifndef _ASM_GENERIC_UNALIGNED_H_
 +#define _ASM_GENERIC_UNALIGNED_H_
@@ -2677,9 +4302,9 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 + * The main single-value unaligned transfer routines.
 + */
 +#define get_unaligned(ptr) \
-+	((__typeof__(*(ptr)))__get_unaligned((ptr), sizeof(*(ptr))))
++	__get_unaligned((ptr), sizeof(*(ptr)))
 +#define put_unaligned(x,ptr) \
-+	__put_unaligned((unsigned long)(x), (ptr), sizeof(*(ptr)))
++	__put_unaligned((__u64)(x), (ptr), sizeof(*(ptr)))
 +
 +/*
 + * This function doesn't actually exist.  The idea is that when
@@ -2697,19 +4322,19 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 + * Elemental unaligned loads 
 + */
 +
-+static inline unsigned long __uldq(const __u64 *addr)
++static inline __u64 __uldq(const __u64 *addr)
 +{
 +	const struct __una_u64 *ptr = (const struct __una_u64 *) addr;
 +	return ptr->x;
 +}
 +
-+static inline unsigned long __uldl(const __u32 *addr)
++static inline __u32 __uldl(const __u32 *addr)
 +{
 +	const struct __una_u32 *ptr = (const struct __una_u32 *) addr;
 +	return ptr->x;
 +}
 +
-+static inline unsigned long __uldw(const __u16 *addr)
++static inline __u16 __uldw(const __u16 *addr)
 +{
 +	const struct __una_u16 *ptr = (const struct __una_u16 *) addr;
 +	return ptr->x;
@@ -2739,7 +4364,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +
 +#define __get_unaligned(ptr, size) ({		\
 +	const void *__gu_p = ptr;		\
-+	unsigned long val;			\
++	__u64 val;				\
 +	switch (size) {				\
 +	case 1:					\
 +		val = *(const __u8 *)__gu_p;	\
@@ -2756,7 +4381,7 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	default:				\
 +		bad_unaligned_access_length();	\
 +	};					\
-+	val;					\
++	(__typeof__(*(ptr)))val;		\
 +})
 +
 +#define __put_unaligned(val, ptr, size)		\
@@ -2781,10 +4406,10 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +} while(0)
 +
 +#endif /* _ASM_GENERIC_UNALIGNED_H */
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/vmlinux.lds.h linux/include/asm-generic/vmlinux.lds.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/vmlinux.lds.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/vmlinux.lds.h	2005-06-22 21:33:06.000000000 +0200
-@@ -0,0 +1,90 @@
+diff -purN orig_linux/include/asm-generic/vmlinux.lds.h linux/include/asm-generic/vmlinux.lds.h
+--- orig_linux/include/asm-generic/vmlinux.lds.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/vmlinux.lds.h	2006-10-14 05:34:04.000000000 +0200
+@@ -0,0 +1,196 @@
 +#ifndef LOAD_OFFSET
 +#define LOAD_OFFSET 0
 +#endif
@@ -2793,7 +4418,12 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +#define VMLINUX_SYMBOL(_sym_) _sym_
 +#endif
 +
++/* Align . to a 8 byte boundary equals to maximum function alignment. */
++#define ALIGN_FUNCTION()  . = ALIGN(8)
++
 +#define RODATA								\
++	. = ALIGN(4096);						\
++	__start_rodata = .;						\
 +	.rodata           : AT(ADDR(.rodata) - LOAD_OFFSET) {		\
 +		*(.rodata) *(.rodata.*)					\
 +		*(__vermagic)		/* Kernel version magic */	\
@@ -2819,6 +4449,13 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +		VMLINUX_SYMBOL(__end_pci_fixups_enable) = .;		\
 +	}								\
 +									\
++	/* RapidIO route ops */						\
++	.rio_route        : AT(ADDR(.rio_route) - LOAD_OFFSET) {	\
++		VMLINUX_SYMBOL(__start_rio_route_ops) = .;		\
++		*(.rio_route_ops)					\
++		VMLINUX_SYMBOL(__end_rio_route_ops) = .;		\
++	}								\
++									\
 +	/* Kernel symbol table: Normal symbols */			\
 +	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
 +		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -2831,6 +4468,27 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +		VMLINUX_SYMBOL(__start___ksymtab_gpl) = .;		\
 +		*(__ksymtab_gpl)					\
 +		VMLINUX_SYMBOL(__stop___ksymtab_gpl) = .;		\
++	}								\
++									\
++	/* Kernel symbol table: Normal unused symbols */		\
++	__ksymtab_unused  : AT(ADDR(__ksymtab_unused) - LOAD_OFFSET) {	\
++		VMLINUX_SYMBOL(__start___ksymtab_unused) = .;		\
++		*(__ksymtab_unused)					\
++		VMLINUX_SYMBOL(__stop___ksymtab_unused) = .;		\
++	}								\
++									\
++	/* Kernel symbol table: GPL-only unused symbols */		\
++	__ksymtab_unused_gpl : AT(ADDR(__ksymtab_unused_gpl) - LOAD_OFFSET) { \
++		VMLINUX_SYMBOL(__start___ksymtab_unused_gpl) = .;	\
++		*(__ksymtab_unused_gpl)					\
++		VMLINUX_SYMBOL(__stop___ksymtab_unused_gpl) = .;	\
++	}								\
++									\
++	/* Kernel symbol table: GPL-future-only symbols */		\
++	__ksymtab_gpl_future : AT(ADDR(__ksymtab_gpl_future) - LOAD_OFFSET) { \
++		VMLINUX_SYMBOL(__start___ksymtab_gpl_future) = .;	\
++		*(__ksymtab_gpl_future)					\
++		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
 +	}								\
 +									\
 +	/* Kernel symbol table: Normal symbols */			\
@@ -2847,10 +4505,33 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +		VMLINUX_SYMBOL(__stop___kcrctab_gpl) = .;		\
 +	}								\
 +									\
++	/* Kernel symbol table: Normal unused symbols */		\
++	__kcrctab_unused  : AT(ADDR(__kcrctab_unused) - LOAD_OFFSET) {	\
++		VMLINUX_SYMBOL(__start___kcrctab_unused) = .;		\
++		*(__kcrctab_unused)					\
++		VMLINUX_SYMBOL(__stop___kcrctab_unused) = .;		\
++	}								\
++									\
++	/* Kernel symbol table: GPL-only unused symbols */		\
++	__kcrctab_unused_gpl : AT(ADDR(__kcrctab_unused_gpl) - LOAD_OFFSET) { \
++		VMLINUX_SYMBOL(__start___kcrctab_unused_gpl) = .;	\
++		*(__kcrctab_unused_gpl)					\
++		VMLINUX_SYMBOL(__stop___kcrctab_unused_gpl) = .;	\
++	}								\
++									\
++	/* Kernel symbol table: GPL-future-only symbols */		\
++	__kcrctab_gpl_future : AT(ADDR(__kcrctab_gpl_future) - LOAD_OFFSET) { \
++		VMLINUX_SYMBOL(__start___kcrctab_gpl_future) = .;	\
++		*(__kcrctab_gpl_future)					\
++		VMLINUX_SYMBOL(__stop___kcrctab_gpl_future) = .;	\
++	}								\
++									\
 +	/* Kernel symbol table: strings */				\
 +        __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
 +		*(__ksymtab_strings)					\
 +	}								\
++	__end_rodata = .;						\
++	. = ALIGN(4096);						\
 +									\
 +	/* Built-in module parameters. */				\
 +	__param : AT(ADDR(__param) - LOAD_OFFSET) {			\
@@ -2860,24 +4541,74 @@ diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm
 +	}
 +
 +#define SECURITY_INIT							\
-+	.security_initcall.init : {					\
++	.security_initcall.init : AT(ADDR(.security_initcall.init) - LOAD_OFFSET) { \
 +		VMLINUX_SYMBOL(__security_initcall_start) = .;		\
 +		*(.security_initcall.init) 				\
 +		VMLINUX_SYMBOL(__security_initcall_end) = .;		\
 +	}
 +
++/* sched.text is aling to function alignment to secure we have same
++ * address even at second ld pass when generating System.map */
 +#define SCHED_TEXT							\
++		ALIGN_FUNCTION();					\
 +		VMLINUX_SYMBOL(__sched_text_start) = .;			\
 +		*(.sched.text)						\
 +		VMLINUX_SYMBOL(__sched_text_end) = .;
 +
++/* spinlock.text is aling to function alignment to secure we have same
++ * address even at second ld pass when generating System.map */
 +#define LOCK_TEXT							\
++		ALIGN_FUNCTION();					\
 +		VMLINUX_SYMBOL(__lock_text_start) = .;			\
 +		*(.spinlock.text)					\
 +		VMLINUX_SYMBOL(__lock_text_end) = .;
-diff -purN /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/xor.h linux/include/asm-generic/xor.h
---- /home/nico/test/buildroot/toolchain_build_arm_nofpu/linux/include/asm-generic/xor.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/asm-generic/xor.h	2005-06-22 21:33:06.000000000 +0200
++
++#define KPROBES_TEXT							\
++		ALIGN_FUNCTION();					\
++		VMLINUX_SYMBOL(__kprobes_text_start) = .;		\
++		*(.kprobes.text)					\
++		VMLINUX_SYMBOL(__kprobes_text_end) = .;
++
++		/* DWARF debug sections.
++		Symbols in the DWARF debugging sections are relative to
++		the beginning of the section so we begin them at 0.  */
++#define DWARF_DEBUG							\
++		/* DWARF 1 */						\
++		.debug          0 : { *(.debug) }			\
++		.line           0 : { *(.line) }			\
++		/* GNU DWARF 1 extensions */				\
++		.debug_srcinfo  0 : { *(.debug_srcinfo) }		\
++		.debug_sfnames  0 : { *(.debug_sfnames) }		\
++		/* DWARF 1.1 and DWARF 2 */				\
++		.debug_aranges  0 : { *(.debug_aranges) }		\
++		.debug_pubnames 0 : { *(.debug_pubnames) }		\
++		/* DWARF 2 */						\
++		.debug_info     0 : { *(.debug_info			\
++				.gnu.linkonce.wi.*) }			\
++		.debug_abbrev   0 : { *(.debug_abbrev) }		\
++		.debug_line     0 : { *(.debug_line) }			\
++		.debug_frame    0 : { *(.debug_frame) }			\
++		.debug_str      0 : { *(.debug_str) }			\
++		.debug_loc      0 : { *(.debug_loc) }			\
++		.debug_macinfo  0 : { *(.debug_macinfo) }		\
++		/* SGI/MIPS DWARF 2 extensions */			\
++		.debug_weaknames 0 : { *(.debug_weaknames) }		\
++		.debug_funcnames 0 : { *(.debug_funcnames) }		\
++		.debug_typenames 0 : { *(.debug_typenames) }		\
++		.debug_varnames  0 : { *(.debug_varnames) }		\
++
++		/* Stabs debugging sections.  */
++#define STABS_DEBUG							\
++		.stab 0 : { *(.stab) }					\
++		.stabstr 0 : { *(.stabstr) }				\
++		.stab.excl 0 : { *(.stab.excl) }			\
++		.stab.exclstr 0 : { *(.stab.exclstr) }			\
++		.stab.index 0 : { *(.stab.index) }			\
++		.stab.indexstr 0 : { *(.stab.indexstr) }		\
++		.comment 0 : { *(.comment) }
+diff -purN orig_linux/include/asm-generic/xor.h linux/include/asm-generic/xor.h
+--- orig_linux/include/asm-generic/xor.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/asm-generic/xor.h	2006-10-14 05:34:04.000000000 +0200
 @@ -0,0 +1,718 @@
 +/*
 + * include/asm-generic/xor.h
