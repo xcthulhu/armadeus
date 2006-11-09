@@ -11,10 +11,6 @@ IMXREGS_CAT:=zcat
 IMXREGS_BINARY:=imxregs
 IMXREGS_TARGET_BINARY:=usr/bin/imxregs
 
-# Not defined in buildroot ??:
-TARGET_STRIP:=arm-linux-strip
-
-
 $(IMXREGS_DIR)/imxregs.c:
 	mkdir -p $(IMXREGS_DIR)/
 	cp $(IMXREGS_SOURCE)/* $(IMXREGS_DIR)/
@@ -24,7 +20,7 @@ $(IMXREGS_DIR)/$(IMXREGS_BINARY): $(IMXREGS_DIR)/imxregs.c
 
 $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY): $(IMXREGS_DIR)/$(IMXREGS_BINARY)
 	install -D $< $@
-	$(TARGET_STRIP) $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
+	$(STRIP) $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
 
 imxregs: uclibc $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
 
