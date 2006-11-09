@@ -5,7 +5,7 @@
 #############################################################
 FBSET_VER=-2.1
 FBSET_SOURCE=fbset$(FBSET_VER).tar.gz
-FBSET_SITE=http://members.chello.be/cr26864/Linux/fbdev/
+FBSET_SITE=http://users.telenet.be/geertu/Linux/fbdev/
 FBSET_DIR:=$(BUILD_DIR)/fbset$(FBSET_VER)
 FBSET_BINARY:=fbset
 FBSET_TARGET_BINARY:=usr/sbin/fbset
