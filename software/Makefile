@@ -91,20 +91,6 @@ buildroot-clean:
 	rm -rf $(BUILDROOT_DIR)/dl
 	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
 
-buildroot-patch: buildroot-clean
-	rm -rf buildroot
-	svn co svn://ericjarrige.homelinux.org/armadeus/trunk/software/buildroot buildroot
-	bzcat $(BUILDROOT_FILE_PATH) | tar -C . $(TAR_OPTIONS) -
-	buildroot/toolchain/patch-kernel.sh buildroot $(PATCH_DIR)
-	touch buildroot/.unpacked
-	diff -purN -x .svn -x '*~' buildroot $(BUILDROOT_DIR) > newBuildroot.diff
-
-sourceball: buildroot-clean
-	cd ..;\
-	cp -a armadeus armadeus-0.1; \
-	tar --exclude=.svn --exclude=*~ -cvjf armadeus-0.1.tar.bz2 armadeus-0.1;
-
-
 .PHONY: dummy buildroot
 
 
