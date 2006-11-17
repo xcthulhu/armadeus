@@ -1,11 +1,10 @@
-diff -purN -x .svn -x '*~' buildrootref/package/Config.in buildroot/package/Config.in
---- buildrootref/package/Config.in	2006-10-26 23:07:04.000000000 +0200
-+++ buildroot/package/Config.in	2006-10-26 22:18:01.000000000 +0200
-@@ -121,6 +121,7 @@ source "package/procps/Config.in"
+--- buildrootref/package/Config.in	2006-11-16 21:41:24.000000000 +0100
++++ buildroot/package/Config.in	2006-11-16 21:40:49.000000000 +0100
+@@ -120,7 +120,6 @@ source "package/pppd/Config.in"
+ source "package/procps/Config.in"
  source "package/psmisc/Config.in"
  source "package/python/Config.in"
- source "package/qte/Config.in"
-+source "package/qte_gpl/Config.in"
+-source "package/qte/Config.in"
  source "package/raidtools/Config.in"
  source "package/readline/Config.in"
  source "package/rsync/Config.in"
