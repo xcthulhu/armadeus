@@ -29,7 +29,7 @@ use XilinxCoreLib.all;
 
 entity PS2_top is                       -- this is the top
   port ( DataxD  : inout std_logic_vector(15 downto 0);
-         AddrxDI : in    std_logic_vector(9 downto 0);
+         AddrxDI : in    std_logic_vector(12 downto 0);
          WRxBI   : in    std_logic;
          RDxBI   : in    std_logic;
 
@@ -105,9 +105,9 @@ begin
     elsif ClkxCI'event and ClkxCI = '1' then  -- rising clock edge
       if CSxBI = '0' and WRxBI = '0' then
         case AddrxDI is
-          when "0000000010" =>
+          when "0000000000010" =>
             reg1 <= DataxD(7 downto 0);
-          when "0000000011" =>
+          when "0000000000011" =>
             reg2 <= DataxD(7 downto 0);
           when others       => null;
         end case;
@@ -151,19 +151,19 @@ begin
     readAccessPulseFiFo <= '1';
     if CSxBI = '0' and RDxBI = '0' then
       case AddrxDI is
-        when "0000000000" =>
+        when "0000000000000" =>
           DataOutRAMxD <= "00" & data_count(1 downto 0) & "0000" & "00" & valid & overflow & full & almost_full & empty & almost_empty;
-        when "0000000001" =>
+        when "0000000000001" =>
           DataOutRAMxD <= "00000000" & dout;
           if readAccessPulse = '0' then
             readAccessPulseFiFo <= '0';
           end if;
-        when "0000000010" =>
+        when "0000000000010" =>
           DataOutRAMxD <= "00000000" & reg1;
-        when "0000000011" =>
+        when "0000000000011" =>
           DataOutRAMxD <= "00000000" & reg2;
 
-        when "0000000100"         =>
+        when "0000000000100"         =>
           DataOutRAMxD <= "0001001000110100";
         when others               =>
           DataOutRAMxD <= (others => '0');
