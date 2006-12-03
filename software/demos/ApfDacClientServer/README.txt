@@ -26,6 +26,6 @@ To clean up:
 
 
 
-The server is able to works without I2C bus you should ativate it as described in the DAC documentation page:
+The server is able to works without I2C bus. But you should ativate it as described in the DAC documentation page:
 http://www.armadeus.com/wiki/index.php?title=DAC
 If running on a PC, the server will only simulate the DAC programming.
