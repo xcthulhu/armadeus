@@ -36,7 +36,7 @@ typedef unsigned int u32;
 static u16 getmem(u32 addr)
 {
    void *map, *regaddr;
-   u16 val;
+   u32 val;
 #ifdef DEBUG
    printf("getmem(0x%04x)\n", addr);
 #endif // DEBUG
@@ -58,15 +58,15 @@ static u16 getmem(u32 addr)
    }
    regaddr = map + (addr & MAP_MASK);
 
-   val = *(u16*) regaddr;
+   val = *(u32*) regaddr;
    munmap(0,MAP_SIZE);
-   printf("read 0x%04x at 0x%08x, 0x%08x\n", val, regaddr, addr);
+   printf("read 0x%04x at 0x%08x\n", val, addr);
 
    return val;
 }
 
 // Modify register value at given address
-static void putmem(u32 addr, u16 val)
+static void putmem(u32 addr, u32 val)
 {
    void *map=0;
    void *regaddr=0;
@@ -94,7 +94,7 @@ static void putmem(u32 addr, u16 val)
    regaddr = map + (addr & MAP_MASK);
   // printf("Mapped addr: 0x%04x\n", regaddr);
 
-   *(u16*) regaddr = val;
+   *(u32*) regaddr = val;
    munmap(0,MAP_SIZE);
 }
 
