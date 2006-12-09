@@ -26,8 +26,6 @@
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
 
-#define GPIO_GPIO GPIO_OCR_MASK // gpio mode
-
 #define GPIO_PORT(x)  ((x >> 5) & 3)
 #define GPIO_SET(x)   (DR(GPIO_PORT(x)) |= (1<<(x & GPIO_PIN_MASK)))
 #define GPIO_CLEAR(x) (DR(GPIO_PORT(x)) &= ~(1<<(x & GPIO_PIN_MASK)))
@@ -80,12 +78,12 @@ int fpga_wr_fn( int assert_write )
 
 int fpga_pre_fn( void )
 {
-	// Initialize GPIO pins
-	imx_gpio_mode (FPGA_INIT | GPIO_GPIO | GPIO_IN );
-	imx_gpio_mode (FPGA_DONE | GPIO_GPIO | GPIO_IN );
-	imx_gpio_mode (FPGA_DIN  | GPIO_GPIO | GPIO_OUT );
-	imx_gpio_mode (FPGA_PROGRAM | GPIO_GPIO | GPIO_OUT );
-	imx_gpio_mode (FPGA_CLOCK | GPIO_GPIO | GPIO_OUT );
+    // Initialize GPIO pins
+	imx_gpio_mode (FPGA_INIT | GPIO_GIUS | GPIO_DR | GPIO_IN );
+	imx_gpio_mode (FPGA_DONE | GPIO_GIUS | GPIO_DR | GPIO_IN );
+	imx_gpio_mode (FPGA_DIN  | GPIO_GIUS | GPIO_DR | GPIO_OUT );
+	imx_gpio_mode (FPGA_PROGRAM | GPIO_GIUS | GPIO_DR | GPIO_OUT );
+	imx_gpio_mode (FPGA_CLOCK | GPIO_GIUS | GPIO_DR | GPIO_OUT );
 	return 1;
 }
 
