@@ -1,19 +1,41 @@
 diff -purN linux-2.6.18/drivers/video/imxfb.c linux-2.6.18-imx/drivers/video/imxfb.c
 --- linux-2.6.18/drivers/video/imxfb.c	2006-09-20 05:42:06.000000000 +0200
 +++ linux-2.6.18-imx/drivers/video/imxfb.c	2006-10-01 14:22:39.000000000 +0200
-@@ -396,7 +396,12 @@ static void imxfb_setup_gpio(struct imxf
+@@ -392,7 +392,26 @@ static void imxfb_setup_gpio(struct imxf
+ 	case 1:
+ 		imx_gpio_mode(PD15_PF_LD0);
+ 	}
++#ifdef CONFIG_MACH_APF9328
++    /* initialize standard GPIOs */
++	imx_gpio_mode(PD6_PF_LSCLK);
++    imx_gpio_mode(PD14_PF_FLM_VSYNC);
++	imx_gpio_mode(PD13_PF_LP_HSYNC);
++	imx_gpio_mode(PD12_PF_ACD_OE);	
+ 
++    /* if != 0 */
++    if( fbi->pwmr ) {
++        imx_gpio_mode(PD11_PF_CONTRAST);
++    }
++    
++    /* sharp display specific */
++	if( fbi->pcr & PCR_SHARP ) {
++   	    imx_gpio_mode(PD10_PF_SPL_SPR);
++	    imx_gpio_mode(PD7_PF_REV);
++	    imx_gpio_mode(PD8_PF_CLS);
++     	imx_gpio_mode(PD9_PF_PS);
++    }
++#else
  	/* initialize GPIOs */
  	imx_gpio_mode(PD6_PF_LSCLK);
  	imx_gpio_mode(PD10_PF_SPL_SPR);
-+#ifndef CONFIG_MACH_SCB9328
-+#ifndef CONFIG_MACH_APF9328
-+    /* On apf9328, used to (de)activate the display, so we need it as a normal gpio */
- 	imx_gpio_mode(PD11_PF_CONTRAST);
-+#endif // CONFIG_MACH_APF9328
-+#endif /* CONFIG_MACH_SCB9328 */
- 	imx_gpio_mode(PD14_PF_FLM_VSYNC);
- 	imx_gpio_mode(PD13_PF_LP_HSYNC);
- 	imx_gpio_mode(PD7_PF_REV);
+@@ -414,6 +433,7 @@ static void imxfb_setup_gpio(struct imxf
+ 	 */
+ 	imx_gpio_mode(PD12_PF_ACD_OE);
+ #endif
++#endif //CONFIG_MACH_APF9328
+ 
+ }
+  
 diff -purN linux-2.6.18/drivers/video/logo/Kconfig linux-2.6.18-imx/drivers/video/logo/Kconfig
 --- linux-2.6.18/drivers/video/logo/Kconfig	2006-09-20 05:42:06.000000000 +0200
 +++ linux-2.6.18-imx/drivers/video/logo/Kconfig	2006-10-01 14:22:39.000000000 +0200
