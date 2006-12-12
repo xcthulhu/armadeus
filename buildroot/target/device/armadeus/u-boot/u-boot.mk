@@ -3,7 +3,7 @@
 # u-boot
 #
 #############################################################
-U-BOOT_VER:=1.1.3
+U-BOOT_VER:=1.1.6
 U-BOOT_SOURCE:=u-boot-$(U-BOOT_VER).tar.bz2
 U-BOOT_SITE:=http://osdn.dl.sourceforge.net/sourceforge/u-boot/
 U-BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U-BOOT_VER)
