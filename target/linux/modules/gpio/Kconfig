@@ -1,0 +1,16 @@
+#
+#
+
+config ARMADEUS_GPIO_DRIVER
+        tristate "Armadeus GPIO driver"
+        default n
+        depends on ARMADEUS_DRIVERS
+        ---help---
+
+config ARMADEUS_PPDEV_DRIVER
+        tristate "Armadeus Parallel Port driver"
+        default n
+        depends on ARMADEUS_GPIO_DRIVER
+        ---help---
+          This driver allows you to emulate a parallel port interface with GPIO.
+          Activate it if you want for example connect a LCD with a // port interface.

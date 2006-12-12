@@ -1,0 +1,10 @@
+#
+#
+
+config ARMADEUS_GENERIC_DRIVER
+        tristate "Generic Armadeus driver (for test)"
+        default n
+        depends on ARMADEUS_DRIVERS
+        ---help---
+		  Could be useful as startpoint for your own drivers
+

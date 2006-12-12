@@ -1,0 +1,8 @@
+--- linux-2.6.18.1.ori/drivers/usb/Kconfig	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.18.1/drivers/usb/Kconfig	2006-12-06 22:28:32.000000000 +0100
+@@ -134,3 +134,5 @@
+ 
+ endmenu
+ 
++source "drivers/armadeus/Kconfig"
++

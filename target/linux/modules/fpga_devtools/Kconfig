@@ -1,0 +1,9 @@
+#
+
+#
+config ARMADEUS_FPGA_TOOL_DRIVER
+        boolean "Armadeus FPGA configuration driver"
+        default n
+        depends on ARMADEUS_DRIVERS
+        ---help---
+

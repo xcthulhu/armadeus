@@ -1,0 +1,34 @@
+#
+# Armadeus custom drivers configuration
+#
+
+menu "Armadeus specific drivers"
+
+#
+config ARMADEUS_DRIVERS
+	boolean
+	default n
+
+# ARM SA1111 chips have a non-PCI based "OHCI-compatible" USB host interface.
+config ARMADEUS_DRIVERS
+	boolean "Support for specific Armadeus drivers"
+	default n
+#	depends on USB_ARCH_HAS_HCD
+	---help---
+	  
+	  
+source "drivers/armadeus/generic/Kconfig"
+
+source "drivers/armadeus/gpio/Kconfig"
+
+comment "FPGA related"
+	depends on ARMADEUS_DRIVERS
+
+source "drivers/armadeus/fpga_devtools/Kconfig"
+
+source "drivers/armadeus/keypad/Kconfig"
+
+source "drivers/armadeus/ps2keyboard/Kconfig"
+
+endmenu
+

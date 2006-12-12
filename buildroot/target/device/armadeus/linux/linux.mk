@@ -103,7 +103,7 @@ else
 	$(SED) 's,db->io_data = (void *).*,db->io_data = (void *)(base + 4 );,g' \
 		$(LINUX_DIR)/drivers/net/dm9000.c
 endif
-
+	(cd $(LINUX_DIR)/drivers; ln -sf ../../../../target/linux/modules/ armadeus)
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) oldconfig include/linux/version.h
 	touch $@
 
@@ -114,6 +114,8 @@ $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
 $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done u-boot
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) $(LINUX_FORMAT)
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) modules
+	# Armadeus custom modules compilation:
+	$(MAKE) PATH=$(TARGET_PATH) LINUX_DIR=$(LINUX_DIR) -C $(LINUX_DIR)/drivers/armadeus
 
 $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 	cp -fa $(LINUX_DIR)/$(LINUX_BINLOC) $(LINUX_KERNEL)
@@ -124,6 +126,8 @@ $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep: $(LINUX_KERNEL)
 	rm -f $(TARGET_DIR)/sbin/cardmgr
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) DEPMOD=`which true` \
 		INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
+	# Armadeus custom modules install:
+	$(MAKE) -C $(LINUX_DIR)/drivers/armadeus DEPMOD=`which true` TARGET_DIR=$(TARGET_DIR) install	
 	(cd $(TARGET_DIR)/lib/modules; ln -s $(LINUX_VERSION)/kernel/drivers .)
 	$(LINUX_PACKAGE_DIR)/depmod.pl \
 		-b $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/ \
