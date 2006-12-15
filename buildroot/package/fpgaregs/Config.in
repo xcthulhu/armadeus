@@ -1,0 +1,6 @@
+config BR2_PACKAGE_FPGAREGS
+	bool "fpgaregs"
+	default n
+	help
+	  Build fpgaregs debug tool. It allows you to access the FPGA internal registers content directly from Linux userspace.
+
