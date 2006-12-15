@@ -9,11 +9,9 @@ config ARMADEUS_DRIVERS
 	boolean
 	default n
 
-# ARM SA1111 chips have a non-PCI based "OHCI-compatible" USB host interface.
 config ARMADEUS_DRIVERS
 	boolean "Support for specific Armadeus drivers"
 	default n
-#	depends on USB_ARCH_HAS_HCD
 	---help---
 	  
 	  
