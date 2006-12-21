@@ -28,5 +28,7 @@ source "drivers/armadeus/keypad/Kconfig"
 
 source "drivers/armadeus/ps2keyboard/Kconfig"
 
+source "drivers/armadeus/pwm/Kconfig"
+
 endmenu
 

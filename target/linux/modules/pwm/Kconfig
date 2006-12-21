@@ -1,0 +1,11 @@
+#
+#
+
+config ARMADEUS_PWM_DRIVER
+        tristate "Armadeus PWM driver"
+        default n
+        depends on ARMADEUS_DRIVERS
+        ---help---
+	  This driver allows you to control the PWM controller in the i.MXl.
+	  PWM is useful to play sound or control motors
+
