@@ -41,7 +41,8 @@
 +#
 +# Build options
 +#
- BR2_WGET="wget --passive-ftp"
+-BR2_WGET="wget --passive-ftp"
++BR2_WGET="wget --passive-ftp --no-directories"
 +BR2_SVN="svn co"
 +BR2_ZCAT="zcat"
 +BR2_TAR_OPTIONS=""
