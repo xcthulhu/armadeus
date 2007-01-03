@@ -29,7 +29,6 @@ PWD	:= $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-	arm-linux-gcc fpgaregs.c -o fpgaregs
 
 clean:
 	rm -f *.*o \
