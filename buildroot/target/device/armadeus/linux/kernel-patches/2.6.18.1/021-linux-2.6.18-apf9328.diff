@@ -974,7 +974,7 @@ diff -purN -x '*~' ref/linux-2.6.18/arch/arm/mach-imx/apf9328.c linux-2.6.18/arc
 +
 +static void apf9328_lcd_power(int on)
 +{
-+    printk("apf9328_lcd_power: %s\n", on ? "on":"off");
++    pr_debug("apf9328_lcd_power: %s\n", on ? "on":"off");
 +    /* use Port_D CONTRAST pin to control LCD power down mode */
 +    if(on)
 +        DR(3) &= 0xFFFFF7FF;    
