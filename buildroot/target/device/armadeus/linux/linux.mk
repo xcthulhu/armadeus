@@ -108,7 +108,8 @@ endif
 	touch $@
 
 $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
-	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) dep
+# 	make dep no more required with kernel 2.6.x 
+#	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) dep
 	touch $@
 
 $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done u-boot
