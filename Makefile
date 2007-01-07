@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
+
 #--------------------------------------------------------------
 # Just run 'make menuconfig', configure stuff, then run 'make'.
 # You shouldn't need to mess with anything beyond this point...
@@ -35,6 +36,18 @@ TAR_OPTIONS=--exclude=.svn -xvf
 
 #used only by cygwin to restore the rights on some rootfs directories
 BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/root
+
+LINUX-REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BUILDROOT_DIR)/.config | \
+      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
+LINUX_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/linux-$(LINUX-REL)
+
+UCLIBC-REL=`grep "UCLIBC_VER:=" $(BUILDROOT_DIR)/toolchain/uClibc/uclibc.mk | \
+      sed "s/UCLIBC_VER:=//"`
+UCLIBC_DIR=$(BUILDROOT_DIR)/toolchain_build_arm_nofpu/uClibc-$(UCLIBC-REL)
+
+BUSYBOX-REL=`grep "BUSYBOX_VER:=" $(BUILDROOT_DIR)/package/busybox/busybox.mk | \
+      sed "s/BUSYBOX_VER:=//"`
+BUSYBOX_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/busybox-$(BUSYBOX-REL)
 
 all: buildroot
 
@@ -67,7 +80,7 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_D
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
 	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
-	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
 		svn revert . ; \
     	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
      	sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
@@ -89,6 +102,21 @@ buildroot: $(BUILDROOT_DIR)/.unpacked
 menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) menuconfig
 
+uclibc-menuconfig:
+	@if [ -e "$(UCLIBC_DIR)/.unpacked" ] ; then \
+		$(MAKE) -C $(UCLIBC_DIR) menuconfig ; \
+	fi;
+
+busybox-menuconfig:
+	@if [ -e "$(BUSYBOX_DIR)/.unpacked" ] ; then \
+		$(MAKE) -C $(BUSYBOX_DIR) menuconfig ; \
+	fi;
+	
+linux-menuconfig:
+	@if [ -e "$(LINUX_DIR)/.unpacked" ] ; then \
+		$(MAKE) -C $(LINUX_DIR) menuconfig ; \
+	fi;
+
 .DEFAULT: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
@@ -99,6 +127,9 @@ buildroot-clean:
 	rm -rf $(BUILDROOT_DIR)/dl
 	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
 
+rootfs-dirclean:
+	rm -rf $(BUILDROOT_DIR)	
+	
 .PHONY: dummy buildroot
 
 
