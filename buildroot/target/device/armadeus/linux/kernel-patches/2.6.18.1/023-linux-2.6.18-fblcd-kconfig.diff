@@ -1,0 +1,41 @@
+--- linux-2.6.18.1/drivers/video/Kconfig	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.18.1.mod/drivers/video/Kconfig	2007-01-07 22:24:25.000000000 +0100
+@@ -271,6 +271,7 @@
+ 	  If you plan to use the LCD display with your SA-1100 system, say
+ 	  Y here.
+ 
++
+ config FB_IMX
+ 	tristate "Motorola i.MX LCD support"
+ 	depends on FB && ARM && ARCH_IMX
+@@ -278,6 +279,30 @@
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT
+ 
++choice
++        depends on FB_IMX
++        prompt "LCD Panel"
++        default FB_IMX_SHARP_LQ057_TFT
++
++config FB_IMX_SHARP_LQ057_TFT
++        bool "Sharp LQ057"
++        help
++          Sharp LQ057, a 3.5" 18 bits color QVGA, TFT panel.
++          The native resolution is 320x240.
++
++config FB_IMX_OPTREX_F51900_CSTN
++        bool "Optrex F-51900"
++        help
++          Optrex 5.7" 8 bits color STN.
++	   The native resolution is 320x240.
++
++config FB_IMX_MOTOROLA_A910_TFT
++        bool "Motorola A910 TFT"
++        help
++          Motorola A910 screen, a 1.2" color QVGA, TFT panel.
++          The native resolution is 240x320.
++endchoice
++
+ config FB_CYBER2000
+ 	tristate "CyberPro 2000/2010/5000 support"
+ 	depends on FB && PCI && (BROKEN || !SPARC64)
