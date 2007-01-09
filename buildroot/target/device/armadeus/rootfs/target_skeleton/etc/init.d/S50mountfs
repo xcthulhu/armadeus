@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Mount/unmount all filesystem in /etc/fstab
+
+test -f /etc/fstab || exit 0
+
+case "$1" in
+    start)
+	echo "Mounting all filesystems in /etc/fstab"
+	/bin/mount -a
+	;;
+    stop)
+	echo  "Unmounting all filesystems"
+	/bin/umount -a
+	;;
+    restart)
+	$0 stop
+	$0 start
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+	;;
+esac
+
+exit 0
+
