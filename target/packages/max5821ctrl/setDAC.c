@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 #ifdef	DEBUG_MAX5821
 		printf("Set the DAC : %02X %02X \n", buf[0],buf[1] );
 #endif
-		if ( 0 !=  write (bus, buf,2))
+		if ( 0 > write (bus, buf,2))
 		{
 			printf("Write error\n");
 			exit (1);
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	if ( 0 !=  write (bus, buf,2))
+	if ( 0 > write (bus, buf,2))
 	{
 		printf("Write error\n");
 		exit (1);
