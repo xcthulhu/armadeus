@@ -81,6 +81,7 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_D
 	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
 	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+		./host/patches/cygwin/run ; \
 		svn revert . ; \
     	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
      	sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
@@ -89,7 +90,7 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_D
 	touch $(BUILDROOT_DIR)/.unpacked
 
 buildroot: $(BUILDROOT_DIR)/.unpacked
-	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
+	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
 		if [ -e "$(BUILDROOT_ROOT_DIR)/etc" ] ; then \
 			chmod 777 $(BUILDROOT_DIR)/build_arm_nofpu/root/etc ; \
 		fi; \
