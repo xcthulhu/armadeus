@@ -15,6 +15,8 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/serio.h>
+// For pr_debug:
+#include <linux/kernel.h>
 
 #include <asm/arch/imx-regs.h>
 
@@ -61,9 +63,9 @@ static int apf9328keyboard_read(void)
     volatile unsigned short value;
     
     value = FPGA_PS2_STATUS_REGISTER;
-    printk(DRIVER_NAME ": status read 0x%x\n", value);
+    pr_debug(DRIVER_NAME ": status read 0x%x\n", value);
     value = FPGA_PS2_DATA_REGISTER;
-    printk(DRIVER_NAME ": value read 0x%x\n", value);
+    pr_debug(DRIVER_NAME ": value read 0x%x\n", value);
     
     return(value);
 }
@@ -171,7 +173,7 @@ static int __init apf9328keyboard_init( void )
     // Check if FPGA is correctly loaded
     err = apf9328keyboard_checkinterface();
     if (err) {
-        printk(KERN_WARNING DRIVER_NAME ": Unable to find PS/2 controller. This driver requires a board with a FPGA loaded with the right IP!\n");
+        printk( KERN_ERR DRIVER_NAME ": Unable to find PS/2 controller. This driver requires a board with a FPGA loaded with the right IP!\n" );
         return(err);
     }
 
@@ -201,7 +203,7 @@ static void __exit apf9328keyboard_exit( void )
     del_timer( &read_timer );
     serio_unregister_port( apf9328keyboard_port );
     //kfree( apf9328keyboard_port ); ??
-    printk(DRIVER_NAME ": successfully unloaded\n");
+    printk( KERN_INFO DRIVER_NAME ": successfully unloaded\n" );
 }
 
 module_init(apf9328keyboard_init);
