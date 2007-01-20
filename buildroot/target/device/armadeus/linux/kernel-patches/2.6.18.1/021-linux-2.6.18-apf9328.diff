@@ -810,7 +810,7 @@ diff -purN -x '*~' ref/linux-2.6.18/arch/arm/configs/apf9328_defconfig linux-2.6
 diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328.c
 --- linux-2.6.18.1/arch/arm/mach-imx/apf9328.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328.c	2007-01-07 21:39:30.000000000 +0100
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,297 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -836,6 +836,9 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/serial_8250.h>
++#include <linux/spi/spi.h>
++// Get CONFIG_ options:
++#include <linux/config.h>
 +
 +#include <asm/system.h>
 +#include <asm/hardware.h>
@@ -847,18 +850,14 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <asm/arch/imx-uart.h>
-+// Get CONFIG_ options:
-+#include <linux/config.h>
-+//
++#include <asm/arch/mmc.h>
++#include <asm/arch/spi_imx.h>
++
 +#ifdef CONFIG_DM9000
 +#include <linux/dm9000.h>
 +#endif // CONFIG_DM9000
-+//
-+#include <asm/arch/mmc.h>
-+//
++
 +#include "generic.h"
-+
-+
 +
 +// --- ETHERNET RESSOURCE ---
 +#ifdef CONFIG_DM9000
@@ -955,6 +954,70 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +    }
 +};
 +
++#ifdef CONFIG_SPI_IMX
++static struct resource imx_spi0_resource[] = {
++	[0] = {
++		.start = 0x00213000,
++		.end   = 0x00213fff,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = CSPI_INT,
++		.end   = CSPI_INT,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct spi_imx_master imx_spi_master_info = {
++	.num_chipselect	= 1,
++	.enable_dma=0,
++};
++
++static struct platform_device imx_spi = {
++	.name				= "imx-spi",
++	.id					= 1,
++	.resource			= imx_spi0_resource,
++	.num_resources		= ARRAY_SIZE(imx_spi0_resource),
++	.dev = {
++		.platform_data	= &imx_spi_master_info,
++	},
++};
++#endif //CONFIG_SPI_IMX
++
++#ifdef CONFIG_SENSORS_MAX1027_MODULE
++#define IMX_SPI1_SS_PIN 15 
++#define IMX_SPI1_SS (1<<15)
++static void max1027_init_cs()
++{
++	// SPI CSn is used as chip select but in GPIO mode
++    OCR1(2) |= 3<<(IMX_SPI1_SS_PIN*2);
++    DDIR(2) |= IMX_SPI1_SS;
++    DR(2) |= IMX_SPI1_SS;
++    GIUS(2) = IMX_SPI1_SS;
++}
++static void max1027_cs(u32 command)
++{
++    if( command == SPI_CS_DEASSERT )
++        DR(2) |= IMX_SPI1_SS;    
++    else
++        DR(2) &= ~IMX_SPI1_SS;
++}
++
++static struct spi_imx_chip max1027_hw = {
++	.cs_control		= max1027_cs,
++};
++
++static struct spi_board_info spi_board_info[] __initdata = { {
++	.modalias			= "max1027",
++	.controller_data 	= &max1027_hw,
++	.max_speed_hz		= 8000000,
++	.bus_num			= 1,
++	.chip_select		= 0,
++	.mode 				= 0,
++},
++};
++#endif // CONFIG_SENSORS_MAX1027_MODULE
++
 +// --- LCD RESSOURCE ---
 +#ifdef CONFIG_FB_IMX
 +// all custom LCD configuration is deported to this file for clarity purpose:
@@ -969,6 +1032,9 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +#ifdef CONFIG_DM9000    
 +    &dm9000x_device,
 +#endif // CONFIG_DM9000
++#ifdef CONFIG_SPI_IMX
++    &imx_spi,
++#endif //CONFIG_SPI_IMX
 +};
 +
 +static void __init apf9328_init(void)
@@ -986,7 +1052,14 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +    imx_fb_set_gpios();
 +#endif // CONFIG_FB_IMX
 +
++#ifdef CONFIG_SENSORS_MAX1027_MODULE
++    max1027_init_cs();
++#endif //CONFIG_SENSORS_MAX1027_MODULE
++
 +    platform_add_devices(devices, ARRAY_SIZE(devices));
++#ifdef CONFIG_SENSORS_MAX1027_MODULE
++  	 spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
++#endif // CONFIG_SENSORS_MAX1027_MODULE
 +    printk("--- APF9328 ressources registered\n");
 +}
 +

@@ -1,0 +1,352 @@
+diff -purN ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/Kconfig linux-2.6.18.1/drivers/hwmon/Kconfig
+--- ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/Kconfig	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.18.1/drivers/hwmon/Kconfig	2007-01-02 16:26:06.843750000 +0100
+@@ -317,6 +317,15 @@ config SENSORS_LM92
+ 	  This driver can also be built as a module.  If so, the module
+ 	  will be called lm92.
+ 
++config SENSORS_MAX1027
++	tristate "Maxim MAX1027 sensor chip"
++	depends on HWMON && SPI_MASTER
++	help
++	  If you say yes here you get support for MAX1027 sensor chip.
++
++	  This driver can also be built as a module.  If so, the module
++	  will be called max1027.
++
+ config SENSORS_MAX1619
+ 	tristate "Maxim MAX1619 sensor chip"
+ 	depends on HWMON && I2C && EXPERIMENTAL
+diff -purN ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/Makefile linux-2.6.18.1/drivers/hwmon/Makefile
+--- ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/Makefile	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.18.1/drivers/hwmon/Makefile	2007-01-02 16:24:11.515625000 +0100
+@@ -38,6 +38,7 @@ obj-$(CONFIG_SENSORS_LM85)	+= lm85.o
+ obj-$(CONFIG_SENSORS_LM87)	+= lm87.o
+ obj-$(CONFIG_SENSORS_LM90)	+= lm90.o
+ obj-$(CONFIG_SENSORS_LM92)	+= lm92.o
++obj-$(CONFIG_SENSORS_MAX1027)	+= max1027.o
+ obj-$(CONFIG_SENSORS_MAX1619)	+= max1619.o
+ obj-$(CONFIG_SENSORS_PC87360)	+= pc87360.o
+ obj-$(CONFIG_SENSORS_SIS5595)	+= sis5595.o
+diff -purN ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/max1027.c linux-2.6.18.1/drivers/hwmon/max1027.c
+--- ma/buildroot/build_arm_nofpu/linux-2.6.18.1/drivers/hwmon/max1027.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.18.1/drivers/hwmon/max1027.c	2007-01-17 20:12:54.748893800 +0100
+@@ -0,0 +1,318 @@
++/*
++ * max1027.c
++ *
++ * The max1027 is a temperature sensor and ADC chip from Maxim.
++ * Copyright (C) 2007 Armadeus <ncolombain@armadeus.com>
++ *
++ * The max1027 communicates with a host processor via an SPI/Microwire Bus
++ * interface. The complete datasheet is available at Maxim's website
++ * here:
++ * http://datasheets.maxim-ic.com/en/ds/MAX1027-MAX1031.pdf
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++ 
++ 
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/sysfs.h>
++#include <linux/hwmon.h>
++#include <linux/spi/spi.h>
++#include <asm/semaphore.h>
++
++#define DRVNAME		"max1027"
++
++#define MAX1027_DEFAULT_SCAN_TIME 10 //ms
++
++/* internal registers */
++#define MAX1027_REG_CONV    0x80
++#define MAX1027_REG_SETUP   0x40
++#define MAX1027_REG_AVG     0x20
++#define MAX1027_REG_RESET   0x10
++#define MAX1027_REG_UNI     0x00
++#define MAX1027_REG_BIPO    0x00
++
++/* register specifics */
++#define MAX1027_CONV_CHSEL(x) 		((x&0x0f)<<3)
++#define MAX1027_CONV_SCAN(x)  		((x&0x03)<<1)
++#define MAX1027_CONV_TEMP  			0x01
++// All channels and temperature are scanned per conversion
++#define MAX_1027_CONV_DEFAULT 		(MAX1027_REG_CONV | \
++									MAX1027_CONV_CHSEL(7) | \
++									MAX1027_CONV_SCAN(0) | MAX1027_CONV_TEMP)
++
++#define MAX1027_SETUP_CLKSEL(x) 	((x&0x03)<<4)
++#define MAX1027_SETUP_REFSEL(x) 	((x&0x03)<<2)
++#define MAX1027_SETUP_DIFFSEL(x)  	(x&0x03)
++#define MAX1027_SETUP_DIFFSEL_MASK 	 0x03
++
++// internal clock and single ended configuration following setup cmd
++#define MAX_1027_SETUP_DEFAULT 		(MAX1027_REG_SETUP | \
++										MAX1027_SETUP_CLKSEL(2) | \
++										MAX1027_SETUP_DIFFSEL(2))
++
++#define MAX1027_AVG_AVGON(x)  		((x&0x01)<<4)
++#define MAX1027_AVG_NAVG(x)   		((x&0x03)<<2)
++#define MAX1027_AVG_NSCAN(x)  		(x&0x03)
++
++#define MAX1027_RESET_ON 			(0x0|MAX1027_REG_RESET)
++#define MAX1027_RESET_OFF 			(0x8|MAX1027_REG_RESET)
++
++#define MAX1027_UNI_UCH(x) 			((x&0x0f)<<4)
++#define MAX1027_BIPO_BCH(x) 		((x&0x0f)<<4)
++
++#define NB_CHANNELS 8
++#define RESULT_ARRAY_SIZE 			((NB_CHANNELS+1)*2)
++
++static ssize_t max1027_sense_temp(struct device *dev,
++		struct device_attribute *attr, char *buf);
++
++static ssize_t max1027_config(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count);
++
++static ssize_t max1027_conv(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count);
++		
++struct max1027 {
++	struct class_device *cdev;
++	struct mutex update_lock;
++	u8 results[RESULT_ARRAY_SIZE];
++	int scan_time; /* in jiffies */
++	unsigned long last_updated; /* in jiffies */
++};
++
++// must be used within mutex !!!	
++static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
++{
++	u8 buf = cmd;
++	spi_write_then_read(spi, &buf, 1, NULL, 0);
++}
++	
++static void max1027_update_device(struct spi_device *spi)
++{
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
++
++	mutex_lock(&p_max1027->update_lock);
++
++	if (time_after(jiffies, p_max1027->last_updated ) )	{
++		// read results 
++		spi_write_then_read(spi, NULL, 0, &p_max1027->results[0], RESULT_ARRAY_SIZE );
++		// start new conv
++		max1027_send_cmd( spi, MAX1027_REG_CONV | 0x39);
++		p_max1027->last_updated = jiffies + p_max1027->scan_time;
++	}
++	mutex_unlock(&p_max1027->update_lock);
++}	
++
++/* sysfs hook functions */				
++
++#define show_in(offset) \
++static ssize_t show_in##offset##_input(struct device *dev, \
++					struct device_attribute *attr, char *buf) \
++{ \
++	u8 index; \
++	int result; \
++	ssize_t status; \
++	struct spi_device *spi = to_spi_device(dev); \
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev); \
++	\
++	index = (offset<<1);	\
++	max1027_update_device(spi); \
++	result = (p_max1027->results[index] << 8) + p_max1027->results[index+1];\
++	status = sprintf(buf, "%d\n", ((result>>2)*2500)>>10); /* millivolt */ \
++\
++	return status; \
++} 
++
++show_in(1);
++show_in(2);
++show_in(3);
++show_in(4);
++show_in(5);
++show_in(6);
++show_in(7);
++show_in(8);
++
++static DEVICE_ATTR(in0_input, S_IRUGO, show_in1_input, NULL);
++static DEVICE_ATTR(in1_input, S_IRUGO, show_in2_input, NULL);
++static DEVICE_ATTR(in2_input, S_IRUGO, show_in3_input, NULL);
++static DEVICE_ATTR(in3_input, S_IRUGO, show_in4_input, NULL);
++static DEVICE_ATTR(in4_input, S_IRUGO, show_in5_input, NULL);
++static DEVICE_ATTR(in5_input, S_IRUGO, show_in6_input, NULL);
++static DEVICE_ATTR(in6_input, S_IRUGO, show_in7_input, NULL);
++static DEVICE_ATTR(in7_input, S_IRUGO, show_in8_input, NULL);
++static DEVICE_ATTR(temp1_input, S_IRUGO, max1027_sense_temp, NULL);
++static DEVICE_ATTR(config, S_IWUSR, NULL, max1027_config);
++static DEVICE_ATTR(conv, S_IWUSR, NULL, max1027_conv);
++
++static ssize_t max1027_sense_temp(struct device *dev,
++		struct device_attribute *attr, char *buf)
++{
++	int result;
++	ssize_t status;
++	struct spi_device *spi = to_spi_device(dev);
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
++	
++	max1027_update_device(spi);
++	result = (p_max1027->results[0] << 8) + p_max1027->results[1];
++	status = sprintf(buf, "%+d\n", ((int)(result>>3)) ); /* degrees Celsius */
++	return status;
++}
++
++
++// buf value <256 -> max1027 config register
++// buf value >=256 -> max1027 Unipolar or Bipolar mode registers 
++static ssize_t max1027_config(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	int val;
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
++	
++	val = simple_strtol(buf, NULL, 10);
++
++	mutex_lock(&p_max1027->update_lock);
++	max1027_send_cmd( spi, MAX1027_REG_SETUP| (val&0xff) );
++	// check whether we need to configure the uni or bipolar mode IOs or not  
++	if( ((val&0xff) & MAX1027_SETUP_DIFFSEL_MASK) > MAX1027_SETUP_DIFFSEL(1) ) {
++		max1027_send_cmd( spi, val>>8 );
++	}
++	mutex_unlock(&p_max1027->update_lock);
++
++	return count;
++}
++
++// buf value <256 -> max1027 config register
++static ssize_t max1027_conv(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	int val;
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
++	
++	val = simple_strtol(buf, NULL, 10);
++
++	mutex_lock(&p_max1027->update_lock);
++	max1027_send_cmd( spi, MAX1027_REG_CONV| (val&0xff) );
++	mutex_unlock(&p_max1027->update_lock);
++
++	return count;
++}
++
++static int __devinit max1027_probe(struct spi_device *spi)
++{
++	struct max1027 *p_max1027;
++	int status;
++
++	p_max1027 = kzalloc(sizeof *p_max1027, GFP_KERNEL);
++	if (!p_max1027)
++		return -ENOMEM;
++
++	mutex_init(&p_max1027->update_lock);
++	// init max1027 struct
++	p_max1027->scan_time = msecs_to_jiffies(MAX1027_DEFAULT_SCAN_TIME); //default value 
++	p_max1027->last_updated = jiffies;
++	
++	/* sysfs hook */
++	dev_set_drvdata(&spi->dev, p_max1027);
++	
++	// register to hardware monitor
++	p_max1027->cdev = hwmon_device_register(&spi->dev);
++	if (IS_ERR(p_max1027->cdev)) {
++		status = PTR_ERR(p_max1027->cdev);
++		goto out_dev_create_file_failed;
++	}
++
++	device_create_file(&spi->dev, &dev_attr_config);
++	device_create_file(&spi->dev, &dev_attr_conv);
++	device_create_file(&spi->dev, &dev_attr_temp1_input);
++	device_create_file(&spi->dev, &dev_attr_in0_input);
++	device_create_file(&spi->dev, &dev_attr_in1_input);
++	device_create_file(&spi->dev, &dev_attr_in2_input);
++	device_create_file(&spi->dev, &dev_attr_in3_input);
++	device_create_file(&spi->dev, &dev_attr_in4_input);
++	device_create_file(&spi->dev, &dev_attr_in5_input);
++	device_create_file(&spi->dev, &dev_attr_in6_input);
++	device_create_file(&spi->dev, &dev_attr_in7_input);
++
++	// setup spi device
++	spi->bits_per_word = 8;
++	spi_setup(spi);
++	
++	// configure the MAX
++	max1027_send_cmd( spi, MAX_1027_SETUP_DEFAULT );
++	// reset FIFO
++	max1027_send_cmd( spi, MAX1027_RESET_ON );
++	// start initial conversion to fill in the p_max1027 struct
++	max1027_send_cmd( spi, MAX_1027_CONV_DEFAULT );
++
++	return 0;
++
++out_dev_create_file_failed:
++	dev_set_drvdata(&spi->dev, NULL);
++	kfree(p_max1027);
++	return status;
++}
++
++static int __devexit max1027_remove(struct spi_device *spi)
++{
++	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
++
++	device_remove_file(&spi->dev, &dev_attr_temp1_input);
++	device_remove_file(&spi->dev, &dev_attr_in0_input);
++	device_remove_file(&spi->dev, &dev_attr_in1_input);
++	device_remove_file(&spi->dev, &dev_attr_in2_input);
++	device_remove_file(&spi->dev, &dev_attr_in3_input);
++	device_remove_file(&spi->dev, &dev_attr_in4_input);
++	device_remove_file(&spi->dev, &dev_attr_in5_input);
++	device_remove_file(&spi->dev, &dev_attr_in6_input);
++	device_remove_file(&spi->dev, &dev_attr_in7_input);
++	device_remove_file(&spi->dev, &dev_attr_config);
++	device_remove_file(&spi->dev, &dev_attr_conv);
++	hwmon_device_unregister(p_max1027->cdev);
++	dev_set_drvdata(&spi->dev, NULL);
++	kfree(p_max1027);
++
++	return 0;
++}
++
++static struct spi_driver max1027_driver = {
++	.driver = {
++		.name	= "max1027",
++		.owner	= THIS_MODULE,
++	},
++	.probe	= max1027_probe,
++	.remove	= __devexit_p(max1027_remove),
++};
++
++static int __init init_max1027(void)
++{
++	return spi_register_driver(&max1027_driver);
++}
++
++static void __exit cleanup_max1027(void)
++{
++	spi_unregister_driver(&max1027_driver);
++}
++
++module_init(init_max1027);
++module_exit(cleanup_max1027);
++
++MODULE_AUTHOR("NC Armadeus");
++MODULE_DESCRIPTION("Maxim max1027 Linux driver");
++MODULE_LICENSE("GPL");
