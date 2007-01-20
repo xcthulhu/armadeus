@@ -1,0 +1,86 @@
+diff -purN u-boot-1.1.6.ref/include/asm-arm/arch-imx/imx-regs.h u-boot-1.1.6/include/asm-arm/arch-imx/imx-regs.h
+--- u-boot-1.1.6.ref/include/asm-arm/arch-imx/imx-regs.h	2006-11-02 15:15:01.000000000 +0100
++++ u-boot-1.1.6/include/asm-arm/arch-imx/imx-regs.h	2006-11-04 18:44:12.000000000 +0100
+@@ -574,4 +574,27 @@
+ #define TSTAT_CAPT     (1<<1)  /* Capture event */
+ #define TSTAT_COMP     (1)     /* Compare event */
+ 
++/*
++ * I2C module
++ */
++#define IADR   __REG(IMX_I2C_BASE + 0x000) /* I2C Address Register */
++#define IFDR   __REG(IMX_I2C_BASE + 0x004) /* I2C Frequency Divider Register*/
++#define I2CR   __REG(IMX_I2C_BASE + 0x008) /* I2C Control Register */
++#define I2SR   __REG(IMX_I2C_BASE + 0x00C) /* I2C Status Register */
++#define I2DR   __REG(IMX_I2C_BASE + 0x010) /* I2C Data I/O Register */
++/* I2C Control Register Bit Fields */
++#define I2CR_IEN 	(1<<7)		/* I2C Enable */
++#define I2CR_IIEN 	(1<<6)		/* I2C Interrupt Enable */
++#define I2CR_MSTA 	(1<<5)		/* I2C Master/Slave Mode Select */
++#define I2CR_MTX 	(1<<4)		/* I2C Transmit/Receive Mode Select */
++#define I2CR_TXAK 	(1<<3)		/* I2C Transmit Acknowledge Enable */
++#define I2CR_RSTA 	(1<<2)		/* I2C Repeated START */
++#define I2SR_ICF 	(1<<7)		/* I2C Data Transfer */
++#define I2SR_IAAS 	(1<<6)		/* I2C Addressed As a Slave */
++#define I2SR_IBB 	(1<<5)		/* I2C Bus Busy */
++#define I2SR_IAL 	(1<<4)		/* I2C Arbitration Lost */
++#define I2SR_SRW 	(1<<2)		/* I2C Slave Read/Write	*/
++#define I2SR_IIF 	(1<<1)		/* I2C interrupt */
++#define I2SR_RXAK 	(1<<0)		/* I2C Received Acknowledge */
++
+ #endif				/* _IMX_REGS_H */
+diff -purN u-boot-1.1.6.ref/MAKEALL u-boot-1.1.6/MAKEALL
+--- u-boot-1.1.6.ref/MAKEALL	2006-11-02 15:15:01.000000000 +0100
++++ u-boot-1.1.6/MAKEALL	2006-11-04 18:39:08.000000000 +0100
+@@ -187,7 +187,7 @@ LIST_ARM7="	\
+ #########################################################################
+ 
+ LIST_ARM9="	\
+-	at91rm9200dk	cmc_pu2						\
++	at91rm9200dk	cmc_pu2	apx9328			\
+ 	ap920t		ap922_XA10	ap926ejs	ap946es		\
+ 	ap966		cp920t		cp922_XA10	cp926ejs	\
+ 	cp946es		cp966		lpd7a400	mp2usb		\
+diff -purN u-boot-1.1.6.ref/Makefile u-boot-1.1.6/Makefile
+--- u-boot-1.1.6.ref/Makefile	2006-11-02 15:15:01.000000000 +0100
++++ u-boot-1.1.6/Makefile	2006-11-04 18:41:00.000000000 +0100
+@@ -1763,6 +1763,9 @@ xtract_omap1610xxx = $(subst _cs0boot,,$
+ 
+ xtract_omap730p2 = $(subst _cs0boot,,$(subst _cs3boot,, $(subst _config,,$1)))
+ 
++apx9328_config	:	unconfig
++	@./mkconfig $(@:_config=) arm arm920t apx9328 NULL imx
++
+ at91rm9200dk_config	:	unconfig
+ 	@$(MKCONFIG) $(@:_config=) arm arm920t at91rm9200dk NULL at91rm9200
+ 
+diff -purN u-boot-1.1.6.ref/include/asm-arm/mach-types.h u-boot-1.1.6/include/asm-arm/mach-types.h
+--- u-boot-1.1.6.ref/include/asm-arm/mach-types.h	2006-11-02 15:15:01.000000000 +0100
++++ u-boot-1.1.6/include/asm-arm/mach-types.h	2006-11-05 12:47:52.000000000 +0100
+@@ -736,6 +736,7 @@ extern unsigned int __machine_arch_type;
+ #define MACH_TYPE_LN2410SBC            725
+ #define MACH_TYPE_CB3RUFC              726
+ #define MACH_TYPE_MP2USB               727
++#define MACH_TYPE_APF9328              906
+ #define MACH_TYPE_PDNB3               1002
+ 
+ #ifdef CONFIG_ARCH_EBSA110
+@@ -9402,6 +9403,18 @@ extern unsigned int __machine_arch_type;
+ # define machine_is_mp2usb()	(0)
+ #endif
+ 
++#ifdef CONFIG_MACH_APF9328
++# ifdef machine_arch_type
++#  undef machine_arch_type
++#  define machine_arch_type	__machine_arch_type
++# else
++#  define machine_arch_type	MACH_TYPE_APF9328
++# endif
++# define machine_is_apf9328()	(machine_arch_type == MACH_TYPE_APF9328)
++#else
++# define machine_is_apf9328()	(0)
++#endif
++
+ /*
+  * These have not yet been registered
+  */
