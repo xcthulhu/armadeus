@@ -1111,7 +1111,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h
 --- linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2007-01-07 21:40:59.000000000 +0100
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,116 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -1142,7 +1142,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +#else
 +    if(on)
 +        /* use Port_D CONTRAST pin to control LCD power down mode */
-+        DR(3) &= 0xFFFFF7FF;    
++        DR(3) &= ~0x00000800;    
 +    else
 +        DR(3) |= 0x00000800;
 +#endif // CONFIG_FB_IMX_OPTREX_F51900_CSTN
@@ -1165,7 +1165,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
 +                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +    .pwmr = 0,    // No contrast management
-+
++    .dmacr = 0X80080004,
 +    .lcd_power = apf9328_lcd_power,
 +};
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
@@ -1183,7 +1183,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .lower_margin   = 2,
 + 
 +    .pcr        = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) | PCR_END_BYTE_SWAP | PCR_PCD(3),
-+ 
++    .dmacr = 0X80080004, 
 +    .lcd_power = apf9328_lcd_power,
 +};
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
@@ -1201,7 +1201,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .lower_margin   = 4,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+
++    .dmacr = 0X80080004,
 +    .pwmr = 0,    // No contrast management
 +    .lcd_power = apf9328_lcd_power,
 +};
@@ -1213,15 +1213,16 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +{
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +    OCR1(3) = 0x0000C000  ;
-+    DR(3) |= 0x00000800;
-+    DDIR(3) |= 0x7FFFFFC0;
-+    GIUS(3) &= 0x800000bF;
-+    GPR(3) &= 0x800000bF;
++    DR(3) |= 0x00000080;
++    DDIR(3) |= 0x00000080;
++    GIUS(3) &= ~0x00000080;
++    GPR(3) &= ~0x00000080;
 +#else
-+    DR(3) |= 0x00000800; // essai Nico ...
-+    DDIR(3) |= 0x7FFFFFC0;
-+    GIUS(3) &= 0x8000003F;
-+    GPR(3) &= 0x8000003F;
++    OCR1(3) = 0x00C00000  ;
++    DR(3) |= 0x00000800; 
++    DDIR(3) |= 0x00000800;
++    GIUS(3) &= ~0x00000800;
++    GPR(3) &= ~0x00000800;
 +#endif
 +}
 +#endif // CONFIG_FB_IMX
