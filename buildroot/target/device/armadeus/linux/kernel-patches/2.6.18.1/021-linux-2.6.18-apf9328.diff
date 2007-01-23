@@ -1111,7 +1111,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h
 --- linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2007-01-07 21:40:59.000000000 +0100
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,136 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -1148,7 +1148,27 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +#endif // CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +}
 +
-+#ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
++#ifdef CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
++static struct imxfb_mach_info apf9328_fb_info __initdata = {
++    .pixclock   = 62500,    
++    .bpp        = 16,
++    .xres       = 320,      
++    .yres       = 240,
++
++    .hsync_len  = 30,        
++    .vsync_len  = 3,
++    .left_margin    = 24,       
++    .upper_margin   = 1,
++    .right_margin   = 38,        
++    .lower_margin   = 23,
++
++    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
++                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++    .pwmr = 0,    // No contrast management
++	 .dmacr = 0x80080004,
++    .lcd_power = apf9328_lcd_power,
++};
++#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock   = 62500,    
 +    .bpp        = 16,
