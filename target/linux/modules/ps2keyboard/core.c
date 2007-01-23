@@ -77,7 +77,7 @@ static int apf9328keyboard_flush(void)
     volatile unsigned short shadow;
     unsigned int timeout = 0;
     
-    while( ((shadow & FPGA_PS2_FIFO_EMPTY_MASK) != 0) && (timeout <= 50) )
+    while( ((shadow & FPGA_PS2_FIFO_EMPTY_MASK) == 0) && (timeout <= 50) )
     {
         shadow = FPGA_PS2_DATA_REGISTER;
         shadow = FPGA_PS2_STATUS_REGISTER;
