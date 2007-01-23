@@ -1,7 +1,20 @@
 diff -purN linux-2.6.18/drivers/video/imxfb.c linux-2.6.18-imx/drivers/video/imxfb.c
 --- linux-2.6.18/drivers/video/imxfb.c	2006-09-20 05:42:06.000000000 +0200
 +++ linux-2.6.18-imx/drivers/video/imxfb.c	2006-10-01 14:22:39.000000000 +0200
-@@ -392,7 +392,26 @@ static void imxfb_setup_gpio(struct imxf
+@@ -46,9 +46,9 @@
+ #include "imxfb.h"
+ 
+ static struct imxfb_rgb def_rgb_16 = {
+-	.red	= { .offset = 8,  .length = 4, },
+-	.green	= { .offset = 4,  .length = 4, },
+-	.blue	= { .offset = 0,  .length = 4, },
++	.red	= { .offset = 11,  .length = 5, },
++	.green	= { .offset = 5,  .length = 6, },
++	.blue	= { .offset = 0,  .length = 5, },
+ 	.transp = { .offset = 0,  .length = 0, },
+ };
+ 
+@@ -392,7 +392,26 @@
  	case 1:
  		imx_gpio_mode(PD15_PF_LD0);
  	}
