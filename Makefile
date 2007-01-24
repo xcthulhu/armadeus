@@ -79,7 +79,7 @@ $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE):
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
 	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
-	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) *.diff 
+	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) \*.diff 
 	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
 		./host/patches/cygwin/run ; \
 		svn revert . ; \
