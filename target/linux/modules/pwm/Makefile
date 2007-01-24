@@ -5,8 +5,8 @@
 # Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
 
-#obj-$(CONFIG_ARMADEUS_PWM_DRIVER)	+= pwm.o
-obj-m      += pwm.o
+obj-$(CONFIG_ARMADEUS_PWM_DRIVER)	+= pwm.o
+#obj-m      += pwm.o
 
 pwm-objs	:= core.o
 
