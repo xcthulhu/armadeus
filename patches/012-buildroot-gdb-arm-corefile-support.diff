@@ -1,16 +1,18 @@
 diff -urN buildroot/toolchain/gdb/6.5/401-arm-coredump.patch buildroot/toolchain/gdb/6.5.mod/401-arm-coredump.patch
 --- buildroot/toolchain/gdb/6.5/401-arm-coredump.patch	1970-01-01 01:00:00.000000000 +0100
 +++ buildroot/toolchain/gdb/6.5.mod/401-arm-coredump.patch	2007-01-25 14:16:20.000000000 +0100
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,105 @@
 +--- cvs-6.4.orig/gdb/arm-linux-tdep.c       2006-04-10 16:39:24.000000000 +0200
 ++++ cvs-6.4/gdb/arm-linux-tdep.c    2007-01-25 12:07:47.000000000 +0100
-+@@ -70,6 +70,18 @@
++@@ -70,6 +70,20 @@
 + #define ARM_LINUX_JB_ELEMENT_SIZE	INT_REGISTER_SIZE
 + #define ARM_LINUX_JB_PC			21
 +
 ++/* Following enums used to implement the core file support. */
 ++enum {
+++#ifndef ELF_NGREG
 ++  ELF_NGREG = 18,      /* core reg size is 72 */
+++#endif
 ++  ELF_NFPREG = 33,
 ++  ELF_NVRREG = 33
 ++};
