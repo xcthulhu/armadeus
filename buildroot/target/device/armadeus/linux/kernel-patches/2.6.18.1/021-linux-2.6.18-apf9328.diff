@@ -1187,7 +1187,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
 +                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +    .pwmr = 0,    // No contrast management
-+	 .dmacr = 0x80080004,
++    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
 +    .lcd_power = apf9328_lcd_power,
 +};
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
@@ -1200,14 +1200,14 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .hsync_len  = 9,        
 +    .vsync_len  = 2,
 +    .left_margin    = 9,       
-+    .upper_margin   = 2,
++    .upper_margin   = 0,
 +    .right_margin   = 27,        
-+    .lower_margin   = 4,
++    .lower_margin   = 7,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
 +                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +    .pwmr = 0,    // No contrast management
-+    .dmacr = 0X80080004,
++    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
 +    .lcd_power = apf9328_lcd_power,
 +};
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
@@ -1225,7 +1225,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .lower_margin   = 2,
 + 
 +    .pcr        = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) | PCR_END_BYTE_SWAP | PCR_PCD(3),
-+    .dmacr = 0X80080004, 
++    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
 +    .lcd_power = apf9328_lcd_power,
 +};
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
@@ -1243,7 +1243,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .lower_margin   = 4,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .dmacr = 0X80080004,
++    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
 +    .pwmr = 0,    // No contrast management
 +    .lcd_power = apf9328_lcd_power,
 +};
