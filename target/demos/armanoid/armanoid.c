@@ -1,15 +1,50 @@
+/*
+ *
+ * Small game to demonstrate how to use (or not use ;-) ) SDL library
+ *   for the Armadeus project. www.armadeus.og
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> // for sleep()
 
 #include "SDL.h"
+// For collision detection:
+#include "collide.h"
+// For timer handling (g++ only)
+//#include "timer.h"
+// To play sound:
+#include "buzzer.h"
+
 
 #define SCREEN_WIDTH  320
 #define SCREEN_HEIGHT 240
 
+#ifdef DEBUG
+#define debug( args...) printf( ## args )
+#else
+#define debug( args...) do {;} while(0);
+#endif
+
+#define bool  unsigned int
+#define false 0
+#define true  1
+
 SDL_Surface *back;
-//SDL_Surface *image;
-SDL_Surface* bar;
 SDL_Surface* block;
 SDL_Surface *screen;
 
@@ -30,12 +65,13 @@ struct sprite {
 };
 
 static struct sprite ball;
-//int xpos=0,ypos=0;
-int barxpos=SCREEN_WIDTH/2, barypos= SCREEN_HEIGHT-32;
+static struct sprite bar;
+
+static bool ball_isfree = false;
 int remainingBlocks = 0;
 
-#define BLOCK_HORI_SIZE 32
-#define BLOCK_VERT_SIZE 24
+static int BLOCK_HORI_SIZE = 32;
+static int BLOCK_VERT_SIZE = 24;
 
 #define BLOCK_SPACING   4
 #define YOFFUP          24
@@ -44,19 +80,46 @@ int remainingBlocks = 0;
 #define MAX_HORI_BLOCKS ((SCREEN_WIDTH-XOFF*2)/(BLOCK_HORI_SIZE+BLOCK_SPACING))
 #define MAX_VERT_BLOCKS ((SCREEN_HEIGHT-YOFFUP*2-YOFFDOWN)/(BLOCK_VERT_SIZE+BLOCK_SPACING))
 
+const int NB_FRAMES_PER_SECOND = 50;
 
-char blocks[MAX_HORI_BLOCKS][MAX_VERT_BLOCKS];
+char blocks[32][32];
 
 
-int loadImages()
+// Load an image from a filename to a sprite surface
+static int loadImage( struct sprite* aSprite, char* afilename )
 {
     int result = 0;
-    
-    //back  = SDL_LoadBMP("./background.bmp");
-    ball.pSurface = SDL_LoadBMP("./ball.bmp");
-    bar   = SDL_LoadBMP("./bar.bmp");
+    SDL_Surface* loadedImage = NULL; 
+
+    loadedImage= SDL_LoadBMP( afilename );
+    if( loadedImage == NULL )
+    {
+        printf("Error while loading image: %s\n", afilename);
+        result = -1;
+    }
+    else
+    {
+        aSprite->pSurface = SDL_DisplayFormat( loadedImage ); 
+        SDL_FreeSurface( loadedImage ); 
+        aSprite->width = aSprite->pSurface->w;
+        aSprite->height = aSprite->pSurface->h;
+    }
+    return( result );
+}
+
+// Load all images needed by the game (from .bmp files)
+static int loadImages()
+{
+    int result = 0;
+
+    loadImage( &ball, "./ball.bmp");
+    loadImage( &bar, "./bar.bmp");
+
     block = SDL_LoadBMP("./block.bmp");
-    if( ball.pSurface == NULL || bar == NULL || block ==NULL )
+    BLOCK_HORI_SIZE = block->w;
+    BLOCK_VERT_SIZE = block->h;
+    // Check if we got all images
+    if( ball.pSurface == NULL || bar.pSurface == NULL || block ==NULL )
     {
         printf("Unable to load image files !\n");
         result = -1;
@@ -72,37 +135,45 @@ int loadImages()
         {
             printf("Error while setting transparent color\n");
         }
+
+        bar.xpos=SCREEN_WIDTH/2; bar.ypos= SCREEN_HEIGHT-(bar.height*2);
     }
 
     return(result);
 }
 
+static void freeRessources()
+{
+    SDL_FreeSurface( screen );
+    SDL_FreeSurface( ball.pSurface );
+    SDL_FreeSurface( bar.pSurface );
+    SDL_FreeSurface( block );
+}
+
 void DrawIMG(SDL_Surface *img, int x, int y)
 {
-  SDL_Rect dest;
-  dest.x = x;
-  dest.y = y;
-  SDL_BlitSurface(img, NULL, screen, &dest);
+    SDL_Rect dest;
+    dest.x = x;
+    dest.y = y;
+    SDL_BlitSurface(img, NULL, screen, &dest);
 }
 
-void DrawIMG(SDL_Surface *img, int x, int y,
+void DrawIMGRect(SDL_Surface *img, int x, int y,
                                 int w, int h, int x2, int y2)
 {
-  SDL_Rect dest;
-  dest.x = x;
-  dest.y = y;
-  SDL_Rect dest2;
-  dest2.x = x2;
-  dest2.y = y2;
-  dest2.w = w;
-  dest2.h = h;
-  SDL_BlitSurface(img, &dest2, screen, &dest);
+    SDL_Rect dest;
+    dest.x = x;
+    dest.y = y;
+    SDL_Rect dest2;
+    dest2.x = x2;
+    dest2.y = y2;
+    dest2.w = w;
+    dest2.h = h;
+    SDL_BlitSurface(img, &dest2, screen, &dest);
 }
 
-void DrawBG()
+void drawBackground()
 {
-    //DrawIMG(back, 0, 0);
-
     SDL_Rect dest;
     dest.x = 0; dest.y = 0; dest.w = SCREEN_WIDTH; dest.h = SCREEN_HEIGHT;
     // Fill background
@@ -139,13 +210,12 @@ void drawBlocks()
     }
 }
 
-void DrawScene()
+void drawScene()
 {
-    //DrawIMG(back, xpos-2, ypos-2, 132, 132, xpos-2, ypos-2);
-    DrawBG();
+    drawBackground();
     drawBlocks();
     DrawIMG(ball.pSurface, ball.xpos, ball.ypos);
-    DrawIMG(bar,   barxpos, barypos);
+    DrawIMG(bar.pSurface,  bar.xpos, bar.ypos);
 
     SDL_Flip(screen);
 }
@@ -154,76 +224,121 @@ bool hasBallCollidedBlock(void)
 {
     bool result = false;
 
-    // Test pad collision
-    Uint32 distance=0;
-/*    distance = (ypos - barypos) * (ypos - barypos) + (xpos - barxpos) * (xpos - barxpos);
-    
-    if( distance <= 32 )
-        result = true;
-*/
+//     SDL_CollideBoundingBox(&ball , ball.xpos , ball.ypos ,
+//                              SDL_Surface *sb , int bx , int by)
+
     Uint32 Xind, Yind;
-    if( (ball.xpos + ball.xhot > XOFF) && (ball.ypos + ball.yhot > YOFFUP) )
+    if( (ball.xpos + ball.width > XOFF) && (ball.ypos + ball.height > YOFFUP) )
     {
-        if( (ball.xpos + ball.xhot < SCREEN_WIDTH - XOFF) && (ball.ypos + ball.yhot < SCREEN_HEIGHT - YOFFDOWN) )
+        if( (ball.xpos + ball.width < SCREEN_WIDTH - XOFF) && (ball.ypos + ball.height < SCREEN_HEIGHT - YOFFDOWN) )
         {
             Xind = (ball.xpos-XOFF) / (BLOCK_HORI_SIZE + BLOCK_SPACING);
             Yind = (ball.ypos-YOFFUP) / (BLOCK_VERT_SIZE + BLOCK_SPACING);
             if( (Xind < MAX_HORI_BLOCKS) && (Yind < MAX_VERT_BLOCKS) && (blocks[Xind][Yind] == 1) )
             {
                 result = true;
-                printf("Xpos: %d, Xind: %d, YPos %d, Yind %d \n", ball.xpos, Xind, ball.ypos, Yind);
+                debug("Xpos: %d, Xind: %d, YPos %d, Yind %d \n", ball.xpos, Xind, ball.ypos, Yind);
                 blocks[Xind][Yind] = 0;
+                if( (ball.xpos + ball.width / 2) < (XOFF + (Xind) * (BLOCK_HORI_SIZE + BLOCK_SPACING)) )
+                {
+                    ball.xspeed = -(ball.xspeed);
+                    debug("SideG coll\n");
+                }
+                else if( (ball.xpos + ball.width / 2) > (XOFF + (Xind+1) * (BLOCK_HORI_SIZE + BLOCK_SPACING)) )
+                {
+                    ball.xspeed = -(ball.xspeed);
+                    debug("SideD coll\n");
+                } else
+                    ball.yspeed = -(ball.yspeed);
                 remainingBlocks--;
             }
         }
     }
-//    printf("Dist: %i\r", distance);
-    return(result);	
+
+    return( result );	
 }
 
 bool hasBallCollidedBar(void)
 {
     bool result = false;
 
-    if( (ball.xpos + ball.xhot >= barxpos) && (ball.xpos + ball.xhot <= (barxpos+64)) )
-      if( (ball.ypos + ball.yhot >= barypos) && (ball.ypos + ball.yhot <= (barypos+16)) )
-         result = true;
+//     if( (ball.xpos + ball.xhot >= barxpos) && (ball.xpos + ball.xhot <= (barxpos+64)) )
+//       if( (ball.ypos + ball.yhot >= barypos) && (ball.ypos + ball.yhot <= (barypos+16)) )
+//          result = true;
+    if( SDL_CollideBoundingBox(ball.pSurface , ball.xpos , ball.ypos , bar.pSurface, bar.xpos , bar.ypos) )
+        result = true;
 
     return(result);	
 }
 
+bool hasBallCollidedBarOnSide(void)
+{
+    bool result = false;
+
+    if( (ball.ypos > bar.ypos) && ( SDL_CollideBoundingBox(ball.pSurface , ball.xpos , ball.ypos , bar.pSurface, bar.xpos , bar.ypos) ) )
+        result = true;
+
+    return(result);	
+}
+
+#define MAX_BAR_SPEED 10
 int main(int argc, char *argv[])
 {
     Uint8* keys;
-
+    int nbFrames = 0;
+    //Timer fps, update;
     //Sint8 xspeed = 1, yspeed =1;
 
-    if ( SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0 )
+    // Initialize SDL
+    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER /*| SDL_INIT_EVENTTHREAD |SDL_INIT_NOPARACHUTE*/) < 0 )
     {
         printf("Unable to init SDL: %s\n", SDL_GetError());
         exit(1);
     }
+    if (SDL_InitSubSystem(SDL_INIT_TIMER) == -1)
+    {
+        fprintf(stderr, "SDL timer failed to initialize! Error: %s\n", SDL_GetError());
+        exit(1);
+    }
+    else
+    {
+        fprintf(stdout, "SDL timer initialized properly!\n");
+    }
+    // Ask SDL to cleanup when exiting
     atexit(SDL_Quit);
 
-    screen=SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, 16, 0/*SDL_HWSURFACE|SDL_DOUBLEBUF*/ );
-    if ( screen == NULL )
+    // Get a screen to display our game
+    screen=SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, 16, 0/*SDL_HWPALETTE*//*SDL_HWSURFACE|| SDL_DOUBLEBUF*/ );
+    if( screen == NULL )
     {
         printf("Unable to set %dx%dvideo mode: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
         exit(1);
     }
 
+    // Load our graphics
     if( loadImages() )
     {
         return(1);
     }
-    DrawBG();
+    drawBackground();
     initBlocks();
 
-    int done=0;
-    printf("Calculated blocks number: Hori: %d, Vert: %d\n", MAX_HORI_BLOCKS, MAX_VERT_BLOCKS);
+    // Initialize sound
+    if( initBuzzer() )
+    {
+        printf("Unable to find PWM on your system, sound won't be activated\n");
+    }
 
-    sleep(1);
+    int done=0;
+    debug("Calculated blocks number: Hori: %d, Vert: %d\n", MAX_HORI_BLOCKS, MAX_VERT_BLOCKS);
+
+    // Hide mouse
     SDL_ShowCursor(0);
+
+    /* // Start timer for Frame Rate calculation
+    update.start();
+    fps.start();*/
+
     // Main loop
     while(done == 0)
     {
@@ -237,32 +352,79 @@ int main(int argc, char *argv[])
                 if ( event.key.keysym.sym == SDLK_ESCAPE ) { done = 1; }
             }
         }
-        // Check user actions
+
+        bar.xpos += 1*(bar.xspeed/2);
+        if( bar.xspeed < 0 ) bar.xspeed++; else if( bar.xspeed > 0 ) bar.xspeed--;
+        if(bar.xpos < 0) bar.xpos = 0;
+        if( bar.xpos > (SCREEN_WIDTH-bar.width) ) bar.xpos = (SCREEN_WIDTH-bar.width);
+
+        // Check user actions and move pad
         keys = SDL_GetKeyState(NULL);
         /*if ( keys[SDLK_UP] ) { ball.ypos -= 1; }
         if ( keys[SDLK_DOWN] ) { ball.ypos += 1; }*/
-        if ( keys[SDLK_LEFT] )  { barxpos -= 2; if(barxpos < 0) barxpos = 0;}
-        if ( keys[SDLK_RIGHT] ) { barxpos += 2; if( barxpos > (SCREEN_WIDTH-64) ) barxpos = (SCREEN_WIDTH-64);}
+        if ( keys[SDLK_LEFT] )
+        {
+            bar.xspeed -= 2; if( bar.xspeed <= -MAX_BAR_SPEED ) bar.xspeed = -MAX_BAR_SPEED;
+        }
+        if ( keys[SDLK_RIGHT] )
+        {
+            bar.xspeed += 2; if( bar.xspeed >= MAX_BAR_SPEED ) bar.xspeed = MAX_BAR_SPEED; 
+        }
+
+        if ( keys[SDLK_SPACE] ) { ball_isfree = true; ball.yspeed = -1; }
 
         // Move ball depending on speed
-        ball.ypos += ball.yspeed;
-        ball.xpos += ball.xspeed;
+        if( ball_isfree )
+        {
+            ball.ypos += ball.yspeed;
+            ball.xpos += ball.xspeed;
+        } else // or from the pad if captured
+        {
+            ball.ypos = bar.ypos - ball.height;
+            ball.xpos = bar.xpos + bar.width/2 - ball.width/2;
+            if( bar.xspeed > 0 )
+                ball.xspeed = 1;
+            else if( bar.xspeed < 0 )
+                ball.xspeed = -1; 
+        }
 
         // Check if ball will go out of playing area
-        if( ball.xpos+ball.xhot >= SCREEN_WIDTH ) { ball.xspeed = -(ball.xspeed); printf("Xx: %i\n", ball.xspeed); ball.xhot = 0;}
-        if( ball.ypos+ball.yhot >= SCREEN_HEIGHT ) { /*ball.yspeed = -(ball.yspeed); ball.yhot = 0;*/ printf("PERDU !\n"); done=1;}
-        if ( ball.xpos+ball.xhot <= 0 ) { ball.xspeed = -(ball.xspeed); ball.xhot = ball.width; printf("Xx: %i\n", ball.xspeed); }
-        if ( ball.ypos+ball.yhot <= 0 ) { ball.yspeed = -(ball.yspeed); ball.yhot = ball.height; printf("Yy: %i\n", ball.yspeed);}
+        if( ball.xpos + ball.width >= SCREEN_WIDTH ) { ball.xspeed = -(ball.xspeed); debug("Xx: %i\n", ball.xspeed); ball.xhot = 0;}
+        if( ball.ypos + ball.height >= SCREEN_HEIGHT ) { printf("PERDU !\n"); done=1;}
+        if( ball.xpos <= 0 ) { ball.xspeed = -(ball.xspeed); ball.xhot = ball.width; debug("Xx: %i\n", ball.xspeed); }
+        if( ball.ypos <= 0 ) { ball.yspeed = -(ball.yspeed); ball.yhot = ball.height; debug("Yy: %i\n", ball.yspeed);}
 
         // Check if ball has collided with an other object
-        if( hasBallCollidedBar() ) { ball.yspeed = -(ball.yspeed); ball.yhot = abs(ball.yhot-ball.width);};
-        if( hasBallCollidedBlock() ) { ball.yspeed = -(ball.yspeed); /*ball.xspeed = -(ball.xspeed);*/ ball.yhot = abs(ball.yhot-ball.width);};
+        if( hasBallCollidedBar()  && ball_isfree ) { ball.yspeed = -(ball.yspeed); ball.yhot = abs(ball.yhot-ball.width); playSound(1000,100);};
+        if( hasBallCollidedBarOnSide() ) { ball.xspeed = -(ball.xspeed); playSound(1000,100);};
+        if( hasBallCollidedBlock() ) { playSound(500,100); };
 
         if( remainingBlocks <= 0 ) { printf("GAGNE !!\n"); done=1;}
 
         // Update screen
-        DrawScene();
+        drawScene();
+        nbFrames++;
+
+        // Calculate and stabilize Frame Rate
+/*        if( update.getTicks() > 1000 )
+        {
+            printf("FPS: %f\n", (float)nbFrames  );
+            update.start();
+            nbFrames = 0;
+        }
+        while( fps.getTicks() < (1000 / NB_FRAMES_PER_SECOND) )
+        {
+            ;
+        }
+        fps.start();*/
+        SDL_Delay(20);
     }
+
+    // Cleanup what we used
+    releaseBuzzer();
+    freeRessources();
+    SDL_QuitSubSystem( SDL_INIT_TIMER );
+    SDL_Quit();
 
     return 0;
 }
