@@ -221,7 +221,7 @@ static void setup_pwm_unit(struct pwm_device *ppd)
             return;	/* do nothing, not fully configured yet */
 
     // Setup prescaler
-    printk("Updating PWM registers\n");
+    pr_debug("Updating PWM registers\n");
     PWMC = (PWMC & ~PWMC_PRESCALER_MASK) | PWMC_PRESCALER(ppd->entry->prescaler) /*| PWMC_REPEAT(3)*/;
 
     // Setup period
