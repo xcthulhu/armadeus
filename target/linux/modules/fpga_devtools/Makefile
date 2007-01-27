@@ -1,5 +1,5 @@
 #
-# Makefile for the Armadeus GPIO drivers
+# Makefile for the Armadeus FPGA loader driver
 # PATH=$HOME/nico/test/buildroot/build_arm_nofpu/staging_dir/bin:$PATH
 # make ARCH=arm
 # tftp -gr fpgaloader.ko -l /lib/modules/drivers/fpgaloader.ko 192.168.0.3
@@ -18,12 +18,10 @@ ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
 
 ifneq ($(KERNELRELEASE),)
 
-obj-m	+= fpgaloader.o
+obj-$(CONFIG_ARMADEUS_FPGA_TOOL_DRIVER)	+= fpgaloader.o
 fpgaloader-objs   := target-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o 
 
 else
-#KDIR	:= /lib/modules/$(shell uname -r)/build
-#KDIR	:= /lib/modules/$(REL)/build
 KDIR    := $(ARMADEUS_KERNEL_DIR)
 PWD	:= $(shell pwd)
 
