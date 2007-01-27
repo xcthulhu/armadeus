@@ -7,7 +7,8 @@
 if [ -d "$1" ]; then
     GPIO_MODULES_DIR="$1"
 else
-    GPIO_MODULES_DIR="/lib/modules/2.6.12/kernel"
+    KERNEL_VERSION=`uname -r`
+    GPIO_MODULES_DIR="/lib/modules/$KERNEL_VERSION/extra/gpio/"
     echo "Using $GPIO_MODULES_DIR as default modules dir as no param was passed"
 fi
 
