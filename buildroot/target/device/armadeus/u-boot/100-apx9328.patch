@@ -1393,7 +1393,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#define CONFIG_CONSOLE "console=ttySMX0,"MK_STR(CONFIG_BAUDRATE)"n8"
 +#define CONFIG_MTDMAP  "apf9328_flash"
 +#define CONFIG_MTDPARTS "mtdparts=" CONFIG_MTDMAP ":256k(U-boot)ro,"    \
-+			"128k(U-boot_env),256k(firmware),1536k(kernel),-(root)"
++			"128k(U-boot_env),256k(firmware),1536k(kernel),6016k(root)"
 +
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +	"fileaddr="		MK_STR(CFG_LOAD_ADDR)		"\0"	\
@@ -1686,7 +1686,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#define	CONFIG_KERNEL_ADDR	0x100A0000
 +#define	CONFIG_KERNEL_LEN	0x00180000	/* 1.5MB */
 +#define	CONFIG_ROOTFS_ADDR	0x10220000
-+#define	CONFIG_ROOTFS_LEN	0x00580000	/* 5.5MB */
++#define	CONFIG_ROOTFS_LEN	0x005E0000	/* almost 6MB */
 +
 +/*
 + * Default load address for user programs and kernel
