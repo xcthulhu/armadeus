@@ -45,8 +45,8 @@ struct semaphore fpga_sema;
 static int fpga_major =  FPGA_MAJOR;
 Xilinx_desc* g_current_desc = NULL;
 
-static unsigned char g_desc = 0; // use default target_fpga_desc
-module_param( g_desc, byte, 0 );
+static unsigned char fpga_descriptor = 0; // use default target_fpga_desc
+module_param( fpga_descriptor, byte, 0 );
 
 #define FPGA_BUFFER_SIZE 4096
 static unsigned char g_buffer[FPGA_BUFFER_SIZE];
@@ -99,7 +99,7 @@ static int armadeus_fpga_open(struct inode *inode, struct file *file)
     g_nb_users++;
     ret = xilinx_init_load( g_current_desc );
 
-    PRINTF("Opening /dev/fpga/loader%d file, %d %d\n", MINOR(inode->i_rdev), g_desc, ret);
+    PRINTF("Opening /dev/fpga/loader%d file, %d %d\n", MINOR(inode->i_rdev), fpga_descriptor, ret);
     return ret;
 }
 
@@ -247,7 +247,7 @@ int __init armadeus_fpga_init(void)
     sema_init(&fpga_sema, 1);
  
     // initialize the current fpga descriptor with the one by default
-    g_current_desc = xilinx_get_descriptor(g_desc);
+    g_current_desc = xilinx_get_descriptor(fpga_descriptor);
     if( g_current_desc == NULL ){
         return -EINVAL;
     }
