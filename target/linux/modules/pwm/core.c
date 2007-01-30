@@ -228,12 +228,7 @@ static void setup_pwm_unit(struct pwm_device *ppd)
     PWMP = PWMP_PERIOD(ppd->entry->period);
 
     // Setup duty
-    PWMS = PWMS_SAMPLE( ppd->entry->period / 2 ); // Fixed to 0.5 for the moment
-    //PWMS = PWMS_SAMPLE( (uint32) (ppd->entry->period * ppd->duty / 1000) );
-
-    if (ppd->active) 
-    {
-        PWMC |= PWMC_EN;
+    PWMS = PWMS_SAMPLE( (u32) ((ppd->entry->period * ppd->duty) / 1000) );
 /*        unsigned duty;
 
         if (ppd->duty == MAX_DUTY)
@@ -241,6 +236,10 @@ static void setup_pwm_unit(struct pwm_device *ppd)
         else
                 duty=((ppd->entry->max_period_val-1)*ppd->duty)/MAX_DUTY;
 */
+
+    if (ppd->active) 
+    {
+        PWMC |= PWMC_EN;
     }
     else 
     {
@@ -970,7 +969,7 @@ static int init_userinterface(struct platform_device *pdev, u32 address)
     ppd->reg=address;
     ppd->entry=NULL;
     ppd->active=0;
-    ppd->duty=0;
+    ppd->duty=500; // = 50.O%
 
     rc = class_device_register(&ppd->class_dev);
     if (unlikely(rc)) {
