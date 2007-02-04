@@ -61,10 +61,9 @@
 #include <asm/irq.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/irqs.h>
-
 // For register adresses
 #include <asm/arch/imx-regs.h>
-#define PWMC_PRESCALER_MASK (0x7F << 8)  // not define in imx-regs ?
+#define PWMC_PRESCALER_MASK (0x7F << 8)  // not defined in imx-regs ?
 //
 #include <linux/platform_device.h>
 
@@ -77,10 +76,6 @@
 
 #define DEV_IRQ_NAME    DRIVER_NAME
 #define DEV_IRQ_ID      DRIVER_NAME
-
-// #define MAX_ID          0x14
-// 
-// #define	_reg(REG)       (*((volatile unsigned long *)(REG)))
 
 //#define	PK(fmt, args...)	printk(fmt, ## args)
 #define	PK(...)
@@ -129,10 +124,10 @@ typedef struct timer_list timer_blk_t;
 typedef struct timerStruct
 {
     timer_blk_t	*timer_blk_ptr;
-    int		period;
-    void		(*timer_func)(unsigned long);
-    int		stop_flag;
-}PWM_Timer_t;
+    int     period;
+    void    (*timer_func)(unsigned long);
+    int     stop_flag;
+} PWM_Timer_t;
 
 static PWM_Timer_t pwmTimer;
 static timer_blk_t timer_blk;
@@ -220,15 +215,20 @@ static void setup_pwm_unit(struct pwm_device *ppd)
     if (ppd->entry == NULL)
             return;	/* do nothing, not fully configured yet */
 
-    // Setup prescaler
-    pr_debug("Updating PWM registers\n");
-    PWMC = (PWMC & ~PWMC_PRESCALER_MASK) | PWMC_PRESCALER(ppd->entry->prescaler) /*| PWMC_REPEAT(3)*/;
+    if (ppd->active) 
+    {
+        // Activate PWM
+        PWMC |= PWMC_EN;
 
-    // Setup period
-    PWMP = PWMP_PERIOD(ppd->entry->period);
-
-    // Setup duty
-    PWMS = PWMS_SAMPLE( (u32) ((ppd->entry->period * ppd->duty) / 1000) );
+        // Setup prescaler
+        pr_debug("Updating PWM registers\n");
+        PWMC = (PWMC & ~PWMC_PRESCALER_MASK) | PWMC_PRESCALER(ppd->entry->prescaler) /*| PWMC_REPEAT(3)*/;
+    
+        // Setup period
+        PWMP = PWMP_PERIOD(ppd->entry->period);
+    
+        // Setup duty
+        PWMS = PWMS_SAMPLE( (u32) ((ppd->entry->period * ppd->duty) / 1000) );
 /*        unsigned duty;
 
         if (ppd->duty == MAX_DUTY)
@@ -237,12 +237,10 @@ static void setup_pwm_unit(struct pwm_device *ppd)
                 duty=((ppd->entry->max_period_val-1)*ppd->duty)/MAX_DUTY;
 */
 
-    if (ppd->active) 
-    {
-        PWMC |= PWMC_EN;
     }
     else 
     {
+        // De-activate
         PWMC &= ~PWMC_EN;
     }
 }
@@ -363,7 +361,7 @@ static void StopPwm(void)
     PK("<1>PWMC = 0x%8x\n", (u32)PWMC);
 }
 
-static void pwmIntFunc(void)
+static void pwmIntFunc( unsigned long unused)
 {
     u32	period;
 
@@ -754,9 +752,9 @@ static ssize_t pwm_show_period(struct class_device *dev, char *buf)
     struct pwm_device *ppd=to_pwm_device(dev);
 
     if (ppd->entry)	/* already initialized? */
-            ret_size=sprintf(buf,"%ld",ppd->entry->period);
+        ret_size=sprintf(buf,"%ld",ppd->entry->period);
     else
-            ret_size=sprintf(buf,"0");
+        ret_size=sprintf(buf,"0");
 
     return ret_size;
 }
@@ -796,7 +794,7 @@ static ssize_t pwm_store_period(struct class_device *dev, const char *buf, size_
 
     value = simple_strtol(buf, NULL, 10);
     if ((value < PWM_MIN_PERIOD) && (value > PWM_MAX_PERIOD))
-            return -EIO;
+        return -EIO;
 
 /*    for( i=0; i<ARRAY_SIZE(pwm_table); i++ )
     {
@@ -831,7 +829,7 @@ static ssize_t pwm_show_frequency(struct class_device *dev, char *buf)
     struct pwm_device *ppd=to_pwm_device(dev);
 
     if (ppd->entry)
-        ret_size = sprintf( buf,"%ld", (u32) 1/(ppd->entry->period) );
+        ret_size = sprintf( buf,"%ld", (u32) 1000000/(ppd->entry->period) );
     else
         ret_size = sprintf(buf,"0");
 
@@ -901,9 +899,9 @@ static ssize_t pwm_store_state(struct class_device *dev, const char *buf, size_t
 
     value = simple_strtol(buf, NULL, 10);
     if (value != 0)
-            ppd->active=1;
+        ppd->active=1;
     else
-            ppd->active=0;
+        ppd->active=0;
 
     setup_pwm_unit(ppd);
     
@@ -1072,7 +1070,7 @@ end:
 }
 
 /**
- * pxa27x_pwm_drv_probe - claim resources
+ * imx_pwm_drv_probe - claim resources
  * @pdev: platform device to work with
  *
  * CAUTION: This functions rejects a PWM unit if its
@@ -1127,7 +1125,7 @@ exit:
 }
 
 /**
- * pxa27x_pwm_drv_remove - free claimed resources
+ * imx_pwm_drv_remove - free claimed resources
  * @pdev: platform device to work with
  */
 static int imx_pwm_drv_remove (struct platform_device *pdev)
