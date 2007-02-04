@@ -72,7 +72,7 @@
 #define PWM_TEST
 
 #define DRIVER_NAME         "imx-pwm"
-#define DRIVER_VERSION      "0.3"
+#define DRIVER_VERSION      "0.4"
 
 #define DEV_IRQ_NAME    DRIVER_NAME
 #define DEV_IRQ_ID      DRIVER_NAME
@@ -424,7 +424,9 @@ static int initPWM(void)
 
     // Software reset
     PWMC |= PWMC_SWR;
-    udelay(1);
+    udelay(10);
+    // Activate & de-activate PWM (seems to be necessary after a reset)
+    PWMC |= PWMC_EN; PWMC &= ~PWMC_EN; 
 
     // Enable interrupt
     //PWMC |= PWMC_IRQEN;
