@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# start/stop samba services
+
+
+test -f /usr/sbin/smbd || exit 0
+test -f /usr/sbin/nmbd || exit 0
+
+[ -f /etc/samba/smb.conf ] || exit 0
+
+
+start() {
+        echo  "Starting smbd services"
+	mkdir -p /var/log/samba/
+        /usr/sbin/smbd -D
+        RETVAL=$?
+        echo "Starting nmbd services"
+        /usr/sbin/nmbd -D
+        RETVAL2=$?
+        if [  $RETVAL -ne 0 ] ; then
+                return 1
+        fi
+        if [  $RETVAL2 -ne 0 ] ; then
+                return 1
+        fi
+	return 0
+}
+
+stop() {
+        echo  "Shutting down smbd services"
+        killall smbd
+        RETVAL=$?
+        echo  "Shutting down nmbd services"
+	killall nmbd
+        RETVAL2=$?
+
+        if [  $RETVAL -ne 0 ] ; then
+                return 1
+        fi
+        if [  $RETVAL2 -ne 0 ] ; then
+                return 1
+        fi
+	return 0
+}
+
+restart() {
+        stop
+        start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        restart
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
+

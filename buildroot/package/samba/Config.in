@@ -1,0 +1,38 @@
+config BR2_PACKAGE_SAMBA
+	bool "samba"
+	default n
+	help
+	  Samba allows the interoperability between Linux/Unix servers 
+	  and Windows-based clients.
+	  http://www.samba.org/
+
+config BR2_PACKAGE_SMBMOUNT
+	bool "smbmount (660 Kb) service in target"
+	default y
+	depends on BR2_PACKAGE_SAMBA
+	help
+	  Put smbmount & smbumount service in the target. 
+	  IMPORTANT:
+	  Needs the mount command from utils-linux package  (not mount from the busybox)
+
+config BR2_PACKAGE_SMBD
+	bool "nmbd & smbd (3.1 Mb) service in target"
+	default n
+	depends on BR2_PACKAGE_SAMBA
+	help
+	  Put nmbd & smbd  service in the target.
+
+config BR2_PACKAGE_SMB_START
+	bool "add samba init script"
+	default y
+	depends on BR2_PACKAGE_SMBD
+	help
+	  Put smbd & nmbd intialization script in /etc/init.d.
+
+config BR2_PACKAGE_SMBPASSWD
+	bool "smbpasswd (1.2 Mb) service in target"
+	default n
+	depends on BR2_PACKAGE_SAMBA
+	help
+	  Put smbpasswd service in the target.
+

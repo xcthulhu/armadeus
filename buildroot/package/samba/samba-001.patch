@@ -1,0 +1,11 @@
+--- samba-3.0.20/source/configure.org	2007-01-28 11:11:41.000000000 +0100
++++ samba-3.0.20/source/configure	2007-01-28 11:45:04.000000000 +0100
+@@ -18730,7 +18730,7 @@
+ case "$host_os" in
+     *linux*)
+        # glibc <= 2.3.2 has a broken getgrouplist
+-       if test "$cross_compiling" = yes; then
++       if test "$cross_compiling" = no; then
+   { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+ See \`config.log' for more details." >&5
+ echo "$as_me: error: cannot run test program while cross compiling
