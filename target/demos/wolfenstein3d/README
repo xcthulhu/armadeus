@@ -1,0 +1,74 @@
+This is a "quick and dirty" port of "Wolfenstein 3D Linux" to the Armadeus Project
+boards. You will need a keyboard connected to your board to appreciate this game ! ;-)
+
+Original sources were found here: http://www.icculus.org/wolf3d/
+
+To compile it:
+- for your Host: make
+- for your board; make TARGET=arm
+
+To use it you will need to have original game data (wolfdata.zip):
+http://sourceforge.net/project/showfiles.php?group_id=11904
+Launch the game executable (sdlwolf3d) from the data directory.
+
+There is still some bugs, please consult BUGS.txt.
+
+Julien Boibessot
+julien.boibessot@armadeus.org
+
+
+Original text start here: --------------------------->>>>
+
+This is a October 28, 2001 Snapshot of "Wolfenstein 3D Linux" by Steven
+Fuller.  It is an unofficial Linux port of the id Software game, Wolfenstein
+3D (1992).
+
+I am releasing this snapshot to find out what still needs to be done to make 
+this port 'complete.'  So all feedback is welcome.
+
+My Goal:
+Take the 1992 DOS game, and bring it to Linux.  Extra features will be kept
+at a minimum.
+
+To compile, type: make
+Be sure to have SDL 1.2 (http://www.libsdl.org) installed.
+
+To change which version of the game is used, edit version.h (change the
+#define WMODE <number> line, replacing <number> with: 0 for the Wolfenstein
+3D Shareware (WL1), Wolfenstein 3D registered, all six episodes (WL6), the
+Spear of Destiny Demo (SDM), and Spear of Destiny (SOD).  Make sure you have
+the latest versions of the game).  Wolfenstein 3D, the first three episodes
+(WL3) is not supported; let me know if you have a copy (or you could pick up
+a copy of the full version...).  To find out where to get the
+demos/shareware, look in NOTES.
+
+Sound support is there.  Edit the Makefile (find the line that has 'OBJS +=
+sd_null.o'.  Add a # in front of it, and remove the # from the next three
+lines.  Recompile and sound should work.)
+
+If you have anything to contribute to NOTES (interesting facts, etc),
+please let me know.
+
+Note:
+Config files are not implemented.  They should be implemented in the next
+release.
+
+If you like your Wolf3D with OpenGL, be sure to check out WolfGL:
+http://www.sourceforge.net/projects/wolfgl/
+
+
+Thanks:
+* id Software
+* David Haslam
+* Ryan Gordon
+* Bill Heineman
+* Dan Olson
+* Leonardo Zide
+* Tatsuyuki Satoh
+* Chuck Mason
+* And everyone who has emailed me about this code! Thanks!
+
+-----
+Steven Fuller
+relnev@icculus.org
+http://icculus.org/wolf3d/
