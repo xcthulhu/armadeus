@@ -1,6 +1,6 @@
 diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/Kconfig linux-2.6.18.1/drivers/rtc/Kconfig
 --- ref/linux-2.6.18.1/drivers/rtc/Kconfig	2006-10-14 05:34:03.000000000 +0200
-+++ linux-2.6.18.1/drivers/rtc/Kconfig	2007-02-25 20:22:02.000000000 +0100
++++ linux-2.6.18.1/drivers/rtc/Kconfig	2007-02-26 23:09:28.000000000 +0100
 @@ -111,6 +111,16 @@ config RTC_DRV_DS1307
  	  This driver can also be built as a module. If so, the module
  	  will be called rtc-ds1307.
@@ -20,7 +20,7 @@ diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/Kconfig linux-2.6.18.1/drivers
  	depends on RTC_CLASS
 diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/Makefile linux-2.6.18.1/drivers/rtc/Makefile
 --- ref/linux-2.6.18.1/drivers/rtc/Makefile	2006-10-14 05:34:03.000000000 +0200
-+++ linux-2.6.18.1/drivers/rtc/Makefile	2007-02-25 20:22:02.000000000 +0100
++++ linux-2.6.18.1/drivers/rtc/Makefile	2007-02-26 23:09:28.000000000 +0100
 @@ -15,6 +15,7 @@ obj-$(CONFIG_RTC_DRV_X1205)	+= rtc-x1205
  obj-$(CONFIG_RTC_DRV_ISL1208)	+= rtc-isl1208.o
  obj-$(CONFIG_RTC_DRV_TEST)	+= rtc-test.o
@@ -31,7 +31,7 @@ diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/Makefile linux-2.6.18.1/driver
  obj-$(CONFIG_RTC_DRV_PCF8563)	+= rtc-pcf8563.o
 diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/rtc-ds1374.c linux-2.6.18.1/drivers/rtc/rtc-ds1374.c
 --- ref/linux-2.6.18.1/drivers/rtc/rtc-ds1374.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.18.1/drivers/rtc/rtc-ds1374.c	2007-02-26 22:46:55.000000000 +0100
++++ linux-2.6.18.1/drivers/rtc/rtc-ds1374.c	2007-02-27 17:52:19.000000000 +0100
 @@ -0,0 +1,282 @@
 +/*
 + * An rtc/alarm/i2c driver for the Dallas ds1374
@@ -289,7 +289,7 @@ diff -purN -x '*~' ref/linux-2.6.18.1/drivers/rtc/rtc-ds1374.c linux-2.6.18.1/dr
 +	if (!IS_ERR(rtc))
 +		rtc_device_unregister(rtc);
 +
-+	if ((err = i2c_detach_client(client)))
++	if (!i2c_detach_client(client))
 +
 +exit_kfree:
 +	kfree(client);
