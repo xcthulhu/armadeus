@@ -1,0 +1,9 @@
+config BR2_PACKAGE_PRBOOM
+	bool "PrBoom"
+	depends on BR2_PACKAGE_SDL BR2_PACKAGE_SDL_MIXER BR2_PACKAGE_SDL_NET
+	default n
+	help
+
+	  PrBoom is the culmination of years of work by various people and projects on the Doom source code.
+
+	  http://prboom.sourceforge.net/about.html
