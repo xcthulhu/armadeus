@@ -8,14 +8,21 @@ PRBOOM_SOURCE:=prboom-$(PRBOOM_VERSION).tar.gz
 PRBOOM_SITE:=http://downloads.sourceforge.net/prboom
 PRBOOM_CAT:=zcat
 PRBOOM_DIR:=$(BUILD_DIR)/prboom-$(PRBOOM_VERSION)
+DOOM_SITE:=ftp://ftp.idsoftware.com/idstuff/doom
+PRBOOM_DATA:=doom-1.8.wad.gz
 
 $(DL_DIR)/$(PRBOOM_SOURCE):
 	$(WGET) -P $(DL_DIR) $(PRBOOM_SITE)/$(PRBOOM_SOURCE)
 
-sdl_prboom-source: $(DL_DIR)/$(PRBOOM_SOURCE)
+prboom-source: $(DL_DIR)/$(PRBOOM_SOURCE)
 
-$(PRBOOM_DIR)/.unpacked: $(DL_DIR)/$(PRBOOM_SOURCE)
+$(DL_DIR)/$(PRBOOM_DATA):
+	$(WGET) -P $(DL_DIR) $(DOOM_SITE)/$(PRBOOM_DATA)
+
+$(PRBOOM_DIR)/.unpacked: $(DL_DIR)/$(PRBOOM_SOURCE) $(DL_DIR)/$(PRBOOM_DATA)
 	$(PRBOOM_CAT) $(DL_DIR)/$(PRBOOM_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	# all *.wad should be in the same place
+	$(PRBOOM_CAT) $(DL_DIR)/$(PRBOOM_DATA) > $(PRBOOM_DIR)/data/doom1.wad
 	touch $@
 
 $(PRBOOM_DIR)/.configured: $(PRBOOM_DIR)/.unpacked
@@ -37,26 +44,28 @@ $(PRBOOM_DIR)/.configured: $(PRBOOM_DIR)/.unpacked
 	touch $@
 # !!!! ++ modif de config.status pour virer les /usr/include et /usr/lib en dur......!!!!!!!!!!
 
-$(PRBOOM_DIR)/.compiled: $(PRBOOM_DIR)/.configured
-	$(MAKE) -C $(PRBOOM_DIR) 
-	touch $@
+$(PRBOOM_DIR)/src/prboom: $(PRBOOM_DIR)/.configured
+	$(MAKE) -C $(PRBOOM_DIR)
 
-$(STAGING_DIR)/usr/lib/prdoom.so: $(PRBOOM_DIR)/.compiled
+$(STAGING_DIR)/usr/games/$(GNU_TARGET_NAME)-prboom: $(PRBOOM_DIR)/src/prboom
 	$(MAKE) -C $(PRBOOM_DIR) install
-	touch -c $@
 
-$(TARGET_DIR)/usr/lib/prdoom.so: $(STAGING_DIR)/usr/lib/prdoom.so
-#copier tous les .wad dans data (là où est prdoom.wad)
-	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_image*.so* $(TARGET_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_image.so
+$(TARGET_DIR)/usr/games/prboom: $(STAGING_DIR)/usr/games/$(GNU_TARGET_NAME)-prboom
+	mkdir -p $(TARGET_DIR)/usr/games/
+	mkdir -p $(TARGET_DIR)/usr/share/games/doom/
+	cp -dpf $(STAGING_DIR)/usr/games/$(GNU_TARGET_NAME)-prboom $@
+	cp -dpf $(PRBOOM_DIR)/data/*.wad $(TARGET_DIR)/usr/share/games/doom/ 
+	-$(STRIP) --strip-unneeded $@
 
-PRBOOM sdl_prboom: sdl $(PRBOOM_DIR)/.compiled
+PRBOOM prboom: sdl sdl_net sdl_mixer $(TARGET_DIR)/usr/games/prboom
 
-sdl_prboom-clean:
+prboom-clean:
 	$(MAKE) DESTDIR=$(TARGET_DIR) CC=$(TARGET_CC) -C $(PRBOOM_DIR) uninstall
+	rm -rf $(TARGET_DIR)/usr/share/games/doom/
+	rm -rf $(TARGET_DIR)/usr/games/
 	-$(MAKE) -C $(PRBOOM_DIR) clean
  
-sdl_prboom-dirclean:
+prboom-dirclean:
 	rm -rf $(PRBOOM_DIR)
  
 #############################################################
@@ -65,5 +74,5 @@ sdl_prboom-dirclean:
 #
 #############################################################
 ifeq ($(strip $(BR2_PACKAGE_PRBOOM)),y)
-TARGETS+=sdl_prboom
+TARGETS+=prboom
 endif
