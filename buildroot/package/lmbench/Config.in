@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LMBENCH
+	bool "LMbench"
+	default n
+	help
+	  Tools for Performance Analysis. Suite of simple, portable benchmarks.
+	  http://www.bitmover.com/lmbench/
+
