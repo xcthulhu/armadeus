@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+//#include <errno.h>
 //#include "MX1_def.h"
 #include "../pwm.h"
 
@@ -43,28 +44,59 @@
 #define DATA_SZ		0x7520
 #endif
 
-int main(void)
+#define BUFFER_SIZE (16*1024)
+
+
+int main( int argc, char* argv[] )
 {
-	int handle;
-	short	ret;
+    int handle, readfd = 0, nb = 0, written = 0;
+    short	ret;
+    unsigned char* buffer;
 
-	handle = open("/dev/pwm", O_RDWR);
-	if(handle == 0){
-		printf("can not open file pwm\n");
-		return -1;
-	}
+    if( argc != 1 )
+    {
+        printf("Opening file: %s\n", argv[1]);
+        readfd = open( argv[1], O_RDONLY );
+    }
 
-	printf("Play wave file...\n");
+    handle = open("/dev/pwm", O_RDWR);
+    if( handle < 0 ) {
+        printf("can not open file /dev/pwm\n");
+        exit( 1 );
+    }
 
-	// Play wave
-	ioctl(handle, PWM_IOC_SMODE, PWM_PLAY_MODE);
-	ioctl(handle, PWM_IOC_SFREQ, SAM_RATE);
-	ioctl(handle, PWM_IOC_SDATALEN, DATA_LEN);
+    printf("Playing wave file...\n");
 
-	write(handle, data, DATA_SZ);
+    // Play wave
+    ioctl(handle, PWM_IOC_SMODE, PWM_PLAY_MODE);
+    ioctl(handle, PWM_IOC_SFREQ, SAM_RATE);
+    ioctl(handle, PWM_IOC_SDATALEN, DATA_LEN);
 
-	close(handle);
-	
-	return 1;
+    if( readfd ) {
+        buffer = (unsigned char*)malloc( BUFFER_SIZE );
+        if( buffer ) {
+            while( (nb = read( readfd, buffer, BUFFER_SIZE )) > 0 ) {
+                write( handle, buffer, nb );
+                printf("read %d\n", nb);
+            }
+        }
+    } else {
+        printf("No data file given, playing default sound of size %d\n", DATA_SZ);
+        buffer = (unsigned char*)data;
+        while( nb < DATA_SZ ) {
+            written = write(handle, buffer, DATA_SZ);
+            buffer += written;
+            nb += written;
+            printf("  Written %d, total %d\n", written, nb);
+        }
+        buffer = 0;
+    }
+
+    printf("End of sound playing\n");
+    close( handle );
+    close( readfd );
+    if( buffer ) free( buffer );
+
+    exit( 0 );
 }
 
