@@ -1,0 +1,172 @@
+--------------------------------------------------------------------------------
+-- Copyright (c) 1995-2003 Xilinx, Inc.
+-- All Right Reserved.
+--------------------------------------------------------------------------------
+--   ____  ____ 
+--  /   /\/   / 
+-- /___/  \  /    Vendor: Xilinx 
+-- \   \   \/     Version : 9.1i
+--  \   \         Application : ISE
+--  /   /         Filename : debouncer_tbw.ant
+-- /___/   /\     Timestamp : Fri Apr 13 22:26:03 2007
+-- \   \  /  \ 
+--  \___\/\___\ 
+--
+--Command: 
+--Design Name: debouncer_tbw
+--Device: Xilinx
+--
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+USE IEEE.STD_LOGIC_TEXTIO.ALL;
+USE STD.TEXTIO.ALL;
+
+ENTITY debouncer_tbw IS
+END debouncer_tbw;
+
+ARCHITECTURE testbench_arch OF debouncer_tbw IS
+    FILE RESULTS: TEXT OPEN WRITE_MODE IS "/home/benoit/armadeus/trunk/firmware/led/debouncer_tbw.ano";
+
+    COMPONENT debouncer
+        PORT (
+            clk_100hz : In std_logic;
+            button_in : In std_logic;
+            button_debounced_out : Out std_logic
+        );
+    END COMPONENT;
+
+    SIGNAL clk_100hz : std_logic := '0';
+    SIGNAL button_in : std_logic := '0';
+    SIGNAL button_debounced_out : std_logic := '0';
+
+    SHARED VARIABLE TX_ERROR : INTEGER := 0;
+    SHARED VARIABLE TX_OUT : LINE;
+
+    constant PERIOD : time := 200 ns;
+    constant DUTY_CYCLE : real := 0.5;
+    constant OFFSET : time := 100 ns;
+
+    BEGIN
+        UUT : debouncer
+        PORT MAP (
+            clk_100hz => clk_100hz,
+            button_in => button_in,
+            button_debounced_out => button_debounced_out
+        );
+
+        PROCESS    -- clock process for clk_100hz
+        BEGIN
+            WAIT for OFFSET;
+            CLOCK_LOOP : LOOP
+                clk_100hz <= '0';
+                WAIT FOR (PERIOD - (PERIOD * DUTY_CYCLE));
+                clk_100hz <= '1';
+                WAIT FOR (PERIOD * DUTY_CYCLE);
+            END LOOP CLOCK_LOOP;
+        END PROCESS;
+
+        PROCESS    -- Annotation process for clk_100hz
+            VARIABLE TX_TIME : INTEGER := 0;
+
+            PROCEDURE ANNOTATE_button_debounced_out(
+                TX_TIME : INTEGER
+            ) IS
+                VARIABLE TX_STR : String(1 to 4096);
+                VARIABLE TX_LOC : LINE;
+            BEGIN
+                STD.TEXTIO.write(TX_LOC, string'("Annotate["));
+                STD.TEXTIO.write(TX_LOC, TX_TIME);
+                STD.TEXTIO.write(TX_LOC, string'(", button_debounced_out, "));
+                IEEE.STD_LOGIC_TEXTIO.write(TX_LOC, button_debounced_out);
+                STD.TEXTIO.write(TX_LOC, string'("]"));
+                TX_STR(TX_LOC.all'range) := TX_LOC.all;
+                STD.TEXTIO.writeline(RESULTS, TX_LOC);
+                STD.TEXTIO.Deallocate(TX_LOC);
+            END;
+        BEGIN
+            WAIT for 1 fs;
+            ANNOTATE_button_debounced_out(0);
+            WAIT for OFFSET;
+            TX_TIME := TX_TIME + 100;
+            ANNO_LOOP : LOOP
+                --Rising Edge
+                WAIT for 115 ns;
+                TX_TIME := TX_TIME + 115;
+                ANNOTATE_button_debounced_out(TX_TIME);
+                WAIT for 85 ns;
+                TX_TIME := TX_TIME + 85;
+            END LOOP ANNO_LOOP;
+        END PROCESS;
+
+        PROCESS
+            BEGIN
+                -- -------------  Current Time:  100ns
+                WAIT FOR 100 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  385ns
+                WAIT FOR 285 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  585ns
+                WAIT FOR 200 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  785ns
+                WAIT FOR 200 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  985ns
+                WAIT FOR 200 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  1785ns
+                WAIT FOR 800 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  3185ns
+                WAIT FOR 1400 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  4585ns
+                WAIT FOR 1400 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  4785ns
+                WAIT FOR 200 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  5385ns
+                WAIT FOR 600 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  5585ns
+                WAIT FOR 200 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  5785ns
+                WAIT FOR 200 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                -- -------------  Current Time:  7385ns
+                WAIT FOR 1600 ns;
+                button_in <= '1';
+                -- -------------------------------------
+                -- -------------  Current Time:  8185ns
+                WAIT FOR 800 ns;
+                button_in <= '0';
+                -- -------------------------------------
+                WAIT FOR 2015 ns;
+
+                STD.TEXTIO.write(TX_OUT, string'("Total[]"));
+                STD.TEXTIO.writeline(RESULTS, TX_OUT);
+                ASSERT (FALSE) REPORT
+                    "Success! Simulation for annotation completed"
+                    SEVERITY FAILURE;
+            END PROCESS;
+
+    END testbench_arch;
+

@@ -1,0 +1,3 @@
+MODULE clock_divider_tbw
+SUBMODULE clock_divider
+INSTANCE UUT

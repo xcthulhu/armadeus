@@ -1,0 +1,3 @@
+MODULE debouncer_tbw
+SUBMODULE debouncer
+INSTANCE UUT

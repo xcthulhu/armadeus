@@ -1,0 +1,2 @@
+vhdl work "debouncer.vhd"
+vhdl work "debouncer_tbw.vhw"
