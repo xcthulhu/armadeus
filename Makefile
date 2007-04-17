@@ -32,7 +32,7 @@ BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 
 PATCH_DIR=patches
 PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
-TAR_OPTIONS=--exclude=.svn -xvf 
+TAR_OPTIONS=--exclude=.svn -xf 
 
 #used only by cygwin to restore the rights on some rootfs directories
 BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/root
@@ -99,6 +99,14 @@ buildroot: $(BUILDROOT_DIR)/.unpacked
 		fi; \
 	fi;
 	@$(MAKE) -C $(BUILDROOT_DIR)
+
+# To be called only one time if one wants to make an automatic build
+buildauto: $(BUILDROOT_DIR)/.unpacked
+	# Be sure that /local/downloads exists if you want to use automated build
+	sed -e 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_new ; \
+		mv -f $(BUILDROOT_DIR)/.defconfig_new $(BUILDROOT_DIR)/.defconfig
+	echo "ey" | $(MAKE) -C $(BUILDROOT_DIR) menuconfig
+	$(MAKE) -C $(BUILDROOT_DIR)
 
 menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) menuconfig
