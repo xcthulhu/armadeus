@@ -1,0 +1,20 @@
+---------------------------------------------------------------
+Here are the instructions to install and run uboot recover tool:
+---------------------------------------------------------------
+
+Pyhton 2.4 has to be installed on your system. If not, take a look at here:
+www.python.org/download/releases/2.4.4/
+
+For the windows users:
+Install the win32 extension package for python 2.4 (pywin32).
+http://sourceforge.net/projects/pywin32/
+
+For all users
+Install the serial port package for python (pyserial).
+http://sourceforge.net/projects/pyserial/
+
+Usage
+Simply connect the APF to the serial port of the host and run the uboot_recover tool.
+->python uboot_recover.py
+Then indicate which port is used to communicate with the APF (ttySx or COMx)
+That's all
