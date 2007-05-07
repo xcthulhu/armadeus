@@ -1133,7 +1133,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h
 --- linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2007-01-07 21:40:59.000000000 +0100
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,146 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -1161,47 +1161,57 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +        DR(3) |= 0x00000080; //rev line
 +    else
 +        DR(3) &= ~0x00000080; // rev line
++#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
++    // No LCD powerdown yet
 +#else
 +    if(on)
 +        /* use Port_D CONTRAST pin to control LCD power down mode */
-+        DR(3) &= ~0x00000800;    
++        DR(3) &= ~0x00000800;
 +    else
 +        DR(3) |= 0x00000800;
 +#endif // CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +}
 +
++static void apf9328_lcd_backlight_power(int on)
++{
++    if(on)
++        PWMR |= 0x000000ff;
++    else
++        PWMR &= 0xffffff00;
++}
++
 +#ifdef CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
-+    .pixclock   = 62500,    
++    .pixclock   = 62500,
 +    .bpp        = 16,
-+    .xres       = 320,      
++    .xres       = 320,
 +    .yres       = 240,
 +
-+    .hsync_len  = 30,        
++    .hsync_len  = 30,
 +    .vsync_len  = 3,
-+    .left_margin    = 24,       
++    .left_margin    = 24,
 +    .upper_margin   = 1,
-+    .right_margin   = 38,        
++    .right_margin   = 38,
 +    .lower_margin   = 23,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
 +                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .pwmr = 0,    // No contrast management
++    .pwmr = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
 +    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
-+    .lcd_power = apf9328_lcd_power,
++    .backlight_power = apf9328_lcd_backlight_power,
 +};
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
-+    .pixclock   = 62500,    
++    .pixclock   = 62500,
 +    .bpp        = 16,
-+    .xres       = 320,      
++    .xres       = 320,
 +    .yres       = 240,
 +
-+    .hsync_len  = 9,        
++    .hsync_len  = 9,
 +    .vsync_len  = 2,
-+    .left_margin    = 9,       
++    .left_margin    = 9,
 +    .upper_margin   = 0,
-+    .right_margin   = 27,        
++    .right_margin   = 27,
 +    .lower_margin   = 7,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
@@ -1212,16 +1222,16 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +};
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
-+    .pixclock   = 62500,    
++    .pixclock   = 62500,
 +    .bpp        = 8,
-+    .xres       = 320,      
++    .xres       = 320,
 +    .yres       = 240,
 + 
-+    .hsync_len  = 2,        
++    .hsync_len  = 2,
 +    .vsync_len  = 2,
-+    .left_margin    = 2,       
++    .left_margin    = 2,
 +    .upper_margin   = 2,
-+    .right_margin   = 2,        
++    .right_margin   = 2,
 +    .lower_margin   = 2,
 + 
 +    .pcr        = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) | PCR_END_BYTE_SWAP | PCR_PCD(3),
@@ -1230,16 +1240,16 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +};
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
-+    .pixclock   = 62500,    
++    .pixclock   = 62500,
 +    .bpp        = 16,
-+    .xres       = 240,      
++    .xres       = 240,
 +    .yres       = 320,
 +
-+    .hsync_len  = 9,        
++    .hsync_len  = 9,
 +    .vsync_len  = 2,
-+    .left_margin    = 9,       
++    .left_margin    = 9,
 +    .upper_margin   = 2,
-+    .right_margin   = 27,        
++    .right_margin   = 27,
 +    .lower_margin   = 4,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
@@ -1254,16 +1264,16 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +static void imx_fb_set_gpios(void)
 +{
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+    OCR1(3) = 0x0000C000  ;
++    OCR1(3) = 0x0000C000;
 +    DR(3) |= 0x00000080;
 +    DDIR(3) |= 0x00000080;
 +    GIUS(3) &= ~0x00000080;
 +    GPR(3) &= ~0x00000080;
 +#else
-+    OCR1(3) = 0x00C00000  ;
-+    DR(3) |= 0x00000800; 
++    OCR1(3) = 0x00C00000;
++    DR(3) |= 0x00000800;
 +    DDIR(3) |= 0x00000800;
-+    GIUS(3) &= ~0x00000800;
++    GIUS(3) |= 0x00000800; // GPIO Function for CONTRAST pin (changed in imxfb if contrast is activated)
 +    GPR(3) &= ~0x00000800;
 +#endif
 +}
