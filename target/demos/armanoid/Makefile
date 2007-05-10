@@ -1,19 +1,19 @@
 
-ifeq ($(TARGET),arm)
-INCLUDE_PATH="../../../buildroot/build_arm_nofpu/SDL-1.2.9/include/"
-LIBRARY_PATH="../../../buildroot/build_arm_nofpu/root/usr/lib/"
+ifeq ($(TARGET),)
 INSTALL_DIR="../../../buildroot/build_arm_nofpu/root/usr/bin/"
 CC=arm-linux-gcc
 DEFINES=TARGET
+CFLAGS:=`sh ../../../buildroot/build_arm_nofpu/SDL-1.2.11/sdl-config --cflags`
+LIBS=`sh ../../../buildroot/build_arm_nofpu/SDL-1.2.11/sdl-config --libs`
 else
-INCLUDE_PATH="/usr/include/SDL"
-LIBRARY_PATH="/usr/lib/"
 INSTALL_DIR="."
+CFLAGS:=`/usr/bin/sdl-config --cflags`
+LIBS=`/usr/bin/sdl-config --libs`
 CC=gcc
 DEFINES=HOST
 endif
 
-CFLAGS="-g"
+CFLAGS+="-g"
 
 default: armanoid
 
@@ -21,19 +21,19 @@ all: armanoid
 
 
 armanoid.o: armanoid.c
-	$(CC) -I$(INCLUDE_PATH) $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 collide.o: collide.c
-	$(CC) -I$(INCLUDE_PATH) $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 #timer.o: timer.cpp
-#	$(CC) -I$(INCLUDE_PATH) $(CFLAGS) -c -o $@ $^
+#	$(CC) $(CFLAGS) -c -o $@ $^
 
 buzzer.o: buzzer.c
-	$(CC) -I$(INCLUDE_PATH) $(CFLAGS) -D$(DEFINES) -c -o $@ $^
+	$(CC) $(CFLAGS) -D$(DEFINES) -c -o $@ $^
 
 armanoid: armanoid.o collide.o buzzer.o
-	$(CC) -I$(INCLUDE_PATH) -L$(LIBRARY_PATH) -o $@ $^ -lSDL
+	$(CC)  $(LIBS) -o $@ $^
 
 install: armanoid
 	cp armanoid  $INSTALL_DIR
