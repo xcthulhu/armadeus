@@ -11,7 +11,7 @@ This patch adds the possibility to have custom Armadeus drivers built in kernel 
 --- linux-2.6.18.1/drivers/Makefile.org       2007-05-09 10:48:51.000000000 +0200
 +++ linux-2.6.18.1/drivers/Makefile   2007-05-09 10:57:09.000000000 +0200
 @@ -76,3 +76,4 @@
- obj-$(CONFIG_SUPERH)           += sh/
- obj-$(CONFIG_GENERIC_TIME)     += clocksource/
- obj-$(CONFIG_DMA_ENGINE)       += dma/
-+obj-y                           += armadeus/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_GENERIC_TIME)	+= clocksource/
+ obj-$(CONFIG_DMA_ENGINE)	+= dma/
++obj-$(CONFIG_ARMADEUS_DRIVERS) += armadeus/

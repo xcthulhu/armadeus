@@ -7,7 +7,7 @@
 # Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
 
-obj-m	+= gpio/ ps2keyboard/ fpga_devtools/ pwm/
+obj-$(CONFIG_ARMADEUS_DRIVERS)	+= gpio/ ps2keyboard/ fpga_devtools/ pwm/ backlight/
 
 # Part execute when called from standard make in this directory:
 else
