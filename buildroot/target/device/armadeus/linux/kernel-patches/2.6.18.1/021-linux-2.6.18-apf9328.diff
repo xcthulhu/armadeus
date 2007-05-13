@@ -810,7 +810,7 @@ diff -purN -x '*~' ref/linux-2.6.18/arch/arm/configs/apf9328_defconfig linux-2.6
 diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328.c
 --- linux-2.6.18.1/arch/arm/mach-imx/apf9328.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.18.1.mod/arch/arm/mach-imx/apf9328.c	2007-01-07 21:39:30.000000000 +0100
-@@ -0,0 +1,326 @@
+@@ -0,0 +1,349 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -842,7 +842,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +
 +#include <asm/system.h>
 +#include <asm/hardware.h>
-+#include <asm/irq.h>
++#include <linux/irq.h>
 +#include <asm/pgtable.h>
 +#include <asm/page.h>
 +
@@ -864,6 +864,9 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +#endif
 +#ifdef CONFIG_SPI_IMX_MODULE
 +#define CONFIG_SPI_IMX 1
++#endif
++#ifdef CONFIG_IMX_BACKLIGHT_MODULE
++#define CONFIG_IMX_BACKLIGHT 1
 +#endif
 +
 +// --- ETHERNET RESSOURCE ---
@@ -1012,7 +1015,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +};
 +#endif //CONFIG_SPI_IMX
 +
-+#ifdef CONFIG_SENSORS_MAX1027_MODULE
++#ifdef CONFIG_SENSORS_MAX1027
 +#define IMX_SPI1_SS_PIN 15 
 +#define IMX_SPI1_SS (1<<15)
 +static void max1027_init_cs(void)
@@ -1044,7 +1047,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +	.mode 				= 0,
 +},
 +};
-+#endif // CONFIG_SENSORS_MAX1027_MODULE
++#endif // CONFIG_SENSORS_MAX1027
 +
 +// --- LCD RESSOURCE ---
 +#ifdef CONFIG_FB_IMX
@@ -1053,6 +1056,23 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +#define IMX_FB_PHYS     (0x0C000000 - 0x40000)
 +#endif // CONFIG_FB_IMX
 +
++#ifdef CONFIG_IMX_BACKLIGHT
++static struct imxbl_machinfo imx_bl_machinfo = {
++    .max_intensity = 0xff,
++    .default_intensity = 0x90,
++    .limit_mask = 0x7f, // When battery is low
++//    set_bl_intensity = put a function here if you want to overload default one,
++};
++//extern struct platform_device imxfb_device; // filled in generic.c
++static struct platform_device imxbl_device = {
++    .name       = "imxl-bl",
++    .dev        = {
++//        .parent = &imxfb_device.dev, crash kernel even if EXPORT_SYMBOL() is done in generic.c
++        .platform_data	= &imx_bl_machinfo,
++    },
++    .id        = 0,
++};
++#endif // CONFIG_IMX_BACKLIGHT
 +
 +static struct platform_device *devices[] __initdata = {
 +    &imx_uart1_device,
@@ -1064,6 +1084,9 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +    &imx_spi,
 +#endif //CONFIG_SPI_IMX
 +    &imx_pwm_device,
++#ifdef CONFIG_IMX_BACKLIGHT
++    &imxbl_device,
++#endif // CONFIG_IMX_BACKLIGHT
 +};
 +
 +static void __init apf9328_init(void)
@@ -1081,14 +1104,14 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328.c linux-2.6.18.1.mod/arch/arm
 +    imx_fb_set_gpios();
 +#endif // CONFIG_FB_IMX
 +
-+#ifdef CONFIG_SENSORS_MAX1027_MODULE
++#ifdef CONFIG_SENSORS_MAX1027
 +    max1027_init_cs();
-+#endif //CONFIG_SENSORS_MAX1027_MODULE
++#endif //CONFIG_SENSORS_MAX1027
 +
 +    platform_add_devices(devices, ARRAY_SIZE(devices));
-+#ifdef CONFIG_SENSORS_MAX1027_MODULE
++#ifdef CONFIG_SENSORS_MAX1027
 +  	 spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-+#endif // CONFIG_SENSORS_MAX1027_MODULE
++#endif // CONFIG_SENSORS_MAX1027
 +    printk("--- APF9328 ressources registered\n");
 +}
 +

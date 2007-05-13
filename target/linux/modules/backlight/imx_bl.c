@@ -18,9 +18,9 @@
 #include <linux/mutex.h>
 #include <linux/fb.h>
 #include <linux/backlight.h>
-#include <asm/arch/sharpsl.h>  --> do the same in asm-arm/arch-imx !!
+#include <asm/arch/imxfb.h> // Backlight machinfo struct is defined here
 #include <asm/arch/imx-regs.h>
-// #include <asm/hardware/sharpsl_pm.h>
+
 
 static int imxbl_intensity;
 static DEFINE_MUTEX(bl_mutex);
@@ -34,8 +34,8 @@ static unsigned long imxbl_flags;
 
 static int imxbl_send_intensity(struct backlight_device *bd)
 {
-	void (*imx_kick_batt)(void);
 	int intensity = bd->props->brightness;
+    unsigned long shadow = 0;
 
 	if (bd->props->power != FB_BLANK_UNBLANK)
 		intensity = 0;
@@ -47,18 +47,19 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 		intensity &= bl_machinfo->limit_mask;
 
  	mutex_lock(&bl_mutex);
-	//bl_machinfo->set_bl_intensity(intensity);
-	//LCDC_PWMR = ....;
+    if( bl_machinfo->set_bl_intensity ) {
+        bl_machinfo->set_bl_intensity(intensity);
+    } else {
+        shadow = LCDC_PWMR;
+        shadow &= 0xffffff00;
+        shadow |= PWMR_PW(intensity);
+        LCDC_PWMR = shadow;
+        printk("Setting backlight intensity to %d\n", intensity);
+    }
 	mutex_unlock(&bl_mutex);
 
 	imxbl_intensity = intensity;
 
-/* 	imx_kick_batt = symbol_get(sharpsl_battery_kick);
- 	if (imx_kick_batt) {
- 		imx_kick_batt();
- 		symbol_put(sharpsl_battery_kick);
- 	}
-*/
 	return 0;
 }
 
@@ -113,7 +114,7 @@ static struct backlight_properties imxbl_data = {
 	.update_status  = imxbl_set_intensity,
 };
 
-static int __init imxbl_probe(struct platform_device *pdev)
+static int imxbl_probe(struct platform_device *pdev)
 {
 	struct imxbl_machinfo *machinfo = pdev->dev.platform_data;
 
@@ -125,7 +126,10 @@ static int __init imxbl_probe(struct platform_device *pdev)
 	imx_backlight_device = backlight_device_register ("imxl-bl",
 		NULL, &imxbl_data);
 	if (IS_ERR (imx_backlight_device))
+    {
+        printk("Error imxBL\n");
 		return PTR_ERR (imx_backlight_device);
+    }
 
 	imxbl_data.power = FB_BLANK_UNBLANK;
 	imxbl_data.brightness = machinfo->default_intensity;
@@ -155,12 +159,12 @@ static struct platform_driver imxbl_driver = {
 
 static int __init imxbl_init(void)
 {
-	return platform_driver_register(&imxbl_driver);
+    return platform_driver_register(&imxbl_driver);
 }
 
 static void __exit imxbl_exit(void)
 {
-	platform_driver_unregister(&imxbl_driver);
+    platform_driver_unregister(&imxbl_driver);
 }
 
 module_init(imxbl_init);
@@ -168,4 +172,4 @@ module_exit(imxbl_exit);
 
 MODULE_AUTHOR("Julien Boibessot <julien.boibessot@armadeus.com>");
 MODULE_DESCRIPTION("i.MXL Backlight Driver");
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPL");

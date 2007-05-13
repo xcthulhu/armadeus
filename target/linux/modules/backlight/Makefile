@@ -5,9 +5,7 @@
 # Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
 
-obj-m	+= imx_bl.o
-
-#watchdog-objs	:= imx_watchdog.o
+obj-$(CONFIG_IMX_BACKLIGHT) += imx_bl.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

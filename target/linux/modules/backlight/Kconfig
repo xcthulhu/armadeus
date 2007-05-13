@@ -1,0 +1,11 @@
+#
+#
+
+config IMX_BACKLIGHT
+        tristate "i.MXL backlight driver"
+        default n
+        depends on ARMADEUS_DRIVERS && BACKLIGHT_LCD_SUPPORT
+        ---help---
+        This driver allows you to control the backlight of your graphic LCD, if it's
+        connected to the i.MXL "CONTRAST" pin.
+

@@ -1,0 +1,15 @@
+--- linux-2.6.18.1/include/asm-arm/arch-imx/imxfb.h	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.18.1.backlight/include/asm-arm/arch-imx/imxfb.h	2007-05-12 17:29:30.000000000 +0200
+@@ -34,3 +34,12 @@
+ 	void (*backlight_power)(int);
+ };
+ void set_imx_fb_info(struct imxfb_mach_info *hard_imx_fb_info);
++
++// --- Backlight handling ---
++struct imxbl_machinfo {
++	int max_intensity;
++	int default_intensity;
++	int limit_mask; // When battery is low
++	void (*set_bl_intensity)(int intensity);
++};
++extern void imxbl_limit_intensity(int limit);

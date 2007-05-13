@@ -28,7 +28,12 @@ source "drivers/armadeus/keypad/Kconfig"
 
 source "drivers/armadeus/ps2keyboard/Kconfig"
 
+comment "Handheld related"
+	depends on ARMADEUS_DRIVERS
+
 source "drivers/armadeus/pwm/Kconfig"
+
+source "drivers/armadeus/backlight/Kconfig"
 
 endmenu
 
