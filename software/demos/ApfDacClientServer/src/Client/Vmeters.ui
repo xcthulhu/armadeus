@@ -71,7 +71,7 @@
                <enum>Qt::RichText</enum>
               </property>
               <property name="pixmap" >
-               <pixmap>../../../../../../../fred/LocalProjects/ApfQtDemos/Client/bin/vmeter.png</pixmap>
+               <pixmap>vmeter.png</pixmap>
               </property>
               <property name="scaledContents" >
                <bool>true</bool>
@@ -126,7 +126,7 @@
                <string/>
               </property>
               <property name="pixmap" >
-               <pixmap>../../../../../../../fred/LocalProjects/ApfQtDemos/Client/bin/vmeter.png</pixmap>
+               <pixmap>vmeter.png</pixmap>
               </property>
               <property name="scaledContents" >
                <bool>true</bool>
@@ -207,7 +207,6 @@
    </item>
   </layout>
  </widget>
- <includes/>
  <resources>
   <include location="ApfClient.qrc" />
  </resources>

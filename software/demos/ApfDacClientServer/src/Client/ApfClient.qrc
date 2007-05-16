@@ -1,1 +1,5 @@
-<RCC/>
+<RCC>
+    <qresource prefix="/new/prefix1" >
+        <file>vmeter.png</file>
+    </qresource>
+</RCC>
