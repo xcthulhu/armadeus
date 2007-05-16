@@ -1225,7 +1225,7 @@ diff -urN linux-2.6.18.1/arch/arm/mach-imx/apf9328_lcd_config.h linux-2.6.18.1.m
 +    .lower_margin   = 23,
 +
 +    .pcr        = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++                  PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(6),
 +    .pwmr = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
 +    .dmacr = DMACR_BURST | DMACR_HM(8) | DMACR_TM(4),
 +    .backlight_power = apf9328_lcd_backlight_power,
