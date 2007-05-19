@@ -5,12 +5,12 @@
 #############################################################
 ALLEGRO_VERSION:=4.2.1
 ALLEGRO_SOURCE:=allegro-$(ALLEGRO_VERSION).tar.gz
-ALLEGRO_SITE:=http://prdownloads.sourceforge.net/alleg/
+ALLEGRO_SITE:=http://dfn.dl.sourceforge.net/sourceforge/alleg/
 ALLEGRO_CAT:=zcat
 ALLEGRO_DIR:=$(BUILD_DIR)/allegro-$(ALLEGRO_VERSION)
 
 $(DL_DIR)/$(ALLEGRO_SOURCE):
-	$(WGET) -P $(DL_DIR) $(ALLEGRO_SITE)/$(ALLEGRO_SOURCE)?download
+	$(WGET) -P $(DL_DIR) $(ALLEGRO_SITE)/$(ALLEGRO_SOURCE)
 
 allegro-source: $(DL_DIR)/$(ALLEGRO_SOURCE)
 
@@ -44,19 +44,19 @@ $(ALLEGRO_DIR)/.configured: $(ALLEGRO_DIR)/.unpacked
 # 		--disable-color24 \
 # 		--disable-color32 \
 
-$(ALLEGRO_DIR)/.compiled: $(ALLEGRO_DIR)/.configured
+$(ALLEGRO_DIR)/lib/unix/liballeg.a: $(ALLEGRO_DIR)/.configured
 	$(MAKE) -C $(ALLEGRO_DIR) CROSSCOMPILE=1
 	touch $@
 
-# $(STAGING_DIR)/usr/lib/libSDL_net.so: $(ALLEGRO_DIR)/.compiled
-# 	$(MAKE) -C $(ALLEGRO_DIR) install
-# 	touch -c $@
+#$(STAGING_DIR)/usr/lib/liballeg.so: $(ALLEGRO_DIR)/lib/unix/liballeg.a
+#	$(MAKE) -C $(ALLEGRO_DIR) install
+#	touch -c $@
 # 
-# $(TARGET_DIR)/usr/lib/libSDL_net.so: $(STAGING_DIR)/usr/lib/libSDL_net.so
-# 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_net*.so* $(TARGET_DIR)/usr/lib/
-# 	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_net.so
+# $(TARGET_DIR)/usr/lib/liballeg.so.so: $(STAGING_DIR)/usr/lib/liballeg.so
+# 	cp -dpf $(STAGING_DIR)/usr/lib/liballeg*.so* $(TARGET_DIR)/usr/lib/
+# 	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/liballeg.so
 
-ALLEGRO allegro: uclibc $(ALLEGRO_DIR)/.compiled
+ALLEGRO allegro: $(ALLEGRO_DIR)/lib/unix/liballeg.a
 
 allegro-clean:
 	$(MAKE) DESTDIR=$(TARGET_DIR) CC=$(TARGET_CC) -C $(ALLEGRO_DIR) uninstall

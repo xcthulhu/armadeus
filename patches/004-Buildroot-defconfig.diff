@@ -1,6 +1,6 @@
 --- buildroot/.defconfig.ori	2006-10-20 09:15:14.000000000 +0200
 +++ buildroot/.defconfig	2006-10-24 22:15:00.000000000 +0200
-@@ -2,55 +2,426 @@
+@@ -2,55 +2,427 @@
  # Automatically generated make config: don't edit
  #
  BR2_HAVE_DOT_CONFIG=y
@@ -224,6 +224,7 @@
 +# Other stuff
 +#
 +# BR2_PACKAGE_ACPID is not set
++# BR2_PACKAGE_ALLEGRO is not set
 +# BR2_PACKAGE_ASTERISK is not set
 +# BR2_PACKAGE_AT is not set
 +# BR2_PACKAGE_AUTOCONF is not set

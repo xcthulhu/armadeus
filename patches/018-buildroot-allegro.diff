@@ -1,0 +1,10 @@
+--- buildroot.ori/package/Config.in	2007-05-19 19:06:19.000000000 +0200
++++ buildroot/package/Config.in	2007-05-19 19:06:46.000000000 +0200
+@@ -25,6 +25,7 @@
+ 
+ comment "Other stuff"
+ source "package/acpid/Config.in"
++source "package/allegro/Config.in"
+ source "package/asterisk/Config.in"
+ source "package/at/Config.in"
+ source "package/autoconf/Config.in"
