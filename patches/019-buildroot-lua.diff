@@ -1,0 +1,10 @@
+--- buildroot/package/Config.in.old	2007-06-04 11:01:58.000000000 +0200
++++ buildroot/package/Config.in	2007-06-04 11:02:46.000000000 +0200
+@@ -86,6 +86,7 @@
+ source "package/ltp-testsuite/Config.in"
+ source "package/ltrace/Config.in"
+ source "package/ltt/Config.in"
++source "package/lua/Config.in"
+ source "package/lvm2/Config.in"
+ source "package/lzo/Config.in"
+ source "package/lzma/Config.in"
