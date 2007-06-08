@@ -1,0 +1,10 @@
+--- buildroot/package/Config.in.old	2007-06-08 17:01:07.000000000 +0200
++++ buildroot/package/Config.in	2007-06-08 17:01:37.000000000 +0200
+@@ -61,6 +61,7 @@
+ source "package/hotplug/Config.in"
+ source "package/imxregs/Config.in"
+ source "package/iostat/Config.in"
++source "package/ipkg/Config.in"
+ source "package/iproute2/Config.in"
+ source "package/ipsec-tools/Config.in"
+ source "package/iptables/Config.in"
