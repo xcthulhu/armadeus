@@ -1,0 +1,7 @@
+config BR2_PACKAGE_MESALIB
+	bool "Mesa library"
+	default n
+	select BR2_PACKAGE_GPM
+	help
+	  Build MesaGL. It allows you to use OpenGL on your Armadeus board.
+
