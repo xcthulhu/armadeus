@@ -1,0 +1,5 @@
+config BR2_PACKAGE_GPM
+	bool "GPM Mouse server"
+	default n
+	help
+	  GPM means general purpose mouse and is the mouse support for linux in the console.
