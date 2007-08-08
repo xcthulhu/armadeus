@@ -1,0 +1,282 @@
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/acinclude.m4 alsa-driver-1.0.14.mod/acinclude.m4
+--- alsa-driver-1.0.14/acinclude.m4	2007-06-04 09:28:55.000000000 +0200
++++ alsa-driver-1.0.14.mod/acinclude.m4	2007-08-06 20:08:44.000000000 +0200
+@@ -186,6 +186,7 @@
+ 	CONFIG_SND_AOA_SOUNDBUS_I2S=""
+ 	CONFIG_ARM=""
+ 	CONFIG_SND_SA11XX_UDA1341=""
++	CONFIG_SND_IMX_TSC2102=""
+ 	CONFIG_ARCH_SA1100=""
+ 	CONFIG_L3=""
+ 	CONFIG_SND_ARMAACI=""
+@@ -1962,6 +1963,18 @@
+       probed=0
+     fi
+   fi
++  if test "$card" = "all" -o "$card" = "imx-tsc"; then
++    if ( test "$CONFIG_SOUND" = "y" -o "$CONFIG_SOUND" = "m" ) &&
++      ( test "$CONFIG_ARM" = "y" -o "$CONFIG_ARM" = "m" ) &&
++      ( test "$CONFIG_ARCH_SA1100" = "y" -o "$CONFIG_ARCH_SA1100" = "m" ); then
++      CONFIG_SND_TIMER="m"
++      CONFIG_SND_PCM="m"
++      CONFIG_SND_IMX_TSC2102="m"
++      probed=1
++    elif test -z "$probed"; then
++      probed=0
++    fi
++  fi
+   if test "$card" = "all" -o "$card" = "armaaci"; then
+     if ( test "$CONFIG_SOUND" = "y" -o "$CONFIG_SOUND" = "m" ) &&
+       ( test "$CONFIG_ARM" = "y" -o "$CONFIG_ARM" = "m" ) &&
+@@ -2928,6 +2941,9 @@
+ if test -n "$CONFIG_SND_SA11XX_UDA1341"; then
+   AC_DEFINE(CONFIG_SND_SA11XX_UDA1341_MODULE)
+ fi
++if test -n "$CONFIG_SND_IMX_TSC2102"; then
++  AC_DEFINE(CONFIG_SND_IMX_TSC2102_MODULE)
++fi
+ if test -n "$CONFIG_SND_ARMAACI"; then
+   AC_DEFINE(CONFIG_SND_ARMAACI_MODULE)
+ fi
+@@ -3306,6 +3322,7 @@
+ AC_SUBST(CONFIG_SND_AOA_SOUNDBUS_I2S)
+ AC_SUBST(CONFIG_ARM)
+ AC_SUBST(CONFIG_SND_SA11XX_UDA1341)
++AC_SUBST(CONFIG_SND_IMX_TSC2102)
+ AC_SUBST(CONFIG_ARCH_SA1100)
+ AC_SUBST(CONFIG_L3)
+ AC_SUBST(CONFIG_SND_ARMAACI)
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/alsa-kernel/arm/Kconfig alsa-driver-1.0.14.mod/alsa-kernel/arm/Kconfig
+--- alsa-driver-1.0.14/alsa-kernel/arm/Kconfig	2007-06-04 09:28:52.000000000 +0200
++++ alsa-driver-1.0.14.mod/alsa-kernel/arm/Kconfig	2007-08-07 11:56:04.000000000 +0200
+@@ -33,4 +33,11 @@
+ 	  Say Y or M if you want to support any AC97 codec attached to
+ 	  the PXA2xx AC97 interface.
+ 
++config SND_IMX_TSC2102
++	tristate "TSC2102 driver for the i.MXL"
++	depends on ARCH_IMX && SND
++	help
++	  Say Y or M if you want to support TSC2102 codec attached to
++	  the i.MXL SSI interface.
++
+ endmenu
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/alsa-kernel/arm/Makefile alsa-driver-1.0.14.mod/alsa-kernel/arm/Makefile
+--- alsa-driver-1.0.14/alsa-kernel/arm/Makefile	2007-06-04 09:28:52.000000000 +0200
++++ alsa-driver-1.0.14.mod/alsa-kernel/arm/Makefile	2007-08-08 11:39:22.000000000 +0200
+@@ -12,4 +12,12 @@
+ snd-pxa2xx-pcm-objs		:= pxa2xx-pcm.o
+ 
+ obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
++#obj-m	+= snd-pxa2xx-ac97.o
+ snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
++
++#obj-$(CONFIG_SND_IMX_TSC2102)	+= snd-imx-tsc.o
++obj-m	+= snd-imx-tsc.o
++snd-imx-tsc-objs		:= imx-tsc2102.o
++
++obj-m   += snd-imx1-ssi.o
++snd-imx1-ssi-objs                := imx1-ssi.o
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/alsa-kernel/Kconfig alsa-driver-1.0.14.mod/alsa-kernel/Kconfig
+--- alsa-driver-1.0.14/alsa-kernel/Kconfig	2007-06-04 09:28:52.000000000 +0200
++++ alsa-driver-1.0.14.mod/alsa-kernel/Kconfig	2007-08-07 11:53:32.000000000 +0200
+@@ -32,7 +32,7 @@
+ 	  Kernel patches and supporting utilities to do that are in the pcsp
+ 	  package, available at <ftp://ftp.infradead.org/pub/pcsp/>.
+ 
+-source "sound/oss/dmasound/Kconfig"
++#source "sound/oss/dmasound/Kconfig"
+ 
+ if !M68K
+ 
+@@ -91,7 +91,7 @@
+ 	help
+ 	  Say 'Y' or 'M' to enable Open Sound System drivers.
+ 
+-source "sound/oss/Kconfig"
++#source "sound/oss/Kconfig"
+ 
+ endmenu
+ 
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/alsa-kernel/Makefile alsa-driver-1.0.14.mod/alsa-kernel/Makefile
+--- alsa-driver-1.0.14/alsa-kernel/Makefile	2007-06-04 09:28:52.000000000 +0200
++++ alsa-driver-1.0.14.mod/alsa-kernel/Makefile	2007-08-07 12:03:05.000000000 +0200
+@@ -5,7 +5,8 @@
+ obj-$(CONFIG_SOUND_PRIME) += sound_firmware.o
+ obj-$(CONFIG_SOUND_PRIME) += oss/
+ obj-$(CONFIG_DMASOUND) += oss/
+-obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ sparc/ parisc/ pcmcia/ mips/ soc/
++#obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ sparc/ parisc/ pcmcia/ mips/ soc/
++obj-y += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ sparc/ parisc/ pcmcia/ mips/ soc/
+ obj-$(CONFIG_SND_AOA) += aoa/
+ 
+ # This one must be compilable even if sound is configured out
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/arm/imx1-ssi.c alsa-driver-1.0.14.mod/arm/imx1-ssi.c
+--- alsa-driver-1.0.14/arm/imx1-ssi.c	1970-01-01 01:00:00.000000000 +0100
++++ alsa-driver-1.0.14.mod/arm/imx1-ssi.c	2007-08-07 10:40:54.000000000 +0200
+@@ -0,0 +1,2 @@
++#include "../alsa-kernel/arm/imx1-ssi.c"
++EXPORT_NO_SYMBOLS;
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/arm/imx-tsc2102.c alsa-driver-1.0.14.mod/arm/imx-tsc2102.c
+--- alsa-driver-1.0.14/arm/imx-tsc2102.c	1970-01-01 01:00:00.000000000 +0100
++++ alsa-driver-1.0.14.mod/arm/imx-tsc2102.c	2007-08-07 10:41:25.000000000 +0200
+@@ -0,0 +1,2 @@
++#include "../alsa-kernel/arm/imx-tsc2102.c"
++EXPORT_NO_SYMBOLS;
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/configure alsa-driver-1.0.14.mod/configure
+--- alsa-driver-1.0.14/configure	2007-06-04 09:29:01.000000000 +0200
++++ alsa-driver-1.0.14.mod/configure	2007-08-06 20:11:32.000000000 +0200
+@@ -836,6 +836,7 @@
+ CONFIG_SND_AOA_SOUNDBUS
+ CONFIG_SND_AOA_SOUNDBUS_I2S
+ CONFIG_SND_SA11XX_UDA1341
++CONFIG_SND_IMX_TSC2102
+ CONFIG_SND_ARMAACI
+ CONFIG_ARM_AMBA
+ CONFIG_SND_PXA2XX_PCM
+@@ -4356,6 +4357,7 @@
+ 	CONFIG_SND_AOA_SOUNDBUS_I2S=""
+ 	CONFIG_ARM=""
+ 	CONFIG_SND_SA11XX_UDA1341=""
++	CONFIG_SND_IMX_TSC2102=""
+ 	CONFIG_ARCH_SA1100=""
+ 	CONFIG_L3=""
+ 	CONFIG_SND_ARMAACI=""
+@@ -7343,6 +7345,7 @@
+ CONFIG_ARM=
+ CONFIG_ARCH_SA1100=
+ CONFIG_ARCH_PXA=
++CONFIG_ARCH_IMX=
+ CONFIG_PPC=
+ CONFIG_SPARC32=
+ CONFIG_SPARC64=
+@@ -7360,8 +7363,8 @@
+   KERNDIR=$CONFIG_SND_KERNELDIR
+ fi
+ if test "$cross_compiling" = yes; then
+-  { echo "$as_me:$LINENO: result: unknown" >&5
+-echo "${ECHO_T}unknown" >&6; };processor=""
++  { echo "$as_me:$LINENO: result: imx" >&5
++echo "${ECHO_T}unknown" >&6; };processor="imx"
+ 
+ else
+   cat >conftest.$ac_ext <<_ACEOF
+@@ -7447,6 +7450,8 @@
+ 	fprintf(file, "sa1100");
+ #elif defined(CONFIG_ARCH_PXA)
+ 	fprintf(file, "pxa");
++#elif defined(CONFIG_ARCH_IMX)
++	fprintf(file, "imx");
+ #elif defined(CONFIG_ARM_AMBA)
+ 	fprintf(file, "amba");
+ #elif defined(CONFIG_PARISC)
+@@ -7502,7 +7507,6 @@
+ 
+ 
+ CFLAGS="$ac_save_CFLAGS"
+-rm -f processor.id
+ c_opts=""
+ KLD=ld
+ ARCH=
+@@ -7734,6 +7738,14 @@
+     CONFIG_ARCH_PXA=y
+     test "$CONFIG_ISA" = "probe" && CONFIG_ISA=
+     ;;
++  imx)
++    ARCH=arm
++    c_opts="-O2 -mapcs-32 -march=armv4 -msoft-float"
++    CONFIG_ARM=y
++    # CONFIG_L3=y
++    CONFIG_ARCH_IMX=y
++    test "$CONFIG_ISA" = "probe" && CONFIG_ISA=
++    ;;
+   amba)
+     ARCH=arm
+     c_opts="-O2 -mapcs-32 -march=armv4 -Wa,-mxscale -mshort-load-bytes -msoft-float"
+@@ -14464,6 +14476,18 @@
+       probed=0
+     fi
+   fi
++  if test "$card" = "all" -o "$card" = "imx-tsc"; then
++    if ( test "$CONFIG_SOUND" = "y" -o "$CONFIG_SOUND" = "m" ) &&
++      ( test "$CONFIG_ARM" = "y" -o "$CONFIG_ARM" = "m" ) &&
++      ( test "$CONFIG_ARCH_IMX" = "y" -o "$CONFIG_ARCH_IMX" = "m" ); then
++      CONFIG_SND_TIMER="m"
++      CONFIG_SND_PCM="m"
++      CONFIG_SND_IMX_TSC2102="m"
++      probed=1
++    elif test -z "$probed"; then
++      probed=0
++    fi
++  fi
+   if test "$card" = "all" -o "$card" = "armaaci"; then
+     if ( test "$CONFIG_SOUND" = "y" -o "$CONFIG_SOUND" = "m" ) &&
+       ( test "$CONFIG_ARM" = "y" -o "$CONFIG_ARM" = "m" ) &&
+@@ -15889,6 +15913,12 @@
+ _ACEOF
+ 
+ fi
++if test -n "$CONFIG_SND_IMX_TSC2102"; then
++  cat >>confdefs.h <<\_ACEOF
++#define CONFIG_SND_IMX_TSC2102_MODULE 1
++_ACEOF
++
++fi
+ if test -n "$CONFIG_SND_ARMAACI"; then
+   cat >>confdefs.h <<\_ACEOF
+ #define CONFIG_SND_ARMAACI_MODULE 1
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/configure.in alsa-driver-1.0.14.mod/configure.in
+--- alsa-driver-1.0.14/configure.in	2007-06-04 09:28:51.000000000 +0200
++++ alsa-driver-1.0.14.mod/configure.in	2007-08-06 19:22:43.000000000 +0200
+@@ -918,6 +918,8 @@
+ 	fprintf(file, "sa1100");
+ #elif defined(CONFIG_ARCH_PXA)
+ 	fprintf(file, "pxa");
++#elif defined(CONFIG_ARCH_IMX)
++	fprintf(file, "imx");
+ #elif defined(CONFIG_ARM_AMBA)
+ 	fprintf(file, "amba");
+ #elif defined(CONFIG_PARISC)
+@@ -941,7 +943,6 @@
+   AC_MSG_RESULT(unknown);processor=""
+ )
+ CFLAGS="$ac_save_CFLAGS"
+-rm -f processor.id
+ c_opts=""
+ KLD=ld
+ ARCH=
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/toplevel.config alsa-driver-1.0.14.mod/toplevel.config
+--- alsa-driver-1.0.14/toplevel.config	2007-08-08 18:33:37.000000000 +0200
++++ alsa-driver-1.0.14.mod/toplevel.config	2007-08-07 12:52:01.000000000 +0200
+@@ -182,8 +182,10 @@
+ CONFIG_SND_AOA_TOONIE=
+ CONFIG_SND_AOA_SOUNDBUS=
+ CONFIG_SND_AOA_SOUNDBUS_I2S=
+-CONFIG_ARM=
++CONFIG_ARM=y
++CONFIG_MACH_APF9328=y
+ CONFIG_SND_SA11XX_UDA1341=
++CONFIG_SND_IMX_TSC2102=m
+ CONFIG_ARCH_SA1100=
+ CONFIG_L3=
+ CONFIG_SND_ARMAACI=
+@@ -191,6 +193,7 @@
+ CONFIG_SND_PXA2XX_PCM=
+ CONFIG_SND_PXA2XX_AC97=
+ CONFIG_ARCH_PXA=
++CONFIG_ARCH_IMX=y
+ CONFIG_SND_S3C2410=
+ CONFIG_ARCH_S3C2410=
+ CONFIG_I2C_SENSOR=
+diff -urN -X linux-2.6.18.1/Documentation/dontdiff alsa-driver-1.0.14/toplevel.config.in alsa-driver-1.0.14.mod/toplevel.config.in
+--- alsa-driver-1.0.14/toplevel.config.in	2007-06-04 09:28:55.000000000 +0200
++++ alsa-driver-1.0.14.mod/toplevel.config.in	2007-08-06 20:02:26.000000000 +0200
+@@ -184,6 +184,7 @@
+ CONFIG_SND_AOA_SOUNDBUS_I2S=@CONFIG_SND_AOA_SOUNDBUS_I2S@
+ CONFIG_ARM=@CONFIG_ARM@
+ CONFIG_SND_SA11XX_UDA1341=@CONFIG_SND_SA11XX_UDA1341@
++CONFIG_SND_IMX_TSC2102=@CONFIG_SND_IMX_TSC2102@
+ CONFIG_ARCH_SA1100=@CONFIG_ARCH_SA1100@
+ CONFIG_L3=@CONFIG_L3@
+ CONFIG_SND_ARMAACI=@CONFIG_SND_ARMAACI@
+Binary files alsa-driver-1.0.14/utils/mod-deps and alsa-driver-1.0.14.mod/utils/mod-deps differ

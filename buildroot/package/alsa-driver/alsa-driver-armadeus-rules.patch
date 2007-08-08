@@ -1,0 +1,11 @@
+--- alsa-driver-1.0.14/Rules.make	2007-06-04 09:28:51.000000000 +0200
++++ alsa-driver-1.0.14.working/Rules.make	2007-08-01 12:47:03.000000000 +0200
+@@ -158,7 +158,7 @@
+ 
+ $(ld-multi-used-m) : %.o: $(ld-multi-objs-m)
+ 	rm -f $@
+-	$(LD) $(EXTRA_LDFLAGS) -r -o $@ $(filter $($(basename $@)-objs) $(extra-$(basename $@)-objs), $^)
++	arm-linux-ld $(EXTRA_LDFLAGS) -r -o $@ $(filter $($(basename $@)-objs) $(extra-$(basename $@)-objs), $^)
+ 
+ #
+ # This make dependencies quickly
