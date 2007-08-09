@@ -72,8 +72,11 @@ tslib: uclibc $(TARGET_DIR)/usr/lib/libts-0.0.so.0.1.1
 tslib-clean:
 	$(MAKE) DESTDIR=$(TARGET_DIR) CC=$(TARGET_CC) -C $(TSLIB_DIR) uninstall
 	-$(MAKE) -C $(TSLIB_DIR) clean
+	rm $(TSLIB_DIR)/.compiled
+	rm $(STAGING_DIR)/usr/lib/libts* 
+	rm $(TARGET_DIR)/usr/lib/libts*
 
-tslib-dirclean:
+tslib-dirclean: clean
 	rm -rf $(TSLIB_DIR)
 
 #############################################################

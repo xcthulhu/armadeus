@@ -1,0 +1,10 @@
+--- buildroot/package/Config.in.org	2007-08-10 00:37:23.000000000 +0200
++++ buildroot/package/Config.in	2007-08-10 00:38:14.000000000 +0200
+@@ -147,6 +147,7 @@
+ source "package/tinylogin/Config.in"
+ source "package/tinyx/Config.in"
+ source "package/tn5250/Config.in"
++source "package/tslib/Config.in"
+ source "package/ttcp/Config.in"
+ source "package/udev/Config.in"
+ source "package/udhcp/Config.in"
