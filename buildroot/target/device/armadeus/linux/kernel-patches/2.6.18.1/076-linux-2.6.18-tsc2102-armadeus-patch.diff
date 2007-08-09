@@ -1,0 +1,205 @@
+--- linux-2.6.18.1/drivers/input/touchscreen/tsc2102_ts.c	2007-08-02 00:49:55.000000000 +0200
++++ linux-2.6.18.1.mod/drivers/input/touchscreen/tsc2102_ts.c	2007-07-01 19:24:12.000000000 +0200
+@@ -42,8 +42,8 @@
+ 	}
+ 
+ 	input_report_key(dev, BTN_TOUCH, touching);
+-
+-	do_poke_blanked_console = 1;
++	//printk("Touch: %d\n", touching);
++	//do_poke_blanked_console = 1; Unknown symbol in 2.6.18.1
+ }
+ 
+ static void tsc2102_coords(int x, int y, int z1, int z2)
+--- linux-2.6.18.1/drivers/spi/tsc2102.c	2007-08-05 23:03:42.000000000 +0200
++++ linux-2.6.18.1.mod/drivers/spi/tsc2102.c	2007-08-05 22:39:44.000000000 +0200
+@@ -51,7 +51,8 @@
+ #define TSC2102_ADC_T1_CONTROL		0x2bf4
+ #define TSC2102_ADC_T2_CONTROL		0x33f4
+ #define TSC2102_ADC_DAV			0x4000
+-#define TSC2102_ADC_INT_REF		0x0016
++#define TSC2102_ADC_INT_REF_125	0x0016
++#define TSC2102_ADC_INT_REF_250	0x0017
+ #define TSC2102_ADC_EXT_REF		0x0002
+ #define TSC2102_CONFIG_TIMES		0x0008
+ #define TSC2102_RESET			0xbb00
+@@ -87,7 +88,7 @@
+ struct tsc2102_dev {
+ 	struct tsc2102_config *pdata;
+ 	spinlock_t lock, lock_sync;
+-	struct clk *bclk_ck;
++//	struct clk *bclk_ck;  TODO add clock mechanism to i.MX ???
+ 
+ 	int state;			/* 0: TS, 1: Portscan, 2-3: Temps */
+ 	struct timer_list ts_timer;	/* Busy-wait for PEN UP */
+@@ -307,7 +308,9 @@
+ }
+ 
+ tsc2102_cb_register_func(touch_cb, tsc2102_touch_t)
++EXPORT_SYMBOL(tsc2102_touch_cb);
+ tsc2102_cb_register_func(coords_cb, tsc2102_coords_t)
++EXPORT_SYMBOL(tsc2102_coords_cb);
+ tsc2102_cb_register_func(ports_cb, tsc2102_ports_t)
+ tsc2102_cb_register_func(temp1_cb, tsc2102_temp_t)
+ tsc2102_cb_register_func(temp2_cb, tsc2102_temp_t)
+@@ -411,22 +414,25 @@
+ 			TSC2102_TS_ADC_CTRL, TSC2102_ADC_ADST,
+ 			tsc2102_complete_dummy);
+ 
+-	dev->state ++;
++	//dev->state ++;
+ 	tsc2102_mode(dev);
+ }
+ 
+ static void tsc2102_check_status(struct tsc2102_dev *dev);
+ 
+-/* TSC has new data for us availiable.  */
+-static irqreturn_t tsc2102_handler(int irq, void *dev_id)
++/* TSC has new data for us available.  */
++static irqreturn_t tsc2102_handler(int irq, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct tsc2102_dev *dev = (struct tsc2102_dev *) dev_id;
+ 	spin_lock_irq(&dev->lock);
+ 
+-	if (!dev->data_pending)
++    if (!dev->data_pending) 
++	{
++		dev->data_pending = 1;
+ 		tsc2102_check_status(dev);
+-
+-	dev->data_pending ++;
++	}
++ 
++// 	dev->data_pending ++;
+ 
+ 	spin_unlock_irq(&dev->lock);
+ 	return IRQ_HANDLED;
+@@ -464,7 +470,7 @@
+ 
+ 	spin_lock_irq(&dev->lock);
+ 
+-	dev->data_pending --;
++	dev->data_pending=0; // --
+ 
+ 	/*
+ 	 * This may happen if the registers were successfully read and a
+@@ -474,8 +480,8 @@
+ 	if (dev->data_pending)
+ 		tsc2102_check_status(dev);
+ 
+-	if (dev->status & (TSC2102_PS_DAV | TSC2102_T1_DAV | TSC2102_T2_DAV))
+-		tsc2102_new_mode(dev);
++// 	if (dev->status & (TSC2102_PS_DAV | TSC2102_T1_DAV | TSC2102_T2_DAV))
++// 		tsc2102_new_mode(dev);
+ 
+ 	spin_unlock_irq(&dev->lock);
+ }
+@@ -486,6 +492,7 @@
+ 	 * Read all converted data from corresponding registers
+ 	 * so that the ADC can move on to a new conversion.
+ 	 */
++
+ 	if (dev->status & TSC2102_TS_DAV) {
+ 		tsc2102_reads_async(&dev->req_adc, TSC2102_TS_X,
+ 				dev->adc_data, 4, tsc2102_data_report);
+@@ -517,7 +524,7 @@
+ 	if (!(dev->status & (TSC2102_TS_DAV | TSC2102_PS_DAV |
+ 					TSC2102_T1_DAV | TSC2102_T2_DAV))) {
+ 		spin_lock_irq(&dev->lock);
+-		dev->data_pending --;
++		dev->data_pending=0; //--
+ 		spin_unlock_irq(&dev->lock);
+ 
+ 		WARN_ON(!dev->state);
+@@ -539,8 +546,8 @@
+ 
+ 	tsc2102_new_mode(dev);
+ 
+-	mod_timer(&dev->mode_timer, jiffies +
+-			msecs_to_jiffies(dev->mode_msecs));
++/*	mod_timer(&dev->mode_timer, jiffies +
++			msecs_to_jiffies(dev->mode_msecs));*/
+ 	spin_unlock_irq(&dev->lock);
+ }
+ 
+@@ -786,7 +793,7 @@
+ 
+ 	/* Reference mode, 100 usec delay, 1.25 V reference */
+ 	if (dev->pdata->use_internal)
+-		tsc2102_write_sync(TSC2102_TS_REF_CTRL, TSC2102_ADC_INT_REF);
++		tsc2102_write_sync(TSC2102_TS_REF_CTRL, TSC2102_ADC_INT_REF_250);
+ 	else
+ 		tsc2102_write_sync(TSC2102_TS_REF_CTRL, TSC2102_ADC_EXT_REF);
+ 
+@@ -986,7 +993,7 @@
+ {
+ 	struct tsc2102_config *pdata = spi->dev.platform_data;
+ 	struct spi_transfer *spi_buffer;
+-	int err = 0;
++	int err = -EINVAL;
+ 
+ 	if (!pdata) {
+ 		printk(KERN_ERR "TSC2102: Platform data not supplied\n");
+@@ -1021,21 +1028,23 @@
+ 	tsc2102_request_alloc(&tsc, &tsc.req_mode, 1, 1, &spi_buffer);
+ 
+ 	spin_lock_init(&tsc.lock);
++	spin_lock_init(&tsc.lock_sync); // If think its better no ?
+ 	spin_lock(&tsc.lock_sync);
+ 
+ 	/* Get the BCLK - assuming the rate is at 12000000 */
+-	tsc.bclk_ck = clk_get(0, "bclk");
++#ifdef IMX_CLOCK_CONFIG
++	tsc.bclk_ck = clk_get(0, "bclk"); TODO add clock mechanism to i.MX ???
+ 	if (!tsc.bclk_ck) {
+ 		printk(KERN_ERR "Unable to get the clock BCLK\n");
+ 		err = -EPERM;
+ 		goto done;
+ 	}
+-
++ 
+ 	clk_enable(tsc.bclk_ck);
++#endif //IMX_CLOCK_CONFIG
+ 
+-	if (request_irq(spi->irq, tsc2102_handler, IRQF_SAMPLE_RANDOM |
+-				IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
+-		printk(KERN_ERR "Could not allocate touchscreen IRQ!\n");
++	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
++		printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", spi->irq);
+ 		err = -EINVAL;
+ 		goto err_clk;
+ 	}
+@@ -1056,7 +1065,7 @@
+ 
+ 	/* Now try to detect the chip, make first contact */
+ 	if (tsc2102_get_revision() != 0x1) {
+-		printk(KERN_ERR "No TI TSC2102 chip found!\n");
++		printk(KERN_ERR "No TI TSC2102 chip found! Bad revision: %x\n", tsc2102_get_revision());
+ 		goto err_timer;
+ 	}
+ 
+@@ -1120,10 +1129,11 @@
+ 	del_timer(&tsc.mode_timer);
+ 	dev_set_drvdata(&spi->dev, NULL);
+ err_clk:
+-	clk_disable(tsc.bclk_ck);
+-	clk_put(tsc.bclk_ck);
++/*	clk_disable(tsc.bclk_ck); TODO add clock mechanism to i.MX ???
++	clk_put(tsc.bclk_ck);*/
+ done:
+ 	spin_unlock(&tsc.lock_sync);
++
+ 	return err;
+ }
+ 
+@@ -1139,8 +1149,8 @@
+ 	dev_set_drvdata(&spi->dev, NULL);
+ 
+ 	/* Release the BCLK */
+-	clk_disable(dev->bclk_ck);
+-	clk_put(dev->bclk_ck);
++/*	clk_disable(dev->bclk_ck); TODO add clock mechanism to i.MX ???
++	clk_put(dev->bclk_ck); */
+ 
+ 	del_timer(&tsc.mode_timer);
+ 	del_timer(&tsc.ts_timer);
