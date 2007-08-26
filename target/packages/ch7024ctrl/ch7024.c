@@ -17,7 +17,7 @@
 ** along with this program; if not, write to the Free Software 
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-**	ch7024: manage the Svideo output controller CH7024
+**	ch7024: manage the Svideo controller CH7024
 **
 **	author: thom25@users.sourceforge.net
 */ 
@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <linux/i2c.h> // seems to make trouble during compiling ....
+#include <linux/i2c.h> 
 #include <linux/i2c-dev.h>
  
 #include <sys/ioctl.h>
@@ -55,23 +55,30 @@ void usage()
 }
 
 /* Read a byte on the I2C bus
+   This is done by writing the register address 
+   we want to access and then by reading this register
      @param fd: file descriptor of the device
-     @param reg: registre to access
+     @param reg: register to access
      @param buf: buffer used to store the result
      @return : -1 in case of error otherwise 0
  */
 int read_byte( int fd, unsigned char reg, unsigned char *buf )
 { 
+    // create an I2C write message (only one byte: the address)
     struct i2c_msg msg = { CH7024_I2C_SLAVE_ADDR, 0, 1, buf };
+    // create a I2C IOCTL request
     struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
 
     buf[0] = reg; // select reg to read
+
+    // write the desired register address
 	if ( ioctl( fd, I2C_RDWR, &rdwr ) < 0 ){
 		printf("Write error\n");
 		return -1;
 	}
     msg.flags = I2C_M_RD; // read
     
+    // read the result and write it in buf[0]
 	if ( ioctl( fd, I2C_RDWR, &rdwr ) < 0 ){
 		printf("Read error\n");
 		return -1;
@@ -81,14 +88,18 @@ int read_byte( int fd, unsigned char reg, unsigned char *buf )
 
 /* Write a byte on the I2C bus
      @param fd: file descriptor of the device
-     @param reg: registre to access
+     @param reg: register to access
      @param value: value to write
      @return : -1 in case of error otherwise 0   
  */
 int write_byte(int fd, unsigned char reg, unsigned char value)
 {
-    unsigned char buf[2] = {reg,value};
+    unsigned char buf[2] = {reg,value}; // initialise a data buffer with 
+                                        // address and data
+
+    // create an I2C write message
     struct i2c_msg msg = { CH7024_I2C_SLAVE_ADDR, 0, sizeof(buf), buf };
+    // create a I2C IOCTL request
     struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
 
 #ifdef DEBUG_CH7024
