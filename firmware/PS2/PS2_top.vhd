@@ -105,9 +105,9 @@ begin
     elsif ClkxCI'event and ClkxCI = '1' then  -- rising clock edge
       if CSxBI = '0' and WRxBI = '0' then
         case AddrxDI is
-          when "0000000000010" =>
+          when "0000000000100" =>
             reg1 <= DataxD(7 downto 0);
-          when "0000000000011" =>
+          when "0000000000110" =>
             reg2 <= DataxD(7 downto 0);
           when others       => null;
         end case;
@@ -158,12 +158,12 @@ begin
           if readAccessPulse = '0' then
             readAccessPulseFiFo <= '0';
           end if;
-        when "0000000000010" =>
+        when "0000000000100" =>
           DataOutRAMxD <= "00000000" & reg1;
-        when "0000000000011" =>
+        when "0000000000110" =>
           DataOutRAMxD <= "00000000" & reg2;
 
-        when "0000000000100"         =>
+        when "0000000001000"         =>
           DataOutRAMxD <= "0001001000110100";
         when others               =>
           DataOutRAMxD <= (others => '0');
