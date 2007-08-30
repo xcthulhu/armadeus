@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     // check CH7024 presence
     if( !read_byte( fd, DEVICE_ID_CMD, buf ) ){
         if( buf[0] != CH7024_ID ){
-            printf("CH7024 found. Exit\n");
+            printf("CH7024 not found. Exit\n");
             exit(1);
         }
     }
