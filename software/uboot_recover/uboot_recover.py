@@ -32,7 +32,7 @@ if __name__ == "__main__":
     print "APF Recover Tool"
     print "Do not forget to place the bootstrap jumper !!"
     print "and be sure to have a u-boot.bin file in current dir"
-    port = raw_input('Enter serial port number or name to use (ttySx under Linux and COMx under Windows: ')
+    port = raw_input('Enter serial port number or name to use (/dev/ttySx under Linux and COMx under Windows: ')
     input = raw_input('Enter RAM size (default 16): ')
     if input.isdigit():
         ramSize = int( input )
