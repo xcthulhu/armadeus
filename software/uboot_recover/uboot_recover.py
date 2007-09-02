@@ -45,7 +45,8 @@ if __name__ == "__main__":
     ser.flush()
     apfBootloader = imxlBootloader(ser, ramSize)
     apfBootloader.sync()
-    apfBootloader.loadFlashbin("u-boot.bin", "10000000")
+    eraseAll = raw_input('Would you like to erase the environment variables? y/n: ')
+    apfBootloader.loadFlashbin("u-boot.bin", "10000000", eraseAll)
     print "uBoot successfully recovered !"
     del ser
 

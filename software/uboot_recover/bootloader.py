@@ -144,24 +144,26 @@ class imxlBootloader:
         except:
             pass
 
-    def loadFlashbin( self, fileName, address ) :
+    def loadFlashbin( self, fileName, address, eraseAll ) :
         #a=glob.glob(fileName)[0]
         self.fastloadRam( fileName,"08001000");   
-        self.Flashbin(address, '%x' % os.path.getsize(fileName),"08001000")
+        self.Flashbin(address, '%x' % os.path.getsize(fileName),"08001000", eraseAll)
         #self.Flashbin(address, '%x' % os.stat(a)[6],"08001000")
 
-    def Flashbin( self, address, size, fileRamPosition ):
+    def Flashbin( self, address, size, fileRamPosition, eraseAll ):
         # erase the whole flash
         self.put("00220004", "00000D01", "l")  # Configure CS0 as 16bits wide bus
         self.put("10000000", "0060", "w")  # Clear block lock bit
         self.put("10000000", "00D0", "w")  # Clear block lock bit
+
         self.eraseFlashBlock("10000000")
         self.eraseFlashBlock("10020000")
-        self.eraseFlashBlock("10040000")
-        self.eraseFlashBlock("10080000")
-        self.eraseFlashBlock("10100000")
-        self.eraseFlashBlock("10200000")
-        self.eraseFlashBlock("10400000")	
+        if eraseAll == 'y':
+            self.eraseFlashBlock("10040000")
+            self.eraseFlashBlock("10080000")
+            self.eraseFlashBlock("10100000")
+            self.eraseFlashBlock("10200000")
+            self.eraseFlashBlock("10400000")	
 
         # load FlashBurner program
         self.loadbin( "flashprogrammer.bin","08000400")   
