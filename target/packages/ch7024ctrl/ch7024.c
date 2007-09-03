@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <linux/i2c.h> 
+//#include <linux/i2c.h> 
 #include <linux/i2c-dev.h>
  
 #include <sys/ioctl.h>
