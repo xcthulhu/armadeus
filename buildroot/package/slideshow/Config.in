@@ -1,0 +1,9 @@
+config BR2_PACKAGE_SLIDESHOW
+	bool "Slideshow"
+	depends on BR2_PACKAGE_SDL && BR2_PACKAGE_SDL_IMAGE
+	default n
+	help
+
+	  Perigee Slideshow is a command line program that searches a directory for supported graphic files and displays them in a slideshow
+
+	  http://www.xmission.com/~jstanley/slideshow.html
