@@ -153,7 +153,7 @@ begin
       case AddrxDI is
         when "0000000000000" =>
           DataOutRAMxD <= "00" & data_count(1 downto 0) & "0000" & "00" & valid & overflow & full & almost_full & empty & almost_empty;
-        when "0000000000001" =>
+        when "0000000000010" =>
           DataOutRAMxD <= "00000000" & dout;
           if readAccessPulse = '0' then
             readAccessPulseFiFo <= '0';
