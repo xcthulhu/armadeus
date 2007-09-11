@@ -1,0 +1,8 @@
+config BR2_PACKAGE_ALSA_DRIVER
+	bool "alsa-driver"
+	default n
+	help
+	  Advanced Linux Sound Architecture
+
+	  http://www.alsa-project.org/
+
