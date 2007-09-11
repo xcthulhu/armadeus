@@ -20,51 +20,57 @@ $(ALSA_DRIVER_DIR)/.unpacked: $(DL_DIR)/$(ALSA_DRIVER_SOURCE)
 	toolchain/patch-kernel.sh $(ALSA_DRIVER_DIR) package/alsa-driver/ alsa-driver-armadeus\*.patch
 	# Copy our custom drivers (until they are integrated in alsa mainline)
 	cp -f package/alsa-driver/imx* $(ALSA_DRIVER_DIR)/alsa-kernel/arm/
-#	$(CONFIG_UPDATE) $(ALSA_DRIVER_DIR)
 	touch $@
 
 $(ALSA_DRIVER_DIR)/.configured: $(ALSA_DRIVER_DIR)/.unpacked
 	(cd $(ALSA_DRIVER_DIR); rm -rf config.cache; \
-		$(TARGET_CONFIGURE_ARGS) \
 		$(TARGET_CONFIGURE_OPTS) \
+		$(TARGET_CONFIGURE_ARGS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
+		aclocal; \
+		autoconf; \
 		./configure \
+		--prefix=$(STAGING_DIR) \
 		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--sysconfdir=/etc \
+		--with-kernel=$(LINUX_DIR) \
+		--with-moddir=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/extra \
 		--disable-docs \
 		--with-sequencer=yes \
 		--with-isapnp=no \
-		--with-oss=yes \
-		--with-kernel=${BUILD_DIR}/linux-2.6.18.1 \
-		--with-kernel-version=2.6.18.1 \
-		--with-cards=all \
-	);
+		--with-oss=no \
+		--disable-old-api \
+		--with-redhat=no \
+		--with-suse=no \
+		--with-cross=arm-linux- \
+		--with-debug=full \
+		--with-kernel-version=$(LINUX_VERSION) \
+		--with-cards=all ;\
+		$(MAKE) dep \
+	);	
 	touch $@
 
-$(ALSA_DRIVER_DIR)/modules/snd-imx-tsc.o: $(ALSA_DRIVER_DIR)/.configured
+$(ALSA_DRIVER_DIR)/modules/snd.ko: $(ALSA_DRIVER_DIR)/.configured
 	(export PATH=${PATH}:${STAGING_DIR}/bin ; \
-		$(MAKE) -C $(ALSA_DRIVER_DIR) \
+		$(MAKE) -C $(ALSA_DRIVER_DIR);  \
 	);
+	touch -c $@
 
-# $(STAGING_DIR)/$(ALSA_DRIVER_TARGET_BINARY): $(ALSA_DRIVER_DIR)/src/.libs/$(ALSA_DRIVER_BINARY)
-# 	$(MAKE) DESTDIR=$(STAGING_DIR) -C $(ALSA_DRIVER_DIR) install
-# 	$(SED) "s,^libdir=.*,libdir=\'$(STAGING_DIR)/usr/lib\',g" $(STAGING_DIR)/usr/lib/libasound.la
-# 
-# $(TARGET_DIR)/$(ALSA_DRIVER_TARGET_BINARY): $(STAGING_DIR)/$(ALSA_DRIVER_TARGET_BINARY)
-# 	mkdir -p $(TARGET_DIR)/usr/share/alsa
-# 	mkdir -p $(TARGET_DIR)/usr/lib/alsa-lib
-# 	cp -dpf  $(STAGING_DIR)/lib/libasound.so*  $(TARGET_DIR)/usr/lib/
-# 	cp -rdpf $(STAGING_DIR)/usr/share/alsa/*   $(TARGET_DIR)/usr/share/alsa/
-# 	cp -rdpf $(STAGING_DIR)/usr/lib/alsa-lib/* $(TARGET_DIR)/usr/lib/alsa-lib/
-# 	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libasound.so*
-# 	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/alsa-lib/*.so
-# 	touch -c $@
+$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/extra/acore/snd.ko: $(ALSA_DRIVER_DIR)/modules/snd.ko
+	(export PATH=${PATH}:${STAGING_DIR}/bin ; \
+		$(MAKE) PATH=$(TARGET_PATH) -C $(ALSA_DRIVER_DIR) TARGET_DIR=$(TARGET_DIR) \
+			DEPMOD=`which true` install-modules; \
+	);
+	touch -c $@
 
-alsa-driver: uclibc linux $(ALSA_DRIVER_DIR)/modules/snd-imx-tsc.o
+$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep: $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/extra/acore/snd.ko
+	package/alsa-driver/depmod.pl \
+		-b $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/ \
+		-k $(LINUX_DIR)/vmlinux \
+		-F $(LINUX_DIR)/System.map \
+		> $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep
+
+alsa-driver: uclibc linux $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep
 
 alsa-driver-clean:
 	rm -f $(TARGET_DIR)/$(ALSA_DRIVER_TARGET_BINARY)
