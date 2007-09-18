@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include <linux/i2c.h> 
+#include <linux/i2c.h> 
 #include <linux/i2c-dev.h>
  
 #include <sys/ioctl.h>
@@ -192,6 +192,10 @@ void load( int fd, char* fileName )
         if(nb>=8) 
             write_byte (fd, addr4, val4);
     }
+    /* power down to reset the dac after parameter changing*/
+    write_byte (fd, POWER_STATE_CMD, 0xFF);
+    /* power on the dac after parameter changing*/
+    write_byte (fd, POWER_STATE_CMD, 0x00);
     if(fd_conf != NULL)
         fclose(fd_conf);
 }
