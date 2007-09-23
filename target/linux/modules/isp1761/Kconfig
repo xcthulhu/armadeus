@@ -1,0 +1,10 @@
+#
+#
+
+config ARMADEUS_ISP1761
+        tristate "isp1761 USB 2.0 Host controller"
+        default n
+        depends on ARMADEUS_DRIVERS && USB
+        ---help---
+        This driver allows you to control isp1761 USB 2.0 Host controller of the DevFull board
+

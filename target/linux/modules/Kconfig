@@ -35,5 +35,11 @@ source "drivers/armadeus/pwm/Kconfig"
 
 source "drivers/armadeus/backlight/Kconfig"
 
+comment "Communication bus related:"
+	depends on ARMADEUS_DRIVERS
+
+source "drivers/armadeus/isp1761/Kconfig"
+
+
 endmenu
 

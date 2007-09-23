@@ -1,0 +1,21 @@
+issues:
+20/07/2005
+1. turnaround /timeout when we didnt get the all the data from the device
+  solution: resubmit the td for this case
+  status: done	
+
+2. abborting the transfer and completing mass storage urbs	
+   solution: not to call urb->complete in case of usb_async_unlink flag is set
+   status: done
+
+12/08/2005
+1. reading/writing always 4 bytes in dma.c 
+   solution: read the remaining bytes to be read/written , and if not
+	     multiple of 4 then call appropriately read/write calls
+   status: done
+		
+26/08/2005
+1. transaction/turnaround clear bit when retrying the td
+
+
+

@@ -1,0 +1,32 @@
+---------------------------------------
+ ISP176x driver (version 2.0.0.0-gum1)
+---------------------------------------
+
+This driver for the ISP1761 on a Gumstix is adapted from version 2.0.0.0 of the
+ISP176x host driver released by Philips at
+  http://sourceforge.net/projects/isp176x-hcd
+
+Changes from the original driver essentially involve:
+ - porting to Linux 2.6.17
+ - writing the HAL module hal_pxa.c
+ - The addition of gumstix-isp1761.c to point the driver at the relevant
+   resources.
+
+The board it has been tested on has the ISP1761 wired up as follows:
+ - 16-bit data bus
+ - 17-bits of address lines straight through
+ - nCS on nCS2
+ - NPWE to nWR (VLIO)
+ - NOE to nRD
+
+The gumstix-isp1761 module must be loaded before pehci, else the pehci module
+will not load.
+
+Porting to your port will involve editing gumstix-isp1761.c to find the correct
+chip select lines, IRQ lines, and memory regions. A 32-bit data bus will also
+require some changes to the mode register setting (set upon reset) in pehci.c
+and hal_pxa.c.
+
+Isochronous support has not been tested.
+
+ - Bernard Blackham <bernard@blackham.com.au>
