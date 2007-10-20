@@ -1,9 +1,9 @@
 --- buildroot/.defconfig.ori	2007-10-06 09:15:54.000000000 +0200
-+++ buildroot/.defconfig	2007-10-20 17:04:57.000000000 +0200
++++ buildroot/.defconfig	2007-10-20 19:58:01.000000000 +0200
 @@ -1,19 +1,150 @@
  #
  # Automatically generated make config: don't edit
-+# Sat Oct 20 17:04:57 2007
++# Sat Oct 20 19:58:01 2007
  #
  BR2_HAVE_DOT_CONFIG=y
 -# BR2_arm is not set
@@ -388,7 +388,7 @@
 +# BR2_PACKAGE_OPENSSL is not set
 +# BR2_PACKAGE_OPENVPN is not set
 +# BR2_PACKAGE_OPENSWAN is not set
-+# BR2_PACKAGE_PORTMAP is not set
++BR2_PACKAGE_PORTMAP=y
 +# BR2_PACKAGE_PPPD is not set
 +# BR2_PACKAGE_RP_PPPOE is not set
 +# BR2_PACKAGE_PPTP_LINUX is not set
