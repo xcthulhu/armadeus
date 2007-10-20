@@ -53,13 +53,21 @@ $(U-BOOT_DIR)/u-boot.bin: $(U-BOOT_DIR)/.configured
 	make -C $(U-BOOT_DIR) CROSS_COMPILE=$(TARGET_CROSS)
 	touch -c $(U-BOOT_DIR)/u-boot.bin
 
-u-boot: $(U-BOOT_DIR)/u-boot.bin $(U-BOOT_DIR)/u-boot.brec
-	cp $(U-BOOT_DIR)/u-boot.bin .
-	cp $(U-BOOT_DIR)/u-boot.brec .
+$(BINARIES_DIR)/u-boot.brec: $(U-BOOT_DIR)/u-boot.brec
+	mkdir -p $(BINARIES_DIR)
+	cp $(U-BOOT_DIR)/u-boot.brec $@
+
+$(BINARIES_DIR)/u-boot.bin: $(U-BOOT_DIR)/u-boot.bin
+	mkdir -p $(BINARIES_DIR)
+	cp $(U-BOOT_DIR)/u-boot.bin $@
+
+u-boot: $(BINARIES_DIR)/u-boot.bin $(BINARIES_DIR)/u-boot.brec
 	ln -fs $(U-BOOT_DIR)/tools/mkimage $(STAGING_DIR)/bin/mkimage
 
 u-boot-clean:
 	make -C $(U-BOOT_DIR) clean
+	rm -f $(BINARIES_DIR)/u-boot.bin
+	rm -f $(BINARIES_DIR)/u-boot.brec
 	rm -rf $(U-BOOT_DIR)/tools/mkbrecimage
 	rm -rf $(U-BOOT_DIR)/.configured
 

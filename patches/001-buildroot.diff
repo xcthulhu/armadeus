@@ -1,10 +1,10 @@
-diff -purN -x .svn buildrootref/target/device/Config.in buildroot/target/device/Config.in
---- buildrootref/target/device/Config.in       2006-01-27 09:15:21.000000000 +0100
-+++ buildroot/target/device/Config.in  2006-01-27 16:32:13.000000000 +0100
-@@ -1,5 +1,6 @@
- menu "Board Support Options"
- 
-+source "target/device/armadeus/Config.in"
+--- buildrootref/target/device/Config.in	2007-10-13 17:36:33.000000000 +0200
++++ buildroot/target/device/Config.in	2007-10-13 17:38:47.000000000 +0200
+@@ -13,6 +13,7 @@
  source "target/device/Soekris/Config.in"
- source "target/device/Hitachi/Config.in"
- source "target/device/AMD/Config.in"
+ source "target/device/Via/Config.in"
+ source "target/device/x86/Config.in"
++source "target/device/armadeus/Config.in"
+ 
+ # This must be last
+ source "target/generic/Config.in"

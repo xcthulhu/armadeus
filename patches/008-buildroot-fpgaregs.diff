@@ -1,11 +1,10 @@
-diff -purN -x .svn -x '*~' buildrootref/package/Config.in buildroot/package/Config.in
---- buildrootref/package/Config.in	2006-12-15 20:47:21.500000000 +0100
-+++ buildroot/package/Config.in	2006-12-14 12:31:38.406250000 +0100
-@@ -50,6 +50,7 @@ source "package/e2fsprogs/Config.in"
+--- buildrootref/package/Config.in	2007-10-06 09:15:53.000000000 +0200
++++ buildroot/package/Config.in	2007-10-13 18:08:37.000000000 +0200
+@@ -48,6 +48,7 @@
+ source "package/dmalloc/Config.in"
+ source "package/expat/Config.in"
  source "package/fakeroot/Config.in"
- source "package/fbset/Config.in"
- source "package/file/Config.in"
 +source "package/fpgaregs/Config.in"
- source "package/freetype/Config.in"
  source "package/gettext/Config.in"
- source "package/gzip/Config.in"
+ source "package/gmp/Config.in"
+ source "package/mpfr/Config.in"

@@ -1,12 +1,11 @@
-diff -purN buildrootref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
---- buildrootref/target/jffs2/jffs2root.mk	2006-10-20 09:15:08.000000000 +0200
-+++ buildroot/target/jffs2/jffs2root.mk	2006-10-24 22:31:40.000000000 +0200
-@@ -39,7 +39,7 @@ endif
+--- buildrootref/target/jffs2/jffs2root.mk	2007-10-06 09:15:23.000000000 +0200
++++ buildroot/target/jffs2/jffs2root.mk	2007-10-13 17:41:40.000000000 +0200
+@@ -48,7 +48,7 @@
  # value of MKFS_JFFS2 to either the previously installed copy or the one
  # just built.
  #
 -$(JFFS2_TARGET): host-fakeroot makedevs mtd-host
 +$(JFFS2_TARGET): host-fakeroot makedevs mtd-host linux
- 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+ 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIPCMD) 2>/dev/null || true
+ ifneq ($(BR2_HAVE_MANPAGES),y)
  	@rm -rf $(TARGET_DIR)/usr/man
- 	@rm -rf $(TARGET_DIR)/usr/share/man

@@ -10,6 +10,9 @@ include target/device/armadeus/linux/linux.mk
 include target/device/armadeus/rootfs/Makefile.in
 include target/device/armadeus/$(ARMADEUS_TARGET_NAME)/Makefile.in
 
+LINUX26_KCONFIG=$(ARMADEUS_CONFIG_PATH)/linux-$(BR2_PACKAGE_LINUX_VERSION).config
+LINUX26_VERSION=$(strip $(subst ",, $(BR2_PACKAGE_LINUX_VERSION)))
+DOWNLOAD_LINUX26_VERSION=$(strip $(subst ",, $(BR2_PACKAGE_LINUX_VERSION)))
 
 BR2_PACKAGE_BUSYBOX_CONFIG=$(ARMADEUS_PATH)/busybox.config
 UCLIBC_CONFIG_FILE=$(ARMADEUS_PATH)/uClibc.config.$(ARCH)

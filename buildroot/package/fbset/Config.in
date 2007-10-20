@@ -1,6 +1,0 @@
-config BR2_PACKAGE_FBSET
-	bool "fbset utility"
-	default n
-	help
-	  Build framebuffer fbset utility
-

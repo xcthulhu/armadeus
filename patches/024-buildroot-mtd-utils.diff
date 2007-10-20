@@ -1,0 +1,12 @@
+diff -purN -x .svn -x '*~' buildrootref/package/mtd/mtd-utils/mtd.mk buildroot/package/mtd/mtd-utils/mtd.mk
+--- buildrootref/package/mtd/mtd-utils/mtd.mk	2007-10-15 22:41:00.000000000 +0200
++++ buildroot/package/mtd/mtd-utils/mtd.mk	2007-10-14 17:32:37.000000000 +0200
+@@ -29,7 +29,7 @@ $(MTD_HOST_DIR)/.unpacked: $(DL_DIR)/$(M
+ 	toolchain/patch-kernel.sh $(MTD_HOST_DIR) \
+ 		package/mtd/mtd-utils mtd-utils-$(MTD_VERSION)-all\*.patch
+ 	toolchain/patch-kernel.sh $(MTD_HOST_DIR) \
+-		package/mtd/mtd-utils mtd-utils-$(MTD_VERSION)-host\*.patch
++		package/mtd/mtd-utils mtd-utils-$(MTD_VERSION)-target\*.patch
+ 	touch $@
+ 
+ 

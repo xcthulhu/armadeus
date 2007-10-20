@@ -16,6 +16,7 @@
 # Startup the system
 null::sysinit:/bin/mount -o remount,rw /
 null::sysinit:/bin/mount -t proc proc /proc
+null::sysinit:/bin/mount -a
 null::sysinit:/bin/hostname -F /etc/hostname
 null::sysinit:/sbin/ifconfig lo 127.0.0.1 up
 null::sysinit:/sbin/route add -net 127.0.0.0 netmask 255.0.0.0 lo
@@ -28,7 +29,7 @@ tty1::respawn:/sbin/getty 38400 tty1
 
 # Put a getty on the serial port
 #ttyS0::respawn:/sbin/getty -L ttySMX0 115200,57600,38400,230400 vt100
-null::respawn:/sbin/getty -L ttySMX0 115200,57600,38400,230400 vt100
+ttySMX0::respawn:/sbin/getty -L ttySMX0 115200,57600,38400 vt100
 #null::respawn:/sbin/getty -L ttygserial 115200 vt100
 
 # Logging junk

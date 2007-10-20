@@ -1,0 +1,15 @@
+diff -purN -x .svn -x '*~' buildrootref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
+--- buildrootref/target/jffs2/jffs2root.mk	2007-10-15 22:41:05.000000000 +0200
++++ buildroot/target/jffs2/jffs2root.mk	2007-10-15 21:06:03.000000000 +0200
+@@ -57,7 +57,10 @@ endif
+ ifneq ($(BR2_HAVE_INFOPAGES),y)
+ 	@rm -rf $(TARGET_DIR)/usr/info
+ endif
+-	@rmdir -p --ignore-fail-on-non-empty $(TARGET_DIR)/usr/share
++	@test -d $(TARGET_DIR)/usr/share && \
++		rmdir -p --ignore-fail-on-non-empty $(TARGET_DIR)/usr/share || \
++		true
++#	@rmdir -p --ignore-fail-on-non-empty $(TARGET_DIR)/usr/share
+ 	$(if $(TARGET_LDCONFIG),test -x $(TARGET_LDCONFIG) && $(TARGET_LDCONFIG) -r $(TARGET_DIR) 2>/dev/null)
+ 	# Use fakeroot to pretend all target binaries are owned by root
+ 	rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(JFFS2_TARGET))

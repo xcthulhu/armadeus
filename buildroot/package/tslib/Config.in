@@ -1,8 +1,0 @@
-config BR2_PACKAGE_TSLIB
-	bool "tslib"
-	select BR2_INSTALL_LIBSTDCPP
-	default n
-	help
-		Tslib is an abstraction layer for touchscreen panel events.
-
-		See: http://tslib.berlios.de/

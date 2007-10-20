@@ -1,11 +1,10 @@
-diff -purN -x .svn -x '*~' buildrootref/package/Config.in buildroot/package/Config.in
---- buildrootref/package/Config.in	2006-10-26 23:03:00.000000000 +0200
-+++ buildroot/package/Config.in	2006-10-26 22:18:01.000000000 +0200
-@@ -57,6 +57,7 @@ source "package/haserl/Config.in"
- source "package/hdparm/Config.in"
- source "package/hostap/Config.in"
+--- buildrootref/package/Config.in	2007-10-06 09:15:53.000000000 +0200
++++ buildroot/package/Config.in	2007-10-13 17:58:06.000000000 +0200
+@@ -230,6 +230,7 @@
  source "package/hotplug/Config.in"
+ endif
+ source "package/hwdata/Config.in"
 +source "package/imxregs/Config.in"
  source "package/iostat/Config.in"
- source "package/iproute2/Config.in"
- source "package/ipsec-tools/Config.in"
+ source "package/libaio/Config.in"
+ source "package/libraw1394/Config.in"

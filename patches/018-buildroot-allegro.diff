@@ -1,10 +1,10 @@
---- buildroot.ori/package/Config.in	2007-05-19 19:06:19.000000000 +0200
-+++ buildroot/package/Config.in	2007-05-19 19:06:46.000000000 +0200
-@@ -25,6 +25,7 @@
+--- buildrootref/package/Config.in	2007-10-13 18:33:51.000000000 +0200
++++ buildroot/package/Config.in	2007-10-13 18:32:21.000000000 +0200
+@@ -298,6 +298,7 @@
+ source "package/dialog/Config.in"
  
- comment "Other stuff"
- source "package/acpid/Config.in"
+ comment "graphic libraries"
 +source "package/allegro/Config.in"
- source "package/asterisk/Config.in"
- source "package/at/Config.in"
- source "package/autoconf/Config.in"
+ source "package/directfb/Config.in"
+ source "package/fusion/Config.in"
+ source "package/imagemagick/Config.in"

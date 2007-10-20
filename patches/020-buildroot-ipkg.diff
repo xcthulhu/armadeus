@@ -1,10 +1,10 @@
---- buildroot/package/Config.in.old	2007-06-08 17:01:07.000000000 +0200
-+++ buildroot/package/Config.in	2007-06-08 17:01:37.000000000 +0200
-@@ -61,6 +61,7 @@
- source "package/hotplug/Config.in"
- source "package/imxregs/Config.in"
- source "package/iostat/Config.in"
+--- buildrootref/package/Config.in	2007-10-13 18:37:33.000000000 +0200
++++ buildroot/package/Config.in	2007-10-13 18:38:38.000000000 +0200
+@@ -67,6 +67,7 @@
+ source "package/customize/Config.in"
+ source "package/dash/Config.in"
+ source "package/file/Config.in"
 +source "package/ipkg/Config.in"
- source "package/iproute2/Config.in"
- source "package/ipsec-tools/Config.in"
- source "package/iptables/Config.in"
+ source "package/kexec/Config.in"
+ if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
+ source "package/less/Config.in"

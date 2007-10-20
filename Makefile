@@ -1,6 +1,6 @@
 # Makefile for armadeus
 #
-# Copyright (C) 2005-2006 by Eric Jarrige <jorasse@sourceforge.net>
+# Copyright (C) 2005-2006 by <jorasse@armadeus.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ BUILDROOT_DIR = buildroot
 
 BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH:=downloads
-BUILDROOT_SITE:=ftp://ftp2.armadeus.com/armadeus/download
-BUILDROOT_VERSION:=20061030
+BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots/
+BUILDROOT_VERSION:=20071006
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 
 PATCH_DIR=patches
@@ -35,19 +35,12 @@ PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
 TAR_OPTIONS=--exclude=.svn -xf 
 
 #used only by cygwin to restore the rights on some rootfs directories
-BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/root
+BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/project_build_arm/root
 
 LINUX-REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BUILDROOT_DIR)/.config | \
       sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
-LINUX_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/linux-$(LINUX-REL)
+LINUX_DIR=$(BUILDROOT_DIR)/build_arm/linux-$(LINUX-REL)
 
-UCLIBC-REL=`grep "UCLIBC_VER:=" $(BUILDROOT_DIR)/toolchain/uClibc/uclibc.mk | \
-      sed "s/UCLIBC_VER:=//"`
-UCLIBC_DIR=$(BUILDROOT_DIR)/toolchain_build_arm_nofpu/uClibc-$(UCLIBC-REL)
-
-BUSYBOX-REL=`grep "BUSYBOX_VER:=" $(BUILDROOT_DIR)/package/busybox/busybox.mk | \
-      sed "s/BUSYBOX_VER:=//"`
-BUSYBOX_DIR=$(BUILDROOT_DIR)/build_arm_nofpu/busybox-$(BUSYBOX-REL)
 
 all: buildroot
 
@@ -111,16 +104,7 @@ buildauto: $(BUILDROOT_DIR)/.unpacked
 menuconfig: $(BUILDROOT_DIR)/.unpacked
 	@$(MAKE) -C $(BUILDROOT_DIR) menuconfig
 
-uclibc-menuconfig:
-	@if [ -e "$(UCLIBC_DIR)/.unpacked" ] ; then \
-		$(MAKE) -C $(UCLIBC_DIR) menuconfig ; \
-	fi;
 
-busybox-menuconfig:
-	@if [ -e "$(BUSYBOX_DIR)/.unpacked" ] ; then \
-		$(MAKE) -C $(BUSYBOX_DIR) menuconfig ; \
-	fi;
-	
 linux-menuconfig:
 	@if [ -e "$(LINUX_DIR)/.unpacked" ] ; then \
 		$(MAKE) -C $(LINUX_DIR) menuconfig ; \

@@ -68,7 +68,7 @@ config BR2_ARMADEUS_PACKAGE
 	source package/ch7024ctrl/Config.in
 	comment "---"    
     
-config BR2_PACKAGE_LINUX
+config BR2_PACKAGE_LINUX_ARM
 	bool "linux"
 	default n
 	depends BR2_TARGET_ARMADEUS
@@ -79,7 +79,7 @@ config BR2_PACKAGE_LINUX
 choice
 	prompt "Linux kernel version"
 	default BR2_PACKAGE_LINUX_VERSION_2_6_12
-	depends on BR2_PACKAGE_LINUX
+	depends on BR2_PACKAGE_LINUX_ARM
 	help
 	    Linux kernel version you want to use with your Armadeus board.
 	    If you plan to use MMC/SD cards then choose 2.6.18.1, otherwise 2.6.12

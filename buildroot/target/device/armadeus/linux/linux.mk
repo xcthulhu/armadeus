@@ -32,7 +32,7 @@ LINUX_VERSION:=$(BR2_PACKAGE_C_LINUX_VERSION)
 
 
 # File name for the Linux kernel binary
-LINUX_KERNEL=linux-kernel-$(LINUX_VERSION)-$(ARCH).bin
+LINUX_KERNEL=$(BINARIES_DIR)/linux-kernel-$(LINUX_VERSION)-$(ARCH).bin
 
 LINUX_PACKAGE_DIR:=$(ARMADEUS_PATH)/linux
 
@@ -173,6 +173,6 @@ endif
 	-(cd $(BUILD_DIR); \
 	diff -purN -x '*~' ref/linux-$(LINUX_VERSION) linux-$(LINUX_VERSION) > $(BUILD_DIR)/../newlinux.diff)
 
-ifeq ($(strip $(BR2_PACKAGE_LINUX)),y)
+ifeq ($(strip $(BR2_PACKAGE_LINUX_ARM)),y)
 TARGETS+=linux
 endif
