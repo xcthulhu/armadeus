@@ -1,13 +1,13 @@
 diff -purN -x .svn -x '*~' buildrootref/toolchain/gcc/gcc-uclibc-3.x.mk buildroot/toolchain/gcc/gcc-uclibc-3.x.mk
 --- buildrootref/toolchain/gcc/gcc-uclibc-3.x.mk	2007-10-15 22:41:00.000000000 +0200
 +++ buildroot/toolchain/gcc/gcc-uclibc-3.x.mk	2007-10-20 18:04:02.000000000 +0200
-@@ -327,8 +327,7 @@ endif
+@@ -327,8 +327,8 @@ endif
  	#
  	mkdir -p $(TARGET_DIR)/usr/lib $(TARGET_DIR)/usr/sbin
  	touch $@
--
+
 -$(GCC_BUILD_DIR2)/.libs_installed: $(GCC_BUILD_DIR2)/.installed
-+$(TARGET_DIR)/lib/libgcc_s*: $(STAGING_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s*
++$(TARGET_DIR)/lib/libgcc_s*: $(GCC_BUILD_DIR2)/.installed
  ifeq ($(BR2_GCC_SHARED_LIBGCC),y)
  	# These are in /lib, so...
  	rm -rf $(TARGET_DIR)/usr/lib/libgcc_s*.so*
@@ -23,13 +23,13 @@ diff -purN -x .svn -x '*~' buildrootref/toolchain/gcc/gcc-uclibc-3.x.mk buildroo
 diff -purN -x .svn -x '*~' buildrootref/toolchain/gcc/gcc-uclibc-4.x.mk buildroot/toolchain/gcc/gcc-uclibc-4.x.mk
 --- buildrootref/toolchain/gcc/gcc-uclibc-4.x.mk	2007-10-15 22:41:00.000000000 +0200
 +++ buildroot/toolchain/gcc/gcc-uclibc-4.x.mk	2007-10-20 18:06:25.000000000 +0200
-@@ -340,14 +340,15 @@ endif
+@@ -340,14 +340,16 @@ endif
  	#
  	mkdir -p $(TARGET_DIR)/usr/lib $(TARGET_DIR)/usr/sbin
  	touch $@
--
+
 -$(GCC_BUILD_DIR2)/.libs_installed: $(GCC_BUILD_DIR2)/.installed
-+$(TARGET_DIR)/lib/libgcc_s*: $(STAGING_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s*
++$(TARGET_DIR)/lib/libgcc_s*: $(GCC_BUILD_DIR2)/.installed
  ifeq ($(BR2_GCC_SHARED_LIBGCC),y)
  	# These are in /lib, so...
  	rm -rf $(TARGET_DIR)/usr/lib/libgcc_s*.so*
