@@ -1,0 +1,18 @@
+--- buildrootref/package/Config.in	2007-10-21 10:36:23.000000000 +0200
++++ buildroot/package/Config.in	2007-10-21 11:06:59.000000000 +0200
+@@ -43,6 +43,7 @@
+ source "package/automake/Config.in"
+ source "package/bison/Config.in"
+ source "toolchain/ccache/Config.in.2"
++source "package/ch7024ctrl/Config.in"
+ source "package/cvs/Config.in"
+ source "package/distcc/Config.in"
+ source "package/dmalloc/Config.in"
+@@ -54,6 +55,7 @@
+ source "package/mpfr/Config.in"
+ source "package/libtool/Config.in"
+ source "package/m4/Config.in"
++source "package/max5821ctrl/Config.in"
+ source "package/mpatrol/Config.in"
+ source "package/pkgconfig/Config.in"
+ source "package/readline/Config.in"
