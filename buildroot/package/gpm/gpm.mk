@@ -58,11 +58,11 @@ $(STAGING_DIR)/usr/sbin/gpm: $(GPM_DIR)/.compiled
 
 $(TARGET_DIR)/usr/sbin/gpm: $(STAGING_DIR)/usr/sbin/gpm
 	cp -dpf $(STAGING_DIR)/usr/sbin/gpm $(TARGET_DIR)/usr/sbin/
-	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/sbin/gpm
+#	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/sbin/gpm
 	cp -dpf $(STAGING_DIR)/usr/bin/gpm-root $(TARGET_DIR)/usr/bin/
-	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/bin/gpm-root
+#	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/bin/gpm-root
 	cp -dpf $(STAGING_DIR)/usr/lib/libgpm.so* $(TARGET_DIR)/usr/lib/
-	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libgpm.so.1.*
+#	$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libgpm.so.1.*
 
 GPM gpm: uclibc $(TARGET_DIR)/usr/sbin/gpm
 

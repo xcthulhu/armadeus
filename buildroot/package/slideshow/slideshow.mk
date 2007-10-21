@@ -28,7 +28,7 @@ $(SLIDESHOW_DIR)/slideshow: $(SLIDESHOW_DIR)/.configured
 
 $(TARGET_DIR)/usr/bin/slideshow: $(SLIDESHOW_DIR)/slideshow
 	cp -dpf $< $(TARGET_DIR)/usr/bin
-	-$(STRIP) --strip-unneeded $@
+#	-$(STRIP) --strip-unneeded $@
 
 SLIDESHOW slideshow: sdl sdl_image $(TARGET_DIR)/usr/bin/slideshow
 
