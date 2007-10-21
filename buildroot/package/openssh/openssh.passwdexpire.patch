@@ -1,11 +1,13 @@
---- openssh-3.9p1/configure.ac.org	2006-10-16 22:42:09.000000000 +0200
-+++ openssh-3.9p1/configure.ac	2006-10-16 23:11:50.000000000 +0200
-@@ -2508,7 +2508,7 @@ if test -z "$disable_shadow" ; then
+--- openssh-4.6p1/configure.ac.org	2007-10-21 12:42:09.000000000 +0200
++++ openssh-4.6p1/configure.ac	2007-10-21 13:11:50.000000000 +0200
+@@ -3437,8 +3437,8 @@ if test -z "$disable_shadow" ; then
  
  	if test "x$sp_expire_available" = "xyes" ; then
  		AC_MSG_RESULT(yes)
--		AC_DEFINE(HAS_SHADOW_EXPIRE)
-+//		AC_DEFINE(HAS_SHADOW_EXPIRE)
+-		AC_DEFINE(HAS_SHADOW_EXPIRE, 1,
+-		    [Define if you want to use shadow password expire field])
++//		AC_DEFINE(HAS_SHADOW_EXPIRE, 1,
++//		    [Define if you want to use shadow password expire field])
  	else
  		AC_MSG_RESULT(no)
- 	fi
+	fi
