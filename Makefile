@@ -46,18 +46,27 @@ all: buildroot
 
 help:
 	@echo 'Cleaning:'
-	@echo '  buildroot-clean	- delete all non-source files in buildroot (including .config)'
+	@echo '  buildroot-clean	- delete all non-source files in buildroot'
+	@echo '  clean                  - delete temporary files created by build'
+	@echo '  distclean              - delete all non-source files (including .config)'
 	@echo
 	@echo 'Build:'
-	@echo '  all			- everything needed (default)'
+	@echo '  all                    - make world'
 	@echo '  <Package>		- a single package (ex: u-boot linux or buildroot'
 	@echo
 	@echo 'Configuration:'
-	@echo '  menuconfig		- interactive curses-based configurator'
+	@echo '  menuconfig             - interactive curses-based configurator'
+	@echo '  oldconfig              - resolve any unresolved symbols in .config'
+	@echo
+	@echo 'Miscellaneous:'
+	@echo '  source                 - download all sources needed for offline-build'
+	@echo '  source-check           - check all packages for valid download URLs'
 	@echo
 	@echo 'Development:'
 	@echo '  buildroot-patch	- generate patch file for buildroot'
 	@echo '  sourceball		- create a distribution tarball'
+	@echo
+	@echo 'See docs/README and docs/buildroot.html for further details'
 	@echo
 
 
@@ -114,15 +123,14 @@ linux-menuconfig:
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
 buildroot-clean:
-	@$(MAKE) -C $(BUILDROOT_DIR)  clean
 	rm -rf $(BUILDROOT_DIR)/build*
+	rm -rf $(BUILDROOT_DIR)/binaries
+	rm -rf $(BUILDROOT_DIR)/project_build*
 	rm -rf $(BUILDROOT_DIR)/toolchain_build*
-	rm -rf $(BUILDROOT_DIR)/dl
-	rm -rf $(BUILDROOT_DIR)/u-boot* $(BUILDROOT_DIR)/rootfs* $(BUILDROOT_DIR)/linux*
 
-rootfs-dirclean:
+buildroot-dirclean:
 	rm -rf $(BUILDROOT_DIR)	
 	
-.PHONY: dummy buildroot
+.PHONY: dummy buildroot buildroot-clean
 
 
