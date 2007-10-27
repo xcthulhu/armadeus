@@ -55,7 +55,7 @@ $(TARGET_DIR)/usr/games/prboom: $(STAGING_DIR)/usr/games/$(GNU_TARGET_NAME)-prbo
 	mkdir -p $(TARGET_DIR)/usr/share/games/doom/
 	cp -dpf $(STAGING_DIR)/usr/games/$(GNU_TARGET_NAME)-prboom $@
 	cp -dpf $(PRBOOM_DIR)/data/*.wad $(TARGET_DIR)/usr/share/games/doom/ 
-#	-$(STRIP) --strip-unneeded $@
+	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)  $@
 
 PRBOOM prboom: sdl sdl_net sdl_mixer $(TARGET_DIR)/usr/games/prboom
 
