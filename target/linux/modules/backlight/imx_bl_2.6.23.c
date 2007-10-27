@@ -1,9 +1,9 @@
 /*
  *  Backlight Driver for i.MXL based platform 
  *
- *  Copyright (c) 2007 Armadeus Project
+ *  Copyright (c) 2007 Julien Boibessot - Armadeus Project
  *
- *  Based on Sharp's 2.4 Backlight Driver
+ *  Based on Backlight Driver for Sharp Zaurus Handhelds
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2 as
@@ -34,29 +34,28 @@ static unsigned long imxbl_flags;
 
 static int imxbl_send_intensity(struct backlight_device *bd)
 {
-	int intensity = bd->props->brightness;
-    unsigned long shadow = 0;
+	int intensity = bd->props.brightness;
+	unsigned long shadow = 0;
 
-	if (bd->props->power != FB_BLANK_UNBLANK)
+	if (bd->props.power != FB_BLANK_UNBLANK)
 		intensity = 0;
-	if (bd->props->fb_blank != FB_BLANK_UNBLANK)
+	if (bd->props.fb_blank != FB_BLANK_UNBLANK)
 		intensity = 0;
 	if (imxbl_flags & IMXBL_SUSPENDED)
 		intensity = 0;
 	if (imxbl_flags & IMXBL_BATTLOW)
 		intensity &= bl_machinfo->limit_mask;
 
- 	mutex_lock(&bl_mutex);
-    if( bl_machinfo->set_bl_intensity ) {
-        bl_machinfo->set_bl_intensity(intensity);
-    } else {
-        shadow = LCDC_PWMR;
-        shadow &= 0xffffff00;
-        shadow |= PWMR_PW(intensity);
-        LCDC_PWMR = shadow;
-        printk("Setting backlight intensity to %d\n", intensity);
-    }
-	mutex_unlock(&bl_mutex);
+	// If a function was given in machine info then use it
+	if( bl_machinfo->set_bl_intensity ) {
+		bl_machinfo->set_bl_intensity(intensity);
+	} else { // Otherwise use this default one:
+		shadow = LCDC_PWMR;
+		shadow &= 0xffffff00;
+		shadow |= PWMR_PW(intensity);
+		LCDC_PWMR = shadow;
+		printk("Setting backlight intensity to %d\n", intensity);
+	}
 
 	imxbl_intensity = intensity;
 
@@ -66,15 +65,19 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 #ifdef CONFIG_PM
 static int imxbl_suspend(struct platform_device *dev, pm_message_t state)
 {
+	struct backlight_device *bd = platform_get_drvdata(pdev);
+
 	imxbl_flags |= IMXBL_SUSPENDED;
-	imxbl_send_intensity(imx_backlight_device);
+	backlight_update_status(bd);
 	return 0;
 }
 
 static int imxbl_resume(struct platform_device *dev)
 {
+	struct backlight_device *bd = platform_get_drvdata(pdev);
+
 	imxbl_flags &= ~IMXBL_SUSPENDED;
-	imxbl_send_intensity(imx_backlight_device);
+	backlight_update_status(bd);
 	return 0;
 }
 #else
@@ -87,12 +90,6 @@ static int imxbl_get_intensity(struct backlight_device *bd)
 	return imxbl_intensity;
 }
 
-static int imxbl_set_intensity(struct backlight_device *bd)
-{
-	imxbl_send_intensity(imx_backlight_device);
-	return 0;
-}
-
 /*
  * Called when the battery is low to limit the backlight intensity.
  * If limit==0 clear any limit, otherwise limit the intensity
@@ -103,15 +100,14 @@ void imxbl_limit_intensity(int limit)
 		imxbl_flags |= IMXBL_BATTLOW;
 	else
 		imxbl_flags &= ~IMXBL_BATTLOW;
-	imxbl_send_intensity(imx_backlight_device);
+	backlight_update_status(imx_backlight_device);
 }
 EXPORT_SYMBOL(imxbl_limit_intensity);
 
 
-static struct backlight_properties imxbl_data = {
-	.owner          = THIS_MODULE,
+static struct backlight_ops imxbl_ops = {
 	.get_brightness = imxbl_get_intensity,
-	.update_status  = imxbl_set_intensity,
+	.update_status  = imxbl_send_intensity,
 };
 
 static int imxbl_probe(struct platform_device *pdev)
@@ -123,35 +119,43 @@ static int imxbl_probe(struct platform_device *pdev)
 	if (!machinfo->limit_mask)
 		machinfo->limit_mask = -1;
 
-	imx_backlight_device = backlight_device_register ("imxl-bl",
-		NULL, &imxbl_data);
+	imx_backlight_device = backlight_device_register ("imxl-bl", &pdev->dev, NULL, &imxbl_ops);
 	if (IS_ERR (imx_backlight_device))
     {
         printk("Error imxBL\n");
 		return PTR_ERR (imx_backlight_device);
     }
 
-	imxbl_data.power = FB_BLANK_UNBLANK;
-	imxbl_data.brightness = machinfo->default_intensity;
-	imxbl_send_intensity(imx_backlight_device);
+	platform_set_drvdata(pdev, imx_backlight_device);
 
-	printk("i.MXL Backlight Driver Initialized.\n");
+	imx_backlight_device->props.max_brightness = machinfo->max_intensity;
+	imx_backlight_device->props.power = FB_BLANK_UNBLANK;
+	imx_backlight_device->props.brightness = machinfo->default_intensity;
+	backlight_update_status(imx_backlight_device);
+
+	printk("i.MX Backlight driver initialized.\n");
 	return 0;
 }
 
-static int imxbl_remove(struct platform_device *dev)
+static int imxbl_remove(struct platform_device *pdev)
 {
-	backlight_device_unregister(imx_backlight_device);
+	struct backlight_device *bd = platform_get_drvdata(pdev);
 
-	printk("i.MXL Backlight Driver Unloaded\n");
+	imxbl_data.power = 0;
+	imxbl_data.brightness = 0;
+	backlight_update_status(bd);
+
+	backlight_device_unregister(bd);
+
+	printk("i.MX Backlight driver unloaded\n");
 	return 0;
 }
 
 static struct platform_driver imxbl_driver = {
 	.probe		= imxbl_probe,
-	.remove	= imxbl_remove,
+	.remove		= imxbl_remove,
 	.suspend	= imxbl_suspend,
-	.resume	= imxbl_resume,
+	.resume		= imxbl_resume,
 	.driver		= {
 		.name	= "imxl-bl",
 	},
