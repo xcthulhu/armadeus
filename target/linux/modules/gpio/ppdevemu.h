@@ -19,7 +19,10 @@
 #ifndef __PPDEV_EMU_H__
 #define __PPDEV_EMU_H__
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 #include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
