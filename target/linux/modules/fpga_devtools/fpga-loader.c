@@ -21,10 +21,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  **********************************************************************
  */
+#include <linux/version.h>
 #include "fpga-loader.h"
 #include "xilinx-fpga-loader.h"
 #include <asm/arch/imx-regs.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 #include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
