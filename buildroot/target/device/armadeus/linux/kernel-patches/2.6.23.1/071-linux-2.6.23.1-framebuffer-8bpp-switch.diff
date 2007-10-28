@@ -1,0 +1,41 @@
+This patch activates 8/16 bpp switching in framebuffer on 16 Bits TFT
+
+--- linux-2.6.18.1/drivers/video/imxfb.c	2007-04-05 22:31:12.000000000 +0200
++++ linux-2.6.18.1.fb8bits/drivers/video/imxfb.c	2007-05-08 12:40:31.000000000 +0200
+@@ -350,6 +350,7 @@
+ 	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
+ 		var->yres, var->vsync_len,
+ 		var->upper_margin, var->lower_margin);
++	pr_debug("var: bpp=%d\n", var->bits_per_pixel);
+ 
+ #if DEBUG_VAR
+ 	if (var->xres < 16        || var->xres > 1024)
+@@ -387,7 +388,17 @@
+ 			  VCR_V_WAIT_2(var->lower_margin);
+ 
+ 	LCDC_SIZE	= SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres);
+-	LCDC_PCR	= fbi->pcr;
++    // On TFT LCD i.MXL can support 16, 12, 8, 4bpp with the same hardware interface (12 to 16 bits)
++    // So if userspace app wants a 8bpp screen switch to 8bpp (can save ressources, with SDL for ex)
++    if( (var->bits_per_pixel == 8) && (fbi->pcr & PCR_TFT) )
++    {
++        pr_debug("Switching imxfb to 8bpp\n");
++        LCDC_PCR = (fbi->pcr & (~PCR_BPIX_MASK)) | PCR_BPIX_8 | PCR_END_BYTE_SWAP;
++    }
++    else
++        LCDC_PCR = fbi->pcr;
++   
++    LCDC_VPW    = VPW_VPW(var->xres * var->bits_per_pixel / 8 / 4);
+ 	LCDC_PWMR	= fbi->pwmr;
+ 	LCDC_LSCR1	= fbi->lscr1;
+ 	LCDC_DMACR	= fbi->dmacr;
+--- linux-2.6.18.1/include/asm-arm/arch-imx/imx-regs.h	2007-04-05 22:31:12.000000000 +0200
++++ linux-2.6.18.1.fb8bits/include/asm-arm/arch-imx/imx-regs.h	2007-05-08 12:38:19.000000000 +0200
+@@ -411,6 +411,7 @@
+ #define PCR_BPIX_8      (3<<25)
+ #define PCR_BPIX_12     (4<<25)
+ #define PCR_BPIX_16     (4<<25)
++#define PCR_BPIX_MASK   (7<<25)
+ #define PCR_PIXPOL      (1<<24)
+ #define PCR_FLMPOL      (1<<23)
+ #define PCR_LPPOL       (1<<22)
