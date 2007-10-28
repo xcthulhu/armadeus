@@ -243,6 +243,8 @@ static struct sound_circ_buf gPWM_Circ_Buf;
  *
  ***************************************************************/
 
+static void inline unregister_sys_file( struct pwm_device *ppd );
+
 
 /**
  * setup_pwm_unit - common setup function whenever something was changed
@@ -967,11 +969,13 @@ static struct class_device_attribute attr_pwm_active = {
  */
 static int init_userinterface(struct platform_device *pdev, u32 address)
 {
-    int rc;
+    int rc = 0;
     struct pwm_device *ppd;
 
-    if (unlikely((ppd = kmalloc(sizeof(struct pwm_device), GFP_KERNEL)) == NULL))
-        return -ENOMEM;
+    if (unlikely((ppd = kmalloc(sizeof(struct pwm_device), GFP_KERNEL)) == NULL)) {
+		rc = -ENOMEM;
+        goto error_malloc;
+	}
 
     memset(&ppd->class_dev, 0, sizeof(struct class_device));
     ppd->class_dev.class = &pwm_class;
@@ -983,26 +987,37 @@ static int init_userinterface(struct platform_device *pdev, u32 address)
     ppd->duty=500; // = 50.O%
 
     rc = class_device_register(&ppd->class_dev);
-    if (unlikely(rc)) {
-            printk(KERN_ERR "%s: class registering failed\n", DRIVER_NAME);
-            kfree(ppd);
-            return rc;
-    }
+    if (unlikely(rc)) goto error_register;
+
     // Register the attributes
-    class_device_create_file( &ppd->class_dev, &attr_pwm_duty );
-    class_device_create_file( &ppd->class_dev, &attr_pwm_period );
-    class_device_create_file( &ppd->class_dev, &attr_pwm_frequency );
-    class_device_create_file( &ppd->class_dev, &attr_pwm_active );
+    rc |= class_device_create_file( &ppd->class_dev, &attr_pwm_duty );
+    if (unlikely(rc)) goto error_file;
+    rc |= class_device_create_file( &ppd->class_dev, &attr_pwm_period );
+    if (unlikely(rc)) goto error_file;
+    rc |= class_device_create_file( &ppd->class_dev, &attr_pwm_frequency );
+    if (unlikely(rc)) goto error_file;
+    rc |= class_device_create_file( &ppd->class_dev, &attr_pwm_active );
+    if (unlikely(rc)) goto error_file;
 
     pdev->dev.driver_data=ppd;
+	goto success;
 
+error_file:
+	printk(KERN_ERR "%s: class /sys file creation failed\n", DRIVER_NAME);
+	unregister_sys_file(ppd);
+error_register:
+	printk(KERN_ERR "%s: class registering failed\n", DRIVER_NAME);
+	kfree(ppd);
+error_malloc:
+	return rc;
+success:
     return 0;
 }
 
 /*
  *  PWM interrupt handler (used in Play Mode only)
  */
-static irqreturn_t pwm_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+static irqreturn_t pwm_interrupt(int irq, void *dev_id)
 {
     u32 status;
     int remaining = 0;
@@ -1092,7 +1107,7 @@ static int __init pwm_init_from_probe(void)
         printk("PWM major number = %d\n",gMajor);
     }
 
-    result = request_irq(PWM_INT, pwm_interrupt, SA_INTERRUPT, DEV_IRQ_NAME, DEV_IRQ_ID);
+    result = request_irq(PWM_INT, pwm_interrupt, IRQF_DISABLED, DEV_IRQ_NAME, DEV_IRQ_ID);
     if (result)
     {
         printk("<1>cannot init major= %d irq=%d\n", gMajor, irq);
@@ -1168,6 +1183,15 @@ exit:
     return err;
 }
 
+static inline void unregister_sys_file( struct pwm_device *ppd )
+{
+    // Unregister /sys attributes
+    class_device_remove_file( &ppd->class_dev, &attr_pwm_active );
+    class_device_remove_file( &ppd->class_dev, &attr_pwm_period );
+    class_device_remove_file( &ppd->class_dev, &attr_pwm_frequency );
+    class_device_remove_file( &ppd->class_dev, &attr_pwm_duty   );
+}
+
 /**
  * imx_pwm_drv_remove - free claimed resources
  * @pdev: platform device to work with
@@ -1177,11 +1201,7 @@ static int imx_pwm_drv_remove (struct platform_device *pdev)
     struct resource *res;
     struct pwm_device *ppd=(struct pwm_device*)pdev->dev.driver_data;
 
-    // Unregister /sys attributes
-    class_device_remove_file( &ppd->class_dev, &attr_pwm_active );
-    class_device_remove_file( &ppd->class_dev, &attr_pwm_period );
-    class_device_remove_file( &ppd->class_dev, &attr_pwm_frequency );
-    class_device_remove_file( &ppd->class_dev, &attr_pwm_duty   );
+	unregister_sys_file(ppd);
 
     class_device_unregister( &ppd->class_dev );
 
