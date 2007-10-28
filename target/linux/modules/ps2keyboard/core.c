@@ -12,6 +12,7 @@
  * the Free Software Foundation.
  */
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/serio.h>
@@ -118,7 +119,11 @@ static void apf9328keyboard_interrupt(unsigned long arg)
     
     return(IRQ_HANDLED);
 #else 
-        serio_interrupt(apf9328keyboard_port, gBuffer, 0, 0); //UNCOMMENT THIS ONLY WHEN DATA ARE OK !!
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+        serio_interrupt(apf9328keyboard_port, gBuffer, 0, 0);
+#else
+	serio_interrupt(apf9328keyboard_port, gBuffer, 0);
+#endif
     }
     // Trigger timer again
     read_timer.expires = jiffies + HZ/20; // Schedule next interrupt in 50 msec
