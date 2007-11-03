@@ -103,7 +103,7 @@ else
 	$(SED) 's,db->io_data = (void *).*,db->io_data = (void *)(base + 4 );,g' \
 		$(LINUX_DIR)/drivers/net/dm9000.c
 endif
-	(cd $(LINUX_DIR)/drivers; ln -sf ../../../../target/linux/modules/ armadeus)
+	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) oldconfig include/linux/version.h
 	touch $@
 

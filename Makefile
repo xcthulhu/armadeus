@@ -30,6 +30,9 @@ BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
 BUILDROOT_VERSION:=20071027
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 
+ARMADEUS_TOPDIR:=$(shell pwd)
+export ARMADEUS_TOPDIR
+
 PATCH_DIR=patches
 PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
 TAR_OPTIONS=--exclude=.svn -xf 
