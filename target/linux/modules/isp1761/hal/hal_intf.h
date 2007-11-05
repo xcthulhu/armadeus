@@ -24,7 +24,7 @@
  * Date                Author                  Comments
  * ---------------------------------------------------------------------
  * Nov 29 2005        Prabhakar Kalasani      Initial Creation     
- *               
+ * Nov 04 2007        NC (armadeus)           Add 2.6.23 compatibility               
  ***********************************************************************/
 
 #ifndef __HAL_INTF_H__
@@ -107,8 +107,7 @@ typedef struct isp1761_dev {
     unsigned char   index;          /* local controller (HC/DC/OTG) */
     unsigned int    irq;    /*Interrupt Channel allocated for this device */
     void (*handler)(struct isp1761_dev *dev,
-            void *isr_data,
-            struct pt_regs *);      /* Interrupt Serrvice Routine */
+            void *isr_data);      /* Interrupt Serrvice Routine */
     void            *isr_data;              /* isr data of the driver */
     unsigned long   int_reg;                /* Interrupt register */
     unsigned long   alt_int_reg;            /* Interrupt register 2*/
@@ -153,7 +152,7 @@ int     phci_enumerate_otg_port(struct isp1761_dev *dev, u32 command);
 
 int     isp1761_register_driver(struct isp1761_driver *drv);
 void    isp1761_unregister_driver(struct isp1761_driver *drv);
-int     isp1761_request_irq(void(*handler)(struct isp1761_dev* dev,void* isr_data,struct pt_regs*),
+int     isp1761_request_irq(void(*handler)(struct isp1761_dev* dev,void* isr_data),
         struct isp1761_dev* dev, void* isr_data);
 void    isp1761_free_irq(struct isp1761_dev* dev,void* isr_data);
 

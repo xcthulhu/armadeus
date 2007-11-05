@@ -29,11 +29,10 @@
  * July 4, 2005          krishan                  Handling unprotected urbs
  * Feb 6, 2006           Grant H.                 Added ISO support
  * April 21, 2006        Grant H.                 Added bug fixes
- * 
+ * Nov 04, 2007          NC (armadeus)            Add 2.6.23 compatibility
  ********************************************************************************
  */
 
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
@@ -740,7 +739,7 @@ pehci_hcd_qtd_schedule(phci_hcd *hcd,struct ehci_qtd *qtd,
 
 static void 
 pehci_hcd_urb_complete(phci_hcd *hcd,struct ehci_qh *qh, struct urb *urb, 
-        td_ptd_map_t    *td_ptd_map,struct pt_regs *regs)
+        td_ptd_map_t    *td_ptd_map)
 {
 
     static u32 remove  = 0;
@@ -771,7 +770,7 @@ pehci_hcd_urb_complete(phci_hcd *hcd,struct ehci_qh *qh, struct urb *urb,
         urb->status = 0;
 
     spin_unlock(&hcd->lock);
-    usb_hcd_giveback_urb (&hcd->usb_hcd, urb, regs);
+    usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
     spin_lock(&hcd->lock);
 
     /*lets handle to the remove case*/
@@ -829,7 +828,6 @@ pehci_hcd_update_error_status(u32 ptdstatus,struct urb *urb)
  *      needed by the host controller driver to process data and interact
  *      with the host controller.
  *
- * struct pt_regs *regs
  *
  * API Description
  * This is the ISOCHRONOUS Transfer handler, mainly responsible for:
@@ -841,7 +839,7 @@ pehci_hcd_update_error_status(u32 ptdstatus,struct urb *urb)
  *    required actions depending on status.
  *  - Freeing up memory used by an ITDs once it is not needed anymore.
  ************************************************************************/
-void phcd_iso_handler(phci_hcd *hcd, struct pt_regs *regs)
+void phcd_iso_handler(phci_hcd *hcd)
 {
     struct _isp1761_isoptd *iso_ptd;
     struct isp1761_mem_addr *mem_addr;
@@ -1300,7 +1298,7 @@ void phcd_iso_handler(phci_hcd *hcd, struct pt_regs *regs)
                 spin_unlock(&hcd->lock);
 
                 /* Perform URB cleanup */
-                usb_hcd_giveback_urb (&hcd->usb_hcd, urb, regs);
+                usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
 
                 spin_lock(&hcd->lock);
                 continue;
@@ -1365,7 +1363,7 @@ void phcd_iso_handler(phci_hcd *hcd, struct pt_regs *regs)
   6. schedule
  *********************************************************/
     static void
-pehci_hcd_intl_worker(phci_hcd *hcd,struct pt_regs *regs)
+pehci_hcd_intl_worker(phci_hcd *hcd)
 {
     int i = 0;
     u32 donemap = 0, donetoclear;
@@ -1549,7 +1547,7 @@ copylength:
         }
 
         if(qtd->state & QTD_STATE_LAST){
-            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map,regs);
+            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map);
             if(dontschedule){ /*cleanup will start from drivers*/
                 dontschedule = 0;
                 continue;
@@ -1605,7 +1603,7 @@ schedule:
   6. schedule
  */
     static void
-pehci_hcd_atl_worker(phci_hcd *hcd,struct pt_regs *regs)
+pehci_hcd_atl_worker(phci_hcd *hcd)
 {
     u32 donemap = 0, donetoclear=0;
     u32 pendingmap = 0;
@@ -1969,7 +1967,7 @@ copylength:
     }
 
     if(qtd->state & QTD_STATE_LAST){
-        pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map,regs);
+        pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map);
         if(dontschedule){ /*cleanup will start from drivers*/
             dontschedule = 0;
             /*so that we can take next one*/
@@ -2281,30 +2279,30 @@ pehci_hcd_tasklet(unsigned long arg)
 {
     phci_hcd *hcd = (phci_hcd *) arg;
 #ifdef CONFIG_ISO_SUPPORT
-    phcd_iso_handler(hcd, NULL);
+    phcd_iso_handler(hcd);
 #endif
-    pehci_hcd_atl_worker(hcd,NULL);
-    pehci_hcd_intl_worker(hcd,NULL);
+    pehci_hcd_atl_worker(hcd);
+    pehci_hcd_intl_worker(hcd);
     return;
 
 }
 
     static void
-pehci_interrupt_handler(phci_hcd *hcd, struct pt_regs *regs)
+pehci_interrupt_handler(phci_hcd *hcd)
 {
     spin_lock(&hcd->lock);
 #ifdef CONFIG_ISO_SUPPORT
-    phcd_iso_handler(hcd, regs);
+    phcd_iso_handler(hcd);
 #endif
-    pehci_hcd_atl_worker(hcd,regs);
-    pehci_hcd_intl_worker(hcd,regs);
+    pehci_hcd_atl_worker(hcd);
+    pehci_hcd_intl_worker(hcd);
     spin_unlock(&hcd->lock);
     return;
 }
 
 
     irqreturn_t
-pehci_hcd_irq1(struct usb_hcd *hcd, struct pt_regs *regs)
+pehci_hcd_irq1(struct usb_hcd *hcd)
 {
     info("%s: doing nothing\n",__FUNCTION__);
     return IRQ_NONE;
@@ -2312,7 +2310,7 @@ pehci_hcd_irq1(struct usb_hcd *hcd, struct pt_regs *regs)
 
 /*isr routine*/
     irqreturn_t
-pehci_hcd_irq(struct usb_hcd *usb_hcd, struct pt_regs *regs) //struct isp1761_dev *dev, void *__irq_data, struct pt_regs *regs) 
+pehci_hcd_irq(struct usb_hcd *usb_hcd) //struct isp1761_dev *dev, void *__irq_data, struct pt_regs *regs) 
 {
     struct isp1761_dev *dev;
     int work = 0;
@@ -2341,20 +2339,20 @@ pehci_hcd_irq(struct usb_hcd *usb_hcd, struct pt_regs *regs) //struct isp1761_de
         work = 1;       /* phci_iso_worker(hcd); */
     if(intr & (HC_ATL_INT & INTR_ENABLE_MASK)){
         spin_lock(&pehci_hcd->lock);
-        pehci_hcd_atl_worker(pehci_hcd, regs);
+        pehci_hcd_atl_worker(pehci_hcd);
         spin_unlock(&pehci_hcd->lock);  
         work = 0;       /*phci_atl_worker(hcd); */
     }
 
     if(intr & (HC_INTL_INT & INTR_ENABLE_MASK)){
         spin_lock(&pehci_hcd->lock);
-        pehci_hcd_intl_worker(pehci_hcd, regs);
+        pehci_hcd_intl_worker(pehci_hcd);
         spin_unlock(&pehci_hcd->lock);
         work = 0;       /*phci_intl_worker(hcd); */
     }
 #endif
     if(work)
-        pehci_interrupt_handler(pehci_hcd, regs);
+        pehci_interrupt_handler(pehci_hcd);
 
     atomic_dec(&pehci_hcd->nuofsofs);
     return IRQ_HANDLED;
@@ -2732,7 +2730,7 @@ pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd,struct urb *urb)
                     urb->transfer_buffer_length, urb->actual_length);
             qtd = urb_priv->qtd[urb_priv->length-1];
             pehci_check("qtd state is %x\n", qtd->state);       
-            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map,NULL);
+            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map);
 
 #if 0 /* Set only for memory leak debugging */
             {
@@ -2777,7 +2775,7 @@ pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd,struct urb *urb)
             isp1761_reg_write32(hcd->dev, hcd->regs.inttdskipmap,
                     skipmap | td_ptd_map->ptd_bitmap);
             qtd_list = &qh->qtd_list;
-            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map,NULL);
+            pehci_hcd_urb_complete(hcd,qh,urb,td_ptd_map);
             if(!list_empty(qtd_list))
             {   
                 err("Never Error: List must not be emplyt\n"); /*only one td in my endpoint*/
@@ -3160,7 +3158,7 @@ pehci_hcd_probe(struct isp1761_dev *tmp_1761_dev , isp1761_id *ids )
     /*lets keep our host here*/
     tmp_1761_dev->driver_data = usb_hcd;
 
-    status = usb_add_hcd(usb_hcd, tmp_1761_dev->irq, SA_INTERRUPT | SA_SHIRQ);
+    status = usb_add_hcd(usb_hcd, tmp_1761_dev->irq, IRQF_DISABLED | IRQF_SHARED);
     pehci_entry("-- %s: Exit\n",__FUNCTION__);
     return status;
 
@@ -3174,7 +3172,6 @@ clean:
 pehci_hcd_remove(struct isp1761_dev *tmp_1761_dev)
 
 {
-
     struct usb_hcd          *usb_hcd;
 
     phci_hcd *hcd = NULL;

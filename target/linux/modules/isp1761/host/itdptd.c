@@ -666,7 +666,7 @@ unsigned long phcd_submit_iso( phci_hcd *hcd,
     /* Local variable initialization */
     high_speed = 0;
     periodic_list = &hcd->periodic_list[0];
-    dev = (struct hcd_dev *)urb->dev->bus->hcpriv;
+    dev = (struct hcd_dev*) bus_to_hcd(urb->dev->bus);
     urb->hcpriv = (void *) 0;
     prev_itd = (struct ehci_itd *) 0;
     itd = (struct ehci_itd *) 0;
@@ -715,15 +715,12 @@ unsigned long phcd_submit_iso( phci_hcd *hcd,
 
     if(urb->dev->speed == USB_SPEED_FULL)
     {
-        if(urb->bandwidth == 0)
-        {                       
-            bus_time = usb_check_bandwidth(urb->dev, urb);
-            if(bus_time < 0)
-            {                           
-                usb_dec_dev_use(urb->dev);
-                *status = bus_time;
-                return *status;
-            }
+        bus_time = usb_check_bandwidth(urb->dev, urb);
+        if(bus_time < 0)
+        {                           
+            usb_dec_dev_use(urb->dev);
+            *status = bus_time;
+            return *status;
         }
     } /*if(urb->dev->speed == USB_SPEED_FULL)  */   
     else /*HIGH SPEED*/

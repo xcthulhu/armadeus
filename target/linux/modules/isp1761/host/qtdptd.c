@@ -19,20 +19,116 @@
  *
  * File Name: qtdptd.c
  *
- * Refering linux kernel version 2.6.9
+ * Refering linux kernel version 2.6.23
  *
  * History:
  *
  * Date                   Author                  Comments
  * --------------------------------------------------------------------
  * June 21, 2005          krishan                  Initial version
- *  
+ * Nov  04, 2007          NC (armadeus)            Add 2.6.23 compatibility      
  **********************************************************************
  */
 
 /*   Td managenment routines  */
 
 #define QUEUE_HEAD_NOT_EMPTY    0x001
+
+/*
+ * usb_check_bandwidth():
+ *
+ * old_alloc is from host_controller->bandwidth_allocated in microseconds;
+ * bustime is from calc_bus_time(), but converted to microseconds.
+ *
+ * returns <bustime in us> if successful,
+ * or -ENOSPC if bandwidth request fails.
+ *
+ * FIXME:
+ * This initial implementation does not use Endpoint.bInterval
+ * in managing bandwidth allocation.
+ * It probably needs to be expanded to use Endpoint.bInterval.
+ * This can be done as a later enhancement (correction).
+ *
+ * This will also probably require some kind of
+ * frame allocation tracking...meaning, for example,
+ * that if multiple drivers request interrupts every 10 USB frames,
+ * they don't all have to be allocated at
+ * frame numbers N, N+10, N+20, etc.  Some of them could be at
+ * N+11, N+21, N+31, etc., and others at
+ * N+12, N+22, N+32, etc.
+ *
+ * Similarly for isochronous transfers...
+ *
+ * Individual HCDs can schedule more directly ... this logic
+ * is not correct for high speed transfers.
+ */
+int usb_check_bandwidth (struct usb_device *dev, struct urb *urb)
+{
+	unsigned int	pipe = urb->pipe;
+	long		bustime;
+	int		is_in = usb_pipein (pipe);
+	int		is_iso = usb_pipeisoc (pipe);
+	int		old_alloc = dev->bus->bandwidth_allocated;
+	int		new_alloc;
+
+
+	bustime = NS_TO_US (usb_calc_bus_time (dev->speed, is_in, is_iso,
+			usb_maxpacket (dev, pipe, !is_in)));
+	if (is_iso)
+		bustime /= urb->number_of_packets;
+
+	new_alloc = old_alloc + (int) bustime;
+	if (new_alloc > FRAME_TIME_MAX_USECS_ALLOC) {
+#ifdef	DEBUG
+		char	*mode = 
+#ifdef CONFIG_USB_BANDWIDTH
+			"";
+#else
+			"would have ";
+#endif
+		dev_dbg (&dev->dev, "usb_check_bandwidth %sFAILED: %d + %ld = %d usec\n",
+			mode, old_alloc, bustime, new_alloc);
+#endif
+#ifdef CONFIG_USB_BANDWIDTH
+		bustime = -ENOSPC;	/* report error */
+#endif
+	}
+
+	return bustime;
+}
+
+/**
+ * usb_claim_bandwidth - records bandwidth for a periodic transfer
+ * @dev: source/target of request
+ * @urb: request (urb->dev == dev)
+ * @bustime: bandwidth consumed, in (average) microseconds per frame
+ * @isoc: true iff the request is isochronous
+ *
+ * Bus bandwidth reservations are recorded purely for diagnostic purposes.
+ * HCDs are expected not to overcommit periodic bandwidth, and to record such
+ * reservations whenever endpoints are added to the periodic schedule.
+ *
+ * FIXME averaging per-frame is suboptimal.  Better to sum over the HCD's
+ * entire periodic schedule ... 32 frames for OHCI, 1024 for UHCI, settable
+ * for EHCI (256/512/1024 frames, default 1024) and have the bus expose how
+ * large its periodic schedule is.
+ */
+void usb_claim_bandwidth (struct usb_device *dev, struct urb *urb, int bustime, int isoc)
+{
+	dev->bus->bandwidth_allocated += bustime;
+	if (isoc)
+		dev->bus->bandwidth_isoc_reqs++;
+	else
+		dev->bus->bandwidth_int_reqs++;
+
+#ifdef USB_BANDWIDTH_MESSAGES
+	dev_dbg (&dev->dev, "bandwidth alloc increased by %d (%s) to %d for %d requesters\n",
+		bustime,
+		isoc ? "ISOC" : "INTR",
+		dev->bus->bandwidth_allocated,
+		dev->bus->bandwidth_int_reqs + dev->bus->bandwidth_isoc_reqs);
+#endif
+}
 
 
 /*free the location used by removed urb/endpoint*/
@@ -853,7 +949,7 @@ phci_hcd_submit_async(
 
 
     qtd = list_entry (qtd_list->next, struct ehci_qtd, qtd_list);
-    dev = (struct hcd_dev *)urb->dev->bus->hcpriv;
+    dev = (struct hcd_dev*) bus_to_hcd(urb->dev->bus);
     epnum = usb_pipeendpoint (urb->pipe);
     if (usb_pipein (urb->pipe) && !usb_pipecontrol (urb->pipe))
         epnum |= 0x10;
@@ -1022,7 +1118,7 @@ phci_hcd_submit_interrupt(
 
 
     qtd = list_entry (qtd_list->next, struct ehci_qtd, qtd_list);
-    dev = (struct hcd_dev *)urb->dev->bus->hcpriv;
+    dev = (struct hcd_dev*) bus_to_hcd(urb->dev->bus);
     epnum = ep->desc.bEndpointAddress;
 
     pehci_entry("++ %s, enter\n", __FUNCTION__);    

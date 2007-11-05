@@ -19,18 +19,17 @@
  *
  * File Name: hal_x86.c
  *
- * Refering linux kernel version 2.6.9
+ * Refering linux kernel version 2.6.23
  *
  * History:
  *
  * Date                Author                  Comments
  * ---------------------------------------------------------------------
  * Nov 29 2005        Prabhakar Kalasani      Initial Creation     
- *
+ * Nov 04 2007        NC (armadeus)           add 2.6.23 compatibility
  **********************************************************************
  */
 
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
@@ -88,7 +87,7 @@ static int __devinit isp1761_probe (struct platform_device *pdev);
 static int isp1761_pci_suspend (struct pci_dev *dev, __u32 state);
 static int isp1761_pci_resume (struct pci_dev *dev);
 #endif
-static irqreturn_t  isp1761_pci_isr (int irq, void *dev_id, struct pt_regs *regs);
+static irqreturn_t  isp1761_pci_isr (int irq, void *dev_id);
 
 
 /*--------------------------------------------------------------*
@@ -114,7 +113,7 @@ void isp1761_enable_interrupt(int       irq) {
  *               ISP1761 Interrupt Service Routine
  *--------------------------------------------------------------*/
 /*Interrupt Service Routine for device controller*/
-irqreturn_t isp1761_pci_dc_isr(int irq, void *data, struct pt_regs *r)
+irqreturn_t isp1761_pci_dc_isr(int irq, void *data)
 {
     struct isp1761_dev *dev;
     dev = &isp1761_loc_dev[ISP1761_DC];
@@ -141,7 +140,7 @@ irqreturn_t isp1761_pci_dc_isr(int irq, void *data, struct pt_regs *r)
     isp1761_reg_write32(dev, 0x218, dev->int_reg);
     dev->int_reg &= 0x03fffdb9;
     if(dev->int_reg)
-        dev->handler(dev, dev->isr_data,r);
+        dev->handler(dev, dev->isr_data);
     hal_entry("%s: Exit\n",__FUNCTION__);
     return IRQ_HANDLED;
 }
@@ -151,7 +150,7 @@ irqreturn_t isp1761_pci_dc_isr(int irq, void *data, struct pt_regs *r)
  * Before calling the driver's ISR clears the source of interrupt.
  * The drivers can get the source of interrupt from the dev->int_reg field
  */
-irqreturn_t     isp1761_pci_isr(int irq, void *__data, struct pt_regs *r) 
+irqreturn_t isp1761_pci_isr(int irq, void *__data) 
 {
     __u32               irq_mask = 0;
     struct isp1761_dev  *dev;
@@ -166,7 +165,7 @@ irqreturn_t     isp1761_pci_isr(int irq, void *__data, struct pt_regs *r)
     dev->int_reg &= irq_mask; /*shared irq ??*/
     /*call the Host Isr if any valid(minus otg)interrupt is present*/
     if(dev->int_reg & ~HC_OTG_INTERRUPT)                
-        dev->handler(dev,dev->isr_data,r);
+        dev->handler(dev,dev->isr_data);
 #ifdef OTG
 #ifndef MSEC_INT_BASED
     mdelay(1);
@@ -186,7 +185,7 @@ irqreturn_t     isp1761_pci_isr(int irq, void *__data, struct pt_regs *r)
         /* Read the source of  OTG_INT and clear the
            interrupt source */
         dev->int_reg = otg_int; 
-        dev->handler(dev, dev->isr_data,r);
+        dev->handler(dev, dev->isr_data);
     }   
 #endif
     hal_entry("%s: Exit\n",__FUNCTION__);
@@ -468,7 +467,7 @@ void isp1761_get_mem_params(struct isp1761_dev *dev,struct isp1761_driver *drv)
  * 
  *--------------------------------------------------------------*/
 
-int isp1761_request_irq(void (*handler)(struct isp1761_dev *, void *, struct pt_regs *),
+int isp1761_request_irq(void (*handler)(struct isp1761_dev *, void *),
         struct isp1761_dev *dev, void *isr_data) 
 {
     int result = 0;
@@ -476,12 +475,12 @@ int isp1761_request_irq(void (*handler)(struct isp1761_dev *, void *, struct pt_
     hal_int("isp1761_request_irq: dev->index %x\n",dev->index);
     if(dev->index == ISP1761_DC){
         result = request_irq(dev->irq, isp1761_pci_dc_isr,
-                SA_SHIRQ,
+                IRQF_SHARED,
                 dev->name,
                 isr_data);
     }else {
         result= request_irq(dev->irq,isp1761_pci_isr,
-                SA_SHIRQ,
+                IRQF_SHARED,
                 dev->name,
                 isr_data);
     }
