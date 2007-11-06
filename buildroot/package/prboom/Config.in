@@ -1,6 +1,8 @@
 config BR2_PACKAGE_PRBOOM
 	bool "PrBoom"
-	depends on BR2_PACKAGE_SDL && BR2_PACKAGE_SDL_MIXER && BR2_PACKAGE_SDL_NET
+	select BR2_PACKAGE_SDL 
+	select BR2_PACKAGE_SDL_MIXER
+	select BR2_PACKAGE_SDL_NET
 	default n
 	help
 
