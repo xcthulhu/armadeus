@@ -41,7 +41,7 @@ TARGET  = ch7024
 
 $(TARGET): $(OBJECTS) Makefile $(HEADERS)
 	@echo
-	@echo "Building I2C dac test programm..."
+	@echo "Building CH7024 control programm..."
 	$(CC) $(OBJECTS) $(CFLAGS) $(INCLUDES) -o $(TARGET)
 
 

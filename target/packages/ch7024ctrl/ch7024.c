@@ -167,6 +167,7 @@ void dump(int fd, FILE* destFile)
 void load( int fd, char* fileName )
 {
     char line[MAX_DUMP_LINE];
+    char tempFileName[MAX_DUMP_LINE];
     FILE *fd_conf = NULL;
     int addr1, addr2, addr3, addr4;
     int val1, val2, val3, val4;
@@ -174,13 +175,18 @@ void load( int fd, char* fileName )
 
     if( strlen(fileName) == 0 ){
         printf("Enter file name: ");
-        gets(fileName);
-    }        
-    if ((fd_conf = fopen(fileName,"r")) < 0){
+        fgets (tempFileName, sizeof(tempFileName), stdin);
+        tempFileName[strlen(tempFileName)-1] = '\0'; //suppress \n
+    }
+    else{
+        strcpy(tempFileName,fileName);    
+    }
+ 
+    if ((fd_conf = fopen(tempFileName,"r")) == NULL){
         perror("Open error: ");
         exit (1);
     }
-    while(fgets(line, MAX_DUMP_LINE, fd_conf) != NULL){
+     while(fgets(line, MAX_DUMP_LINE, fd_conf) != NULL){
         nb = sscanf(line,"%2X%*c%2X%2X%*c%2X%2X%*c%2X%2X%*c%2X",
                     &addr1,&val1,&addr2,&val2,&addr3,&val3,&addr4,&val4 );
         if(nb>=2) 
@@ -230,10 +236,15 @@ int main(int argc, char *argv[])
     // check CH7024 presence
     if( !read_byte( fd, DEVICE_ID_CMD, buf ) ){
         if( buf[0] != CH7024_ID ){
-            printf("CH7024 not found. Exit\n");
+            printf("CH7024 not recognized. Exit\n");
             exit(1);
         }
     }
+    else{
+        printf("CH7024 not found. Exit\n");
+        exit(1);
+    }
+        
 
 	if ( argc == 2 ){ // read data from file
         load(fd,argv[1]);
@@ -242,15 +253,15 @@ int main(int argc, char *argv[])
 
     usage();
     while(1){
-        gets(string);
+        fgets(string,sizeof(string),stdin);
         if(string[0] == 'q')  // Exit
             exit(0);
         else if (string[0] == 'm'){ // Modify registers
             printf("reg addr (hex without 0x): ");
-            gets(string);
+            fgets(string,sizeof(string),stdin);
             sscanf(string,"%2x", &regAddr);
             printf("reg value (hex without 0x): ");
-            gets(string);
+            fgets(string,sizeof(string),stdin);
             sscanf(string,"%2x", &regValue);
             write_byte (fd, regAddr, regValue);
         }
