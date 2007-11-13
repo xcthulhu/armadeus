@@ -1,10 +1,12 @@
---- buildrootref/package/Config.in	2007-10-06 09:15:53.000000000 +0200
-+++ buildroot/package/Config.in	2007-10-13 18:29:07.000000000 +0200
-@@ -308,6 +311,7 @@
- comment "--> (May be broken in busybox)"
- source "package/fbv/Config.in"
- source "package/fbset/Config.in"
-+source "package/prboom/Config.in"
+--- buildrootref/package/Config.in	2007-11-13 21:07:37.000000000 +0100
++++ buildroot/package/Config.in	2007-11-13 21:09:02.000000000 +0100
+@@ -379,6 +379,9 @@
  
- comment "other GUIs"
- source "package/qte/Config.in"
+ comment "Video libraries/codecs and applications"
+ source "package/mplayer/Config.in"
++
++comment "Games"
++source "package/prboom/Config.in"
+ endif
+ 
+ menuconfig BR2_COMPRESSOR_SUPPORT
