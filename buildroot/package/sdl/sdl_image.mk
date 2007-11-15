@@ -3,10 +3,10 @@
 # SDL_image addon for SDL
 #
 #############################################################
-SDL_IMAGE_VERSION:=1.2.5
+SDL_IMAGE_VERSION:=1.2.6
 SDL_IMAGE_SOURCE:=SDL_image-$(SDL_IMAGE_VERSION).tar.gz
 SDL_IMAGE_SITE:=http://www.libsdl.org/projects/SDL_image/release
-SDL_IMAGE_CAT:=zcat
+SDL_IMAGE_CAT:=$(ZCAT)
 SDL_IMAGE_DIR:=$(BUILD_DIR)/SDL_image-$(SDL_IMAGE_VERSION)
 
 $(DL_DIR)/$(SDL_IMAGE_SOURCE):
@@ -16,13 +16,13 @@ sdl_image-source: $(DL_DIR)/$(SDL_IMAGE_SOURCE)
 
 $(SDL_IMAGE_DIR)/.unpacked: $(DL_DIR)/$(SDL_IMAGE_SOURCE)
 	$(SDL_IMAGE_CAT) $(DL_DIR)/$(SDL_IMAGE_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	$(CONFIG_UPDATE) $(SDL_IMAGE_DIR)
 	touch $@
 
 $(SDL_IMAGE_DIR)/.configured: $(SDL_IMAGE_DIR)/.unpacked
-	(cd $(SDL_IMAGE_DIR); \
+	(cd $(SDL_IMAGE_DIR); rm -rf config.cache; \
 	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS) " \
-	LDFLAGS="-Wl,-rpath=$(STAGING_DIR)/lib/" \
+	$(TARGET_CONFIGURE_ARGS) \
 	./configure \
 	--target=$(GNU_TARGET_NAME) \
 	--host=$(GNU_TARGET_NAME) \
