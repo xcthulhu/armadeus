@@ -167,8 +167,8 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
     int err = 0; int ret = 0;
     int value=0;
     unsigned int minor;
-    unsigned long lShadow = 0;
-    unsigned long PP_DDIR_MASK=0;
+    unsigned int lShadow = 0;
+    unsigned int PP_DDIR_MASK=0;
 
     //printk(" ## IOCTL received: (0x%x) ##\n", cmd);
     
