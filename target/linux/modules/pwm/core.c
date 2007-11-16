@@ -219,7 +219,7 @@ static inline u8 get_byte_from_circbuf( struct sound_circ_buf* abuffer )
 
 static inline u16 get_word_from_circbuf( struct sound_circ_buf* abuffer )
 {
-    u16 w = *((u16*)((abuffer->buf)[ abuffer->read ]));
+    u16 w = *((u16*)(&(abuffer->buf[ abuffer->read ])));
     abuffer->read = (abuffer->read + 2) & (abuffer->size - 1);
     return w;
 }
