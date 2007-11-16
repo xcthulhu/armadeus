@@ -95,7 +95,7 @@
 +    
 +    simple_map_init(&apf9328_map);
 +    
-+    printk(KERN_NOTICE "Probing %s at physical address 0x%08lx (%d-bit buswidth)\n", apf9328_map.name, apf9328_map.phys, apf9328_map.bankwidth * 8);
++    printk(KERN_NOTICE "Probing %s at physical address 0x%08x (%d -bit buswidth)\n", apf9328_map.name, apf9328_map.phys, apf9328_map.bankwidth * 8);
 +    
 +    mymtds = do_map_probe("cfi_probe", &apf9328_map);
 +    
