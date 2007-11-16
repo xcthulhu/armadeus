@@ -1,10 +1,10 @@
---- buildrootref/package/Config.in	2007-10-06 09:15:53.000000000 +0200
-+++ buildroot/package/Config.in	2007-10-13 18:08:37.000000000 +0200
-@@ -48,6 +48,7 @@
- source "package/dmalloc/Config.in"
- source "package/expat/Config.in"
- source "package/fakeroot/Config.in"
+--- buildrootref/package/Config.in	2007-11-14 21:43:29.000000000 +0100
++++ buildroot/package/Config.in	2007-11-14 21:44:15.000000000 +0100
+@@ -223,6 +223,7 @@
+ source "package/dm/Config.in"
+ source "package/dmraid/Config.in"
+ source "package/e2fsprogs/Config.in"
 +source "package/fpgaregs/Config.in"
- source "package/gettext/Config.in"
- source "package/gmp/Config.in"
- source "package/mpfr/Config.in"
+ source "package/gadgetfs-test/Config.in"
+ source "package/hal/Config.in"
+ if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
