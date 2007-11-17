@@ -6,7 +6,7 @@
 SDL_NET_VERSION:=1.2.6
 SDL_NET_SOURCE:=SDL_net-$(SDL_NET_VERSION).tar.gz
 SDL_NET_SITE:=http://www.libsdl.org/projects/SDL_net/release
-SDL_NET_CAT:=zcat
+SDL_NET_CAT:=$(ZCAT)
 SDL_NET_DIR:=$(BUILD_DIR)/SDL_net-$(SDL_NET_VERSION)
 
 $(DL_DIR)/$(SDL_NET_SOURCE):
@@ -16,13 +16,13 @@ sdl_net-source: $(DL_DIR)/$(SDL_NET_SOURCE)
 
 $(SDL_NET_DIR)/.unpacked: $(DL_DIR)/$(SDL_NET_SOURCE)
 	$(SDL_NET_CAT) $(DL_DIR)/$(SDL_NET_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	$(CONFIG_UPDATE) $(SDL_NET_DIR)
 	touch $@
 
 $(SDL_NET_DIR)/.configured: $(SDL_NET_DIR)/.unpacked
-	(cd $(SDL_NET_DIR); \
+	(cd $(SDL_NET_DIR); rm -rf config.cache; \
 	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS) " \
-	LDFLAGS="-Wl,-rpath=$(STAGING_DIR)/lib/" \
+	$(TARGET_CONFIGURE_ARGS) \
 	./configure \
 	--target=$(GNU_TARGET_NAME) \
 	--host=$(GNU_TARGET_NAME) \
