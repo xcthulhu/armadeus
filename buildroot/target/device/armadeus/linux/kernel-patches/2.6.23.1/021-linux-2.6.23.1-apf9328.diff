@@ -1006,7 +1006,7 @@
 +};
 +
 +static struct platform_device imx_spi1 = {
-+	.name				= "imx-spi",
++	.name				= "spi_imx",
 +	.id					= 1,
 +	.resource			= imx_spi1_resource,
 +	.num_resources		= ARRAY_SIZE(imx_spi1_resource),
@@ -1034,7 +1034,7 @@
 +};
 +
 +static struct platform_device imx_spi2 = {
-+	.name				= "imx-spi",
++	.name				= "spi_imx",
 +	.id					= 2,
 +	.resource			= imx_spi2_resource,
 +	.num_resources		= ARRAY_SIZE(imx_spi2_resource),
