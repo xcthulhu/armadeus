@@ -80,7 +80,7 @@ diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/tsc2102_ts.c
 +
 +	input_report_key(dev, BTN_TOUCH, touching);
 +
-+	do_poke_blanked_console = 1;
++	//do_poke_blanked_console = 1;
 +}
 +
 +static void tsc2102_coords(int x, int y, int z1, int z2)

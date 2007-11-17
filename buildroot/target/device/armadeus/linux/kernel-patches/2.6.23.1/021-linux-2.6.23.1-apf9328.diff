@@ -1122,7 +1122,7 @@
 +static struct tsc2102_config apf9328_tsc2102_config = {
 +    .use_internal = 1, // -> use internal voltage reference
 +    .monitor = TSC_BAT1 | TSC_AUX | TSC_TEMP,
-+    .temp_at25c = { 2200, 2615 },
++    .temp_at25c = 2200,
 +/*    .apm_report = palmte_get_power_status,
 +    .alsa_config = &palmte_alsa_config,*/
 +};
