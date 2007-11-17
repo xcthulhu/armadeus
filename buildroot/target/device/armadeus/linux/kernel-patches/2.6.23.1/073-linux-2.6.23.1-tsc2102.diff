@@ -675,7 +675,7 @@ diff -pNur ref/linux-2.6.18.1/drivers/spi/tsc2102.c linux-2.6.18.1/drivers/spi/t
 +}
 +
 +/* TSC has new data for us available.  */
-+static irqreturn_t tsc2102_handler(int irq, void *dev_id, struct pt_regs *regs)
++static irqreturn_t tsc2102_handler(int irq, void *dev_id)
 +{
 +	struct tsc2102_dev *dev = (struct tsc2102_dev *) dev_id;
 +
