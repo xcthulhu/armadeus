@@ -1,16 +1,12 @@
---- buildroot/package/sdl/Config.in.old	2007-08-01 18:34:54.000000000 +0200
-+++ buildroot/package/sdl/Config.in	2007-08-01 18:35:51.000000000 +0200
-@@ -45,3 +45,13 @@
- 	  This is a small sample cross-platform networking library, with a sample chat client and server application.
+--- buildrootref/package/Config.in 2007-11-17 23:30:25.000000000 +0100
++++ buildroot/package/Config.in	2007-11-17 23:31:37.000000000 +0100
+@@ -385,6 +385,9 @@
+ comment "Video libraries/codecs and applications"
+ source "package/mplayer/Config.in"
  
- 	  http://www.libsdl.org/projects/SDL_net/
++comment "Demos"
++source "package/sdlwater/Config.in"
 +
-+config BR2_PACKAGE_SDL_WATER
-+	bool "SDL_water"
-+	depends on BR2_PACKAGE_SDL
-+	default n
-+	help
-+
-+	  Water effect demo coded with SDL
-+
-+	  http://www.libsdl.org/projects/SDL_water/
+ comment "Games"
+ source "package/prboom/Config.in"
+ 
