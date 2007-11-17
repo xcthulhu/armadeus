@@ -24,7 +24,7 @@ $(SLIDESHOW_DIR)/.configured: $(SLIDESHOW_DIR)/.unpacked
 	touch $@
 
 $(SLIDESHOW_DIR)/slideshow: $(SLIDESHOW_DIR)/.configured
-	export PATH=$(STAGING_DIR)/bin::$$PATH; $(MAKE) -C $(SLIDESHOW_DIR) ARCH=arm
+	export PATH=$(STAGING_DIR)/bin::$$PATH; export STAGING_DIR=$(STAGING_DIR); $(MAKE) -C $(SLIDESHOW_DIR) ARCH=arm
 
 $(TARGET_DIR)/usr/bin/slideshow: $(SLIDESHOW_DIR)/slideshow
 	cp -dpf $< $(TARGET_DIR)/usr/bin

@@ -1,0 +1,13 @@
+--- slideshow.org/SDLFont.cpp	2007-11-17 19:25:02.000000000 +0100
++++ slideshow/SDLFont.cpp	2007-11-17 20:06:20.000000000 +0100
+@@ -84,8 +84,8 @@
+ 
+     Uint8 *pixloc = (Uint8 *)pDisplay->pixels + dpitch * y + Bpp * x;
+     Uint8 *pChar, *pScreen;
+-    char c;
+-    int i, j;
++    //char c;
++    int i, j, c;
+ 
+     for(const char *p = text; *p != '\0'; p++)
+     {
