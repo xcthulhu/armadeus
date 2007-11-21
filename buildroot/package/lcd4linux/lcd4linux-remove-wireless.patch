@@ -1,0 +1,13 @@
+This plugin doesn't compile yet (/anymore?)
+
+--- lcd4linux-0.10.0/configure.org	2007-11-21 22:31:40.000000000 +0100
++++ lcd4linux-0.10.0/configure  	2007-11-21 22:32:04.000000000 +0100
+@@ -6366,7 +6366,7 @@
+          PLUGIN_STATFS="yes"
+          PLUGIN_UNAME="yes"
+          PLUGIN_UPTIME="yes"
+-         PLUGIN_WIRELESS="yes"
++         PLUGIN_WIRELESS="no"
+          PLUGIN_XMMS="yes"
+          ;;
+       apm)

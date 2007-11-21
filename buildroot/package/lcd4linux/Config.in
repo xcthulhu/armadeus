@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LCD4LINUX
 	bool "LCD4Linux daemon"
+	select BR2_PACKAGE_NCURSES
 	default n
 	help
 	  Build LCD4Linux daemon. It allows you to show system parameters on a textual LCD connected to your Armadeus board.
