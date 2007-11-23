@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LMBENCH
 	bool "LMbench"
+	select BR2_PACKAGE_MICROPERL
 	default n
 	help
 	  Tools for Performance Analysis. Suite of simple, portable benchmarks.
