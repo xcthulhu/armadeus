@@ -1,0 +1,12 @@
+--- lmbench3.ori/src/disk.c	2005-08-23 02:19:54.000000000 +0200
++++ lmbench3/src/disk.c	2007-11-23 18:46:25.000000000 +0100
+@@ -288,7 +288,8 @@
+ int
+ seekto(int fd, uint64 off)
+ {
+-#ifdef	__linux__
++/* #ifdef	__linux__ */
++#if	FALSE
+ 	extern	loff_t llseek(int, loff_t, int);
+ 
+ 	if (llseek(fd, (loff_t)off, SEEK_SET) == (loff_t)-1) {

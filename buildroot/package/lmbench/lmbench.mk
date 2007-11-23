@@ -17,6 +17,8 @@ lmbench-source: $(DL_DIR)/$(LMBENCH_SOURCE)
 
 $(LMBENCH_DIR)/.unpacked: $(DL_DIR)/$(LMBENCH_SOURCE)
 	$(LMBENCH_CAT) $(DL_DIR)/$(LMBENCH_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	chmod -R u+w $(LMBENCH_DIR)	
+	toolchain/patch-kernel.sh $(LMBENCH_DIR) package/lmbench/ lmbench\*.patch
 	touch $(LMBENCH_DIR)/.unpacked
 
 $(LMBENCH_DIR)/.configured: $(LMBENCH_DIR)/.unpacked
