@@ -61,12 +61,12 @@ config BR2_PACKAGE_LINUX_ARM
 	    http://www.kernel.org/
 choice
 	prompt "Linux kernel version"
-	default BR2_PACKAGE_LINUX_VERSION_2_6_12
+	default BR2_PACKAGE_LINUX_VERSION_2_6_23_1
 	depends on BR2_PACKAGE_LINUX_ARM
 	help
 	    Linux kernel version you want to use with your Armadeus board.
-	    If you plan to use MMC/SD cards then choose 2.6.18.1, otherwise 2.6.12
-	    should be sufficient and is more used/tested.
+	    If you plan to use MMC/SD cards then choose 2.6.18.1 or later,
+            otherwise 2.6.12 should be sufficient and is more used/tested.
 
 config BR2_PACKAGE_LINUX_VERSION_2_6_12
 	bool "2.6.12"
