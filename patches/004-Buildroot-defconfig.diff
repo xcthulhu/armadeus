@@ -1,9 +1,9 @@
---- buildroot/.defconfigori	2007-10-28 20:51:46.000000000 +0100
-+++ buildroot/.defconfig	2007-10-28 19:48:01.000000000 +0100
-@@ -1,19 +1,144 @@
+--- buildroot/.defconfigori	2007-10-27 09:15:37.000000000 +0200
++++ buildroot/.defconfig	2007-11-23 22:25:11.000000000 +0100
+@@ -1,19 +1,145 @@
  #
  # Automatically generated make config: don't edit
-+# Sun Oct 28 19:48:01 2007
++# Fri Nov 23 22:25:11 2007
  #
  BR2_HAVE_DOT_CONFIG=y
 -# BR2_arm is not set
@@ -80,8 +80,9 @@
 +BR2_PACKAGE_LINUX_ARM=y
 +# BR2_PACKAGE_LINUX_VERSION_2_6_12 is not set
 +# BR2_PACKAGE_LINUX_VERSION_2_6_17 is not set
-+BR2_PACKAGE_LINUX_VERSION_2_6_18_1=y
-+BR2_PACKAGE_LINUX_VERSION="2.6.18.1"
++# BR2_PACKAGE_LINUX_VERSION_2_6_18_1 is not set
++BR2_PACKAGE_LINUX_VERSION_2_6_23_1=y
++BR2_PACKAGE_LINUX_VERSION="2.6.23.1"
 +BR2_TARGET_U-BOOT=y
 +
 +#
@@ -148,7 +149,7 @@
  
  #
  # Kernel Header Options
-@@ -25,8 +150,16 @@
+@@ -25,8 +151,16 @@
  # BR2_KERNEL_HEADERS_2_6_9 is not set
  # BR2_KERNEL_HEADERS_2_6_11 is not set
  # BR2_KERNEL_HEADERS_2_6_12 is not set
@@ -166,7 +167,7 @@
  
  #
  # uClibc Options
-@@ -34,7 +167,6 @@
+@@ -34,7 +168,6 @@
  # BR2_UCLIBC_VERSION_0_9_28_3 is not set
  BR2_UCLIBC_VERSION_0_9_29=y
  # BR2_UCLIBC_VERSION_SNAPSHOT is not set
@@ -174,7 +175,7 @@
  BR2_UCLIBC_CONFIG="toolchain/uClibc/uClibc-0.9.29.config"
  # BR2_ENABLE_LOCALE is not set
  # BR2_PTHREADS_NONE is not set
-@@ -42,35 +174,435 @@
+@@ -42,35 +175,452 @@
  BR2_PTHREADS_OLD=y
  # BR2_PTHREADS_NATIVE is not set
  # BR2_PTHREAD_DEBUG is not set
@@ -292,21 +293,18 @@
 +# BR2_PACKAGE_AUTOMAKE is not set
 +# BR2_PACKAGE_BISON is not set
 +# BR2_PACKAGE_CCACHE_TARGET is not set
-+# BR2_PACKAGE_CH7024CTRL is not set
 +# BR2_PACKAGE_CVS is not set
 +# BR2_PACKAGE_DISTCC is not set
 +# BR2_PACKAGE_DMALLOC is not set
 +# BR2_PACKAGE_EXPAT is not set
 +# BR2_PACKAGE_FAKEROOT is not set
 +BR2_HOST_FAKEROOT=y
-+# BR2_PACKAGE_FPGAREGS is not set
 +# BR2_PACKAGE_GETTEXT is not set
 +# BR2_PACKAGE_LIBINTL is not set
 +# BR2_PACKAGE_LIBGMP is not set
 +# BR2_PACKAGE_LIBMPFR is not set
 +# BR2_PACKAGE_LIBTOOL is not set
 +# BR2_PACKAGE_M4 is not set
-+# BR2_PACKAGE_MAX5821CTRL is not set
 +# BR2_PACKAGE_PKGCONFIG is not set
 +# BR2_READLINE is not set
 +# BR2_PACKAGE_XERCES is not set
@@ -337,7 +335,6 @@
 +# BR2_PACKAGE_LTP-TESTSUITE is not set
 +# BR2_PACKAGE_LTRACE is not set
 +# BR2_PACKAGE_LTT is not set
-+# BR2_PACKAGE_LUA is not set
 +# BR2_PACKAGE_PORTAGE is not set
 +# BR2_PACKAGE_SQLITE is not set
 +# BR2_PACKAGE_STRACE is not set
@@ -393,7 +390,7 @@
 +# BR2_PACKAGE_PPTP_LINUX is not set
 +# BR2_PACKAGE_PROFTPD is not set
 +# BR2_PACKAGE_QUAGGA is not set
- 
++
 +#
 +# quagga suite
 +#
@@ -418,10 +415,12 @@
 +# BR2_PACKAGE_VTUN is not set
 +# BR2_PACKAGE_WIRELESS_TOOLS is not set
 +BR2_BLOCKDEV_SUPPORT=y
++# BR2_PACKAGE_CH7024CTRL is not set
 +# BR2_PACKAGE_DBUS is not set
 +# BR2_PACKAGE_DM is not set
 +# BR2_PACKAGE_DMRAID is not set
 +# BR2_PACKAGE_E2FSPROGS is not set
++# BR2_PACKAGE_FPGAREGS is not set
 +# BR2_PACKAGE_GADGETFS_TEST is not set
 +# BR2_PACKAGE_HAL is not set
 +# BR2_PACKAGE_HWDATA is not set
@@ -432,6 +431,7 @@
 +# BR2_PACKAGE_LIBUSB is not set
 +# BR2_PACKAGE_LM_SENSORS is not set
 +# BR2_PACKAGE_LVM2 is not set
++# BR2_PACKAGE_MAX5821CTRL is not set
 +# BR2_PACKAGE_MDADM is not set
 +# BR2_PACKAGE_MEMTESTER is not set
 +# BR2_PACKAGE_MKDOSFS is not set
@@ -479,7 +479,10 @@
 +# BR2_PACKAGE_AUMIX is not set
 +# BR2_PACKAGE_LIBMAD is not set
 +# BR2_PACKAGE_LIBSNDFILE is not set
-+# BR2_PACKAGE_LIBVORBIS is not set
++
++#
++# libvorbis requires the package libogg to build
++#
 +# BR2_PACKAGE_MADPLAY is not set
 +# BR2_PACKAGE_MPG123 is not set
 +BR2_GRAPHIC_SUPPORT=y
@@ -508,7 +511,7 @@
 +# BR2_PACKAGE_LIBUNGIF is not set
 +# BR2_PACKAGE_SDL is not set
 +# BR2_PACKAGE_TIFF is not set
-+
+ 
 +#
 +# busybox graphic applications
 +#
@@ -555,6 +558,20 @@
 +# Video libraries/codecs and applications
 +#
 +# BR2_PACKAGE_MPLAYER is not set
++
++#
++# Demos
++#
++# BR2_PACKAGE_SDL_WATER is not set
++
++#
++# Games
++#
++# BR2_PACKAGE_PRBOOM is not set
++
++#
++# Misc
++#
 +BR2_COMPRESSOR_SUPPORT=y
 +BR2_PACKAGE_LZO=y
 +# BR2_PACKAGE_LZMA_TARGET is not set
@@ -562,6 +579,7 @@
 +BR2_PACKAGE_ZLIB=y
 +# BR2_PACKAGE_ZLIB_TARGET_HEADERS is not set
 +BR2_SCRIPTING_SUPPORT=y
++# BR2_PACKAGE_LUA is not set
 +# BR2_PACKAGE_MICROPERL is not set
 +# BR2_PACKAGE_PYTHON is not set
 +# BR2_PACKAGE_RUBY is not set
