@@ -1,0 +1,28 @@
+diff -Naur buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/ipc/ipc_stress/pipe_test_02.c buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/ipc/ipc_stress/pipe_test_02.c
+--- buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/ipc/ipc_stress/pipe_test_02.c	2007-03-01 05:40:34.000000000 +0100
++++ buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/ipc/ipc_stress/pipe_test_02.c	2007-11-25 19:01:04.000000000 +0100
+@@ -95,6 +95,10 @@
+  *  
+  * USAGE: usage statement
+  */
++#ifndef OPEN_MAX
++#define OPEN_MAX 256
++#endif
++
+ #define MB			(1024*1024)
+ #define DEFAULT_PACKETS_TO_SEND 1024
+ #define DEFAULT_NUM_CHILDREN	1
+diff -Naur buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/syscalls/fork/fork09.c buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/syscalls/fork/fork09.c
+--- buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/syscalls/fork/fork09.c	2007-03-01 05:40:36.000000000 +0100
++++ buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/syscalls/fork/fork09.c	2007-11-25 19:00:48.000000000 +0100
+@@ -48,6 +48,10 @@
+ #include "test.h"
+ #include "usctest.h"
+ 
++#ifndef OPEN_MAX
++#define OPEN_MAX 256
++#endif
++
+ char *TCID = "fork09";
+ int TST_TOTAL = 1;
+ extern int Tst_count;
