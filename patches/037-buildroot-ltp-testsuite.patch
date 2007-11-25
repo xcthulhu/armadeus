@@ -1,0 +1,45 @@
+diff -Naur buildroot.ori/package/ltp-testsuite/ltp-testsuite-missing-open-max.patch buildroot/package/ltp-testsuite/ltp-testsuite-missing-open-max.patch
+--- buildroot.ori/package/ltp-testsuite/ltp-testsuite-missing-open-max.patch	1970-01-01 01:00:00.000000000 +0100
++++ buildroot/package/ltp-testsuite/ltp-testsuite-missing-open-max.patch	2007-11-25 19:58:24.000000000 +0100
+@@ -0,0 +1,28 @@
++diff -Naur buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/ipc/ipc_stress/pipe_test_02.c buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/ipc/ipc_stress/pipe_test_02.c
++--- buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/ipc/ipc_stress/pipe_test_02.c	2007-03-01 05:40:34.000000000 +0100
+++++ buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/ipc/ipc_stress/pipe_test_02.c	2007-11-25 19:01:04.000000000 +0100
++@@ -95,6 +95,10 @@
++  *  
++  * USAGE: usage statement
++  */
+++#ifndef OPEN_MAX
+++#define OPEN_MAX 256
+++#endif
+++
++ #define MB			(1024*1024)
++ #define DEFAULT_PACKETS_TO_SEND 1024
++ #define DEFAULT_NUM_CHILDREN	1
++diff -Naur buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/syscalls/fork/fork09.c buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/syscalls/fork/fork09.c
++--- buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228.ori/testcases/kernel/syscalls/fork/fork09.c	2007-03-01 05:40:36.000000000 +0100
+++++ buildroot/project_build_arm/armadeus/root/root/ltp-full-20070228/testcases/kernel/syscalls/fork/fork09.c	2007-11-25 19:00:48.000000000 +0100
++@@ -48,6 +48,10 @@
++ #include "test.h"
++ #include "usctest.h"
++ 
+++#ifndef OPEN_MAX
+++#define OPEN_MAX 256
+++#endif
+++
++ char *TCID = "fork09";
++ int TST_TOTAL = 1;
++ extern int Tst_count;
+diff -Naur buildroot.ori/package/ltp-testsuite/ltp-testsuite.mk buildroot/package/ltp-testsuite/ltp-testsuite.mk
+--- buildroot.ori/package/ltp-testsuite/ltp-testsuite.mk	2007-10-27 09:15:33.000000000 +0200
++++ buildroot/package/ltp-testsuite/ltp-testsuite.mk	2007-11-25 20:22:27.000000000 +0100
+@@ -15,7 +15,8 @@
+ #
+ LTP_PATCHES:=ltp-testsuite-generate-needs-bash.patch \
+ 	     ltp-testsuite-sh-is-not-C-code.patch \
+-	     ltp-testsuite.patch
++	     ltp-testsuite.patch \
++	     ltp-testsuite-missing-open-max.patch
+ 
+ ifeq ($(BR2_PTHREADS_NATIVE),y)
+ LTP_PATCHES+=ltp-testsuite-enable-openposix-for-nptl.patch
