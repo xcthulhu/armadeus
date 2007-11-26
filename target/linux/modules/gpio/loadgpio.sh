@@ -13,7 +13,7 @@ else
 fi
 
 # Load GPIO main module
-insmod $GPIO_MODULES_DIR/gpio.ko portB_init=0,0,0x00FFFF00,0,0,0,0,0,0x0FF00000,0,0,0,0,0,0,0x0FF00000 portD_init=0,0xFFFF0000,0xFFFFFFFF,0,0,0,0,0,0xFFFFFFFF,0,0,0,0,0,0,0xFFFFFC00
+insmod $GPIO_MODULES_DIR/gpio.ko portB_init=0,0,0x00FFFF00,0,0,0,0,0,0xF00FFFFF,0,0,0,0,0,0,0x0FF00000 portD_init=0,0xFFFF0000,0xFFFFFFFF,0,0,0,0,0,0xFFFFFFFF,0,0,0,0,0,0,0xFFFFFC00
 # Load PPDEV emultaion module
 insmod $GPIO_MODULES_DIR/ppdev.ko port_mode=4
 
