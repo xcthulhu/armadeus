@@ -1982,7 +1982,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#define CFG_ICR2_C_VAL		0x00000000
 +#define CFG_IMR_C_VAL		0x00000000
 +#define CFG_GPR_C_VAL		0x00000000
-+#define CFG_PUEN_C_VAL		0xF910FFFF
++#define CFG_PUEN_C_VAL		0xFFFFFFFF
 +
 +#define CFG_DDIR_D_VAL		0x00000000
 +#define CFG_OCR1_D_VAL		0x00000000
@@ -1999,7 +1999,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#define CFG_GPR_D_VAL		0x00000000
 +#define CFG_PUEN_D_VAL		0xFFFFFFFF
 +
-+#define CFG_GPCR_VAL		0x000007AB
++#define CFG_GPCR_VAL		0x000003AB
 +
 +/* FMCR Bit 1 becomes 0 to make CS3 if we have only one sdram bank*/
 +#if (CONFIG_NR_DRAM_BANKS == 1)
