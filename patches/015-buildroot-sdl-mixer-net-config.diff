@@ -1,6 +1,6 @@
 --- buildroot.ori/package/sdl/Config.in	2007-03-03 21:28:52.000000000 +0100
 +++ buildroot/package/sdl/Config.in	2007-03-02 21:22:13.000000000 +0100
-@@ -15,7 +15,6 @@
+@@ -16,7 +16,6 @@
  	  and supports the following formats: BMP, GIF, JPEG, LBM, PCX, PNG, PNM, TGA, TIFF, XCF, XPM, XV.
  
  	  http://www.libsdl.org/projects/SDL_image/
@@ -8,7 +8,7 @@
  
  config BR2_PACKAGE_SDL_TTF
  	bool "SDL_ttf"
-@@ -26,4 +25,23 @@
+@@ -27,4 +26,23 @@
  	  This is a sample library which allows you to use TrueType fonts in your SDL applications.
  
  	  http://www.libsdl.org/projects/SDL_ttf/

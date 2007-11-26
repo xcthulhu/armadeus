@@ -1,6 +1,6 @@
 --- buildrootref/package/Config.in	2007-10-06 09:15:53.000000000 +0200
 +++ buildroot/package/Config.in	2007-10-13 18:01:26.000000000 +0200
-@@ -299,6 +300,7 @@
+@@ -300,6 +301,7 @@
  source "package/fusion/Config.in"
  source "package/imagemagick/Config.in"
  source "package/jpeg/Config.in"

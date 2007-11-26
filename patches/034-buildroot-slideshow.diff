@@ -1,6 +1,6 @@
 --- buildroot.org/package/Config.in	2007-11-17 20:17:10.000000000 +0100
 +++ buildroot/package/Config.in	2007-11-17 20:18:58.000000000 +0100
-@@ -387,6 +387,9 @@
+@@ -390,6 +390,9 @@
  
  comment "Games"
  source "package/prboom/Config.in"
