@@ -1,6 +1,24 @@
---- linux-org/drivers/usb/gadget/imx_udc.c	2006-10-01 14:49:39.000000000 +0200
-+++ linux-imx/drivers/usb/gadget/imx_udc.c	2006-10-01 09:41:50.000000000 +0200
-@@ -402,7 +402,7 @@ static int imx_ep_disable (struct usb_ep
+--- linux-2.6.23.1.org/drivers/usb/gadget/imx_udc.c	2007-11-26 06:07:05.000000000 +0100
++++ linux-2.6.23.1.gadget/drivers/usb/gadget/imx_udc.c	2007-11-25 20:54:37.000000000 +0100
+@@ -23,7 +23,7 @@
+  *
+  */
+ 
+-#include <linux/config.h>
++//#include <linux/config.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/ioport.h>
+@@ -54,7 +54,7 @@
+ #include <asm/hardware.h>
+ #include <asm/arch/imx-regs.h>
+ 
+-#include <linux/usb_ch9.h>
++#include <linux/usb/ch9.h>
+ #include <linux/usb_gadget.h>
+ 
+ 
+@@ -402,7 +402,7 @@
   *     imx_ep_alloc_request - allocate a request data structure
   */
  static struct usb_request *
@@ -9,8 +27,12 @@
  {
      struct imx_request *req;
  
-@@ -435,7 +435,7 @@ imx_ep_free_request (struct usb_ep *_ep,
- 
+@@ -432,10 +432,10 @@
+     WARN_ON (!list_empty (&req->queue));
+     kfree(req);
+ }
+-
++#if 0 // No more used
  static void *
  imx_ep_alloc_buffer(struct usb_ep *_ep, unsigned bytes,
 -    dma_addr_t *dma, int gfp_flags)
@@ -18,7 +40,16 @@
  {
      void           *retval;
  
-@@ -656,6 +656,7 @@ read_fifo (struct imx_ep *ep, struct imx
+@@ -450,7 +450,7 @@
+ {
+     if (buf) kfree (buf);
+ }
+-
++#endif
+ /*-------------------------------------------------------------------------*/
+ 
+ /*
+@@ -656,6 +656,7 @@
          i=0;
          last=0;
          while (count>0) {
@@ -26,7 +57,7 @@
  #if 0
              if (!(i%4))
                  //tmp = be32_to_cpu(USB_EP_FDAT(EP_NO(ep)));
-@@ -675,7 +676,7 @@ read_fifo (struct imx_ep *ep, struct imx
+@@ -675,7 +676,7 @@
              if ((USB_EP_FSTAT(EP_NO(ep)) & USB_FRAME_STAT) == 0x08000000) {
                  last=1;
              }
@@ -35,7 +66,7 @@
              D4("frame boundary stat <%08x>\n",USB_EP_FSTAT(EP_NO(ep)));
              tmp = (USB_EP_FDAT0(EP_NO(ep)));
              if (imx_fifo_bcount(ep)-t > 1) 
-@@ -763,7 +764,7 @@ read_ep0_fifo (struct imx_ep *ep, struct
+@@ -763,7 +764,7 @@
  
  
  static int
@@ -44,7 +75,18 @@
  { 
      struct imx_ep  *ep = container_of(_ep, struct imx_ep, ep);
      struct imx_request *req = container_of(_req, struct imx_request, req);
-@@ -1026,7 +1027,7 @@ static const struct usb_gadget_ops imx_u
+@@ -994,8 +995,8 @@
+     .alloc_request = imx_ep_alloc_request,
+     .free_request  = imx_ep_free_request,
+ 
+-    .alloc_buffer  = imx_ep_alloc_buffer,
+-    .free_buffer   = imx_ep_free_buffer,
++/*    .alloc_buffer  = imx_ep_alloc_buffer,
++    .free_buffer   = imx_ep_free_buffer, */
+ 
+     .queue     = imx_ep_queue,
+     .dequeue   = imx_ep_dequeue,
+@@ -1026,7 +1027,7 @@
  /*
   * "function" sysfs attribute
   */
@@ -53,7 +95,79 @@
  {
      struct imx_udc *dev = dev_get_drvdata (_dev);
  
-@@ -1843,14 +1848,14 @@ irqreturn_t(*intr_handler(int i))(int, v
+@@ -1146,7 +1147,10 @@
+     dev->driver = driver;
+     dev->gadget.dev.driver = &driver->driver;
+ 
+-    device_add (&dev->gadget.dev);
++    retval = device_add (&dev->gadget.dev);
++	if (retval) {
++		D1("device_add %s --> error %d\n", driver->driver.name, retval);
++	}
+     retval = driver->bind(&dev->gadget);
+     if (retval) {
+         D1("bind to driver %s --> error %d\n",
+@@ -1157,7 +1161,10 @@
+         dev->gadget.dev.driver = 0;
+         return retval;
+     }
+-    device_create_file(dev->dev, &dev_attr_function);
++    retval = device_create_file(dev->dev, &dev_attr_function);
++	if (retval) {
++		D1("device_create_file %s --> error %d\n", driver->driver.name, retval);
++	}
+ 
+     /* ... then enable host detection and ep0; and we're ready
+     * for set_configuration as well as eventual disconnect.
+@@ -1398,7 +1405,7 @@
+  * under software control 
+  */
+ static irqreturn_t
+-imx_udc_irq(int irq, void *_dev, struct pt_regs *r)
++imx_udc_irq(int irq, void *_dev)
+ {
+     struct imx_udc  *dev = _dev;
+ 
+@@ -1533,7 +1540,7 @@
+ /*
+  * imx_udc_ctrl_irq - interrupt handler
+  */
+-static irqreturn_t imx_udc_ctrl_irq(int irq, void *_dev, struct pt_regs *r)
++static irqreturn_t imx_udc_ctrl_irq(int irq, void *_dev)
+ {
+     struct imx_udc *dev = _dev;
+     //unsigned long flags;
+@@ -1564,7 +1571,7 @@
+  * imx_udc_bulk_irq - interrupt handler
+  *
+  */
+-static irqreturn_t imx_udc_bulk_irq(int irq, void *_dev, struct pt_regs *r)
++static irqreturn_t imx_udc_bulk_irq(int irq, void *_dev)
+ {
+     struct imx_udc *dev = _dev;
+     struct imx_ep  *ep = &dev->ep[irq-USBD_INT0]; //XXX: use a function instead
+@@ -1588,9 +1595,9 @@
+     return IRQ_HANDLED;
+ }
+ 
+-static irqreturn_t imx_udc_int_irq(int irq, void *_dev, struct pt_regs *r)
++static irqreturn_t imx_udc_int_irq(int irq, void *_dev)
+ {
+-    imx_udc_bulk_irq(irq,_dev,r);
++    imx_udc_bulk_irq(irq,_dev);
+ 
+     return IRQ_HANDLED;
+ }
+@@ -1822,7 +1829,7 @@
+ 
+ #endif /* CONFIG_USB_GADGET_DEBUG_FILES */
+ 
+-irqreturn_t(*intr_handler(int i))(int, void *, struct pt_regs *) 
++irqreturn_t(*intr_handler(int i))(int, void *) 
+ {
+     switch (i) {
+     case 0:
+@@ -1843,7 +1850,7 @@
  /*
   *  probe - binds to the platform device
   */
@@ -62,15 +176,16 @@
  {
      struct imx_udc *dev = &memory;
      int retval = 0;
-     int i;
-     
-     /* TODO: probe for IMX cpu */
--    
-+    
-     if (!imx_get_usb_clk()) {
-         WARN("USB clock should be 48MHz, but is not\n");
-         return -EIO;
-@@ -1877,14 +1882,14 @@ static int __init imx_udc_probe(struct d
+@@ -1863,7 +1870,7 @@
+     */
+     for (i = 0; i < IMX_USB_NB_EP + 1; i++) 
+     {
+-        retval = request_irq(USBD_INT0 + i, intr_handler(i), SA_INTERRUPT, driver_name, dev);
++        retval = request_irq(USBD_INT0 + i, intr_handler(i), IRQF_DISABLED, driver_name, dev);
+         if (retval != 0) {
+             printk(KERN_ERR "%s: can't get irq %i, err %d\n",
+             driver_name, USBD_INT0 + i, retval);
+@@ -1877,14 +1884,14 @@
          return -EBUSY;
      }
      
@@ -89,7 +204,7 @@
      
      udc_disable(dev);
      udc_hardinit(dev);
-@@ -1895,9 +1900,9 @@ static int __init imx_udc_probe(struct d
+@@ -1895,9 +1902,9 @@
      return 0;
  }
  
@@ -101,7 +216,7 @@
      
      udc_disable(dev);
      remove_proc_files();
-@@ -1910,7 +1915,7 @@ static int __exit imx_udc_remove(struct 
+@@ -1910,7 +1917,7 @@
      free_irq(USBD_INT2, dev);
      free_irq(USBD_INT1, dev);
      free_irq(USBD_INT0, dev);
@@ -110,7 +225,7 @@
      the_controller = NULL;
      return 0;
  }
-@@ -1932,12 +1937,12 @@ static struct platform_driver udc_driver
+@@ -1932,12 +1939,12 @@
      .bus        = &platform_bus_type,*/
      //.shutdown   = ???
      .probe      = imx_udc_probe,
@@ -124,3 +239,4 @@
 +        .name  = "imx-udc",
      },
  };
+ 
