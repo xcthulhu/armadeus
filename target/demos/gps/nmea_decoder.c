@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h> // sigaction
+#include <ctype.h> // isprint
 
 
 struct termios oldtio, newtio;
@@ -75,8 +76,8 @@ int openSerialPort( char* aDeviceName, int aSpeed )
 
 void closeSerialPort(int fd)
 {
-    printf("Restoring old Termio config\n");
     if (fd ) {
+        printf("Restoring old Termio config\n");
         tcsetattr( fd, TCSANOW, &oldtio ); /* restore the old port settings */
         close(fd);
     }
@@ -162,6 +163,8 @@ int readAndParseFrame(int fd)
     } else {
         ; // don't care
     }
+
+    return(0);
 }
 
 void showValues( void )
@@ -172,29 +175,85 @@ void showValues( void )
 
 void showUsage(void)
 {
+    printf("\n");
     printf("Usage: nmea_decoder [ -d DEVICE ] [ -s SPEED ]\n");
     printf(" default device: /dev/ttySMX1\n");
     printf(" default speed: 4800\n");
+    printf("\n");
     exit(1);
 }
 
 void signal_handler(int param)
 {
     printf("Signal caught %i\n", param);
-    closeSerialPort( serialfd );
     exit(0);
 }
 
+void cleanup(void)
+{
+    //printf("Cleaning up...\n");
+    closeSerialPort( serialfd );
+}
+
+
 int main(int argc, char **argv)
 {
-    struct itimerval t;
-    char buf,s[128];
-    unsigned char c,flag=0;
     struct sigaction action;
+    char *device = NULL;
+    char *str_speed  = NULL;
+    int index, speed, c;
 
     if (argc <= 1)
         showUsage();
 
+    atexit(cleanup);
+
+    opterr = 0;
+    while ((c = getopt (argc, argv, "hd:s:")) != -1)
+    {
+        switch (c)
+        {
+            case 'd':
+                device = optarg;
+            break;
+
+            case 's':
+                str_speed = optarg;
+            break;
+
+            case 'h':
+                showUsage();
+            break;
+
+            case '?':
+                if( (optopt == 's') || (optopt == 'd') )
+                    fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+                else if (isprint (optopt))
+                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                else
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                showUsage();
+                //exit(1);
+
+            default:
+                abort ();
+        }
+    }
+
+    //printf ("device = %s, speed = %s, cvalue = %s\n", device, str_speed, cvalue);
+
+    for (index = optind; index < argc; index++)
+        printf ("Non-option argument %s\n", argv[index]);
+
+    if( str_speed && strcmp( str_speed, "9600") == 0 ) {
+        speed = B9600;
+    }
+    else {
+        speed = B4800;
+        printf("Using default speed: 4800 bauds\n");
+    }
+
+    // Install signal handler (CTRL+C)
     action.sa_handler = signal_handler;
     sigemptyset( &action.sa_mask );
     sigaddset( &action.sa_mask, SIGTERM );
@@ -202,10 +261,18 @@ int main(int argc, char **argv)
     action.sa_restorer = NULL;
     sigaction( SIGINT, &action, /*struct sigaction *oact*/ 0 );
 
-    serialfd = openSerialPort("/dev/ttySMX1", B4800);
+    // Open serial device
+    if( device )
+        serialfd = openSerialPort(device, B4800);
+    else {
+        device = "/dev/ttySMX1";
+        printf("Using default device: %s\n", device);
+        serialfd = openSerialPort(device, B4800);
+    }
     if ( serialfd < 0 )
         exit(1);
 
+    // Main loop
     while(1) {
         if( waitForData( serialfd ) ) {
             readAndParseFrame( serialfd );
@@ -214,6 +281,6 @@ int main(int argc, char **argv)
             printf("No data\n");
         }
     }
-    closeSerialPort( serialfd );
+
     exit(0);
 }

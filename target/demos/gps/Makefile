@@ -1,6 +1,7 @@
 INSTALL_DIR="../../../buildroot/project_build_arm/armadeus/root/usr/bin/"
 CC="../../../buildroot/build_arm/staging_dir/bin/arm-linux-gcc"
 #CFLAGS+="-g"
+CFLAGS+="-Wall"
 
 default: nmea_decode
 
