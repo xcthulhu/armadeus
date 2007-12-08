@@ -26,7 +26,7 @@ BUILDROOT_DIR = buildroot
 
 BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH:=downloads
-BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
+BUILDROOT_SITE:=ftp://ftp2.armadeus.com/armadeus/download
 BUILDROOT_VERSION:=20071027
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 
