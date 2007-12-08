@@ -127,8 +127,6 @@ $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep: $(LINUX_KERNEL)
 	rm -f $(TARGET_DIR)/sbin/cardmgr
 	$(MAKE) PATH=$(TARGET_PATH) -C $(LINUX_DIR) DEPMOD=`which true` \
 		INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
-	# Armadeus custom modules install:
-	$(MAKE) -C $(LINUX_DIR)/drivers/armadeus DEPMOD=`which true` TARGET_DIR=$(TARGET_DIR) install	
 	(cd $(TARGET_DIR)/lib/modules; ln -s $(LINUX_VERSION)/kernel/drivers .)
 	$(LINUX_PACKAGE_DIR)/depmod.pl \
 		-b $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/ \
