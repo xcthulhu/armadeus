@@ -1982,7 +1982,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#define CFG_ICR2_C_VAL		0x00000000
 +#define CFG_IMR_C_VAL		0x00000000
 +#define CFG_GPR_C_VAL		0x00000000
-+#define CFG_PUEN_C_VAL		0xFFFFFFFF
++#define CFG_PUEN_C_VAL		0xF913FFFF
 +
 +#define CFG_DDIR_D_VAL		0x00000000
 +#define CFG_OCR1_D_VAL		0x00000000
