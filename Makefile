@@ -1,6 +1,6 @@
 # Makefile for armadeus
 #
-# Copyright (C) 2005-2006 by <jorasse@armadeus.com>
+# Copyright (C) 2005-2007 by <jorasse@armadeus.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,11 +65,9 @@ help:
 	@echo '  source                 - download all sources needed for offline-build'
 	@echo '  source-check           - check all packages for valid download URLs'
 	@echo
-	@echo 'Development:'
-	@echo '  buildroot-patch	- generate patch file for buildroot'
-	@echo '  sourceball		- create a distribution tarball'
-	@echo
-	@echo 'See docs/README and docs/buildroot.html for further details'
+	@echo 'See www.armadeus.org for further armadeus details'
+	@echo 'See /buildroot/docs/README and /buildroot/docs/buildroot.html'
+	@echo '  for further buildroot details'
 	@echo
 
 

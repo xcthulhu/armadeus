@@ -1,0 +1,84 @@
+
+                ChangeLog file for Armadeus
+
+Changes in release 2.1 (8 December 2007)
+- [UBOOT] U-Boot 1.1.6 patched 2.6
+- [UBOOT] set pullup by default on inputs
+- [UBOOT] Change default MAC address to be compliant with Armadeus one
+- [LINUX] Added support for kernel Linux 2.6.23.1 (set as default)
+- [LINUX] Improved support for RTC-ds1374 RealTime Clock
+- [LINUX] Added backlight control for Microtips LCD
+- [LINUX] Enhanced framebuffer driver
+- [LINUX] Added capability to build the Armadeus custom drivers in kernel
+- [LINUX] Enhanced iMX SPI driver to be compiled as module
+- [LINUX] Added of backlight support for i.MXL
+- [LINUX] Added TSC2102 core and touchscreen drivers
+- [LINUX] Added support for isp1761 USB host controller
+- [LINUX] Added support for MCP2515 CAN bus controller (not activated by default)
+- [BUILDROOT] updated buildroot to revision 20321 (snapshot 20071027)
+- [BUILDROOT] libacl1 libacl1-dev host packages required
+- [BUILDROOT] Build g++ and shared lib as default
+- [BUILDROOT] Fixed uClibc compatility issues to support OpenSSH 
+                  thanks to Jean Michel
+- [BUILDROOT] Added Samba services smbmount, nmbd and smbd
+- [BUILDROOT] Added support for PrBoom
+- [BUILDROOT] Added SDL_mixer, SDL_net support
+- [BUILDROOT] Added support for LMbench (performance analysis tools)
+- [BUILDROOT] Added sound file playing capability to PWM driver
+- [BUILDROOT] Added support for Allegro (still needs to be static library)
+- [BUILDROOT] Added support for Lua package (thanks to Benoit)
+- [BUILDROOT] Added support for ipkg package with scripts and utilities
+                  Still needs Host part to build .ipk packages
+- [BUILDROOT] Added Tslib support with ts_test tool
+- [BUILDROOT] Preliminary integration of GPM package
+- [BUILDROOT] Preliminary integration of the Mesa package
+- [BUILDROOT] Added SDL-Water demo
+- [BUILDROOT] Added support for CH7024 (TV encoder)
+- [BUILDROOT] Added support for SDL Perigee Slideshow tool
+- [BUILDROOT] Added support for the max5821 DAC converter
+- [BUILDROOT] Build demos and examples by default in qtopia (but not installed)
+- [BUILDROOT] Preliminary integration of the ltp-testsuite package
+- [BUILDROOT] Preliminary support for libvorbis
+- [BUILDROOT] Hide original kernel menu - Armadeus defines its own kernel menu
+- [SOFTWARE] Added first (usable but buggy) version of Wolfenstein3D
+- [SOFTWARE] Added uboot_recover tool
+- [SOFTWARE] Added initial version of orchestra project builder
+- [FIRMWARE] Added led example for the FPGA (led_top.bin)
+- [FIRMWARE] Added 400k gates Spartan3 bitfile for PS/2 controller
+- [FIRMWARE] Added SRAM test VHDL code for the Devfull board
+- [FIRMWARE] Improved PS2 IP to be compatible with APF9328 board
+- [BUILD] Added buildauto target to main Makefile in order to setup automatic builds
+- [ROOTFS] Adding of /etc/fb.modes framebuffer config file (used by SDL for example)
+- [ROOTFS] Add Bash script to test MMC/SD cards performances
+- Fixed many bugs
+
+Changes in release 2.0 (7 February 2007)
+- upgrade u-boot bios to release 1.1.6
+- upgrade buildroot to the october, 30 2006 snapshot 
+- add support for the RTC DS1374 (under u-boot and linux)
+- new IMX SPI linux driver
+- add MAX1027 ADC linux driver
+- add IMX PWM linux driver
+- improve imx-i2c driver (bugs fixed)
+- change the name of the armadeus platform under u-boot to apx9328:
+      apm9328 and apf9328 compatible
+- add a Linux FPGA loader tool
+- add a Linux FPGAregs tool
+- support linux kernel 2.6.18.1
+- Add sysfs to fstab
+- Add support for several LCDs in linux (Sharp, Microtips)
+- improved DHCP usage with uBoot
+- Use new spartan3 u-boot driver
+- preliminary support for SDL
+
+
+Changes in release 1.6 (11 November 2006)
+- added linux kernels 2.6.17 and 2.6.18
+- added usb support add mmc support
+
+Changes in release 1.5 (15 July 2006)
+- building package for toolchain, u-boot, kernel and root-fs
+- First referenced released
+
+Sorry, no detailed ChangeLog available for previous releases
+
