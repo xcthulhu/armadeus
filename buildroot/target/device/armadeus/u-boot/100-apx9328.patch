@@ -1335,7 +1335,7 @@ diff -purN -x '*~' ref/u-boot-1.1.6/include/configs/apx9328.h u-boot-1.1.6/inclu
 +#ifndef __CONFIG_H
 +#define __CONFIG_H
 +
-+#define CONFIG_IDENT_STRING	" apx9328 patch 2.5"
++#define CONFIG_IDENT_STRING	" apx9328 patch 2.6"
 +
 +#define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
 +#define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
