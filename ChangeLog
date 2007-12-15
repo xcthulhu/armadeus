@@ -1,7 +1,7 @@
 
                 ChangeLog file for Armadeus
 
-Changes in release 2.1 (8 December 2007)
+Changes in release 2.1 (15 December 2007)
 - [UBOOT] U-Boot 1.1.6 patched 2.6
 - [UBOOT] set pullup by default on inputs
 - [UBOOT] Change default MAC address to be compliant with Armadeus one
