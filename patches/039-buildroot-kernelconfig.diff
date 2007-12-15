@@ -1,0 +1,57 @@
+--- buildroot.ori/target/Config.in	2007-12-14 22:12:46.000000000 +0100
++++ buildroot/target/Config.in	2007-12-15 17:36:39.000000000 +0100
+@@ -20,19 +20,19 @@
+ source "target/powerpc/yaboot/Config.in"
+ endmenu
+ 
+-menu "Kernel"
+-choice
+-	prompt "Kernel type"
+-	default BR2_KERNEL_LINUX_ADVANCED if BR2_TARGET_ATMEL
+-	default BR2_KERNEL_LINUX if !BR2_TARGET_ATMEL
++#menu "Kernel"
++#choice
++#	prompt "Kernel type"
++#	default BR2_KERNEL_LINUX_ADVANCED if BR2_TARGET_ATMEL
++#	default BR2_KERNEL_LINUX if !BR2_TARGET_ATMEL
+ 
+ config BR2_KERNEL_none
+-	bool "none"
++	bool
+ 	help
+ 	  Do not build a kernel
+ 
+ config BR2_KERNEL_LINUX_ADVANCED
+-	bool "linux (Advanced configuration)"
++	bool
+ 	select BR2_PACKAGE_LINUX
+ 	help
+ 	  The Linux kernel - Advanced Configuration.
+@@ -43,7 +43,7 @@
+ 	        kernels. This is a feature.
+ 
+ config BR2_KERNEL_LINUX
+-	bool "linux (Same version as linux headers)"
++	bool
+ 	select BR2_PACKAGE_LINUX
+ 	help
+ 	  The Linux kernel.
+@@ -54,10 +54,10 @@
+ 	        kernels. This is a feature.
+ 
+ config BR2_KERNEL_HURD
+-	bool "hurd"
++	bool
+ 	help
+ 	  GNU/Hurd kernel
+-endchoice
++#endchoice
+ 
+ config BR2_PACKAGE_LINUX
+ 	bool
+@@ -72,4 +72,4 @@
+ if BR2_KERNEL_HURD
+ source "target/hurd/Config.in"
+ endif
+-endmenu
++#endmenu
