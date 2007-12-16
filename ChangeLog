@@ -50,6 +50,7 @@ Changes in release 2.1 (15 December 2007)
 - [BUILD] Added buildauto target to main Makefile in order to setup automatic builds
 - [ROOTFS] Adding of /etc/fb.modes framebuffer config file (used by SDL for example)
 - [ROOTFS] Add Bash script to test MMC/SD cards performances
+- [ROOTFS] Changed MAJOR of /dev/mmcblkxx
 - Fixed many bugs
 
 Changes in release 2.0 (7 February 2007)

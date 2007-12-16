@@ -179,7 +179,7 @@
  /dev/i2c-0	c 	666 	0 	0 	89 	0
 
 # MMC/SD Devices
-/dev/mmcblk0	b	640	0	0	254	0	0	0	-
-/dev/mmcblk0p	b	640	0	0	254	1	1	1	8	
+/dev/mmcblk0	b	640	0	0	179	0	0	0	-
+/dev/mmcblk0p	b	640	0	0	179	1	1	1	8	
 
 
