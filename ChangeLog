@@ -1,7 +1,7 @@
 
                 ChangeLog file for Armadeus Project
 
-Changes in release 2.1 (15 December 2007)
+Changes in release 2.2 (16 December 2007)
 - [UBOOT] U-Boot 1.1.6 patched 2.6
 - [UBOOT] set pullup by default on inputs
 - [UBOOT] Change default MAC address to be compliant with Armadeus one
@@ -52,6 +52,7 @@ Changes in release 2.1 (15 December 2007)
 - [ROOTFS] Add Bash script to test MMC/SD cards performances
 - [ROOTFS] Changed MAJOR of /dev/mmcblkxx
 - Fixed many bugs
+- Revoked release 2.1 (bug fixed)
 
 Changes in release 2.0 (7 February 2007)
 - upgrade U-Boot bios to release 1.1.6
