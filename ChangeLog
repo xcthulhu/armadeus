@@ -1,5 +1,5 @@
 
-                ChangeLog file for Armadeus
+                ChangeLog file for Armadeus Project
 
 Changes in release 2.1 (15 December 2007)
 - [UBOOT] U-Boot 1.1.6 patched 2.6
@@ -11,7 +11,7 @@ Changes in release 2.1 (15 December 2007)
 - [LINUX] Enhanced framebuffer driver
 - [LINUX] Added capability to build the Armadeus custom drivers in kernel
 - [LINUX] Enhanced iMX SPI driver to be compiled as module
-- [LINUX] Added of backlight support for i.MXL
+- [LINUX] Added backlight support for i.MXL
 - [LINUX] Added TSC2102 core and touchscreen drivers
 - [LINUX] Added support for isp1761 USB host controller
 - [LINUX] Added support for MCP2515 CAN bus controller (not activated by default)
@@ -53,7 +53,7 @@ Changes in release 2.1 (15 December 2007)
 - Fixed many bugs
 
 Changes in release 2.0 (7 February 2007)
-- upgrade u-boot bios to release 1.1.6
+- upgrade U-Boot bios to release 1.1.6
 - upgrade buildroot to the october, 30 2006 snapshot 
 - add support for the RTC DS1374 (under u-boot and linux)
 - new IMX SPI linux driver
@@ -68,16 +68,16 @@ Changes in release 2.0 (7 February 2007)
 - Add sysfs to fstab
 - Add support for several LCDs in linux (Sharp, Microtips)
 - improved DHCP usage with uBoot
-- Use new spartan3 u-boot driver
+- Use new spartan3 U-Boot driver
 - preliminary support for SDL
 
 
 Changes in release 1.6 (11 November 2006)
-- added linux kernels 2.6.17 and 2.6.18
+- added Linux kernels 2.6.17 and 2.6.18
 - added usb support add mmc support
 
 Changes in release 1.5 (15 July 2006)
-- building package for toolchain, u-boot, kernel and root-fs
+- building package for toolchain, U-Boot, kernel and root-fs
 - First referenced released
 
 Sorry, no detailed ChangeLog available for previous releases
