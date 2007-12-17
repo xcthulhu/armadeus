@@ -27,7 +27,7 @@ import serial
 ser = 0 #serial port
 
 if __name__ == "__main__":    
-    SPEED = 57600
+    SPEED = 38400
     ramSize = 16
     print "APF Recover Tool"
     print "Do not forget to place the bootstrap jumper !!"
