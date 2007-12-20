@@ -856,7 +856,7 @@ Index: linux-2.6.19.2/drivers/net/can/mcp251x.c
 +    INIT_WORK(&priv->irq_work, mcp251x_irq_work_handler);
 +
 +    /* Configure the SPI bus */
-+    spi->mode = SPI_MODE_2;
++    spi->mode = SPI_MODE_0;
 +    spi->bits_per_word = 8;
 +    spi_setup(spi);
 +

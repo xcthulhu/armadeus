@@ -808,7 +808,7 @@
 +CONFIG_ZLIB_DEFLATE=y
 --- linux-2.6.23.1.1/arch/arm/mach-imx/apf9328.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.23.1.1.mod/arch/arm/mach-imx/apf9328.c	2007-07-22 22:46:57.000000000 +0200
-@@ -0,0 +1,527 @@
+@@ -0,0 +1,533 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -1006,7 +1006,7 @@
 +
 +static struct spi_imx_master imx_spi1_master_info = {
 +	.num_chipselect	= 1,
-+	.enable_dma=0,
++	.enable_dma     = 0,
 +};
 +
 +static struct platform_device imx_spi1 = {
@@ -1034,7 +1034,7 @@
 +
 +static struct spi_imx_master imx_spi2_master_info = {
 +	.num_chipselect	= 1,
-+	.enable_dma=0,
++	.enable_dma     = 0,
 +};
 +
 +static struct platform_device imx_spi2 = {
@@ -1077,6 +1077,8 @@
 +
 +#ifdef CONFIG_SPI_TSC2102
 +#define TSC2102_CS_GPIOB 17
++#define TSC2102_INT_GPIOD 8 
++
 +static void tsc2102_init_gpio(void)
 +{
 +    // Activate SPI2 port ----
@@ -1090,7 +1092,7 @@
 +    FMCR |= SPI2_RXD_SEL; // RX is AOUT on PORTD
 +
 +    // PortD 8 is used as PINTDAV interrupt
-+    imx_gpio_mode( GPIO_PORTD | 8 | GPIO_IN | GPIO_GIUS );
++    imx_gpio_mode( GPIO_PORTD | TSC2102_INT_GPIOD | GPIO_IN | GPIO_GIUS );
 +    //imx_gpio_irq_type( IRQ_GPIOD(8), __IRQT_FALEDGE );
 +
 +    // Activate SSI on PortC ----
@@ -1135,6 +1137,7 @@
 +
 +#ifdef CONFIG_CAN_MCP251X
 +#define CAN_MPC251X_CS_GPIOB 19
++#define CAN_MPC251X_INT_GPIOC 13 
 +
 +// Chip select command for MCP251X
 +static void mcp251X_cs(u32 command)
@@ -1156,19 +1159,22 @@
 +    // PortB 19 is used as chip select (in GPIO mode)
 +    DR(1) |= 1 << CAN_MPC251X_CS_GPIOB; // Initializes it High
 +    imx_gpio_mode( GPIO_PORTB | CAN_MPC251X_CS_GPIOB | GPIO_OUT | GPIO_GIUS | GPIO_DR );
++
++    // PortC 13 is used as CAN interrupt
++    imx_gpio_mode( GPIO_PORTC | CAN_MPC251X_INT_GPIOC | GPIO_IN | GPIO_GIUS );
++
 +    // Configure SPI2 outputs
 +    imx_gpio_mode( PD7_AIN_SPI2_SCLK );
 +    imx_gpio_mode( PD10_AIN_SPI2_TXD );
 +    imx_gpio_mode( PD9_AOUT_SPI2_RXD );
 +    FMCR |= SPI2_RXD_SEL; // RX is AOUT on PORTD
-+    imx_gpio_mode( GPIO_PORTC | 13 | GPIO_IN | GPIO_GIUS );
 +}
 +
 +static struct mcp251x_platform_data apf9328_mcp251x_config = {
-+ .oscillator_frequency = 16000000,
-+ .board_specific_setup = NULL,
-+ .device_reset = NULL,
-+ .transceiver_enable = NULL,
++ .oscillator_frequency  = 16000000,
++ .board_specific_setup  = NULL,
++ .device_reset          = NULL,
++ .transceiver_enable    = NULL,
 +};
 +
 +#endif 
@@ -1191,7 +1197,7 @@
 +    .controller_data 	= &tsc2102_hw,
 +    .max_speed_hz		= 8000000,
 +    .bus_num			= 2, // SPI2
-+    .irq                = IRQ_GPIOD(8),
++    .irq                = IRQ_GPIOD(TSC2102_INT_GPIOD),
 +    .chip_select		= 0,
 +    .mode 				= 0,
 +    .platform_data      = &apf9328_tsc2102_config,
@@ -1199,14 +1205,14 @@
 +#endif // CONFIG_SPI_TSC2102
 +#ifdef CONFIG_CAN_MCP251X
 + {
-+ .modalias       = "mcp251x",
-+ .max_speed_hz   = 8000000, /* 8MHz */
++ .modalias          = "mcp251x",
++ .max_speed_hz      = 8000000, /* 8MHz */
 + .controller_data 	= &mcp251X_hw,
-+ .bus_num        = 2,
-+ .mode           = SPI_MODE_0,
-+ .chip_select    = 0,
-+ .irq = IRQ_GPIOC(13),
-+ .platform_data  = &apf9328_mcp251x_config,
++ .bus_num           = 2,
++ .mode              = SPI_MODE_0,
++ .chip_select       = 0,
++ .irq               = IRQ_GPIOC( CAN_MPC251X_INT_GPIOC ),
++ .platform_data     = &apf9328_mcp251x_config,
 + },
 +#endif // CONFIG_CAN_MCP251X
 +};
@@ -1220,9 +1226,9 @@
 +
 +#ifdef CONFIG_IMX_BACKLIGHT
 +static struct imxbl_machinfo imx_bl_machinfo = {
-+    .max_intensity = 0xff,
-+    .default_intensity = 0x90,
-+    .limit_mask = 0x7f, // When battery is low
++    .max_intensity      = 0xff,
++    .default_intensity  = 0x90,
++    .limit_mask         = 0x7f, // When battery is low
 +//    set_bl_intensity = put a function here if you want to overload default one,
 +};
 +//extern struct platform_device imxfb_device; // filled in generic.c
@@ -1318,10 +1324,10 @@
 +    set_irq_type(APF9328_ETH_IRQ, IRQF_TRIGGER_LOW);
 +#endif // CONFIG_DM9000
 +#ifdef CONFIG_SPI_TSC2102
-+    set_irq_type( IRQ_GPIOD(8), IRQF_TRIGGER_FALLING );
++    set_irq_type( IRQ_GPIOD(TSC2102_INT_GPIOD), IRQF_TRIGGER_FALLING );
 +#endif // CONFIG_SPI_TSC2102
 +#ifdef CONFIG_CAN_MCP251X
-+    set_irq_type( IRQ_GPIOC(13), IRQF_TRIGGER_FALLING );
++    set_irq_type( IRQ_GPIOC(CAN_MPC251X_INT_GPIOC), IRQF_TRIGGER_FALLING );
 +#endif // CONFIG_CAN_MCP251X
 +}
 +
