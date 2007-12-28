@@ -1,6 +1,19 @@
 diff -purN u-boot-1.1.6.ref/include/asm-arm/arch-imx/imx-regs.h u-boot-1.1.6/include/asm-arm/arch-imx/imx-regs.h
 --- u-boot-1.1.6.ref/include/asm-arm/arch-imx/imx-regs.h	2006-11-02 15:15:01.000000000 +0100
 +++ u-boot-1.1.6/include/asm-arm/arch-imx/imx-regs.h	2006-11-04 18:44:12.000000000 +0100
+@@ -8,9 +8,9 @@
+ 
+ # ifndef __ASSEMBLY__
+ #  define __REG(x)	(*((volatile u32 *)(x)))
+-# define __REG2(x,y)	\
+-	( __builtin_constant_p(y) ? (__REG((x) + (y))) \
+-			  : (*(volatile u32 *)((u32)&__REG(x) + (y))) )
++#  define __REG2(x,y)	(*((volatile u32 *)((x)+(y))))
++
++
+ # else
+ #  define __REG(x) (x)
+ #  define __REG2(x,y) ((x)+(y))
 @@ -574,4 +574,27 @@
  #define TSTAT_CAPT     (1<<1)  /* Capture event */
  #define TSTAT_COMP     (1)     /* Compare event */
