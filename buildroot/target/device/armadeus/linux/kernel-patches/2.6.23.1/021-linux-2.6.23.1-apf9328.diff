@@ -1344,7 +1344,7 @@
 +MACHINE_END
 --- linux-2.6.23.1.1/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.23.1.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2007-01-07 21:40:59.000000000 +0100
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,189 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -1383,8 +1383,11 @@
 +#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
 +    // No LCD powerdown yet
 +#elif CONFIG_FB_IMX_SHARP_LQ043_TFT
-+    if(on)
++    if(on) {
++        mdelay(200); // at least ten frames have to be processed before 
++                     // enabling the display
 +        DR(LCD_PORT) |= (1 << SHARP_LQ043_POWER_DOWN); 
++   }
 +    else
 +        DR(LCD_PORT) &= ~(1 << SHARP_LQ043_POWER_DOWN); 
 +#else
