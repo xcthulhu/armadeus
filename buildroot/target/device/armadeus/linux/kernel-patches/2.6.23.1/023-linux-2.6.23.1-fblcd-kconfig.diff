@@ -1,6 +1,6 @@
 --- linux-org/drivers/video/Kconfig	2006-10-14 05:34:03.000000000 +0200
 +++ linux-imx/drivers/video/Kconfig	2007-01-07 22:24:25.000000000 +0100
-@@ -271,6 +271,7 @@
+@@ -342,6 +342,7 @@ config FB_SA1100
  	  If you plan to use the LCD display with your SA-1100 system, say
  	  Y here.
  
@@ -8,14 +8,20 @@
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -278,6 +279,36 @@
+@@ -349,6 +350,42 @@ config FB_IMX
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
 +choice
 +        depends on FB_IMX
 +        prompt "LCD Panel"
-+        default FB_IMX_SHARP_LQ057_TFT
++        default FB_IMX_MICROTIPS_MTF_T035_TFT
++
++config FB_IMX_SHARP_LQ043_TFT
++        bool "Sharp LQ043"
++        help
++          Sharp LQ043, a 4.3" 24 bits color 480x272, TFT panel.
++          The native resolution is 480x272.
 +
 +config FB_IMX_MICROTIPS_MTF_T035_TFT
 +        bool "Microtips MTF-T035"
