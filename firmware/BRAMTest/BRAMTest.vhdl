@@ -27,7 +27,7 @@ use UNISIM.VComponents.all;
 
 entity BRAMTest_Top is  -- this is the top
     Port ( DataxD      : inout std_logic_vector(15 downto 0);
-		     AddrxDI	  : in std_logic_vector(9 downto 0);
+		     AddrxDI	  : in std_logic_vector(12 downto 0);
 		     CSxBI		  : in std_logic;
 		     WRxBI   	  : in std_logic;
 		     RDxBI		  : in std_logic;
@@ -130,7 +130,7 @@ begin
    port map (
       DO => DataOutRAMxD,      -- 16-bit Data Output
       DOP => open,    -- 2-bit parity Output
-      ADDR => AddrxDI,  -- 10-bit Address Input
+      ADDR => AddrxDI(9 downto 0),  -- 10-bit Address Input
       CLK => CLKBRAM,    -- Clock
       DI => DataxD,      -- 16-bit Data Input
       DIP => "00",    -- 2-bit parity Input
