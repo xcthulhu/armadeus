@@ -1,6 +1,9 @@
 
                 ChangeLog file for Armadeus Project
 
+Changes in release 2.3 (11 February 2008)
+- [BUILDROOT] Change FTP server for buildroot and fakeroot files
+
 Changes in release 2.2 (16 December 2007)
 - [UBOOT] U-Boot 1.1.6 patched 2.6
 - [UBOOT] set pullup by default on inputs
