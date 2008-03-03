@@ -1,0 +1,60 @@
+Simple design to blink a led from the i.mx.
+
+1) Description
+
+Led is branched on fpga P116 with this schematics :
+
+          3.3v
+         -----
+           |
+         -----
+         |   |
+         |   | 330 Ohms
+         |   |
+         -----
+           |
+        -------
+         \   /  --/
+          \ /    /--->
+        -------
+           |
+FPGA16 -----	
+(P116)
+
+See ucf file in sr/bus_led.ucf for more details 
+NET "LED"     LOC = "P116"  | IOSTANDARD = LVCMOS33 ;     
+
+To change the value from uboot use mw.w command and write
+on address 0x12000000 :
+mw.w 12000000 0001 1 # led off
+mw.w 12000000 0000 1 # led on
+
+2) Simulation 
+
+The testbench is in testbench/ directory using apf_test_pkg.vhd in
+apf_pkg/ directory, to simulate it you can use ghdl using the makefile.
+compile:
+>make ghdl-compil
+
+run (the end of test finish with assert error "end of test"):
+>make ghdl-run
+
+And see graph result with gtkwave:
+>make ghdl-view
+
+3) Synthesis
+
+To synthetize the design, you need Xilinx webpack installed correctly
+and you can use make:
+>make
+This will make synthesis, place & route and bitgen, and will copy the
+bitstream in /tftpboot/ directory
+
+4) Configure
+
+To configure, you need tftpboot installed on your computer, and on 
+uboot type:
+>tftpboot 08000000 bus_led_top.bit
+>fpga load 0 08000000 1ffd5
+
+

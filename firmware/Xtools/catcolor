@@ -1,0 +1,7 @@
+#!/bin/bash
+cat $1 \
+		| sed "s/^ERROR/[01\;31mERROR[00m/"\
+		| sed "s/^WARNING/[01\;33mWARNING[00m/"\
+		| sed "s/^INFO/[01\;32mINFO[0m/"
+
+
