@@ -10,7 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 package apf_test_pkg is
-	   -- read and write procedures
+	-- read and write procedures
 	procedure imx_write(
 	address     : in std_logic_vector (15 downto 0);
 	value       : in std_logic_vector (15 downto 0);
@@ -23,14 +23,14 @@ package apf_test_pkg is
 );
 
 procedure imx_read(
-	address     : in std_logic_vector (15 downto 0);
-	value       : out std_logic_vector (15 downto 0);
-	signal   gls_clk     : in std_logic ;
-	signal   imx_cs_n    : out std_logic ;
-	signal   imx_oe_n    : out std_logic ;
-	signal   imx_eb3_n   : out std_logic ;
-	signal   imx_address : out std_logic_vector (12 downto 1);
-	signal   imx_data    : in std_logic_vector (15 downto 0)
+address     : in std_logic_vector (15 downto 0);
+value       : out std_logic_vector (15 downto 0);
+signal   gls_clk     : in std_logic ;
+signal   imx_cs_n    : out std_logic ;
+signal   imx_oe_n    : out std_logic ;
+signal   imx_eb3_n   : out std_logic ;
+signal   imx_address : out std_logic_vector (12 downto 1);
+signal   imx_data    : in std_logic_vector (15 downto 0)
    );
 
 
@@ -38,7 +38,7 @@ end package apf_test_pkg;
 
 package body apf_test_pkg is
 
-	   -- Write value from imx
+	-- Write value from imx
 	procedure imx_write(
 	address     : in std_logic_vector (15 downto 0);
 	value       : in std_logic_vector (15 downto 0);
@@ -50,7 +50,7 @@ package body apf_test_pkg is
 	signal   imx_data    : out std_logic_vector (15 downto 0)
 ) is
 begin
-					   -- Write value
+	-- Write value
 	wait until falling_edge(gls_clk);
 	wait for 4 ns;
 	imx_address <= address(12 downto 1);
@@ -68,19 +68,19 @@ begin
 	imx_data  <= (others => 'Z');
 end procedure imx_write;
 
-			   -- Read a value from imx
+-- Read a value from imx
 procedure imx_read(
-address     : in std_logic_vector (15 downto 0);
-value       : out std_logic_vector (15 downto 0);
-signal   gls_clk     : in std_logic ;
-signal   imx_cs_n    : out std_logic ;
-signal   imx_oe_n    : out std_logic ;
-signal   imx_eb3_n   : out std_logic ;
-signal   imx_address : out std_logic_vector (12 downto 1);
-signal   imx_data    : in std_logic_vector (15 downto 0)
+					address     : in std_logic_vector (15 downto 0);
+					value       : out std_logic_vector (15 downto 0);
+					signal   gls_clk     : in std_logic ;
+					signal   imx_cs_n    : out std_logic ;
+					signal   imx_oe_n    : out std_logic ;
+					signal   imx_eb3_n   : out std_logic ;
+					signal   imx_address : out std_logic_vector (12 downto 1);
+					signal   imx_data    : in std_logic_vector (15 downto 0)
 					   ) is
 					   begin
-							   -- Read value
+						   -- Read value
 						   wait until falling_edge(gls_clk);
 						   wait for 4 ns;
 						   imx_address <= address(12 downto 1);

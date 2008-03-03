@@ -36,51 +36,69 @@ end entity;
 ---------------------------------------------------------------------------
 Architecture RTL of bus_led is
 	---------------------------------------------------------------------------
-	signal Reg  : std_logic_vector(15 downto 0) := (others => '0');
+	signal Reg        : std_logic_vector(15 downto 0) := (others => '0');
+	signal address    : std_logic_vector(11 downto 0);
+	signal readdata   : std_logic_vector(15 downto 0);
+	signal writedata  : std_logic_vector(15 downto 0);
+	signal read       : std_logic;
+	signal write      : std_logic;
 
 begin
 
 	-- Led connection
 	LED <= Reg(0);
 
-	write : process (clk,Rst_n)
+	imx_data <= readdata when (read = '1') else (others => 'Z');  
+
+	-----------------------------------------------------
+	-- Synchro external signal
+	-----------------------------------------------------
+	sync_proc : process(clk, rst_n)
+	 begin
+	   if Rst_n = '0' then
+	     address <= (others => '0');
+	     read    <= '0';
+	     write   <= '0';
+	   elsif rising_edge(clk) then
+	     write     <= not (imx_cs_n or imx_eb3_n);
+	     read      <= not (imx_cs_n or imx_oe_n);
+	     address   <= imx_addr;
+	     writedata <= imx_data;
+	   end if;
+	 end process;
+
+	writeprocess : process (clk,Rst_n)
 	begin
 		if Rst_n = '0' then
 			Reg    <= (others => '0');
 		elsif rising_edge(clk) then
-			if (imx_cs_n = '0' and	imx_oe_n = '1' and imx_eb3_n = '0' ) then
-				case imx_addr is
+			if (write = '1') then
+				case address is
 					when "000000000000" => 
 						-- Save imx_data value in Reg
-						Reg <= imx_data;
-					when others => 
-						Reg <= Reg;
+						Reg <= writedata;
+					when others => Null; 
 				end case;
-
 			end if;
 		end if;
-	end process write;
+	end process writeprocess;
 
-	read : process (clk, Rst_n)
+	readprocess : process (clk, Rst_n)
 	begin
 		if Rst_n = '0' then
-			imx_data <= (others => 'Z');
-		elsif falling_edge(clk) then
-			if(imx_cs_n = '0' and imx_oe_n = '0' and imx_eb3_n = '1' ) then
-				case imx_addr is
+			readdata <= (others => '0');
+		elsif rising_edge(clk) then
+			readdata <= (others => '0');
+			if(read = '1') then
+				case address is
 					when "000000000000" => 
 					-- Write Reg value on imx_data bus
-						imx_data <= Reg;
-					when others => 
-					-- High impedance if others address
-						imx_data <= (others => 'Z');
+						readdata <= Reg;
+					when others => Null; 
 				end case;
-			else
-					-- High impedance if others address
-				imx_data <= (others => 'Z');
 			end if;
 		end if;
-	end process read;
+	end process readprocess;
 
 end architecture RTL;
 

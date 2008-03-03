@@ -103,7 +103,7 @@ bit : $(BIN)/$(PROJECT).ncd trace
 	cp $(BIN)/$(PROJECT).bit /tftpboot/
 
 trace: $(BIN)/$(PROJECT).ncd $(BIN)/$(PROJECT).pcf
-	-$(TRACE) -intstyle xflow -e 3 -l 3 -s 5 -xml $(BIN)/$(PROJECT) $(BIN)/$(PROJECT).ncd -o $(BIN)/$(PROJECT).twr $(BIN)/$(PROJECT).pcf > $(BIN)/$(PROJECT).tracelog 
+	-$(TRACE) -intstyle xflow -e 3 -l 3 -s 5 -xml $(BIN)/$(PROJECT) $(BIN)/$(PROJECT).ncd -o $(BIN)/$(PROJECT).twr $(BIN)/$(PROJECT).pcf 
 	$(CAT) $(BIN)/$(PROJECT).tracelog
 
 $(BIN)/$(PROJECT).ncd : par 

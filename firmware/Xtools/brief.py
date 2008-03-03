@@ -43,7 +43,7 @@ report(file)
 file.close()
 print '---------------------------------------------------'
 print ' trace messages :'
-file = open(sys.argv[1] + ".tracelog",'r')
+file = open(sys.argv[1] + ".twr",'r')
 report(file)
 file.close()
 print '---------------------------------------------------'

@@ -65,8 +65,12 @@ begin
 		wait for HALF_PERIODE*20;
 
 		for i in 0 to 600 loop
-			imx_write(x"0000",conv_std_logic_vector(i,16),clk,imx_cs_n,imx_oe_n,imx_eb3_n,imx_addr(12 downto 1),imx_data);
-			imx_read(x"0000",value,clk,imx_cs_n,imx_oe_n,imx_eb3_n,imx_addr(12 downto 1),imx_data);
+			imx_write(x"0000",conv_std_logic_vector(i,16),
+						clk,imx_cs_n,imx_oe_n,
+						imx_eb3_n,imx_addr(12 downto 1),imx_data);
+			imx_read(x"0000",value,
+						clk,imx_cs_n,imx_oe_n,
+						imx_eb3_n,imx_addr(12 downto 1),imx_data);
 			assert value = conv_std_logic_vector(i,16) report "error reading imx_data" severity error;
 		end loop;
 
