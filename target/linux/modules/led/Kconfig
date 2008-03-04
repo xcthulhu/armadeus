@@ -1,0 +1,8 @@
+#
+#
+
+config ARMADEUS_LED_DRIVER
+        tristate "Led driver"
+        default n
+        depends on ARMADEUS_DRIVERS
+        ---help---

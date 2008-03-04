@@ -1,0 +1,16 @@
+Driver for fpga IP bus_led -> armadeus/firmware/led/
+Fabien Marteau <fabien.marteau@armadeus.com>
+
+To use it configure fpga with bus_led then insert led.ko with insmod :
+>insmod led.ko
+
+watch dmesg :
+LED: MAJOR: 253 MINOR: 0
+Led module insered
+
+then make a character file with wright major and minor number :
+>mknod led c 253 0
+
+Then led can be switched on/off writing a character in nod file, 
+only LSB will switch led, 1 will switch off led and 0 will 
+witch on. To read value, just read the file.
