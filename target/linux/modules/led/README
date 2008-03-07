@@ -4,13 +4,23 @@ Fabien Marteau <fabien.marteau@armadeus.com>
 To use it configure fpga with bus_led then insert led.ko with insmod :
 >insmod led.ko
 
-watch dmesg :
+Watch dmesg :
 LED: MAJOR: 253 MINOR: 0
-Led module insered
+Led module inserted
 
-then make a character file with wright major and minor number :
+Then make a character file with wright major and minor number :
 >mknod led c 253 0
 
-Then led can be switched on/off writing a character in nod file, 
+Then led can be switched on/off writing a character in node file, 
 only LSB will switch led, 1 will switch off led and 0 will 
 witch on. To read value, just read the file.
+
+To test read/write testled.c can be used, to compile :
+make test
+then launch the binary :
+>./testled led
+
+Sysfs is created at /sys/fpgaled/status, to print the led status:
+>cat /sys/fpgaled/status
+To switch the status :
+>echo 1 > /sys/fpgaled/status

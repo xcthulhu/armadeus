@@ -19,6 +19,8 @@
 /* linux device model */
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
+#include <linux/sysdev.h>
+#include <linux/device.h>
 
 /* for file  operations */
 #include <linux/fs.h>
@@ -55,14 +57,19 @@
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Fabien Marteau - ARMadeus Systems");
+MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com> - ARMadeus Systems");
 MODULE_DESCRIPTION("Led device driver");
 
 /* cdev struct */
 struct led_dev{
   struct cdev cdev;     /* Char device structure */
   struct semaphore sem; /* Mutex */
+  struct kobject kobj;
 };
+
+static void kobj_release(struct kobject *);
+
+#define DRIVER_NAME "led"
 
 /* major and minor number */
 #define N_DEV 1
@@ -74,12 +81,13 @@ struct led_dev *sdev;
 #define LED_LENGTH 1
 struct resource *mem; /* pointer to fpga led */
 
+
+/* to read write led register */
 ssize_t led_read(struct file *fildes, char __user *buff,
                  size_t count, loff_t *offp);
 
 ssize_t led_write(struct file *fildes, const char __user *
                   buff,size_t count, loff_t *offp);
-
 int led_open(struct inode *inode, struct file *filp);
 
 int led_release(struct inode *, struct file *filp);
@@ -93,3 +101,25 @@ struct file_operations led_fops = {
 };
 
 
+/* Sysfs operation */
+static struct attribute led_status_attr = {
+  .name = "status",
+  .owner = THIS_MODULE,
+  .mode = 0666,
+};
+static int init_sysinterface(struct led_dev *pdev);
+static ssize_t led_show_status(struct kobject *kobj,struct attribute *attr,char *buf);
+static ssize_t led_store_status(struct kobject *kobj,struct attribute *attr, const char *buff, size_t size);
+
+static struct sysfs_ops led_status_fs_ops = {
+  .show = led_show_status,
+  .store = led_store_status,
+};
+
+struct kobj_type kobjtype = {
+  .release = kobj_release,
+  .sysfs_ops = &led_status_fs_ops,
+};
+
+
+static void free_all(void);

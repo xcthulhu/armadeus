@@ -24,6 +24,11 @@ default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 	cp led.ko /tftpboot/
 
+test:
+	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc testled.c -o testled
+	chmod 755 testled
+	cp testled /tftpboot/
+
 clean:
 	rm -f *.*o \
 	rm -f Module.symvers
