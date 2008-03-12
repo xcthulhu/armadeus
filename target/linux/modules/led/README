@@ -1,26 +1,43 @@
 Driver for fpga IP bus_led -> armadeus/firmware/led/
 Fabien Marteau <fabien.marteau@armadeus.com>
 
-To use it configure fpga with bus_led then insert led.ko with insmod :
->insmod led.ko
 
-Watch dmesg :
-LED: MAJOR: 253 MINOR: 0
-Led module inserted
+* Character device
 
-Then make a character file with wright major and minor number :
->mknod led c 253 0
+  To use it configure fpga with bus_led then insert led.ko with insmod :
+  >insmod led.ko
+  
+  Watch dmesg :
+  LED: MAJOR: 253 MINOR: 0
+  Led module inserted
+  
+  Then make a character file with wright major and minor number :
+  >mknod led c 253 0
+  
+  Then led can be switched on/off writing a character in node file, 
+  only LSB will switch led, 1 will switch off led and 0 will 
+  witch on. To read value, just read the file.
 
-Then led can be switched on/off writing a character in node file, 
-only LSB will switch led, 1 will switch off led and 0 will 
-witch on. To read value, just read the file.
+  To test read/write testled.c can be used, to compile :
+  make test
+  then launch the binary :
+  >./testled led
+  
+* Sysfs /sys/fpgaled/status
 
-To test read/write testled.c can be used, to compile :
-make test
-then launch the binary :
->./testled led
+  Sysfs is created at /sys/fpgaled/status, to print the led status:
+  >cat /sys/fpgaled/status
+  To switch the status :
+  >echo 1 > /sys/fpgaled/status
+  
+* interruption
 
-Sysfs is created at /sys/fpgaled/status, to print the led status:
->cat /sys/fpgaled/status
-To switch the status :
->echo 1 > /sys/fpgaled/status
+  Led value is toggled on interruption, to use it, apf9328.c has to
+  be modified with line (buildroot/build_arm/linux-2.6.23.1/arch/arm/mach-imx/apf9328.c) :
+
+#ifdef CONFIG_CAN_MCP251X
+    set_irq_type( IRQ_GPIOC(CAN_MPC251X_INT_GPIOC), IRQF_TRIGGER_FALLING );
+#endif // CONFIG_CAN_MCP251X
+#   define FPGA_INT_GPIOA 1
+    set_irq_type(IRQ_GPIOA(FPGA_INT_GPIOA),IRQF_TRIGGER_RISING);
+  At the end of the file.

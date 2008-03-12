@@ -1,9 +1,54 @@
-/* Driver for bus_led fpga IP
+/* led.c
+ * Driver for bus_led fpga IP
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * 4 march 2008
  */
 
 #include "led.h"
+
+/*********************************
+ * simple fpga read/write
+ *********************************/
+
+static ssize_t fpga_read(void * addr,u16 *data,struct led_dev *dev){
+  *data = ioread16(addr);/* read the led value */
+  //  PDEBUG( "read : value read : %x\n",*data);
+  return 2; 
+}
+
+static ssize_t fpga_write(void * addr,u16 *data,struct led_dev *dev){
+  ssize_t retval;
+
+  iowrite16(*data,addr);/* write the led value */
+  retval = 2;
+  return retval;
+}
+
+/**********************************
+ * irq management
+ * ********************************/
+
+static irqreturn_t fpga_interrupt(int irq,void *dev_id,struct pt_regs *reg){
+  struct led_dev *ldev = dev_id;
+  u16 data;
+
+  if(down_trylock(&ldev->sem))
+    return IRQ_HANDLED;
+
+  /* acknoledge irq */
+  data = 0x0001;
+  fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev);
+  /* read led value */
+  fpga_read(ldev->fpga_virtual_base_address,&data,ldev);
+  data = ((data&0x0001)==1)?data&0xfffe:data|0x0001;
+  fpga_write(ldev->fpga_virtual_base_address,&data,ldev);
+
+  up(&ldev->sem);
+  PDEBUG("time %ldticks\n",jiffies-ldev->previousint);
+  ldev->previousint = jiffies;
+  return IRQ_HANDLED;
+}
+
+
 
 /* *********************************
  * Sysfs operations
@@ -36,27 +81,23 @@ out:
 static ssize_t led_show_status(struct kobject *kobj,struct attribute *attr,char *buf){
   ssize_t ret_size = 0;
   struct led_dev *dev;
-  void * virt_addr;
   u16 data;
 
   dev = container_of(kobj,struct led_dev,kobj);
 
-  if(down_interruptible(&dev->sem)) /* take mutex */
+  if(down_interruptible(&dev->sem)){ /* take mutex */
+    printk(KERN_WARNING "led_show_status:can't take mutex\n");
     return -ERESTARTSYS;
-
-  virt_addr = ioremap(IMX_CS1_PHYS,1);/* translate hardware address to virtual */
-  if(virt_addr==NULL){
-    printk(KERN_WARNING "ioremap error\n");
-    return -EFAULT;
   }
-  data = ioread16(virt_addr);/* read the led value */
-  PDEBUG( "show : value read : %x\n",data);
 
-  iounmap(virt_addr);
+  if((ret_size=fpga_read(dev->fpga_virtual_base_address,&data,dev))<0)
+     goto out;
 
+  PDEBUG("data : %d\n",data);
   if(data&0x0001)ret_size = (ssize_t)sprintf(buf,"1\n");
   else ret_size = (ssize_t)sprintf(buf,"0\n");
 
+out:
   up(&dev->sem);
   return ret_size;
 }
@@ -64,8 +105,6 @@ static ssize_t led_show_status(struct kobject *kobj,struct attribute *attr,char 
 static ssize_t led_store_status(struct kobject *kobj,struct attribute *attr, 
                                 const char *buff, size_t size){
   struct led_dev *ldev = container_of(kobj,struct led_dev,kobj);
-  void * virt_addr;
-  ssize_t retval=0;
   u16 data;
 
   if(buff[0]=='1')
@@ -78,20 +117,10 @@ static ssize_t led_store_status(struct kobject *kobj,struct attribute *attr,
   if(down_interruptible(&ldev->sem))
     return -ERESTARTSYS;
 
-  virt_addr = ioremap(IMX_CS1_PHYS,1);/* translate hardware address to virtual */
-  if(virt_addr==NULL){
-    printk(KERN_WARNING "write : ioremap error\n");
-    retval = -EFAULT;
-    goto out;
-  }
-  iowrite16(data,virt_addr);/* write the led value */
-  iounmap(virt_addr);
-  PDEBUG( "write : Value wrote : %x\n",data);
+  size=fpga_write(ldev->fpga_virtual_base_address,&data,ldev);
 
   up(&ldev->sem);
   return size ;
-out:
-  return retval;
 }
 
 /***********************************
@@ -99,7 +128,6 @@ out:
  * *********************************/
 ssize_t led_read(struct file *fildes, char __user *buff, size_t count, loff_t *offp){
   struct led_dev *ldev = fildes->private_data;
-  void * virt_addr;
   u16 data=0;
   ssize_t retval = 0;
 
@@ -112,18 +140,8 @@ ssize_t led_read(struct file *fildes, char __user *buff, size_t count, loff_t *o
   if(*offp + count >= 1)                    /* Only one word can be read */
     count = 1 - *offp;
 
-  virt_addr = ioremap(IMX_CS1_PHYS,1);/* translate hardware address to virtual */
-  if(virt_addr==NULL){
-    printk(KERN_WARNING "ioremap error\n");
-    return -EFAULT;
-  }
-  PDEBUG("read : Virtual fpga adress : %lx\n",(long int)virt_addr);
-  PDEBUG("read : Real    fpga adress : %lx\n",(long int)IMX_CS1_PHYS);
-  //  rmb();                            
-  data = ioread16(virt_addr);/* read the led value */
-  PDEBUG( "read : value read : %x\n",data);
-
-  iounmap(virt_addr);
+  if((retval = fpga_read(ldev->fpga_virtual_base_address,&data,ldev))<0)
+    goto out;
 
   /* return data for user */
   if(copy_to_user(buff,&data,2)){
@@ -143,7 +161,6 @@ out:
 
 ssize_t led_write(struct file *fildes, const char __user *buff,size_t count, loff_t *offp){
   struct led_dev *ldev = fildes->private_data;
-  void * virt_addr;
   u16 data=0;
   ssize_t retval = 0;
 
@@ -157,28 +174,20 @@ ssize_t led_write(struct file *fildes, const char __user *buff,size_t count, lof
   if(count != 1)                    /* Only one word can be read */
     count = 1;
 
-  virt_addr = ioremap(IMX_CS1_PHYS,1);/* translate hardware address to virtual */
-  if(virt_addr==NULL){
-    printk(KERN_WARNING "write : ioremap error\n");
-    retval = -EFAULT;
-    goto out;
-  }
-  PDEBUG("write : Virtual fpga adress : %lx\n",(long int)virt_addr);
-  PDEBUG("write : Real    fpga adress : %lx\n",(long int)IMX_CS1_PHYS);
-  //  rmb();
   if(copy_from_user(&data,buff,1)){
     printk(KERN_WARNING "write : copy from user error\n");
     retval = -EFAULT;
     goto out;
   }
-  PDEBUG( "write : user buff value %d\n",(int)data);
-  iowrite16(data,virt_addr);/* write the led value */
-  iounmap(virt_addr);
-  PDEBUG( "write : Value wrote : %x\n",data);
-  retval = 1;
+  
+  if((retval=fpga_write(ldev->fpga_virtual_base_address,&data,ldev))<0){
+     goto out;
+  }
+
 out:
   up(&ldev->sem);
   return retval;
+
 }
 
 int led_open(struct inode *inode, struct file *filp){
@@ -202,7 +211,8 @@ int led_release(struct inode *inode, struct file *filp){
 static int __init led_init(void){
 
   int result;                 /* error return */
-  int led_major,led_minor;    
+  int led_major,led_minor;
+  u16 data;
 
   led_major = 253;
   led_minor = 0;
@@ -221,7 +231,7 @@ static int __init led_init(void){
   init_MUTEX(&sdev->sem);
 
   /* Get the major and minor device numbers */
-  PDEBUG("Get the major and minor device numbers");
+  PDEBUG("Get the major and minor device numbers\n");
   if(led_major){
     devno = MKDEV(led_major,led_minor);
     result = register_chrdev_region(devno, N_DEV,"led");
@@ -240,21 +250,37 @@ static int __init led_init(void){
   sdev->cdev.owner = THIS_MODULE;
 
   /* Add the device to the kernel, connecting cdev to major/minor number */
-  PDEBUG(" Add the device to the kernel, connecting cdev to major/minor number \n");
+  PDEBUG("Add the device to the kernel, connecting cdev to major/minor number \n");
   result = cdev_add(&sdev->cdev,devno,1);
   if(result < 0)printk(KERN_WARNING "LED: can't add cdev\n");
 
   /* Requested I/O memory */
   PDEBUG(" Requested I/O memory \n");
-  mem = request_mem_region(LED_BASE_ADDR,LED_LENGTH,"led");
+  mem = request_mem_region(IMX_CS1_PHYS,IMX_CS1_SIZE,"led");
   if(mem == NULL)
     printk(KERN_ERR "LED: Error memory allocation\n");
+  if((sdev->fpga_virtual_base_address = ioremap(IMX_CS1_PHYS,IMX_CS1_SIZE))==NULL){
+    printk(KERN_ERR "ioremap error\n");
+    goto error;
+  }
 
   /* initialyzing sysfs */
-  PDEBUG(" initialyzing sysfs");
+  PDEBUG(" initialyzing sysfs\n");
   if(unlikely(result = init_sysinterface(sdev)))
     goto error;
 
+  /* irq registering */
+  if(request_irq(IRQ_GPIOA(1),(irq_handler_t)fpga_interrupt,IRQF_SAMPLE_RANDOM,"fpga",sdev)<0){
+    printk(KERN_ERR "Can't request fpga irq\n");
+    goto error;
+  }
+  /* irq unmask */
+  data=1;
+  if((result=fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_MASK,&data,sdev))<0)
+    goto error;
+
+  sdev->previousint = jiffies;
+  /* OK module inserted ! */
   printk(KERN_INFO "Led module insered\n");
   return 0;
 
@@ -269,6 +295,10 @@ static void __exit led_exit(void){
 }
 
 static void free_all(void){
+  
+  /* free irq*/
+  free_irq(IRQ_GPIOA(1),sdev);
+
   /* unregister kobj */
   kobject_unregister(&sdev->kobj);
 
@@ -279,7 +309,7 @@ static void free_all(void){
   kfree(sdev);
 
   /* Release I/O memories */
-  release_mem_region(LED_BASE_ADDR,LED_LENGTH);
+  release_mem_region(IMX_CS1_PHYS,IMX_CS1_SIZE);
 
   /* free major and minor number */
   unregister_chrdev_region(devno,N_DEV);

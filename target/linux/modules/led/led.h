@@ -1,6 +1,12 @@
-/* Driver for bus_led IP
+/* led.h
+ * Driver for bus_led IP
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * 4 march 2008
+ * ----------------
+ *  12 march 2008
+ *  switching led on interruption
+ * ----------------
+ *  4 march 2008
+ *  initial version
  */
 
 
@@ -37,6 +43,13 @@
 
 /* hardware addresses */
 #include <asm/hardware.h>
+
+/* interruptions */
+#include <linux/interrupt.h>
+#include <asm/irq.h>
+
+/* measure time */
+#include <linux/jiffies.h>
 #endif
 
 /* for debugging messages*/
@@ -55,16 +68,21 @@
 # define PDEBUG(fmt,args...) /* no debbuging message */
 #endif
 
+#define FPGA_IRQ_MASK   4
+#define FPGA_IRQ_PEND   2
+#define FPGA_IRQ_ACK    2
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com> - ARMadeus Systems");
 MODULE_DESCRIPTION("Led device driver");
 
-/* cdev struct */
+/* main device structure */
 struct led_dev{
   struct cdev cdev;     /* Char device structure */
   struct semaphore sem; /* Mutex */
-  struct kobject kobj;
+  struct kobject kobj;  /* kobject for sysfs entry */
+  void * fpga_virtual_base_address;  /* fpga register base address*/
+  unsigned long previousint;         /* last interruption time */
 };
 
 static void kobj_release(struct kobject *);
@@ -121,5 +139,9 @@ struct kobj_type kobjtype = {
   .sysfs_ops = &led_status_fs_ops,
 };
 
+static irqreturn_t  fpga_interrupt(int irq,void *stuff,struct pt_regs *reg);
 
 static void free_all(void);
+
+static ssize_t fpga_read(void * addr, u16 *data , struct led_dev *dev);
+static ssize_t fpga_write(void * addr, u16 *data, struct led_dev *dev);
