@@ -8,3 +8,14 @@
  
  # This must be last
  source "target/generic/Config.in"
+--- buildrootref/Makefile	2007-10-27 09:15:37.000000000 +0200
++++ buildroot/Makefile	2008-03-11 12:17:43.000000000 +0100
+@@ -328,7 +328,7 @@ _source-check:
+ #
+ #############################################################
+ clean: $(TARGETS_CLEAN)
+-	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
++	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE) $(PROJECT_BUILD_DIR)/.root
+ 
+ dirclean: $(TARGETS_DIRCLEAN)
+ 	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
