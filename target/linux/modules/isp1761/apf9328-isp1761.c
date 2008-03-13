@@ -33,9 +33,9 @@
 #define CFG_CS3_WRITE_PROTECT		0	/* 1 : write access prohibited  */
 #define CFG_CS3_EB_SIGNAL_CONTROL_WRITE	1	/* 1 when EB is used as write signal*/
 
-#define CFG_CS3_READ_CYC_LGTH		95	/* ns */
+#define CFG_CS3_READ_CYC_LGTH		105	/* ns */
 #define CFG_CS3_OE_ASSERT_DLY	35		/* ns */
-#define CFG_CS3_OE_NEG_DLY		30	/* ns */
+#define CFG_CS3_OE_NEG_DLY		35	/* ns */
 
 #define CFG_CS3_CS_NEG_LGTH 	30	/* max 30 ns CS HIGH to CS LOW at 100MHz*/
 #define CFG_CS3_XTRA_DEAD_CYC	0	/* ns from CS HIGH to tristate bus */
