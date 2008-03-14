@@ -37,10 +37,10 @@ static irqreturn_t fpga_interrupt(int irq,void *dev_id,struct pt_regs *reg){
   /* acknoledge irq */
   data = 0x0001;
   fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev);
-  /* read led value */
-  fpga_read(ldev->fpga_virtual_base_address,&data,ldev);
-  data = ((data&0x0001)==1)?data&0xfffe:data|0x0001;
-  fpga_write(ldev->fpga_virtual_base_address,&data,ldev);
+  /* read button value */
+  fpga_read(ldev->fpga_virtual_base_address + FPGA_BUTTON,&data,ldev);
+  data = ((data&0x0001)==1)?0x0001:0x0000;
+  fpga_write(ldev->fpga_virtual_base_address + FPGA_LED,&data,ldev);
 
   up(&ldev->sem);
   PDEBUG("time %ldticks\n",jiffies-ldev->previousint);
@@ -90,7 +90,7 @@ static ssize_t led_show_status(struct kobject *kobj,struct attribute *attr,char 
     return -ERESTARTSYS;
   }
 
-  if((ret_size=fpga_read(dev->fpga_virtual_base_address,&data,dev))<0)
+  if((ret_size=fpga_read(dev->fpga_virtual_base_address + FPGA_LED,&data,dev))<0)
      goto out;
 
   PDEBUG("data : %d\n",data);
@@ -117,7 +117,7 @@ static ssize_t led_store_status(struct kobject *kobj,struct attribute *attr,
   if(down_interruptible(&ldev->sem))
     return -ERESTARTSYS;
 
-  size=fpga_write(ldev->fpga_virtual_base_address,&data,ldev);
+  size=fpga_write(ldev->fpga_virtual_base_address + FPGA_LED,&data,ldev);
 
   up(&ldev->sem);
   return size ;
@@ -140,7 +140,7 @@ ssize_t led_read(struct file *fildes, char __user *buff, size_t count, loff_t *o
   if(*offp + count >= 1)                    /* Only one word can be read */
     count = 1 - *offp;
 
-  if((retval = fpga_read(ldev->fpga_virtual_base_address,&data,ldev))<0)
+  if((retval = fpga_read(ldev->fpga_virtual_base_address + FPGA_LED,&data,ldev))<0)
     goto out;
 
   /* return data for user */
@@ -180,7 +180,7 @@ ssize_t led_write(struct file *fildes, const char __user *buff,size_t count, lof
     goto out;
   }
   
-  if((retval=fpga_write(ldev->fpga_virtual_base_address,&data,ldev))<0){
+  if((retval=fpga_write(ldev->fpga_virtual_base_address + FPGA_LED,&data,ldev))<0){
      goto out;
   }
 
@@ -274,9 +274,17 @@ static int __init led_init(void){
     printk(KERN_ERR "Can't request fpga irq\n");
     goto error;
   }
+  /* irq ack */
+  data=1;
+  if((result=fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,sdev))<0)
+    goto error;
   /* irq unmask */
   data=1;
   if((result=fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_MASK,&data,sdev))<0)
+    goto error;
+  /* initialize led value */
+  data=1;
+  if((result=fpga_write(sdev->fpga_virtual_base_address + FPGA_LED,&data,sdev))<0)
     goto error;
 
   sdev->previousint = jiffies;

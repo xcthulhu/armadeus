@@ -68,7 +68,9 @@
 # define PDEBUG(fmt,args...) /* no debbuging message */
 #endif
 
-#define FPGA_IRQ_MASK   4
+#define FPGA_BUTTON     8
+#define FPGA_LED        4
+#define FPGA_IRQ_MASK   0
 #define FPGA_IRQ_PEND   2
 #define FPGA_IRQ_ACK    2
 
