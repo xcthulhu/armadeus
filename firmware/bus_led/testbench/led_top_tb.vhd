@@ -13,8 +13,13 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
 use ieee.std_logic_arith.all;
-use work.apf_test_pkg.ALL;
 
+library SIMPRIM;
+use SIMPRIM.VCOMPONENTS.ALL;
+use SIMPRIM.VPACKAGE.ALL;
+
+use work.apf_test_pkg.ALL;
+use simprim.all;
 ----------------------------------------------------------------------------------
 Entity led_top_tb is 
 ----------------------------------------------------------------------------------
@@ -50,8 +55,21 @@ Architecture RTL of led_top_tb is
 	 clk       : in std_logic ;
 	 LED          : out std_logic );
 	end component bus_led_top;
-
 begin
+
+	connect_bus_led : bus_led_top
+	port map(
+				imx_data       => imx_data,
+				imx_data0_test => imx_data0_test,
+				imx_addr1_test => imx_addr1_test,
+				imx_addr      => imx_addr,
+				imx_cs_n        => imx_cs_n,
+				imx_eb3_n        => imx_eb3_n,
+				imx_oe_n        => imx_oe_n,
+				clk       => clk,
+				LED          => LED);
+
+
 	-- Test stimulus
 	stimulus : process
 		variable value : std_logic_vector (15 downto 0);
@@ -72,6 +90,7 @@ begin
 						clk,imx_cs_n,imx_oe_n,
 						imx_eb3_n,imx_addr(12 downto 1),imx_data);
 			assert value = conv_std_logic_vector(i,16) report "error reading imx_data" severity error;
+			assert false report "faux" severity error;
 		end loop;
 
 		assert false report "End of test" severity error;
@@ -86,19 +105,4 @@ begin
 		wait for HALF_PERIODE;
 	end process Clockp;
 
-	connect_bus_led : bus_led_top
-	port map(
-				imx_data       => imx_data,
-				imx_data0_test => imx_data0_test,
-				imx_addr1_test => imx_addr1_test,
-				imx_addr      => imx_addr,
-				imx_cs_n        => imx_cs_n,
-				imx_eb3_n        => imx_eb3_n,
-				imx_oe_n        => imx_oe_n,
-				clk       => clk,
-				LED          => LED);
-
---		Rst_n   => Rst_n);
-
 end architecture RTL;
-

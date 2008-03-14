@@ -3,11 +3,13 @@ NET "clk"    LOC = "P55"  | IOSTANDARD = LVCMOS33 ;
 NET "clk" TNM_NET = "clk";
 TIMESPEC "TS_clk" = PERIOD "clk" 10.42 ns HIGH 50 %;
 
-# IMX control
+# IMX controls
 NET "imx_cs_n"      LOC = "P59"  | IOSTANDARD = LVCMOS33; 
 NET "imx_eb3_n"  		LOC = "P60"  | IOSTANDARD = LVCMOS33; 
 NET "imx_oe_n"  		LOC = "P63"  | IOSTANDARD = LVCMOS33; 
 
+# IMX interruption
+NET "imx_irq"				LOC = "P68"  | IOSTANDARD = LVCMOS33;
 
 # IMX address bus
 NET "imx_addr<1>"   LOC = "P23"  | IOSTANDARD = LVCMOS33;  
@@ -46,9 +48,11 @@ NET "imx_data<15>"  LOC = "P20"  | IOSTANDARD = LVCMOS33;
 ###############################################
 
 # led output
-NET "LED"  		LOC = "P116"  | IOSTANDARD = LVCMOS33 ; 
+NET "LED"  		LOC = "P116"  | IOSTANDARD = LVCMOS33 ;
+# Button input
+NET "button"  		LOC = "P102"  | IOSTANDARD = LVCMOS33 ; 
 
 # Test (X10 on devfull) connection
-NET "imx_data0_test" LOC = "P102" | IOSTANDARD = LVCMOS33 ;  
-NET "imx_addr1_test" LOC = "P97" | IOSTANDARD = LVCMOS33 ;  
+#NET "imx_data0_test" LOC = "P102" | IOSTANDARD = LVCMOS33 ;  
+#NET "imx_addr1_test" LOC = "P97" | IOSTANDARD = LVCMOS33 ;  
 
