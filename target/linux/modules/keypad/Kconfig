@@ -2,9 +2,9 @@
 
 #
 config ARMADEUS_KEYPAD_DRIVER
-        boolean "Armadeus keypad driver"
+        tristate "Armadeus keypad driver"
         default n
         depends on ARMADEUS_DRIVERS
         ---help---
-	  GPIO can be used to control a matrix keypad with this driver
+	  GPIO pins can be used to control a matrix keypad with this driver
 
