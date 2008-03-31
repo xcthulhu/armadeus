@@ -1,0 +1,217 @@
+--- linux-2.6.24.org/arch/arm/mach-imx/apf9328.c	2008-02-02 19:10:54.000000000 +0100
++++ linux-2.6.24.mod/arch/arm/mach-imx/apf9328.c	2008-02-21 21:59:54.000000000 +0100
+@@ -41,6 +41,9 @@
+ #include <asm/arch/spi_imx.h>
+ #include <asm/arch/imx-regs.h> // imx_gpio_mode()
+ 
++#include <linux/spi/mmc_spi.h>
++#include <linux/mmc/host.h>
++
+ #ifdef CONFIG_DM9000
+ #include <linux/dm9000.h>
+ #endif // CONFIG_DM9000
+@@ -62,6 +65,10 @@
+ #ifdef CONFIG_IMX_BACKLIGHT_MODULE
+ #define CONFIG_IMX_BACKLIGHT 1
+ #endif
++#ifdef CONFIG_LIBERTAS_SDIO_MODULE
++#undef CONFIG_SENSORS_MAX1027 // Otherwise /sys conflict...
++#define CONFIG_LIBERTAS_SDIO 1
++#endif
+ 
+ // --- ETHERNET RESSOURCE ---
+ #ifdef CONFIG_DM9000
+@@ -195,7 +202,7 @@
+ 
+ static struct spi_imx_master imx_spi1_master_info = {
+ 	.num_chipselect	= 1,
+-	.enable_dma=0,
++	.enable_dma=0, // 1?
+ };
+ 
+ static struct platform_device imx_spi1 = {
+@@ -264,6 +271,67 @@
+ 
+ #endif // CONFIG_SENSORS_MAX1027
+ 
++/////////////////////////////////////////////////////////////
++
++#define LIBERTAS_CS_GPIOC 5
++
++static void libertas_cs(u32 command)
++{
++    if( command == SPI_CS_DEASSERT ) {
++        DR(2) |= 1 << LIBERTAS_CS_GPIOC;
++    } else {
++        DR(2) &= ~(1 << LIBERTAS_CS_GPIOC);
++    }
++}
++
++static struct spi_imx_chip libertas_hw = {
++	.cs_control		= libertas_cs,
++};
++
++static int mmc_slot_init(struct device *dev,
++                irqreturn_t (*handler)(int, void *),
++                void *data)
++{
++        struct spi_device *spi = to_spi_device(dev);
++
++	printk("mmc_slot_init\n");
++        return request_irq(spi->irq, handler,
++                          IRQF_TRIGGER_FALLING
++                        | IRQF_SAMPLE_RANDOM,
++                        spi->dev.bus_id, data);
++}
++
++static void mmc_slot_exit(struct device *dev, void *data)
++{
++        struct spi_device *spi = to_spi_device(dev);
++
++        free_irq(spi->irq, data);
++	printk("mmc_slot_exit\n");
++}
++
++static struct mmc_spi_platform_data libertas_mmc_pdata = {
++        .init           = mmc_slot_init,
++        .exit           = mmc_slot_exit,
++        .detect_delay   = 700,  /* msecs */
++	.ocr_mask       = MMC_VDD_32_33 | MMC_VDD_33_34,
++};
++
++static void libertas_init_gpio(void)
++{
++    // SSI0_RXDAT (PortC 5) is used as chip select but in GPIO mode
++    DR(2) |= 1 << LIBERTAS_CS_GPIOC; // Initializes it High
++    imx_gpio_mode( GPIO_PORTC | LIBERTAS_CS_GPIOC | GPIO_OUT | GPIO_GIUS | GPIO_DR );
++    //FMCR &= ~( 1 << LIBERTAS_CS_GPIOC);
++
++    // PortC 13 is used as  interrupt
++    imx_gpio_mode( GPIO_PORTC | 13 | GPIO_IN | GPIO_GIUS );
++
++    GIUS(2) &= ~(1<<14 | 1<<16 | 1<< 17); // Set SPI primary functions
++    printk("Libertas GPIOs configured\n");
++}
++
++/////////////////////////////////////////////////////////////
++
+ #ifdef CONFIG_SPI_TSC2102
+ #define TSC2102_CS_GPIOB 17
+ static void tsc2102_init_gpio(void)
+@@ -287,8 +355,10 @@
+     FMCR &= ~(SSI_RXFS_SEL);
+     imx_gpio_mode( PC4_PF_SSI_RXCLK );
+     FMCR &= ~(SSI_RXCLK_SEL);
++#ifndef (CONFIG_LIBERTAS_SDIO)
+     imx_gpio_mode( PC5_PF_SSI_RXDAT );
+-    FMCR &= ~(SSI_RXDAT_SEL);
++    FMCR &= ~(SSI_RXDAT_SEL); // used as CS for libertas
++#endif // ~(CONFIG_LIBERTAS_SDIO)
+     imx_gpio_mode( PC6_PF_SSI_TXDAT );
+     imx_gpio_mode( PC7_PF_SSI_TXFS  );
+     FMCR &= ~(SSI_TXFS_SEL);
+@@ -398,6 +468,18 @@
+  .platform_data  = &apf9328_mcp251x_config,
+  },
+ #endif // CONFIG_CAN_MCP251X
++#ifdef CONFIG_LIBERTAS_SDIO
++{
++	.modalias = "mmc_spi",
++	.bus_num = 1,
++	.controller_data = &libertas_hw,
++	.chip_select = 0,
++	.mode = 0,
++	.max_speed_hz = 1000000,
++	.platform_data = &libertas_mmc_pdata,
++	//.irq            = IRQ_GPIOC(13),
++},
++#endif // CONFIG_LIBERTAS_SDIO
+ };
+ 
+ // --- LCD RESSOURCE ---
+@@ -465,9 +547,12 @@
+ #ifdef CONFIG_CAN_MCP251X
+     mcp251X_init_gpio();
+ #endif // CONFIG_CAN_MCP251X
++#ifdef CONFIG_LIBERTAS_SDIO
++    libertas_init_gpio();
++#endif // CONFIG_LIBERTAS_SDIO
+ 
+     platform_add_devices(devices, ARRAY_SIZE(devices));
+-#if defined (CONFIG_SENSORS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++#if defined (CONFIG_SENSORS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X) || defined (CONFIG_LIBERTAS_SDIO)
+     spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
+ #endif 
+ 
+--- linux-2.6.24.org/drivers/net/wireless/libertas/if_sdio.c	2007-12-11 04:48:43.000000000 +0100
++++ linux-2.6.24.mod/drivers/net/wireless/libertas/if_sdio.c	2008-02-25 22:22:48.000000000 +0100
+@@ -417,7 +417,7 @@
+ 
+ 	ret = request_firmware(&fw, card->helper, &card->func->dev);
+ 	if (ret) {
+-		lbs_pr_err("can't load helper firmware\n");
++		lbs_pr_err("can't load helper firmware: %s \n", card->helper);
+ 		goto out;
+ 	}
+ 
+--- linux-2.6.24.org/drivers/net/wireless/libertas/main.c	2007-12-11 04:48:43.000000000 +0100
++++ linux-2.6.24.mod/drivers/net/wireless/libertas/main.c	2008-01-26 22:34:58.000000000 +0100
+@@ -1514,6 +1514,7 @@
+ {
+ 	lbs_deb_enter(LBS_DEB_MAIN);
+ 	libertas_debugfs_init();
++	printk("libertas_init_module 0x%x\n", libertas_debug);
+ 	lbs_deb_leave(LBS_DEB_MAIN);
+ 	return 0;
+ }
+--- linux-2.6.24.org/drivers/spi/spi_imx.c	2007-12-11 04:48:43.000000000 +0100
++++ linux-2.6.24.mod/drivers/spi/spi_imx.c	2008-02-15 23:11:10.000000000 +0100
+@@ -17,6 +17,7 @@
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
++//#define DEBUG 1
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -305,6 +306,7 @@
+ 
+ static void null_cs_control(u32 command)
+ {
++	printk("#############\n");
+ }
+ 
+ static inline u32 data_to_write(struct driver_data *drv_data)
+@@ -1176,6 +1178,7 @@
+ 	int first_setup = 0;
+ 	u32 tmp;
+ 	int status = 0;
++	int keep_cs_high = 0;
+ 
+ 	if (spi->mode & ~MODEBITS) {
+ 		dev_dbg(&spi->dev, "setup: unsupported mode bits %x\n",
+@@ -1221,6 +1224,7 @@
+ 	}
+ 
+ 	/* Now set controller state based on controller data */
++	/* SPI dma driven */
+ 
+ 	if (first_setup) {
+ 		/* SPI loopback */
+@@ -1257,6 +1261,7 @@
+ 	if (tmp & SPI_CS_HIGH) {
+ 		u32_EDIT(chip->control,
+ 				SPI_CONTROL_SSPOL, SPI_CONTROL_SSPOL_ACT_HIGH);
++		keep_cs_high = 1;
+ 	}
+ 	switch (tmp & SPI_MODE_3) {
+ 	case SPI_MODE_0:
+@@ -1322,7 +1327,7 @@
+ 	}
+ 
+ 	/* SPI chip-select management */
+-	if (chip_info->cs_control)
++	if (chip_info->cs_control && !keep_cs_high)
+ 		chip->cs_control = chip_info->cs_control;
+ 	else
+ 		chip->cs_control = null_cs_control;

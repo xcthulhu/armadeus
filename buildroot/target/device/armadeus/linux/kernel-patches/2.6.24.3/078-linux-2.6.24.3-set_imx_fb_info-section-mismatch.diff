@@ -1,0 +1,11 @@
+--- linux-2.6.23.1.org/arch/arm/mach-imx/generic.c	2007-11-17 22:32:24.000000000 +0100
++++ linux-2.6.23.1/arch/arm/mach-imx/generic.c	2007-11-17 22:34:06.000000000 +0100
+@@ -335,7 +335,7 @@
+ 
+ static struct imxfb_mach_info imx_fb_info;
+ 
+-void __init set_imx_fb_info(struct imxfb_mach_info *hard_imx_fb_info)
++void set_imx_fb_info(struct imxfb_mach_info *hard_imx_fb_info)
+ {
+ 	memcpy(&imx_fb_info,hard_imx_fb_info,sizeof(struct imxfb_mach_info));
+ }
