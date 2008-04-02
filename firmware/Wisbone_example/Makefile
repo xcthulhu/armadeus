@@ -67,6 +67,7 @@ OBJS_SIMFILES   = $(patsubst %.vhd, %.o, $(notdir $(SIMFILES)) )
 
 messages : bit
 	$(BRIEF) $(BIN)/$(PROJECT)	
+	@echo bitstream : $(PROJECT).bit
 
 
 bit : $(BIN)/$(PROJECT).ncd trace
