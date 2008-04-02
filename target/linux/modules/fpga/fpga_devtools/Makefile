@@ -15,7 +15,6 @@ REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
 
 ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
 
-
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_FPGA_TOOL_DRIVER)	+= fpgaloader.o

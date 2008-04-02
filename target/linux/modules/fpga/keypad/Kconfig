@@ -4,7 +4,7 @@
 config ARMADEUS_KEYPAD_DRIVER
         tristate "Armadeus keypad driver"
         default n
-        depends on ARMADEUS_DRIVERS
+        depends on ARMADEUS_FPGA_DRIVERS
         ---help---
 	  GPIO pins can be used to control a matrix keypad with this driver
 

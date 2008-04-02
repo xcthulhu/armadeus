@@ -6,14 +6,9 @@ menu "Armadeus specific drivers"
 
 #
 config ARMADEUS_DRIVERS
-	boolean
-	default n
-
-config ARMADEUS_DRIVERS
 	boolean "Support for specific Armadeus drivers"
 	default n
 	---help---
-	  
 	  
 source "drivers/armadeus/generic/Kconfig"
 
@@ -22,11 +17,7 @@ source "drivers/armadeus/gpio/Kconfig"
 comment "FPGA related"
 	depends on ARMADEUS_DRIVERS
 
-source "drivers/armadeus/fpga_devtools/Kconfig"
-
-source "drivers/armadeus/keypad/Kconfig"
-
-source "drivers/armadeus/ps2keyboard/Kconfig"
+source "drivers/armadeus/fpga/Kconfig"
 
 comment "Handheld related"
 	depends on ARMADEUS_DRIVERS
@@ -39,7 +30,6 @@ comment "Communication bus related:"
 	depends on ARMADEUS_DRIVERS
 
 source "drivers/armadeus/isp1761/Kconfig"
-
 
 endmenu
 
