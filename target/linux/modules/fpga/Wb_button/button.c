@@ -1,6 +1,24 @@
-/* button.c
- * Driver for bus_led fpga IP
+/*
+ ***********************************************************************
+ *
+ * (c) Copyright 2007    Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
+ * Driver for Wb_button IP
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ **********************************************************************
  */
 
 #include "button.h"
@@ -33,11 +51,15 @@ static irqreturn_t fpga_interrupt(int irq,void *dev_id,struct pt_regs *reg){
   struct button_dev *ldev = dev_id;
   u16 data;
 
-  /* wake up reading process */
-  if(ldev->reading)up(&ldev->sem);
-  /* acknowledge irq_mngr */
-  data=1;
-  BUG_ON((button_fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev))<0);
+  button_fpga_read(ldev->fpga_virtual_base_address + FPGA_IRQ_PEND,&data,ldev);
+
+  if(data&WB_BUTTON_IRQ){
+      /* wake up reading process */
+      if(ldev->reading)up(&ldev->sem);
+      /* acknowledge irq_mngr */
+      button_fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev);
+  }
+  PDEBUG("Interrupt raised %x\n",data);
 
   return IRQ_HANDLED;
 }
@@ -114,6 +136,10 @@ static int __init button_init(void){
     return -ENOMEM;
   }
 
+  /* initiate mutex locked */
+  sdev->reading = 0;
+  init_MUTEX_LOCKED(&sdev->sem);
+
   /* Get the major and minor device numbers */
   PDEBUG("Get the major and minor device numbers\n");
   if(button_major){
@@ -141,23 +167,22 @@ static int __init button_init(void){
   /* Requested I/O memory */
   sdev->fpga_virtual_base_address = (void*)IMX_CS1_VIRT;
 
-  /* irq registering */
-  if(request_irq(IRQ_GPIOA(1),(irq_handler_t)fpga_interrupt,IRQF_SHARED,FPGA_IRQ_NAME,sdev)<0){
-    printk(KERN_ERR "Can't request fpga irq\n");
-    goto error;
-  }
-  /* irq acknowledge */
-  data=1;
-  if((result=button_fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,sdev))<0)
-    goto error;
   /* irq unmask */
   data=1;
   if((result=button_fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_MASK,&data,sdev))<0)
     goto error;
 
-  /* initiate mutex locked */
-  sdev->reading = 0;
-  init_MUTEX_LOCKED(&sdev->sem);
+  /* irq acknowledge */
+  data=1;
+  if((result=button_fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,sdev))<0)
+    goto error;
+
+  /* irq registering */
+  printk(KERN_INFO "button: fpga irq shared gpioa 1\n");
+  if(request_irq(IRQ_GPIOA(1),(irq_handler_t)fpga_interrupt,IRQF_SHARED,FPGA_IRQ_NAME,sdev)<0){
+    printk(KERN_ERR "Can't request fpga irq\n");
+    goto error;
+  }
 
 
   /* OK module inserted ! */

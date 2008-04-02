@@ -1,7 +1,24 @@
-/* button.h
- * Driver for Wb_button IP
+/*
+ ***********************************************************************
+ *
+ * (c) Copyright 2007    Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * 28 mars 2008
+ * Driver for Wb_button IP
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ **********************************************************************
  */
 
 
@@ -46,13 +63,13 @@
 #endif
 
 /* for debugging messages*/
-#define BUTTON_DEBUG
+/*#define BUTTON_DEBUG*/
 
 #undef PDEBUG
 #ifdef BUTTON_DEBUG
 # ifdef __KERNEL__
     /* for kernel spage */
-#   define PDEBUG(fmt,args...) printk(KERN_DEBUG "button : " fmt, ##args)
+#   define PDEBUG(fmt,args...) printk(KERN_INFO "button : " fmt, ##args)
 # else
     /* for user space */
 #   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
