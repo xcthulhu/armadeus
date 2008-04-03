@@ -1,16 +1,24 @@
 
 ifeq ($(TARGET),)
-INSTALL_DIR="../../../buildroot/build_arm_nofpu/root/usr/bin/"
-CC=arm-linux-gcc
-DEFINES=TARGET
-CFLAGS:=`sh ../../../buildroot/build_arm_nofpu/SDL-1.2.11/sdl-config --cflags`
-LIBS=`sh ../../../buildroot/build_arm_nofpu/SDL-1.2.11/sdl-config --libs`
+	BUILDROOT_DIR:=../../../buildroot/
+	BUILD_DIR_EXT:=$(shell ls $(BUILDROOT_DIR) | grep -e "^build_arm*")
+	BUILD_DIR:=$(BUILDROOT_DIR)/$(BUILD_DIR_EXT)
+
+	SDL_DIR:=$(BUILD_DIR)/SDL-1.2.11/
+	STAGING_DIR:=$(BUILD_DIR)/staging_dir/
+	ROOT_DIR:=$(BUILDROOT_DIR)/project_$(BUILD_DIR_EXT)/armadeus/root/
+        INSTALL_DIR:=$(ROOT_DIR)/usr/bin/
+
+	CC:=$(STAGING_DIR)/bin/arm-linux-gcc
+	DEFINES="TARGET"
+	CFLAGS:=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags)
+	LIBS:=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --libs)
 else
-INSTALL_DIR="."
-CFLAGS:=`/usr/bin/sdl-config --cflags`
-LIBS=`/usr/bin/sdl-config --libs`
-CC=gcc
-DEFINES=HOST
+	INSTALL_DIR="."
+	CFLAGS=`/usr/bin/sdl-config --cflags`
+	LIBS=`/usr/bin/sdl-config --libs`
+	CC=gcc
+	DEFINES="HOST"
 endif
 
 CFLAGS+="-g"
@@ -35,11 +43,8 @@ buzzer.o: buzzer.c
 armanoid: armanoid.o collide.o buzzer.o
 	$(CC)  $(LIBS) -o $@ $^
 
-install: armanoid
-	cp armanoid  $INSTALL_DIR
-	cp ball.bmp  $INSTALL_DIR
-	cp block.bmp $INSTALL_DIR
-	cp bar.bmp   $INSTALL_DIR
+install: armanoid ball.bmp block.bmp bar.bmp
+	cp $^  $(INSTALL_DIR)
 
 clean: 
 	rm -rf armanoid
