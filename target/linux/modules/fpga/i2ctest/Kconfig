@@ -1,0 +1,8 @@
+#
+#
+
+config ARMADEUS_I2C_OCORE_IRQMNG
+        tristate "Driver for testing wishbone i2c-ocore-irq_mng"
+        default n
+        depends on ARMADEUS_FPGA_DRIVERS
+        ---help---

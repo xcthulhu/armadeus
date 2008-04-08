@@ -1,0 +1,13 @@
+This is a really simple driver to test reading and writing
+a value on i2c bus throught ocore-irq_mng FPGA IP.
+
+To use it load i2ctest.ko module with insmod
+>insmod i2ctest.ko
+
+Then read /proc/i2c_test with cat
+> cat /proc/i2c_test
+
+This will send write command on component
+
+To read the value you wrote, read /proc/i2c_test2
+> cat /proc/i2c_test2

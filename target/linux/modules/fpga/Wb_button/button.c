@@ -52,16 +52,17 @@ static irqreturn_t fpga_interrupt(int irq,void *dev_id,struct pt_regs *reg){
   u16 data;
 
   button_fpga_read(ldev->fpga_virtual_base_address + FPGA_IRQ_PEND,&data,ldev);
-
-  if(data&WB_BUTTON_IRQ){
-      /* wake up reading process */
-      if(ldev->reading)up(&ldev->sem);
-      /* acknowledge irq_mngr */
-      button_fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev);
-  }
   PDEBUG("Interrupt raised %x\n",data);
 
-  return IRQ_HANDLED;
+  if(data&WB_BUTTON_IRQ){
+    /* wake up reading process */
+    if(ldev->reading)up(&ldev->sem);
+    /* acknowledge irq_mngr */
+    button_fpga_write(ldev->fpga_virtual_base_address + FPGA_IRQ_ACK,&data,ldev);
+    return IRQ_HANDLED;
+  }else
+    return IRQ_NONE;
+
 }
 
 /***********************************
@@ -168,7 +169,7 @@ static int __init button_init(void){
   sdev->fpga_virtual_base_address = (void*)IMX_CS1_VIRT;
 
   /* irq unmask */
-  data=1;
+  data=1 | ioread16(sdev->fpga_virtual_base_address + FPGA_IRQ_MASK);
   if((result=button_fpga_write(sdev->fpga_virtual_base_address + FPGA_IRQ_MASK,&data,sdev))<0)
     goto error;
 
@@ -179,7 +180,7 @@ static int __init button_init(void){
 
   /* irq registering */
   printk(KERN_INFO "button: fpga irq shared gpioa 1\n");
-  if(request_irq(IRQ_GPIOA(1),(irq_handler_t)fpga_interrupt,IRQF_SHARED,FPGA_IRQ_NAME,sdev)<0){
+  if(request_irq(IRQ_GPIOA(1),(irq_handler_t)fpga_interrupt,IRQF_SHARED,BUTTON_IRQ_NAME,sdev)<0){
     printk(KERN_ERR "Can't request fpga irq\n");
     goto error;
   }
@@ -203,7 +204,7 @@ static void __exit button_exit(void){
 
 static void free_all(void){
   struct button_dev *sdev = buttondev;
-  
+
   /* free irq*/
   free_irq(IRQ_GPIOA(1),sdev);
 

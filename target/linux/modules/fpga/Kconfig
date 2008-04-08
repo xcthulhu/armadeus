@@ -21,5 +21,9 @@ source "drivers/armadeus/fpga/Wb_led/Kconfig"
 
 source "drivers/armadeus/fpga/Wb_button/Kconfig"
 
+source "drivers/armadeus/fpga/i2ctest/Kconfig"
+
+source "drivers/armadeus/fpga/fpgaaccess/Kconfig"
+
 endmenu
 

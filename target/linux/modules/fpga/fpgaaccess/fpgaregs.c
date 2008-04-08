@@ -1,9 +1,7 @@
-
- * ***********************************************************************
-/* a program to write/read values on fpga address map
- * Fabien Marteau <fabien.marteau@armadeus.com>
+/************************************************************************
+ * a program to write/read values on fpga address map
  * 7 april 2008
- * fpgaaccess.h
+ * fpgaregs.c
  *
  * (c) Copyright 2008    Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
@@ -27,10 +25,6 @@
  **********************************************************************
  */
 
-
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,55 +35,60 @@
 /* as name said */
 #include <signal.h>
 
-/* sleep */
+/* sleep, write(), read() */
 #include <unistd.h>
 
-int fled;
+/* converting string */
+#include <string.h>
 
-void quit(int pouet){
-  close(fled);
-  exit(0);
-}
+int ffpga;
 
 int main(int argc, char *argv[])
 {
-  unsigned short i,j;
-
-  /* quit when Ctrl-C pressed */
-  signal(SIGINT, quit);
-
-  j=0;
+  unsigned short address;
+  unsigned short value;
+  int retval;
 
   printf( "Testing button driver\n" );
 
-  if(argc < 2){
-    perror("invalide arguments number\ntestled <button_filename>\n");
+  if((argc < 2) || (argc > 3)){
+    perror("invalid arguments number\nfpgaregs fpga_reg_add [value]\n");
     exit(EXIT_FAILURE);
   }
 
-  fled=open(argv[1],O_RDWR);
-  if(fled<0){
-    perror("can't open file\n");
+  ffpga=open("/dev/fpgaaccess",O_RDWR);
+  if(ffpga<0){
+    perror("can't open file /dev/fpgaaccess\n");
     exit(EXIT_FAILURE);
   }
 
-  while(1){
-    i = (i==0)?1:0;
-    fflush(stdout);
+  address = (unsigned char )strtol(argv[1], (char **)NULL, 16);
 
-    /* read value */
-    if(read(fled,&j,1)<0){
-      perror("read error\n");
-      exit(EXIT_FAILURE);
-    }
-    printf("Read %d\n",j);
+  if(address%2!=0){
+    perror("error address must be pair\n");
+    exit(EXIT_FAILURE);
+  }
+  
+  /* write value at address */
+  if(argc == 3){
+  value   = (unsigned char )strtol(argv[2], (char **)NULL, 16);
+  retval = pwrite(ffpga,(void *)&value,2,address);
+  if(retval<0){
+    perror("write error\n");
+    exit(EXIT_FAILURE);
+  }
+  printf("Wrote %04x at %08x\n",value,address+0x12000000);
 
-    if(lseek(fled,0,SEEK_SET)<0){
-      perror("lseek error\n");
-      exit(EXIT_FAILURE);
-    }
+  /* read address value */
+  }else{
+  retval = pread(ffpga,(void *)&value,2,address);
+  if(retval<0){
+    perror("Read error\n");
+    exit(EXIT_FAILURE);
+  }
+  printf("Read %04x at %08x\n",value,address+0x12000000);
   }
 
-  close(fled);
+  close(ffpga);
   exit(0);
 }

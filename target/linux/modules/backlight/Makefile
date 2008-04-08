@@ -20,7 +20,7 @@ else
 BASE_DIR="../../../../buildroot/"
 REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
       sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
-ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
+ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm/linux-$(REL)
 KDIR    := $(ARMADEUS_KERNEL_DIR)
 PWD	:= $(shell pwd)
 
