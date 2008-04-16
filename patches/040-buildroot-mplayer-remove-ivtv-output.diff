@@ -1,0 +1,10 @@
+--- buildroot.org/package/mplayer/mplayer.mk	2008-04-01 17:17:27.000000000 +0200
++++ buildroot/package/mplayer/mplayer.mk	2008-04-13 21:29:14.000000000 +0200
+@@ -45,6 +45,7 @@
+ 		$(MPLAYER_ENDIAN) \
+ 		--disable-mpdvdkit \
+ 		--disable-tv \
++		--disable-ivtv \
+ 		--enable-dynamic-plugins \
+ 	)
+ 	touch $@
