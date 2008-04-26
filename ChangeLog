@@ -1,6 +1,10 @@
 
                 ChangeLog file for Armadeus Project
 
+Changes to be released
+- [uClibc] undefine _POSIX_SPIN_LOCKS: still not yet implemented in uClibc 0.9.29
+             thanks to Creber 
+
 Changes in release 2.3 (11 February 2008)
 - [BUILDROOT] Change FTP server for buildroot and fakeroot files
 
