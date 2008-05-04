@@ -1082,7 +1082,7 @@
 +static void tsc2102_init_gpio(void)
 +{
 +    // Activate SPI2 port ----
-+    // PortB 19 is used as chip select (in GPIO mode)
++    // PortB 17 is used as chip select (in GPIO mode)
 +    DR(1) |= 1 << TSC2102_CS_GPIOB; // Initializes it High
 +    imx_gpio_mode( GPIO_PORTB | TSC2102_CS_GPIOB | GPIO_OUT | GPIO_GIUS | GPIO_DR );
 +    // Configure SPI2 outputs
