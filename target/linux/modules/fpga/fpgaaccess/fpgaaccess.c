@@ -32,17 +32,20 @@
 ssize_t fpgaaccess_read(struct file *fildes, char __user *buff,
                  size_t count, loff_t *offp){
   struct fpgaaccess_dev *sdev = fildes->private_data;
-  u16 data=0;
+  u32 data=0;
 
   if(*offp >= FPGA_SIZE || ((*offp)%2 != 0)){ /* offset must be pair */
     return 0;
   }
 
-  if(count != 2) /* only one word can be wrote (two bytes)*/
-    count = 2; 
+  if(count > 4) /* 32bits max*/
+    count = 4; 
 
-  data = ioread16(sdev->fpga_virtual_base_address + *offp);
-
+  if (count == 2)
+    data = ioread16(sdev->fpga_virtual_base_address + *offp);
+  else        
+    data = ioread32(sdev->fpga_virtual_base_address + *offp);
+    
  /* return data for user */
   if(copy_to_user(buff,&data,count)){
     printk(KERN_WARNING "read : copy to user data error\n");
@@ -54,21 +57,24 @@ ssize_t fpgaaccess_read(struct file *fildes, char __user *buff,
 ssize_t fpgaaccess_write(struct file *fildes, const char __user *
                   buff,size_t count, loff_t *offp){
   struct fpgaaccess_dev *sdev = fildes->private_data;
-  u16 data=0;
+  u32 data=0;
 
   if(*offp >= FPGA_SIZE || ((*offp)%2 != 0)){ /* offset must be pair */
     return 0;
   }
 
-  if(count != 2) /* only one word can be wrote (two bytes)*/
-    count = 2; 
+  if(count > 4) /* 32 bits max)*/
+    count = 4; 
 
   if(copy_from_user(&data,buff,count)){
     printk(KERN_WARNING "write : copy from user error\n");
     return -EFAULT;
   }
 
-  iowrite16(data,sdev->fpga_virtual_base_address + *offp); 
+  if (count == 2)
+    iowrite16(data,sdev->fpga_virtual_base_address + *offp);
+  else        
+    iowrite32(data,sdev->fpga_virtual_base_address + *offp); 
 
   return count;
 }
