@@ -41,18 +41,16 @@
 /* converting string */
 #include <string.h>
 
-int ffpga;
 
 int main(int argc, char *argv[])
 {
-  unsigned short address;
+  unsigned int address;
   unsigned short value;
-  int retval;
-
-  printf( "Testing button driver\n" );
+  int retval, error = 0;
+  int ffpga;
 
   if((argc < 2) || (argc > 3)){
-    perror("invalid arguments number\nfpgaregs fpga_reg_add [value]\n");
+    perror("invalid arguments number\nfpgaregs fpga_reg_add [value].\n Ex: fpgaregs 0x10 0x0008");
     exit(EXIT_FAILURE);
   }
 
@@ -62,33 +60,35 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  address = (unsigned char )strtol(argv[1], (char **)NULL, 16);
+  address = (unsigned int)strtol(argv[1], (char **)NULL, 16);
 
-  if(address%2!=0){
-    perror("error address must be pair\n");
-    exit(EXIT_FAILURE);
+  if(argc<2){
+    perror("invalid command line");
   }
-  
-  /* write value at address */
-  if(argc == 3){
-  value   = (unsigned char )strtol(argv[2], (char **)NULL, 16);
-  retval = pwrite(ffpga,(void *)&value,2,address);
-  if(retval<0){
-    perror("write error\n");
-    exit(EXIT_FAILURE);
+  else {    
+    /* write value at address */
+    if(argc == 3){ 
+      value   = strtol(argv[2], (char **)NULL, 16);
+      retval = pwrite(ffpga,(void *)&value,2,address);
+      if(retval<0){
+        perror("write error\n");
+        error = EXIT_FAILURE;
+      }
+      else
+        printf("Wrote %04x at %08x\n",value,address);
+        
+      /* read address value */
+    }else if(argc == 2){
+      retval = pread(ffpga,(void *)&value,2,address);
+      if(retval<0){
+        perror("Read error\n");
+        error = EXIT_FAILURE;
+      }
+      else
+        printf("Read %04x at %08x\n",value,address);
+    }
   }
-  printf("Wrote %04x at %08x\n",value,address+0x12000000);
-
-  /* read address value */
-  }else{
-  retval = pread(ffpga,(void *)&value,2,address);
-  if(retval<0){
-    perror("Read error\n");
-    exit(EXIT_FAILURE);
-  }
-  printf("Read %04x at %08x\n",value,address+0x12000000);
-  }
-
   close(ffpga);
-  exit(0);
+  exit(error);
 }
+

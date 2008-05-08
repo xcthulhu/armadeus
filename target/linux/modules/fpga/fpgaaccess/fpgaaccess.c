@@ -44,7 +44,7 @@ ssize_t fpgaaccess_read(struct file *fildes, char __user *buff,
   data = ioread16(sdev->fpga_virtual_base_address + *offp);
 
  /* return data for user */
-  if(copy_to_user(buff,&data,2)){
+  if(copy_to_user(buff,&data,count)){
     printk(KERN_WARNING "read : copy to user data error\n");
     return -EFAULT;
   }
@@ -63,14 +63,14 @@ ssize_t fpgaaccess_write(struct file *fildes, const char __user *
   if(count != 2) /* only one word can be wrote (two bytes)*/
     count = 2; 
 
-  if(copy_from_user(&data,buff,2)){
+  if(copy_from_user(&data,buff,count)){
     printk(KERN_WARNING "write : copy from user error\n");
     return -EFAULT;
   }
 
   iowrite16(data,sdev->fpga_virtual_base_address + *offp); 
 
-  return 2;
+  return count;
 }
 
 int fpgaaccess_open(struct inode *inode, struct file *filp){
@@ -92,7 +92,6 @@ int fpgaaccess_release(struct inode *inode, struct file *filp){
 static int __init fpgaaccess_init(void){
   int result;
   int fpgaaccess_major,fpgaaccess_minor;
-  u16 data;
   struct fpgaaccess_dev *sdev;
 
   fpgaaccess_major = 250;

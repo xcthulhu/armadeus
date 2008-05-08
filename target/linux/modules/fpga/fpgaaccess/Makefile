@@ -22,12 +22,9 @@ PWD	:= $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-	-cp fpgaaccess.ko /tftpboot/
 
 fpgaregs: fpgaregs.c
-	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc -Wall fpgaregs.c -o fpgaregs
-	chmod 755 fpgaregs
-	cp fpgaregs /tftpboot/
+	$(BASE_DIR)build_arm/staging_dir/bin/arm-linux-gcc -Wall fpgaregs.c -o fpgaregs
 
 clean:
 	rm -f *.*o \
