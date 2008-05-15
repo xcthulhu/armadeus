@@ -1,0 +1,20 @@
+--- fbgrab-1.0.org/Makefile	2008-05-15 14:30:23.000000000 +0200
++++ fbgrab-1.0/Makefile	2008-05-15 14:31:25.000000000 +0200
+@@ -4,13 +4,8 @@
+ ###
+ 
+ fbgrab: fbgrab.c
+-	splint +posixlib fbgrab.c
+-	gcc -g -Wall fbgrab.c -lpng -lz -o fbgrab
+-
+-install:
+-	strip fbgrab
+-	install fbgrab /usr/bin/fbgrab
+-	install fbgrab.1.man /usr/man/man1/fbgrab.1
++	$(CC) -c $(CFLAGS) $(INCLUDES) -o fbgrab fbgrab.c
+ 
+ clean:
+-	rm -f fbgrab *~ \#*\#
+\ No newline at end of file
++	rm -f fbgrab *~ \#*\#
++
