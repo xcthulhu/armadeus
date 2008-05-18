@@ -55,7 +55,7 @@ MODULE_LICENSE("GPL");
 #define KB_ROWMASK(r)		(1 << (r + kpdPtr->rows_offset))
 #define SCANCODE(c,r)		( (c * kpdPtr->num_rows) + (r) )
 
-#define KB_DELAY		8
+#define KB_DELAY		8	/* uS */
 #define SCAN_INTERVAL		(HZ/10)
 
 static unsigned char imxkeypad_keycode[KPD_MAX_ROWS * KPD_MAX_COLS] = {
@@ -83,10 +83,10 @@ struct imxkeypad {
 	int 	debouncing;
 };
 
+/* module parameters definition */
 static int io_port=0;
 module_param(io_port, int, 0000);
 MODULE_PARM_DESC(io_port, "GPIO port (0..3)");
-
 
 static long int size[]={4,4};
 module_param_array(size, long, NULL, 0000);
@@ -119,12 +119,12 @@ static inline void imxkeypad_reset_col(struct imxkeypad *kpdPtr, int col)
 }
 
 /*
- * The imx keypad only generates interrupts when a key is pressed.
+ * The i.MX keypad only generates interrupts when a key is pressed.
  * So when a key is pressed, we enable a timer.  This timer scans the
  * keyboard, and this is how we detect when the key is released.
  */
 
-/* Scan the hardware keyboard and push any changes up through the input layer */
+/* Scan the hardware keyboard and push any changes up to the Input layer */
 static void imxkeypad_scankeyboard(struct imxkeypad *kpdPtr) 
 {
 	unsigned int row, col, scancode;
@@ -157,7 +157,7 @@ static void imxkeypad_scankeyboard(struct imxkeypad *kpdPtr)
 
 	input_sync(kpdPtr->input);
 
-	/* on key release repeat some scan to remove debounce */
+	/* on key release, repeat some scan to remove debounce */
 	if ((!num_pressed)&&(0 <= kpdPtr->debouncing)) {
 		kpdPtr->debouncing--;
 	}
@@ -171,7 +171,6 @@ static void imxkeypad_scankeyboard(struct imxkeypad *kpdPtr)
 		/* if any keys are pressed or still checking debounce, enable the timer */
 		mod_timer(&kpdPtr->timer, jiffies + SCAN_INTERVAL);
 	}
-
 }
 
 /* 
@@ -246,7 +245,6 @@ static int __init imxkeypad_init(void)
 	imxkeypad.input->id.version = 0x0100;
 
 
-
 	printk(KERN_DEBUG "imxkeypad matrix size: %ld rows, %ld cols\n", size[0], size[1]);
 	imxkeypad.num_rows = size[0];
 	imxkeypad.num_cols = size[1];
@@ -278,12 +276,13 @@ static int __init imxkeypad_init(void)
 		
 	}	
 
-	/* Activate every column to detect any key pressed */
+	/* Activate(??) every column to detect any key pressed */
 	imxkeypad_activate_all(&imxkeypad);
 
+	/* register driver to the Linux Input layer */
 	input_register_device(imxkeypad.input);
 
-	/* attempt to get the interrupts */
+	/* attempt to reserve the interrupts (on i.MXL each GPIO can generate it's own interrupt) */
 	for (i = 0; i < imxkeypad.num_rows; i++) {
 		imxkeypad.irqs[i] = IMX_IRQS + 32*imxkeypad.port + imxkeypad.rows_offset + i;
 		printk(KERN_DEBUG "imxkeypad: requesting irq %d\n", imxkeypad.irqs[i]);
@@ -292,7 +291,7 @@ static int __init imxkeypad_init(void)
 			printk(KERN_ERR "imxkeypad: Can't get irq for keyboard\n");
 			goto free;
 		}
-		else set_irq_type( imxkeypad.irqs[i], IRQF_TRIGGER_FALLING );
+		else set_irq_type( imxkeypad.irqs[i], IRQF_TRIGGER_FALLING ); /* configure it as falling edge sensitive */
 	}
 	
 	return 0;
