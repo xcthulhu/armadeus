@@ -13,8 +13,6 @@ config ARMADEUS_FPGA_DRIVERS
 	
 source "drivers/armadeus/fpga/fpga_devtools/Kconfig"
 
-source "drivers/armadeus/fpga/keypad/Kconfig"
-
 source "drivers/armadeus/fpga/ps2keyboard/Kconfig"
 
 source "drivers/armadeus/fpga/Wb_led/Kconfig"

@@ -8,7 +8,7 @@
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_DRIVERS)	+= gpio/ pwm/ backlight/ isp1761/ \
-	fpga/ps2keyboard/ fpga/keypad/ fpga/fpga_devtools/ fpga/Wb_led/ fpga/Wb_button/ \
+	fpga/ps2keyboard/ imxlkeypad/ fpga/fpga_devtools/ fpga/Wb_led/ fpga/Wb_button/ \
 	fpga/i2ctest/ fpga/fpgaaccess/
 
 # Part execute when called from standard make in this directory:
