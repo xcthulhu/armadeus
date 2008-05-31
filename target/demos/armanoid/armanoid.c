@@ -44,6 +44,8 @@
 #define false 0
 #define true  1
 
+#define DEFAULT_DATA_DIR "/usr/share/games/armanoid/data/"
+
 SDL_Surface *back;
 SDL_Surface* block;
 SDL_Surface *screen;
@@ -112,10 +114,10 @@ static int loadImages()
 {
     int result = 0;
 
-    loadImage( &ball, "./ball.bmp");
-    loadImage( &bar, "./bar.bmp");
+    loadImage( &ball, DEFAULT_DATA_DIR "/ball.bmp");
+    loadImage( &bar, DEFAULT_DATA_DIR "/bar.bmp");
 
-    block = SDL_LoadBMP("./block.bmp");
+    block = SDL_LoadBMP( DEFAULT_DATA_DIR "/block.bmp" );
     BLOCK_HORI_SIZE = block->w;
     BLOCK_VERT_SIZE = block->h;
     // Check if we got all images
