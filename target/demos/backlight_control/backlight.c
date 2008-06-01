@@ -1,5 +1,4 @@
 /*
- *
  * Small tool to demonstrate how to use (or not use ;-) ) Tslib + SDL library
  *   for the Armadeus project. www.armadeus.og
  *
@@ -23,7 +22,6 @@
 #include <unistd.h> // for sleep()
 
 #include "SDL.h"
-// To 
 #include "backlight_sysctl.h"
 
 
@@ -44,6 +42,8 @@
 #define false 0
 #define true  1
 
+#define DEFAULT_DATA_DIR "/usr/share/apps/backlight/data/"
+
 SDL_Surface *cursor;
 SDL_Surface *full_end;
 SDL_Surface *full;
@@ -61,11 +61,11 @@ static int loadImages()
 {
     int result = 0;
 
-    full_end = SDL_LoadBMP("./full_end.bmp");
-    full = SDL_LoadBMP("./full.bmp");
-    cursor = SDL_LoadBMP("./cursor.bmp");
-    empty = SDL_LoadBMP("./empty.bmp");
-    empty_end = SDL_LoadBMP("./empty_end.bmp");
+    full_end  = SDL_LoadBMP( DEFAULT_DATA_DIR "full_end.bmp" );
+    full      = SDL_LoadBMP( DEFAULT_DATA_DIR "full.bmp" );
+    cursor    = SDL_LoadBMP( DEFAULT_DATA_DIR "cursor.bmp" );
+    empty     = SDL_LoadBMP( DEFAULT_DATA_DIR "empty.bmp" );
+    empty_end = SDL_LoadBMP( DEFAULT_DATA_DIR "empty_end.bmp" );
 
     // Check if we got all images
     if( full_end == NULL || full == NULL || cursor == NULL || empty == NULL || empty_end == NULL )
@@ -83,7 +83,7 @@ static int loadImages()
     return(result);
 }
 
-// 
+//
 static void freeRessources()
 {
     SDL_FreeSurface( screen );
@@ -171,7 +171,7 @@ static void drawCursor( int xpos )
     int x=0;
 
     x = paddXPos( xpos );
-    drawImage( cursor, x, BAR_YPOSITION-5);    
+    drawImage( cursor, x, BAR_YPOSITION-5 );
 }
 
 //
@@ -183,6 +183,13 @@ void updateCursor( int xpos )
     SDL_Flip( screen );
 }
 
+void cleanup( void )
+{
+    // Cleanup what we used
+    releaseBacklightControl();
+    freeRessources();
+    SDL_Quit();
+}
 
 //---- Main ----
 
@@ -190,34 +197,22 @@ void updateCursor( int xpos )
 int main(int argc, char *argv[])
 {
     Uint8* keys;
-    int nbFrames = 0;
     int cursorPos = 0;
-    //Timer fps, update;
-    //Sint8 xspeed = 1, yspeed =1;
 
     // Initialize SDL
     if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER /*| SDL_INIT_EVENTTHREAD |SDL_INIT_NOPARACHUTE*/) < 0 )
     {
-        printf("Unable to init SDL: %s\n", SDL_GetError());
+        fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
         exit(1);
-    }
-    if (SDL_InitSubSystem(SDL_INIT_TIMER) == -1)
-    {
-        fprintf(stderr, "SDL timer failed to initialize! Error: %s\n", SDL_GetError());
-        exit(1);
-    }
-    else
-    {
-        fprintf(stdout, "SDL timer initialized properly!\n");
     }
     // Ask SDL to cleanup when exiting
-    atexit(SDL_Quit);
+    atexit(cleanup);
 
     // Get a screen to display our game
     screen=SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, 16, 0/*SDL_HWPALETTE*//*SDL_HWSURFACE|| SDL_DOUBLEBUF*/ );
     if( screen == NULL )
     {
-        printf("Unable to set %dx%dvideo mode: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
+        fprintf(stderr, "Unable to set %dx%dvideo mode: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
         exit(1);
     }
 
@@ -233,15 +228,11 @@ int main(int argc, char *argv[])
     {
         printf("Unable to find Backlight control on your system -> won't be activated\n");
     }
-    updateCursor( (getBacklight() * BAR_WIDTH / 100) + BAR_MIN_XPOSITION );
+    updateCursor( (getBrightness() * BAR_WIDTH / 100) + BAR_MIN_XPOSITION );
     int done=0, move=0;
 
     // Hide mouse
     SDL_ShowCursor(0);
-
-    /* // Start timer for Frame Rate calculation
-    update.start();
-    fps.start();*/
 
     // Main loop
     while(done == 0)
@@ -280,36 +271,15 @@ int main(int argc, char *argv[])
         }
 
         if( cursorPos != 0 && move == 1 ) {
-
             //
-            setBacklight( calculateBacklight( cursorPos ) );
+            setBrightness( calculateBacklight( cursorPos ) );
 
             // Update screen
             updateCursor( cursorPos );
-	    nbFrames++;
         }
 
-        // Calculate and stabilize Frame Rate
-/*        if( update.getTicks() > 1000 )
-        {
-            printf("FPS: %f\n", (float)nbFrames  );
-            update.start();
-            nbFrames = 0;
-        }
-        while( fps.getTicks() < (1000 / NB_FRAMES_PER_SECOND) )
-        {
-            ;
-        }
-        fps.start();
-*/
         SDL_Delay(50);
     }
-
-    // Cleanup what we used
-    releaseBacklightControl();
-    freeRessources();
-    SDL_QuitSubSystem( SDL_INIT_TIMER );
-    SDL_Quit();
 
     return 0;
 }

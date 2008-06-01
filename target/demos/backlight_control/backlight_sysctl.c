@@ -2,62 +2,65 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "backlight_sysctl.h"
 
-int playing, initialized = 0;
-FILE* fd;
-FILE* fda;
-unsigned char currentBacklight = 0;
+int initialized = 0;
+FILE* fd_bright;
+FILE* fd_max;
+unsigned char current_brightness = 0;
+int max_brightness = 255;
 
 #ifdef TARGET
-#define FREQ_SYS_FILE   "/sys/class/pwm/pwm0/frequency"
-#define ACTIVE_SYS_FILE "/sys/class/pwm/pwm0/active"
+#define BRIGHTNESS_SYS_FILE     "/sys/class/backlight/imxl-bl/brightness"
+#define MAX_BRIGHTNESS_SYS_FILE "/sys/class/backlight/imxl-bl/max_brightness"
 #else
-#define FREQ_SYS_FILE   "./backlight.dat"
-#define ACTIVE_SYS_FILE "./active"
+#define BRIGHTNESS_SYS_FILE     "./backlight.dat"
+#define MAX_BRIGHTNESS_SYS_FILE "./backlight.dat"
 #endif // TARGET
-
-SDL_TimerID myTimerID;
 
 /*
  * Initialize the system
- *
  */
 int initBacklightControl()
 {
     int result = -1;
+    int size = 0;
+    char buffer[6];
 
     if( !initialized )
     {
-        playing = 0;
-        fd  = fopen( FREQ_SYS_FILE, "w+" );
-        fda = fopen( ACTIVE_SYS_FILE, "w" );
+        fd_bright  = fopen( BRIGHTNESS_SYS_FILE, "w+" );
+        fd_max = fopen( MAX_BRIGHTNESS_SYS_FILE, "r" );
 
-        if( (fd != NULL) && (fda != NULL) )
+        if( (fd_bright != NULL) && (fd_max != NULL) )
         {
             result = 0;
             initialized = 1;
 #ifdef TARGET
-
+            size = fread( buffer, 1, 6, fd_max );
+            max_brightness = atoi(buffer);
+            printf("Max: %i\n", max_brightness);
+            size = fread( buffer, 1, 6, fd_bright );
+            current_brightness = atoi(buffer);
+            printf("Current: %i\n", current_brightness);
 #else
-            currentBacklight = 50; // %    
+            current_brightness = 50; // %    
 #endif // TARGET
-        } else
-            printf("Buzzer: can't open /sys interface\n");
+        } else {
+            printf("Backlight: can't open %s interface\n", BRIGHTNESS_SYS_FILE);
+        }
     }
     return( result );
 }
 
 /*
  * Free ressources allocated by the "library"
- *
  */
 void releaseBacklightControl()
 {
     if( initialized )
     {
-        fclose( fd );
-        fclose( fda );
+        fclose( fd_bright );
+        fclose( fd_max );
         initialized = 0;
     }
 }
@@ -65,25 +68,27 @@ void releaseBacklightControl()
 /*
  * 0-100 %
  */
-void setBacklight( unsigned char aValue )
+void setBrightness( unsigned char aValue )
 {
     if( initialized )
     {
         char value[4]; int nchar;
+        if( aValue > 100 ) aValue = 100;
+        aValue = (aValue * max_brightness) / 100;
 
-        // Program PWM with given frequency
+        // Send it to hardware
         nchar = sprintf( value, "%d", aValue);
-        fwrite( value, 1, nchar, fd );
-        fflush( fd );
-        currentBacklight = aValue;
+        fwrite( value, 1, nchar, fd_bright );
+        fflush( fd_bright );
+        current_brightness = aValue;
     }
 }
 
 /*
  * 0-100 %
  */
-unsigned char getBacklight( void )
+unsigned char getBrightness( void )
 {
-    return( currentBacklight );
+    return( (current_brightness * 100) / max_brightness  );
 }
 

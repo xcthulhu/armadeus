@@ -5,8 +5,11 @@
 // Initialize the Backlight control library
 int initBacklightControl( void );
 
-// Play a sound on buzzer at given frequency (Hz) and during given time (ms)
-void setBacklight( unsigned char aValue );
+// Set brightness to given value (0-100 %)
+void setBrightness( unsigned char );
+
+// Get current brightness (0-100 %)
+unsigned char getBrightness( void );
 
 // Free ressources allocated by the Backlight control library
 void releaseBacklightControl( void );
