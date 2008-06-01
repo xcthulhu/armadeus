@@ -32,7 +32,6 @@
 #include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/input.h>
-#include <linux/ioport.h>
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/interrupt.h>
@@ -44,7 +43,7 @@
 #include <asm/irq.h>
 
 MODULE_AUTHOR("Eric Jarrige");
-MODULE_DESCRIPTION("IMX keypad driver");
+MODULE_DESCRIPTION("i.MXL keypad driver");
 MODULE_LICENSE("GPL");
 
 #define DEBUG
@@ -58,15 +57,15 @@ MODULE_LICENSE("GPL");
 #define KB_DELAY		8	/* uS */
 #define SCAN_INTERVAL		(HZ/10)
 
-static unsigned char imxkeypad_keycode[KPD_MAX_ROWS * KPD_MAX_COLS] = {
-	KEY_LEFT, KEY_RIGHT, KEY_ENTER, KEY_ESC,	/* 0 - 3 */
-	KEY_3, KEY_6, KEY_9, KEY_SPACE,			/* 4 - 7 */
-	KEY_2, KEY_5, KEY_8, KEY_0,			/* 8 - 11 */
-	KEY_1, KEY_4, KEY_7, KEY_KPASTERISK		/* 12 - 15 */
+static unsigned short imxkeypad_keycode[KPD_MAX_ROWS * KPD_MAX_COLS] = {
+	KEY_LEFT, KEY_RIGHT, KEY_ENTER, KEY_ESC,       /* 0 - 3 */
+	KEY_3,    KEY_6,     KEY_9,     KEY_SPACE,     /* 4 - 7 */
+	KEY_2,    KEY_5,     KEY_8,     KEY_0,         /* 8 - 11 */
+	KEY_1,    KEY_4,     KEY_7,     KEY_KPASTERISK /* 12 - 15 */
 };
 
 struct imxkeypad {
-	unsigned char keycode[KPD_MAX_ROWS * KPD_MAX_COLS];
+	unsigned short keycode[KPD_MAX_ROWS * KPD_MAX_COLS];
 	struct input_dev *input;
 	char phys[32];
 
@@ -95,6 +94,9 @@ MODULE_PARM_DESC(size, "matrix size: num rows, num cols");
 static long int bit_offset[]={3,7};
 module_param_array(bit_offset, long, NULL, 0000);
 MODULE_PARM_DESC(bit_offset, "rows and cols bits offset in registers");
+
+module_param_array(imxkeypad_keycode, short, NULL, 0000); // imxkeypad_keycode declared line 60
+MODULE_PARM_DESC(imxkeypad_keycode, "rows and cols bits offset in registers");
 
 /* helper functions for reading the keyboard matrix */
 static inline void imxkeypad_charge_all(struct imxkeypad *kpdPtr)
@@ -212,7 +214,7 @@ static struct imxkeypad imxkeypad;
 
 static int __init imxkeypad_init(void)
 {
-	int i, ret;
+	int i, j, ret;
 
 	printk(KERN_INFO "Initializing Armadeus keypad driver\n");
 
@@ -233,7 +235,7 @@ static int __init imxkeypad_init(void)
 	imxkeypad.input->evbit[0] = BIT(EV_KEY) | BIT(EV_REP);
 	
 	imxkeypad.input->keycode = imxkeypad.keycode;
-	imxkeypad.input->keycodesize = sizeof(unsigned char);
+	imxkeypad.input->keycodesize = sizeof(unsigned short);
 	imxkeypad.input->keycodemax = ARRAY_SIZE(imxkeypad_keycode);
 	imxkeypad.input->private = &imxkeypad;
 
