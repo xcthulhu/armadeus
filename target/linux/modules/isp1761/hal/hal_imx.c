@@ -835,14 +835,17 @@ isp1761_probe (struct platform_device *pdev)
 
     loc_dev = &(isp1761_loc_dev[ISP1761_HC]);
     isp1761_reg_write16(loc_dev, HC_SCRATCH_REG, 0xFACE);
-    udelay(100);
+    /* perform a read of the chip ID to avoir bus hold effect when
+    * reading back the scratch register */
+    isp1761_reg_read16(loc_dev, HC_CHIP_ID_REG, reg_data);
+    udelay(100); 
     reg_data = isp1761_reg_read16(loc_dev, HC_SCRATCH_REG,reg_data);
 
     /* Host Controller presence is detected by writing to scratch register
      * and reading back and checking the contents are same or not
      */
     if(reg_data != 0xFACE) {
-        err("%s scratch register mismatch %x",
+        err("%s scratch register mismatch %x. Unable to find the ISP176x device",
                 isp1761_driver_name,reg_data);
         status = -ENODEV;
         goto clean;
