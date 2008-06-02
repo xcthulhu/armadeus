@@ -83,3 +83,17 @@
  			loops, where, *pstat, stat_mask);
  	return loops;
  }
+--- linux-org/drivers/mmc/host/imxmmc.c	2008-06-02 04:25:41.000000000 +0200
++++ linux-imx/drivers/mmc/host/imxmmc.c	2008-06-02 04:22:21.000000000 +0200
+@@ -336,6 +336,12 @@ static void imxmci_start_cmd(struct imxm
+ 	/* Ensure, that clock are stopped else command programming and start fails */
+ 	imxmci_stop_clock(host);
+ 
++	/*force check of busy bit DO after CMD25 + CMD12 
++		to avoid hang up of the controler */
++	if( cmd->opcode == 13){
++		cmdat |= CMD_DAT_CONT_BUSY; 
++	}
++
+ 	if (cmd->flags & MMC_RSP_BUSY)
+ 		cmdat |= CMD_DAT_CONT_BUSY;
