@@ -65,7 +65,7 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 #ifdef CONFIG_PM
 static int imxbl_suspend(struct platform_device *dev, pm_message_t state)
 {
-	struct backlight_device *bd = platform_get_drvdata(pdev);
+	struct backlight_device *bd = platform_get_drvdata(dev);
 
 	imxbl_flags |= IMXBL_SUSPENDED;
 	backlight_update_status(bd);
@@ -74,7 +74,7 @@ static int imxbl_suspend(struct platform_device *dev, pm_message_t state)
 
 static int imxbl_resume(struct platform_device *dev)
 {
-	struct backlight_device *bd = platform_get_drvdata(pdev);
+	struct backlight_device *bd = platform_get_drvdata(dev);
 
 	imxbl_flags &= ~IMXBL_SUSPENDED;
 	backlight_update_status(bd);
