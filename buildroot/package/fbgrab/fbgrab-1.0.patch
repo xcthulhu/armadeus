@@ -1,20 +1,21 @@
---- fbgrab-1.0.org/Makefile	2008-05-15 14:30:23.000000000 +0200
-+++ fbgrab-1.0/Makefile	2008-05-15 14:31:25.000000000 +0200
-@@ -4,13 +4,8 @@
+diff -urN fbgrab-1.0/Makefile fbgrab-1.0.mod/Makefile
+--- fbgrab-1.0/Makefile	2002-03-20 20:49:06.000000000 +0100
++++ fbgrab-1.0.mod/Makefile	2008-06-06 21:42:56.000000000 +0200
+@@ -4,8 +4,8 @@
  ###
  
  fbgrab: fbgrab.c
 -	splint +posixlib fbgrab.c
 -	gcc -g -Wall fbgrab.c -lpng -lz -o fbgrab
--
--install:
--	strip fbgrab
--	install fbgrab /usr/bin/fbgrab
--	install fbgrab.1.man /usr/man/man1/fbgrab.1
-+	$(CC) -c $(CFLAGS) $(INCLUDES) -o fbgrab fbgrab.c
++	#splint +posixlib fbgrab.c
++	$(CC) -Wall fbgrab.c -lpng -lz -o fbgrab
+ 
+ install:
+ 	strip fbgrab
+@@ -13,4 +13,4 @@
+ 	install fbgrab.1.man /usr/man/man1/fbgrab.1
  
  clean:
 -	rm -f fbgrab *~ \#*\#
-\ No newline at end of file
+\ Pas de fin de ligne à la fin du fichier.
 +	rm -f fbgrab *~ \#*\#
-+
