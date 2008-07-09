@@ -163,14 +163,18 @@ static void dumpall(void)
 // Show content of register with name starting with given string
 static void dumpmatching(char *name)
 {
-   int i;
+   int i, found=0;
    int n=sizeof(regs)/sizeof(struct reg_info);
 
    for (i=0; i<n; i++) 
    {
-      if (strstr(regs[i].name, name))
+      if (strstr(regs[i].name, name)) {
          dumpentry(i);
+         found = 1;
+      }
    }
+   if(!found)
+      printf("No matching register found\n");
 }
 
 //
