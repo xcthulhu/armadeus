@@ -22,6 +22,23 @@ struct reg_info {
 
 static struct reg_info regs[] = 
 {
+// Watchdog
+{ "WCR",	0x00201000,  0, 0xffffffff, 'x', "Watchdog Control Register" },
+{ "WSR",	0x00201004,  0, 0xffffffff, 'x', "Watchdog Service Register" },
+{ "WSTR",	0x00201008,  0, 0xffffffff, 'x', "Watchdog Status Register" },
+// Timers
+{ "TCTL1",	0x00202000, 0, 0xffffffff, 'x', "Timer 1 Control Register" },
+{ "TPRER1",	0x00202004, 0, 0xffffffff, 'x', "Timer 1 Prescaler Register" },
+{ "TCMP1",	0x00202008, 0, 0xffffffff, 'x', "Timer 1 Compare Register" },
+{ "TCR1",	0x0020200C, 0, 0xffffffff, 'x', "Timer 1 Capture Register" },
+{ "TCN1",	0x00202010, 0, 0xffffffff, 'x', "Timer 1 Counter Register" },
+{ "TSTAT1",	0x00202014, 0, 0xffffffff, 'x', "Timer 1 Status Register" },
+{ "TCTL2",	0x00203000, 0, 0xffffffff, 'x', "Timer 2 Control Register" },
+{ "TPRER2",	0x00203004, 0, 0xffffffff, 'x', "Timer 2 Prescaler Register" },
+{ "TCMP2",	0x00203008, 0, 0xffffffff, 'x', "Timer 2 Compare Register" },
+{ "TCR2",	0x0020300C, 0, 0xffffffff, 'x', "Timer 2 Capture Register" },
+{ "TCN2",	0x00203010, 0, 0xffffffff, 'x', "Timer 2 Counter Register" },
+{ "TSTAT2",	0x00203014, 0, 0xffffffff, 'x', "Timer 2 Status Register" },
 // RTC
 { "HOURMIN",   0x00204000,  0, 0xffffffff, 'x', "RTC Hours and minutes counter register" },
 { "SECONDS",   0x00204004,  0, 0xffffffff, 'x', "RTC Seconds counter register" },
