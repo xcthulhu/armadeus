@@ -175,7 +175,7 @@
  BR2_UCLIBC_CONFIG="toolchain/uClibc/uClibc-0.9.29.config"
  # BR2_ENABLE_LOCALE is not set
  # BR2_PTHREADS_NONE is not set
-@@ -42,35 +175,452 @@
+@@ -42,35 +175,453 @@
  BR2_PTHREADS_OLD=y
  # BR2_PTHREADS_NATIVE is not set
  # BR2_PTHREAD_DEBUG is not set
@@ -405,6 +405,7 @@
 +# BR2_PACKAGE_RSYNC is not set
 +# BR2_PACKAGE_SAMBA is not set
 +# BR2_PACKAGE_SOCAT is not set
++# BR2_PACKAGE_SOCKETCAN is not set
 +# BR2_PACKAGE_STUNNEL is not set
 +# BR2_PACKAGE_TCPDUMP is not set
 +# BR2_PACKAGE_DHCPDUMP is not set
