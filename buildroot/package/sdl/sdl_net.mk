@@ -45,7 +45,7 @@ $(STAGING_DIR)/usr/lib/libSDL_net.so: $(SDL_NET_DIR)/.compiled
 
 $(TARGET_DIR)/usr/lib/libSDL_net.so: $(STAGING_DIR)/usr/lib/libSDL_net.so
 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_net*.so* $(TARGET_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_net.so
+	-$(STRIPCMD) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_net.so
 
 SDL_NET sdl_net: sdl $(TARGET_DIR)/usr/lib/libSDL_net.so
 

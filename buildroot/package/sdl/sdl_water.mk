@@ -40,7 +40,7 @@ $(STAGING_DIR)/usr/bin/water: $(SDL_WATER_DIR)/water
 
 $(TARGET_DIR)/usr/bin/water: $(STAGING_DIR)/usr/bin/water
 	cp -dpf  $< $(SDL_WATER_DIR)/water320.bmp $(TARGET_DIR)/usr/bin/
-	-$(STRIP) --strip-unneeded $@
+	-$(STRIPCMD) --strip-unneeded $@
 
 SDL-WATER sdl-water: uclibc sdl $(TARGET_DIR)/usr/bin/water
 

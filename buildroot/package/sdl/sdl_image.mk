@@ -53,7 +53,7 @@ $(STAGING_DIR)/usr/lib/libSDL_image.so: $(SDL_IMAGE_DIR)/.compiled
 
 $(TARGET_DIR)/usr/lib/libSDL_image.so: $(STAGING_DIR)/usr/lib/libSDL_image.so
 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_image*.so* $(TARGET_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_image.so
+	-$(STRIPCMD) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_image.so
 
 SDL_IMAGE sdl_image: uclibc sdl libpng $(TARGET_DIR)/usr/lib/libSDL_image.so
 

@@ -45,7 +45,7 @@ $(STAGING_DIR)/usr/lib/libSDL_mixer.so: $(SDL_MIXER_DIR)/.compiled
 
 $(TARGET_DIR)/usr/lib/libSDL_mixer.so: $(STAGING_DIR)/usr/lib/libSDL_mixer.so
 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_mixer*.so* $(TARGET_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_mixer.so
+	-$(STRIPCMD) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_mixer.so
 
 SDL_MIXER sdl_mixer: sdl $(TARGET_DIR)/usr/lib/libSDL_mixer.so
 
