@@ -17,6 +17,7 @@ sdl_ttf-source: $(DL_DIR)/$(SDL-TTF_SOURCE)
 
 $(SDL-TTF_DIR)/.unpacked: $(DL_DIR)/$(SDL-TTF_SOURCE)
 	$(SDL-TTF_CAT) $(DL_DIR)/$(SDL-TTF_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	toolchain/patch-kernel.sh $(SDL-TTF_DIR) package/sdl sdl_ttf-$(SDL-TTF_VERSION)\*.patch
 	touch $@
 
 $(SDL-TTF_DIR)/.configured: $(SDL-TTF_DIR)/.unpacked
@@ -48,7 +49,7 @@ $(STAGING_DIR)/usr/lib/libSDL_ttf.so: $(SDL-TTF_DIR)/.compiled
 
 $(TARGET_DIR)/usr/lib/libSDL_ttf.so: $(STAGING_DIR)/usr/lib/libSDL_ttf.so
 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_ttf*.so* $(TARGET_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_ttf.so
+	-$(STRIPCMD) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL_ttf.so
 
 SDL_TTF sdl_ttf: uclibc sdl freetype $(TARGET_DIR)/usr/lib/libSDL_ttf.so
 
