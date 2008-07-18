@@ -1,0 +1,29 @@
+--- linux-2.6.23.1/sound/arm/Kconfig	2007-10-12 18:43:44.000000000 +0200
++++ linux-2.6.23.1.alsa/sound/arm/Kconfig	2008-07-17 17:39:17.000000000 +0200
+@@ -33,4 +33,16 @@
+ 	  Say Y or M if you want to support any AC97 codec attached to
+ 	  the PXA2xx AC97 interface.
+ 
++config SND_IMX_TSC2102
++ 	tristate "i.MX1/L TSC2102 alsa driver"
++ 	depends on ARCH_IMX && SND
++ 	select SND_PCM
++	select SPI_TSC2102
++ 	help
++ 	  Say Y here if you have an i.MX1/L platform board
++ 	  and a TSC2102 audio chip.
++
++ 	  To compile this driver as a module, choose M here: the module
++ 	  will be called snd-imx-tsc2102.
++
+ endmenu
+--- linux-2.6.23.1/sound/arm/Makefile	2007-10-12 18:43:44.000000000 +0200
++++ linux-2.6.23.1.alsa/sound/arm/Makefile	2008-07-17 15:53:07.000000000 +0200
+@@ -13,3 +13,7 @@
+ 
+ obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
+ snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
++
++obj-$(CONFIG_SND_IMX_TSC2102) += snd-imx-alsa-tsc2102.o
++snd-imx-alsa-tsc2102-objs :=   imx-alsa.o imx-alsa-tsc2102.o imx-alsa-tsc2102-mixer.o
++

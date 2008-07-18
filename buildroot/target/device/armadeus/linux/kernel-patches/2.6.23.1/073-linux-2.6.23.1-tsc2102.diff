@@ -179,7 +179,7 @@
 +#endif	/* __LINUX_SPI_TSC2102_H */
 --- linux-2.6.23.original/drivers/spi/tsc2102.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.23.mod/drivers/spi/tsc2102.c	2007-09-22 01:42:55.000000000 +0200
-@@ -0,0 +1,1103 @@
+@@ -0,0 +1,1148 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
@@ -229,6 +229,13 @@
 +#include <asm/apm.h>
 +#endif
 +
++#ifdef CONFIG_MACH_APF9328    // TODO: Put MCLK choice in Kconfig ?? 
++#define MCLK_16M 1  // DevFull
++#endif // CONFIG_MACH_APF9328
++
++/* #define DEBUG */
++#define DEBUG_AUDIO
++
 +/* Bit field definitions for chip registers */
 +#define TSC2102_ADC_TS_CONTROL		0x8bf4
 +#define TSC2102_ADC_SCAN_CONTROL	0x2ff4
@@ -252,10 +259,17 @@
 +#define TSC2102_DAC_OFF			0xafa0
 +#define TSC2102_FS44K			(1 << 13)
 +#define TSC2102_PLL1_OFF		0x0000
++#ifdef MCLK_16M /* 16Mhz master clock */
++#define TSC2102_PLL1_44K		(PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(1) | PLL1_J_VAL(5))
++#define TSC2102_PLL1_48K		(PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(1) | PLL1_J_VAL(6))
++#define TSC2102_PLL2_44K		(PLL2_D_VAL(6448))
++#define TSC2102_PLL2_48K		(PLL2_D_VAL(1440))
++#else
 +#define TSC2102_PLL1_44K		0x811c
 +#define TSC2102_PLL1_48K		0x8120
 +#define TSC2102_PLL2_44K		(5462 << 2)
 +#define TSC2102_PLL2_48K		(1920 << 2)
++#endif // MCLK_16M
 +#define TSC2102_SLVMS			(1 << 11)
 +#define TSC2102_DEEMPF			(1 << 0)
 +#define TSC2102_BASSBC			(1 << 1)
@@ -297,6 +311,7 @@
 +	struct tsc2102_spi_req req_pressure;
 +	struct tsc2102_spi_req req_stopadc;
 +	struct tsc2102_spi_req req_mode;
++	struct tsc2102_spi_req req_click;
 +
 +	int bat[2], aux[1], temp[2];
 +	struct class_device *hwmondev;
@@ -683,7 +698,8 @@
 +	}
 +}
 +
-+#ifdef CONFIG_SOUND
++#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)
++
 +/*
 + * Volume level values should be in the range [0, 127].
 + * Higher values mean lower volume.
@@ -705,6 +721,7 @@
 +	tsc2102_write_sync(TSC2102_DAC_GAIN_CTRL, val);
 +	mutex_unlock(&tsc.lock_sync);
 +}
++EXPORT_SYMBOL(tsc2102_set_volume);
 +
 +void tsc2102_set_mute(int left_ch, int right_ch)
 +{
@@ -720,6 +737,7 @@
 +
 +	mutex_unlock(&tsc.lock_sync);
 +}
++EXPORT_SYMBOL(tsc2102_set_mute);
 +
 +void tsc2102_get_mute(int *left_ch, int *right_ch)
 +{
@@ -733,6 +751,7 @@
 +	*left_ch = !!(val & (1 << 15));
 +	*right_ch = !!(val & (1 << 7));
 +}
++EXPORT_SYMBOL(tsc2102_get_mute);
 +
 +void tsc2102_set_deemphasis(int enable)
 +{
@@ -748,6 +767,7 @@
 +	tsc2102_write_sync(TSC2102_DAC_POWER_CTRL, val);
 +	mutex_unlock(&tsc.lock_sync);
 +}
++EXPORT_SYMBOL(tsc2102_set_deemphasis);
 +
 +void tsc2102_set_bassboost(int enable)
 +{
@@ -763,8 +783,9 @@
 +	tsc2102_write_sync(TSC2102_DAC_POWER_CTRL, val);
 +	mutex_unlock(&tsc.lock_sync);
 +}
++EXPORT_SYMBOL(tsc2102_set_bassboost);
 +
-+/*	{rate, dsor, fsref}	*/
++/* {rate, divisor, fsref?=44,1k} */
 +static const struct tsc2102_rate_info_s tsc2102_rates[] = {
 +	/* Fsref / 6.0 */
 +	{7350,	63,	1},
@@ -791,6 +812,7 @@
 +	{44100,	0,	1},
 +	{48000,	0,	0},
 +
++	/* end of struct */
 +	{0,	0, 	0},
 +};
 +
@@ -809,7 +831,8 @@
 +
 +	mutex_lock(&tsc.lock_sync);
 +
-+	tsc2102_write_sync(TSC2102_AUDIO1_CTRL, tsc2102_rates[i].divisor);
++	val = tsc2102_read_sync(TSC2102_AUDIO1_CTRL) & ~AC1_DACFS_MASK;
++	tsc2102_write_sync(TSC2102_AUDIO1_CTRL, val | AC1_DACFS(tsc2102_rates[i].divisor) );
 +
 +	val = tsc2102_read_sync(TSC2102_AUDIO3_CTRL);
 +
@@ -828,6 +851,7 @@
 +	mutex_unlock(&tsc.lock_sync);
 +	return 0;
 +}
++EXPORT_SYMBOL(tsc2102_set_rate);
 +
 +/*
 + * Perform basic set-up with default values and power the DAC on.
@@ -837,8 +861,8 @@
 +	mutex_lock(&tsc.lock_sync);
 +
 +	if (state) {
-+		/* 16-bit words, DSP mode, sample at Fsref */
-+		tsc2102_write_sync(TSC2102_AUDIO1_CTRL, 0x0100);
++		/* 16-bit words, I2S mode, sample at Fsref */
++		tsc2102_write_sync(TSC2102_AUDIO1_CTRL, AC1_WLEN(0) | AC1_DATFM(0) | AC1_DACFS(0) );
 +		/* Keyclicks off, soft-stepping at normal rate */
 +		tsc2102_write_sync(TSC2102_AUDIO2_CTRL, TSC2102_KEYCLICK_OFF);
 +		/* 44.1 kHz Fsref, continuous transfer mode, master DAC */
@@ -860,6 +884,7 @@
 +
 +	mutex_unlock(&tsc.lock_sync);
 +}
++EXPORT_SYMBOL(tsc2102_dac_power);
 +
 +void tsc2102_set_i2s_master(int state)
 +{
@@ -875,7 +900,8 @@
 +
 +	mutex_unlock(&tsc.lock_sync);
 +}
-+#endif	/* CONFIG_SOUND */
++EXPORT_SYMBOL(tsc2102_set_i2s_master);
++#endif	/* CONFIG_SOUND || CONFIG_SOUND_MODULE */
 +
 +static int tsc2102_configure(struct tsc2102_dev *dev)
 +{
@@ -893,6 +919,24 @@
 +
 +	/* PINT/DAV acts as DAV */
 +	tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_DAV);
++
++#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)	
++	/* 16-bit words, I2S mode, sample at Fsref */
++	tsc2102_write_sync(TSC2102_AUDIO1_CTRL, AC1_WLEN(0) | AC1_DATFM(0) | AC1_DACFS(0) );
++	/* Keyclicks off, soft-stepping at normal rate */
++	tsc2102_write_sync(TSC2102_AUDIO2_CTRL, TSC2102_KEYCLICK_OFF);
++	/* 48 kHz Fsref, continuous transfer mode, master DAC */
++	tsc2102_write_sync(TSC2102_AUDIO3_CTRL, 0x0800);
++	/* Soft-stepping enabled */
++	tsc2102_write_sync(TSC2102_AUDIO4_CTRL, 0x0000);
++	/* FSRef = 44,1k */
++	tsc2102_write_sync(TSC2102_PLL1_CTRL, TSC2102_PLL1_44K);
++	tsc2102_write_sync(TSC2102_PLL2_CTRL, TSC2102_PLL2_44K);
++
++	tsc2102_write_sync(TSC2102_DAC_GAIN_CTRL, 0xA0A0);
++	tsc2102_write_sync(TSC2102_DAC_POWER_CTRL, 0x3BA0);
++	tsc2102_write_sync(TSC2102_DAC_GAIN_CTRL, 0x7F7F);
++#endif /* CONFIG_SOUND || CONFIG_SOUND_MODULE */
 +
 +	/* Init mode state machine */
 +	dev->state = 0; 
@@ -1104,6 +1148,7 @@
 +	tsc2102_request_alloc(&tsc, &tsc.req_pressure, 0, 1, &spi_buffer);
 +	tsc2102_request_alloc(&tsc, &tsc.req_stopadc, 1, 1, &spi_buffer);
 +	tsc2102_request_alloc(&tsc, &tsc.req_mode, 1, 1, &spi_buffer);
++	tsc2102_request_alloc(&tsc, &tsc.req_click, 1, 1, &spi_buffer);
 +
 +	spin_lock_init(&tsc.lock);
 +	mutex_init(&tsc.lock_sync);
