@@ -1,12 +1,13 @@
---- linux-2.6.18.1/include/asm-arm/arch-imx/imx-regs.h	2007-08-01 22:01:00.000000000 +0200
-+++ linux-2.6.18.1.mod/include/asm-arm/arch-imx/imx-regs.h	2007-07-17 00:08:11.000000000 +0200
-@@ -39,6 +39,16 @@
+--- linux-2.6.23.1/include/asm-arm/arch-imx/imx-regs.h	2007-08-01 22:01:00.000000000 +0200
++++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/imx-regs.h	2007-07-17 00:08:11.000000000 +0200
+@@ -39,6 +39,17 @@
  #define IMX_AITC_BASE              (0x23000 + IMX_IO_BASE)
  #define IMX_CSI_BASE               (0x24000 + IMX_IO_BASE)
  
 +/* System control registers */
 +
 +#define FMCR __REG(0x1B808 + IMX_IO_BASE)
++/* FMCR bit fields */
 +#define SPI2_RXD_SEL  (1 << 8)
 +#define SSI_RXFS_SEL  (1 << 7)
 +#define SSI_RXCLK_SEL (1 << 6)
@@ -26,8 +27,8 @@
  #define PD8_PF_CLS           ( GPIO_PORTD | GPIO_PF | 8 )
  #define PD8_AF_UART2_DCD     ( GPIO_PORTD | GPIO_OUT | GPIO_AF | 8 )
  #define PD8_AIN_SPI2_SS      ( GPIO_GIUS | GPIO_PORTD | GPIO_AIN | 8 )
---- linux-2.6.18.1/include/asm-arm/arch-imx/irqs.h	2006-10-14 05:34:03.000000000 +0200
-+++ linux-2.6.18.1.mod/include/asm-arm/arch-imx/irqs.h	2007-07-15 15:59:04.000000000 +0200
+--- linux-2.6.23.1/include/asm-arm/arch-imx/irqs.h	2006-10-14 05:34:03.000000000 +0200
++++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/irqs.h	2007-07-15 15:59:04.000000000 +0200
 @@ -61,6 +61,7 @@
  #define PWM_INT                     34
  #define SDHC_INT                    35
