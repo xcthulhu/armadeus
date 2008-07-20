@@ -1,0 +1,78 @@
+--- linux-2.6.23.1/arch/arm/mach-imx/Kconfig	2006-10-12 22:37:14.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/Kconfig	2006-10-07 20:09:07.000000000 +0200
+@@ -1,6 +1,10 @@
+ menu "IMX Implementations"
+ 	depends on ARCH_IMX
+-
++
++choice
++    prompt "Development board selection"
++    depends on ARCH_IMX
++
+ config ARCH_MX1ADS
+ 	bool "mx1ads"
+ 	depends on ARCH_IMX
+@@ -20,6 +24,14 @@ config MACH_SCB9328
+ 	help
+ 	  Say Y here if you are using the Synertronixx scb9328 board
+ 
++config MACH_APF9328
++    bool "apf9328"
++    depends on ARCH_IMX
++    help
++      Say Yes here if you are using the Armadeus APF9328 development board
++
++endchoice
++
+ choice
+        prompt "SCB9328 eval board"
+        depends on MACH_SCB9328
+@@ -39,4 +51,30 @@ config IMX_SCB9328_EVK9328L
+ 
+ endchoice
+ 
++choice
++       prompt "APF9328 Flash available"
++       depends on MACH_APF9328
++       default IMX_APF9328_FLASH_16MB
++
++config IMX_APF9328_FLASH_8MB
++       bool "8MB"
++
++config IMX_APF9328_FLASH_16MB
++       bool "16MB"
++
++endchoice
++
++choice
++       prompt "APF9328 RAM available"
++       depends on MACH_APF9328
++       default IMX_APF9328_RAM_32MB
++
++config IMX_SCB9328_RAM_16MB
++       bool "16MB"
++
++config IMX_SCB9328_RAM_32MB
++       bool "32MB"
++
++endchoice
++
+ endmenu
+--- linux-2.6.23.1/arch/arm/mach-imx/Makefile	2006-10-12 22:37:14.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/Makefile	2006-10-07 20:09:07.000000000 +0200
+@@ -15,6 +15,7 @@ 
+ obj-$(CONFIG_ARCH_MX1ADS) += mx1ads.o
+ obj-$(CONFIG_MACH_MX1FS2) += mx1fs2.o
+ obj-$(CONFIG_MACH_SCB9328) += scb9328.o
++obj-$(CONFIG_MACH_APF9328) += apf9328.o
+ 
+ # Support for blinky lights
+ led-y := leds.o
+--- linux-2.6.23.1/arch/arm/mach-imx/Makefile.boot	2006-10-12 22:37:14.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/Makefile.boot	2006-10-07 20:09:07.000000000 +0200
+@@ -1,3 +1,4 @@
+     zreladdr-$(CONFIG_ARCH_MX1ADS)	:= 0x08008000
+     zreladdr-$(CONFIG_MACH_MX1FS2)	:= 0x08008000
+     zreladdr-$(CONFIG_MACH_SCB9328)	:= 0x08008000
++    zreladdr-$(CONFIG_MACH_APF9328) := 0x08008000
+\ No newline at end of file
