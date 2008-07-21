@@ -1,27 +1,47 @@
-Ce projet est un firmware FPGA de contolleur de servo de telecommande.
-Une description de ce genre de servos peut être trouve a:
+--------------------------------------------------------------------------------
+-- Copyright (C) 2008  Armadeus Project
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--------------------------------------------------------------------------------
+
+This project is a FPGA firmware for R/C servos.
+
+A description of such R/C servos can be found at:
 http://fribotte.free.fr/bdtech/pic/pic_et_servo.html
-Il est inspire du projet "Atmel AVR 2004 Design Contest Entry Project Number A3722"
-de Circuit Cellar par Eric Gagnon :
+
+It is inspired from the project:
+"Atmel AVR 2004 Design Contest Entry Project Number A3722"
+of Circuit Cellar by Eric Gagnon :
 http://www.circuitcellar.com/avr2004/HA3722.html
-Ce controleur de servo permet de controler jusqu'a 24 servos.
-Il est facilement extensible a plus.
 
-L'utilisation d'un FPGA est justifie car avec les sorties classiques d'un microcontroleur,
-meme avec l'utilisation d'un timer hardware et d'une programmation en assembleur,
-le repect precis des largeurs des impulsions PWM est quasi impossible surtout avec
-un nombre eleve de servos a commander.
-Un FPGA permet de realiser une concurence vraie dans la generation des signaux.
-D'ailleurs avec ce controleur, il n'y a pas de fretillement des servos quelque
-soient leur position les uns par rapport aux autres, ce qui n'est pas le cas
-dans une solution classique a microcontoleur.
+This controler is able to drive from 1 to 32 R/C servos. 
 
-1 - CREATION D'UN NOUVEAU PROJET DANS XILINX ISE
-Version Xilinx ISE 9.2.04i
-Creer le nouveau projet:
+The FPGA use is justify because with classical microcontoller outputs, hardware timers
+and assembly programming, the strict respect of PWM timing is almost impossible with
+numerous R/C servos.
+FPGA can build a module with a "true" concurrency in PWM signals generation.
+With this controller, there is no R/C servo jittering. For more explanation 
+about servo jittering:
+http://www.circuitcellar.com/avr2004/wentries/A3722.zip
+
+1 - CREATE A NEW PROJECT IN XILINX ISE:
+Xilinx ISE Version: 9.2.04i
+Create a new project:
 File->New Project
-Selectionner Top Level Source: HDL (Harware Description Language)
-Pour le FPGA de la carte Armadeus choisir:
+Select Top Level Source: HDL (Harware Description Language)
+For the Aramadeus FPGA choose:
 Family: Spartan3
 Device: XC3S200
 Package: TQ144
@@ -31,60 +51,60 @@ Synthesis Tool: XST
 Simulator: ISE Simulator (VHDL/Verilog)
 Preferred Language: VHDL
 
-Importer les fichiers sources dans le projet ISE:
+Import the source files in the project:
 Projet->Add Source
-Selectionner les fichiers:
+Select files:
 SERVO_top.vhd
-CLK_GENERATOR.vhd
+COUNTER.vhd
 pwm_module.vhd
 servo.ucf
 
-2 - SYNTHESE - CREATION DU FICHIER FIRMWARE  SERVO_top.bit
-Generate Programming File->clic droit->Run
+2 - SYNTHESIZE - SERVO_top.bit FIRMWARE FILE CREATION
+Generate Programming File->right clic->Run
 
-3 - CHARGEMENT DU FIRMWARE SERVO_top.bit DANS L'APF9328
-Se placer dans le repertoire qui contient le fichier SERVO_top.bit
+3 - LOADING OF SERVO_top.bit FIRMWARE FILE IN APF9328
+Go to the SERVO_top.bit directory
 
-Etablir une connexion RS232 avec l'APF9328 comme le decrit:
+Establish a RS232 link to APF9328 as describe:
 http://www.armadeus.com/wiki/index.php?title=Connection_with_U-Boot_on_Linux
 
-Mettre sous tension l'APF9328
-Au message Hit any key to stop autoboot:
-Appuyer sur une touche pour obtenir le prompt:
+Power up APF9328
+At message Hit any key to stop autoboot:
+Hit any key to obtain the command prompt:
 BIOS> 
 
-Choisir l'emplacement memoire de l'upload:
+Choose the upload memory address:
 loadb 08000000
 
-Le message:
+The message:
 ## Ready for binary (kermit) download to 0x08000000 at 115200 bps...
-apparait.
+is printed.
 
-Passer en mode commande Kermit:
+Change to the Kermit command mode:
 Ctrl+Altgr+\+c 
 
-Upload du fichier:
+File upload:
 send SERVO_top.bit
 
-Kermit upload le fichier.
-Taper c pour reconnecter le terminal.
+Kermit upload the file.
+Hit c to reconnect the terminal.
 
-Flasher le firmware:
+Firmware Flashing:
 run flash_firmware
 
-Charger le firmware dans le FPGA:
+Loading the firmware in the FPGA:
 fpga load 0 ${firmware_addr} ${firmware_len}
 
-Pour un chargement automatique au boot:
+For an automatic loading at boot:
 setenv firmware_autoload 1
 saveenv
 
-Le firmware est maintenant charge et utilisable.
+The firmware is now usable:
 
-4 - UTILISATION DU FIRMWARE
-Actuellement seul le firmware est ecrit. 
-Les servos sont a brancher sur les ports de la DevLight suivants via un buffer
-74HCT244:
+4 - USING FIRMWARE
+Actually, only the firmware is written.
+R/C servos must be connected to the DevLight ports via a 74HCT244 buffer:
+
 L24N_3/P87 -> servo 00
 L24P_3/P86 -> servo 01
 L23N_3/P85 -> servo 02
@@ -109,58 +129,68 @@ L01N_2/P108 -> servo 20
 L31P_0/P129 -> servo 21
 L31N_0/P130 -> servo 22
 L32N_1/P125 -> servo 23
+L30P_0/P131 -> servo 24
+L30N_0/P132 -> servo 25
+L27P_0/P135 -> servo 26
+L28N_1/P119 -> servo 27
+L28P_1/P118 -> servo 28
+IO1/P116 -> servo 29
+L01P_1/P112 -> servo 30
+L01P_1/P112 -> servo 31
 
-Commande BIOS pour le controle des servos:
-Au chargement du firmware, tous les servos sont desactives.
+BIOS commands for R/C servos controlling:
+At firmware initialisation, all R/C servos are disable.
 
-Activation des servos 0-15:
-mw.w 12000040 FFFF
+Servos 0-15 enabling:
+mw.w 1200000A FFFF
 
-Activation des servos 16-23:
-mw.w 12000042 00FF
+Servos 16-31 enabling:
+mw.w 1200000C FFFF
 
-Desactivation des servos 0-15:
-mw.w 12000040 0000
+At firmware initialisation, all R/C servos are in medium position.
+Put the servo 0 on the maximal counterclockwise position:
+mw.w 12000010 0000
+Put the servo 0 on the median position:
+mw.w 12000010 0800
+Put the servo 0 on the maximal clockwise position:
+mw.w 12000010 0FFF
 
-Desactivation des servos 16-23:
-mw.w 12000042 0000
-
-Au chargement du firmware, tous les servos sont en position mediane.
-Positionnement du servo 0 a la position maximale anti-horaire:
-mw.w 12000000 0000
-Positionnement du servo 0 a la position maximale horaire:
-mw.w 12000000 0FFF
-Positionnement du servo 0 a la position mediane:
-mw.w 12000000 0800
-
-Voici les adresses a utiliser pour les autres servos:
-0x12000000 -> servo 0
-0x12000002 -> servo 1
-0x12000004 -> servo 2
-0x12000006 -> servo 3
-0x12000008 -> servo 4
-0x1200000A -> servo 5
-0x1200000C -> servo 6
-0x1200000E -> servo 7
-0x12000010 -> servo 8
-0x12000012 -> servo 9
-0x12000014 -> servo 10
-0x12000016 -> servo 11
-0x12000018 -> servo 12
-0x1200001A -> servo 13
-0x1200001C -> servo 14
-0x1200001E -> servo 15
-0x12000020 -> servo 16
-0x12000022 -> servo 17
-0x12000024 -> servo 18
-0x12000026 -> servo 19
-0x12000028 -> servo 20
-0x1200002A -> servo 21
-0x1200002C -> servo 22
-0x1200002E -> servo 23
+R/C servos addresses:
+0x12000010 -> servo 0
+0x12000012 -> servo 1
+0x12000014 -> servo 2
+0x12000016 -> servo 3
+0x12000018 -> servo 4
+0x1200001A -> servo 5
+0x1200001C -> servo 6
+0x1200001E -> servo 7
+0x12000020 -> servo 8
+0x12000022 -> servo 9
+0x12000024 -> servo 10
+0x12000026 -> servo 11
+0x12000028 -> servo 12
+0x1200002A -> servo 13
+0x1200002C -> servo 14
+0x1200002E -> servo 15
+0x12000030 -> servo 16
+0x12000032 -> servo 17
+0x12000034 -> servo 18
+0x12000036 -> servo 19
+0x12000038 -> servo 20
+0x1200003A -> servo 21
+0x1200003C -> servo 22
+0x1200003E -> servo 23
+0x12000040 -> servo 24
+0x12000042 -> servo 25
+0x12000044 -> servo 26
+0x12000046 -> servo 27
+0x12000048 -> servo 28
+0x1200004A -> servo 29
+0x1200004C -> servo 30
+0x1200004E -> servo 31
 
 5 - ROAD MAP
-De futurs developpements sont en cours:
-	- Driver Linux pour le firmware FPGA,
-	- Daemon de commande des servos via le driver Linux,
-	- Client reseau pour daemon de commande...
+Developements in progress:
+	- Linux Kernel Driver for this firmware
+	- Command Daemon for the Linux Kernel Driver,
+	- Network Client for the Command Daemon...

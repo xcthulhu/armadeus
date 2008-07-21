@@ -1,4 +1,20 @@
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Copyright (C) 2008  Armadeus Project
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--------------------------------------------------------------------------------
 -- Company: Armadeus Project
 -- Engineer: Yvan ROCH
 -- 
@@ -14,64 +30,82 @@
 --
 -- Revision: 
 -- Revision 0.01 - File Created
+-- Revision 0.02 - 2008-05-11 (see SERVO_top.vhd)
+-- Revision 0.03 - 2008-07-09 (see SERVO_top.vhd)
 -- Additional Comments:
---
-------------------------------------------------------------------------------------
+-- PWM module: This module generates the PWM output and save the servosReg and
+-- enableReg signals in the internal module register at the right time.
+--------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity PWM_MODULE is
 	Port ( 
-		-- Compteur externe de 16 bits cadencer a 4MHz: un cycle complet du compteur
-		-- dure 16.384 ms, c'est la durée entre 2 implusions
+		-- External 96 MHz clock
+		clkIn : in std_logic;
+		-- External 4MHz, 16 bits, external counter
+		-- One counter cycle has a duration of 16.384 ms
+		-- This is the delay between 2 PWM pulses
 		count : in std_logic_vector(15 downto 0);
-		-- signal servosReg(X) copie dans pwmValue
+
+		-- signal servosReg(X) to be copied in pwmValue
 		servosReg : in std_logic_vector( 11 downto 0);
-		-- signal enableReg(X) copie dans enable
+
+		-- signal enableReg(X) to be copied in enable
 		enableReg: in std_logic;
-		-- sortie pwm
-		pwmOut : out std_logic;
-		-- le signal writeValue valide l'ecriture de servosReg dans pwmValue et enableReg dans
-		-- enable a un instant ou la sortie PWM est a zero.
-		-- Ainsi la generation de l'impulsion n'est pas perturbee par le changement
-		-- de valeur de servosReg et enableReg
-		writeValue : in std_logic);
+
+		-- PWM output
+		pwmOut : out std_logic);
 end PWM_MODULE;
 
 architecture Behavioral of PWM_MODULE is
-	-- Valeur interne pwmValue : registre de 12 bits.
+	-- Internal value pwmValue : 12 bits register
 	signal pwmValue : std_logic_vector(11 downto 0) := "000000000000";
-	-- Validation de la sortie PWM
+	-- PWM output validation
 	signal enable: std_logic := '0';
 begin
 
-	-- Ecriture dans les registres du module
-	process(writeValue)
+	-- Writing operation in the module registers
+	-- 
+	-- Revision 0.02: removing the writeValue signal.
+	-- The internal registers must updated only when the PWM ouput is 0
+	-- for avoiding the servo jittering.
+	-- The PWM ouput is 0 when count < 1111100000110000b (start of the common 
+	-- 0.5 ms PWM pulse for all servos)and
+	-- count > 0001111111111110b (max 12bits pwmValue left shifted by 1 bit)
+	-- Arbitrary the internal registers will be updated when count is 0x8000
+	process(clkIn)
 	begin
-		if (writeValue'event and writeValue='1') then
-		-- Sur le front montant de writeValue memorisation
-		-- de servosReg dans pwmValue et enableReg dans enable
-			pwmValue <= servosReg;
-			enable <= enableReg;
+		-- On the rising edge of count
+		if (rising_edge(clkIn)) then
+			-- count is 0x8000 update of the internal registers
+			if (count = "1000000000000000") then
+				pwmValue <= servosReg;
+				enable <= enableReg;
+			end if;
 		end if;
 	end process;
 
-	-- Generation du signal PWM
-	pwmOut <= '0' when (enable = '0') else -- sortie a 0 si servo devalide
-		  	  -- Generation de l'impulsion de 0.5 ms commune a toute les valeurs
-			  -- 1111100000110000b=63536
-			  -- 65536-63536=2000 2000 cycle a 4MHz=0.5ms
-			  -- Cela corresponde au debut de generation de l'impulsion
+	-- PWM signal generation 
+	-- 
+	pwmOut <= 
+			-- PWM output to 0 if servo disable
+			'0' when (enable = '0') else
+
+			-- Common to all values 0.5ms pulse generation
+			-- 1111100000110000b=63536
+			-- 65536-63536=2000: 2000 cycles at 4MHz=0.5ms
+			-- This is the start of the pulse generation
 			'1' when (count > "1111100000110000") else -- Count of 63536
-			  -- Multiplication de pwmValue par 2 (decalage a gauche de 1)
-			  -- pour pwmValue=0 position extreme avec une impulsion de 0+0.5=0.5ms
-			  -- pour pwmValue=4000 position extreme avec une impulsion de 2+0.5=2.5ms
-			  -- pwmValue= temps_impulsion(ms).2.10^6
-			  -- Quand le compteur est depasse: fin de l'implusion
+
+			-- Multiplication by 2 of pwmValue (left shift by 1 bit)
+			-- for pwmValue=0 extreme anti-clockwise position with pulse duration of 0+0.5=0.5ms
+			-- pour pwmValue=4000 extreme clockwise position with pulse duration of 2+0.5=2.5ms
+			-- pwmValue= (total_impulsion_time(ms)-0.5ms).2.10^6
+			-- When count is greater : end of pulse
 			'0' when (count > ("000" & pwmValue(11 downto 0) & "0")) else
-			  -- le compteur vaut entre 0 et pwmValue: generation de l'impulsion
-			  '1';
+			
+			-- the count value is between 0 and pwmValue: PWM pulse generation
+			'1';
 end Behavioral;

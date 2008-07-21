@@ -1,4 +1,20 @@
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Copyright (C) 2008  Armadeus Project
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--------------------------------------------------------------------------------
 -- Company: Armadeus Project
 -- Engineer: Yvan ROCH
 -- 
@@ -14,594 +30,333 @@
 --
 -- Revision: 
 -- Revision 0.01 - File Created
+-- Revision 0.02 - 2008-05-11
+-- Application of sonzerro and Fabrice Mousset recommendations:
+-- 		- All comments are in english.
+-- 		- Synchronous design, using of a single clock and removing the writeValue
+-- 		signal.
+-- 		- Using a reset signal.
+-- 		- Using of rising_edge.
+-- 		- Using generic parameters (number of servos...).
+-- 		- Using generator for multiple entity.
+-- 		- Using integer with range.
+-- Removing unedeed signal readAccessPulse.
+-- Adding MagicID register for firmware recognition from Linux driver.
+-- Adding Firmware Version register for versatile configuration of Linux driver.
+-- Adding Number of servos register for versatile configuration of Linux driver.
+-- Adding Command/Status register for send command (like reset) to the firmware.
+-- Revision 0.03 - 2008-07-09
+-- 		- Use IEEE.NUMERIC_STD only. Avoid the use of SYNOPSYS Library
+-- 		IEEE.STD_LOGIC_UNSIGNED and IEEE.STD_LOGIC_ARITH.
+-- 		- Synchronous design, using of a single clock (removing 4MHz unused clock)
+-- 		- Asynchronous Reset
+-- 
 -- Additional Comments:
--- Ce projet est un firmware FPGA de contolleur de servo de telecommande
--- Il est inspirer du projet "Atmel AVR 2004 Design Contest Entry Project Number A3722"
--- de Circuit Cellar par Eric Gagnon :
+-- This project is a R/C servos controller FPGA Firmware for the Xilinx Spartan3 embedded 
+-- on the Armadeus board. It is inspired from the project 
+-- "Atmel AVR 2004 Design Contest Entry Project Number A3722" of Circuit Cellar
+-- from Eric Gagnon :
 -- http://www.circuitcellar.com/avr2004/HA3722.html
 -- 
--- Ce controleur de servo permet de controle jusqu'a 24 servos.
--- Il est facilement extensible a plus.
+-- This controler is able to drive from 1 to 32 R/C servos. 
+-- This number is controled by the generic parameter 'nbrServos'
+-- 
+-- Addresses Mapping
+-- Spartan3 Base Address on Armadeus Board:	0x12000000
+-- Magic ID Register:				0x12000000
+-- Firmware Version Register:		0x12000002
+-- Number of R/C servos managed:	0x12000004
+-- Status Register:					0x12000006
+-- Command Register:				0x12000008
+-- Enable Servo Register LSB:		0x1200000A
+-- Enable Servo Register MSB:		0x1200000C
+-- Base Address of Servos Position Registers	0x12000010
 --
--- Chaque registre de servo (0x12000000 - 0x1200002E) est un registre 16 bits 
--- avec 12 bits significatifs contenant la position du servo concerne.
--- 0000 ecrit a l'adresse 0x12000000 positionnera le servo 0 a la position maximale anti-horaire
--- 0800 ecrit a l'adresse 0x12000000 positionnera le servo 0 a la position mediane
--- 0FFF ecrit a l'adresse 0x12000000 positionnera le servo 0 a la position maximale horaire
--- Les registres 0x12000030 et 0x12000032 sont les registres de validation des servos
--- 0001 ecrit a l'adresse 0x12000030 activera le servo 0
--- 0001 ecrit a l'adresse 0x12000032 activera le servo 16
--- 
--- Decodage d'adresse:
--- 0x12000000 servo 0
--- 0x12000002 servo 1
--- 0x12000004 servo 2
--- 0x12000006 servo 3
--- 0x12000008 servo 4
--- 0x1200000A servo 5
--- 0x1200000C servo 6
--- 0x1200000E servo 7
--- 0x12000010 servo 8
--- 0x12000012 servo 9
--- 0x12000014 servo 10
--- 0x12000016 servo 11
--- 0x12000018 servo 12
--- 0x1200001A servo 13
--- 0x1200001C servo 14
--- 0x1200001E servo 15
--- 0x12000020 servo 16
--- 0x12000022 servo 17
--- 0x12000024 servo 18
--- 0x12000026 servo 19
--- 0x12000028 servo 20
--- 0x1200002A servo 21
--- 0x1200002C servo 22
--- 0x1200002E servo 23
--- 0x12000030 Registre de validation LSB
--- 0x12000032 Registre de validation MSB
-
--- 
-----------------------------------------------------------------------------------
+-- Each servo has a 16 bits position register with only 12 signifiant bits that containt the servo position.
+-- Example:
+-- 0000 written at address 0x12000010 will put the servo 0 on the maximal counterclockwise position.
+-- 0800 written at address 0x12000010 will put the servo 0 on the median position.
+-- 0FFF written at address 0x12000010 will put the servo 0 on the maximal clockwise position.
+--
+-- The Enable Servo Register LSB and Enable Servo Register MSB are the servos enable control registers:
+-- XXX1 written at address 0x1200000A will enable the servo 0 (the servo will keep his planed position)
+-- XXX0 written at address 0x1200000A will disable the servo 0 (the servo is freewheeling)
+-- XXX1 written at address 0x1200000C will enable the servo 16 (the servo will keep his planed position)
+-- XXX0 written at address 0x1200000C will disable the servo 16 (the servo is freewheeling)
+--
+-- Status Register:
+-- bit0: If set, a write error occured
+--
+-- Command Register:
+-- bit0: If set, the firmware will reset
+--------------------------------------------------------------------------------
 
 library IEEE;
+-- IEEE.STD_LOGIC_UNSIGNED.ALL and IEEE.STD_LOGIC_ARITH.ALL are not used because
+-- they may have some incompability with some synthesizer (SYNOPSYS library)
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity SERVO_top is
+	-- nbrServos is the number of servos managed by this module
+	-- nbrServos is not declared as a constant because it is used is the
+	-- port declaration section of this module (the synthetizer does not permit that)
+	-- When changing nbrServos you must modify the servo.ucf file for connecting
+	-- pwmOut<XX> properly.
+ 	generic ( nbrServos : integer := 32);
 	port ( -- MC9328MXL pins
-		-- Bus de donnees 16 bits
+		-- MC9328MXL 16 bits Data Bus
 		DataxD : inout std_logic_vector(15 downto 0);
 		
-		-- Bus d'adresses A0-A12
-		-- L'adresse de base du Spartan3 est 0x12000000
+		-- MC9328MXL Address Bus A0-A12
+		-- The Spartan3 base addressis 0x12000000
 		AddrxDI : in std_logic_vector(12 downto 0);
 		
-		-- Acces en ecriture (APF9328: CTRL9, Spartan3 pin 60, MC9328MXL: EB3n pin M5) Actif Bas
-		-- Ce signal du MC9328MXL est actif au niveau bas en ecriture ET en lecture
-		-- Selon le Data Sheet du MC9328MXL P4:
-		-- LSB Byte Strobe?Active low external enable byte signal that controls D [7:0].
-		-- Voir timing Write P28
+		-- Write access (APF9328: CTRL9, Spartan3 pin 60, MC9328MXL: EB3n pin M5) Active Low
+		-- This signal from the MC9328MXL is active low for write AND read operations
+		-- According to MC9328MXL Data Sheet p4:
+		-- LSB Byte Strobe Active low external enable byte signal that controls D [7:0].
+		-- See Write timing p28
 		WRxBI : in std_logic;
 		
-		-- Acces en lecture (APF9328: CTRL10, Spartan3 pin 63, MC9328MXL: OEn pin R5) Actif Bas
-		-- Ce signal du MC9328MXL est actif au niveau bas en lecture UNIQUEMENT
-		-- Selon le Data Sheet du MC9328MXL P4:
+		-- Read access (APF9328: CTRL10, Spartan3 pin 63, MC9328MXL: OEn pin R5) Active Low
+		-- This signal from the MC9328MXL is active low for read operation SOLELY
+		-- According to MC9328MXL Data Sheet p4:
 		-- Memory Output Enable?Active low output enables external data bus.
-		-- Voir timing Read P26
+		-- See Read timing P26
 		RDxBI : in std_logic;
 		
-		-- Remarque sur WRxBI et RDxBI:
-		-- RDxBI est en fait OEn, actif lors de la lecture UNIQUEMENT sur le bus externe du MC9328MXL
-		-- WRxBI est en fait EB3n, actif lors de l'accès a l'octet de poids faible du bus de données en lecture ET en ecriture
-		-- Ce n'est pas très clair car ces deux signaux ne sont pas mutuellement exclusifs!!!
-		-- En resumé:
-		-- Lors d'une lecture: RDxBI=0 et WRxBI=0 (les 2 actifs a 0)
-		-- Lors d'une ecriture: RDxBI=1 et WRxBI=0 (les 2 actifs a 0)
+		-- Comments on  WRxBI et RDxBI:
+		-- RDxBI is in fact OEn, active SOLELY on read operations on the MC9328MXL external bus.
+		-- WRxBI is in fact EB3n, active on read AND write operations on the LSB byte of the data bus.
+		-- It is not very clear because these signals are not mutually exclusive!!!
+		-- To resume:
+		-- On read operations: RDxBI=0 et WRxBI=0 (both acvite low)
+		-- On write operations: RDxBI=1 et WRxBI=0 (both acvite low)
 		
-		-- Chip select (APF9328: CTRL1, Spartan3 pin 59, MC9328MXL: CS1n M8) Actif Bas
+		-- Chip select (APF9328: CTRL1, Spartan3 pin 59, MC9328MXL: CS1n M8) Active Low
 		CSxBI : in std_logic; 
 		
-		-- Entree de l'horloge a 96 MHz provenant du MC9328MXL sur la broche P55 du Spartan3
+		-- Clock input at 96 MHz from  MC9328MXL on Spartan3 pin P55
 		clkInImx96MHz : in  STD_LOGIC;
 		
-		-- Declaration des 24 registres de 1 bit contenant la sortie PWM
-		pwmOut : out std_logic_vector(23 downto 0));
-
+		-- nbrServos 1 bit register declaration for PWM outputs
+		pwmOut : out std_logic_vector(nbrServos-1 downto 0)
+	);
 end entity SERVO_top;
 
 architecture structural of SERVO_top is
-	-- Declaration du type reg12Array24 qui contient 24 signaux de 12 bits
-	-- Ce type est utilise pour les 24 registres de position des servos
-	type reg12Array24 is array(0 to 23) of std_logic_vector(11 downto 0);
+	-- Contants declaration
+	-- Magic ID
+	constant regMagicID : std_logic_vector(15 downto 0) := X"7207";
+	-- Firmware Version
+	constant regFirmwareVersion : std_logic_vector(15 downto 0) := X"0003";
+	-- MagicID register Address: 0x12000000
+	constant regMagicIDAddr : std_logic_vector(12 downto 0) := "0000000000000";
+	-- Firmaware version register Address:0x12000002
+	constant regFirmwareVersionAddr : std_logic_vector(12 downto 0) := "0000000000010";
+	-- Number of servos register Address: 0x12000004
+	constant regNumberServosAddr : std_logic_vector(12 downto 0) := "0000000000100";
+	-- Status register Address: 0x12000006
+	constant regStatusAddr : std_logic_vector(12 downto 0) := "0000000000110";
+	-- Command register Address: 0x12000008
+	constant regCmdAddr : std_logic_vector(12 downto 0) := "0000000001000";
+	-- Servos Validation Register LSB Address: 0x1200000A
+	constant regServosValidationLSBAddr : std_logic_vector(12 downto 0) := "0000000001010";
+	-- Servos Validation Register MSB Address: 0x1200000C
+	constant regServosValidationMSBAddr : std_logic_vector(12 downto 0) := "0000000001100";
+	-- Servos Position Registers base address : 0x12000010
+	-- Servo N Position Register address is : N*2 + addrRegServosPositionDase
+	constant addrRegServosPositionDaseAddr : std_logic_vector(12 downto 0) := "0000000010000";
+
+	-- Type reg12Array declaration that containts nbrServos signals of 12 bits
+	-- This type is used for the sorvos positions registers
+	type reg12Array is array(0 to nbrServos-1) of std_logic_vector(11 downto 0);
 	
-	-- Declaration des 24 registres de 16 bits contenant la position des servos
-	-- Initialisation en position mediane des servos
-	-- Position Min: 0
-	-- Position Max: FFF
-	signal servosReg : reg12Array24 := (X"800",X"800",X"800",X"800",X"800",X"800",
-	X"800",X"800",X"800",X"800",X"800",X"800",X"800",X"800",X"800",X"800",X"800",
-	X"800",X"800",X"800",X"800",X"800",X"800",X"800");
-	-- Declaration des 24 registres de 1 bit contenant la validation des servos
-	-- Initailisation: tous les servo sont desactives
-	signal enableReg : std_logic_vector(31 downto 0) := X"00000000";
+	-- Reset Generator Declaration
+	component RESET_MODULE
+		-- Ports declaration
+		port 
+		(
+			-- Clock Input
+			clkIn : in std_logic ;
+			-- External Reset Input
+			resetIn : in std_logic ;
+			-- Well formed reset signal
+			resetOut : out std_logic 
+		);
+	end component RESET_MODULE;
 
-	-- Declaration du diviseur d'horloge
-	component CLK_GENERATOR
-		-- Declaration des ports utilises
+	-- Counter declaration
+	component COUNTER_MODULE
+		-- Ports declaration
 		port (clkIn : in  STD_LOGIC;
-			counterOut16Bits	: out std_logic_vector(15 downto 0);
-			writeValue : out STD_LOGIC);
-	end component CLK_GENERATOR;
+			counterOut16Bits	: out std_logic_vector(15 downto 0));
+	end component COUNTER_MODULE;
 
-	-- Declaration du generateur PWM
+	-- PWM generator declaration
 	component PWM_MODULE
-		-- Declaration des ports utilises
+		-- Ports declaration
 		Port (count : in std_logic_vector(15 downto 0);
+			clkIn : in std_logic;
 			servosReg : in std_logic_vector( 11 downto 0);
 			enableReg: in std_logic;
-			pwmOut : out std_logic;
-			writeValue : in std_logic);
+			pwmOut : out std_logic);
 	end component PWM_MODULE;
 	
-	-- Declaration des signaux
-	-- Reset asynchrone actif bas
-	signal resetn : std_logic;
-	-- Signal de synchro de lecture
-	signal readAccessPulse : std_logic;
-	-- Signal buffer pour compteur principal
+	-- Signals declaration
+	-- nbrServos 16 bits positon registers declaration
+	signal servosReg : reg12Array;
+	-- nbrServos 1 bit enable registers declaration
+	signal regEnable : std_logic_vector(31 downto 0);
+	-- Status register
+	signal regStatus : std_logic;
+	-- Command register
+	signal regCmd : std_logic_vector(15 downto 0);
+	-- Reset active on high level from the RESET_MODULE
+	signal reset : std_logic;
+	-- Reset request send to the RESET_MODULE
+	signal requestReset : std_logic;
+	-- Signal buffer for the main counter
 	signal count : std_logic_vector(15 downto 0);
-	-- Signal en provenance de compteur principal signifiant que les valeurs
-	-- servosReg(X) et enableReg(X) peuvent mis a jour sans perturber la generation
-	-- de la partie utile de l'impulsion
-	signal writeValue : std_logic;
-	
-	-- Definition de l'architecture
-	begin
-		-- Instantiation du generateur d'horloge
-		clockGen : CLK_GENERATOR
-		-- Mapping des ports du generateur d'horloge
-		port map (clkIn => clkInImx96MHz,
-			counterOut16Bits => count,
- 			writeValue => writeValue);
--- 			testOut => testOut);
-		-- Instantiation des 24 modules PWM
-		PWM0 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(0),
-			enableReg => enableReg(0),
-			pwmOut => pwmOut(0),
-			writeValue => writeValue);
-		PWM1 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(1),
-			enableReg => enableReg(1),
-			pwmOut => pwmOut(1),
-			writeValue => writeValue);
-		PWM2 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(2),
-			enableReg => enableReg(2),
-			pwmOut => pwmOut(2),
-			writeValue => writeValue);
-		PWM3 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(3),
-			enableReg => enableReg(3),
-			pwmOut => pwmOut(3),
-			writeValue => writeValue);
-		PWM4 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(4),
-			enableReg => enableReg(4),
-			pwmOut => pwmOut(4),
-			writeValue => writeValue);
-		PWM5 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(5),
-			enableReg => enableReg(5),
-			pwmOut => pwmOut(5),
-			writeValue => writeValue);
-		PWM6 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(6),
-			enableReg => enableReg(6),
-			pwmOut => pwmOut(6),
-			writeValue => writeValue);
-		PWM7 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(7),
-			enableReg => enableReg(7),
-			pwmOut => pwmOut(7),
-			writeValue => writeValue);
-		PWM8 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(8),
-			enableReg => enableReg(8),
-			pwmOut => pwmOut(8),
-			writeValue => writeValue);
-		PWM9 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(9),
-			enableReg => enableReg(9),
-			pwmOut => pwmOut(9),
-			writeValue => writeValue);
-		PWM10 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(10),
-			enableReg => enableReg(10),
-			pwmOut => pwmOut(10),
-			writeValue => writeValue);
-		PWM11 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(11),
-			enableReg => enableReg(11),
-			pwmOut => pwmOut(11),
-			writeValue => writeValue);
-		PWM12 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(12),
-			enableReg => enableReg(12),
-			pwmOut => pwmOut(12),
-			writeValue => writeValue);
-		PWM13 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(13),
-			enableReg => enableReg(13),
-			pwmOut => pwmOut(13),
-			writeValue => writeValue);
-		PWM14 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(14),
-			enableReg => enableReg(14),
-			pwmOut => pwmOut(14),
-			writeValue => writeValue);
-		PWM15 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(15),
-			enableReg => enableReg(15),
-			pwmOut => pwmOut(15),
-			writeValue => writeValue);
-		PWM16 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(16),
-			enableReg => enableReg(16),
-			pwmOut => pwmOut(16),
-			writeValue => writeValue);
-		PWM17 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(17),
-			enableReg => enableReg(17),
-			pwmOut => pwmOut(17),
-			writeValue => writeValue);
-		PWM18 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(18),
-			enableReg => enableReg(18),
-			pwmOut => pwmOut(18),
-			writeValue => writeValue);
-		PWM19 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(19),
-			enableReg => enableReg(19),
-			pwmOut => pwmOut(19),
-			writeValue => writeValue);
-		PWM20 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(20),
-			enableReg => enableReg(20),
-			pwmOut => pwmOut(20),
-			writeValue => writeValue);
-		PWM21 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(21),
-			enableReg => enableReg(21),
-			pwmOut => pwmOut(21),
-			writeValue => writeValue);
-		PWM22 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(22),
-			enableReg => enableReg(22),
-			pwmOut => pwmOut(22),
-			writeValue => writeValue);
-		PWM23 : PWM_MODULE
-		-- Mapping des ports du module PWM
-		port map (count => count,
-			servosReg => servosReg(23),
-			enableReg => enableReg(23),
-			pwmOut => pwmOut(23),
-			writeValue => writeValue);
+-- Architecture definition
+begin
+ 	-- Reset generator Instantiation
+ 	resetGenerator : RESET_MODULE
+ 	-- Port mapping for Reset generator
+	port map (
+		clkIn => clkInImx96MHz,
+		resetIn => requestReset,
+		resetOut => reset
+	);
+	-- Counter instantiation
+	counterGenerator : COUNTER_MODULE
+	-- Port mapping for Counter
+	port map (
+		clkIn => clkInImx96MHz,
+		counterOut16Bits => count
+	);
+	-- PWM Modules Instantiation
+	Pwm : for N in 0 to nbrServos-1 generate
+		PWM_MOD : PWM_MODULE
+			port map (
+				count      => count,
+				clkIn => clkInImx96MHz,
+				servosReg  => servosReg(N),
+				enableReg  => regEnable(N),
+				pwmOut     => pwmOut(N));
+	end generate Pwm;
 
-	-- Initialisation
-	resetn <= '1';
-
-	-- Processus d'ecriture dans le registre depuis le bus µP
-	registerWrite: process (clkInImx96MHz, resetn)
+	-- Write process in the firmware registers from the µP bus
+	registerWrite: process (clkInImx96MHz,reset)
 	begin  -- process registerWrite
-		-- Reset asynchrone actif au niveau bas
-		if resetn = '0' then
-			-- Action eventuelle du Reset
-		-- Sur le front montant de clk_in_Imx_96MHz
-		elsif clkInImx96MHz'event and clkInImx96MHz = '1' then
+		-- General Initialisation Process
+		-- This initialisation process is here because if it is located in
+		-- an other process the synthesis will failed because there are multiple
+		-- asignments to the same signals
+		-- Asynchronous Reset
+		if reset = '1' then
+			requestReset <= '0';
+			regStatus <= '0';
+			regCmd <= X"0000";
+			-- All servos are disable
+			regEnable <= X"00000000";
+			-- Medium position for all servos
+			for N in 0 to nbrServos-1 loop
+				servosReg(N) <= X"800";
+			end loop;
+		elsif rising_edge(clkInImx96MHz) then
+			-- Write access
 			if CSxBI = '0' and WRxBI = '0' then
-				-- Decodage d'adresse, adresse de base: 0x12000000
+				-- Addresses decoding, base address is 0x12000000
 				case AddrxDI is
-					-- 0x12000000 servo 0
-					when "0000000000000" =>
-						-- Sauvegarde dans le registre du servo 0
-						servosReg(0) <= DataxD(11 downto 0);
-					-- 0x12000002 servo 1
-					when "0000000000010" =>
-						-- Sauvegarde dans le registre du servo 1
-						servosReg(1) <= DataxD(11 downto 0);
-					-- 0x12000004 servo 2
-					when "0000000000100" =>
-						-- Sauvegarde dans le registre du servo 2
-						servosReg(2) <= DataxD(11 downto 0);
-					-- 0x12000006 servo 3
-					when "0000000000110" =>
-						-- Sauvegarde dans le registre du servo 3
-						servosReg(3) <= DataxD(11 downto 0);
-					-- 0x12000008 servo 4
-					when "0000000001000" =>
-						-- Sauvegarde dans le registre du servo 4
-						servosReg(4) <= DataxD(11 downto 0);
-					-- 0x1200000A servo 5
-					when "0000000001010" =>
-						-- Sauvegarde dans le registre du servo 5
-						servosReg(5) <= DataxD(11 downto 0);
-					-- 0x1200000C servo 6
-					when "0000000001100" =>
-						-- Sauvegarde dans le registre du servo 6
-						servosReg(6) <= DataxD(11 downto 0);
-					-- 0x1200000E servo 7
-					when "0000000001110" =>
-						-- Sauvegarde dans le registre du servo 7
-						servosReg(7) <= DataxD(11 downto 0);
-					-- 0x12000010 servo 8
-					when "0000000010000" =>
-						-- Sauvegarde dans le registre du servo 8
-						servosReg(8) <= DataxD(11 downto 0);
-					-- 0x12000012 servo 9
-					when "0000000010010" =>
-						-- Sauvegarde dans le registre du servo 9
-						servosReg(9) <= DataxD(11 downto 0);
-					-- 0x12000014 servo 10
-					when "0000000010100" =>
-						-- Sauvegarde dans le registre du servo 10
-						servosReg(10) <= DataxD(11 downto 0);
-					-- 0x12000016 servo 11
-					when "0000000010110" =>
-						-- Sauvegarde dans le registre du servo 11
-						servosReg(11) <= DataxD(11 downto 0);
-					-- 0x12000018 servo 12
-					when "0000000011000" =>
-						-- Sauvegarde dans le registre du servo 12
-						servosReg(12) <= DataxD(11 downto 0);
-					-- 0x1200001A servo 13
-					when "0000000011010" =>
-						-- Sauvegarde dans le registre du servo 13
-						servosReg(13) <= DataxD(11 downto 0);
-					-- 0x1200001C servo 14
-					when "0000000011100" =>
-						-- Sauvegarde dans le registre du servo 14
-						servosReg(14) <= DataxD(11 downto 0);
-					-- 0x1200001E servo 15
-					when "0000000011110" =>
-						-- Sauvegarde dans le registre du servo 15
-						servosReg(15) <= DataxD(11 downto 0);
-					-- 0x12000020 servo 16
-					when "0000000100000" =>
-						-- Sauvegarde dans le registre du servo 16
-						servosReg(16) <= DataxD(11 downto 0);
-					-- 0x12000022 servo 17
-					when "0000000100010" =>
-						-- Sauvegarde dans le registre du servo 17
-						servosReg(17) <= DataxD(11 downto 0);
-					-- 0x12000024 servo 18
-					when "0000000100100" =>
-						-- Sauvegarde dans le registre du servo 18
-						servosReg(18) <= DataxD(11 downto 0);
-					-- 0x12000026 servo 19
-					when "0000000100110" =>
-						-- Sauvegarde dans le registre du servo 19
-						servosReg(19) <= DataxD(11 downto 0);
-					-- 0x12000028 servo 20
-					when "0000000101000" =>
-						-- Sauvegarde dans le registre du servo 20
-						servosReg(20) <= DataxD(11 downto 0);
-					-- 0x1200002A servo 21
-					when "0000000101010" =>
-						-- Sauvegarde dans le registre du servo 21
-						servosReg(21) <= DataxD(11 downto 0);
-					-- 0x1200002C servo 22
-					when "0000000101100" =>
-						-- Sauvegarde dans le registre du servo 22
-						servosReg(22) <= DataxD(11 downto 0);
-					-- 0x1200002E servo 23
-					when "0000000101110" =>
-						-- Sauvegarde dans le registre du servo 23
-						servosReg(23) <= DataxD(11 downto 0);
-					-- 0x12000030 Registre de validation LSB
-					when "0000000110000" =>
-						-- Sauvegarde dans le registre de validation LSB
-						enableReg(15 downto 0) <= DataxD(15 downto 0);
-					-- 0x12000032 Registre de validation MSB
-					when "0000000110010" =>
-						-- Sauvegarde dans le registre de validation LSB
-						enableReg(31 downto 16) <= DataxD(15 downto 0);
+					-- MagicID, Firmaware version, regNumberServos, Status
+					-- register not processed: read only registers!!!
+					when regCmdAddr =>
+						-- Save in the regCmd
+						regCmd <= DataxD(15 downto 0);
+						-- Here: code for command execution...
+						-- Software Reset
+						if regCmd = X"0001" then
+							requestReset <= '1';
+						end if;
+						if regCmd = X"0000" then
+							requestReset <= '0';
+						end if;
+					-- Servos Validation Register LSB
+					when regServosValidationLSBAddr =>
+						-- save in regEnable LSB
+						regEnable(15 downto 0) <= DataxD(15 downto 0);
+					-- Servos Validation Register MSB
+					when regServosValidationMSBAddr =>
+						-- save in regEnable MSB
+						regEnable(31 downto 16) <= DataxD(15 downto 0);
 					when others => null;
-				end case;
+					-- Add here read error processing
+				end case;				
+				-- Save position value for all servos
+				for N in 0 to nbrServos-1 loop
+					-- unigned cast must be used with IEEE.NUMERIC_STD
+					if (std_logic_vector(unsigned(addrRegServosPositionDaseAddr) + (N*2))=AddrxDI) then
+						-- Save in Servo N Position Register
+						servosReg(N) <= DataxD(11 downto 0);
+					end if;
+				end loop;
 			end if;
 		end if;
 	end process registerWrite;
 
-	-- Processus d'acces generique en lecture depuis le bus µP
-	registerReadSyn: process (clkInImx96MHz, resetn)
-		variable ReadAccessEdgeDetect : std_logic := '0';
-	begin  -- process registerReadSyn
-		-- Reset asynchrone actif au niveau bas
-		if resetn = '0' then
-			ReadAccessPulse   <= '1';
-			ReadAccessEdgeDetect := '0';
-		-- Sur le front montant de clk_in_Imx_96MHz
-		elsif clkInImx96MHz'event and clkInImx96MHz = '1' then
-			-- Si initialement ReadAccessEdgeDetect=0 et acces en lecture (RDxBI=0 et CSxBI=0)
-			-- Alors ReadAccessPulse=0
-			-- Au cycle d'horloge suivant si tourjours acces en lecture (RDxBI=0 et CSxBI=0)
-			-- Alors ReadAccessPulse=1
-			-- Et vice versa
-			-- On obtient donc une transition 0->1 ou 1->0 sur ReadAccessPulse
-			-- Au maximum en 2 cycle de clk_in_Imx_96MHz
-			-- Lorsque l'acces en lecture est fini ReadAccessEdgeDetect revient a 0
-			if (ReadAccessEdgeDetect = '0' and ((not CSxBI) and (not RDxBI)) = '1') then
-				ReadAccessPulse <= '0';
-			else
-				ReadAccessPulse <= '1';
-			end if;
-			-- ReadAccessEdgeDetect = 1 si lecture (RDxBI=0 et CSxBI=0)
-			ReadAccessEdgeDetect := (not CSxBI) and (not RDxBI);
-		end if;
-	end process registerReadSyn;
-
-	-- Processus de lecture du registre depuis le bus µP
-	registerRead : process (CSxBI, RDxBI, AddrxDI, ReadAccessPulse)
+	-- Read process of firmware registers from the µP bus
+	registerRead : process (CSxBI, RDxBI, AddrxDI, clkInImx96MHz, servosReg, regStatus, regCmd, regEnable)
 	begin -- process registerRead
-		-- acces en lecture (RDxBI=0 et CSxBI=0)
+		-- Read access (RDxBI=0 et CSxBI=0)
 		if CSxBI = '0' and RDxBI = '0' then
+			-- Read the general register:
+			-- regMagicID,regFirmwareVersion, 	regNumberServos,regStatus
+			-- regCmd,regServosValidationLSBAddr,regServosValidationMSBAddr
 			case AddrxDI is
-				-- 0x12000000 servo 0
-				when "0000000000000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 0
-					DataxD <= "0000" & servosReg(0)(11 downto 0);
-				-- 0x12000002 servo 1
-				when "0000000000010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 1
-					DataxD <= "0000" & servosReg(1)(11 downto 0);
-				-- 0x12000004 servo 2
-				when "0000000000100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 2
-					DataxD <= "0000" & servosReg(2)(11 downto 0);
-				-- 0x12000006 servo 3
-				when "0000000000110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 3
-					DataxD <= "0000" & servosReg(3)(11 downto 0);
-				-- 0x12000008 servo 4
-				when "0000000001000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 4
-					DataxD <= "0000" & servosReg(4)(11 downto 0);
-				-- 0x1200000A servo 5
-				when "0000000001010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 5
-					DataxD <= "0000" & servosReg(5)(11 downto 0);
-				-- 0x1200000C servo 6
-				when "0000000001100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 6
-					DataxD <= "0000" & servosReg(6)(11 downto 0);
-				-- 0x1200000E servo 7
-				when "0000000001110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 7
-					DataxD <= "0000" & servosReg(7)(11 downto 0);
-				-- 0x12000010 servo 8
-				when "0000000010000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 8
-					DataxD <= "0000" & servosReg(8)(11 downto 0);
-				-- 0x12000012 servo 9
-				when "0000000010010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 9
-					DataxD <= "0000" & servosReg(9)(11 downto 0);
-				-- 0x12000014 servo 10
-				when "0000000010100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 10
-					DataxD <= "0000" & servosReg(10)(11 downto 0);
-				-- 0x12000016 servo 11
-				when "0000000010110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 11
-					DataxD <= "0000" & servosReg(11)(11 downto 0);
-				-- 0x12000018 servo 12
-				when "0000000011000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 12
-					DataxD <= "0000" & servosReg(12)(11 downto 0);
-				-- 0x1200001A servo 13
-				when "0000000011010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 13
-					DataxD <= "0000" & servosReg(13)(11 downto 0);
-				-- 0x1200001C servo 14
-				when "0000000011100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 14
-					DataxD <= "0000" & servosReg(14)(11 downto 0);
-				-- 0x1200001E servo 15
-				when "0000000011110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 15
-					DataxD <= "0000" & servosReg(15)(11 downto 0);
-				-- 0x12000020 servo 16
-				when "0000000100000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 16
-					DataxD <= "0000" & servosReg(16)(11 downto 0);
-				-- 0x12000022 servo 17
-				when "0000000100010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 17
-					DataxD <= "0000" & servosReg(17)(11 downto 0);
-				-- 0x12000024 servo 18
-				when "0000000100100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 18
-					DataxD <= "0000" & servosReg(18)(11 downto 0);
-				-- 0x12000026 servo 19
-				when "0000000100110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 19
-					DataxD <= "0000" & servosReg(19)(11 downto 0);
-				-- 0x12000028 servo 20
-				when "0000000101000" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 20
-					DataxD <= "0000" & servosReg(20)(11 downto 0);
-				-- 0x1200002A servo 21
-				when "0000000101010" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 21
-					DataxD <= "0000" & servosReg(21)(11 downto 0);
-				-- 0x1200002C servo 22
-				when "0000000101100" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 22
-					DataxD <= "0000" & servosReg(22)(11 downto 0);
-				-- 0x1200002E servo 23
-				when "0000000101110" =>
-					-- Envoi sur le bus de donnees µP du registre du servo 23
-					DataxD <= "0000" & servosReg(23)(11 downto 0);
-					-- 0x12000030 Registre de validation LSB
-				when "0000000110000" =>
-					-- Envoi sur le bus de donnees µP du registre de validation LSB
-					DataxD <= enableReg(15 downto 0);
-				-- 0x12000032 Registre de validation MSB
-				when "0000000110010" =>
-					-- Envoi sur le bus de donnees µP du registre de validation LSB
-					DataxD <= enableReg(31 downto 16);
+				-- Read MagicID
+				when regMagicIDAddr =>
+					-- Send on the µP data bus the MagicID
+					DataxD <= regMagicID;
+				-- Read Firmaware version
+				when regFirmwareVersionAddr =>
+					-- Send on the µP data bus the Firmaware version
+					DataxD <= regFirmwareVersion;
+				-- Read regNumberServos
+				when regNumberServosAddr =>
+					-- Send on the µP data bus the number of managed servos
+					DataxD <= std_logic_vector(to_unsigned(nbrServos,16));
+				-- Read regStatus
+				when regStatusAddr =>
+					-- Send on the µP data bus the Status
+					DataxD <= X"000" & "000" & regStatus;
+				-- Read regCmd
+				when regCmdAddr =>
+					-- Send on the µP data bus the last cms code
+					DataxD <= regCmd;
+				-- Servos Validation Register LSB
+				when regServosValidationLSBAddr =>
+					-- Send on the µP data bus regEnable LSB
+					DataxD <= regEnable(15 downto 0);
+				-- Servos Validation Register MSB
+				when regServosValidationMSBAddr =>
+					-- Send on the µP data bus regEnable MSB
+					DataxD <= regEnable(31 downto 16);
 				when others		=>
 					DataxD <= (others => '0');
 			end case;
+			-- Read position value for all servos
+			for N in 0 to nbrServos-1 loop
+				-- unigned cast must be used with IEEE.NUMERIC_STD
+				if (std_logic_vector(unsigned(addrRegServosPositionDaseAddr) + (N*2))=AddrxDI) then
+					-- Send on the µP data bus Servo N Position Register
+					DataxD <= "0000" & servosReg(N)(11 downto 0);
+				end if;
+			end loop;
+		
 		else
-			-- Haute impedance si acces autre qu'en lecture
+			-- hig impedance si acces autre qu'en lecture
 			DataxD <= (others => 'Z');
 		end if;
 	end process registerRead;
