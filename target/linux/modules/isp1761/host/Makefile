@@ -1,4 +1,6 @@
-obj-m	:=	pehci.o
+#
+#
+obj-$(CONFIG_ARMADEUS_ISP1761) :=	pehci.o
 
 clean:
 	find . -name '*.mod.[co]' -or -name '.*.o.cmd' | xargs rm -f

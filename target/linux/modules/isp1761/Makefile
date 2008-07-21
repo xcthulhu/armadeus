@@ -11,9 +11,11 @@ obj-$(CONFIG_ARMADEUS_ISP1761)	+= hal/ host/ apf9328-isp1761.o
 else
 
 BASE_DIR="../../../../buildroot/"
+BUILD_DIR_EXT:=$(shell ls $(BASE_DIR) | grep -e "^build_arm*")
 REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
       sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
-ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm_nofpu/linux-$(REL)
+
+ARMADEUS_KERNEL_DIR=$(BASE_DIR)/$(BUILD_DIR_EXT)/linux-$(REL)
 ifeq ($(LINUX_DIR),)
 LINUX_DIR    := $(ARMADEUS_KERNEL_DIR)
 endif
