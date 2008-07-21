@@ -1,6 +1,7 @@
 ---------------------------------------------------------------------------
 -- Company     : ARMadeus Systems
--- Author(s)   : Fabien Marteau
+-- Author(s)   : Fabrice Mousset (fabrice.mousset@laposte.net),
+--               modified by Fabien Marteau (fabien.marteau@armadeus.com)
 -- 
 -- Creation Date : 05/03/2008
 -- File          : syscon.vhd
