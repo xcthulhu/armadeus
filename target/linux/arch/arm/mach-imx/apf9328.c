@@ -390,7 +390,7 @@ static struct mcp251x_platform_data apf9328_mcp251x_config = {
  .transceiver_enable    = NULL,
 };
 
-#endif 
+#endif // CONFIG_CAN_MCP251X
 
 
 static struct spi_board_info spi_board_info[] __initdata = {
@@ -538,23 +538,20 @@ static void __init apf9328_init_irq(void)
 {
     // Init generic IRQs
     imx_init_irq();
+
     // Init our custom IRQs
-    set_irq_type(APF9328_UART1_IRQ, IRQF_TRIGGER_FALLING);
 #ifdef CONFIG_DM9000
     set_irq_type(APF9328_ETH_IRQ, IRQF_TRIGGER_FALLING);
-#endif // CONFIG_DM9000
+#endif
 #ifdef CONFIG_SPI_TSC2102
     set_irq_type( IRQ_GPIOD(TSC2102_INT_GPIOD), IRQF_TRIGGER_FALLING );
-#endif // CONFIG_SPI_TSC2102
+#endif
 #ifdef CONFIG_CAN_MCP251X
     set_irq_type( IRQ_GPIOC(CAN_MPC251X_INT_GPIOC), IRQF_TRIGGER_FALLING );
-#endif // CONFIG_CAN_MCP251X
-
+#endif
 #ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
-#define FPGA_INT_GPIOA 1
-    set_irq_type(IRQ_GPIOA(FPGA_INT_GPIOA),IRQF_TRIGGER_RISING);
-#endif // CONFIG_ARMADEUS_FPGA_DRIVERS
-
+    set_irq_type( APF9328_FPGA_IRQ, IRQF_TRIGGER_RISING );
+#endif
 }
 
 

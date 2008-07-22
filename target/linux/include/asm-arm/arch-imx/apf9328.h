@@ -26,14 +26,6 @@
 /* Memory Map for the APF9328 Board                                         */
 /* ------------------------------------------------------------------------ */
 
-// Serial ports
-#define APF9328_UART1_VIRT  ( IMX_CS3_VIRT + 0x30000 )
-#define APF9328_UART1_PHYS  ( IMX_CS3_PHYS + 0x30000 )
-#define APF9328_UART1_IRQ   ( IRQ_GPIOA(1) )
-#define APF9328_UART2_VIRT  ( IMX_CS3_VIRT + 0x10000 )
-#define APF9328_UART2_PHYS  ( IMX_CS3_PHYS + 0x10000 )
-#define APF9328_UART2_IRQ   ( IRQ_GPIOA(1) )
-
 // Ethernet
 #define APF9328_ETH_VIRT ( IMX_CS4_VIRT + 0x00C00000 )
 #define APF9328_ETH_PHYS ( IMX_CS4_PHYS + 0x00C00000 )
@@ -53,7 +45,9 @@
 // Usefull ?
 
 // FPGA
-// TBDL
+#define APF9328_FPGA_VIRT ( IMX_CS1_VIRT )
+#define APF9328_FPGA_PHYS ( IMX_CS1_PHYS )
+#define APF9328_FPGA_IRQ  ( IRQ_GPIOA(1) )
 
 #define CLK32 32768
 
