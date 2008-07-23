@@ -23,5 +23,7 @@ source "drivers/armadeus/fpga/i2ctest/Kconfig"
 
 source "drivers/armadeus/fpga/fpgaaccess/Kconfig"
 
+source "drivers/armadeus/fpga/serial/Kconfig"
+
 endmenu
 

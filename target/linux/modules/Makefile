@@ -4,15 +4,17 @@
 # Add your subdirectories to obj- target
 #
 
-# Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
+
+# Part executed when called from kernel build system:
 
 obj-$(CONFIG_ARMADEUS_DRIVERS)	+= gpio/ pwm/ backlight/ isp1761/ \
 	fpga/ps2keyboard/ imxlkeypad/ fpga/fpga_devtools/ fpga/Wb_led/ fpga/Wb_button/ \
-	fpga/i2ctest/ fpga/fpgaaccess/
+	fpga/i2ctest/ fpga/fpgaaccess/ fpga/serial/
 
-# Part execute when called from standard make in this directory:
 else
+
+# Part executed when called from standard make in this directory:
 
 BASE_DIR:=../../../buildroot/
 REL:=$(shell grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
