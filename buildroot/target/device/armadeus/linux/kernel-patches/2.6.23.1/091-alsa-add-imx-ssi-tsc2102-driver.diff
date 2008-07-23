@@ -1,8 +1,8 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory)
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/sound/arm/imx-alsa.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/sound/arm/imx-alsa.c	2008-07-18 15:10:45.000000000 +0200
++++ linux-2.6.23.1.mod/sound/arm/imx-alsa.c	2008-07-22 10:33:25.000000000 +0200
 @@ -0,0 +1,683 @@
 +/*
 + * sound/arm/imx-alsa.c
@@ -689,9 +689,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory)
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/sound/arm/imx-alsa-dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/sound/arm/imx-alsa-dma.h	2008-07-18 15:11:05.000000000 +0200
++++ linux-2.6.23.1.mod/sound/arm/imx-alsa-dma.h	2008-07-22 10:33:25.000000000 +0200
 @@ -0,0 +1,50 @@
 +/*  
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -745,9 +745,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory)
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/sound/arm/imx-alsa-tsc2102.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102.c	2008-07-18 15:11:34.000000000 +0200
++++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102.c	2008-07-22 10:33:25.000000000 +0200
 @@ -0,0 +1,345 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
@@ -1096,9 +1096,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory)
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/sound/arm/imx-alsa-tsc2102.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102.h	2008-07-18 15:11:51.000000000 +0200
++++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102.h	2008-07-22 10:33:25.000000000 +0200
 @@ -0,0 +1,46 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
@@ -1148,9 +1148,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory)
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/sound/arm/imx-alsa-tsc2102-mixer.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102-mixer.c	2008-07-18 15:12:06.000000000 +0200
++++ linux-2.6.23.1.mod/sound/arm/imx-alsa-tsc2102-mixer.c	2008-07-22 10:33:25.000000000 +0200
 @@ -0,0 +1,288 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
