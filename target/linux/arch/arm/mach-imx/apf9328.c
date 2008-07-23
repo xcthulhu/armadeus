@@ -478,42 +478,33 @@ static void __init apf9328_init(void)
 {
     printk("--- Registering APF9328 ressources\n");
 
-    // Serial
-    /*UFCR(IMX_UART1_BASE) = 0xa81; To be removed
-    UFCR(IMX_UART2_BASE) = 0xa81;*/
-    // LCD
-#ifdef CONFIG_FB_IMX
+#ifdef CONFIG_FB_IMX    /* LCD */
     set_imx_fb_info(&apf9328_fb_info);
-    printk("Set apf9328_fb_info\n");
-    // init PORTD ....//
-    imx_fb_set_gpios();
-#endif // CONFIG_FB_IMX
+    imx_fb_set_gpios(); /* init PORTD ....*/
+#endif
 
 #ifdef CONFIG_SENSORS_MAX1027
     max1027_init_cs();
-#endif //CONFIG_SENSORS_MAX1027
+#endif
 #ifdef CONFIG_SPI_TSC2102
     tsc2102_init_gpio();
-#endif // CONFIG_SPI_TSC2102
+#endif
 #ifdef CONFIG_CAN_MCP251X
     mcp251X_init_gpio();
-#endif // CONFIG_CAN_MCP251X
+#endif
 
     platform_add_devices(devices, ARRAY_SIZE(devices));
+
 #if defined (CONFIG_SENSORS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
     spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 #endif 
-
-#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
-    request_mem_region(IMX_CS1_PHYS,IMX_CS1_SIZE,"FPGA");
-#endif // CONFIG_ARMADEUS_FPGA_DRIVERS
 
     printk("--- APF9328 ressources registered\n");
 }
 
 /*
  * Register here the memory addresses we want to access from our drivers and
- * which are not already registerd in generic.c
+ * which are not already registered in generic.c
  */
 static struct map_desc apf9328_io_desc[] __initdata = {
 #ifdef CONFIG_FB_IMX
