@@ -35,7 +35,7 @@ static void apf9328_lcd_power(int on)
         DR(LCD_PORT) |= (1 << OPTREX_F51900_POWER_DOWN);
     else
         DR(LCD_PORT) &= ~(1 << OPTREX_F51900_POWER_DOWN);
-#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
+//#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
     // No LCD powerdown yet
 #elif CONFIG_FB_IMX_SHARP_LQ043_TFT
     if(on) {
