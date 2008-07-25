@@ -2,7 +2,7 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/arch/arm/mach-imx/apf9328.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328.c	2008-07-23 14:39:36.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328.c	2008-07-25 16:13:51.000000000 +0200
 @@ -0,0 +1,558 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -566,8 +566,8 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2008-07-23 14:39:36.000000000 +0200
-@@ -0,0 +1,199 @@
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2008-07-25 16:17:40.000000000 +0200
+@@ -0,0 +1,200 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -592,7 +592,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define SHARP_LQ043_POWER_DOWN      12          /* PD12_ACD_OE line */
 +#define CONTRAST_LINE               11          /* PD11_CONTRAST */
 +
-+#define BACKLIGHT_ON                0x000000ff
 +#define DEFAULT_DMA_SETTINGS        (DMACR_BURST | DMACR_HM(8) | DMACR_TM(4))
 +
 +/*
@@ -629,10 +628,12 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 + */
 +static void apf9328_lcd_backlight_power(int on)
 +{
++    pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
++
 +    if(on)
-+        LCDC_PWMR |= BACKLIGHT_ON;
++        LCDC_PWMR |= PWMR_CC_EN;
 +    else
-+        LCDC_PWMR &= ~BACKLIGHT_ON;
++        LCDC_PWMR &= ~PWMR_CC_EN;
 +}
 +
 +
@@ -652,7 +653,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL | 
 +                          PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+    .pwmr               = 0x00000100,    // Contrast with PWM @ Line_Pulse, min by default
++    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .backlight_power    = apf9328_lcd_backlight_power,
 +    .lcd_power          = apf9328_lcd_power,
@@ -771,7 +772,7 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/include/asm-arm/arch-imx/apf9328.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	2008-07-23 14:39:36.000000000 +0200
++++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	2008-07-25 16:13:51.000000000 +0200
 @@ -0,0 +1,54 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h

@@ -22,7 +22,6 @@
 #define SHARP_LQ043_POWER_DOWN      12          /* PD12_ACD_OE line */
 #define CONTRAST_LINE               11          /* PD11_CONTRAST */
 
-#define BACKLIGHT_ON                0x000000ff
 #define DEFAULT_DMA_SETTINGS        (DMACR_BURST | DMACR_HM(8) | DMACR_TM(4))
 
 /*
@@ -59,10 +58,12 @@ static void apf9328_lcd_power(int on)
  */
 static void apf9328_lcd_backlight_power(int on)
 {
+    pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
+
     if(on)
-        LCDC_PWMR |= BACKLIGHT_ON;
+        LCDC_PWMR |= PWMR_CC_EN;
     else
-        LCDC_PWMR &= ~BACKLIGHT_ON;
+        LCDC_PWMR &= ~PWMR_CC_EN;
 }
 
 
@@ -82,7 +83,7 @@ static struct imxfb_mach_info apf9328_fb_info __initdata = {
 
     .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL | 
                           PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-    .pwmr               = 0x00000100,    // Contrast with PWM @ Line_Pulse, min by default
+    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
     .dmacr              = DEFAULT_DMA_SETTINGS,
     .backlight_power    = apf9328_lcd_backlight_power,
     .lcd_power          = apf9328_lcd_power,
