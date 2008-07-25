@@ -1,8 +1,11 @@
+ifeq ($(CC),cc)
+	CC=arm-linux-gcc
+endif
 
 all: imxregs
 
 imxregs: imxregs.c imxregs.h
-	arm-linux-gcc imxregs.c -o $@
+	$(CC) imxregs.c -o $@
     
 clean:
 	rm -f *.o

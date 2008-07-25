@@ -60,7 +60,7 @@ static struct reg_info regs[] =
 { "HCR",       0x0020501C,  0, 0xffffffff, 'x', "Horizontal Configuration Register" },
 { "VCR",       0x00205020,  0, 0xffffffff, 'x', "Vertical Configuration Register" },
 { "POS",       0x00205024,  0, 0xffffffff, 'x', "Panning Offset Register" },
-{ "LGPMR",     0x00205028,  0, 0xffffffff, 'x', "LCD Gray Palette Mapping Register" },
+{ "LSCR1",     0x00205028,  0, 0xffffffff, 'x', "Sharp Configuration 1 Register" },
 { "PWMR",      0x0020502C,  0, 0xffffffff, 'x', "PWM Contrast Control Register" },
 { "DMACR",     0x00205030,  0, 0xffffffff, 'x', "DMA Control Register" },
 { "RMCR",      0x00205034,  0, 0xffffffff, 'x', "Refresh Mode Control Register" },
