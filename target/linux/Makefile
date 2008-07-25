@@ -1,53 +1,73 @@
-# To get from Buildroot:
-LINUX_VERSION=2.6.23.1
-TARBALL_DIR=/local/downloads
-BUILD_DIR=../../buildroot/build_arm
+#
+# Get important variables from Buildroot:
+#
+BUILDROOT_DIR=../../buildroot
+include $(BUILDROOT_DIR)/.config
 
-LINUX_NAME=linux-$(LINUX_VERSION)
-LINUX_ARCHIVE=$(LINUX_NAME).tar.bz2
+LINUX_VERSION:=$(shell echo $(BR2_PACKAGE_LINUX_VERSION))
+TARBALL_DIR:=$(shell echo $(BR2_DL_DIR)) #/local/downloads
+BUILD_DIR=$(BUILDROOT_DIR)/build_arm
+
+
+LINUX_NAME:=linux-$(LINUX_VERSION)
+LINUX_ARCHIVE:=$(LINUX_NAME).tar.bz2
 # Working Linux:
-LINUX_DIR=$(BUILD_DIR)/$(LINUX_NAME)
+LINUX_DIR:=$(BUILD_DIR)/$(LINUX_NAME)
 # Original Linux:
-LINUX_DIR_TO_DIFF=$(LINUX_DIR).original
+LINUX_DIR_TO_DIFF:=$(LINUX_DIR).original
 
-PATCH_DIR=../../buildroot/target/device/armadeus/linux/kernel-patches/$(LINUX_VERSION)
+PATCH_DIR:=../../buildroot/target/device/armadeus/linux/kernel-patches/$(LINUX_VERSION)
 TMP_DIR=./tmp
 PATCH_CMD=./generate_patch.sh
 CLEAN_PATCH_CMD=sed --in-place "s,$(LINUX_DIR),$(LINUX_NAME)," $@ && sed --in-place=.bak "s,\.\./linux/,$(LINUX_NAME).mod/," $@
-START_CMD=echo "*** Generating patch: $@"
+START_CMD=echo "*** Generating patch: $@"; mkdir -p ./tmp
 
-### ALSA Patches:
+GENERATE_PATCH_FROM_SINGLE_DEPEND=$(PATCH_CMD) $(LINUX_DIR_TO_DIFF)/$< ../linux/$< $@; echo "    adding $<"
+GENERATE_PATCH_FROM_MULTIPLE_DEPENDS=rm -f $@; for file in $^; do $(PATCH_CMD) --append $(LINUX_DIR_TO_DIFF)/$$file ../linux/$$file $@; echo "    adding $$file"; done
 
-$(TMP_DIR)/090-alsa-create-imx-alsa_h.diff: include/asm-arm/arch-imx/imx-alsa.h
+
+### ALSA Patches: ---
+
+DEP1=include/asm-arm/arch-imx/imx-alsa.h
+TARGET1:=$(TMP_DIR)/090-alsa-create-imx-alsa_h.diff
+$(TARGET1): $(DEP1)
 	@$(START_CMD)
-	$(PATCH_CMD) $(LINUX_DIR_TO_DIFF)/$< ../linux/$< $@
-	$(CLEAN_PATCH_CMD)
+	@$(GENERATE_PATCH_FROM_SINGLE_DEPEND)
+	@$(CLEAN_PATCH_CMD)
 	@echo
-PATCHES+=$(TMP_DIR)/090-alsa-create-imx-alsa_h.diff
+PATCHES+=$(TARGET1)
+FILES+=$(DEP1)
 
-$(TMP_DIR)/091-alsa-add-imx-ssi-tsc2102-driver.diff: sound/arm/imx-alsa.c sound/arm/imx-alsa-dma.h sound/arm/imx-alsa-tsc2102.c sound/arm/imx-alsa-tsc2102.h sound/arm/imx-alsa-tsc2102-mixer.c
+DEP2=sound/arm/imx-alsa.c sound/arm/imx-alsa-dma.h sound/arm/imx-alsa-tsc2102.c sound/arm/imx-alsa-tsc2102.h sound/arm/imx-alsa-tsc2102-mixer.c
+TARGET2:=$(TMP_DIR)/091-alsa-add-imx-ssi-tsc2102-driver.diff
+$(TARGET2): $(DEP2)
 	@$(START_CMD)
-	for patch in $^; do $(PATCH_CMD) --append $(LINUX_DIR_TO_DIFF)/$$patch ../linux/$$patch $@; done
-	$(CLEAN_PATCH_CMD)
+	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
+	@$(CLEAN_PATCH_CMD)
 	@echo
-PATCHES+=$(TMP_DIR)/091-alsa-add-imx-ssi-tsc2102-driver.diff
+PATCHES+=$(TARGET2)
+FILES+=$(DEP2)
 
 
-### APF9328 Patches:
-$(TMP_DIR)/021-linux-2.6.23.1-apf9328.diff: arch/arm/mach-imx/apf9328.c arch/arm/mach-imx/apf9328_lcd_config.h include/asm-arm/arch-imx/apf9328.h
+### APF9328 Patches: ---
+
+DEP3=arch/arm/mach-imx/apf9328.c arch/arm/mach-imx/apf9328_lcd_config.h include/asm-arm/arch-imx/apf9328.h
+TARGET3:=$(TMP_DIR)/021-linux-2.6.23.1-apf9328.diff
+$(TARGET3): $(DEP3)
 	@$(START_CMD)
-	for patch in $^; do $(PATCH_CMD) --append $(LINUX_DIR_TO_DIFF)/$$patch ../linux/$$patch $@; done
-	$(CLEAN_PATCH_CMD)
+	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
+	@$(CLEAN_PATCH_CMD)
 	@echo
-PATCHES+=$(TMP_DIR)/021-linux-2.6.23.1-apf9328.diff
+PATCHES+=$(TARGET3)
+FILES+=$(DEP3)
 
 
-### Other Patches:
+### Other Patches: ---
 
 
-### Patches generation:
+### Patches generation: ---
 
-.PHONY: clean all help
+.PHONY: clean all help show import patch patch_install
 
 $(LINUX_DIR_TO_DIFF)/.unpacked:
 	@echo "***Installing original kernel in $(BUILD_DIR)"
@@ -55,23 +75,37 @@ $(LINUX_DIR_TO_DIFF)/.unpacked:
 	tar jxf $(TARBALL_DIR)/$(LINUX_ARCHIVE) -C $(BUILD_DIR)/
 	mv $(LINUX_DIR) $(LINUX_DIR_TO_DIFF)
 	mv $(LINUX_DIR).modified $(LINUX_DIR)
-	touch $@
+	@touch $@
  
 patch: $(LINUX_DIR_TO_DIFF)/.unpacked $(PATCHES)
-	mkdir -p ./tmp
 
 patch_install: patch
-	echo $(PATCHES)
-	cp -a $(PATCHES) $(PATCH_DIR)/
+	@cp -a $(PATCHES) $(PATCH_DIR)/
+	@echo "Patches installed, you can check the diff in $(PATCH_DIR)/"
+	@echo "    please don't commit only timestamp changes !"
+
+show:
+	@echo "Linux kernel files ($(LINUX_VERSION)) from which I can generate patch:"
+	@for file in $(FILES); do echo "    $$file"; done
+	@echo "\nNames of the patches I will generate:"
+	@for patch in $(PATCHES); do echo "    $$patch"; done
+
+import:
+	@for file in $(FILES); do cp $(LINUX_DIR)/$$file $$file; done
+	@echo "Import done, check your modifications with  svn status -q"
 
 help:
 	@echo "make [patch|patch_install|clean|help]"
-	@echo "    help: this help"
-	@echo "    patch: generate all patches in $(TMP_DIR) directory"
-	@echo "    patch_install: install patch in $(PATCH_DIR)"
+	@echo "    help ............ this help"
+	@echo "    show ............ list handled kernel files and generated patches name"
+	@echo "    import .......... import files we handle here from current kernel"
+	@echo "    patch ........... generate all patches in $(TMP_DIR) directory"
+	@echo "    patch_install ... install generated patches in $(PATCH_DIR)"
 
 all: patch
 
 clean:
-	rm -f $(TMP_DIR)/*
- 
+	$(MAKE) clean -C modules
+#	rm -f $(TMP_DIR)/*   humm... not a good idea to clean patches otherwise will be regenerated
+#	                     with new timestamp even if no changes where made to the files...
+
