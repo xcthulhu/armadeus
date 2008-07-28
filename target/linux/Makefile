@@ -64,6 +64,20 @@ FILES+=$(DEP3)
 
 ### Other Patches: ---
 
+# Special case: drivers/video/imxfb.h doesn't exist
+FILES_O1=drivers/video/imxfb.c drivers/video/imxfb.h
+DEP_O1=drivers/video/imxfb.c
+TARGET_O1:=$(TMP_DIR)/013-imxfb-improvements.diff
+$(TARGET_O1): $(DEP_O1)
+	@$(START_CMD)
+	rm -f $@
+	for file in $(FILES_O1); do $(PATCH_CMD) --append $(LINUX_DIR_TO_DIFF)/$$file ../linux/$$file $@; echo "    adding $$file"; done
+	@$(CLEAN_PATCH_CMD)
+	@echo
+PATCHES+=$(TARGET_O1)
+FILES+=$(FILES_O1)
+
+
 
 ### Patches generation: ---
 
@@ -82,7 +96,7 @@ patch: $(LINUX_DIR_TO_DIFF)/.unpacked $(PATCHES)
 patch_install: patch
 	@cp -a $(PATCHES) $(PATCH_DIR)/
 	@echo "Patches installed, you can check the diff in $(PATCH_DIR)/"
-	@echo "    please don't commit only timestamp changes !"
+	@echo "    please don't commit <<timestamp only>> changes !"
 
 show:
 	@echo "Linux kernel files ($(LINUX_VERSION)) from which I can generate patch:"
@@ -91,7 +105,7 @@ show:
 	@for patch in $(PATCHES); do echo "    $$patch"; done
 
 import:
-	@for file in $(FILES); do cp $(LINUX_DIR)/$$file $$file; done
+	@for file in $(FILES); do if [ -f $(LINUX_DIR)/$$file ]; then cp $(LINUX_DIR)/$$file $$file; fi; done
 	@echo "Import done, check your modifications with  svn status -q"
 
 help:

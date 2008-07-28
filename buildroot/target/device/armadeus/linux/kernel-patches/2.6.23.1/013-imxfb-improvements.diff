@@ -1,7 +1,8 @@
---- linux-2.6.23/drivers/video/imxfb.c	2006-09-20 05:42:06.000000000 +0200
-+++ linux-2.6.23-imx/drivers/video/imxfb.c	2006-10-01 14:22:39.000000000 +0200
-18:43:44.000000000 +0200
-+++ imxfb.c	2008-01-15 01:50:45.000000000 +0100
+PATCH AUTOMATICALLY GENERATED
+DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
+--- linux-2.6.23.1.original/drivers/video/imxfb.c	2007-10-12 18:43:44.000000000 +0200
++++ linux-2.6.23.1.mod/drivers/video/imxfb.c	2008-07-28 16:58:52.000000000 +0200
 @@ -42,22 +42,48 @@
   */
  #define DEBUG_VAR 1
@@ -63,7 +64,7 @@
  static int imxfb_activate_var(struct fb_var_screeninfo *var, struct fb_info *info);
  
  static inline u_int chan_to_field(u_int chan, struct fb_bitfield *bf)
-@@ -152,7 +178,6 @@ static int
+@@ -152,7 +178,6 @@
  imxfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
  {
  	struct imxfb_info *fbi = info->par;
@@ -71,7 +72,7 @@
  
  	if (var->xres < MIN_XRES)
  		var->xres = MIN_XRES;
-@@ -165,27 +190,39 @@ imxfb_check_var(struct fb_var_screeninfo
+@@ -165,27 +190,39 @@
  	var->xres_virtual = max(var->xres_virtual, var->xres);
  	var->yres_virtual = max(var->yres_virtual, var->yres);
  
@@ -125,7 +126,7 @@
  	pr_debug("RGBT length = %d:%d:%d:%d\n",
  		var->red.length, var->green.length, var->blue.length,
  		var->transp.length);
-@@ -248,10 +285,11 @@ static void imxfb_enable_controller(stru
+@@ -248,10 +285,11 @@
  
  	LCDC_RMCR = RMCR_LCDC_EN;
  
@@ -139,7 +140,7 @@
  }
  
  static void imxfb_disable_controller(struct imxfb_info *fbi)
-@@ -312,6 +350,7 @@ static int imxfb_activate_var(struct fb_
+@@ -312,6 +350,7 @@
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
  		var->upper_margin, var->lower_margin);
@@ -147,11 +148,14 @@
  
  #if DEBUG_VAR
  	if (var->xres < 16        || var->xres > 1024)
-@@ -349,7 +388,17 @@ static int imxfb_activate_var(struct fb_
+@@ -349,10 +388,17 @@
  			  VCR_V_WAIT_2(var->lower_margin);
  
  	LCDC_SIZE	= SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres);
 -	LCDC_PCR	= fbi->pcr;
+-	LCDC_PWMR	= fbi->pwmr;
+-	LCDC_LSCR1	= fbi->lscr1;
+-	LCDC_DMACR	= fbi->dmacr;
 +    // On TFT LCD i.MXL can support 16, 12, 8, 4bpp with the same hardware interface (12 to 16 bits)
 +    // So if userspace app wants a 8bpp screen switch to 8bpp (can save ressources, with SDL for ex)
 +    if( (var->bits_per_pixel == 8) && (fbi->pcr & PCR_TFT) )
@@ -163,10 +167,10 @@
 +        LCDC_PCR = fbi->pcr;
 +   
 +    LCDC_VPW    = VPW_VPW(var->xres * var->bits_per_pixel / 8 / 4);
- 	LCDC_PWMR	= fbi->pwmr;
- 	LCDC_LSCR1	= fbi->lscr1;
- 	LCDC_DMACR	= fbi->dmacr;
-@@ -391,7 +440,26 @@ static void imxfb_setup_gpio(struct imxf
+ 
+ 	return 0;
+ }
+@@ -391,7 +437,26 @@
  	case 1:
  		imx_gpio_mode(PD15_PF_LD0);
  	}
@@ -193,7 +197,7 @@
  	/* initialize GPIOs */
  	imx_gpio_mode(PD6_PF_LSCLK);
  	imx_gpio_mode(PD11_PF_CONTRAST);
-@@ -406,6 +474,7 @@ static void imxfb_setup_gpio(struct imxf
+@@ -406,6 +471,7 @@
  		imx_gpio_mode(PD9_PF_PS);
  		imx_gpio_mode(PD10_PF_SPL_SPR);
  	}
@@ -201,7 +205,7 @@
  }
  
  #ifdef CONFIG_PM
-@@ -469,9 +538,6 @@ static int __init imxfb_init_fbinfo(stru
+@@ -469,9 +535,6 @@
  	info->fbops			= &imxfb_ops;
  	info->flags			= FBINFO_FLAG_DEFAULT;
  
@@ -211,10 +215,24 @@
  	fbi->max_xres			= inf->xres;
  	info->var.xres			= inf->xres;
  	info->var.xres_virtual		= inf->xres;
-Index: drivers/video/imxfb.h
-===================================================================
---- a/drivers/video/imxfb.h
-+++ b//dev/null
+@@ -596,6 +659,12 @@
+ 	imxfb_setup_gpio(fbi);
+ 
+ 	imxfb_set_par(info);
++	/* JB: The following parameters are only needed once at startup and so 
++		removed from from imxfb_set_par()/imxfb_activate_var() */
++	LCDC_PWMR	= fbi->pwmr;
++	LCDC_LSCR1	= fbi->lscr1;
++	LCDC_DMACR	= fbi->dmacr;
++
+ 	ret = register_framebuffer(info);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "failed to register framebuffer\n");
+PATCH AUTOMATICALLY GENERATED
+DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
+--- linux-2.6.23.1.original/drivers/video/imxfb.h	2007-10-12 18:43:44.000000000 +0200
++++ linux-2.6.23.1.mod/drivers/video/imxfb.h	1970-01-01 01:00:00.000000000 +0100
 @@ -1,73 +0,0 @@
 -/*
 - * linux/drivers/video/imxfb.h
