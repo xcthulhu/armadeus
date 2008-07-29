@@ -1,0 +1,65 @@
+COPY IT IN buildroot/target/device/armadeus/linux/kernel-patches/2.6.23.1/
+diff -urN -X buildroot/build_arm/linux-2.6.23.1/Documentation/dontdiff buildroot/build_arm/linux-2.6.23.1/arch/arm/kernel/irq.c buildroot/build_arm/linux-2.6.23.1.irq_manager/arch/arm/kernel/irq.c
+--- buildroot/build_arm/linux-2.6.23.1/arch/arm/kernel/irq.c	2007-10-12 18:43:44.000000000 +0200
++++ buildroot/build_arm/linux-2.6.23.1.irq_manager/arch/arm/kernel/irq.c	2008-07-24 16:43:52.000000000 +0200
+@@ -152,6 +152,7 @@
+ 		desc->status &= ~IRQ_NOAUTOEN;
+ 	spin_unlock_irqrestore(&desc->lock, flags);
+ }
++EXPORT_SYMBOL(set_irq_flags);
+ 
+ void __init init_IRQ(void)
+ {
+diff -urN -X buildroot/build_arm/linux-2.6.23.1/Documentation/dontdiff buildroot/build_arm/linux-2.6.23.1/include/asm-arm/arch-imx/irqs.h buildroot/build_arm/linux-2.6.23.1.irq_manager/include/asm-arm/arch-imx/irqs.h
+--- buildroot/build_arm/linux-2.6.23.1/include/asm-arm/arch-imx/irqs.h	2008-07-29 17:26:13.000000000 +0200
++++ buildroot/build_arm/linux-2.6.23.1.irq_manager/include/asm-arm/arch-imx/irqs.h	2008-07-24 17:26:17.000000000 +0200
+@@ -112,6 +112,10 @@
+ /* decode irq number to use with IMR(x), ISR(x) and friends */
+ #define IRQ_TO_REG(irq) ((irq - IMX_IRQS) >> 5)
+ 
+-#define NR_IRQS (IRQ_GPIOD(32) + 1)
++#define IRQ_FPGA_START (IRQ_GPIOD(32) + 1)
++#define IRQ_FPGA(x) (IRQ_FPGA_START + x)
++
++//#define NR_IRQS (IRQ_GPIOD(32) + 1)
++#define NR_IRQS (IRQ_FPGA(16) + 1)
+ #define IRQ_GPIO(x)
+ #endif
+diff -urN -X buildroot/build_arm/linux-2.6.23.1/Documentation/dontdiff buildroot/build_arm/linux-2.6.23.1/kernel/irq/chip.c buildroot/build_arm/linux-2.6.23.1.irq_manager/kernel/irq/chip.c
+--- buildroot/build_arm/linux-2.6.23.1/kernel/irq/chip.c	2007-10-12 18:43:44.000000000 +0200
++++ buildroot/build_arm/linux-2.6.23.1.irq_manager/kernel/irq/chip.c	2008-07-24 16:47:35.000000000 +0200
+@@ -502,6 +502,7 @@
+ out_unlock:
+ 	spin_unlock(&desc->lock);
+ }
++EXPORT_SYMBOL(handle_edge_irq);
+ 
+ #ifdef CONFIG_SMP
+ /**
+@@ -581,6 +582,7 @@
+ 	}
+ 	spin_unlock_irqrestore(&desc->lock, flags);
+ }
++EXPORT_SYMBOL(__set_irq_handler);
+ 
+ void
+ set_irq_chip_and_handler(unsigned int irq, struct irq_chip *chip,
+@@ -589,6 +591,7 @@
+ 	set_irq_chip(irq, chip);
+ 	__set_irq_handler(irq, handle, 0, NULL);
+ }
++EXPORT_SYMBOL(set_irq_chip_and_handler);
+ 
+ void
+ set_irq_chip_and_handler_name(unsigned int irq, struct irq_chip *chip,
+diff -urN -X buildroot/build_arm/linux-2.6.23.1/Documentation/dontdiff buildroot/build_arm/linux-2.6.23.1/kernel/irq/handle.c buildroot/build_arm/linux-2.6.23.1.irq_manager/kernel/irq/handle.c
+--- buildroot/build_arm/linux-2.6.23.1/kernel/irq/handle.c	2007-10-12 18:43:44.000000000 +0200
++++ buildroot/build_arm/linux-2.6.23.1.irq_manager/kernel/irq/handle.c	2008-07-24 17:02:07.000000000 +0200
+@@ -59,6 +59,7 @@
+ #endif
+ 	}
+ };
++EXPORT_SYMBOL(irq_desc);
+ 
+ /*
+  * What should we do if we get a hw irq event on an illegal vector?
