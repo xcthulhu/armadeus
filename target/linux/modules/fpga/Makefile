@@ -1,5 +1,5 @@
 #
-# Main Makefile for the Armadeus drivers
+# Main Makefile for the Armadeus FPGA related drivers
 #
 # Add your subdirectories to obj- target
 #
@@ -8,14 +8,14 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_DRIVERS)	+= gpio/ pwm/ backlight/ isp1761/ \
-	imxlkeypad/ fpga/
+obj-$(CONFIG_ARMADEUS_FPGA_DRIVERS)	+= ps2keyboard/ fpga_devtools/ Wb_led/ Wb_button/ \
+	i2ctest/ fpgaaccess/ serial/ irq_manager/
 
 else
 
 # Part executed when called from standard make in this directory:
 
-BASE_DIR:=../../../buildroot/
+BASE_DIR:=../../../../buildroot/
 REL:=$(shell grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
       sed -e 's/BR2_PACKAGE_LINUX_VERSION=//' | sed -e 's/"//g')
 #`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
@@ -28,7 +28,7 @@ PWD:= $(shell pwd)
 
 default:
 	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) zImage modules
 
 clean:
 	echo "Your Linux source dir is: $(LINUX_DIR)"

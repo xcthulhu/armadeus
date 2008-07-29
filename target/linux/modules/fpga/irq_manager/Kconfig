@@ -1,0 +1,10 @@
+#
+#
+
+config ARMADEUS_FPGA_IRG_MANAGER
+        tristate "OpenCore IRQ manager driver"
+        default n
+        depends on ARMADEUS_FPGA_DRIVERS
+        ---help---
+	  You need it if you have a POD generated "IP"
+

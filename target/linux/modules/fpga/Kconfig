@@ -25,5 +25,7 @@ source "drivers/armadeus/fpga/fpgaaccess/Kconfig"
 
 source "drivers/armadeus/fpga/serial/Kconfig"
 
+source "drivers/armadeus/fpga/irq_manager/Kconfig"
+
 endmenu
 
