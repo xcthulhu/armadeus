@@ -6,10 +6,10 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-m += irq_ocore.o
+obj-$(CONFIG_ARMADEUS_FPGA_IRQ_MANAGER) += irq_ocore.o
 irq_ocore-objs	:= main.o
 
-obj-m += test_irq.o
+obj-$(CONFIG_ARMADEUS_FPGA_IRQ_MANAGER) += test_irq.o
 test_irq-objs := test.o
 
 else
