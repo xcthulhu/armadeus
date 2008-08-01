@@ -28,6 +28,7 @@ default:
 clean:
 	rm -f *.*o \
 	rm -f Module.symvers
+	rm -f .*.cmd
 
 endif
 

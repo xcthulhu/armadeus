@@ -1,5 +1,11 @@
 /*
- **********************************************************************
+ * Armadeus i.MXL GPIO management driver
+ *
+ * Copyright (C) 2006-2008 Armadeus Project / Armadeus Systems
+ * Authors: Nicolas Colombain / Julien Boibessot
+ *
+ * Inspired by a lot of other GPIO management systems...
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
@@ -13,19 +19,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- **********************************************************************
+ *
  */
 
- 
 #include <asm/arch/imx-regs.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
-#include "core.h"
+#include "core.h" // TBDJUJU: put core.h contents here....
 
 
 #define GPIO_PROC_FILE 1
-#define SETTINGS_PROC_FILE 4
+#define SETTINGS_PROC_FILE        (1 << 3)
+#define SETTINGS_IRQ_PROC_FILE    (1 << 4)
+#define SETTINGS_PULLUP_PROC_FILE (1 << 5)
 
 #define PORT_A      0
 #define PORT_B      1
@@ -33,6 +40,15 @@
 #define PORT_D      3
 #define NB_PORTS    4
 #define PORT_MAX_ID 4
+
+#define MAX_MINOR (255) /* Linux limitation */
+
+#define FULL_PORTA_MINOR (MAX_MINOR - PORT_A)
+#define FULL_PORTB_MINOR (MAX_MINOR - PORT_B)
+#define FULL_PORTC_MINOR (MAX_MINOR - PORT_C)
+#define FULL_PORTD_MINOR (MAX_MINOR - PORT_D)
+
+#define FULL_MINOR_TO_PORT(x) (MAX_MINOR - x)
 
 // Parameters order:
 enum {
@@ -54,10 +70,6 @@ enum {
     PUEN_I,
 };
 
-/*#define PORTB27_21MASK    ((unsigned long)0x0FF00000)
-#define PORTB27_21SHIFT   20
-#define PORT_D_31_10_MASK 0xFFFFFC00*/
-
 // Global variables
 struct gpio_operations *driver_ops;
 static int gpio_major =  GPIO_MAJOR;
@@ -67,10 +79,18 @@ static int number_of_pins[4] = {32, 32, 32, 32};
 static unsigned long init_map;
 struct semaphore gpio_sema;
 
-static unsigned int gPortAIndex = PORT_A;
-static unsigned int gPortBIndex = PORT_B;
-static unsigned int gPortCIndex = PORT_C;
-static unsigned int gPortDIndex = PORT_D;
+enum {
+	VALUE = 0,
+	DIRECTION,
+	PULL_UP,
+	INTERRUPT,
+};
+
+struct gpio_settings {
+	unsigned int port;
+	int type;
+};
+
 // Module parameters
 #define NB_CONFIG_REGS 16
 static int portA_init[NB_CONFIG_REGS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -86,45 +106,75 @@ static int portD_init[NB_CONFIG_REGS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 static int portD_init_nb = 0;
 module_param_array( portD_init, int, &portD_init_nb, 0000 );
 
-// Static functions 
+
+struct gpio_item {
+	spinlock_t lock;
+
+	int enabled;
+	int initialized;
+	int port;
+	int nb_pins;
+	int number;
+	u32 pin_mask;
+	u32 oe_mask;
+
+	/* Pin state last time we read it (for blocking reads) */
+	u32 pin_state;
+	int changed;
+
+	wait_queue_head_t change_wq;
+	struct fasync_struct *async_queue;
+
+	int id;
+	struct class_device *gpio_dev;
+	struct cdev char_dev;
+// 	struct config_item item; TBDJUJU: Use configfs filesystem !
+};
+
+static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0 };
+
+
+// Static functions
 static void __exit armadeus_gpio_cleanup(void);
 
 static int toString(unsigned long value, char* buffer, int number_of_bits) 
 {
     static int i;
-    
+
     /* convert it into a string */
     for(i=number_of_bits;i>0;i--){
         buffer[number_of_bits-i]=test_bit(i-1,&value)?'1':'0';
     }
-    
+
     buffer[number_of_bits] = '\n';
     buffer[number_of_bits+1] = 0;
-    
+
     return number_of_bits+1;
 }
 
+/* Convert binary string ("010011") to int. Don't care of non '0' / '1' chars */
 static unsigned long fromString(char* buffer, int number_of_bits) 
 {
-    static int i;
-    static unsigned long ret_val=0;
-    
-    ret_val = 0;
-    /* Create WORD to write from the string */
-    for(i=0;i<number_of_bits;i++)
-    {
-        if (buffer[i] == 0) break;
-    
-        if (buffer[i] == '0' || buffer[i] == '1') {
-            ret_val=ret_val<<1;
-        }
-    
-        if (buffer[i] == '1') {
-            ret_val |= 1;
-        }
-    }
-    
-    return(ret_val);
+	int i, j;
+	unsigned long ret_val=0;
+
+	ret_val = 0;
+	/* Create WORD to write from the string */
+	for( i=0, j=1; j<=number_of_bits; i++)
+	{
+		//printk("%x j=%d i=%d\n", buffer[i], j, i);
+		if (buffer[i] == '\0') break; /* EOC */
+	
+		if (buffer[i] == '0' || buffer[i] == '1') {
+			ret_val <<= 1;
+			if (buffer[i] == '1') {
+				ret_val |= 1;
+			}
+			j++;
+		}
+	}
+
+	return(ret_val);
 }
 
 //------------------------------------------------
@@ -132,7 +182,7 @@ static unsigned long fromString(char* buffer, int number_of_bits)
 // Low level functions
 //
 #define DEFAULT_VALUE 0x12345678
-// These masks are for restricting user acces to configuration of some criticals GPIO pins used by Armadeus and not configurable
+// These masks are for restricting user access to configuration of some criticals GPIO pins used by Armadeus and not configurable
 static unsigned long MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF };
 #define PORT_A_MASK    0x0003FFFE
 #define PORT_B_MASK    0xF00FFF00
@@ -237,18 +287,10 @@ static void initializePorts( void )
     initializePortB();
     initializePortC();
     initializePortD();
-    
-/*    GIUS(PORT_B) = GIUS(PORT_B) | PORTB27_21MASK; //set only portb27..21
-    PUEN(PORT_B) = PUEN(PORT_B) | PORTB27_21MASK;
-    OCR1(PORT_B) = OCR1(PORT_B); // nothing to do for 27..21
-    OCR2(PORT_B) = OCR2(PORT_B) | 0x00FFFF00;
-*/    
-/*    GIUS(PORT_D) = GIUS(PORT_D) | PORT_D_31_10_MASK; //set only portD 31..10
-    PUEN(PORT_D) = PUEN(PORT_D) | PORT_D_31_10_MASK;
-    OCR1(PORT_D) = OCR1(PORT_D) | 0xFFFF0000;
-    OCR2(PORT_D) = OCR2(PORT_D) | 0xFFFFFFFF;
-*/
 }
+
+
+// TBDJUJU: replace the following functions with imx_gpio_xxx one !!
 
 static void writeOnPort( unsigned int aPort, unsigned int aValue )
 {
@@ -281,45 +323,42 @@ static unsigned int getPortDir( unsigned int aPort )
     return( port_value );
 }
 
+char* port_name[NB_PORTS]  = { "PortA", "PortB", "PortC", "PortD" };
+char* port_setting_name[4] = { "Value", "Direction", "Pull-up", "Interrupt" };
 
 //------------------------------------------------
 //
 // Handles write() done on /dev/gpioxx
 //
-static ssize_t armadeus_gpio_write(struct file *file, const char *data, size_t count, loff_t *ppos)
+static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size_t count, loff_t *offset)
 {
-    unsigned int minor=0, port_value=0, value=0;
-    size_t        i;
-//    /*char*/unsigned int          port_value=0;
-    ssize_t       ret = 0;
-//    unsigned int  value=0;
-    
-    minor = MINOR(file->f_dentry->d_inode->i_rdev);
-    printk("armadeus_gpio_write() on minor %d\n", minor);
-    
-    if (ppos != &file->f_pos)
-        return -ESPIPE;
-    
-    if (down_interruptible(&gpio_sema))
+	unsigned int minor=0;
+	u32 value=0;
+	ssize_t ret = 0;
+	struct gpio_item *gpio = file->private_data;
+
+	minor = MINOR(file->f_dentry->d_inode->i_rdev);
+
+    printk("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
+
+    if (down_interruptible(&gpio_sema)) /* Usefull ?? */
         return -ERESTARTSYS;
 
-    value = 0;
-    for (i = 0; i < count; ++i) 
-    {
-        port_value = 0;
-        // Get value to write from user space
-        ret = __get_user(port_value, (unsigned int*)/*(char *)*/data);
-        if (ret != 0) {
-            //ret = -EFAULT;
-            goto out;
-        }
+	count = min(count, (size_t)4);
+	if (copy_from_user(&value, data, count)) {
+		ret = -EFAULT;
+		goto out;
+	}
 
-        writeOnPort( minor, port_value );
-        
-        data++;
-        *ppos = *ppos+1;
-    }
-    ret = count;
+	if( gpio->nb_pins != 1) {
+		printk("Full port write: 0x%x\n", value);
+		writeOnPort( gpio->port, value );
+	} else {
+		value = value ? 1 : 0;
+		printk("Single pin write: %d\n", value);
+		imx_gpio_set_value( minor, value );
+	}
+	ret = count;
 
 out:
     up(&gpio_sema);
@@ -329,262 +368,182 @@ out:
 //
 // Handles read() done on /dev/gpioxx
 //
-static ssize_t armadeus_gpio_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
     unsigned minor = MINOR(file->f_dentry->d_inode->i_rdev);
-    unsigned long value=0;
-    size_t bytes_read=0;
+    u32 value=0;
     ssize_t ret = 0;
-    char port_status;
-    
+    u32 port_status;
+	struct gpio_item *gpio = file->private_data;
+
     if (count == 0)
-        return bytes_read;
-    
-    if (ppos != &file->f_pos)
-        return -ESPIPE;
-    
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
-        
-    printk("armadeus_gpio_read on minor %d\n", minor);
-            
+        return count;
+
+	spin_lock_irq(&gpio->lock);
+
+    printk("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
+
+	while (!gpio->changed) {
+		spin_unlock_irq(&gpio->lock);
+
+		if (file->f_flags & O_NONBLOCK)
+			return -EAGAIN;
+
+		if (wait_event_interruptible(gpio->change_wq, gpio->changed))
+			return -ERESTARTSYS;
+
+		spin_lock_irq(&gpio->lock);
+	}
+	gpio->changed = 0;
+
+	if( gpio->nb_pins != 1) {
+		value = readFromPort( gpio->port );
+		printk("Full port read: 0x%x\n", value);
+	} else {
+		value = imx_gpio_get_value( minor );
+		printk("Single pin read: %d\n", value);
+	}
+	
     value = readFromPort( minor );
     port_status = (char)(value & 0xFF);
-    
-    if (copy_to_user(buf, &port_status, sizeof(unsigned int))) {
+
+	count = min( count, (size_t)sizeof(u32) );
+    if ( copy_to_user(buf, &value, count) ) {
         ret = -EFAULT;
         goto out;
     }
-    bytes_read += sizeof(unsigned int);
-    buf += sizeof(unsigned int);
-    *ppos = *ppos+4;
-    ret = bytes_read;
+    ret = count;
 
 out:
-    up(&gpio_sema);
+    spin_unlock_irq(&gpio->lock);
     return ret;
+}
+
+
+static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
+{
+	struct gpio_item *gpio = dev_id;
+	u32 old_state, new_state;
+
+	printk("IT for pin %d %d\n", gpio->port, gpio->number);
+
+	old_state = gpio->pin_state;
+	new_state = imx_gpio_get_value( gpio->port|gpio->number );
+	gpio->pin_state = new_state;
+
+	if (new_state != old_state) {
+		gpio->changed = 1;
+		wake_up_interruptible(&gpio->change_wq);
+
+		if (gpio->async_queue)
+			kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
+	}
+
+	return IRQ_HANDLED;
 }
 
 //
 // Handles open() done on /dev/gpioxx
 //
-static int armadeus_gpio_open(struct inode *inode, struct file *file)
+static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 {
     unsigned minor = MINOR(inode->i_rdev);
-    
-    if( minor >= PORT_MAX_ID ) {
-        printk("unsupported minor\n");
-        return -EINVAL;
-    }
+	unsigned int major = MAJOR(inode->i_rdev);
+	unsigned int irq;
+	int ret = 0;
+	struct gpio_item *gpio;/* = container_of(inode->i_cdev, struct gpio_item,
+								char_dev);*/
 
-    printk("Opening /dev/gpio%d file\n", minor);
+	gpio = kzalloc(sizeof(struct gpio_item), GFP_KERNEL);
+	if (!gpio)
+		goto err_request;
+
+	file->private_data = gpio;
+	spin_lock_init(&gpio->lock);
+	init_waitqueue_head(&gpio->change_wq);
+
+	switch(minor)
+	{
+		/* Write all port pins in one time */
+		case FULL_PORTA_MINOR:
+		case FULL_PORTB_MINOR:
+		case FULL_PORTC_MINOR:
+		case FULL_PORTD_MINOR:
+			gpio->nb_pins = 32;
+			gpio->changed = 1;
+			gpio->port    = FULL_MINOR_TO_PORT(minor);
+			printk("Reserving full %s\n", port_name[gpio->port]);
+			goto success;
+		break;
+	}
+
+	/* Pin by pin access */
+	gpio->nb_pins = 1;
+	gpio->changed = 1;
+
+	if( imx_gpio_request(minor, "gpio-dev") )
+		goto err_request;
+
+	gpio->port   = minor >> GPIO_PORT_SHIFT;
+	gpio->number = minor & GPIO_PIN_MASK;
+	gpio->pin_state = 0;
+
+	if( getPortDir(gpio->port) & (1 << gpio->number) ) {
+		imx_gpio_direction_output( minor, 0 );
+	} else {
+		imx_gpio_direction_input( minor );
+		gpio->pin_state = imx_gpio_get_value( minor );
+	}
+
+	/* Request interrupt if pin was configured for */
+	if (shadows_irq[gpio->port] & (1 << gpio->number) ) {
+		irq = IRQ_GPIOA(minor); /* irq number are continuous */
+		ret = request_irq( irq, armadeus_gpio_interrupt, 0, "gpio", gpio );
+		if( ret )
+			goto err_irq;
+// 		set_irq_type( irq, IRQF_TRIGGER_FALLING ); TDBJUJU
+	}
+
+success:
+    printk("Opening /dev/gpio%d/%d file port:%d pin:%d\n", major, minor, gpio->port, gpio->number);
+	gpio->initialized = 1;
     return 0;
+
+err_irq:
+	printk("%s error while requesting irq %d\n", __FUNCTION__, irq);
+	free_irq(irq, gpio);
+err_request:
+	kfree(gpio);
+	/* what about spinlock & wait_queue ?? */
+	return ret;
 }
 
 //
 // Handles close() done on /dev/gpioxx
 //
-static int armadeus_gpio_release(struct inode *inode, struct file *file)
+static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 {
-    unsigned minor = MINOR(inode->i_rdev);
-    
-    printk("Closing access to /dev/gpio%d\n", minor);
-    return 0;
-}
+	unsigned minor = MINOR(inode->i_rdev);
+	struct gpio_item *gpio = file->private_data;
+	unsigned int irq;
 
+	if( gpio->initialized ) {
+		if (shadows_irq[gpio->port] & (1 << gpio->number) ) {
+			irq = IRQ_GPIOA(minor);
+			free_irq( irq, gpio );
+		}
+		imx_gpio_free( minor );
+	}
+	kfree(gpio);
+	printk("Closing access to /dev/gpio%d\n", minor);
+
+	return 0;
+}
 
 //------------------------------------------------
-// PROC file functions
+//  Handling of IOCTL calls
 //
-static int procfile_gpio_read( char *buffer, __attribute__ ((unused)) char **start, off_t offset, int buffer_length, int *eof, void* data) 
-{
-    int len; /* The number of bytes actually used */
-    unsigned int port_status=0x53;
-    unsigned int port_ID = 0;
-    
-    if( data != NULL )
-    {   
-        port_ID = *((unsigned int*)data);
-        //printk("procfile_gpio_read %d \n", port_ID);
-    }
-    
-    // We give all of our information in one go, so if the user asks us if we have more information the answer should always be no.
-    // This is important because the standard read function from the library would continue to issue the read system call until 
-    // the kernel replies that it has no more information, or until its buffer is filled.
-    
-    if( (offset > 0) || (buffer_length < number_of_pins[port_ID]+2) ) 
-    {
-        return 0;
-    }
-    
-    len = buffer_length;
-    if( len > MAX_NUMBER_OF_PINS + 1 ) 
-    {
-        len = MAX_NUMBER_OF_PINS + 1;
-    }
-    
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
-    
-    // Get the status of the gpio ports
-    port_status = readFromPort( port_ID );
-    
-    // Put status to given chr buffer
-    len = toString(port_status, buffer, number_of_pins[/*PORT_B*/port_ID]);
-    
-    //*start = buffer;
-    *eof = 1;
-    up(&gpio_sema);
-    
-    // Return the length    
-    return len;
-}
-
-
-static int procfile_gpio_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
-{
-    int len;
-    char new_gpio_state[MAX_NUMBER_OF_PINS+1];
-    unsigned int gpio_state;
-    unsigned int port_ID = 0;
-    
-    if( data != NULL )
-    {   
-        port_ID = *((unsigned int*)data);
-    }
-
-    // Do some checks on parameters    
-    if( count <= 0 ){
-        printk("Empty string transmitted !\n");
-        return 0;
-    }    
-    if( count > (MAX_NUMBER_OF_PINS + 1) ) {
-        len = MAX_NUMBER_OF_PINS;
-       printk("Gpio port is only 32bits !\n");
-    } else {
-        len = count;
-    }
-
-    // Get exclusive access to port    
-    if( down_interruptible(&gpio_sema) )
-        return -ERESTARTSYS;
-    
-    // Get datas to write from user space
-    if( copy_from_user(new_gpio_state, buf, len) ) {
-        up(&gpio_sema);
-        return -EFAULT;
-    }
-    
-    // Convert it from String to Int
-    gpio_state = fromString(new_gpio_state, number_of_pins[port_ID] /*__number_of_pins*/);
-    printk("/proc asking me to write %d bits (0x%x) on GPIO%d\n", len, gpio_state, port_ID);
-
-    // Put value in GPIO registers    
-    writeOnPort( port_ID, gpio_state );
-    
-    up(&gpio_sema);
-    
-    return len;
-}
-
-static int procfile_settings_read( char *buffer, char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void *data )
-{
-    int len; /* The number of bytes actually used */
-    unsigned int port_status = 0x66;
-    unsigned int port_ID = 0;
-    
-    if( data != NULL )
-    {   
-        port_ID = *((unsigned int*)data);
-    }
-    
-    if( offset > 0 || buffer_length < (number_of_pins[PORT_B]+2) )
-        return 0;
-    
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
-    
-    // Get the status of the gpio direction registers TBDNICO
-    port_status = getPortDir(port_ID);
-    //printk("procfile_settings_read (0x%x)\n", count, gpio_state);
-    // Put status to given chr buffer
-    len = toString( port_status,buffer, number_of_pins[port_ID] );
-    
-    //*start = buffer;
-    *eof = 1;
-    up(&gpio_sema);
-    
-    // Return the length    
-    return len;
-}
-
-static int procfile_settings_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
-{
-    int len;
-    int p1,p2;
-    char ch;
-    char new_gpio_state[MAX_NUMBER_OF_PINS+1];
-    unsigned int  gpio_state;
-    unsigned int port_ID = 0;
-    
-    if( data != NULL )
-    {   
-        port_ID = *((unsigned int*)data);
-    }
-    
-    if (count==0) return 0;
-    
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
-    
-    if( count > (MAX_NUMBER_OF_PINS + 1) ) {
-        len = MAX_NUMBER_OF_PINS;
-       printk("Gpio port setting register is only 32bits !\n");
-    } else {
-        len = count;
-    }
-    
-    // Get datas to write from user space
-    if(copy_from_user(new_gpio_state, buf, len)) {
-        up(&gpio_sema);
-        return -EFAULT;
-    }
-    
-    /* make sure our string only contains 1 and 0 */
-    p1=0;
-    p2=0;
-    while (p2<=len) 
-    {
-        ch=new_gpio_state[p2];
-    
-        if (ch == '0' || ch == '1' || ch == '\0') {
-            new_gpio_state[p1] = ch;
-            p1++;
-        }
-    
-        if (ch==0) break;
-            p2++;
-    }
-    new_gpio_state[p1] = 0;
-    
-    if( strlen(new_gpio_state) > 0 ) 
-    {
-        // Convert it from String to Int
-        gpio_state = fromString( new_gpio_state, number_of_pins[port_ID] );
-        printk("/proc asking me to write %d bits (0x%x) on GPIO settings\n", len, gpio_state);
-       // 
-        setPortDir( port_ID, gpio_state );
-    }
-    
-    up(&gpio_sema);
-    return len;
-}
-
-
-//------------------------------------------------
-//  Handling of IOCTL calls 
-//
-int armadeus_gpio_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
+int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
 {
     int err = 0; int ret = 0;
     int value=0;
@@ -609,7 +568,7 @@ int armadeus_gpio_ioctl( struct inode *inode, struct file *filp, unsigned int cm
         return -ERESTARTSYS;
     // Extract and test minor
     minor = MINOR(inode->i_rdev);
-    if( minor > GPIO_MAX_MINOR ) {
+    if( minor < FULL_PORTD_MINOR ) {
         printk("Minor outside range: %d !\n", minor);
         return -EFAULT;
     }
@@ -618,7 +577,6 @@ int armadeus_gpio_ioctl( struct inode *inode, struct file *filp, unsigned int cm
     {
         case GPIORDDIRECTION:
             value = getPortDir( minor );
-            //    value = (getPortDir( PORT_B ) & PORTB27_21MASK) >> PORTB27_21SHIFT;
             ret = __put_user(value, (unsigned int *)arg);
         break;
 
@@ -652,79 +610,260 @@ int armadeus_gpio_ioctl( struct inode *inode, struct file *filp, unsigned int cm
     return ret;
 }
 
+
+//------------------------------------------------
+// PROC file functions
 //
-// Create /proc entries for direct access (with echo/cat) to GPIOs config
-//
+
+static int armadeus_gpio_proc_read( char *buffer, char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void *data )
+{
+    int len = 0; /* The number of bytes actually used */
+    unsigned int port_status = 0x66;
+    unsigned int port_ID = 0;
+	struct gpio_settings *settings = (struct gpio_settings *) data;
+
+    if( settings != NULL ) {
+        port_ID = settings->port;
+    }
+
+	/* We give all of our information in one go, so if the user asks us if we
+	   have more information the answer should always be no. This is important
+	   because the standard read function from the library would continue to
+	   issue the read system call until the kernel replies that it has no more
+	   information, or until its buffer is filled
+	*/
+    if( offset > 0 || buffer_length < (number_of_pins[port_ID]+2) )
+        return 0;
+
+    if (down_interruptible(&gpio_sema))
+        return -ERESTARTSYS;
+
+	switch( settings->type )
+	{
+		case VALUE:
+			port_status = readFromPort( port_ID );
+		break;
+
+		case DIRECTION:
+			// Get the status of the gpio direction registers TBDNICO
+			printk("direction\n");
+			port_status = getPortDir(port_ID);
+		break;
+
+		case PULL_UP:
+			port_status = PUEN(port_ID);
+			printk("pull-up\n");
+		break;
+
+		case INTERRUPT:
+			port_status = shadows_irq[port_ID];
+			printk("interrupt\n");
+		break;
+
+		default:
+			printk("%s: unknown setting\n", __FUNCTION__);
+		break;
+	}
+	/* Put result to given chr buffer */
+	len = toString(port_status, buffer, number_of_pins[port_ID]);
+	printk("0x%08x\n", port_status);
+
+    *eof = 1;
+    up(&gpio_sema);
+
+    // Return the length
+    return len;
+}
+
+static char new_gpio_state[MAX_NUMBER_OF_PINS*2];
+
+static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
+{
+	int len;
+	unsigned int  gpio_state;
+	unsigned int port_ID = 0;
+	struct gpio_settings *settings = (struct gpio_settings *) data;
+
+	if( settings != NULL ) {
+		port_ID = settings->port;
+	}
+
+    /* Do some checks on parameters */
+    if( count <= 0 ) {
+        printk("Empty string transmitted !\n");
+        return 0;
+    }
+	if (count > (MAX_NUMBER_OF_PINS + 1))
+		printk("GPIO port registers are only 32bits !\n");
+	if( count > (sizeof(new_gpio_state)) ) {
+		len = sizeof(new_gpio_state);
+	} else {
+		len = count;
+	}
+
+    /* Get exclusive access to port */
+    if( down_interruptible(&gpio_sema) )
+        return -ERESTARTSYS;
+
+    /* Get datas to write from user space */
+    if (copy_from_user(new_gpio_state, buf, len)) {
+        up(&gpio_sema);
+        return -EFAULT;
+    }
+
+	if( strlen(new_gpio_state) > 0 )
+	{
+		// Convert it from String to Int
+		gpio_state = fromString( new_gpio_state, number_of_pins[port_ID] );
+
+		switch( settings->type )
+		{
+			case VALUE:
+				printk("value\n");
+				writeOnPort( port_ID, gpio_state );
+			break;
+
+			case DIRECTION:
+				printk("direction\n");
+				setPortDir( port_ID, gpio_state );
+			break;
+
+			case PULL_UP:
+				printk("pull-up\n");
+			break;
+
+			case INTERRUPT:
+				shadows_irq[port_ID] = gpio_state;
+				printk("interrupt\n");
+			break;
+
+			default:
+				printk("%s: unknown setting\n", __FUNCTION__);
+			break;
+		}
+
+		printk("/proc wrote 0x%x on %s %s register\n", gpio_state, port_name[port_ID], port_setting_name[settings->type]);
+    }
+
+    up(&gpio_sema);
+    return count; /* Makes as if we take all the data send even if we can't handle more than register size */
+}
+
+
+/* /proc registering helpers */
+struct proc_config_entry {
+	struct proc_dir_entry *entry;
+	char* name;
+	int port;
+	int type;
+};
+
+static int initialize_entry( struct proc_config_entry *config )
+{
+	int i;
+
+	for( i=0; i<4; i++ )
+	{
+		config[i].entry = create_proc_entry( config[i].name, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
+		if( config[i].entry == NULL ) {
+			printk(KERN_ERR DRIVER_NAME ": Couldn't register %s. Terminating.\n", config[i].name);
+			return -ENOMEM;
+		}
+
+		config[i].entry->read_proc  = armadeus_gpio_proc_read;
+		config[i].entry->write_proc = armadeus_gpio_proc_write;
+		config[i].entry->data       = kmalloc(sizeof(struct gpio_settings), GFP_KERNEL);
+		((struct gpio_settings*) config[i].entry->data)->port = i;
+		((struct gpio_settings*) config[i].entry->data)->type = config[i].type;
+	}
+
+	return 0;
+}
+
+/*
+ * Create /proc entries for direct access (with echo/cat) to GPIOs config
+ */
 static int create_proc_entries( void )
 {
-    static struct proc_dir_entry *Proc_PortA, *Proc_PortB, *Proc_PortC, *Proc_PortD;
-    static struct proc_dir_entry *Proc_PortAdir, *Proc_PortBdir, *Proc_PortCdir, *Proc_PortDdir;
-    
-    //
+	struct proc_config_entry proc_config[NB_PORTS];
+	int ret;
+
     printk("Creating /proc entries: ");
-    // Create main directory
+
+    /* Create main directory */
     proc_mkdir(GPIO_PROC_DIRNAME, NULL);
-    
-    // Create proc file to handle GPIO values
-    Proc_PortA = create_proc_entry( GPIO_PROC_PORTA_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortB = create_proc_entry( GPIO_PROC_PORTB_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortC = create_proc_entry( GPIO_PROC_PORTC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortD = create_proc_entry( GPIO_PROC_PORTD_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
 
-    if( (Proc_PortA == NULL) || (Proc_PortB == NULL) ) 
-    {
-        printk(KERN_ERR DRIVER_NAME ": Could not register a " GPIO_PROC_PORTA_FILENAME  ". Terminating\n");
-        armadeus_gpio_cleanup();
-        return -ENOMEM;
-    } 
-    else 
-    {
-        Proc_PortA->read_proc  = procfile_gpio_read;   Proc_PortA->write_proc = procfile_gpio_write; Proc_PortA->data  = (void*)&gPortAIndex;
-        Proc_PortB->read_proc  = procfile_gpio_read;   Proc_PortB->write_proc = procfile_gpio_write; Proc_PortB->data  = (void*)&gPortBIndex;
-        Proc_PortC->read_proc  = procfile_gpio_read;   Proc_PortC->write_proc = procfile_gpio_write; Proc_PortC->data  = (void*)&gPortCIndex;
-        Proc_PortD->read_proc  = procfile_gpio_read;   Proc_PortD->write_proc = procfile_gpio_write; Proc_PortD->data  = (void*)&gPortDIndex;
-        init_map |= GPIO_PROC_FILE;
-    }
-    
-    // Create proc file to handle GPIO direction settings
-    Proc_PortAdir = create_proc_entry( GPIO_PROC_PORTADIR_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortBdir = create_proc_entry( GPIO_PROC_PORTBDIR_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortCdir = create_proc_entry( GPIO_PROC_PORTCDIR_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-    Proc_PortDdir = create_proc_entry( GPIO_PROC_PORTDDIR_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
+    /* Create proc file to handle GPIO values */
+	proc_config[PORT_A].name = GPIO_PROC_PORTA_FILENAME;
+	proc_config[PORT_A].type = VALUE;
+	proc_config[PORT_B].name = GPIO_PROC_PORTB_FILENAME;
+	proc_config[PORT_B].type = VALUE;
+	proc_config[PORT_C].name = GPIO_PROC_PORTC_FILENAME;
+	proc_config[PORT_C].type = VALUE;
+	proc_config[PORT_D].name = GPIO_PROC_PORTD_FILENAME;
+	proc_config[PORT_D].type = VALUE;
 
-    if( (Proc_PortAdir == NULL) || (Proc_PortBdir == NULL) ) 
-    {
-        printk(KERN_ERR DRIVER_NAME ": Could not register " GPIO_PROC_PORTADIR_FILENAME ". Terminating\n");
-        armadeus_gpio_cleanup();
-        return -ENOMEM;
-    } 
-    else 
-    {
-        Proc_PortAdir->read_proc = procfile_settings_read; Proc_PortAdir->write_proc = procfile_settings_write; 
-        Proc_PortAdir->data  = (void*)&gPortAIndex;
-        Proc_PortBdir->read_proc = procfile_settings_read; Proc_PortBdir->write_proc = procfile_settings_write; 
-        Proc_PortBdir->data  = (void*)&gPortBIndex;
-        Proc_PortCdir->read_proc = procfile_settings_read; Proc_PortCdir->write_proc = procfile_settings_write; 
-        Proc_PortCdir->data  = (void*)&gPortCIndex;
-        Proc_PortDdir->read_proc = procfile_settings_read; Proc_PortDdir->write_proc = procfile_settings_write; 
-        Proc_PortDdir->data  = (void*)&gPortDIndex;
-        init_map |= SETTINGS_PROC_FILE;
-    }
+	if( (ret = initialize_entry(proc_config)) )
+		return ret;
+	init_map |= GPIO_PROC_FILE;
+
+    /* Create proc file to handle GPIO direction settings */
+	proc_config[PORT_A].name = GPIO_PROC_PORTADIR_FILENAME;
+	proc_config[PORT_A].type = DIRECTION;
+	proc_config[PORT_B].name = GPIO_PROC_PORTBDIR_FILENAME;
+	proc_config[PORT_B].type = DIRECTION;
+	proc_config[PORT_C].name = GPIO_PROC_PORTCDIR_FILENAME;
+	proc_config[PORT_C].type = DIRECTION;
+	proc_config[PORT_D].name = GPIO_PROC_PORTDDIR_FILENAME;
+	proc_config[PORT_D].type = DIRECTION;
+
+	if( (ret = initialize_entry(proc_config)) )
+		return ret;
+	init_map |= SETTINGS_PROC_FILE;
+
+	/* Create proc file to handle GPIO interrupt settings */
+	proc_config[PORT_A].name = GPIO_PROC_PORTA_IRQ_FILENAME;
+	proc_config[PORT_A].type = INTERRUPT;
+	proc_config[PORT_B].name = GPIO_PROC_PORTB_IRQ_FILENAME;
+	proc_config[PORT_B].type = INTERRUPT;
+	proc_config[PORT_C].name = GPIO_PROC_PORTC_IRQ_FILENAME;
+	proc_config[PORT_C].type = INTERRUPT;
+	proc_config[PORT_D].name = GPIO_PROC_PORTD_IRQ_FILENAME;
+	proc_config[PORT_D].type = INTERRUPT;
+
+	if( (ret = initialize_entry(proc_config)) )
+		return ret;
+	init_map |= SETTINGS_IRQ_PROC_FILE;
+
+	/* Create proc file to handle GPIO pullup settings */
+	proc_config[PORT_A].name = GPIO_PROC_PORTA_PULLUP_FILENAME;
+	proc_config[PORT_A].type = PULL_UP;
+	proc_config[PORT_B].name = GPIO_PROC_PORTB_PULLUP_FILENAME;
+	proc_config[PORT_B].type = PULL_UP;
+	proc_config[PORT_C].name = GPIO_PROC_PORTC_PULLUP_FILENAME;
+	proc_config[PORT_C].type = PULL_UP;
+	proc_config[PORT_D].name = GPIO_PROC_PORTD_PULLUP_FILENAME;
+	proc_config[PORT_D].type = PULL_UP;
+
+	if( (ret = initialize_entry(proc_config)) )
+		return ret;
+	init_map |= SETTINGS_PULLUP_PROC_FILE;
 
     printk("OK!\n");
     return(0);
 }
 
 //
-// Userspace functionnalities supported:
+// /dev functionnalities supported:
 //
 static struct file_operations gpio_fops = {
     .owner   = THIS_MODULE,
-    .write   = armadeus_gpio_write,
-    .read    = armadeus_gpio_read,
-    .open    = armadeus_gpio_open,
-    .release = armadeus_gpio_release,
-    .ioctl   = armadeus_gpio_ioctl,
+	.llseek  = no_llseek,
+    .write   = armadeus_gpio_dev_write,
+    .read    = armadeus_gpio_dev_read,
+    .open    = armadeus_gpio_dev_open,
+    .release = armadeus_gpio_dev_release,
+    .ioctl   = armadeus_gpio_dev_ioctl,
 };
 
 //
@@ -740,29 +879,31 @@ static int __init armadeus_gpio_init(void)
     printk("    PortC Parameters (%i): ", portC_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portC_init[i]); } printk("\n");
     printk("    PortD Parameters (%i): ", portD_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portD_init[i]); } printk("\n");
     init_map = 0;
-    
+
     // Configure HW ports/GPIOs with default values or given parameters
     initializePorts();
-    
-    // Register the driver by getting a major number
+
+    /* Register the driver as character device by getting a major number */
     result = register_chrdev(gpio_major, DRIVER_NAME, &gpio_fops);
     if (result < 0) 
     {
         printk(KERN_WARNING DRIVER_NAME ": can't get major %d\n", gpio_major);
         return result;
     }
-    if( gpio_major == 0 ) gpio_major = result; // dynamic Major allocation
+    if( gpio_major == 0 ) gpio_major = result; /* dynamic Major allocation */
 
-    // Creating /proc entries
-    result = create_proc_entries();
-    if( result < 0 ) return( result );
-    
+	/* Creates /proc entries */
+	if( (result = create_proc_entries()) ) {
+		armadeus_gpio_cleanup();
+		return( result );
+	}
+
     // Initialise GPIO port access semaphore
     sema_init(&gpio_sema, 1);
 
     // Set GPIOs to initial state
     // iMX and parameters will do it
-    
+
     printk( DRIVER_NAME " " DRIVER_VERSION " successfully loaded !\n");
 
     return(0);
@@ -773,8 +914,10 @@ static int __init armadeus_gpio_init(void)
 //
 static void __exit armadeus_gpio_cleanup(void)
 {
-    printk("Cleanup: ");
-    
+    printk("Cleanup:\n");
+
+	/* TBDJUJU free config[i].entry->data first ?? */
+
     // Remove /proc entries
     if( init_map & GPIO_PROC_FILE )
     {
@@ -792,15 +935,34 @@ static void __exit armadeus_gpio_cleanup(void)
         remove_proc_entry( GPIO_PROC_PORTCDIR_FILENAME, NULL);
         remove_proc_entry( GPIO_PROC_PORTDDIR_FILENAME, NULL);
     }
-    // De-register from /dev interface
+    if( init_map & SETTINGS_IRQ_PROC_FILE )
+    {
+		printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_IRQ_FILENAME " & Co\n" );
+		remove_proc_entry( GPIO_PROC_PORTA_IRQ_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTB_IRQ_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTC_IRQ_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTD_IRQ_FILENAME, NULL);
+    }
+	if( init_map & SETTINGS_PULLUP_PROC_FILE )
+	{
+		printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_PULLUP_FILENAME " & Co\n" );
+		remove_proc_entry( GPIO_PROC_PORTA_PULLUP_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTB_PULLUP_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTC_PULLUP_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTD_PULLUP_FILENAME, NULL);
+	}
+
+	remove_proc_entry(GPIO_PROC_DIRNAME, NULL);
+
+    /* De-register from /dev interface */
     unregister_chrdev(gpio_major, DRIVER_NAME);
 
-    printk("Ok !\n ");
+    printk("Ok !\n");
 }
 
 //------------------------------------------------
 //
-// API
+// API   TBDJUJU To be removed......
 //
 
 void gpioWriteOnPort( unsigned int aPort, unsigned int aValue )
@@ -831,6 +993,7 @@ EXPORT_SYMBOL( gpioWriteOnPort );
 EXPORT_SYMBOL( gpioReadFromPort );
 EXPORT_SYMBOL( gpioSetPortDir );
 EXPORT_SYMBOL( gpioGetPortDir );
+
 
 module_init(armadeus_gpio_init);
 module_exit(armadeus_gpio_cleanup);

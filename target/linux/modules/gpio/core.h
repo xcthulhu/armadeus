@@ -36,7 +36,9 @@
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
-#include <linux/pci.h>
+#include <linux/interrupt.h> /* request_irq */
+#include <asm/gpio.h>        /* imx_gpio_... */
+#include <linux/cdev.h>      /* struct cdev */
 
 // Proc filenames:
 #define GPIO_PROC_DIRNAME         "driver/gpio"
@@ -51,10 +53,20 @@
 #define GPIO_PROC_PORTCDIR_FILENAME GPIO_PROC_PORTC_FILENAME "dir"
 #define GPIO_PROC_PORTDDIR_FILENAME GPIO_PROC_PORTD_FILENAME "dir"
 
+#define GPIO_PROC_PORTA_IRQ_FILENAME GPIO_PROC_PORTA_FILENAME "irq"
+#define GPIO_PROC_PORTB_IRQ_FILENAME GPIO_PROC_PORTB_FILENAME "irq"
+#define GPIO_PROC_PORTC_IRQ_FILENAME GPIO_PROC_PORTC_FILENAME "irq"
+#define GPIO_PROC_PORTD_IRQ_FILENAME GPIO_PROC_PORTD_FILENAME "irq"
+
+#define GPIO_PROC_PORTA_PULLUP_FILENAME GPIO_PROC_PORTA_FILENAME "pullup"
+#define GPIO_PROC_PORTB_PULLUP_FILENAME GPIO_PROC_PORTB_FILENAME "pullup"
+#define GPIO_PROC_PORTC_PULLUP_FILENAME GPIO_PROC_PORTC_FILENAME "pullup"
+#define GPIO_PROC_PORTD_PULLUP_FILENAME GPIO_PROC_PORTD_FILENAME "pullup"
+
+
 // By default, we use dynamic allocation of major numbers -> MAJOR = 0
 #define GPIO_MAJOR 0
 #define GPIO_MAX_MAJOR 254
-#define GPIO_MAX_MINOR 4 
 
 // IOCTL 
 #define GPIORDDIRECTION _IOR(PP_IOCTL, 0xF0, int)  //Read/write bitmask that determines input/output pins (1 means output, 0 input)
@@ -64,7 +76,7 @@
 
 #define MAX_NUMBER_OF_PINS 32
 #define DRIVER_NAME    "Armadeus GPIOs driver"
-#define DRIVER_VERSION "v1.0"
+#define DRIVER_VERSION "v2.0alpha"
 
 // Pretend we're PPDEV for IOCTL
 #include <linux/ppdev.h>
