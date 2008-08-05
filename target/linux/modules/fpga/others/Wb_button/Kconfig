@@ -4,5 +4,5 @@
 config ARMADEUS_BUTTON_DRIVER
         tristate "Wishbone Button driver"
         default n
-        depends on ARMADEUS_FPGA_DRIVERS
+        depends on ARMADEUS_FPGA_OTHERS_DRIVERS
         ---help---

@@ -6,26 +6,14 @@ menu "FPGA Drivers "
 
 #
 config ARMADEUS_FPGA_DRIVERS
-	boolean "Support for FPGA specific drivers"
+	boolean "Support FPGA specific drivers"
 	default n
 	---help---
 	All drivers for FPGA components
 	
-source "drivers/armadeus/fpga/fpga_devtools/Kconfig"
+source "drivers/armadeus/fpga/dev_tools/Kconfig"
 
-source "drivers/armadeus/fpga/ps2keyboard/Kconfig"
-
-source "drivers/armadeus/fpga/Wb_led/Kconfig"
-
-source "drivers/armadeus/fpga/Wb_button/Kconfig"
-
-source "drivers/armadeus/fpga/i2ctest/Kconfig"
-
-source "drivers/armadeus/fpga/fpgaaccess/Kconfig"
-
-source "drivers/armadeus/fpga/serial/Kconfig"
-
-source "drivers/armadeus/fpga/irq_manager/Kconfig"
+source "drivers/armadeus/fpga/others/Kconfig"
 
 endmenu
 

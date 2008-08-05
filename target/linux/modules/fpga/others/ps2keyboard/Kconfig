@@ -4,7 +4,7 @@
 config ARMADEUS_PS2KBD_DRIVER
         tristate "Armadeus PS/2 driver"
         default n
-        depends on ARMADEUS_FPGA_DRIVERS
+        depends on ARMADEUS_FPGA_OTHERS_DRIVERS
         ---help---
 	  If you have the corresponding IP loaded in the FPGA then this
 	  driver will allow you to use PS/2 keyboard with your Armadeus

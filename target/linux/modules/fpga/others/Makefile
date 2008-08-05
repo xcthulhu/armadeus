@@ -8,7 +8,7 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_FPGA_DRIVERS)	+= dev_tools/ others/
+obj-$(CONFIG_ARMADEUS_FPGA_OTHERS_DRIVERS)	+= Wb_button/ Wb_led/ i2ctest/ ps2keyboard/
 
 else
 
