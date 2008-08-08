@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   printf( "Testing button driver\n" );
 
   if(argc < 2){
-    perror("invalide arguments number\ntestled <button_filename>\n");
+    perror("invalid arguments number\ntestled <button_filename>\n");
     exit(EXIT_FAILURE);
   }
 

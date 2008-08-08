@@ -2,7 +2,7 @@
 # Makefile for the Armadeus Wb_led drivers
 #
 
-BASE_DIR="../../../../../buildroot/"
+BASE_DIR="../../../../../../buildroot/"
 
 REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
       sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
@@ -25,7 +25,7 @@ default:
 	-cp led.ko /tftpboot/
 
 test:
-	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc testled.c -o testled
+	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc -Wall testled.c -o testled
 	chmod 755 testled
 	cp testled /tftpboot/
 
