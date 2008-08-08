@@ -116,6 +116,10 @@ menuconfig: $(BUILDROOT_DIR)/.unpacked
 
 
 linux-menuconfig:
+	@if [ ! -e "target/linux/modules/fpga/POD/.pod" ] ; then\
+		target/linux/modules/fpga/podscript.sh ; \
+	fi;
+
 	@if [ -e "$(LINUX_DIR)/.unpacked" ] ; then \
 		$(MAKE) -C $(LINUX_DIR) menuconfig ; \
 	fi;
