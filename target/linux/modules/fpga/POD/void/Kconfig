@@ -1,0 +1,10 @@
+#
+#
+
+config VOID_DRIVER
+        tristate "Useless, just to avoid error"
+        default n
+        depends on POD_DRIVERS 
+        ---help---
+        Useless, just to avoid error
+
