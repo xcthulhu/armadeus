@@ -25,17 +25,19 @@ config POD_DRIVERS
 
 
 line=""
-for i in `tree -fid $FPGADIR$PODDIR | grep -v "$PODDIR\$" | grep "$PODDIR"` 
+for i in `ls $FPGADIR$PODDIR` 
 do
-    echo $i
-    IFS='/'
-    name=(${i})
+    if [ -d $FPGADIR$PODDIR/$i ]
+        then
+        echo $i
+        name=$i
 
-echo """
-source \"drivers/armadeus/fpga/POD/${name[5]}/Kconfig\"
+        echo """
+source \"drivers/armadeus/fpga/POD/$name/Kconfig\"
 """ >> "${FPGADIR}${PODDIR}/Kconfig"
 
-	line="${line} ${name[5]}/" 
+	    line="${line} $name/" 
+        fi;
 done;
 
 # fill Makefile
