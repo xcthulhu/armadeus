@@ -5,7 +5,7 @@ BUILDROOT_DIR=../../buildroot
 include $(BUILDROOT_DIR)/.config
 
 LINUX_VERSION:=$(shell echo $(BR2_PACKAGE_LINUX_VERSION))
-TARBALL_DIR:=$(shell echo $(BR2_DL_DIR)) #/local/downloads
+TARBALL_DIR:=$(shell echo $(BR2_DL_DIR))
 BUILD_DIR=$(BUILDROOT_DIR)/build_arm
 
 
