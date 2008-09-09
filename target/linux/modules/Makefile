@@ -9,7 +9,7 @@ ifneq ($(KERNELRELEASE),)
 # Part executed when called from kernel build system:
 
 obj-$(CONFIG_ARMADEUS_DRIVERS)	+= gpio/ pwm/ backlight/ isp1761/ \
-	imxlkeypad/ fpga/
+	imxlkeypad/ fpga/ fast_max1027/
 
 else
 

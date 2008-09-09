@@ -1,0 +1,33 @@
+#
+# Makefile for the Armadeus Max1027 (fast version)
+#
+
+# Part executed when called from kernel build system:
+ifneq ($(KERNELRELEASE),)
+
+#obj-$(CONFIG_ARMADEUS_FAST_MAX1027)	+= fast-max1027.o
+obj-m    += fast-max1027.o
+fast-max1027-objs	:= main.o
+
+# Part executed when called from standard make in this directory:
+# (preferably use Makefile in parent directory)
+else
+
+BASE_DIR="../../../../buildroot/"
+REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
+      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
+ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm/linux-$(REL)
+KDIR    := $(ARMADEUS_KERNEL_DIR)
+PWD	:= $(shell pwd)
+
+default:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+
+clean:
+	rm -f *.*o \
+	rm -f Module.symvers
+	rm -f .*.cmd
+	rm -f *.mod.c
+	rm -rf .tmp_versions/
+endif
+
