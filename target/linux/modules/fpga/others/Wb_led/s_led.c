@@ -1,9 +1,9 @@
 /*
  ***********************************************************************
  *
- * (c) Copyright 2007    Armadeus project
+ * (c) Copyright 2008    Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * Driver for Wishbone led IP
+ * Specific led driver for generic led driver 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +21,8 @@
  **********************************************************************
  */
 
-
-#ifndef __LED_H__
-#define __LED_H__
+#ifndef __S_LED_H__
+#define __S_LED_H__
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
@@ -77,11 +76,43 @@
 
 #define LED_NUMBER 2
 
-/* platform device */
-struct plat_led_port{
-    const char   *name;    /* instance name  */
-    int          num;      /* instance number */
-    unsigned int membase;  /* ioremap base address */
+#include"led.h"
+
+static struct plat_led_port plat_led_data[] = {
+    {
+        .name    = "led0",
+        .num     = 0,
+        .membase = 0x04
+    },
+    {
+        .name    = "led1",
+        .num     = 1,
+        .membase = 0x06
+    },
+    { },
 };
 
+static struct platform_device plat_led_device = {
+    .name = "led",
+    .id   = 0,
+    .dev  = {
+        .platform_data = plat_led_data
+    },
+};
+
+static int __init sled_init(void){
+    PDEBUG("Driver registered\n");
+    return platform_device_register(&plat_led_device);
+}
+
+static void __exit sled_exit(void){
+    platform_device_unregister(&plat_led_device);
+}
+
+module_init(sled_init);
+module_exit(sled_exit);
+
+MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
+MODULE_DESCRIPTION("Driver to blink blink some led");
+MODULE_LICENSE("GPL");
 

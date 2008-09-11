@@ -11,7 +11,7 @@ ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm/linux-$(REL)
 
 ifneq ($(KERNELRELEASE),)
 
-obj-$(CONFIG_ARMADEUS_LED_DRIVER)	+= led.o
+obj-$(CONFIG_ARMADEUS_LED_DRIVER)	+= s_led.o g_led.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)
@@ -22,7 +22,8 @@ PWD	:= $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-	-cp led.ko /tftpboot/
+	-cp g_led.ko /tftpboot/
+	-cp s_led.ko /tftpboot/
 
 test:
 	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc -Wall testled.c -o testled
