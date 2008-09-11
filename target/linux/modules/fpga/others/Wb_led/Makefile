@@ -33,6 +33,8 @@ test:
 clean:
 	rm -f *.*o \
 	rm -f Module.symvers
-
+	rm -rf .*.cmd
+	rm -f *.mod.c
+    
 endif
 

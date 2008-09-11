@@ -21,9 +21,6 @@
  **********************************************************************
  */
 
-#ifndef __S_LED_H__
-#define __S_LED_H__
-
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 #include <linux/config.h>
@@ -33,50 +30,11 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
-/* for file  operations */
-#include <linux/fs.h>
-#include <linux/cdev.h>
-
-/* copy_to_user function */
-#include <asm/uaccess.h>
-
-/* request_mem_region */
-#include <linux/ioport.h>
-
-/* readw() writew() */
-#include <asm/io.h>
-
-/* hardware addresses */
-#include <asm/hardware.h>
-
 /* for platform device */
 #include <linux/platform_device.h>
 
-#endif
-
-/* for debugging messages*/
-#define LED_DEBUG
-
-#undef PDEBUG
-#ifdef LED_DEBUG
-# ifdef __KERNEL__
-    /* for kernel spage */
-#   define PDEBUG(fmt,args...) printk(KERN_DEBUG "LED : " fmt, ##args)
-# else
-    /* for user space */
-#   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
-# endif
-#else
-# define PDEBUG(fmt,args...) /* no debbuging message */
-#endif
-
-
-#define FPGA_BASE_ADDR IMX_CS1_PHYS
-#define FPGA_MEM_SIZE  IMX_CS1_SIZE
-
-#define LED_NUMBER 2
-
 #include"led.h"
+
 
 static struct plat_led_port plat_led_data[] = {
     {
@@ -100,12 +58,13 @@ static struct platform_device plat_led_device = {
     },
 };
 
-static int __init sled_init(void){
-    PDEBUG("Driver registered\n");
+static int __init sled_init(void)
+{
     return platform_device_register(&plat_led_device);
 }
 
-static void __exit sled_exit(void){
+static void __exit sled_exit(void)
+{
     platform_device_unregister(&plat_led_device);
 }
 
@@ -113,6 +72,6 @@ module_init(sled_init);
 module_exit(sled_exit);
 
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
-MODULE_DESCRIPTION("Driver to blink blink some led");
+MODULE_DESCRIPTION("Driver to blink blink some leds");
 MODULE_LICENSE("GPL");
 

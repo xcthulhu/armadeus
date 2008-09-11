@@ -21,10 +21,6 @@
  **********************************************************************
  */
 
-
-#ifndef __G_LED_H__
-#define __G_LED_H__
-
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 #include <linux/config.h>
@@ -56,7 +52,6 @@
 /* led */
 #include "led.h"
 
-#endif
 
 /* for debugging messages*/
 #define LED_DEBUG
@@ -80,38 +75,6 @@
 
 #define LED_NUMBER 2
 
-static int led_probe(struct platform_device *plat_led_device);
-static int led_remove(struct platform_device *plat_led_device);
-
-static struct platform_driver plat_led_driver = {
-    .probe      = led_probe,
-    .remove     = led_remove,
-    .driver     = {
-        .name    = "led",
-        .owner   = THIS_MODULE,
-    },
-};
-
-/************************************
- * module init and exit
- ***********************************/
-
-static int __init led_init(void){
-    int ret;
-    PDEBUG("init Led platform driver\n");
-    PDEBUG("Platform driver name %s\n",plat_led_driver.driver.name);
-    ret = platform_driver_register(&plat_led_driver);
-    if(ret){
-        printk(KERN_ERR "Platform driver register error\n");
-        return ret;
-    }
-    return 0;
-}
-
-static void __exit led_exit(void){
-    PDEBUG("g_led exit function \n");
-    platform_driver_unregister(&plat_led_driver);
-}
 
 /*************************/
 /* main device structure */
@@ -220,19 +183,24 @@ int led_open(struct inode *inode, struct file *filp){
 /* ******************************
  * Init and release functions
  * ******************************/
-int led_release(struct inode *inode, struct file *filp){
+int led_release(struct inode *inode, struct file *filp)
+{
     struct led_dev *dev;
+
     dev = container_of(inode->i_cdev,struct led_dev,cdev);
     PDEBUG( "%s: released\n",dev->name);
     filp->private_data=NULL;
+
     return 0;
 }
 
-int register_led(struct plat_led_port *dev){
+int register_led(struct plat_led_port *dev)
+{
     int result = 0;                 /* error return */
     int led_major,led_minor;
     u16 data;
     struct led_dev *sdev = &led_device[dev->num];
+
     PDEBUG("Register %d led\n",dev->num);
     /* major and minor number */
     led_major = 253;
@@ -242,57 +210,57 @@ int register_led(struct plat_led_port *dev){
     sdev->membase = dev->membase;
 
     /* name and address of the instance */
-    sdev->name = (char *)kmalloc((1+strlen(dev->name))*sizeof(char),GFP_KERNEL);
-    if(sdev->name == NULL){
+    sdev->name = (char *)kmalloc((1+strlen(dev->name))*sizeof(char), GFP_KERNEL);
+    if (sdev->name == NULL) {
         printk("Kmalloc name space error\n");
         goto error;
     }
-    if(strncpy(sdev->name,dev->name,1+strlen(dev->name)) < 0){
+    if (strncpy(sdev->name,dev->name,1+strlen(dev->name)) < 0) {
         printk("copy error");
         goto error;
     }
 
     /* Get the major and minor device numbers */
     PDEBUG("%s:Get the major and minor device numbers\n",dev->name);
-    if(led_major){
-        sdev->devno = MKDEV(led_major,led_minor);
+    if (led_major) {
+        sdev->devno = MKDEV(led_major, led_minor);
         result = register_chrdev_region(sdev->devno, 1,dev->name);
-    }else{
-        result = alloc_chrdev_region(&sdev->devno,led_minor,1,dev->name);
+    } else {
+        result = alloc_chrdev_region(&sdev->devno, led_minor, 1, dev->name);
         led_major = MAJOR(sdev->devno);
     }
 
     printk(KERN_INFO "%s: MAJOR: %d MINOR: %d\n",dev->name,MAJOR(sdev->devno),MINOR(sdev->devno));
-    if(result < 0){
+    if (result < 0) {
         printk(KERN_WARNING "%s: can't get major %d\n",dev->name,led_major);
         goto error;
     }
 
     /* Init the cdev structure  */
-    PDEBUG("%s:Init the cdev structure\n",dev->name);
-    cdev_init(&sdev->cdev,&led_fops);
+    PDEBUG("%s:Init the cdev structure\n", dev->name);
+    cdev_init(&sdev->cdev, &led_fops);
     sdev->cdev.owner = THIS_MODULE;
     sdev->cdev.ops   = &led_fops;
 
     /* Add the device to the kernel, connecting cdev to major/minor number */
-    PDEBUG("%s:Add the device to the kernel, connecting cdev to major/minor number \n",dev->name);
-    result = cdev_add(&sdev->cdev,sdev->devno,1);
-    if(result){
-        printk(KERN_WARNING "%s: can't add cdev\n",dev->name);
+    PDEBUG("%s:Add the device to the kernel, connecting cdev to major/minor number \n", dev->name);
+    result = cdev_add(&sdev->cdev, sdev->devno, 1);
+    if (result) {
+        printk(KERN_WARNING "%s: can't add cdev\n", dev->name);
         goto error;
     }
 
     /* initialize led value */
     data=1;
     iowrite16(data,sdev->fpga_virtual_base_address + sdev->membase);
-    PDEBUG("Wrote %x at %x\n",data,sdev->membase);
+    PDEBUG("Wrote %x at %x\n", data, sdev->membase);
 
     /* OK module inserted ! */
-    printk(KERN_INFO "Led module %s insered\n",dev->name);
+    printk(KERN_INFO "Led module %s insered\n", dev->name);
     return 0;
 
 error:
-    printk(KERN_ERR "%s: not inserted\n",dev->name);
+    printk(KERN_ERR "%s: not inserted\n", dev->name);
     free_all(dev);
     return result;
 }
@@ -300,18 +268,18 @@ error:
 /**********************************
  * driver probe
  **********************************/
-static int led_probe(struct platform_device *dev){
-
+static int led_probe(struct platform_device *pdev)
+{
     /* new code for led with platform device */
-    struct plat_led_port *p = dev->dev.platform_data;
-    int ret,i;
-    
+    struct plat_led_port *p = pdev->dev.platform_data;
+    int ret, i;
+
     PDEBUG("Led probing\n");
     /* register each led in plat_led_port tab */
     for (i = 0; p->name!=NULL ; p++, i++) {
         PDEBUG("%s:register led number %d\n",p->name,i);
         ret = register_led(p);
-        if(ret){
+        if (ret) {
             printk(KERN_WARNING "Unable to register led %s\n",p->name);
         }
     }
@@ -320,18 +288,22 @@ static int led_probe(struct platform_device *dev){
     return 0  ;
 }
 
-static int led_remove(struct platform_device *dev){
-    struct plat_led_port *p = dev->dev.platform_data;
+static int __devexit led_remove(struct platform_device *pdev)
+{
+    struct plat_led_port *p = pdev->dev.platform_data;
     int i;
+
     PDEBUG("Removing leds\n");
     for (i = 0; p->name!=NULL ; p++, i++) {
         PDEBUG("Remove led %d\n",i);
         free_all(p);
     }
-    return 0; 
+
+    return 0;
 }
 
-static int free_all(struct plat_led_port *dev){
+static int free_all(struct plat_led_port *dev)
+{
     struct led_dev *sdev = &led_device[dev->num];
 
     PDEBUG("Unregister %s, number %d\n",dev->name,dev->num);
@@ -343,7 +315,35 @@ static int free_all(struct plat_led_port *dev){
     /* free major and minor number */
     unregister_chrdev_region(sdev->devno,1);
     printk(KERN_INFO "%s: Led deleted\n",dev->name);
+
     return 0;
+}
+
+static struct platform_driver plat_led_driver = {
+    .probe      = led_probe,
+    .remove     = __devexit_p(led_remove),
+    .driver     = {
+        .name    = "led",
+        .owner   = THIS_MODULE,
+    },
+};
+
+static int __init led_init(void)
+{
+    int ret;
+
+    PDEBUG("Platform driver name %s\n", plat_led_driver.driver.name);
+    ret = platform_driver_register(&plat_led_driver);
+    if (ret) {
+        printk(KERN_ERR "Platform driver register error\n");
+        return ret;
+    }
+    return 0;
+}
+
+static void __exit led_exit(void)
+{
+    platform_driver_unregister(&plat_led_driver);
 }
 
 module_init(led_init);
