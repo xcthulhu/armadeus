@@ -1,7 +1,7 @@
 /*
- * Armadeus Max1027 driver (fast version)
+ * Max1027 driver for kernel >= 2.6.23
  *
- * Copyright (C) 2006-2008 Armadeus Project / ArmadeusPort Systems
+ * Copyright (C) 2006-2008 Armadeus Project / Armadeus Systems
  * Authors: Nicolas Colombain / Julien Boibessot
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,18 +23,10 @@
 #include <asm/arch/imx-regs.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/errno.h>
 #include <linux/types.h>
-#include <linux/proc_fs.h>
-#include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/fcntl.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#include <asm/uaccess.h>
+#include <asm/uaccess.h>     /* copy_to_user */
 #include <linux/interrupt.h> /* request_irq */
 #include <asm/gpio.h>        /* imx_gpio_... */
 #include <linux/cdev.h>      /* struct cdev */
@@ -43,13 +35,15 @@
 #include <linux/sysfs.h>
 #include <linux/spi/spi.h>
 #include <asm/semaphore.h>
-
 #include <linux/delay.h>
-
 #include <linux/irq.h> /* set_irq_type */
+#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
+#include <linux/hwmon.h>
+#endif
+
 
 #define DRIVER_NAME    "max1027"
-#define DRIVER_VERSION "0.1"
+#define DRIVER_VERSION "0.2"
 
 #define MAX1027_EOC_IRQ  IRQ_GPIOA(10) // CSI_D6 = PortA 10    IRQ_GPIOA(1) can be used for test
 
@@ -63,25 +57,34 @@
 
 /* register specifics */
 #define MAX1027_CONV_CHSEL(x) 		((x&0x0f)<<3)
+#define GET_SELECTED_CHANNEL(conv)	( (conv & 0x78) >> 3 )
 #define MAX1027_CONV_SCAN(x)  		((x&0x03)<<1)
+#define GET_SCAN_MODE(conv)			( (conv & 0x06) >> 1 )
 #define MAX1027_CONV_TEMP  			0x01
 /* All channels and temperature are scanned per conversion */
 #define MAX1027_CONV_DEFAULT 		(MAX1027_REG_CONV | \
 									MAX1027_CONV_CHSEL(7) | \
 									MAX1027_CONV_SCAN(0) | MAX1027_CONV_TEMP)
+#define SCAN_MODE_00				0
+#define SCAN_MODE_01				1
+#define SCAN_MODE_10				2
+#define SCAN_MODE_11				3
 
 #define MAX1027_SETUP_CLKSEL(x) 	((x&0x03)<<4)
 #define MAX1027_SETUP_REFSEL(x) 	((x&0x03)<<2)
 #define MAX1027_SETUP_DIFFSEL(x)  	(x&0x03)
 #define MAX1027_SETUP_DIFFSEL_MASK 	 0x03
-/* Internal clock and single ended configuration following setup cmd */
+/* Internal clock and reference stays on */
 #define MAX1027_SETUP_DEFAULT 		(MAX1027_REG_SETUP | \
 										MAX1027_SETUP_CLKSEL(2) | \
-										MAX1027_SETUP_DIFFSEL(2))
+										MAX1027_SETUP_REFSEL(2))
 
 #define MAX1027_AVG_AVGON(x)  		((x&0x01)<<4)
 #define MAX1027_AVG_NAVG(x)   		((x&0x03)<<2)
 #define MAX1027_AVG_NSCAN(x)  		(x&0x03)
+#define GET_NB_SCAN(avg)			( 4 * ((avg & 0x03)+1) )
+/* Averaging Off */
+#define MAX1027_AVG_DEFAULT 		( MAX1027_REG_AVG | MAX1027_AVG_AVGON(0) )
 
 #define MAX1027_RESET_ALL 			(0x0|MAX1027_REG_RESET)
 #define MAX1027_RESET_FIFO 			(0x8|MAX1027_REG_RESET)
@@ -90,27 +93,29 @@
 #define MAX1027_BIPO_BCH(x) 		((x&0x0f)<<4)
 
 #define NB_CHANNELS 				8
-#define RESULT_ARRAY_SIZE 			(NB_CHANNELS+1)
+#define MAX_RESULTS_PER_CHANNEL		16   /* NSCAN = 11 */
+#define MAX_NB_RESULTS 				(MAX_RESULTS_PER_CHANNEL+1) /* + temp */
 
 
-// Global variables
+/* Global variables */
 struct max1027_operations *driver_ops;
 static int max1027_major = 0; /* Dynamic major allocation */
 
-
 struct max1027_results {
-	u16 temp;             /* in 1/8 °C */
 	u16 ain[NB_CHANNELS];
 };
 
 struct adc_channel {
 	spinlock_t lock;
 
+	u16 results[MAX_RESULTS_PER_CHANNEL];
+	int nb_results;
+
 	int id;
 	int enabled;
 	int initialized;
 	int running;
-	int eoc; /* 1 if convertion ended */
+	int eoc; /* 1 if conversion ended */
 
 	wait_queue_head_t change_wq;
 	struct fasync_struct *async_queue;
@@ -121,10 +126,12 @@ struct adc_channel {
 struct max1027 {
 	struct class_device *cdev;
 	struct mutex update_lock;
-	struct max1027_results results;
+
+	struct max1027_results results; /* latest channels value */
 	struct adc_channel* channels[NB_CHANNELS];
 	int scan_time; /* in jiffies */
 	unsigned long last_updated; /* in jiffies */
+	int temperature; /* current one in millidegree Celcius */
 	/* Shadow registers to hold current configuration */
 	u8 conv_reg;
 	u8 setup_reg;
@@ -136,18 +143,17 @@ struct max1027 {
 	struct tasklet_struct tasklet;
 	int conversion_running;
 };
-#define GET_NB_CHANNELS(max1027) (max1027->conv_reg & MASK >> XX)
 
 #define CS_CHANGE(val)			0  /* <-- ça sert à quoi ce truc ??? */
 
 static struct spi_device *current_spi;
 
-struct spi_transfer transfer[NB_CHANNELS+1];
+struct spi_transfer transfer[MAX_NB_RESULTS];
 struct spi_message message;
-u8 buffer[32];
+u8 buffer[MAX_NB_RESULTS*2]; // each result is sent with 16 bits
 
 
-// must be used within mutex and outside of IRQ context !!!
+/* Must be used within mutex and outside of IRQ context !!! */
 static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
 {
 	u8 buf = cmd;
@@ -155,13 +161,14 @@ static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
 
 	spi_write_then_read(spi, &buf, 1, NULL, 0);
 
+	/* !! order is important here !! ;-) */
 	if( cmd & MAX1027_REG_CONV ) {
 		p_max1027->conv_reg = cmd;
 	}
-	if( cmd & MAX1027_REG_SETUP ) {
+	else if( cmd & MAX1027_REG_SETUP ) {
 		p_max1027->setup_reg = cmd;
 	}
-	if( cmd & MAX1027_REG_AVG ) {
+	else if( cmd & MAX1027_REG_AVG ) {
 		p_max1027->avg_reg = cmd;
 	}
 }
@@ -194,19 +201,22 @@ static void max1027_process_results(struct max1027 *max1027)
 		msb = buffer[0] & 0x0f;
 		lsb = buffer[1];
 		value = ((msb << 8) | lsb);
-		max1027->results.temp = value;
-		printk("%d°C ", value >> 3); /* 1 unit = 1/8 °C */
+		max1027->temperature = (value * 1000) >> 3; /* 1 unit = 1/8 °C + save it in millidegree */
+		printk("%d m°C ", max1027->temperature);
 	}
 
 	for( i=start; i<values_to_read; i++ ) {
 		msb = buffer[i*2] & 0x0f;
-		lsb = buffer[(i*2)+1] >> 2;
-		value = (msb << 8) | lsb;
-		max1027->results.ain[i-start] = value;
+		lsb = buffer[(i*2)+1];
+		value = ((msb << 8) | lsb) >> 2;
+		if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_00 )
+		{
+			//size = GET_SELECTED_CHANNEL(max1027->conv_reg) + 1;
+			max1027->results.ain[i-start] = value;
+		}
 		printk("0x%04x ", value);
 	}
 	printk("\n");
-
 
 	/* Wake up waiting userspace apps */
 	pr_debug("EOC for");
@@ -292,7 +302,7 @@ static ssize_t max1027_dev_read(struct file *file, char *buf, size_t count, loff
 	channel->running = 0;
 
 	/* Read conversion results */
-	value = max1027->results.ain[channel->id]; //get_value_for_channel(channel->id);
+	value = max1027->results.ain[channel->id];
 
 	/* Copy result to given userspace buffer */
 	count = min( count, (size_t)sizeof(u32) );
@@ -308,17 +318,46 @@ out:
 }
 
 /* Tasklet to get results after EOC IRQ */
-/* Tasklets seems to be unable to call spi_xxx too :-( */
 static void read_conversion_results( unsigned long data )
 {
 	struct spi_device *spi = (struct spi_device *)data;
 	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
+	int size = 0;
 
-	/* Get conversion results from chip */
-	if( max1027->conv_reg & MAX1027_CONV_TEMP )
-		max1027_reads_async(spi, 9);
-	else
-		max1027_reads_async(spi, 8);
+	/* Get conversion results from chip (depends on conversion mode) */
+	if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_00 )
+	{
+		size = GET_SELECTED_CHANNEL(max1027->conv_reg) + 1;
+		if( max1027->conv_reg & MAX1027_CONV_TEMP )
+			max1027_reads_async(spi, size+1);
+		else
+			max1027_reads_async(spi, size);
+	}
+	if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_01 )
+	{
+		size = NB_CHANNELS - GET_SELECTED_CHANNEL(max1027->conv_reg);
+		if( max1027->conv_reg & MAX1027_CONV_TEMP )
+			max1027_reads_async(spi, size+1);
+		else
+			max1027_reads_async(spi, size);
+	}
+	if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_10 )
+	{
+		size = GET_NB_SCAN(max1027->avg_reg);
+		if( max1027->conv_reg & MAX1027_CONV_TEMP )
+			max1027_reads_async(spi, size+1);
+		else
+			max1027_reads_async(spi, size);
+	}
+	if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_11 )
+	{
+		size = 1;
+		if( max1027->conv_reg & MAX1027_CONV_TEMP )
+			max1027_reads_async(spi, size+1);
+		else
+			max1027_reads_async(spi, size);
+	}
+
 }
 
 /* EOC (End Of Conversion) IRQ handler */
@@ -400,22 +439,20 @@ static struct file_operations max1027_fops = {
 	.ioctl   = max1027_dev_ioctl,
 };
 
+/* sysfs hook functions */
 
-// buf value <256 -> max1027 config register
 static ssize_t max1027_set_conversion(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct spi_device *spi = to_spi_device(dev);
-	int val, reg;
+	int val;
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
-	val = simple_strtol(buf, NULL, 10);
-	printk("%s: 0x%02x\n", __FUNCTION__, val);
+	val = (simple_strtol(buf, NULL, 10)) & 0xff;
+	pr_debug("%s: 0x%02x\n", __FUNCTION__, val);
 
 	mutex_lock(&p_max1027->update_lock);
-	reg = MAX1027_REG_CONV | (val&0xff);
-	max1027_send_cmd( spi, reg );
-	p_max1027->conv_reg = (u8)reg;
+	max1027_send_cmd( spi, MAX1027_REG_CONV | val );
 	mutex_unlock(&p_max1027->update_lock);
 
 	return count;
@@ -427,11 +464,10 @@ static ssize_t max1027_get_conversion(struct device *dev, struct device_attribut
 	struct spi_device *spi = to_spi_device(dev);
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
-	ret_size = sprintf(buf,"0x%2x", p_max1027->conv_reg);
+	ret_size = sprintf(buf,"0x%02x", p_max1027->conv_reg);
 
 	return ret_size;
 }
-
 
 // buf value <256 -> max1027 config register
 // buf value >=256 -> max1027 Unipolar or Bipolar mode registers
@@ -439,17 +475,15 @@ static ssize_t max1027_set_setup(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct spi_device *spi = to_spi_device(dev);
-	int val, reg;
+	int val;
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
 	val = simple_strtol(buf, NULL, 10);
 	printk("%s: 0x%02x", __FUNCTION__, val);
 
 	mutex_lock(&p_max1027->update_lock);
-	reg = MAX1027_REG_SETUP | (val&0xff);
-	max1027_send_cmd( spi, reg );
-	p_max1027->setup_reg = (u8)reg;
-	// check whether we need to configure the uni or bipolar mode IOs or not
+	max1027_send_cmd( spi, MAX1027_REG_SETUP | (val&0xff) );
+	/* check whether we need to configure the uni or bipolar mode IOs or not */
 	if( ((val&0xff) & MAX1027_SETUP_DIFFSEL_MASK) > MAX1027_SETUP_DIFFSEL(1) ) {
 		max1027_send_cmd( spi, val>>8 );
 		printk("+ 0x%02x", val);
@@ -466,12 +500,11 @@ static ssize_t max1027_get_setup(struct device *dev, struct device_attribute *at
 	struct spi_device *spi = to_spi_device(dev);
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
-	ret_size = sprintf(buf,"0x%2x", p_max1027->setup_reg);
+	ret_size = sprintf(buf,"0x%02x", p_max1027->setup_reg);
 
 	return ret_size;
 }
 
-// buf value <256 -> max1027 averaging register
 static ssize_t max1027_set_averaging(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -479,11 +512,11 @@ static ssize_t max1027_set_averaging(struct device *dev,
 	int val;
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
-	val = simple_strtol(buf, NULL, 10);
-	printk("%s: 0x%02x\n", __FUNCTION__, val);
+	val = (simple_strtol(buf, NULL, 10)) & 0xff;
+	pr_debug("%s: 0x%02x\n", __FUNCTION__, val);
 
 	mutex_lock(&p_max1027->update_lock);
-	max1027_send_cmd( spi, MAX1027_REG_AVG | (val&0xff) );
+	max1027_send_cmd( spi, MAX1027_REG_AVG | val );
 	mutex_unlock(&p_max1027->update_lock);
 
 	return count;
@@ -495,7 +528,7 @@ static ssize_t max1027_get_averaging(struct device *dev, struct device_attribute
 	struct spi_device *spi = to_spi_device(dev);
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 	
-	ret_size = sprintf(buf,"0x%2x", p_max1027->avg_reg);
+	ret_size = sprintf(buf,"0x%02x", p_max1027->avg_reg);
 
 	return ret_size;
 }
@@ -507,9 +540,66 @@ static DEVICE_ATTR(averaging,  S_IWUSR | S_IRUGO, max1027_get_averaging, max1027
 static DEVICE_ATTR(unipolar,   S_IWUSR, NULL, max1027_unipolar);
 static DEVICE_ATTR(bipolar,    S_IWUSR, NULL, max1027_bipolar);*/
 
+#define show_in(offset) \
+static ssize_t show_in##offset##_input(struct device *dev, \
+					struct device_attribute *attr, char *buf) \
+{ \
+	int result; \
+	ssize_t size; \
+	struct spi_device *spi = to_spi_device(dev); \
+	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev); \
+	\
+	result = p_max1027->results.ain[offset]; \
+	size = sprintf(buf, "%d\n", (result*2500)>>10); /* millivolt with 2.5V ref */ \
+\
+	return size; \
+} 
+
+show_in(0);
+show_in(1);
+show_in(2);
+show_in(3);
+show_in(4);
+show_in(5);
+show_in(6);
+show_in(7);
+
+static DEVICE_ATTR(in0_input, S_IRUGO, show_in0_input, NULL);
+static DEVICE_ATTR(in1_input, S_IRUGO, show_in1_input, NULL);
+static DEVICE_ATTR(in2_input, S_IRUGO, show_in2_input, NULL);
+static DEVICE_ATTR(in3_input, S_IRUGO, show_in3_input, NULL);
+static DEVICE_ATTR(in4_input, S_IRUGO, show_in4_input, NULL);
+static DEVICE_ATTR(in5_input, S_IRUGO, show_in5_input, NULL);
+static DEVICE_ATTR(in6_input, S_IRUGO, show_in6_input, NULL);
+static DEVICE_ATTR(in7_input, S_IRUGO, show_in7_input, NULL);
+
+
+static ssize_t max1027_get_temperature(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	int result;
+	ssize_t size;
+	struct spi_device *spi = to_spi_device(dev);
+	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
+
+	result = p_max1027->temperature;
+	size = sprintf(buf, "%d\n", result );
+
+	return size;
+}
+
+static DEVICE_ATTR(temp1_input, S_IRUGO, max1027_get_temperature, NULL);
+
+
 #define SYSFS_ERROR_STRING "Unable to create sysfs attribute for max1027"
 
-int static max1027_create_sys_entries(struct spi_device *spi)
+#define CREATE_SYSFS_FOR_AIN(id) \
+	if ((status = device_create_file(&spi->dev, &dev_attr_in##id##_input))) { \
+		printk(KERN_WARNING SYSFS_ERROR_STRING "in##id## \n"); \
+		goto end; \
+	}
+
+static int max1027_create_sys_entries(struct spi_device *spi)
 {
 	int status = 0;
 
@@ -528,8 +618,38 @@ int static max1027_create_sys_entries(struct spi_device *spi)
 		goto end;
 	}
 
+	if ((status = device_create_file(&spi->dev, &dev_attr_temp1_input))){ 
+        printk(KERN_WARNING SYSFS_ERROR_STRING " temp1\n");
+		goto end;
+	}
+
+	CREATE_SYSFS_FOR_AIN(0);
+	CREATE_SYSFS_FOR_AIN(1);
+	CREATE_SYSFS_FOR_AIN(2);
+	CREATE_SYSFS_FOR_AIN(3);
+	CREATE_SYSFS_FOR_AIN(4);
+	CREATE_SYSFS_FOR_AIN(5);
+	CREATE_SYSFS_FOR_AIN(6);
+	CREATE_SYSFS_FOR_AIN(7);
+
 end:
 	return status;
+}
+
+static int max1027_remove_sys_entries(struct spi_device *spi)
+{
+	device_remove_file(&spi->dev, &dev_attr_conversion);
+	device_remove_file(&spi->dev, &dev_attr_setup);
+	device_remove_file(&spi->dev, &dev_attr_averaging);
+	device_remove_file(&spi->dev, &dev_attr_temp1_input);
+	device_remove_file(&spi->dev, &dev_attr_in0_input);
+	device_remove_file(&spi->dev, &dev_attr_in1_input);
+	device_remove_file(&spi->dev, &dev_attr_in2_input);
+	device_remove_file(&spi->dev, &dev_attr_in3_input);
+	device_remove_file(&spi->dev, &dev_attr_in4_input);
+	device_remove_file(&spi->dev, &dev_attr_in5_input);
+	device_remove_file(&spi->dev, &dev_attr_in6_input);
+	device_remove_file(&spi->dev, &dev_attr_in7_input);
 }
 
 static int __devinit max1027_probe(struct spi_device *spi)
@@ -569,6 +689,15 @@ static int __devinit max1027_probe(struct spi_device *spi)
 	dev_set_drvdata(&spi->dev, max1027);
 	current_spi = spi; /* <<-- cradingue !! trouver comment faire autrement !! */
 
+#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
+	/* register to hwmon */
+	max1027->cdev = hwmon_device_register(&spi->dev);
+	if (IS_ERR(max1027->cdev)) {
+		result = PTR_ERR(max1027->cdev);
+		goto err_hwmon;
+	}
+#endif
+
 	result = max1027_create_sys_entries(spi);
 	if (result)
 		goto err_sys;
@@ -583,12 +712,17 @@ static int __devinit max1027_probe(struct spi_device *spi)
 	max1027_send_cmd( spi, MAX1027_RESET_ALL );
 	max1027->conv_reg = (u8)MAX1027_CONV_DEFAULT;
 	max1027_send_cmd( spi, MAX1027_SETUP_DEFAULT );
+	max1027_send_cmd( spi, MAX1027_AVG_DEFAULT );
 
 	printk( DRIVER_NAME " v" DRIVER_VERSION " successfully probed !\n");
 	return(0);
 
 err_sys:
 	free_irq(MAX1027_EOC_IRQ, max1027);
+#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
+err_hwmon:
+	hwmon_device_unregister(max1027->cdev);
+#endif
 err_irq:
 	unregister_chrdev(max1027_major, DRIVER_NAME);
 
@@ -602,9 +736,10 @@ static int __devexit max1027_remove(struct spi_device *spi)
 
 	pr_debug("%s\n", __FUNCTION__);
 
-	device_remove_file(&spi->dev, &dev_attr_conversion);
-	device_remove_file(&spi->dev, &dev_attr_setup);
-	device_remove_file(&spi->dev, &dev_attr_averaging);
+	max1027_remove_sys_entries(spi);
+#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
+	hwmon_device_unregister(max1027->cdev);
+#endif
 
 	tasklet_kill( &max1027->tasklet );
 
