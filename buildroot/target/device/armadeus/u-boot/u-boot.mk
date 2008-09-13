@@ -3,13 +3,13 @@
 # u-boot
 #
 #############################################################
-U-BOOT_VER:=1.1.6
+U-BOOT_VER:=1.3.4
 U-BOOT_SOURCE:=u-boot-$(U-BOOT_VER).tar.bz2
-U-BOOT_SITE:=http://ovh.dl.sourceforge.net/sourceforge/u-boot
+U-BOOT_SITE:=ftp://ftp.denx.de/pub/u-boot
 U-BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U-BOOT_VER)
 
 U-BOOT_PACKAGE_DIR:=$(ARMADEUS_PATH)/u-boot
-U-BOOT_TARGET_NAME:=apx9328
+U-BOOT_TARGET_NAME:=apf9328
 
 $(DL_DIR)/$(U-BOOT_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(U-BOOT_SITE)/$(U-BOOT_SOURCE)
@@ -38,7 +38,7 @@ ifneq ($(BR2_TARGET_ARMADEUS_APF9328),)
 	$(SED) 's,^#define CONFIG_MTDMAP.*,#define CONFIG_MTDMAP  "apf9328_flash",g' \
 		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
 else
-	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APX9328,g' \
+	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APF9328,g' \
 		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
 	$(SED) 's,^#define CONFIG_DM9000_BASE.*,#define CONFIG_DM9000_BASE    0x15C3FFFC,g' \
 		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
