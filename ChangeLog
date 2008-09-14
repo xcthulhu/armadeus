@@ -2,6 +2,7 @@
                 ChangeLog file for Armadeus Project
 
 Changes to be released
+- [BUILDROOT] Predefine GCC 4.2.1 by default 
 - [BUILDROOT] uppgrade MPFR to revision 2.3.2 fixing broken internet link issue
 - [UBOOT]     upgrade to U-Boot release 1.3.4
 - [uClibc]    undefine _POSIX_SPIN_LOCKS: still not yet implemented in uClibc 0.9.29

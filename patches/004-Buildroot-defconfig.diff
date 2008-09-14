@@ -1,9 +1,9 @@
---- buildroot/.defconfigori	2007-10-27 09:15:37.000000000 +0200
-+++ buildroot/.defconfig	2007-11-23 22:25:11.000000000 +0100
-@@ -1,19 +1,145 @@
+--- buildroot/.defconfig.ori	2007-10-27 09:15:37.000000000 +0200
++++ buildroot/.defconfig	2008-09-14 04:30:31.000000000 +0200
+@@ -1,19 +1,146 @@
  #
  # Automatically generated make config: don't edit
-+# Fri Nov 23 22:25:11 2007
++# Sun Sep 14 04:30:31 2008
  #
  BR2_HAVE_DOT_CONFIG=y
 -# BR2_arm is not set
@@ -82,6 +82,7 @@
 +# BR2_PACKAGE_LINUX_VERSION_2_6_17 is not set
 +# BR2_PACKAGE_LINUX_VERSION_2_6_18_1 is not set
 +BR2_PACKAGE_LINUX_VERSION_2_6_23_1=y
++# BR2_PACKAGE_LINUX_VERSION_2_6_24 is not set
 +BR2_PACKAGE_LINUX_VERSION="2.6.23.1"
 +BR2_TARGET_U-BOOT=y
 +
@@ -149,25 +150,26 @@
  
  #
  # Kernel Header Options
-@@ -25,8 +151,16 @@
+@@ -25,8 +152,16 @@ BR2_WGET="wget --passive-ftp"
  # BR2_KERNEL_HEADERS_2_6_9 is not set
  # BR2_KERNEL_HEADERS_2_6_11 is not set
  # BR2_KERNEL_HEADERS_2_6_12 is not set
+-BR2_KERNEL_HEADERS_2_6_22=y
+-BR2_DEFAULT_KERNEL_HEADERS="2.6.22.8"
 +# BR2_KERNEL_HEADERS_2_6_20_4 is not set
 +# BR2_KERNEL_HEADERS_2_6_20 is not set
 +# BR2_KERNEL_HEADERS_2_6_21_5 is not set
 +# BR2_KERNEL_HEADERS_2_6_21 is not set
 +# BR2_KERNEL_HEADERS_2_6_22_1 is not set
 +# BR2_KERNEL_HEADERS_2_6_22_10 is not set
- BR2_KERNEL_HEADERS_2_6_22=y
--BR2_DEFAULT_KERNEL_HEADERS="2.6.22.8"
-+# BR2_KERNEL_HEADERS_2_6_23 is not set
++# BR2_KERNEL_HEADERS_2_6_22 is not set
++BR2_KERNEL_HEADERS_2_6_23=y
 +# BR2_KERNEL_HEADERS_SNAP is not set
-+BR2_DEFAULT_KERNEL_HEADERS="2.6.22.10"
++BR2_DEFAULT_KERNEL_HEADERS="2.6.23"
  
  #
  # uClibc Options
-@@ -34,7 +168,6 @@
+@@ -34,7 +169,6 @@ BR2_DEFAULT_KERNEL_HEADERS="2.6.22.8"
  # BR2_UCLIBC_VERSION_0_9_28_3 is not set
  BR2_UCLIBC_VERSION_0_9_29=y
  # BR2_UCLIBC_VERSION_SNAPSHOT is not set
@@ -175,7 +177,7 @@
  BR2_UCLIBC_CONFIG="toolchain/uClibc/uClibc-0.9.29.config"
  # BR2_ENABLE_LOCALE is not set
  # BR2_PTHREADS_NONE is not set
-@@ -42,35 +175,453 @@
+@@ -42,18 +176,20 @@ BR2_UCLIBC_CONFIG="toolchain/uClibc/uCli
  BR2_PTHREADS_OLD=y
  # BR2_PTHREADS_NATIVE is not set
  # BR2_PTHREAD_DEBUG is not set
@@ -196,18 +198,16 @@
 -# Gcc Options
 +# GCC Options
  #
--# BR2_GCC_VERSION_3_4_6 is not set
-+BR2_GCC_VERSION_3_4_6=y
+ # BR2_GCC_VERSION_3_4_6 is not set
  # BR2_GCC_VERSION_4_0_4 is not set
- # BR2_GCC_VERSION_4_1_2 is not set
+@@ -61,16 +197,426 @@ BR2_EXTRA_BINUTILS_CONFIG_OPTIONS=""
  # BR2_GCC_VERSION_4_2_0 is not set
--BR2_GCC_VERSION_4_2_1=y
-+# BR2_GCC_VERSION_4_2_1 is not set
+ BR2_GCC_VERSION_4_2_1=y
  # BR2_GCC_IS_SNAP is not set
--BR2_GCC_VERSION="4.2.1"
-+# BR2_GCC_SUPPORTS_SYSROOT is not set
++BR2_GCC_SUPPORTS_SYSROOT=y
 +# BR2_GCC_SUPPORTS_FINEGRAINEDMTUNE is not set
-+BR2_GCC_VERSION="3.4.6"
+ BR2_GCC_VERSION="4.2.1"
++BR2_TOOLCHAIN_SYSROOT=y
  # BR2_GCC_USE_SJLJ_EXCEPTIONS is not set
  BR2_EXTRA_GCC_CONFIG_OPTIONS=""
 +BR2_GCC_CROSS_CXX=y
@@ -330,6 +330,7 @@
 +# BR2_PACKAGE_LIBLOCKFILE is not set
 +# BR2_PACKAGE_LIBSYSFS is not set
 +# BR2_PACKAGE_LIBXML2 is not set
++# BR2_PACKAGE_LMBENCH is not set
 +# BR2_PACKAGE_LOCKFILE_PROGS is not set
 +# BR2_PACKAGE_LSOF is not set
 +# BR2_PACKAGE_LTP-TESTSUITE is not set
@@ -365,7 +366,6 @@
 +# BR2_PACKAGE_LIBCGICC is not set
 +# BR2_PACKAGE_LIBPCAP is not set
 +# BR2_PACKAGE_LINKS is not set
-+# BR2_PACKAGE_LMBENCH is not set
 +# BR2_PACKAGE_LRZSZ is not set
 +# BR2_PACKAGE_MDNSRESPONDER is not set
 +# BR2_PACKAGE_MROUTED is not set
@@ -441,7 +441,7 @@
 +# BR2_PACKAGE_MTD_20061007 is not set
 +# BR2_PACKAGE_MTD_20050122 is not set
 +# BR2_PACKAGE_MTD_SNAPSHOT is not set
-+
+ 
 +#
 +# MTD tools selection
 +#
@@ -512,7 +512,7 @@
 +# BR2_PACKAGE_LIBUNGIF is not set
 +# BR2_PACKAGE_SDL is not set
 +# BR2_PACKAGE_TIFF is not set
- 
++
 +#
 +# busybox graphic applications
 +#
@@ -522,6 +522,7 @@
 +#
 +# BR2_PACKAGE_FBV is not set
 +# BR2_PACKAGE_FBSET is not set
++# BR2_PACKAGE_FBGRAB is not set
 +
 +#
 +# other GUIs
@@ -628,12 +629,4 @@
 +#
 +# bootloader for target device
 +#
-+
-+#
-+# Kernel
-+#
-+BR2_KERNEL_none=y
-+# BR2_KERNEL_LINUX_ADVANCED is not set
-+# BR2_KERNEL_LINUX is not set
-+# BR2_KERNEL_HURD is not set
 +# BR2_PACKAGE_LINUX is not set
