@@ -2,8 +2,10 @@
                 ChangeLog file for Armadeus Project
 
 Changes to be released
-- [uClibc] undefine _POSIX_SPIN_LOCKS: still not yet implemented in uClibc 0.9.29
-             thanks to Creber 
+- [BUILDROOT] uppgrade MPFR to revision 2.3.2 fixing broken internet link issue
+- [UBOOT]     upgrade to U-Boot release 1.3.4
+- [uClibc]    undefine _POSIX_SPIN_LOCKS: still not yet implemented in uClibc 0.9.29
+                thanks to Creber 
 
 Changes in release 2.3 (11 February 2008)
 - [BUILDROOT] Change FTP server for buildroot and fakeroot files

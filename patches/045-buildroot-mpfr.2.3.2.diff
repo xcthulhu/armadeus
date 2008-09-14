@@ -1,0 +1,13 @@
+--- buildroot.ori/package/mpfr/mpfr.mk	2007-10-27 09:15:22.000000000 +0200
++++ buildroot/package/mpfr/mpfr.mk	2008-09-14 02:03:59.000000000 +0200
+@@ -3,8 +3,8 @@
+ # mpfr
+ #
+ #############################################################
+-MPFR_VERSION:=2.3.0
+-MPFR_PATCH:=patches
++MPFR_VERSION:=2.3.2
++MPFR_PATCH:=
+ MPFR_PATCH_FILE:=mpfr-$(MPFR_VERSION).patch
+ MPFR_SOURCE:=mpfr-$(MPFR_VERSION).tar.bz2
+ MPFR_CAT:=$(BZCAT)
