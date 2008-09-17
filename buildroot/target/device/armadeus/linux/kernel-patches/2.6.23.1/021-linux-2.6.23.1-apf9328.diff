@@ -2,7 +2,7 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/arch/arm/mach-imx/apf9328.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328.c	2008-07-25 17:36:46.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328.c	2008-09-17 18:28:30.000000000 +0200
 @@ -0,0 +1,558 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -566,7 +566,7 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/arch/arm/mach-imx/apf9328_lcd_config.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2008-07-25 17:36:46.000000000 +0200
++++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328_lcd_config.h	2008-09-17 18:28:05.000000000 +0200
 @@ -0,0 +1,200 @@
 +/*
 + *
@@ -653,7 +653,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL | 
 +                          PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
++    .pwmr               = 0x000003ff,    // Contrast with PWM @ Pixel clock / 256, max width by default
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .backlight_power    = apf9328_lcd_backlight_power,
 +    .lcd_power          = apf9328_lcd_power,
@@ -674,7 +674,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
 +                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
-+    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
++    .pwmr               = 0x000003ff,    // Contrast with PWM @ Pixel clock / 256, max width by default
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .backlight_power    = apf9328_lcd_backlight_power,
 +};
@@ -772,7 +772,7 @@ PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/include/asm-arm/arch-imx/apf9328.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	2008-07-25 17:36:46.000000000 +0200
++++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	2008-09-17 18:28:05.000000000 +0200
 @@ -0,0 +1,54 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h

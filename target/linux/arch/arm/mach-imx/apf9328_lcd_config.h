@@ -83,7 +83,7 @@ static struct imxfb_mach_info apf9328_fb_info __initdata = {
 
     .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL | 
                           PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
+    .pwmr               = 0x000003ff,    // Contrast with PWM @ Pixel clock / 256, max width by default
     .dmacr              = DEFAULT_DMA_SETTINGS,
     .backlight_power    = apf9328_lcd_backlight_power,
     .lcd_power          = apf9328_lcd_power,
@@ -104,7 +104,7 @@ static struct imxfb_mach_info apf9328_fb_info __initdata = {
 
     .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
                           PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
-    .pwmr               = 0x000001ff,    // Contrast with PWM @ Line_Pulse, max by default
+    .pwmr               = 0x000003ff,    // Contrast with PWM @ Pixel clock / 256, max width by default
     .dmacr              = DEFAULT_DMA_SETTINGS,
     .backlight_power    = apf9328_lcd_backlight_power,
 };
