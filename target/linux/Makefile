@@ -1,6 +1,7 @@
 #
 # Get important variables from Buildroot:
 #
+BASE_DIR=../
 BUILDROOT_DIR=../../buildroot
 include $(BUILDROOT_DIR)/.config
 
