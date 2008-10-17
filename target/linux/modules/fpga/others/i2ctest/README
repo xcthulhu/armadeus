@@ -1,5 +1,8 @@
 This is a really simple driver to test reading and writing
-a value on i2c bus throught ocore-irq_mng FPGA IP.
+a value on i2c memory component throught ocore-irq_mng FPGA IP.
+
+Frames are like :
+START+ADDR+ACK+SUBADDR+ACK+REPSTART+ADDR+ACK+VALUE+ACK+STOP
 
 To use it load i2ctest.ko module with insmod
 >insmod i2ctest.ko

@@ -73,37 +73,50 @@
 # define PDEBUG(fmt,args...) /* no debbuging message */
 #endif
 
-#define FPGA_BUTTON     8
-#define FPGA_LED        4
-#define FPGA_IRQ_MASK   0
-#define FPGA_IRQ_PEND   2
-#define FPGA_IRQ_ACK    2
+/* Addresses */
+#define FPGA_IRQ_MASK   (0x0)
+#define FPGA_IRQ_PEND   (0x2)
+#define FPGA_IRQ_ACK    (0x2)
 
-#define FPGA_I2C_PRESC  0x10
-#define FPGA_I2C_CTR    0x12
-#define FPGA_I2C_TXR_CR 0x14
-#define FPGA_I2C_RXT_SR 0x16
+#define FPGA_BASE_ADDR		(0x20)
+#define FPGA_I2C_PRESCLo	(FPGA_BASE_ADDR+0x0)
+#define FPGA_I2C_PRESCHi	(FPGA_BASE_ADDR+0x2)
+#define FPGA_I2C_CTR		(FPGA_BASE_ADDR+0x4)
+#define FPGA_I2C_TXR		(FPGA_BASE_ADDR+0xA)
+#define FPGA_I2C_RXR		(FPGA_BASE_ADDR+0xE)
+#define FPGA_I2C_CR			(FPGA_BASE_ADDR+0x8)
+#define FPGA_I2C_SR			(FPGA_BASE_ADDR+0xC)
+
+/* Values */
+#define PRELo	(0xBF)
+#define PREHi   (0x00)
+
+/* read/write (accelerometer)*/
+#define ADDR	(0x1D) /* lis3lv02dl */
+#define SUBADDR (0x16) /* OFFSET_X   */
+#define VALUE	(0xBB)
+
+/* irq position in irqmngr */
+#define IRQ (0x01)
 
 
 /* CTR register */
-#define I2C_EN    0x80
-#define I2C_IEN   0x40
-/* CR register */
-#define I2C_STA   0x80
-#define I2C_STO   0x40
-#define I2C_RD    0x20
-#define I2C_WR    0x10
-#define I2C_ACK   0x08
-#define I2C_IACK  0x01
+#define I2C_EN    (0x80)
+#define I2C_IEN   (0x40)
 
-#define I2C_ADD_READ 0x0100
-#define I2C_ADD_WRITE 0
+/* CR register */
+#define I2C_STA   (0x80)
+#define I2C_STO   (0x40)
+#define I2C_RD    (0x20)
+#define I2C_WR    (0x10)
+#define I2C_ACK   (0x08)
+#define I2C_IACK  (0x01)
+
+/* read/write bit */
+#define I2C_ADD_READ  (0x01)
+#define I2C_ADD_WRITE (0x00)
 
 #define DRIVER_NAME "i2ctest"
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com> - ARMadeus Systems");
-MODULE_DESCRIPTION("I2C tester");
 
 struct i2ctest_dev {
   struct semaphore sem;
@@ -117,11 +130,19 @@ struct i2ctest_dev *i2cdev;
 static int __init i2ctest_init(void);
 static void __exit i2ctest_exit(void);
 
-static int read_proc(char *page,char **start,off_t offset,int count,int *eof,void *data);
-static int read_proc2(char *page,char **start,off_t offset,int count,int *eof,void *data);
+static int read_proc(char *page, char **start, off_t offset,
+					 int count,int *eof,void *data);
+static int read_proc2(char *page,char **start,off_t offset,
+					  int count,int *eof,void *data);
 static void free_all(void);
 
-static irqreturn_t  fpga_interrupt(int irq,void *stuff,struct pt_regs *reg);
-
+static irqreturn_t  fpga_interrupt(int irq,void *stuff,
+								   struct pt_regs *reg);
 module_init(i2ctest_init);
 module_exit(i2ctest_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com> - ARMadeus Systems");
+MODULE_DESCRIPTION("I2C tester");
+
+
