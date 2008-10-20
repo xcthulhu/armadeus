@@ -1,0 +1,12 @@
+This patch corrects "aplay: set_params:1012: unable to install sw params:" bug.
+
+--- buildroot.org/package/alsa-lib/alsa-lib.mk	2007-10-27 09:15:22.000000000 +0200
++++ buildroot/package/alsa-lib/alsa-lib.mk	2008-10-20 18:54:41.000000000 +0200
+@@ -31,6 +31,7 @@
+ 		--host=$(GNU_TARGET_NAME) \
+ 		--build=$(GNU_HOST_NAME) \
+ 		--prefix=/usr \
++		--with-versioned=no \
+ 		--sysconfdir=/etc \
+ 		--enable-shared \
+ 		--enable-static \
