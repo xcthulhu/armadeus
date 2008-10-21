@@ -1,4 +1,4 @@
-CC=../../../buildroot/build_arm/staging_dir/bin/arm-linux-gcc
+CC=../../../../buildroot/build_arm/staging_dir/bin/arm-linux-gcc
 
 all: fpgaregs
 
