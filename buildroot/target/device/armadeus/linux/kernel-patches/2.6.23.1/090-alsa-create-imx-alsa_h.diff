@@ -1,8 +1,8 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.23.1.original/include/asm-arm/arch-imx/imx-alsa.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/imx-alsa.h	2008-07-22 10:33:24.000000000 +0200
+--- linux-2.6.23.1.original/include/asm-arm/arch-imx/imx-alsa.h	
++++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/imx-alsa.h	
 @@ -0,0 +1,131 @@
 +/*
 + * linux/include/asm-arm/arch-imx/imx-alsa.h

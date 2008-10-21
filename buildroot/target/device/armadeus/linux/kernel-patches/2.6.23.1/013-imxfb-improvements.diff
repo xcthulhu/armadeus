@@ -1,8 +1,8 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.23.1.original/drivers/video/imxfb.c	2007-10-12 18:43:44.000000000 +0200
-+++ linux-2.6.23.1.mod/drivers/video/imxfb.c	2008-07-28 16:58:52.000000000 +0200
+--- linux-2.6.23.1.original/drivers/video/imxfb.c	
++++ linux-2.6.23.1.mod/drivers/video/imxfb.c	
 @@ -42,22 +42,48 @@
   */
  #define DEBUG_VAR 1
@@ -231,8 +231,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.23.1.original/drivers/video/imxfb.h	2007-10-12 18:43:44.000000000 +0200
-+++ linux-2.6.23.1.mod/drivers/video/imxfb.h	1970-01-01 01:00:00.000000000 +0100
+--- linux-2.6.23.1.original/drivers/video/imxfb.h	
++++ linux-2.6.23.1.mod/drivers/video/imxfb.h	
 @@ -1,73 +0,0 @@
 -/*
 - * linux/drivers/video/imxfb.h

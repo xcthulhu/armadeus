@@ -15,5 +15,5 @@ fi
 echo "DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST" >> $3
 echo "(Take a look at armadeus/target/linux/ directory to know how to generate it)" >> $3
 
-diff -urN $1 $2 >> $3
+diff -urN $1 $2 | sed "s/[0-9]\+-[0-9]\+-[0-9]\+ [0-9]\+:[0-9]\+:[0-9]\+.[0-9]\+ +[0-9]\+//g" >> $3
 exit 0
