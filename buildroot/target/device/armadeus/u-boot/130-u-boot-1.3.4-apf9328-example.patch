@@ -1,7 +1,15 @@
-diff -purN u-boot-1.3.4.ref/examples/Makefile u-boot-1.3.4/examples/Makefile
---- u-boot-1.3.4.ref/examples/Makefile	2008-08-12 16:08:38.000000000 +0200
-+++ u-boot-1.3.4/examples/Makefile	2008-09-13 16:30:08.000000000 +0200
-@@ -78,6 +78,7 @@ include $(TOPDIR)/config.mk
+--- u-boot-1.3.4/examples/Makefile	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4.new/examples/Makefile	2008-10-27 10:04:43.000000000 +0100
+@@ -32,6 +32,8 @@ endif
+ ifeq ($(ARCH),arm)
+ ifeq ($(BOARD),omap2420h4)
+ LOAD_ADDR = 0x80300000
++else ifeq ($(SOC),imx)
++LOAD_ADDR = 0x08000000
+ else
+ LOAD_ADDR = 0xc100000
+ endif
+@@ -78,6 +80,7 @@ include $(TOPDIR)/config.mk
  ELF	= hello_world
  SREC	= hello_world.srec
  BIN	= hello_world.bin
@@ -9,7 +17,7 @@ diff -purN u-boot-1.3.4.ref/examples/Makefile u-boot-1.3.4/examples/Makefile
  
  ifeq ($(CPU),mpc8xx)
  ELF	+= test_burst
-@@ -180,6 +181,9 @@ $(BIN):
+@@ -180,6 +183,9 @@ $(BIN):
  $(obj)%.bin:	$(obj)%
  		$(OBJCOPY) -O binary $< $@ 2>/dev/null
  
@@ -19,9 +27,8 @@ diff -purN u-boot-1.3.4.ref/examples/Makefile u-boot-1.3.4/examples/Makefile
  #########################################################################
  
  # defines $(obj).depend target
-diff -purN u-boot-1.3.4.ref/examples/testcmds.txt u-boot-1.3.4/examples/testcmds.txt
---- u-boot-1.3.4.ref/examples/testcmds.txt	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-1.3.4/examples/testcmds.txt	2008-09-13 16:30:08.000000000 +0200
+--- u-boot-1.3.4/examples/testcmds.txt	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4.new/examples/testcmds.txt	2008-10-27 09:35:47.000000000 +0100
 @@ -0,0 +1,17 @@
 +setenv load_addr 08020000
 +setenv test_script 'tftp  $load_addr /tftpboot/u-boot/examples/testcmds.img; auto $load_addr'
@@ -40,9 +47,8 @@ diff -purN u-boot-1.3.4.ref/examples/testcmds.txt u-boot-1.3.4/examples/testcmds
 +setenv load_addr 08000000
 +saveenv
 +run run_test
-diff -purN u-boot-1.3.4.ref/examples/tftploadscripts.txt u-boot-1.3.4/examples/tftploadscripts.txt
---- u-boot-1.3.4.ref/examples/tftploadscripts.txt	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-1.3.4/examples/tftploadscripts.txt	2008-09-13 16:30:08.000000000 +0200
+--- u-boot-1.3.4/examples/tftploadscripts.txt	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4.new/examples/tftploadscripts.txt	2008-10-27 09:35:47.000000000 +0100
 @@ -0,0 +1,27 @@
 +setenv load_addr 08000000
 +setenv tftp_script 'tftp  $load_addr /tftpboot/u-boot/examples/tftploadscripts.img; auto $load_addr'
