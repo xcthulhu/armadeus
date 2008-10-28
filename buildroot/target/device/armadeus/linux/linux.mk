@@ -73,7 +73,7 @@ ifneq ($(DOWNLOAD_LINUX_VERSION),$(LINUX_VERSION))
 	# Rename the dir from the downloaded version to the AFTER patch version
 	mv -f $(BUILD_DIR)/linux-$(DOWNLOAD_LINUX_VERSION) $(BUILD_DIR)/linux-$(LINUX_VERSION)
 endif
-	toolchain/patch-kernel.sh $(LINUX_DIR) $(LINUX_PATCH_DIR) \*.diff
+	toolchain/patch-kernel.sh $(LINUX_DIR) $(LINUX_PATCH_DIR) \*.patch
 	if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
 		toolchain/patch-kernel.sh $(LINUX_DIR) $(CYGWIN_LINUX_PATCH_DIR) ; \
 	fi;
