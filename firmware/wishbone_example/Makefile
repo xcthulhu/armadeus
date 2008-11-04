@@ -213,7 +213,7 @@ clean : ghdl-clean
 # Simulation with GHDL
 ########################
 
-ghdl-compil :
+ghdl-compile :
 	mkdir -p simu
 	$(GHDL_CMD) -i $(GHDL_FLAGS) --workdir=simu --work=work $(SIMFILES) $(FILES)
 	$(GHDL_CMD) -m $(GHDL_FLAGS) --workdir=simu --work=work $(SIMTOP)

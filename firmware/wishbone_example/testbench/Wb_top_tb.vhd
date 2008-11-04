@@ -30,6 +30,10 @@ Architecture RTL of Wb_top_tb is
 	----------------------------------------------------------------------------------
 
 	CONSTANT HALF_PERIODE : time := 5 ns;  -- Half clock period
+  constant IRQ_PEND : std_logic_vector( 15 downto 0) := x"0002";
+  constant IRQ_MASK : std_logic_vector( 15 downto 0) := x"0000";
+  constant LED_REG  : std_logic_vector( 15 downto 0) := x"0004";
+  constant BUTTON_REG : std_logic_vector( 15 downto 0) := x"0008";
 
 	signal imx_data          : std_logic_vector(15 downto 0);
 	signal imx_addr          : std_logic_vector (12 downto 0);
@@ -85,17 +89,20 @@ begin
 		wait for HALF_PERIODE*10;
 
 		-- reset irq_pend
-		imx_write(x"0002",x"0000",
+		imx_write(IRQ_PEND,x"0000",
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		-- write on irq_mask
-		imx_write(x"0004",x"ffff",
+		imx_write(IRQ_MASK,x"ffff",
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		-- read led value
-		imx_read(x"0000",value,
+		imx_read(LED_REG,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		assert value(0) = '0' report "Wrong led value" severity error;
 
 		-- push button
@@ -103,39 +110,46 @@ begin
 		wait for HALF_PERIODE*20;
 		assert imx_irq = '1' report "IRQ not raised" severity error;
 		-- read button value
-		imx_read(x"0008",value,
+		imx_read(BUTTON_REG,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		assert value(0) = '1' report  "Failed to read button" severity error;
 
 		-- Read irq pending
-		imx_read(x"0002",value,
+		imx_read(IRQ_PEND,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		assert value(0) = '1' report "IRQ pending error" severity error;
 		-- Acknowledge irq
-		imx_write(x"0002",x"ffff",
+		imx_write(IRQ_PEND,x"ffff",
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
-		imx_read(x"0002",value,
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
+		imx_read(IRQ_PEND,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		assert value(0) = '0' report "Acknowledge error" severity error;
 
 		-- release button
 		button <= '0';
 		wait for HALF_PERIODE*20;
 		-- Acknowledge irq
-		imx_write(x"0002",x"ffff",
+		imx_write(IRQ_PEND,x"ffff",
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
-		imx_read(x"0002",value,
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
+		imx_read(IRQ_PEND,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		--read button value
-		imx_read(x"0008",value,
+		imx_read(BUTTON_REG,value,
 		clk,imx_cs_n,imx_oe_n,
-		imx_eb3_n,imx_addr(12 downto 1),imx_data);
+		imx_eb3_n,imx_addr(12 downto 0),imx_data,
+    4);
 		assert value(0) = '0' report "Low read button error" severity error;
 	
 
