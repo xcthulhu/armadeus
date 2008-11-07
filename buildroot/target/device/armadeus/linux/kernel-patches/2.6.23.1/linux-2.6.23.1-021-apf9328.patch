@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/arch/arm/mach-imx/apf9328.c	
 +++ linux-2.6.23.1.mod/arch/arm/mach-imx/apf9328.c	
-@@ -0,0 +1,580 @@
+@@ -0,0 +1,569 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -485,10 +485,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    printk("--- Registering APF9328 ressources\n");
 +
 +    // Serial 
-+    /*UFCR(IMX_UART1_BASE) = 0xa81; To be removed 
-+    UFCR(IMX_UART2_BASE) = 0xa81;*/ 
-+
-+	/* using uart1 FabM 5 nov 2008 */
 +	imx_gpio_mode(PC9_PF_UART1_CTS);
 +	imx_gpio_mode(PC10_PF_UART1_RTS);
 +	imx_gpio_mode(PC11_PF_UART1_TXD);
@@ -498,7 +494,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	imx_gpio_mode( PB31_PF_UART2_RXD ); 
 +	imx_gpio_mode( PB28_PF_UART2_CTS ); 
 +	imx_gpio_mode( PB29_PF_UART2_RTS ); 
-+	/* end FabM */
 +
 +#ifdef CONFIG_FB_IMX    /* LCD */
 +    set_imx_fb_info(&apf9328_fb_info);
@@ -551,12 +546,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +    // Init generic IRQs
 +    imx_init_irq();
-+
-+	/* modif for uart1 FabM 5 nov 2008 */
-+	// Init our custom IRQs 
-+	set_irq_type(APF9328_UART1_IRQ, IRQF_TRIGGER_FALLING); 
-+	set_irq_type(APF9328_UART2_IRQ, IRQF_TRIGGER_FALLING); 
-+	/* end FabM */
 +
 +    // Init our custom IRQs
 +#ifdef CONFIG_DM9000
@@ -795,7 +784,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/include/asm-arm/arch-imx/apf9328.h	
 +++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,57 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
 + *
@@ -823,14 +812,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +/* ------------------------------------------------------------------------ */
 +/* Memory Map for the APF9328 Board                                         */
 +/* ------------------------------------------------------------------------ */
-+// Serial ports
-+#define APF9328_UART1_VIRT  ( IMX_CS3_VIRT + 0x30000 )
-+#define APF9328_UART1_PHYS  ( IMX_CS3_PHYS + 0x30000 )
-+#define APF9328_UART1_IRQ   ( IRQ_GPIOA(1) )
-+#define APF9328_UART2_VIRT  ( IMX_CS3_VIRT + 0x10000 )
-+#define APF9328_UART2_PHYS  ( IMX_CS3_PHYS + 0x10000 )
-+#define APF9328_UART2_IRQ   ( IRQ_GPIOA(1) )
-+
 +// Ethernet
 +#define APF9328_ETH_VIRT ( IMX_CS4_VIRT + 0x00C00000 )
 +#define APF9328_ETH_PHYS ( IMX_CS4_PHYS + 0x00C00000 )
