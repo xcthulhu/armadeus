@@ -1,9 +1,12 @@
-CC=../../../../buildroot/build_arm/staging_dir/bin/arm-linux-gcc
+ifeq ($(CC),cc)
+        CC=arm-linux-gcc
+endif
+
 
 all: fpgaregs
 
 fpgaregs: fpgaregs.c
-	$(CC) -Wall fpgaregs.c -o $@
+	$(CC) -mcpu=arm920t -Wall fpgaregs.c -o $@
     
 clean:
 	rm -f *.o

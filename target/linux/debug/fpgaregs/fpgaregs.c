@@ -1,147 +1,120 @@
-/*
- * fpgaregs.h - Tool to display and modify fpga registers from Linux's userspace
+/************************************************************************
+ * a program to write/read 16/32bits values on fpga address map using mmap()
+ * 11 october 2008
+ * fpgaregs_mmap.c
  *
- * Author/Maintainer: --- armadeus -----
- * Derivated from pxaregs (c) Copyright 2002 by M&N Logistik-L�ungen Online GmbH
- * 
- * This tool is placed under the GPL.
+ * (c) Copyright 2008 Armadeus project
+ * Fabien Marteau <fabien.marteau@armadeus.com>
+ * Modified by Sebastien Van Cauwenberghe <svancau@gmail.com>
  *
-*/
+ * A simple driver for reading and writing on
+ * fpga through the character file /dev/mem
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ ***********************************************************************/
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/types.h>
+
+/* file management */
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <ctype.h>
 
+/* as name said */
+#include <signal.h>
 
-//#define DEBUG TRUE
+/* sleep, write(), read() */
+#include <unistd.h>
 
-// fd for /dev/mem
-static int fd = -1;
-typedef unsigned short u16;
-typedef unsigned int u32;
+/* converting string */
+#include <string.h>
 
-#define FPGA_BASE_ADDR 0x12000000
-// Size of mmapping:
-#define MAP_SIZE 4096
-#define MAP_MASK ( MAP_SIZE - 1 )
+/* memory management */
+#include <sys/mman.h>
 
+#define FPGA_ADDRESS 0x12000000
 
-// Get value of the register at the given address
-static u16 getmem(u32 addr)
+#define WORD_ACCESS (2)
+#define LONG_ACCESS (4)
+
+void displayResult(char* text, unsigned int accesstype, unsigned int value, unsigned int address)
 {
-   void *map, *regaddr;
-   u32 val;
-#ifdef DEBUG
-   printf("getmem(0x%04x)\n", addr);
-#endif // DEBUG
-   if (fd == -1) 
-   {
-      fd = open("/dev/mem", O_RDWR | O_SYNC);
-      if (fd<0) 
-      {
-          perror("open(\"/dev/mem\")");
-          exit(1);
-      }
-   }
-
-   map = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, addr & ~MAP_MASK );
-   if (map == (void*)-1 ) 
-   {
-       perror("mmap()");
-       exit(1);
-   }
-   regaddr = map + (addr & MAP_MASK);
-
-   val = *(u32*) regaddr;
-   munmap(0,MAP_SIZE);
-   printf("read 0x%04x at 0x%08x\n", val, addr);
-
-   return val;
-}
-
-// Modify register value at given address
-static void putmem(u32 addr, u32 val)
-{
-   void *map=0;
-   void *regaddr=0;
-   static int fd = -1;
-
-   //printf("putmem(0x%08x, 0x%08x)\n", addr, val);
-
-   if (fd == -1) 
-   {
-      fd = open("/dev/mem", O_RDWR | O_SYNC);
-      if (fd<0) 
-      {
-          perror("open(\"/dev/mem\")");
-          exit(1);
-      }
-   }
-
-   map = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, addr & ~MAP_MASK );
-   if (map == (void*)-1 ) 
-   {
-       perror("mmap()");
-       exit(1);
-   }
-
-   regaddr = map + (addr & MAP_MASK);
-  // printf("Mapped addr: 0x%04x\n", regaddr);
-
-   *(u32*) regaddr = val;
-   munmap(0,MAP_SIZE);
-}
-
-u16 toInt(char * string)
-{   
-    char temp;
-    u16 result = 0;
-
-    while( *string )
-    {
-        temp = *string;
-        if( (temp>='0') && (temp<='9') )
-            temp = temp - '0';
-        else if( (temp>='a') && (temp<='f') )
-            temp = temp -'a' + 10;
-
-        result = (result<<4) + temp;
-        string++;
-    } 
-    return result;
+  if( accesstype == WORD_ACCESS )
+    printf("%s %04x at %08x\n",text, (unsigned short)value,address);
+  else
+    printf("%s %08x at %08x\n",text, value,address);
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-// MAIN
-//
 int main(int argc, char *argv[])
 {
-    // Dump the content of the provided register
-    if (argc == 2) 
-    {
-       getmem(toInt(argv[1])+FPGA_BASE_ADDR);
-       return 0;
-    } 
+  unsigned short address;
+  unsigned int value;
+  int ffpga, accesstype = LONG_ACCESS;
+  void* ptr_fpga;
 
-    // Put value to given register
-    if (argc == 3) 
-    {
-        putmem( toInt(argv[1])+FPGA_BASE_ADDR, toInt(argv[2]) );
-        return 0;
+  if ((argc < 3) || (argc > 4)){
+    printf("invalid arguments number\nfpgaregs [w,l] fpga_reg_add [value].\n\tw: word access, l: long access\n\
+\tEx: fpgaregs w 0x10 0x1234, fpgaregs l 0x10 0x12345678\n");
+    return -1;
+  }
+
+  ffpga=open("/dev/mem",O_RDWR|O_SYNC);
+  if(ffpga<0){
+    printf("can't open file /dev/mem\n");
+    return -1;
+  }
+
+
+  ptr_fpga = mmap (0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, ffpga, FPGA_ADDRESS);
+  if (ptr_fpga == MAP_FAILED)
+  {
+    printf ("mmap failed\n");
+    return -1;
+  }
+
+  address = (unsigned int)strtol(argv[2], (char **)NULL, 16);
+
+  if(argc<3){
+    printf("invalid command line");
+  }
+  else {  
+    if( *(argv[1]) == 'w' )
+      accesstype = WORD_ACCESS;
+     
+    /* write value at address */
+    if(argc == 4){ 
+      value   = strtoul(argv[3], (char **)NULL, 16);
+      if (accesstype == WORD_ACCESS)
+        *(unsigned short*)(ptr_fpga+(address)) = (unsigned short)value;
+      else
+      	*(unsigned int*)(ptr_fpga+(address)) = (unsigned int)value;
+
+      displayResult("Write", accesstype, value, address);
+        
+      /* read address value */
+    }else if(argc == 3){
+    	if (accesstype == WORD_ACCESS)
+          value = *(unsigned short*)(ptr_fpga+(address));
+	else
+	  value = *(unsigned int*)(ptr_fpga+(address));
+	
+      displayResult("Read", accesstype, value, address);
     }
-
-    // In all other cases, print Usage
-    printf("Usage: fpgareg addr [value]\n"
-            "addr: address in fpga (max 2ffe)\n"
-            "value: value to write (16bit max ffff). Option \n");
-           
-    return 1;
+  }
+  close(ffpga);
+  return 0;
 }
 
