@@ -1,9 +1,0 @@
-config BR2_PACKAGE_LUA
-	bool "lua"
-	default n
-	select BR2_READLINE
-	select BR2_PACKAGE_NCURSES
-	help
-	  Build Lua which is a powerful, fast, light-weight, embeddable scripting language.
-	  http://www.lua.org/
-
