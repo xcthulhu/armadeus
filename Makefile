@@ -26,40 +26,48 @@ BUILDROOT_DIR = buildroot
 
 BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH:=downloads
-BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
-BUILDROOT_VERSION:=20071027
+BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
+#http://downloads.sourceforge.net/armadeus
+BUILDROOT_VERSION:=20081103
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
+
+-include $(BUILDROOT_DIR)/.config
 
 ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
 PATCH_DIR=patches
-PATCH_CYGWIN_DIR=$(PATCH_DIR)/cygwin
 TAR_OPTIONS=--exclude=.svn -xf 
 
-#used only by cygwin to restore the rights on some rootfs directories
-BUILDROOT_ROOT_DIR=$(BUILDROOT_DIR)/project_build_arm/root
+LINUX_DIR=$(BUILDROOT_DIR)/project_build_$(BR2_GCC_TARGET_ARCH)/$(BR2_BOARD_NAME)/linux-$(BR2_LINUX26_VERSION)
 
-LINUX-REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BUILDROOT_DIR)/.config | \
-      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
-LINUX_DIR=$(BUILDROOT_DIR)/build_arm/linux-$(LINUX-REL)
+ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
+                echo "                                                   "; \
+                echo " System not configured. Use make <board>_defconfig " >&2; \
+                echo " armadeus valid configurations are:                " >&2; \
+                echo "     "$(shell find ./$(BUILDROOT_DIR)/target/device/armadeus -name *_defconfig|sed 's/.*\///');\
+                echo "                                                   "; \
+		echo -en "\033[0m";
 
-
-all: buildroot
+default: all
 
 help:
+	@echo 'First, choose the platform:'
+	@echo '  apf9328_defconfig  - must be launch before using apf9328 card'
+	@echo '  apf27_defconfig    - must be launch before using apf27 card'
+	@echo ''
 	@echo 'Cleaning:'
-	@echo '  buildroot-clean	- delete all non-source files in buildroot'
-	@echo '  clean                  - delete temporary files created by build'
-	@echo '  distclean              - delete all non-source files (including .config)'
+	@echo '  buildroot-clean    - delete all non-source files in buildroot'
+	@echo '  clean              - delete temporary files created by build'
+	@echo '  distclean          - delete all non-source files (including .config)'
 	@echo
 	@echo 'Build:'
-	@echo '  all                    - make world'
-	@echo '  <Package>		- a single package (ex: u-boot linux or buildroot'
+	@echo '  all            - make world '
+	@echo '  <Package>      - a single package (ex: u-boot linux or buildroot'
 	@echo
 	@echo 'Configuration:'
-	@echo '  menuconfig             - interactive curses-based configurator'
-	@echo '  oldconfig              - resolve any unresolved symbols in .config'
+	@echo '  menuconfig           - interactive curses-based configurator'
+	@echo '  oldconfig            - resolve any unresolved symbols in .config'
 	@echo
 	@echo 'Miscellaneous:'
 	@echo '  source                 - download all sources needed for offline-build'
@@ -78,30 +86,17 @@ $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE):
 	mkdir -p $(BUILDROOT_FILE_PATH)
 	wget --passive-ftp -P $(BUILDROOT_FILE_PATH)  $(BUILDROOT_SITE)/$(BUILDROOT_SOURCE)
 
-
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
 	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) \*.diff 
-	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
-		./host/patches/cygwin/run ; \
-		svn revert . ; \
-    	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_CYGWIN_DIR) *.diff ; \
-     	sed -e 's/pc-linux-gnu/pc-cygwin/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_cygwin ; \
-		mv -f $(BUILDROOT_DIR)/.defconfig_cygwin $(BUILDROOT_DIR)/.defconfig ; \
-	fi;
-	touch $(BUILDROOT_DIR)/.unpacked
+	touch $@
 
-buildroot: $(BUILDROOT_DIR)/.unpacked
-	@if uname | grep -i cygwin >/dev/null 2>&1 ; then  \
-		if [ -e "$(BUILDROOT_ROOT_DIR)/etc" ] ; then \
-			chmod 777 $(BUILDROOT_DIR)/build_arm_nofpu/root/etc ; \
-		fi; \
-		if [ -e "$(BUILDROOT_ROOT_DIR)/etc" ] ; then \
-			chmod 777 $(BUILDROOT_DIR)/build_arm_nofpu/root/dev ; \
-		fi; \
-	fi;
-	@$(MAKE) -C $(BUILDROOT_DIR)
+$(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
+	@if [ ! -f $@ ]; then \
+		$(ECHO_CONFIGURATION_NOT_DEFINED) \
+		exit 1; \
+	fi
 
 # To be called only one time if one wants to make an automatic build
 buildauto: $(BUILDROOT_DIR)/.unpacked
@@ -111,20 +106,47 @@ buildauto: $(BUILDROOT_DIR)/.unpacked
 	echo "ey" | $(MAKE) -C $(BUILDROOT_DIR) menuconfig
 	$(MAKE) -C $(BUILDROOT_DIR)
 
-menuconfig: $(BUILDROOT_DIR)/.unpacked
-	@$(MAKE) -C $(BUILDROOT_DIR) menuconfig
-
-
 linux-menuconfig:
-	@if [ ! -e "target/linux/modules/fpga/POD/.pod" ] ; then\
-		target/linux/modules/fpga/podscript.sh ; \
+	@if [ ! -e "target/linux/modules/fpga/POD/.pod" ] ; then \
+		if [ -x target/linux/modules/fpga/podscript.sh ]; then \
+			target/linux/modules/fpga/podscript.sh ; \
+		fi \
 	fi;
-
 	@if [ -e "$(LINUX_DIR)/.unpacked" ] ; then \
-		$(MAKE) -C $(LINUX_DIR) menuconfig ; \
+		$(MAKE) -C $(BUILDROOT_DIR) linux26-menuconfig ; \
 	fi;
 
-.DEFAULT: $(BUILDROOT_DIR)/.unpacked
+linux26: $(BUILDROOT_DIR)/.configured
+	@-touch $(LINUX_DIR)/.config 
+	@$(MAKE) -C $(BUILDROOT_DIR) linux26
+
+linux26-clean: $(BUILDROOT_DIR)/.configured
+	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
+
+%_defconfig: $(BUILDROOT_DIR)/.unpacked
+	@if [ -e "./$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_defconfig,%,$@)/$@" ]; then \
+		rm -f $(BUILDROOT_DIR)/.config ; \
+		$(MAKE) -C $(BUILDROOT_DIR) $@ ; \
+		$(MAKE) -C $(BUILDROOT_DIR) menuconfig ; \
+		touch $(BUILDROOT_DIR)/.configured ; \
+	else \
+		echo -e "\033[1m\nThis configuration does not exist !!\n\033[0m" ; \
+	fi;
+
+all: $(BUILDROOT_DIR)/.configured
+	@echo "If your /bin/sh link doesn't point to /bin/bash, please correct that."
+	@ls -al /bin/sh | grep bash 
+	@$(MAKE) -C $(BUILDROOT_DIR) $@
+
+menuconfig: $(BUILDROOT_DIR)/.configured
+	@$(MAKE) -C $(BUILDROOT_DIR) $@
+
+# !! .DEFAULT do NOT handle dependancies !!
+.DEFAULT:
+	@if [ ! -e "$(BUILDROOT_DIR)/.configured" ]; then \
+		$(ECHO_CONFIGURATION_NOT_DEFINED) \
+		exit 1; \
+	fi
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
 
 buildroot-clean:
@@ -136,6 +158,5 @@ buildroot-clean:
 buildroot-dirclean:
 	rm -rf $(BUILDROOT_DIR)	
 	
-.PHONY: dummy buildroot buildroot-clean
-
+.PHONY: dummy all linux-menuconfig linux26 linux26-clean buildroot-clean buildroot-dirclean menuconfig $(BUILDROOT_DIR)/.config
 
