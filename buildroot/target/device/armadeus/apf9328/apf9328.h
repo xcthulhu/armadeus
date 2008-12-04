@@ -181,7 +181,7 @@
 		"fi\0"							\
 	"flash_reset_env=protect off ${env_addr} +${env_len};"		\
 		"era ${env_addr} +${env_len};"				\
-		"echo Erasinf flash environment variables done!\0"	\
+		"echo Erasing of flash environment variables done!\0"	\
 	"download_uboot=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-u-boot.bin\0"		\
 	"download_kernel=tftpboot ${loadaddr} "				\
