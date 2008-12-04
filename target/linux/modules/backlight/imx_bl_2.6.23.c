@@ -1,5 +1,5 @@
 /*
- *  Backlight Driver for i.MXL based platform 
+ *  Backlight Driver for i.MXL based platforms 
  *
  *  Copyright (c) 2007 Julien Boibessot - Armadeus Project
  *
@@ -18,8 +18,14 @@
 #include <linux/mutex.h>
 #include <linux/fb.h>
 #include <linux/backlight.h>
-#include <asm/arch/imxfb.h> // Backlight machinfo struct is defined here
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+#include <asm/arch/imxfb.h>    /* Backlight machinfo struct is defined here */
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/imxfb.h>        /* Backlight machinfo struct is defined here */
+#include <mach/imx-regs.h>
+#endif
 
 
 static int imxbl_intensity;
@@ -54,7 +60,7 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 		shadow &= 0xffffff00;
 		shadow |= PWMR_PW(intensity);
 		LCDC_PWMR = shadow;
-		printk("Setting backlight intensity to %d\n", intensity);
+		pr_debug("Setting backlight intensity to %d\n", intensity);
 	}
 
 	imxbl_intensity = intensity;

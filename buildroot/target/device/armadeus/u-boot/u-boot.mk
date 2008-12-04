@@ -3,97 +3,48 @@
 # u-boot
 #
 #############################################################
-U-BOOT_VER:=1.3.4
-U-BOOT_SOURCE:=u-boot-$(U-BOOT_VER).tar.bz2
-U-BOOT_SITE:=ftp://ftp.denx.de/pub/u-boot
-U-BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U-BOOT_VER)
 
-U-BOOT_PACKAGE_DIR:=$(ARMADEUS_PATH)/u-boot
-U-BOOT_TARGET_NAME:=apf9328
+U_BOOT_BIN=$(BOARD_NAME)-u-boot.bin
+BR2_TARGET_U_BOOT_CONFIG_BOARD=$(BOARD_NAME)
+BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE=$(BOARD_PATH)/$(BOARD_NAME).h
+MKIMAGE_BINLOC:=$(STAGING_DIR)/usr/bin/mkimage
+MKIMAGE:=$(KERNEL_CROSS)mkimage
 
-$(DL_DIR)/$(U-BOOT_SOURCE):
-	 $(WGET) -P $(DL_DIR) $(U-BOOT_SITE)/$(U-BOOT_SOURCE)
+BR2_TARGET_UBOOT_ETH1ADDR=""
+BR2_TARGET_UBOOT_BOOTARGS=""
+BR2_TARGET_UBOOT_BOOTCMD=""
 
-u-boot-source: $(DL_DIR)/$(U-BOOT_SOURCE)
-
-$(U-BOOT_DIR)/.unpacked: $(DL_DIR)/$(U-BOOT_SOURCE)
-	bzcat $(DL_DIR)/$(U-BOOT_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	toolchain/patch-kernel.sh $(U-BOOT_DIR) $(U-BOOT_PACKAGE_DIR) *.patch
-	touch $(U-BOOT_DIR)/.unpacked	
-
-$(U-BOOT_DIR)/.configured: $(U-BOOT_DIR)/.unpacked
-	make -C $(U-BOOT_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(U-BOOT_TARGET_NAME)_config
-ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
-	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-endif
-
-ifneq ($(BR2_TARGET_ARMADEUS_APF9328),)
-	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APF9328,g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define CONFIG_DM9000_BASE.*,#define CONFIG_DM9000_BASE    0x15C00000,g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define DM9000_DATA.*,#define DM9000_DATA		(CONFIG_DM9000_BASE+2),g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define CONFIG_MTDMAP.*,#define CONFIG_MTDMAP  "apf9328_flash",g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-else
-	$(SED) 's,^#define CONFIG_MACH_TYPE.*,#define CONFIG_MACH_TYPE MACH_TYPE_APF9328,g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define CONFIG_DM9000_BASE.*,#define CONFIG_DM9000_BASE    0x15C3FFFC,g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define DM9000_DATA.*,#define DM9000_DATA		(CONFIG_DM9000_BASE+4),g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-	$(SED) 's,^#define CONFIG_MTDMAP.*,#define CONFIG_MTDMAP  "scb9328_flash",g' \
-		$(U-BOOT_DIR)/include/configs/$(U-BOOT_TARGET_NAME).h
-endif
-	touch $(U-BOOT_DIR)/.configured	
-
-$(U-BOOT_DIR)/u-boot.bin: $(U-BOOT_DIR)/.configured
-	make -C $(U-BOOT_DIR) CROSS_COMPILE=$(TARGET_CROSS)
-	touch -c $(U-BOOT_DIR)/u-boot.bin
-
-$(BINARIES_DIR)/u-boot.brec: $(U-BOOT_DIR)/u-boot.brec
+$(BINARIES_DIR)/$(BOARD_NAME)-u-boot.brec: u-boot
 	mkdir -p $(BINARIES_DIR)
-	cp $(U-BOOT_DIR)/u-boot.brec $@
+	cp $(U_BOOT_DIR)/u-boot.brec $@
 
-$(BINARIES_DIR)/u-boot.bin: $(U-BOOT_DIR)/u-boot.bin
-	mkdir -p $(BINARIES_DIR)
-	cp $(U-BOOT_DIR)/u-boot.bin $@
-
-u-boot: $(BINARIES_DIR)/u-boot.bin $(BINARIES_DIR)/u-boot.brec
-	ln -fs $(U-BOOT_DIR)/tools/mkimage $(STAGING_DIR)/bin/mkimage
-
-u-boot-clean:
-	make -C $(U-BOOT_DIR) clean
-	rm -f $(BINARIES_DIR)/u-boot.bin
-	rm -f $(BINARIES_DIR)/u-boot.brec
-	rm -rf $(U-BOOT_DIR)/tools/mkbrecimage
-	rm -rf $(U-BOOT_DIR)/.configured
+u-boot-brec: $(BINARIES_DIR)/$(BOARD_NAME)-u-boot.brec
 
 u-boot-distclean: u-boot-clean
-	make -C $(U-BOOT_DIR) distclean
+	$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
+		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
+		 -C $(U_BOOT_DIR) distclean
+	rm -f $(U_BOOT_DIR)/.configured
 
-u-boot-dirclean: 
-	rm -rf $(U-BOOT_DIR)
+$(MKIMAGE): $(BINARIES_DIR)/$(U_BOOT_BIN)
+	ln -fs $(MKIMAGE_BINLOC) $(MKIMAGE)
 
 u-boot-patch: u-boot-distclean
-	-mkdir -p $(BUILD_DIR)/ref
-	rm -rf $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER)
-	bzcat $(DL_DIR)/$(U-BOOT_SOURCE) | tar -C $(BUILD_DIR)/ref $(TAR_OPTIONS) -
-	toolchain/patch-kernel.sh $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER) $(U-BOOT_PACKAGE_DIR) *.patch
-	touch $(BUILD_DIR)/ref/u-boot-$(U-BOOT_VER)/.unpacked
-	-(cd $(BUILD_DIR); \
-	diff -purN -x '*~' ref/u-boot-$(U-BOOT_VER) u-boot-$(U-BOOT_VER) > $(BUILD_DIR)/../newu-boot.diff;\
-	echo -e "\n\nu-boot patch generated!\n")
+	-mkdir -p $(PROJECT_BUILD_DIR)/ref
+	rm -rf $(PROJECT_BUILD_DIR)/ref/u-boot-$(U_BOOT_VERSION)
+	bzcat $(DL_DIR)/$(U_BOOT_SOURCE) | tar -C $(PROJECT_BUILD_DIR)/ref \
+		$(TAR_OPTIONS) -
+	toolchain/patch-kernel.sh $(PROJECT_BUILD_DIR)/ref/u-boot-$(U_BOOT_VERSION) \
+	target/u-boot/ u-boot-$(U_BOOT_VERSION)-\*.patch \
+		u-boot-$(U_BOOT_VERSION)-\*.patch.$(ARCH)
+	touch $(PROJECT_BUILD_DIR)/ref/u-boot-$(U_BOOT_VERSION)/.unpacked
+	-@(cd $(PROJECT_BUILD_DIR); \
+	diff -purN -x '*~' -x .depend ref/u-boot-$(U_BOOT_VERSION) \
+		u-boot-$(U_BOOT_VERSION) > u-boot.patch;\
+	echo ; echo -e u-boot patch generated!;echo ;)
 
-
-#############################################################
-#
-# Toplevel Makefile options
-#
-#############################################################
-ifeq ($(strip $(BR2_TARGET_U-BOOT)),y)
-TARGETS+=u-boot
+ifeq ($(BR2_PACKAGE_LINUX),y)
+TARGETS+=$(MKIMAGE)
 endif
-

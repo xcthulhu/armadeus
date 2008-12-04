@@ -784,7 +784,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.23.1.original/include/asm-arm/arch-imx/apf9328.h	
 +++ linux-2.6.23.1.mod/include/asm-arm/arch-imx/apf9328.h	
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
 + *
@@ -812,6 +812,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +/* ------------------------------------------------------------------------ */
 +/* Memory Map for the APF9328 Board                                         */
 +/* ------------------------------------------------------------------------ */
++
 +// Ethernet
 +#define APF9328_ETH_VIRT ( IMX_CS4_VIRT + 0x00C00000 )
 +#define APF9328_ETH_PHYS ( IMX_CS4_PHYS + 0x00C00000 )

@@ -2,5 +2,6 @@ config BR2_PACKAGE_IMXREGS
 	bool "imxregs"
 	default n
 	help
-	  Build imxregs debug tool. It allows you to show the iMX internal registers content directly from Linux userspace.
+	  This debug tool allows you to access the i.MX internal registers 
+	  directly from Linux userspace. (If operation was allowed in U-Boot).
 

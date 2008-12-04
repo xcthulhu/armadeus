@@ -1,0 +1,100 @@
+diff -purN u-boot-1.3.4.ref/cpu/arm920t/imx/interrupts.c u-boot-1.3.4/cpu/arm920t/imx/interrupts.c
+--- u-boot-1.3.4.ref/cpu/arm920t/imx/interrupts.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/cpu/arm920t/imx/interrupts.c	2008-09-13 16:16:58.000000000 +0200
+@@ -60,7 +60,7 @@ void reset_timer (void)
+ 
+ ulong get_timer (ulong base)
+ {
+-	return get_timer_masked ();
++	return get_timer_masked () - base;
+ }
+ 
+ void set_timer (ulong t)
+diff -purN u-boot-1.3.4.ref/cpu/arm920t/imx/speed.c u-boot-1.3.4/cpu/arm920t/imx/speed.c
+--- u-boot-1.3.4.ref/cpu/arm920t/imx/speed.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/cpu/arm920t/imx/speed.c	2008-09-13 16:16:58.000000000 +0200
+@@ -36,33 +36,27 @@
+  * the specified bus in HZ.
+  */
+ /* ------------------------------------------------------------------------- */
+-
+-ulong get_systemPLLCLK(void)
++static ulong get_PLLCLK(u32 sys_clk_freq, u32 pllctl0)
+ {
+ 	/* FIXME: We assume System_SEL = 0 here */
+-	u32 spctl0 = SPCTL0;
+-	u32 mfi = (spctl0 >> 10) & 0xf;
+-	u32 mfn = spctl0 & 0x3f;
+-	u32 mfd = (spctl0 >> 16) & 0x3f;
+-	u32 pd =  (spctl0 >> 26) & 0xf;
++	u32 mfi = (pllctl0 >> 10) & 0xf;
++	u32 mfn = pllctl0 & 0x3ff;
++	u32 mfd = (pllctl0 >> 16) & 0x3ff;
++	u32 pd =  (pllctl0 >> 26) & 0xf;
+ 
+ 	mfi = mfi<=5 ? 5 : mfi;
++/*	return (2*(CONFIG_SYSPLL_CLK_FREQ>>10)*( (mfi<<10) + (mfn<<10)/(mfd+1)))/(pd+1);*/
++	return (2*(u64)sys_clk_freq* (mfi*(mfd+1) + mfn))/((mfd+1)*(pd+1));
++}
+ 
+-	return (2*(CONFIG_SYSPLL_CLK_FREQ>>10)*( (mfi<<10) + (mfn<<10)/(mfd+1)))/(pd+1);
++ulong get_systemPLLCLK(void)
++{
++	return (get_PLLCLK(CONFIG_SYSPLL_CLK_FREQ, SPCTL0));
+ }
+ 
+ ulong get_mcuPLLCLK(void)
+ {
+-	/* FIXME: We assume System_SEL = 0 here */
+-	u32 mpctl0 = MPCTL0;
+-	u32 mfi = (mpctl0 >> 10) & 0xf;
+-	u32 mfn = mpctl0 & 0x3f;
+-	u32 mfd = (mpctl0 >> 16) & 0x3f;
+-	u32 pd =  (mpctl0 >> 26) & 0xf;
+-
+-	mfi = mfi<=5 ? 5 : mfi;
+-
+-	return (2*(CONFIG_SYS_CLK_FREQ>>10)*( (mfi<<10) + (mfn<<10)/(mfd+1)))/(pd+1);
++	return (get_PLLCLK(CONFIG_SYS_CLK_FREQ, MPCTL0));
+ }
+ 
+ ulong get_FCLK(void)
+@@ -74,7 +68,6 @@ ulong get_FCLK(void)
+ ulong get_HCLK(void)
+ {
+ 	u32 bclkdiv = (( CSCR >> 10 ) & 0xf) + 1;
+-	printf("bclkdiv: %d\n", bclkdiv);
+ 	return get_systemPLLCLK() / bclkdiv;
+ }
+ 
+diff -purN u-boot-1.3.4.ref/include/asm-arm/arch-imx/imx-regs.h u-boot-1.3.4/include/asm-arm/arch-imx/imx-regs.h
+--- u-boot-1.3.4.ref/include/asm-arm/arch-imx/imx-regs.h	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/include/asm-arm/arch-imx/imx-regs.h	2008-09-13 16:16:58.000000000 +0200
+@@ -631,4 +631,27 @@
+ #define TSTAT_CAPT     (1<<1)  /* Capture event */
+ #define TSTAT_COMP     (1)     /* Compare event */
+ 
++/*
++ * I2C module
++ */
++#define IADR   __REG(IMX_I2C_BASE + 0x000) /* I2C Address Register */
++#define IFDR   __REG(IMX_I2C_BASE + 0x004) /* I2C Frequency Divider Register*/
++#define I2CR   __REG(IMX_I2C_BASE + 0x008) /* I2C Control Register */
++#define I2SR   __REG(IMX_I2C_BASE + 0x00C) /* I2C Status Register */
++#define I2DR   __REG(IMX_I2C_BASE + 0x010) /* I2C Data I/O Register */
++/* I2C Control Register Bit Fields */
++#define I2CR_IEN 	(1<<7)		/* I2C Enable */
++#define I2CR_IIEN 	(1<<6)		/* I2C Interrupt Enable */
++#define I2CR_MSTA 	(1<<5)		/* I2C Master/Slave Mode Select */
++#define I2CR_MTX 	(1<<4)		/* I2C Transmit/Receive Mode Select */
++#define I2CR_TXAK 	(1<<3)		/* I2C Transmit Acknowledge Enable */
++#define I2CR_RSTA 	(1<<2)		/* I2C Repeated START */
++#define I2SR_ICF 	(1<<7)		/* I2C Data Transfer */
++#define I2SR_IAAS 	(1<<6)		/* I2C Addressed As a Slave */
++#define I2SR_IBB 	(1<<5)		/* I2C Bus Busy */
++#define I2SR_IAL 	(1<<4)		/* I2C Arbitration Lost */
++#define I2SR_SRW 	(1<<2)		/* I2C Slave Read/Write	*/
++#define I2SR_IIF 	(1<<1)		/* I2C interrupt */
++#define I2SR_RXAK 	(1<<0)		/* I2C Received Acknowledge */
++
+ #endif				/* _IMX_REGS_H */

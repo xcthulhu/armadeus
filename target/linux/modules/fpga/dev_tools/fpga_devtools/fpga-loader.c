@@ -24,9 +24,14 @@
 #include <linux/version.h>
 #include "fpga-loader.h"
 #include "xilinx-fpga-loader.h"
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imx-regs.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 #include <linux/config.h>
+#endif
+#else
+#include <mach/imx-regs.h>
 #endif
 #include <linux/module.h>
 #include <linux/kernel.h>

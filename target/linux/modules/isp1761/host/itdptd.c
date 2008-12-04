@@ -1,7 +1,7 @@
-/******************************************************************************
- * Philips ISP176x Isochronous Transfer support code file
+/*******************************************************************************
+ * NXP ISP176x Isochronous Transfer support code file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@
  * History:     
  *
  * Date                 Author/Modified by      Comments
- * ------------------------------------------------------------------------------
- * Jan 16, 2006         Grant H.                  Initial version
+ * -----------------------------------------------------------------------------
+ * Jan 16, 2006         Grant H.               Initial version
  * Feb 6, 2006          Grant H.               First stable release
+ * May 02 2007		Prabhakar	       ported to 2.6.20 with backward 
+ *                                             compatibility with 2.6.9  
  *
- ********************************************************************************
+ *******************************************************************************
  */
 
 #ifdef CONFIG_ISO_SUPPORT
@@ -39,7 +41,7 @@
  *      - Main host controller driver structure
  * struct ehci_itd *itd
  *  - Isochronous Transfer Descriptor, contains elements as defined by the
- *        EHCI standard plus a few more Philips specific elements.
+ *        EHCI standard plus a few more NXP specific elements.
  * struct urb *urb
  *  - USB Request Block, contains information regarding the type and how much data
  *    is requested to be transferred.
@@ -346,7 +348,7 @@ unsigned long phcd_iso_scheduling_info( phci_hcd *hcd,
  *  - Main host controller driver structure
  * struct ehci_itd *itd
  *  - Isochronous Transfer Descriptor, contains elements as defined by the
- *        EHCI standard plus a few more Philips specific elements.
+ *        EHCI standard plus a few more NXP specific elements.
  * struct urb *urb
  *  - USB Request Block, contains information regarding the type and how much data
  *    is requested to be transferred.
@@ -442,7 +444,7 @@ unsigned long phcd_iso_itd_fill ( phci_hcd *hcd,
  *      - Main host controller driver structure
  * struct ehci_itd *itd
  *  - Isochronous Transfer Descriptor, contains elements as defined by the
- *        EHCI standard plus a few more Philips specific elements.
+ *        EHCI standard plus a few more NXP specific elements.
  *
  * API Description
  * This is mainly responsible for:
@@ -808,7 +810,7 @@ unsigned long phcd_submit_iso( phci_hcd *hcd,
          *
          * This data structure follows the format of the ITD
          * structure defined by the EHCI standard on the top part
-         * but also contains Philips specific elements in the bottom
+         * but also contains NXP specific elements in the bottom
          * part
          */
         itd = (struct ehci_itd *) kmalloc(sizeof(struct ehci_itd), GFP_ATOMIC);

@@ -1,7 +1,7 @@
-/*********************************************************************
- * Philips ISP176x Host Controller Interface code file
+/***************************************************************************************************
+ * NXP ISP176x Host Controller Interface code file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -272,7 +272,6 @@ phci_hcd_qtd_fill(struct urb *urb,
 
     return count;
 }
-
 
 /*
  * makes number of qtds required for

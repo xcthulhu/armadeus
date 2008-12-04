@@ -22,7 +22,13 @@
  *
  */
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/imx-regs.h>
+#endif
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>

@@ -16,7 +16,7 @@ source "drivers/armadeus/gpio/Kconfig"
 
 source "drivers/armadeus/imxlkeypad/Kconfig"
 
-source "drivers/armadeus/fast_max1027/Kconfig"
+source "drivers/armadeus/max1027/Kconfig"
 
 comment "FPGA related"
 	depends on ARMADEUS_DRIVERS

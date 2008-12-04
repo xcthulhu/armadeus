@@ -1,12 +1,10 @@
---- buildroot.org/package/Config.in	2007-11-17 20:17:10.000000000 +0100
-+++ buildroot/package/Config.in	2007-11-17 20:18:58.000000000 +0100
-@@ -390,6 +390,9 @@
- 
- comment "Games"
- source "package/prboom/Config.in"
-+
-+comment "Misc"
+--- buildroot/package/Config.in.ref     2008-11-03 16:25:31.000000000 +0100
++++ buildroot/package/Config.in 2008-11-03 16:26:00.000000000 +0100
+@@ -333,6 +333,7 @@ source "package/sdl_image/Config.in"
+ source "package/sdl_mixer/Config.in"
+ source "package/sdl_net/Config.in"
+ source "package/sdl_ttf/Config.in"
 +source "package/slideshow/Config.in"
- endif
- 
- menuconfig BR2_COMPRESSOR_SUPPORT
+ source "package/tiff/Config.in"
+ comment "Demos"
+ source "package/sdlwater/Config.in"

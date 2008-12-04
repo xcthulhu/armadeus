@@ -1,0 +1,35 @@
+--- buildroot/package/ntp/Config.in	2008-11-03 09:15:26.000000000 +0100
++++ buildroot/package/ntp/Config.in	2008-11-26 12:11:59.000000000 +0100
+@@ -6,6 +6,12 @@
+ 
+ 	  http://www.ntp.org/
+ 
++config BR2_PACKAGE_NTP_NTPD
++        bool "ntpd daemon"
++        depends on BR2_PACKAGE_NTP
++        help
++          Install ntpd daemon
++
+ config BR2_PACKAGE_NTP_SNTP
+ 	bool "sntp"
+ 	depends on BR2_PACKAGE_NTP
+--- buildroot/package/ntp/ntp.mk	2008-11-03 09:15:26.000000000 +0100
++++ buildroot/package/ntp/ntp.mk	2008-11-26 13:17:39.000000000 +0100
+@@ -61,12 +61,15 @@
+ 	$(MAKE) -C $(NTP_DIR)
+ 
+ $(TARGET_DIR)/$(NTP_TARGET_BINARY): $(NTP_DIR)/$(NTP_BINARY)
++	install -m 755 $(NTP_DIR)/$(NTP_BINARY) $@
++ifeq ($(BR2_PACKAGE_NTP_NTPD),y)
+ 	install -m 755 $(NTP_DIR)/ntpd/ntpd $(TARGET_DIR)/usr/sbin/ntpd
+-	install -m 755 $(NTP_DIR)/$(NTP_BINARY) $(TARGET_DIR)/$(NTP_TARGET_BINARY)
++	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
++endif
+ ifeq ($(BR2_PACKAGE_NTP_SNTP),y)
+ 	install -m 755 $(NTP_DIR)/sntp/sntp $(TARGET_DIR)/usr/bin/sntp
+ endif
+-	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
++	touch $@
+ 
+ ntp: uclibc $(TARGET_DIR)/$(NTP_TARGET_BINARY)
+ 

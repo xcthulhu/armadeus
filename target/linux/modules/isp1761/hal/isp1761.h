@@ -1,7 +1,7 @@
 /********************************************************************
- * Philips ISP176x Debugging and Conditinal Compilation header file
+ * NXP ISP176x Debugging and Conditinal Compilation header file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 
 /* For Iso support */
 #ifdef MSEC_INT_BASED /* Iso support is only currently available in this mode */
-#define CONFIG_ISO_SUPPORT /* Comment out to remove isochronous transfer support */
+#define CONFIG_ISO_SUPPORT /* Comment to remove isochronous transfer support */
 #endif
 
 #ifdef CONFIG_ISO_SUPPORT
@@ -66,6 +66,9 @@ do \
 #endif
 
 #endif /* CONFIG_ISO_SUPPORT */
+
+		/*End ISO support stuff*/
+	/*------------------------------------------*/
 
 /*Debug For Entry/Exit of the functions */ 
 #undef HCD_DEBUG_LEVEL1
@@ -125,7 +128,7 @@ do \
 #define dev_inform(format,arg...) do {} while (0)
 #endif
 
-/*Debug for Tranffer flow , Enumeration and Packet info */
+/*Debug for Transfer flow , Enumeration and Packet info */
 #undef DEV_DEBUG_LEVEL4
 #ifdef DEV_DEBUG_LEVEL4
 #define dev_check(format,args...) printk(format, ##args)

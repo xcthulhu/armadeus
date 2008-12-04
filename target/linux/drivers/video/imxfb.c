@@ -24,6 +24,7 @@
 #include <linux/string.h>
 #include <linux/interrupt.h>
 #include <linux/slab.h>
+#include <linux/mm.h>
 #include <linux/fb.h>
 #include <linux/delay.h>
 #include <linux/init.h>
@@ -32,10 +33,9 @@
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 
-#include <asm/hardware.h>
+#include <mach/hardware.h>
 #include <asm/io.h>
-#include <asm/uaccess.h>
-#include <asm/arch/imxfb.h>
+#include <mach/imxfb.h>
 
 /*
  * Complain if VAR is out of range.
@@ -482,7 +482,7 @@ static void imxfb_setup_gpio(struct imxfb_info *fbi)
 static int imxfb_suspend(struct platform_device *dev, pm_message_t state)
 {
 	struct imxfb_info *fbi = platform_get_drvdata(dev);
-	pr_debug("%s\n",__FUNCTION__);
+	pr_debug("%s\n",__func__);
 
 	imxfb_disable_controller(fbi);
 	return 0;
@@ -491,7 +491,7 @@ static int imxfb_suspend(struct platform_device *dev, pm_message_t state)
 static int imxfb_resume(struct platform_device *dev)
 {
 	struct imxfb_info *fbi = platform_get_drvdata(dev);
-	pr_debug("%s\n",__FUNCTION__);
+	pr_debug("%s\n",__func__);
 
 	imxfb_enable_controller(fbi);
 	return 0;
@@ -507,7 +507,7 @@ static int __init imxfb_init_fbinfo(struct device *dev)
 	struct fb_info *info = dev_get_drvdata(dev);
 	struct imxfb_info *fbi = info->par;
 
-	pr_debug("%s\n",__FUNCTION__);
+	pr_debug("%s\n",__func__);
 
 	info->pseudo_palette = kmalloc( sizeof(u32) * 16, GFP_KERNEL);
 	if (!info->pseudo_palette)
@@ -533,7 +533,7 @@ static int __init imxfb_init_fbinfo(struct device *dev)
 	info->var.vmode	= FB_VMODE_NONINTERLACED;
 
 	info->fbops			= &imxfb_ops;
-	info->flags			= FBINFO_FLAG_DEFAULT;
+	info->flags			= FBINFO_FLAG_DEFAULT | FBINFO_READS_FAST;
 
 	fbi->max_xres			= inf->xres;
 	info->var.xres			= inf->xres;
@@ -543,6 +543,7 @@ static int __init imxfb_init_fbinfo(struct device *dev)
 	info->var.yres_virtual		= inf->yres;
 	fbi->max_bpp			= inf->bpp;
 	info->var.bits_per_pixel	= inf->bpp;
+	info->var.nonstd		= inf->nonstd;
 	info->var.pixclock		= inf->pixclock;
 	info->var.hsync_len		= inf->hsync_len;
 	info->var.left_margin		= inf->left_margin;

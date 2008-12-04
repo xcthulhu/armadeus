@@ -1,7 +1,7 @@
 /************************************************************
- * Philips ISP176x Hardware Abstraction Layer code file
+ * NXP ISP176x Hardware Abstraction Layer code file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,17 +99,35 @@ static irqreturn_t  isp1761_pci_isr (int irq, void *dev_id, struct pt_regs *regs
 int             isp1761_hw_lock = 0;
 int             isp1761_hw_isr = 0;
 
-void isp1761_disable_interrupt(int      irq) {
-    /* DUMMY functions
-     * Not used */
-    disable_irq(irq);
-    return;
+void isp1761_disable_interrupt(void) {
+    
+    struct isp1761_dev  *dev;
+    u32 hw_mode_buff;
+    
+    /* Process the Host Controller Driver */
+    dev = &isp1761_loc_dev[ISP1761_HC];
+    
+    hw_mode_buff = isp1761_reg_read32(dev, HC_HW_MODE_REG, hw_mode_buff);
+
+    /* Disable ISP176x global interrupt */
+    hw_mode_buff &= ~(0x1);
+        
+    isp1761_reg_write32(dev, HC_HW_MODE_REG, hw_mode_buff);
 }
-void isp1761_enable_interrupt(int       irq) {
-    /* DUMMY functions
-     * Not used */
-    enable_irq(irq);
-    return;
+
+void isp1761_enable_interrupt(void) {
+    struct isp1761_dev  *dev;
+    u32 hw_mode_buff;
+    
+    /* Process the Host Controller Driver */
+    dev = &isp1761_loc_dev[ISP1761_HC];
+    
+    hw_mode_buff = isp1761_reg_read32(dev, HC_HW_MODE_REG, hw_mode_buff);
+
+    /* Enable ISP176x global interrupt */
+    hw_mode_buff |= 0x1;
+    
+    isp1761_reg_write32(dev, HC_HW_MODE_REG, hw_mode_buff);
 }
 
 /*--------------------------------------------------------------*
@@ -158,6 +176,7 @@ irqreturn_t     isp1761_pci_isr(int irq, void *__data, struct pt_regs *r)
     __u32               irq_mask = 0;
     struct isp1761_dev  *dev;
     hal_entry("%s: Entered\n",__FUNCTION__);
+    isp1761_disable_interrupt();
     /* Process the Host Controller Driver */
     dev = &isp1761_loc_dev[ISP1761_HC];
     /* Get the source of interrupts for Host Controller*/
@@ -191,6 +210,8 @@ irqreturn_t     isp1761_pci_isr(int irq, void *__data, struct pt_regs *r)
         dev->handler(dev, dev->isr_data,r);
     }   
 #endif
+    dev->handler(dev, dev->isr_data,r);
+    isp1761_enable_interrupt();
     hal_entry("%s: Exit\n",__FUNCTION__);
     return IRQ_HANDLED;
 } /* End of isp1362_pci_isr */
@@ -293,7 +314,11 @@ isp1761_mem_read(struct isp1761_dev *dev, __u32 start_add,
     temp_base_mem= (dev->baseaddress + start_add);
     /*initialize the Register 0x33C-used to manage Multiple threads */
     writel(start_add,dev->baseaddress+0x33c);
-
+	if(buffer == NULL)
+	{
+		printk("@@@@ In isp1761_mem_read The buffer is pointing to null\n");
+		return 0;
+	}
 last:
     w = readl(temp_base_mem);
     if(a == 1){
@@ -304,8 +329,6 @@ last:
         *two=(u16)w;
         return 0;
     }   
-
-
     if(a == 3){
         *two=(u16)w;
         two += 1;
@@ -314,7 +337,6 @@ last:
         return 0;
 
     }
-
 
     while(a>0){
         *buffer = w;
@@ -1086,6 +1108,8 @@ EXPORT_SYMBOL(isp1761_mem_write);
 EXPORT_SYMBOL(isp1761_free_irq);
 EXPORT_SYMBOL(isp1761_register_driver);
 EXPORT_SYMBOL(isp1761_unregister_driver);
+EXPORT_SYMBOL(isp1761_disable_interrupt);
+EXPORT_SYMBOL(isp1761_enable_interrupt);
 
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);

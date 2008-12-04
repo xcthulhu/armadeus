@@ -1,0 +1,24 @@
+diff -purN u-boot-1.3.4.ref/MAKEALL u-boot-1.3.4/MAKEALL
+--- u-boot-1.3.4.ref/MAKEALL	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/MAKEALL	2008-09-13 16:25:54.000000000 +0200
+@@ -462,6 +462,7 @@ LIST_ARM7="		\
+ #########################################################################
+ 
+ LIST_ARM9="			\
++	apf9328			\
+ 	ap920t			\
+ 	ap922_XA10		\
+ 	ap926ejs		\
+diff -purN u-boot-1.3.4.ref/Makefile u-boot-1.3.4/Makefile
+--- u-boot-1.3.4.ref/Makefile	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/Makefile	2008-09-13 16:25:54.000000000 +0200
+@@ -2350,6 +2350,9 @@ shannon_config	:	unconfig
+ ## Atmel AT91RM9200 Systems
+ #########################################################################
+ 
++apf9328_config		:	unconfig
++	@$(MKCONFIG) $(@:_config=) arm arm920t apf9328 armadeus imx
++
+ at91rm9200dk_config	:	unconfig
+ 	@$(MKCONFIG) $(@:_config=) arm arm920t at91rm9200dk atmel at91rm9200
+ 

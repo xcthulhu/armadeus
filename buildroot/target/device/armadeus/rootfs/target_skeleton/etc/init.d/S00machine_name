@@ -1,0 +1,11 @@
+#!/bin/sh
+
+FILE=/etc/machine
+
+if [ ! -f "$FILE" ]; then
+        MACHINE=`cat /proc/cpuinfo | grep Hardware`
+        echo ${MACHINE:20} > $FILE
+fi
+
+exit 0
+

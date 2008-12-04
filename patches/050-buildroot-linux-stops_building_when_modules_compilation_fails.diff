@@ -1,0 +1,23 @@
+Stops Linux building when modules compilation fails.
+
+Sent to Buildroot guys.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/target/linux/Makefile.in.advanced
+===================================================================
+--- buildroot/target/linux/Makefile.in.advanced	(revision 24036)
++++ buildroot/target/linux/Makefile.in.advanced	(copie de travail)
+@@ -397,10 +397,10 @@
+ 	# Make Linux depend on modules only if enabled in the .config.
+ 	@if [ $(shell grep -c "CONFIG_MODULES=y" $(LINUX26_DIR)/.config) != 0 ] ; then	\
+ 		echo "*** Installing Linux kernel modules" ;				\
+-		$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) modules;		\
++		$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) modules &&		\
+ 		$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR)				\
+ 			DEPMOD=$(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26		\
+-			INSTALL_MOD_PATH=$(TARGET_DIR) modules_install;			\
++			INSTALL_MOD_PATH=$(TARGET_DIR) modules_install &&		\
+ 		rm -f $(TARGET_DIR)/lib/modules/$(LINUX26_VERSION_PROBED)/build;	\
+ 		rm -f $(TARGET_DIR)/lib/modules/$(LINUX26_VERSION_PROBED)/source;	\
+ 		$(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26 -b $(TARGET_DIR) $(LINUX26_VERSION_PROBED); \

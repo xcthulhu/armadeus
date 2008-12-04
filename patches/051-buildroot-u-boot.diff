@@ -1,0 +1,121 @@
+--- buildroot/target/u-boot.ref/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2008-11-13 22:01:30.000000000 +0100
+@@ -80,3 +80,10 @@ config BR2_TARGET_UBOOT_TOOL_ENV
+ 	depends on BR2_TARGET_UBOOT
+ 	help
+ 	  Install fw_printenv / fw_setenv tools in target.
++
++config BR2_TARGET_UBOOT_COPYTO
++	string "also copy the image to..."
++	depends on BR2_TARGET_UBOOT
++	default ""
++	help
++	  Copies the resulting image to a secondary location.
+--- buildroot/target/u-boot/Makefile.in.ref	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2008-11-20 23:52:02.000000000 +0100
+@@ -9,7 +9,14 @@ U_BOOT_SITE:=ftp://ftp.denx.de/pub/u-boo
+ U_BOOT_DIR:=$(PROJECT_BUILD_DIR)/u-boot-$(U_BOOT_VERSION)
+ U_BOOT_PATCH_DIR:=$(PROJECT_BUILD_DIR)/u-boot-patches
+ U_BOOT_CAT:=$(BZCAT)
++
++ifndef U_BOOT_BIN
+ U_BOOT_BIN:=u-boot.bin
++endif
++ifndef U_BOOT_BINLOC
++U_BOOT_BINLOC:=u-boot.bin
++endif
++
+ U_BOOT_TOOLS_BIN:=mkimage
+ # u-boot still uses arch=ppc for powerpc
+ U_BOOT_ARCH=$(KERNEL_ARCH:powerpc=ppc)
+@@ -28,7 +35,6 @@ ifeq ($(strip $(BR2_TARGET_UBOOT_TOOL_EN
+ U_BOOT_TARGET_TOOLS+=$(TARGET_DIR)/usr/sbin/fw_printenv
+ endif
+ 
+-
+ # Define a helper function
+ define insert_define
+ @echo "#ifdef $(strip $(1))" >> $(U_BOOT_INC_CONF_FILE)
+@@ -80,6 +86,9 @@ $(U_BOOT_DIR)/.header_modified: $(U_BOOT
+ ifneq ($(strip $(BR2_PROJECT)),"")
+ 	$(call insert_define, CONFIG_HOSTNAME, $(BR2_PROJECT))
+ endif
++ifneq ($(strip $(BOARD_NAME)),"")
++	$(call insert_define, CONFIG_BOARD_NAME, $(BOARD_NAME))
++endif
+ ifneq ($(strip $(BR2_TARGET_UBOOT_SERVERIP)),"")
+ 	$(call insert_define, CONFIG_SERVERIP, $(BR2_TARGET_UBOOT_SERVERIP))
+ endif
+@@ -110,27 +119,35 @@ ifeq ($(strip $(BR2_TARGET_UBOOT_SILENT)
+ 	$(call insert_define, CONFIG_SILENT_CONSOLE,)
+ endif
+ 	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
++ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
++	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
++ifneq ($(BR2_TARGET_ARMADEUS_NR_SDRAM),)
++	$(SED) "s,^#define CONFIG_NR_DRAM_BANKS.*,#define CONFIG_NR_DRAM_BANKS $(BR2_TARGET_ARMADEUS_NR_SDRAM),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
+ 	touch $@
+ 
+-$(U_BOOT_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/.header_modified
++$(U_BOOT_DIR)/$(U_BOOT_BINLOC): $(U_BOOT_DIR)/.header_modified
+ 	$(TARGET_CONFIGURE_OPTS) \
+ 		CFLAGS="$(TARGET_CFLAGS)" \
+ 		LDFLAGS="$(TARGET_LDFLAGS)" \
+ 		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
+ 		 -C $(U_BOOT_DIR)
+ 
+-$(BINARIES_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
+-	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)
++$(BINARIES_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
++	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BINLOC) $(BINARIES_DIR)/$(U_BOOT_BIN)
+ 	cp -dpf $(U_BOOT_DIR)/tools/$(U_BOOT_TOOLS_BIN) $(STAGING_DIR)/usr/bin/
+ 
+-$(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BIN)
++$(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 	mkdir -p $(@D)
+ 	$(TARGET_CC) -I$(U_BOOT_DIR)/include -DUSE_HOSTCC -o $@ \
+ 		$(U_BOOT_DIR)/tools/mkimage.c \
+ 		$(addprefix $(U_BOOT_DIR)/tools/,crc32.c image.c md5.c sha1.c fdt*.c)
+ 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
+ 
+-$(TARGET_DIR)/usr/sbin/fw_printenv: $(U_BOOT_DIR)/$(U_BOOT_BIN)
++$(TARGET_DIR)/usr/sbin/fw_printenv: $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 	mkdir -p $(@D)
+ 	$(TARGET_CC) -I$(U_BOOT_DIR)/include -I$(LINUX_HEADERS_DIR)/include \
+ 		-DUSE_HOSTCC -o $@ \
+@@ -138,11 +155,22 @@ $(TARGET_DIR)/usr/sbin/fw_printenv: $(U_
+ 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
+ 	ln -sf fw_printenv $(TARGET_DIR)/usr/sbin/fw_setenv
+ 
++U_BOOT_COPYTO := $(strip $(subst ",,$(BR2_TARGET_UBOOT_COPYTO)))
++#"))
++
+ u-boot: $(BINARIES_DIR)/$(U_BOOT_BIN) $(U_BOOT_TARGET_TOOLS)
++ifneq ($(U_BOOT_COPYTO),)
++	@cp -f $(BINARIES_DIR)/$(U_BOOT_BIN) $(U_BOOT_COPYTO)
++endif
+ 
+ u-boot-clean:
+-	-$(MAKE) -C $(U_BOOT_DIR) clean
++	$(TARGET_CONFIGURE_OPTS) \
++		CFLAGS="$(TARGET_CFLAGS)" \
++		LDFLAGS="$(TARGET_LDFLAGS)" \
++		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
++		 -C $(U_BOOT_DIR) clean
+ 	rm -f $(STAGING_DIR)/usr/bin/$(U_BOOT_TOOLS_BIN) $(U_BOOT_TARGET_TOOLS)
++	rm -f $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 
+ u-boot-dirclean:
+ 	rm -rf $(U_BOOT_DIR)
+@@ -173,5 +201,7 @@ u-boot-status:
+ 	@echo BR2_TARGET_UBOOT_BOOTARGS = $(BR2_TARGET_UBOOT_BOOTARGS)
+ 	@echo BR2_TARGET_UBOOT_BOOTCMD = $(BR2_TARGET_UBOOT_BOOTCMD)
+ 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
++	@echo BR2_TARGET_ARMADEUS_SDRAM_SIZE = $(BR2_TARGET_ARMADEUS_SDRAM_SIZE)
++	@echo BR2_TARGET_ARMADEUS_NR_SDRAM = $(BR2_TARGET_ARMADEUS_NR_SDRAM)
+ 	@echo
+ 	@exit 0

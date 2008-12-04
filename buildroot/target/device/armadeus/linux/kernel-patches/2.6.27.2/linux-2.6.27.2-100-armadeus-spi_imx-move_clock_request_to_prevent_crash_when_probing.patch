@@ -1,0 +1,53 @@
+Corrects spi_imx driver crash during initialization/probing.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+--- linux-2.6.27.2.org/drivers/spi/spi_imx.c	2008-10-10 00:13:53.000000000 +0200
++++ linux-2.6.27.2/drivers/spi/spi_imx.c	2008-11-19 08:48:24.000000000 +0100
+@@ -1468,14 +1468,6 @@
+ 		goto err_no_pdata;
+ 	}
+ 
+-	drv_data->clk = clk_get(&pdev->dev, "perclk2");
+-	if (IS_ERR(drv_data->clk)) {
+-		dev_err(&pdev->dev, "probe - cannot get get\n");
+-		status = PTR_ERR(drv_data->clk);
+-		goto err_no_clk;
+-	}
+-	clk_enable(drv_data->clk);
+-
+ 	/* Allocate master with space for drv_data */
+ 	master = spi_alloc_master(dev, sizeof(struct driver_data));
+ 	if (!master) {
+@@ -1496,6 +1488,14 @@
+ 
+ 	drv_data->dummy_dma_buf = SPI_DUMMY_u32;
+ 
++	drv_data->clk = clk_get(&pdev->dev, "perclk2");
++	if (IS_ERR(drv_data->clk)) {
++		dev_err(&pdev->dev, "probe - cannot get clock\n");
++		status = PTR_ERR(drv_data->clk);
++		goto err_no_clk;
++	}
++	clk_enable(drv_data->clk);
++
+ 	/* Find and map resources */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+@@ -1631,12 +1631,13 @@
+ 	kfree(drv_data->ioarea);
+ 
+ err_no_iores:
+-	spi_master_put(master);
+-
+-err_no_pdata:
+ 	clk_disable(drv_data->clk);
+ 	clk_put(drv_data->clk);
++
+ err_no_clk:
++	spi_master_put(master);
++
++err_no_pdata:
+ err_no_mem:
+ 	return status;
+ }

@@ -46,7 +46,11 @@
 #include <asm/io.h>
 
 /* hardware addresses */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/hardware.h>
+#else
+#include <mach/hardware.h>
+#endif
 
 /* interruptions */
 #include <linux/interrupt.h>

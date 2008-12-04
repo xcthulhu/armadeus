@@ -1,21 +1,10 @@
---- buildrootref/target/device/Config.in	2007-10-13 17:36:33.000000000 +0200
-+++ buildroot/target/device/Config.in	2007-10-13 17:38:47.000000000 +0200
-@@ -13,6 +13,7 @@
- source "target/device/Soekris/Config.in"
- source "target/device/Via/Config.in"
- source "target/device/x86/Config.in"
+--- buildroot/target/device/Config.in.ref       2008-11-03 15:31:26.000000000 +0100
++++ buildroot/target/device/Config.in   2008-11-03 15:32:00.000000000 +0100
+@@ -5,6 +5,7 @@ source "project/Config.in"
+ comment "Preset Devices"
+
+ source "target/device/AMD/Config.in"
 +source "target/device/armadeus/Config.in"
- 
- # This must be last
- source "target/generic/Config.in"
---- buildrootref/Makefile	2007-10-27 09:15:37.000000000 +0200
-+++ buildroot/Makefile	2008-03-11 12:17:43.000000000 +0100
-@@ -328,7 +328,7 @@ _source-check:
- #
- #############################################################
- clean: $(TARGETS_CLEAN)
--	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
-+	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE) $(PROJECT_BUILD_DIR)/.root
- 
- dirclean: $(TARGETS_DIRCLEAN)
- 	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
+ source "target/device/ARMLTD/Config.in"
+ source "target/device/Atmel/Config.in"
+ source "target/device/Hitachi/Config.in"

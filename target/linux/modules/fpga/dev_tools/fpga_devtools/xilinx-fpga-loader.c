@@ -29,7 +29,12 @@
 
 #include "xilinx-fpga-loader.h"
 #include "target-fpga-loader.h"
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/imx-regs.h>
+#endif
 #include <asm/io.h>
 #include <linux/time.h>
 #include <linux/kernel.h>

@@ -19,7 +19,11 @@
 // For pr_debug:
 #include <linux/kernel.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/imx-regs.h>
+#endif
 
 /* Linux Kernel uses virtual addresses linearly mapped to physical one, ex for CS1:
 #define IMX_CS1_PHYS        0x12000000

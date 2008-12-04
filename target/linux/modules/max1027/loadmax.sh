@@ -10,11 +10,11 @@ if [ -d "$1" ]; then
     MAX_MODULES_DIR="$1"
 else
     KERNEL_VERSION=`uname -r`
-    MAX_MODULES_DIR="/lib/modules/$KERNEL_VERSION/extra/max1027/"
+    MAX_MODULES_DIR="/lib/modules/$KERNEL_VERSION/kernel/drivers/armadeus/max1027/"
     echo "Using $MAX_MODULES_DIR as default modules dir as no param was passed"
 fi
 
-insmod $MAX_MODULES_DIR/fast-max1027.ko
+insmod $MAX_MODULES_DIR/max1027.ko
 
 MAX_MAJOR=`cat /proc/devices | grep max1027 | cut -d " " -f 1`
 

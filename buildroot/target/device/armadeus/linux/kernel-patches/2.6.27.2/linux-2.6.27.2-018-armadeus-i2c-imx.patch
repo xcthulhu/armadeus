@@ -1,0 +1,822 @@
+--- ref/linux-2.6.23/drivers/i2c/busses/i2c-imx.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.23/drivers/i2c/busses/i2c-imx.c	2007-01-14 14:08:13.000000000 +0100
+@@ -0,0 +1,641 @@
++/*
++ *	Copyright (C) 2002 Motorola GSG-China
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version 2
++ *	of the License, or (at your option) any later version.
++ *
++ *	This program is distributed in the hope that it will be useful,
++ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *	GNU General Public License for more details.
++ *
++ *	You should have received a copy of the GNU General Public License
++ *	along with this program; if not, write to the Free Software
++ *	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
++ *      USA.
++ *
++ * File Name: i2c-imx.c
++ *
++ * Author:  Torsten Koschorrek, synertronixx GmbH
++ *
++ * Desc.:   Implementation of I2C Adapter/Algorithm Driver
++ *          Driver for I2C Bus integrated in i.MXL, i.MX1
++ *
++ *          compiler options: - I2C_IMX_DEBUG:
++ *                              Enables debug output. If not set, no debug
++ *                              is compiled into the driver.
++ *                            - I2C_IMX_SLAVESUPPORT:
++ *                              This option enables support for slaves.
++ *                              Userspace programs are set into sleep state, if
++ *                              no new data is available from the slave. The
++ *                              timing parameters are defined in additional
++ *                              modules. Now supported are ads1110 and m41t00.
++ *                               
++ *          module parameter: - dbg:
++ *                              Enables debug output. Default is off.
++ *                            - clkdiv:
++ *                              Sets the clk clock rate divider. The default
++ *                              value is #0x0F (240) (400kHz i2c / 96MHz HCLK).
++ *
++ *          Derived from Motorola GSG China I2C example driver
++ *
++ *          Copyright (C) 2002 Motorola GSG-China
++ *          Copyright (C) 2005 Torsten Koschorrek <koschorrek at synertronixx.de>
++ *          Portions:
++ *          Copyright (C) 2005 Matthias Blaschke <blaschke at synertronixx.de>
++ *
++ * History: 2002/2/07 use msgs[]
++ *                    Motorola GSG-China
++ *          2004/3/03 port to linux kernel v2.6.x for i.MX
++ *                    adding ioctl (change bus freq)
++ *                    adding cpu- and bus-usage optimization (..slp)
++ *                    T. Koschorrek <koschorrek at synertronixx.de>
++ *          2005/2/28 changes in timings
++ *                    M. Blaschke <blaschke at synertronixx.de>
++ *          2005/6/01 added module parameters, cleaning up, cpu- and bus-usage
++ *                    modularized (..slave)
++ *                    T. Koschorrek <koschorrek at synertronixx.de>
++ *          2007/1/14 fix i2c_imx_read/write to return number of messages
++ *                      processed.
++ *                    Change form for compatibility with kernel > 2.6.18.
++ *                    Change default CLKDIV to 0x0F (400kHz i2c / 96MHz HCLK). 
++ *                    Jorasse <jorasse@users.sourceforge.net>
++ */
++
++#include "i2c-imx.h"
++
++/*-----------------------------------------------------------------------------
++ * functions (IMX related code)
++ *---------------------------------------------------------------------------*/
++static int i2c_imx_bus_grab(void)
++{
++	long int i = 0;
++	int timeout = I2C_IMX_TIME_GRAB;
++
++	/* wait for bus grab */
++	while((!((i2c_imx_reg->i2sr & (u32)0x30))) && (i < timeout)) {
++		i++;
++	};
++	
++	if (i == timeout)
++		return -I2C_IMX_ERR_GRAB;
++
++	return 0;
++}
++
++static int i2c_imx_bus_busy(void)
++{
++	int i = 0;
++	int timeout = I2C_IMX_TIME_BUSY;
++
++	/* wait for bus not busy */
++	while((i2c_imx_reg->i2sr & (u32)0x20) && (i < timeout))
++		i++;
++
++	if (i == timeout)
++		return -I2C_IMX_ERR_BUSY;
++
++	return 0;
++}
++
++static int i2c_imx_received_acknowledge(void)
++{
++	if (i2c_imx_i2sr & 0x01)
++		return -I2C_IMX_ERR_RXACK;
++
++	return 0;
++}
++
++static int i2c_imx_transfer_complete(void)
++{
++	int i = 0;
++	unsigned long flags;
++	int timeout = I2C_IMX_TIME_TXCOMPLETE;
++
++	i2c_imx_i2sr = 0x00;
++
++	/* wait for transfer complete interrupt */
++	while ((!(i2c_imx_irq_ok)) && (i < timeout)) {
++		spin_lock_irqsave(&i2c_imx_irqlock, flags);
++		i++;
++		spin_unlock_irqrestore(&i2c_imx_irqlock, flags);
++	}
++
++	i2c_imx_irq_ok = 0;
++
++	if (i == timeout)
++		return -I2C_IMX_ERR_TXCOMPLETE;
++
++	return 0;
++}
++
++static int i2c_imx_bus_release(void)
++{	
++	int i = 0;
++	int dummy;
++	int timeout = I2C_IMX_TIME_RELEASE;
++
++	/* if bus busy reset the module process suggested in reference manual
++	   (tahiti) */
++	if (i2c_imx_bus_busy() && (i < timeout)) {
++		i2c_imx_reg->i2cr  =   (u32)0x00;
++		i2c_imx_reg->i2cr |=   (u32)0x0a;
++		dummy = (u8)i2c_imx_reg->i2dr;
++		i2c_imx_reg->i2sr  =   (u32)0x00;
++		i2c_imx_reg->i2cr  =   (u32)0x00;
++		i2c_imx_reg->i2cr &= ~((u32)0x80);
++		i++;
++	}
++
++	return 0;
++}
++
++static int i2c_imx_start(void)
++{
++	int i = 0;
++	int timeout = I2C_IMX_MAX_GRAB;
++
++	/* Set Master Mode */
++	i2c_imx_reg->i2cr |= 0x20;
++
++	/* wait while bus grab */
++	while((i2c_imx_bus_grab()) && (i < timeout)) {
++		i2c_imx_reg->i2cr &= ~((u32)0x20); /* bus stop */
++		i2c_imx_bus_release();
++		if (i2c_imx_bus_busy() < 0)
++			return -I2C_IMX_ERR_BUSY;
++		i2c_imx_reg->i2cr |=   (u32)0x80; /* [I2CR:IEN] (I2C Enable) */
++		i2c_imx_reg->i2cr |=   (u32)0x08; /* [I2CR:TXAK] dable txack */
++		i2c_imx_reg->i2cr |=   (u32)0x20; /* Set Master Mode */
++		i++;
++	}
++
++	if (i == timeout)
++		return -I2C_IMX_ERR_GRAB;
++
++	return 0;
++}
++
++static int i2c_imx_write(int i, int *count, struct i2c_msg *msgs)
++{
++	int j;
++
++	/* select slave */
++	i2c_imx_reg->i2dr = msgs->addr << 1;
++	if (i2c_imx_transfer_complete() < 0)
++		return -I2C_IMX_ERR_TXCOMPLETE;
++	if (i2c_imx_received_acknowledge() < 0)
++		return -I2C_IMX_ERR_RXACK;
++
++	/* write data */
++	for ( j = 0; j < msgs->len; j ++ )
++	{
++		i2c_imx_reg->i2dr = msgs->buf[j];
++		if (i2c_imx_transfer_complete() < 0)
++			return -I2C_IMX_ERR_TXCOMPLETE;
++	}
++
++	(*count)++;
++
++	return 0;
++}
++
++static int i2c_imx_read(int i, int *count, struct i2c_msg *msgs)
++{
++	int j;
++	int dummy;
++
++	/* select slave */
++	i2c_imx_reg->i2dr = ((u32)msgs->addr << 1) | (u32)0x01;
++	if (i2c_imx_transfer_complete() < 0)
++		return -I2C_IMX_ERR_TXCOMPLETE;
++	if (i2c_imx_received_acknowledge() < 0)
++		return -I2C_IMX_ERR_RXACK;
++
++	/* setup bus to read data */
++	i2c_imx_reg->i2cr &= ~(u32)0x10;
++	if (msgs->len-1)
++		i2c_imx_reg->i2cr &= ~(u32)0x08;
++	dummy = (u8)i2c_imx_reg->i2dr; /* trigger rec. of next byte */
++	if (i2c_imx_transfer_complete() < 0)
++		return -I2C_IMX_ERR_TXCOMPLETE;
++
++	/* read data */
++	for ( j = 0; j < msgs->len; j ++ )
++	{
++		if (j == (msgs->len - 1))
++			i2c_imx_reg->i2cr |= 0x08;
++		
++		msgs->buf[j] = (u8)i2c_imx_reg->i2dr;	              
++		if (i2c_imx_transfer_complete() < 0)
++			return -I2C_IMX_ERR_TXCOMPLETE;
++	}
++	
++	(*count)++;
++
++	return 0;
++}
++
++#ifdef I2C_IMX_SLAVESUPPORT
++void i2c_imx_add_slave(struct i2c_slave slave) {
++	i2c_imx_slave[slave.address-1] = slave;
++	slave.last_ct = jiffies;
++
++	I2C_DBG("I2C slave added: Chip-Desc.: %s (slave address: 0x%x)\n",
++		 slave.name, slave.address);
++
++	return;
++}
++
++void i2c_imx_del_slave(struct i2c_slave slave) {
++	I2C_DBG("Remove I2C slave: Chip-Desc.: %s (slave address: 0x%x)\n",
++		 slave.name, slave.address);
++	
++	return;
++}
++#endif
++
++/*-----------------------------------------------------------------------------
++ * static irqreturn_t i2c_imx_isr (s16 irq, void * dev_id, struct pt_regs *
++ * reg)
++ * This function deals with the interrupt for the I2C module.
++ *
++ * Parameters:	irq		the interrupt number
++ *              dev_id		device id
++ * 	        reg		processor register	
++ * Return: 	IRQ_HANDLED	the own irq was handled
++ *---------------------------------------------------------------------------*/
++static irqreturn_t i2c_imx_isr (s16 irq, void *dev_id, struct pt_regs * reg)
++{
++	/* safe status register */
++	i2c_imx_i2sr = i2c_imx_reg->i2sr;
++
++	/* if data transfer is complete set ok */
++	if (i2c_imx_i2sr & (u32)0x80)  /* [I2SR:ICF] TX complete */
++		i2c_imx_irq_ok = 1;
++
++	/* clear irq */
++	i2c_imx_reg->i2sr &= ~(u32)0x02; /* clear [I2SR:IIF] Interrupt */
++
++	return IRQ_HANDLED;
++}
++
++/*-----------------------------------------------------------------------------
++ * int i2c_imx_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[ ],
++ * SINT16 num)
++ * This function is responsible for the transfer of the data through the
++ * I2C bus
++ * 
++ * Parameter:   i2c_adap	associated with the related hardware
++ *              msgs[ ] 	the body of the message to be send out
++ *              num		number of message
++ * Return:      Success		Number of message has been transferred
++ *	        Failure		-err (error code)
++ *---------------------------------------------------------------------------*/
++static int i2c_imx_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[],
++			int num)
++{
++	int i;
++	int count = 0;
++	int err = 0;
++
++	for(i = 0; i < num; i++)
++		I2C_DBG("i2c_adap.%d %s: msg: %d, len: %d, dir: %s, address: "
++			"0x%x\n", i2c_imx_adapter.nr, __FUNCTION__, i,
++			msgs[i].len, (msgs[i].flags & I2C_M_RD)?"rd":"wr",
++			msgs[i].addr);
++
++#ifdef I2C_IMX_SLAVESUPPORT
++	struct i2c_slave *slave = &i2c_imx_slave[msgs[0].addr-1];
++
++	if(slave->address == msgs[0].addr) {
++		unsigned long last_ct = slave->last_ct;
++		int slp_time = slave->slp_time;
++		int slp = slp_time * HZ / 1000 - (jiffies - last_ct);
++		DECLARE_WAIT_QUEUE_HEAD(wait);
++		
++		// scheduler: sleep while slave not ready
++		if ((slp > 1) && (msgs[0].flags & I2C_M_RD)) {
++			up(&i2c_adap->bus_lock);
++			sleep_on_timeout(&wait, slp);
++			down(&i2c_adap->bus_lock);
++		}
++	}
++#endif
++	
++	/* enable the i2c-bus, disable the I2C transmit ACK */
++	if ((err = i2c_imx_bus_busy()) < 0)
++		goto EXIT_FKT;
++	i2c_imx_reg->i2cr |= (u32)0x80;
++	i2c_imx_reg->i2cr |= (u32)0x08;
++
++	for ( i = 0; i < num; i ++)
++	{
++		/* repeat start else start the bus-transfer */
++		if (i)
++			i2c_imx_reg->i2cr |= (u32)0x04;
++		else
++			if ((err = i2c_imx_start()) < 0) 
++				goto EXIT_FKT;
++
++		/* enable interrupt, enable master transmit */
++		i2c_imx_reg->i2cr |= (u32)0x40;
++		i2c_imx_reg->i2cr |= (u32)0x10;
++
++		/* write/read data */
++		if (!(msgs[i].flags & I2C_M_RD)) {
++			if ((err = i2c_imx_write(i, &count, &msgs[i])) < 0)
++				goto EXIT_FKT;
++		} else {
++			if ((err = i2c_imx_read(i, &count, &msgs[i])) < 0)
++				goto EXIT_FKT;
++		}
++	}
++	
++EXIT_FKT:
++	/* disable i2c bus */
++	i2c_imx_reg->i2cr &= ~((u32)0x20); /* bus stop */
++	i2c_imx_bus_release();
++	i2c_imx_reg->i2cr &= ~((u32)0x80); /* disable I2C */
++
++#ifdef I2C_IMX_SLAVESUPPORT
++	/* define ms to sleep after read from chip */
++	if (!(msgs[0].flags & I2C_M_RD) && (slave->address == msgs[0].addr))
++		slave->slp_time = slave->get_slp_time(&msgs[0]);
++	
++	slave->last_ct = jiffies;
++#endif
++	if(err == 0)
++		return count;
++ 
++	switch (err) {
++	case -I2C_IMX_ERR_RXACK:
++		i2c_imx_errcnt_rxack++;
++		break;
++	case -I2C_IMX_ERR_TXCOMPLETE:
++		i2c_imx_errcnt_txcomplete++;
++		break;
++	case -I2C_IMX_ERR_BUSY:
++		i2c_imx_errcnt_busy++;
++		break;
++	case -I2C_IMX_ERR_GRAB:
++		i2c_imx_errcnt_grab++;
++		break;
++	}
++
++	I2C_ERR("I2C transfer error\n");
++	I2C_ERRCNT
++
++	return err;
++}
++
++/*-----------------------------------------------------------------------------
++ * int i2c_smbus_imx_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[ ],
++ * SINT16 num)
++ * This function is responsible for the transfer of the data through the
++ * I2C-bus
++ * 
++ * Parameter : i2c_adap	the structure associated with the related hardware
++ *             msgs[ ]	the body of the message to be send out
++ *             num	number of message
++ * Return :    Success  Number of message has been transferred
++ *	       Failure  -1	
++ *---------------------------------------------------------------------------*/
++static int i2c_imx_smbus(struct i2c_adapter * adapter, u16 addr,
++			 unsigned short flags, char read_write, u8 command,
++			 int size,  union i2c_smbus_data * data)
++{
++	char msgbuf0[34];
++	char msgbuf1[34];
++	int num = read_write == I2C_SMBUS_READ?2:1;
++	struct i2c_msg msg[2] = {
++		{ addr, flags, 1, msgbuf0 }, 
++		{ addr, flags | I2C_M_RD, 10, msgbuf1 }
++	};
++	int i;
++	msgbuf0[0] = command;
++
++	/* select the smbus-command and create the message */
++	switch(size) {
++	case I2C_SMBUS_QUICK:
++		msg[0].len = 0;
++		msg[0].flags=flags|(read_write==I2C_SMBUS_READ)?I2C_M_RD:0;
++		num = 1;
++		break;
++	case I2C_SMBUS_BYTE:
++		if (read_write == I2C_SMBUS_READ) {
++			msg[0].flags = I2C_M_RD | flags;
++			num = 1;
++		}
++		break;
++	case I2C_SMBUS_BYTE_DATA:
++		if (read_write == I2C_SMBUS_READ)
++			msg[1].len = 1;
++		else {
++			msg[0].len = 2;
++			msgbuf0[1] = data->byte;
++		}
++		break;
++	case I2C_SMBUS_WORD_DATA:
++		if (read_write == I2C_SMBUS_READ)
++			msg[1].len = 2;
++		else {
++			msg[0].len=3;
++			msgbuf0[1] = data->word & 0xff;
++			msgbuf0[2] = (data->word >> 8) & 0xff;
++		}
++		break;
++	case I2C_SMBUS_PROC_CALL:
++		num = 2;
++		msg[0].len = 3;
++		msg[1].len = 2;
++		msgbuf0[1] = data->word & 0xff;
++		msgbuf0[2] = (data->word >> 8) & 0xff;
++		break;
++	case I2C_SMBUS_BLOCK_DATA:
++		if (read_write == I2C_SMBUS_READ) {
++			return -I2C_IMX_ERR_SMBUS_XFER;
++		} else {
++			msg[0].len = data->block[0] + 2;
++			if (msg[0].len > 34) {
++				return -I2C_IMX_ERR_SMBUS_XFER;
++			}
++			for (i = 1; i <= msg[0].len; i++)
++				msgbuf0[i] = data->block[i-1];
++		}
++		break;
++	default:
++		return -I2C_IMX_ERR_SMBUS_XFER;
++	}
++
++	/* call the bus access routine */
++	if (i2c_imx_xfer(adapter, msg, num) < 0)
++		return -I2C_IMX_ERR_SMBUS_XFER;
++
++	/* copy the readed bytes to the data-field */
++	if (read_write == I2C_SMBUS_READ)
++		switch(size) {
++		case I2C_SMBUS_BYTE:
++			data->byte = msgbuf0[0];
++			break;
++		case I2C_SMBUS_BYTE_DATA:
++			data->byte = msgbuf1[0];
++			break;
++		case I2C_SMBUS_WORD_DATA: 
++		case I2C_SMBUS_PROC_CALL:
++			data->word = msgbuf1[0] | (msgbuf1[1] << 8);
++			break;
++		}
++
++	return 0;
++}
++
++/*-----------------------------------------------------------------------------
++ * int i2c_imx_ioctl(struct i2c_adapter * adapter, unsigned int cmd,
++ * unsigned long arg)
++ * This function control the I2C module itself
++ *
++ * Parameters:	Adapter		the adapter associated to the I2C module
++ * 	        Cmd		IO control command
++ * 	        Arg		argument associated with the command
++ * Return : 	Success		0
++ *---------------------------------------------------------------------------*/
++static int i2c_imx_ioctl(struct i2c_adapter * adapter, unsigned int cmd,
++			 unsigned long arg)
++{
++	switch( cmd ) {
++	case I2C_IMX_IO_SET_CLKDIV:
++		I2C_DBG("i2c_adap.%d %s: Set I2C Clock Rate Divider to #0x%02x"
++			"\n", i2c_imx_adapter.nr, __FUNCTION__,
++			(u32)(arg & 0x003f));
++		i2c_imx_reg->ifdr = (u32)(arg & 0x003f);
++		break;
++	case I2C_IMX_IO_GET_CLKDIV:
++		I2C_DBG("i2c_adap.%d %s: Get I2C Clock Rate Divider\n",
++			i2c_imx_adapter.nr, __FUNCTION__);
++		arg = i2c_imx_reg->ifdr & 0x003f;
++		I2C_DBG("i2c_adap.%d %s: I2C Clock Rate Divider is #0x%02x"
++			"\n", i2c_imx_adapter.nr, __FUNCTION__,
++			(unsigned int)arg);
++ 		break;
++	}
++
++	return 0;
++}
++
++/*-----------------------------------------------------------------------------
++ * u32 i2c_imx_func(struct i2c_adapter *i2c_adap)
++ * This function returns the functionalities the adapter supports
++ * 
++ * Parameter:   i2c_adap	associated with the related hardware
++ * Return:      u32 		pattern of supported functionalities (i2c.h)
++ *
++ *---------------------------------------------------------------------------*/
++static u32 i2c_imx_func(struct i2c_adapter *adap)
++{
++	return  I2C_FUNC_I2C |
++		I2C_FUNC_SMBUS_QUICK |
++                I2C_FUNC_SMBUS_BYTE |
++                I2C_FUNC_SMBUS_BYTE_DATA |
++                I2C_FUNC_SMBUS_WORD_DATA |
++                I2C_FUNC_SMBUS_PROC_CALL |
++                I2C_FUNC_SMBUS_WRITE_BLOCK_DATA;
++}
++
++/*-----------------------------------------------------------------------------
++ * int __init i2c_imx_init(void)
++ * initializes the I2C module in the DBIMX, and registers itself to the 
++ * Linux I2C system
++ *
++ * Parameters: None
++ * Return:      0: indicates SUCCESS
++ *             -1: indicates FAILURE
++ *---------------------------------------------------------------------------*/
++static int __init i2c_imx_init(void)
++{
++	i2c_imx_dbg = dbg;
++	i2c_imx_clkdiv = clkdiv;
++
++	/* Pin Configuration for I2C:
++	 * 2 Pins are available for the I2C-Module. These Pins are multiplexed
++	 * with other functions on the device and must be configured for SPI-
++	 * Operation.
++	 * The Data Direction Bits in the GPIO Data Direction Register Port A
++	 * must be set for Output.
++	 * The Function Bits in the GPIO In Use Register Port A must be set
++	 * for Multiplexed.
++	 * Data Direction (DDIR): Output
++	 * GPIO-Function (GIUS):  SPI-Operation
++	 * GPR, PUEN:             for Interrupt operations */
++  	imx_gpio_mode(PA15_PF_I2C_SDA);
++  	imx_gpio_mode(PA16_PF_I2C_SCL);
++
++	/* install the I2C_IMX ISR to the Linux Kernel */
++	if (request_irq(I2C_INT, (void *)i2c_imx_isr, IRQF_DISABLED,
++		       "I2C_IMX", "i2c_bus") < 0)
++		return -I2C_IMX_ERR_INIT;
++  
++	/* add the I2C adapter/algorithm driver to the linux kernel */
++	if (i2c_add_adapter(&i2c_imx_adapter))
++		return -I2C_IMX_ERR_INIT;
++
++	I2C_DBG("%s, ver.: %s\n", I2C_IMX_DRIVER_DESC, I2C_IMX_DRIVER_VERSION);
++
++	I2C_DBG("New I2C adapter %d found\n", i2c_imx_adapter.nr);
++
++	/* Set clock Freq. */
++	i2c_imx_reg->ifdr = (u32)i2c_imx_clkdiv;
++	I2C_DBG("i2c_adap.%d I2C Clock Rate Divider set to #0x%x\n",
++		 i2c_imx_adapter.nr, i2c_imx_clkdiv);
++
++#ifdef I2C_IMX_SLAVESUPPORT
++	/* define ms to sleep after read from chip */
++	I2C_DBG("i2c_adap.%d I2C slave support added\n",
++		 i2c_imx_adapter.nr);
++#endif
++
++	return 0;
++}
++
++/*-----------------------------------------------------------------------------
++ * void __exit i2c_imx_cleanup(void)
++ * This routine is called when the driver is unloaded
++ *
++ * Parameters: None
++ * Return:     None
++ *---------------------------------------------------------------------------*/
++static void __exit i2c_imx_cleanup(void)
++{
++	I2C_ERRCNT
++
++	I2C_DBG("I2C adapter removed\n");
++
++	/* unset IEN[I2CR:7] (I2C Disable) */
++	i2c_imx_reg->i2cr = (u32)0x00;
++  
++	/* Free IRQ */
++	free_irq (I2C_INT, "i2c_bus");
++  
++	/* Delete Adapter from Kernel */  
++	i2c_del_adapter(&i2c_imx_adapter);	
++}
++
++module_init(i2c_imx_init);
++module_exit(i2c_imx_cleanup);
++
++MODULE_AUTHOR(I2C_IMX_DRIVER_AUTHOR);
++MODULE_DESCRIPTION(I2C_IMX_DRIVER_DESC);
++MODULE_LICENSE("GPL");
++
++module_param(dbg, bool, 0);
++MODULE_PARM_DESC(dbg, "Debug enabled or not");
++
++module_param(clkdiv, int, 0);
++MODULE_PARM_DESC(clkdiv, "I2C Clock Rate Divider");
++
++#ifdef I2C_IMX_SLAVESUPPORT
++EXPORT_SYMBOL(i2c_imx_add_slave);
++EXPORT_SYMBOL(i2c_imx_del_slave);
++#endif
+--- ref/linux-2.6.23/drivers/i2c/busses/i2c-imx.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.23/drivers/i2c/busses/i2c-imx.h	2007-01-14 14:08:26.000000000 +0100
+@@ -0,0 +1,175 @@
++/*
++ *	Copyright (C) 2002 Motorola GSG-China
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version 2
++ *	of the License, or (at your option) any later version.
++ *
++ *	This program is distributed in the hope that it will be useful,
++ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *	GNU General Public License for more details.
++ *
++ *	You should have received a copy of the GNU General Public License
++ *	along with this program; if not, write to the Free Software
++ *	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
++ *      USA.
++ *
++ * File Name: i2c-imx.h
++ *
++ * Author:  Torsten Koschorrek, synertronixx GmbH
++ *
++ * Desc.:   Implementation of I2C Adapter/Algorithm Driver
++ *
++ *          Derived from Motorola GSG China I2C example driver
++ *
++ *          Copyright (C) 2002 Motorola GSG-China
++ *          Copyright (C) 2005 Torsten Koschorrek <koschorrek at synertronixx.de>
++ *          Portions:
++ *          Copyright (C) 2005 Matthias Blaschke <blaschke at synertronixx.de>
++ *
++ * History: 2002/2/07 use msgs[]
++ *                    Motorola GSG-China
++ *          2004/3/03 port to linux kernel v2.6.x for i.MX
++ *                    adding ioctl (change bus freq)
++ *                    adding cpu- and bus-usage optimization (..slp)
++ *                    T. Koschorrek <koschorrek at synertronixx.de>
++ *          2005/2/28 changes in timings
++ *                    M. Blaschke <blaschke at synertronixx.de>
++ *          2005/6/01 added module parameters, cleaning up, cpu- and bus-usage
++ *                    modularized (..slave)
++ *                    T. Koschorrek <koschorrek at synertronixx.de>
++ *          2007/1/14 fix i2c_imx_read/write to return number of messages
++ *                      processed.
++ *                    Change form for compatibility with kernel > 2.6.18.
++ *                    Change default CLKDIV to 0x0F (400kHz i2c / 96MHz HCLK). 
++ *                    Jorasse <jorasse@users.sourceforge.net>
++ */
++
++#include <linux/i2c.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/spinlock.h>
++
++#include <mach/irqs.h>
++#include <mach/hardware.h>
++
++#define I2C_IMX_DRIVER_VERSION "14 January 2007"
++#define I2C_IMX_DRIVER_AUTHOR  "T. Koschorrek, synertronixx GmbH"
++#define I2C_IMX_DRIVER_DESC    "I2C Adapter/Algorithm driver"
++
++#define I2C_IMX_DEFAULT_DEBUG   0
++#define I2C_IMX_DEFAULT_CLKDIV  16 // 0x0f
++
++#define I2C_IMX_TIME_GRAB       2000
++#define I2C_IMX_TIME_BUSY       2000
++#define I2C_IMX_TIME_RELEASE    2000
++#define I2C_IMX_TIME_TXCOMPLETE 2000
++#define I2C_IMX_MAX_GRAB        3
++
++#define I2C_IMX_IO_SET_CLKDIV   0xaa
++#define I2C_IMX_IO_GET_CLKDIV   0xab
++
++#define I2C_IMX_ERR_INIT        0x01
++#define I2C_IMX_ERR_SMBUS_XFER  0x02
++#define I2C_IMX_ERR_RXACK       0x03
++#define I2C_IMX_ERR_TXCOMPLETE  0x04
++#define I2C_IMX_ERR_BUSY        0x05
++#define I2C_IMX_ERR_GRAB        0x06
++
++
++
++#ifdef I2C_IMX_SLAVESUPPORT
++#include "i2c-imx-slave.h"
++#endif
++
++
++
++/* function declarations */
++static int i2c_imx_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[ ],
++			int num);
++static int i2c_imx_smbus(struct i2c_adapter * adapter, u16 addr,
++			 unsigned short flags, char read_write, u8 command,
++			 int size, union i2c_smbus_data * data);
++static int i2c_imx_ioctl(struct i2c_adapter * adapter, unsigned int cmd,
++			 unsigned long arg);
++static u32 i2c_imx_func(struct i2c_adapter *adap);
++
++/* structs */
++static struct i2c_algorithm i2c_imx_algorithm = {
++	.master_xfer	= 	i2c_imx_xfer,
++	.smbus_xfer	=	i2c_imx_smbus,
++	.functionality	= 	i2c_imx_func
++};
++
++static struct i2c_adapter i2c_imx_adapter = {
++	.owner		= 	THIS_MODULE,
++	.name 		= 	"IMX I2C adapter",
++	.class 		= 	I2C_CLASS_HWMON,
++	.algo 		= 	&i2c_imx_algorithm
++};
++
++struct i2c_regs {
++  	/* address reg */     volatile u32 iadr;
++	/* freq div. reg */   volatile u32 ifdr;
++	/* control reg */     volatile u32 i2cr;
++	/* status reg */      volatile u32 i2sr;
++	/* data io reg */     volatile u32 i2dr;
++};
++
++
++
++
++/* global variables */
++static struct i2c_regs *i2c_imx_reg = (struct i2c_regs *)IMX_I2C_BASE;
++static spinlock_t i2c_imx_irqlock = SPIN_LOCK_UNLOCKED;
++static int i2c_imx_irq_ok;
++static int i2c_imx_i2sr;
++
++#ifdef I2C_IMX_SLAVESUPPORT
++static struct i2c_slave i2c_imx_slave[128];
++#endif
++
++int i2c_imx_errcnt_rxack = 0;
++int i2c_imx_errcnt_txcomplete = 0;
++int i2c_imx_errcnt_busy = 0;
++int i2c_imx_errcnt_grab = 0;
++
++int dbg = I2C_IMX_DEFAULT_DEBUG;
++int i2c_imx_dbg = I2C_IMX_DEFAULT_DEBUG;
++int clkdiv = I2C_IMX_DEFAULT_CLKDIV;
++int i2c_imx_clkdiv = I2C_IMX_DEFAULT_CLKDIV;
++
++
++
++
++/* debug messages */
++#ifdef DEBUG
++#define I2C_DBG(stuff ...) {                                        \
++	if (i2c_imx_dbg) {                                          \
++		printk(KERN_NOTICE stuff);                          \
++	}                                                           \
++	}
++#define I2C_ERR(stuff ...) {                                        \
++	if (i2c_imx_dbg) {                                          \
++		printk(KERN_ERR "i2c_adap.%d ", i2c_imx_adapter.nr);\
++		printk(stuff);                                      \
++	}                                                           \
++	}
++#else
++#define I2C_DBG(stuff ...) while(0){}
++#define I2C_ERR(stuff ...) while(0){}
++#endif
++
++#ifdef DEBUG
++#define I2C_ERRCNT {                                                       \
++	I2C_ERR("  RX ACK     : %d Error(s)\n", i2c_imx_errcnt_rxack);     \
++	I2C_ERR("  TX COMPLETE: %d Error(s)\n", i2c_imx_errcnt_txcomplete);\
++	I2C_ERR("  BUS BUSY   : %d Error(s)\n", i2c_imx_errcnt_busy);      \
++	I2C_ERR("  BUS GRAB   : %d Error(s)\n", i2c_imx_errcnt_grab);      \
++}
++#else
++#define I2C_ERRCNT
++#endif

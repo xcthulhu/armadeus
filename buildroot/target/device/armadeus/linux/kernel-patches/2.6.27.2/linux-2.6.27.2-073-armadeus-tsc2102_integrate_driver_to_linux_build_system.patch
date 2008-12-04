@@ -1,0 +1,27 @@
+--- linux-org/drivers/spi/Kconfig	2007-09-22 02:39:35.000000000 +0200
++++ linux/drivers/spi/Kconfig		2007-09-16 11:08:17.000000000 +0200
+@@ -243,6 +243,14 @@ comment "SPI Protocol Masters"
+ 	  sysfs interface, with each line presented as a kind of GPIO
+ 	  exposing both switch control and diagnostic feedback.
+ 
++config SPI_TSC2102
++    depends on SPI_MASTER
++    depends on HWMON = n || HWMON
++    tristate "TSC2102 codec support"
++    ---help---
++      Say Y here if you want support for the TSC2102 chip.  It
++      will be needed for the touchscreen driver on some boards.
++
+ #
+ # Add new SPI protocol masters in alphabetical order above this line
+ #
+--- linux-2.6.23.original/drivers/spi/Makefile	2007-09-22 02:39:35.000000000 +0200
++++ linux-2.6.23.mod/drivers/spi/Makefile	2007-09-16 11:08:16.000000000 +0200
+@@ -35,6 +35,7 @@ 
+ obj-$(CONFIG_SPI_AT25)		+= at25.o
+ obj-$(CONFIG_SPI_SPIDEV)	+= spidev.o
+ obj-$(CONFIG_SPI_TLE62X0)	+= tle62x0.o
++obj-$(CONFIG_SPI_TSC2102)	+= tsc2102.o
+ # 	... add above this line ...
+ 
+ # SPI slave controller drivers (upstream link)

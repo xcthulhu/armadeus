@@ -1,0 +1,151 @@
+--- buildroot/target/Config.in.arch.ref	2008-11-03 09:15:12.000000000 +0100
++++ buildroot/target/Config.in.arch	2008-11-23 23:08:56.000000000 +0100
+@@ -59,20 +59,30 @@ choice
+ 
+ config BR2_generic_arm
+ 	bool "generic_arm"
+-config BR2_arm7tdmi
+-	bool "arm7tdmi"
++config BR2_arm600
++	bool "arm600"
+ config BR2_arm610
+ 	bool "arm610"
++config BR2_arm620
++	bool "arm620"
+ config BR2_arm710
+ 	bool "arm710"
++config BR2_arm7tdmi
++	bool "arm7tdmi"
++config BR2_arm710t
++	bool "arm710t"
+ config BR2_arm720t
+ 	bool "arm720t"
++config BR2_arm740t
++	bool "arm740t"
+ config BR2_arm920t
+ 	bool "arm920t"
+ config BR2_arm922t
+ 	bool "arm922t"
+ config BR2_arm926t
+ 	bool "arm926t"
++config BR2_arm926ej_s
++	bool "arm926ej-s"
+ config BR2_arm10t
+ 	bool "arm10t"
+ config BR2_arm1136jf_s
+@@ -94,13 +104,18 @@ endchoice
+ config BR2_ARM_TYPE
+ 	string
+ 	default GENERIC_ARM	if BR2_generic_arm
++	default ARM600		if BR2_arm600
+ 	default ARM610		if BR2_arm610
++	default ARM620		if BR2_arm620
+ 	default ARM710		if BR2_arm710
+ 	default ARM7TDMI	if BR2_arm7tdmi
++	default ARM710T		if BR2_arm710t
+ 	default ARM720T		if BR2_arm720t
++	default ARM720T		if BR2_arm740t
+ 	default ARM920T		if BR2_arm920t
+ 	default ARM922T		if BR2_arm922t
+ 	default ARM926T		if BR2_arm926t
++	default ARM926EJ_S	if BR2_arm926ej_s
+ 	default ARM10T		if BR2_arm10t
+ 	default ARM1136JF_S	if BR2_arm1136jf_s
+ 	default ARM1176JZ_S	if BR2_arm1176jz_s
+@@ -569,13 +584,17 @@ config BR2_GCC_TARGET_TUNE
+ 	default arm600		if BR2_arm600
+ 	default arm610		if BR2_arm610
+ 	default arm620		if BR2_arm620
++	default arm710		if BR2_arm710
+ 	default arm7tdmi	if BR2_arm7tdmi
++	default arm7tdmi	if BR2_arm710t
+ 	default arm7tdmi	if BR2_arm720t
+ 	default arm7tdmi	if BR2_arm740t
+ 	default arm920		if BR2_arm920
+-	default arm920t		if BR2_arm920t
+-	default arm922t		if BR2_arm922t
++	default arm920t	if BR2_arm920t
++	default arm922t	if BR2_arm922t
+ 	default arm9tdmi	if BR2_arm926t
++	default arm926ej-s	if BR2_arm926ej_s
++	default arm10tdmi	if BR2_arm10t
+ 	default arm1136j-s	if BR2_arm1136j_s
+ 	default arm1136jf-s	if BR2_arm1136jf_s
+ 	default arm1176jz-s	if BR2_arm1176jz_s
+@@ -686,6 +705,26 @@ config BR2_GCC_TARGET_ARCH
+ 	default winchip2	if BR2_x86_winchip2
+ 	default c3		if BR2_x86_c3
+ 	default geode		if BR2_x86_geode
++	default armv3		if BR2_arm600
++	default armv3		if BR2_arm610
++	default armv3		if BR2_arm620
++	default armv3		if BR2_arm710
++	default armv4t		if BR2_arm7tdmi
++	default armv4t		if BR2_arm720t
++	default armv4t		if BR2_arm740t
++	default armv4		if BR2_arm920
++	default armv4t		if BR2_arm920t 
++	default armv4t		if BR2_arm922t
++	default armv5te	if BR2_arm926t
++	default armv5te	if BR2_arm926ej_s
++	default armv5t		if BR2_arm10t
++	default armv6j		if BR2_arm1136j_s
++	default armv6j		if BR2_arm1136jf_s
++	default armv6z		if BR2_arm1176jz_s
++	default armv6z		if BR2_arm1176jzf_s
++	default armv4		if BR2_sa110
++	default armv4		if BR2_sa1100
++	default armv5te	if BR2_xscale
+ 	default iwmmxt		if BR2_iwmmxt
+ 	default v0		if BR2_cris_unknown
+ 	default v10		if BR2_cris_generic
+--- buildroot/project/Makefile.in.ref	2008-11-21 09:15:04.000000000 +0100
++++ buildroot/project/Makefile.in	2008-11-23 23:10:32.000000000 +0100
+@@ -11,6 +11,8 @@ QUIET:=$(if $(findstring s,$(MAKEFLAGS))
+ # Strip off the annoying quoting
+ ARCH:=$(strip $(subst ",, $(BR2_ARCH)))
+ #"))
++TARGET_ARCH:=$(strip $(subst ",, $(BR2_GCC_TARGET_ARCH)))
++#"))
+ WGET:=$(strip $(subst ",, $(BR2_WGET))) $(SPIDER) $(QUIET)
+ #"))
+ SVN_CO:=$(strip $(subst ",, $(BR2_SVN_CO))) $(QUIET)
+@@ -60,7 +62,12 @@ DL_DIR:=$(BASE_DIR)/dl
+ endif
+ 
+ # All non-configurable packages should be built in BUILD_DIR
++
++ifeq ($(TARGET_ARCH),)
+ BUILD_DIR:=$(BASE_DIR)/$(TOPDIR_PREFIX)build_$(ARCH)$(ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)
++else
++BUILD_DIR:=$(BASE_DIR)/$(TOPDIR_PREFIX)build_$(TARGET_ARCH)$(ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)
++endif
+ 
+ GNU_TARGET_SUFFIX:=-$(strip $(subst ",, $(BR2_GNU_TARGET_SUFFIX)))
+ #"))
+@@ -70,7 +77,11 @@ STAGING_DIR:=$(strip $(subst ",, $(BR2_S
+ 
+ # All configurable packages (like Busybox,Linux etc) should be built
+ # in PROJECT_BUILD_DIR
++ifeq ($(TARGET_ARCH),)
+ PROJECT_BUILD_DIR:=$(BASE_DIR)/$(TOPDIR_PREFIX)project_build_$(ARCH)$(ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)/$(PROJECT)
++else
++PROJECT_BUILD_DIR:=$(BASE_DIR)/$(TOPDIR_PREFIX)project_build_$(TARGET_ARCH)$(ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)/$(PROJECT)
++endif
+ BINARIES_DIR:=$(BASE_DIR)/binaries/$(PROJECT)
+ TARGET_DIR:=$(PROJECT_BUILD_DIR)/root
+ 
+--- buildroot/package/Makefile.in.ref	2008-11-03 09:15:31.000000000 +0100
++++ buildroot/package/Makefile.in	2008-11-24 21:02:43.000000000 +0100
+@@ -110,7 +110,11 @@ COND_ARCH_FPU_SUFFIX:=
+ endif
+ 
+ ifeq ($(BR2_TOOLCHAIN_SOURCE),y)
++ifeq ($(CC_TARGET_ARCH_),)
+ TOOL_BUILD_DIR=$(BASE_DIR)/$(TOPDIR_PREFIX)toolchain_build_$(ARCH)$(COND_ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)
++else
++TOOL_BUILD_DIR=$(BASE_DIR)/$(TOPDIR_PREFIX)toolchain_build_$(CC_TARGET_ARCH_)$(COND_ARCH_FPU_SUFFIX)$(TOPDIR_SUFFIX)
++endif
+ 
+ # Quotes are needed for spaces et al in path components.
+ TARGET_PATH="$(TOOL_BUILD_DIR)/bin:$(STAGING_DIR)/bin:$(STAGING_DIR)/usr/bin:$(PATH)"

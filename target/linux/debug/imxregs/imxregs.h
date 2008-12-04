@@ -1,24 +1,27 @@
 /*
- * imxregs.h - Tool to display and modify iMX registers from Linux's userspace
+ * imxregs.h - i.MXL/1 registers definition
  *
- * Author/Maintainer: J. Boibessot
- * Derivated from pxaregs (c) Copyright 2002 by M&N Logistik-L�ungen Online GmbH
- * 
- * This tool is placed under the GPL.
+ * Copyright (C) 2008 armadeus systems
+ * Derivated from pxaregs (c) Copyright 2002 by M&N Logistik-Loesungen Online GmbH
+ * Author: Julien Boibessot
  *
-*/
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
 
-typedef unsigned int u32;
-
-struct reg_info {
-   char *name;
-   u32 addr;
-   int shift;
-   u32 mask;
-   char type;
-   char *desc;
-};
-
+#include "definitions.h"
 
 static struct reg_info regs[] = 
 {
@@ -595,7 +598,3 @@ static struct reg_info regs[] =
 { "CSISTATR",           0x0022400C, 0, 0xffffffff, 'x', "CSI Statistic FIFO Register 1" },
 { "CSIRXR",             0x00224010, 0, 0xffffffff, 'x', "CSI RxFIFO Register 1" },
 };
-
-// Size of mmapping:
-#define MAP_SIZE 4096
-#define MAP_MASK ( MAP_SIZE - 1 )

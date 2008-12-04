@@ -33,6 +33,11 @@ if [ "$PS1" ]; then
     export EDITOR='/bin/vi'
     export INPUTRC=/etc/inputrc
     export DMALLOC_OPTIONS=debug=0x34f47d83,inter=100,log=logfile
+    # For Tslib:
+    export TSLIB_TSDEVICE=/dev/input/event0
+    export TSLIB_TSEVENTTYPE=INPUT
+    export TSLIB_CONFFILE=/etc/ts.conf
+    export TSLIB_CALIBFILE=/etc/pointercal
 
     ### Some aliases
     alias ps2='ps facux '

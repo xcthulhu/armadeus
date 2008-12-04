@@ -1,0 +1,12 @@
+--- linux-org/drivers/usb/gadget/ether.c	2006-09-20 05:42:06.000000000 +0200
++++ linux-imx/drivers/usb/gadget/ether.c	2006-10-01 14:30:03.000000000 +0200
+@@ -2242,6 +2242,9 @@ eth_bind (struct usb_gadget *gadget)
+ 		 */
+ 		cdc = 0;
+ 	}
++	else if (gadget_is_imx(gadget)) {
++		cdc = 0; //not support altsetting in version 0.5, mikelee
++    }
+ 
+ 	gcnum = usb_gadget_controller_number (gadget);
+ 	if (gcnum >= 0)

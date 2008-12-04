@@ -1,20 +1,34 @@
-# Override the default uClibc configuration
 ifeq ($(strip $(BR2_TARGET_ARMADEUS)),y)
 
 ARMADEUS_PATH:=target/device/armadeus
-ARMADEUS_TARGET_NAME:=$(strip $(subst ",, $(BR2_TARGET_ARMADEUS_NAME)))
-ARMADEUS_CONFIG_PATH:=$(ARMADEUS_PATH)/$(ARMADEUS_TARGET_NAME)
+
+BOARD_NAME:=$(strip $(subst ",, $(BR2_BOARD_NAME)))
+#"))
+BOARD_PATH:=$(strip $(subst ",, $(BR2_BOARD_PATH)))
+#"))
+
+LINUX26_VERSION:=$(strip $(subst ",, $(BR2_LINUX26_VERSION)))
+#"))
+
+LINUX26_PATCH_DIR:=$(strip $(subst ",, "$(ARMADEUS_PATH)/linux/kernel-patches/$(BR2_LINUX26_VERSION)"))
+#"))
+
+# These are set by "new" Config.in
+#LINUX26_KCONFIG:=$(BOARD_PATH)/$(BOARD_NAME)-linux-$(BR2_LINUX26_VERSION).config
+
+# This should be part of target/linux/Makefile.in
+LINUX26_BUILD_DIR:=$(PROJECT_BUILD_DIR)
+
+LINUX26_KERNEL:=$(BINARIES_DIR)/$(BOARD_NAME)-linux.bin
+
+LINUX26_KERNEL_NAME:=$(BOARD_NAME)-linux.bin
 
 include target/device/armadeus/u-boot/u-boot.mk
-include target/device/armadeus/linux/linux.mk
 include target/device/armadeus/rootfs/Makefile.in
-include target/device/armadeus/$(ARMADEUS_TARGET_NAME)/Makefile.in
-
-LINUX26_KCONFIG:=$(ARMADEUS_CONFIG_PATH)/linux-$(BR2_PACKAGE_LINUX_VERSION).config
-LINUX26_VERSION:=$(strip $(subst ",, $(BR2_PACKAGE_LINUX_VERSION)))
-DOWNLOAD_LINUX26_VERSION:=$(strip $(subst ",, $(BR2_PACKAGE_LINUX_VERSION)))
+include target/device/armadeus/$(BOARD_NAME)/Makefile.in
 
 BR2_PACKAGE_BUSYBOX_CONFIG:=$(ARMADEUS_PATH)/busybox.config
-UCLIBC_CONFIG_FILE:=$(ARMADEUS_PATH)/uClibc.config.$(ARCH)
+UCLIBC_CONFIG_FILE:=$(BOARD_PATH)/uClibc.config.$(ARCH)
+
 endif
 

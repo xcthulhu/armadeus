@@ -1,0 +1,33 @@
+diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+--- a/drivers/input/touchscreen/Kconfig	2006-07-06 02:48:09.000000000 +0000
++++ b/drivers/input/touchscreen/Kconfig	2006-08-17 23:35:38.000000000 +0000
+@@ -162,6 +162,20 @@ config TOUCHSCREEN_TOUCHWIN
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called touchwin.
+ 
++config TOUCHSCREEN_TSC2102
++	tristate "TSC 2102 based touchscreens"
++	depends on SPI_MASTER
++	select SPI_TSC2102
++	help
++	  Say Y here if you have a touchscreen interface using the
++	  TI TSC 2102 controller, and your board-specific initialization
++	  code includes that in its table of SPI devices.
++
++	  If unsure, say N (but it's safe to say "Y").
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called tsc2102_ts.
++
+ config TOUCHSCREEN_UCB1400
+ 	tristate "Philips UCB1400 touchscreen"
+ 	select AC97_BUS
+diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+--- a/drivers/input/touchscreen/Makefile	2006-03-22 17:44:37.000000000 +0000
++++ b/drivers/input/touchscreen/Makefile	2006-08-17 23:35:38.000000000 +0000
+@@ -17,4 +17,5 @@
+ obj-$(CONFIG_TOUCHSCREEN_PENMOUNT)	+= penmount.o
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+= touchright.o
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
++obj-$(CONFIG_TOUCHSCREEN_TSC2102)	+= tsc2102_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o

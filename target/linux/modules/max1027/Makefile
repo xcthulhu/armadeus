@@ -1,13 +1,11 @@
 #
-# Makefile for the Armadeus Max1027 (fast version)
+# Makefile for the Armadeus Max1027 
 #
 
 # Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
 
-#obj-$(CONFIG_ARMADEUS_FAST_MAX1027)	+= fast-max1027.o
-obj-m    += fast-max1027.o
-fast-max1027-objs	:= main.o
+obj-$(CONFIG_ARMADEUS_MAX1027)	+= max1027.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

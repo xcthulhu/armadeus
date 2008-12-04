@@ -1,0 +1,79 @@
+--- u-boot-1.3.4/examples/Makefile	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4.new/examples/Makefile	2008-10-27 10:04:43.000000000 +0100
+@@ -32,6 +32,8 @@ endif
+ ifeq ($(ARCH),arm)
+ ifeq ($(BOARD),omap2420h4)
+ LOAD_ADDR = 0x80300000
++else ifeq ($(SOC),imx)
++LOAD_ADDR = 0x08000000
+ else
+ LOAD_ADDR = 0xc100000
+ endif
+@@ -78,6 +80,7 @@ include $(TOPDIR)/config.mk
+ ELF	= hello_world
+ SREC	= hello_world.srec
+ BIN	= hello_world.bin
++# tftploadscripts.img testcmds.img
+ 
+ ifeq ($(CPU),mpc8xx)
+ ELF	+= test_burst
+@@ -180,6 +183,9 @@ $(BIN):
+ $(obj)%.bin:	$(obj)%
+ 		$(OBJCOPY) -O binary $< $@ 2>/dev/null
+ 
++%.img:	%.txt
++	mkimage -T script -C none -n '$@ Script File' -d  $^ $@
++
+ #########################################################################
+ 
+ # defines $(obj).depend target
+--- u-boot-1.3.4/examples/testcmds.txt	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4.new/examples/testcmds.txt	2008-10-27 09:35:47.000000000 +0100
+@@ -0,0 +1,17 @@
++setenv load_addr 08020000
++setenv test_script 'tftp  $load_addr /tftpboot/u-boot/examples/testcmds.img; auto $load_addr'
++echo ===== test toolsettings ===== 
++setenv test_addr 10040000
++setenv test_len 020000
++setenv test_path /tftpboot/u-boot/u-boot.bin
++setenv load_test 'tftp $load_addr $test_path;'
++setenv install_test 'era $test_addr +$test_len; if cp.b $fileaddr $test_addr $filesize; then echo test update succeed; else echo test update failed; fi'
++
++setenv run_test 'go 10040000'
++
++setenv update_test run load_test install_test 
++run update_test
++echo ===== Save new definitions =====
++setenv load_addr 08000000
++saveenv
++run run_test
+--- u-boot-1.3.4/examples/tftploadscripts.txt	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4.new/examples/tftploadscripts.txt	2008-10-27 09:35:47.000000000 +0100
+@@ -0,0 +1,27 @@
++setenv load_addr 08000000
++setenv tftp_script 'tftp  $load_addr /tftpboot/u-boot/examples/tftploadscripts.img; auto $load_addr'
++echo ===== U-Boot settings ===== 
++setenv uboot_path /tftpboot/u-boot/u-boot.bin
++setenv load_uboot 'mw.b $load_addr FF $uboot_len; tftp $load_addr $uboot_path;'
++setenv update_uboot run load_uboot flash_uboot
++echo ===== Linux Firmware settings =====
++setenv firmware_path /tftpboot/dev/firmware.img
++setenv load_firmware 'mw.b $load_addr FF $firmware_len; tftp $load_addr $firmware_path;'
++setenv update_firmware run load_firmware flash_firmware
++echo ===== Linux Kernel settings =====
++setenv kernel_path /tftpboot/linux-2.6.12/arch/arm/boot/uImage
++setenv load_kernel 'mw.b $load_addr FF $kernel_len; tftp $load_addr $kernel_path;'
++setenv update_kernel run load_kernel flash_kernel
++echo ===== Rootfs settings =====
++setenv rootfs_path /tftpboot/buildroot/root_fs_arm_nofpu.jffs2
++setenv load_rootfs 'mw.b $load_addr FF $rootfs_len; tftp $load_addr $rootfs_path;'
++setenv update_rootfs run load_rootfs flash_rootfs
++echo ===== allinone settings =====
++setenv update_all run update_kernel update_rootfs update_uboot update_firmware
++echo ===== env settings =====
++setenv erase_env 'protect off $env_addr +$env_len; era $env_addr +$env_len'
++echo ===== tftp ram boot settings =====
++setenv netfull 'tftp 08800000 /tftpboot/fullimage.img;setenv bootargs root=/dev/ram rw rootfstype=ext2 $console $mtdparts;bootm 08800000'
++setenv netroot 'tftp 08400000 /tftpboot/buildroot/root_fs_arm_nofpu.ext2.gz.img;setenv bootargs root=/dev/ram rw rootfstype=ext2 $console $mtdparts;bootm 100A0000 08400000'
++echo ===== Save new definitions =====
++saveenv

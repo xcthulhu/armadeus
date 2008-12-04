@@ -1,0 +1,63 @@
+--- linux-org/arch/arm/mach-imx/generic.c	2006-09-20 05:42:06.000000000 +0200
++++ linux-imx/arch/arm/mach-imx/generic.c	2006-10-01 14:30:03.000000000 +0200
+@@ -279,9 +279,60 @@ static struct platform_device imxfb_devi
+ 	.resource	= imxfb_resources,
+ };
+ 
++static struct resource imx_usb_resources[] = {
++	[0] = {
++		.start	= 0x00212000,
++		.end	= 0x00212FFF,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= USBD_INT0,
++		.end	= USBD_INT0,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= USBD_INT1,
++		.end	= USBD_INT1,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= USBD_INT2,
++		.end	= USBD_INT2,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[4] = {
++		.start	= USBD_INT3,
++		.end	= USBD_INT3,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[5] = {
++		.start	= USBD_INT4,
++		.end	= USBD_INT4,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[6] = {
++		.start	= USBD_INT5,
++		.end	= USBD_INT5,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[7] = {
++		.start	= USBD_INT6,
++		.end	= USBD_INT6,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device imx_usb_device = {
++	.name		= "imx-udc",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(imx_usb_resources),
++	.resource	= imx_usb_resources,
++};
++
+ static struct platform_device *devices[] __initdata = {
+ 	&imx_mmc_device,
+ 	&imxfb_device,
++	&imx_usb_device,
+ };
+ 
+ static struct map_desc imx_io_desc[] __initdata = {

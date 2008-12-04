@@ -1,12 +1,11 @@
---- buildrootref/package/Config.in 2007-11-17 23:30:25.000000000 +0100
-+++ buildroot/package/Config.in	2007-11-17 23:31:37.000000000 +0100
-@@ -383,6 +383,9 @@
- comment "Video libraries/codecs and applications"
- source "package/mplayer/Config.in"
- 
+--- buildroot/package/Config.in.ref     2008-11-03 16:19:23.000000000 +0100
++++ buildroot/package/Config.in 2008-11-03 16:20:11.000000000 +0100
+@@ -332,6 +332,8 @@ source "package/sdl_mixer/Config.in"
+ source "package/sdl_net/Config.in"
+ source "package/sdl_ttf/Config.in"
+ source "package/tiff/Config.in"
 +comment "Demos"
 +source "package/sdlwater/Config.in"
-+
- comment "Games"
- source "package/prboom/Config.in"
- endif
+
+ comment "busybox graphic applications"
+ comment "--> May be broken in busybox"

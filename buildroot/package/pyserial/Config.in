@@ -1,0 +1,6 @@
+config BR2_PACKAGE_PYSERIAL
+	bool "pyserial"
+	depends on BR2_PACKAGE_PYTHON
+	default n
+	help
+		Installs the python pyserial extension

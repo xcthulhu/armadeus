@@ -1,0 +1,10 @@
+--- buildroot/package/Config.org	2008-12-03 10:26:11.000000000 +0100
++++ buildroot/package/Config.in	2008-12-02 16:33:32.000000000 +0100
+@@ -466,6 +466,7 @@ if BR2_SCRIPTING_SUPPORT
+ source "package/lua/Config.in"
+ source "package/microperl/Config.in"
+ source "package/python/Config.in"
++source "package/pyserial/Config.in"
+ source "package/ruby/Config.in"
+ source "package/tcl/Config.in"
+ source "package/php/Config.in"

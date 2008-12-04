@@ -1,0 +1,3 @@
+To compile:
+ $ make CC=../../../../buildroot/build_arm/staging_dir/bin/arm-linux-gcc
+

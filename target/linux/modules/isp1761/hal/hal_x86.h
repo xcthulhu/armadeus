@@ -1,7 +1,7 @@
 /************************************************************
- * Philips ISP176x Hiardware Access Interface header file
+ * NXP ISP176x Hardware Access Interface header file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,12 +33,10 @@
 #ifndef _HAL_X86_H_
 #define _HAL_X86_H_
 
-#define         DRIVER_AUTHOR          "Philips Semiconductors"
-#define         DRIVER_DESC             "ISP1761 bus driver"
+#define         DRIVER_AUTHOR          "NXP Semiconductors"
+#define         DRIVER_DESC            "ISP1761 bus driver"
 
-/* Driver tuning, per Philips requirements: */
-
-#define MEM_TO_CHECK            4096  /*bytes, must be multiple of 2 */
+/* Driver tuning, per NXP requirements: */
 
 /* BIT defines */
 #define BIT0    (1 << 0)

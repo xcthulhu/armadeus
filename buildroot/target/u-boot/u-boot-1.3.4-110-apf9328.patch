@@ -1,0 +1,1315 @@
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/apf9328.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/apf9328.c	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,98 @@
++/*
++ * Copyright (C) 2004 Sascha Hauer, Synertronixx GmbH
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++#include <common.h>
++#include <asm/arch/imx-regs.h>
++#include "apf9328fpga.h"
++
++extern void imx_gpio_mode (int gpio_mode);
++#if (CFG_FLASH_CFI) && (CFG_FLASH_CFI_DRIVER)
++extern flash_info_t flash_info[];
++#endif
++int
++board_init (void)
++{
++	DECLARE_GLOBAL_DATA_PTR;
++
++	gd->bd->bi_arch_number = CONFIG_MACH_TYPE;
++	gd->bd->bi_boot_params = CONFIG_BOOT_PARAMS_ADDR;
++
++	return 0;
++}
++
++int
++dram_init (void)
++{
++	DECLARE_GLOBAL_DATA_PTR;
++
++#if ( CONFIG_NR_DRAM_BANKS > 0 )
++	gd->bd->bi_dram[0].start = CFG_SDRAM_1_BASE;
++	gd->bd->bi_dram[0].size = CFG_SDRAM_1_SIZE;
++#endif
++#if ( CONFIG_NR_DRAM_BANKS > 1 )
++	gd->bd->bi_dram[1].start = CFG_SDRAM_2_BASE;
++	gd->bd->bi_dram[1].size = CFG_SDRAM_2_SIZE;
++#endif
++
++	return 0;
++}
++
++/*
++ * Miscellaneous intialization
++ */
++int
++misc_init_r (void)
++{
++	char *s;
++	
++#if (CONFIG_FPGA)
++	apf9328_init_fpga ();
++#endif
++
++#if (CONFIG_DRIVER_DM9000)
++	imx_gpio_mode (GPIO_PORTB | GPIO_DR | GPIO_IN | 14);
++#endif
++
++	/* adjust size of rootfs if needed */ 
++#if (CFG_FLASH_CFI) && (CFG_FLASH_CFI_DRIVER)
++	s = getenv ("rootfs_len");
++	if (( NULL == s ) || (0 == strcmp(s, ""))) {
++		char rootfslen[16];
++		sprintf (rootfslen, "0x%lX", flash_info[0].size -
++				(CONFIG_ROOTFS_ADDR - CFG_FLASH_BASE));
++		setenv ("rootfs_len", rootfslen);
++	}
++#endif
++
++	/* detect compatibility issue of environment version */ 
++	s = getenv ("env_version");
++	if (( NULL == s ) || (0 != strcmp(s, CONFIG_ENV_VERSION))) {
++		printf("*** Warning - Environment version change suggests: "
++			"run flash_reset_env; reset\n");
++	}
++
++	return 0;
++}
++
++void
++show_boot_progress (int status)
++{
++	return;
++}
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/apf9328fpga.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/apf9328fpga.c	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,100 @@
++/*
++ * (C) Copyright 2005
++ * Nicolas Colombin <thom25@users.sourceforge.net>
++ * Eric Jarrige <jorasse@users.sourceforge.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++/*
++ * Spartan 3 FPGA configuration support for the APF9328 daughter board
++ */
++
++#include <common.h>
++#include <spartan3.h>
++#include <command.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/io.h>
++#include "apf9328fpga.h"
++
++#if (CONFIG_FPGA)
++#if 0
++#define FPGA_DEBUG
++#endif
++
++#ifdef FPGA_DEBUG
++#define	PRINTF(fmt,args...)	printf (fmt ,##args)
++#else
++#define	PRINTF(fmt,args...)
++#endif
++
++/* Note that these are pointers to code that is in Flash.  They will be
++ * relocated at runtime.
++ * Spartan3 code is used to download our Spartan 3 :) code is compatible. 
++ * Just take care about the file size  
++*/
++Xilinx_Spartan3_Slave_Serial_fns fpga_fns = {
++	fpga_pre_fn,
++	fpga_pgm_fn,
++	fpga_clk_fn,
++	fpga_init_fn,
++	fpga_done_fn,
++	fpga_wr_fn,
++};
++
++Xilinx_desc fpga[CONFIG_FPGA_COUNT] = {
++	{Xilinx_Spartan3,
++	 slave_serial,
++	 XILINX_XC3S400_SIZE,
++	 (void *) &fpga_fns,
++	 0}
++};
++
++/*
++ * Initialize the fpga.  Return 1 on success, 0 on failure.
++ */
++int
++apf9328_init_fpga (void)
++{
++	char *autoload = getenv ("firmware_autoload");
++	DECLARE_GLOBAL_DATA_PTR;
++
++	int i,lout=1;
++
++	PRINTF ("%s:%d: Initialize FPGA interface (relocation offset = 0x%.8lx)\n",
++		__FUNCTION__, __LINE__, gd->reloc_off);
++	fpga_init (gd->reloc_off);
++
++	for (i = 0; i < CONFIG_FPGA_COUNT; i++) {
++		PRINTF ("%s:%d: Adding fpga %d\n", __FUNCTION__, __LINE__, i);
++		fpga_add (fpga_xilinx, &fpga[i]);
++	}
++
++	if (( autoload ) && (0 == strcmp(autoload, "1"))) {
++		if (FPGA_SUCCESS != fpga_load( 0, (void *)CONFIG_FIRMWARE_ADDR, 
++				(size_t) CONFIG_FIRMWARE_LEN )) {
++			lout = 0;
++			printf("Firmware not loaded!\n");
++		}
++	}
++	return 1;
++}
++
++#endif /* CONFIG_FPGA */
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/apf9328fpga.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/apf9328fpga.h	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,31 @@
++/*
++ * (C) Copyright 2002
++ * Rich Ireland, Enterasys Networks, rireland@enterasys.com.
++ * Keith Outwater, keith_outwater@mvis.com.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++/*
++ * Spartan 3 FPGA configuration support for the APF9328 daughter board
++ */
++ 
++#include "fpga.h"
++extern int apf9328_init_fpga (void);
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/config.mk	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/config.mk	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,10 @@
++#
++# This config file is used for compilation of armadeus sources
++#
++# You might change location of U-Boot in memory by setting right TEXT_BASE.
++# This allows for example having one copy located at the end of ram and stored
++# in flash device and later on while developing use other location to test
++# the code in RAM device only.
++#
++
++TEXT_BASE = 0x0BF80000
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/fpga.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/fpga.c	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,140 @@
++/*
++ * (C) Copyright 2002
++ * Rich Ireland, Enterasys Networks, rireland@enterasys.com.
++ * Keith Outwater, keith_outwater@mvis.com.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++#include <common.h>
++
++#if (CONFIG_FPGA)
++
++#include <asm/arch/imx-regs.h>
++#include <asm/io.h>
++#include <config.h>
++
++extern void imx_gpio_mode (int gpio_mode);
++
++
++#define GPIO_PORT(x)  ((x >> 5) & 3)
++#define GPIO_SET(x)   (DR(GPIO_PORT(x)) |= (1<<(x & GPIO_PIN_MASK)))
++#define GPIO_CLEAR(x) (DR(GPIO_PORT(x)) &= ~(1<<(x & GPIO_PIN_MASK)))
++#define GPIO_WRITE(x,y) ( y ? GPIO_SET(x) : GPIO_CLEAR(x) )
++#define GPIO_READ(x)  ((SSR (GPIO_PORT(x)) & (1<<(x & GPIO_PIN_MASK))))
++
++#if 0
++#define FPGA_DEBUG
++#endif
++
++#ifdef FPGA_DEBUG
++#define	PRINTF(fmt,args...)	printf (fmt ,##args)
++#else
++#define	PRINTF(fmt,args...)
++#endif
++
++/*
++ * Port bit numbers for the serial slave controls
++ */
++#define FPGA_INIT	CFG_FPGA_INIT
++#define FPGA_DONE	CFG_FPGA_DONE
++#define FPGA_DIN	CFG_FPGA_DATA
++#define FPGA_PROGRAM	CFG_FPGA_PRG
++#define FPGA_CLOCK	CFG_FPGA_CLK
++
++/* Note that these are pointers to code that is in Flash.  They will be
++ * relocated at runtime.
++ * Spartan2 code is used to download our Spartan 3 :) code is compatible. 
++ * Just take care about the file size  
++*/
++
++/*
++ * nitialize GPIO port B before download
++ */
++int
++fpga_pre_fn (int cookie)
++{
++	PRINTF ("%s:%d: FPGA PRE ", __FUNCTION__, __LINE__);
++
++	// Initialize GPIO pins
++	imx_gpio_mode (FPGA_INIT | GPIO_DR | GPIO_IN );
++	imx_gpio_mode (FPGA_DONE | GPIO_DR | GPIO_IN );
++	imx_gpio_mode (FPGA_DIN  | GPIO_DR | GPIO_OUT );
++	imx_gpio_mode (FPGA_PROGRAM | GPIO_DR | GPIO_OUT );
++	imx_gpio_mode (FPGA_CLOCK | GPIO_DR | GPIO_OUT );
++	return cookie;
++}
++
++/*
++ * Set the FPGA's active-low program line to the specified level
++ */
++int
++fpga_pgm_fn (int assert, int flush, int cookie)
++{
++	PRINTF ("%s:%d: FPGA PROGRAM %s", __FUNCTION__, __LINE__, 
++					assert?"high":"low");
++	GPIO_WRITE( FPGA_PROGRAM, !assert);
++	return assert;
++}
++
++/*
++ * Set the FPGA's active-high clock line to the specified level
++ */
++int
++fpga_clk_fn (int assert_clk, int flush, int cookie)
++{
++	PRINTF ("%s:%d: FPGA CLOCK %s", __FUNCTION__, __LINE__, 
++					assert_clk?"high":"low");
++	GPIO_WRITE( FPGA_CLOCK, assert_clk);
++	return assert_clk;
++}
++
++/*
++ * Test the state of the active-low FPGA INIT line.  Return 1 on INIT
++ * asserted (low).
++ */
++int
++fpga_init_fn (int cookie)
++{
++	PRINTF ("%s:%d: INIT check... ", __FUNCTION__, __LINE__);
++	return(!GPIO_READ(FPGA_INIT));
++}
++
++/*
++ * Test the state of the active-high FPGA DONE pin
++ */
++int
++fpga_done_fn (int cookie)
++{
++	PRINTF ("%s:%d: DONE check... ", __FUNCTION__, __LINE__);
++	return(GPIO_READ(FPGA_DONE));
++}
++
++/*
++ * Set the FPGA's data line to the specified level
++ */
++int
++fpga_wr_fn (int assert_write, int flush, int cookie)
++{
++	PRINTF ("%s:%d: DATA write... ", __FUNCTION__, __LINE__);
++	GPIO_WRITE( FPGA_DIN, assert_write);
++	return assert_write;
++}
++
++#endif /* CONFIG_FPGA */
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/fpga.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/fpga.h	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,30 @@
++/*
++ * (C) Copyright 2002
++ * Rich Ireland, Enterasys Networks, rireland@enterasys.com.
++ * Keith Outwater, keith_outwater@mvis.com.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++extern int fpga_pre_fn (int cookie);
++extern int fpga_pgm_fn (int assert_pgm, int flush, int cookie);
++extern int fpga_init_fn (int cookie);
++extern int fpga_done_fn (int cookie);
++extern int fpga_clk_fn (int assert_clk, int flush, int cookie);
++extern int fpga_wr_fn (int assert_write, int flush, int cookie);
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/i2c.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/i2c.c	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,327 @@
++/*
++ * Eric Jarrige <jorasse@users.sourceforge.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ *
++ */
++
++#include <common.h>
++
++#ifdef CONFIG_HARD_I2C
++
++#include <asm/io.h>
++#include <asm/arch/imx-regs.h>
++#include <i2c.h>
++
++/*#define       DEBUG_I2C*/
++
++extern void imx_gpio_mode (int gpio_mode);
++
++/*-----------------------------------------------------------------------
++ * Definitions
++ */
++
++#define I2C_ACK		0	/* level to ack a byte */
++#define I2C_NOACK	1	/* level to noack a byte */
++
++
++#ifdef DEBUG_I2C
++#define PRINTD(fmt,args...)	do {	\
++	DECLARE_GLOBAL_DATA_PTR;	\
++	if (gd->have_console)		\
++		printf (fmt ,##args);	\
++	} while (0)
++#else
++#define PRINTD(fmt,args...)
++#endif
++
++/*-----------------------------------------------------------------------
++ * Local functions
++ */
++
++/*-----------------------------------------------------------------------
++ * START: High -> Low on SDA while SCL is High
++ * after check for a bus free
++ */
++static void
++imxi2c_send_start (void)
++{
++	while ((I2SR & I2SR_IBB)) ;
++	I2CR |= I2CR_MSTA;
++	I2SR &= ~I2SR_IIF;
++}
++
++/*-----------------------------------------------------------------------
++ * STOP: Low -> High on SDA while SCL is High
++ * after the end of previous transfer
++ */
++static void
++imxi2c_send_stop (void)
++{
++	while (!(I2SR & I2SR_ICF)) ;
++	I2CR &= ~I2CR_MSTA;
++}
++
++/*-----------------------------------------------------------------------
++ * Send 8 bits and look for an acknowledgement.
++ */
++static int
++imxi2c_write_byte (uchar data)
++{
++	while (!(I2SR & I2SR_ICF)) ;	/* Wait end of transfer */
++
++	I2CR |= I2CR_MTX;
++	I2SR &= ~I2SR_IIF;
++	I2DR = data;
++
++	while (!(I2SR & I2SR_IIF)) ;	/* checking IIF before ICF seems required */
++
++	I2SR &= ~I2SR_IIF;
++
++	while (!(I2SR & I2SR_ICF)) ;	/* Wait end of transfer */
++
++	return (I2SR & I2SR_RXAK);	/* not a nack is an ack */
++}
++
++/*-----------------------------------------------------------------------
++ * if ack == I2C_ACK, ACK the byte so can continue reading, else
++ * send I2C_NOACK to end the read.
++ */
++static uchar
++imxi2c_read_byte (int ack)
++{
++	int data;
++
++	while (!(I2SR & I2SR_ICF)) ;
++	I2CR &= ~I2CR_MTX;
++
++	if (ack)
++	{
++		I2CR |= I2CR_TXAK;
++	}
++	else
++	{
++		I2CR &= ~I2CR_TXAK;
++	}
++
++	data = I2DR;
++	return (data);
++}
++
++/* ------------------------------------------------------------------------
++ * API Functions
++ * ------------------------------------------------------------------------
++ */
++
++/*-----------------------------------------------------------------------
++ * i2c_init compute the i2c divider to reach the requested speed
++ * see mxl reference manual
++ */
++void
++i2c_init (int speed, int slaveaddr)
++{
++	int hclk_dividers[] = {
++		30, 32, 36, 42, 48, 52, 60, 72,
++		80, 88, 104, 128, 144, 160, 192, 240,
++		288, 320, 384, 480, 576, 640, 768, 960,
++		1152, 1280, 1536, 1920, 2304, 2560, 3072, 3840,
++		22, 24, 26, 26, 32, 36, 40, 44,
++		48, 56, 64, 72, 80, 96, 112, 128,
++		160, 192, 224, 256, 320, 384, 448, 512,
++		640, 768, 896, 1024, 1280, 1536, 1792, 2048
++	};
++	int refDiv = get_HCLK () / speed;
++	int i, tmpIC;
++
++	imx_gpio_mode (PA15_PF_I2C_SDA);
++	imx_gpio_mode (PA16_PF_I2C_SCL);
++
++	tmpIC = (sizeof (hclk_dividers) / sizeof (int)) - 1;
++	for (i = tmpIC; i >= 0; i--)
++	{
++		if ((hclk_dividers[i] >= refDiv)
++		    && (hclk_dividers[i] < hclk_dividers[tmpIC]))
++		{
++			tmpIC = i;
++		}
++	}
++	
++	IFDR = tmpIC;
++	IADR = slaveaddr << 1;
++
++	if (I2SR & I2SR_IBB)
++		imxi2c_send_stop ();
++
++	I2CR |= I2CR_IEN;
++}
++
++/*-----------------------------------------------------------------------
++ * Probe to see if a chip is present. Also good for checking for the
++ * completion of EEPROM writes since the chip stops responding until
++ * the write completes (typically 10mSec).
++ * probe sends a read command to probe a an address
++ */
++int
++i2c_probe (uchar addr)
++{
++	int rc;
++
++	imxi2c_send_start ();
++	rc = imxi2c_write_byte ((addr << 1) | 0);
++	imxi2c_send_stop ();
++
++	return (rc ? 1 : 0);
++}
++
++/*-----------------------------------------------------------------------
++ * Read bytes
++ */
++int
++i2c_read (uchar chip, uint addr, int alen, uchar * buffer, int len)
++{
++	int shift;
++	PRINTD ("i2c_read: chip %02X addr %02X alen %d buffer %p len %d\n",
++		chip, addr, alen, buffer, len);
++
++#ifdef CFG_I2C_EEPROM_ADDR_OVERFLOW
++	/*
++	 * EEPROM chips that implement "address overflow" are ones
++	 * like Catalyst 24WC04/08/16 which has 9/10/11 bits of
++	 * address and the extra bits end up in the "chip address"
++	 * bit slots. This makes a 24WC08 (1Kbyte) chip look like
++	 * four 256 byte chips.
++	 *
++	 * Note that we consider the length of the address field to
++	 * still be one byte because the extra address bits are
++	 * hidden in the chip address.
++	 */
++	chip |= ((addr >> (alen * 8)) & CFG_I2C_EEPROM_ADDR_OVERFLOW);
++
++	PRINTD ("i2c_read: fix addr_overflow: chip %02X addr %02X\n",
++		chip, addr);
++#endif
++
++	/*
++	 * Do the addressing portion of a write cycle to set the
++	 * chip's address pointer. If the address length is zero,
++	 * don't do the normal write cycle to set the address pointer,
++	 * there is no address pointer in this chip.
++	 */
++	imxi2c_send_start ();
++	if (alen > 0)
++	{
++		if (imxi2c_write_byte (chip << 1))
++		{		/* write cycle */
++			imxi2c_send_stop ();
++			PRINTD ("i2c_read, no chip responded %02X\n", chip);
++			return (1);
++		}
++		shift = (alen - 1) * 8;
++		while (alen-- > 0)
++		{
++			if (imxi2c_write_byte (addr >> shift))
++			{
++				PRINTD ("i2c_read, address not <ACK>ed\n");
++				return (1);
++			}
++			shift -= 8;
++		}
++		imxi2c_send_stop ();	/* reportedly some chips need a full stop */
++		imxi2c_send_start ();
++	}
++	/*
++	 * Send the chip address again, this time for a read cycle.
++	 * Then read the data. On the last byte, we do a NACK instead
++	 * of an ACK(len == 0) to terminate the read.
++	 */
++	imxi2c_write_byte ((chip << 1) | 1);	/* read cycle */
++	imxi2c_read_byte (len <= 2);
++	while (len-- > 1)
++	{
++		*buffer++ = imxi2c_read_byte (len == 1);
++	}
++	imxi2c_send_stop ();
++	*buffer++ = imxi2c_read_byte (0);
++	return (0);
++}
++
++/*-----------------------------------------------------------------------
++ * Write bytes
++ */
++int
++i2c_write (uchar chip, uint addr, int alen, uchar * buffer, int len)
++{
++	int shift, failures = 0;
++
++	PRINTD ("i2c_write: chip %02X addr %02X alen %d buffer %p len %d\n",
++		chip, addr, alen, buffer, len);
++
++	imxi2c_send_start ();
++	if (imxi2c_write_byte (chip << 1))
++	{			/* write cycle */
++		imxi2c_send_stop ();
++		PRINTD ("i2c_write, no chip responded %02X\n", chip);
++		return (1);
++	}
++	shift = (alen - 1) * 8;
++	while (alen-- > 0)
++	{
++		if (imxi2c_write_byte (addr >> shift))
++		{
++			PRINTD ("i2c_write, address not <ACK>ed\n");
++			return (1);
++		}
++		shift -= 8;
++	}
++
++	while (len-- > 0)
++	{
++		if (imxi2c_write_byte (*buffer++))
++		{
++			failures++;
++		}
++	}
++	imxi2c_send_stop ();
++	return (failures);
++}
++
++/*-----------------------------------------------------------------------
++ * Read a register
++ */
++uchar
++i2c_reg_read (uchar i2c_addr, uchar reg)
++{
++	char buf;
++
++	i2c_read (i2c_addr, reg, 1, &buf, 1);
++
++	return (buf);
++}
++
++/*-----------------------------------------------------------------------
++ * Write a register
++ */
++void
++i2c_reg_write (uchar i2c_addr, uchar reg, uchar val)
++{
++	i2c_write (i2c_addr, reg, 1, &val, 1);
++}
++
++#endif /* CONFIG_HARD_I2C */
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/lowlevel_init.S	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/lowlevel_init.S	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,443 @@
++/*
++ * Copyright (C) 2004 Sascha Hauer, Synertronixx GmbH
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++ * 02111-1307, USA.
++ *
++ */
++
++#include <config.h>
++#include <version.h>
++#include <asm/arch/imx-regs.h>
++
++.globl lowlevel_init
++lowlevel_init:
++
++	mov	r10, lr
++
++/* Change PERCLK1DIV to 14 ie 14+1 */
++	ldr		r0,	=PCDR
++	ldr		r1,	=CFG_PCDR_VAL
++	str		r1,	[r0]
++
++/* set MCU PLL Control Register 0 */
++
++	ldr		r0,	=MPCTL0
++	ldr		r1,	=CFG_MPCTL0_VAL
++	str		r1,	[r0]
++
++/* set MCU PLL Control Register 1 */
++
++	ldr		r0,	=MPCTL1
++	ldr		r1,	=CFG_MPCTL1_VAL
++	str		r1,	[r0]
++
++/* set mpll restart bit */
++	ldr		r0, =CSCR
++	ldr		r1, [r0]
++	orr		r1,r1,#(1<<21)
++	str		r1, [r0]
++
++	mov		r2,#0x10
++1:
++	mov		r3,#0x2000
++2:
++	subs	r3,r3,#1
++	bne		2b
++
++	subs	r2,r2,#1
++	bne		1b
++
++/* set System PLL Control Register 0 */
++
++	ldr		r0,	=SPCTL0
++	ldr		r1,	=CFG_SPCTL0_VAL
++	str		r1,	[r0]
++
++/* set System PLL Control Register 1 */
++
++	ldr		r0,	=SPCTL1
++	ldr		r1,	=CFG_SPCTL1_VAL
++	str		r1,	[r0]
++
++/* set spll restart bit */
++	ldr		r0, =CSCR
++	ldr		r1, [r0]
++	orr		r1,r1,#(1<<22)
++	str		r1, [r0]
++
++	mov		r2,#0x10
++1:
++	mov		r3,#0x2000
++2:
++	subs	r3,r3,#1
++	bne		2b
++
++	subs	r2,r2,#1
++	bne		1b
++
++	ldr		r0,	=CSCR
++	ldr		r1,	=CFG_CSCR_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GPCR
++	ldr		r1,	=CFG_GPCR_VAL
++	str		r1,	[r0]
++
++/* I have now read the ARM920 DataSheet back-to-Back, and have stumbled upon
++ *this.....
++ *
++ * It would appear that from a Cold-Boot the ARM920T enters "FastBus" mode CP15
++ * register 1, this stops it using the output of the PLL and thus runs at the
++ * slow rate. Unless you place the Core into "Asynch" mode, the CPU will never
++ * use the value set in the CM_OSC registers...regardless of what you set it
++ * too!  Thus, although i thought i was running at 140MHz, i'm actually running
++ * at 40!..
++
++ * Slapping this into my bootloader does the trick...
++
++ * MRC p15,0,r0,c1,c0,0	 ; read core configuration register
++ * ORR r0,r0,#0xC0000000	; set asynchronous clocks and not fastbus mode
++ * MCR p15,0,r0,c1,c0,0	 ; write modified value to core configuration
++ * register
++ */
++	MRC p15,0,r0,c1,c0,0
++	ORR r0,r0,#0xC0000000
++	MCR p15,0,r0,c1,c0,0
++
++/*	ldr		r0,	=GPR(0) 
++	ldr		r1,	=CFG_GPR_A_VAL
++	str		r1,	[r0]
++*/
++
++	ldr		r0,	=DR(0)
++	ldr		r1,	=CFG_DR_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR1(0)
++	ldr		r1,	=CFG_OCR1_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR2(0)
++	ldr		r1,	=CFG_OCR2_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA1(0)
++	ldr		r1,	=CFG_ICFA1_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA2(0)
++	ldr		r1,	=CFG_ICFA2_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB1(0)
++	ldr		r1,	=CFG_ICFB1_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB2(0)
++	ldr		r1,	=CFG_ICFB2_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR1(0)
++	ldr		r1,	=CFG_ICR1_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR2(0)
++	ldr		r1,	=CFG_ICR2_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=IMR(0)
++	ldr		r1,	=CFG_IMR_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DDIR(0)
++	ldr		r1,	=CFG_DDIR_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GPR(0)
++	ldr		r1,	=CFG_GPR_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=PUEN(0)
++	ldr		r1,	=CFG_PUEN_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GIUS(0)
++	ldr		r1,	=CFG_GIUS_A_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DR(1)
++	ldr		r1,	=CFG_DR_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR1(1)
++	ldr		r1,	=CFG_OCR1_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR2(1)
++	ldr		r1,	=CFG_OCR2_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA1(1)
++	ldr		r1,	=CFG_ICFA1_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA2(1)
++	ldr		r1,	=CFG_ICFA2_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB1(1)
++	ldr		r1,	=CFG_ICFB1_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB2(1)
++	ldr		r1,	=CFG_ICFB2_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR1(1)
++	ldr		r1,	=CFG_ICR1_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR2(1)
++	ldr		r1,	=CFG_ICR2_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=IMR(1)
++	ldr		r1,	=CFG_IMR_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DDIR(1)
++	ldr		r1,	=CFG_DDIR_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GPR(1)
++	ldr		r1,	=CFG_GPR_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=PUEN(1)
++	ldr		r1,	=CFG_PUEN_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GIUS(1)
++	ldr		r1,	=CFG_GIUS_B_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DR(2)
++	ldr		r1,	=CFG_DR_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR1(2)
++	ldr		r1,	=CFG_OCR1_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR2(2)
++	ldr		r1,	=CFG_OCR2_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA1(2)
++	ldr		r1,	=CFG_ICFA1_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA2(2)
++	ldr		r1,	=CFG_ICFA2_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB1(2)
++	ldr		r1,	=CFG_ICFB1_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB2(2)
++	ldr		r1,	=CFG_ICFB2_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR1(2)
++	ldr		r1,	=CFG_ICR1_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR2(2)
++	ldr		r1,	=CFG_ICR2_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=IMR(2)
++	ldr		r1,	=CFG_IMR_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DDIR(2)
++	ldr		r1,	=CFG_DDIR_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GPR(2)
++	ldr		r1,	=CFG_GPR_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=PUEN(2)
++	ldr		r1,	=CFG_PUEN_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GIUS(2)
++	ldr		r1,	=CFG_GIUS_C_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DR(3)
++	ldr		r1,	=CFG_DR_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR1(3)
++	ldr		r1,	=CFG_OCR1_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=OCR2(3)
++	ldr		r1,	=CFG_OCR2_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA1(3)
++	ldr		r1,	=CFG_ICFA1_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFA2(3)
++	ldr		r1,	=CFG_ICFA2_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB1(3)
++	ldr		r1,	=CFG_ICFB1_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICONFB2(3)
++	ldr		r1,	=CFG_ICFB2_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR1(3)
++	ldr		r1,	=CFG_ICR1_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=ICR2(3)
++	ldr		r1,	=CFG_ICR2_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=IMR(3)
++	ldr		r1,	=CFG_IMR_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=DDIR(3)
++	ldr		r1,	=CFG_DDIR_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GPR(3)
++	ldr		r1,	=CFG_GPR_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=PUEN(3)
++	ldr		r1,	=CFG_PUEN_D_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=GIUS(3)
++	ldr		r1,	=CFG_GIUS_D_VAL
++	str		r1,	[r0]
++
++/* CS3 becomes CS3 by clearing reset default bit 1 in FMCR */
++
++	ldr		r0,	=FMCR
++	ldr		r1,	=CFG_FMCR_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS0U
++	ldr		r1,	=CFG_CS0U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS0L
++	ldr		r1,	=CFG_CS0L_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS1U
++	ldr		r1,	=CFG_CS1U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS1L
++	ldr		r1,	=CFG_CS1L_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS2U
++	ldr		r1,	=CFG_CS2U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS2L
++	ldr		r1,	=CFG_CS2L_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS3U
++	ldr		r1,	=CFG_CS3U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS3L
++	ldr		r1,	=CFG_CS3L_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS4U
++	ldr		r1,	=CFG_CS4U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS4L
++	ldr		r1,	=CFG_CS4L_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS5U
++	ldr		r1,	=CFG_CS5U_VAL
++	str		r1,	[r0]
++
++	ldr		r0,	=CS5L
++	ldr		r1,	=CFG_CS5L_VAL
++	str		r1,	[r0]
++
++	adr	r0, sdramsetup	/* r0 <- current position of code */
++	ldr	r1, =CFG_SDRAM_1_BASE	/* test if we run from flash or RAM */
++	cmp	r1, r0		/* don't reloc during debug*/
++	bhi		sdramsetup
++	ldr	r1, =CFG_FLASH_BASE	/* test if we run from flash or RAM */
++	cmp	r0, r1		/* don't reloc during debug */
++	bmi		endofmemsetup
++
++/* SDRAM Setup */
++sdramsetup:
++	ldr		r0, =SDCTL0
++	ldr		r1, =CFG_PRECHARGE_CMD
++	str		r1,	[r0]
++
++	ldr		r1, =CFG_SDRAM_1_BASE+CFG_SDRAM_PRECHARGE_ALL_VAL
++	ldr		r2,	[r1]
++
++	ldr		r1, =CFG_AUTOREFRESH_CMD
++	str		r1,	[r0]
++
++	ldr		r1, =CFG_SDRAM_1_BASE
++	ldr		r2,	[r1] /* Issue AutoRefresh Command */
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++	ldr		r2,	[r1]
++
++	ldr		r1, =CFG_SET_MODE_REG_CMD
++	str		r1,	[r0]
++
++	ldr		r1, =CFG_SDRAM_1_BASE+CFG_SDRAM_MODE_REGISTER_VAL
++	str		r2,	[r1]
++
++	ldr		r1, =CFG_NORMAL_RW_CMD 
++	str		r1,	[r0]
++
++endofmemsetup:
++	mov	pc,r10
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/Makefile	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,50 @@
++#
++# (C) Copyright 2000-2004
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).a
++
++COBJS	:= apf9328.o i2c.o apf9328fpga.o fpga.o
++SOBJS	:= lowlevel_init.o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
++
++clean:
++	rm -f $(SOBJS) $(OBJS)
++
++distclean:	clean
++	rm -f $(LIB) core *.bak $(obj).depend
++
++#########################################################################
++
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- ref/u-boot-1.3.4/board/armadeus/apf9328/u-boot.lds	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf9328/u-boot.lds	2008-11-14 00:48:19.000000000 +0100
+@@ -0,0 +1,56 @@
++/*
++ * (C) Copyright 2000-2004
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
++OUTPUT_ARCH(arm)
++ENTRY(_start)
++SECTIONS
++{
++	. = 0x00000000;
++
++	. = ALIGN(4);
++	.text      :
++	{
++		cpu/arm920t/start.o	(.text)
++		*(.text)
++	}
++
++	. = ALIGN(4);
++	.rodata : { *(.rodata) }
++
++	. = ALIGN(4);
++	.data : { *(.data) }
++
++	. = ALIGN(4);
++	.got : { *(.got) }
++
++	__u_boot_cmd_start = .;
++	.u_boot_cmd : { *(.u_boot_cmd) }
++	__u_boot_cmd_end = .;
++
++	. = ALIGN(4);
++	__bss_start = .;
++	.bss : { *(.bss) }
++	_end = .;
++}

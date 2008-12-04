@@ -16,84 +16,32 @@ choice
 
 config BR2_TARGET_ARMADEUS_APF9328
 	bool "apf9328"
-config BR2_TARGET_ARMADEUS_APM9328
-	bool "apm9328"
+config BR2_TARGET_ARMADEUS_APF27
+	bool "apf27"
 endchoice
 
 
-config BR2_TARGET_ARMADEUS_NAME
+config BR2_BOARD_NAME
 	string
-	default "apm9328"	if BR2_TARGET_ARMADEUS_APM9328
 	default "apf9328"	if BR2_TARGET_ARMADEUS_APF9328
+	default "apf27"		if BR2_TARGET_ARMADEUS_APF27
 
-choice
-	prompt "Target SDRAM size"
-	default BR2_TARGET_ARMADEUS_SDRAM_32
-	depends on BR2_TARGET_ARMADEUS_APF9328 || BR2_TARGET_ARMADEUS_APM9328
-	help
-	  Target SDRAM size 
+config BR2_BOARD_PATH
+	string
+	default "target/device/armadeus/$(BR2_BOARD_NAME)"
 
-config BR2_TARGET_ARMADEUS_SDRAM_8
-	bool "8MB"
-config BR2_TARGET_ARMADEUS_SDRAM_16
-	bool "16MB"
-config BR2_TARGET_ARMADEUS_SDRAM_32
-	bool "32MB"
-config BR2_TARGET_ARMADEUS_SDRAM_64
-	bool "64MB"
-endchoice
+source "target/device/armadeus/apf9328/Config.in"
+source "target/device/armadeus/apf27/Config.in"
 
 config BR2_TARGET_ARMADEUS_SDRAM_SIZE
 	string
 	default "8"		if BR2_TARGET_ARMADEUS_SDRAM_8
-	default "16"		if BR2_TARGET_ARMADEUS_SDRAM_16
-	default "32"		if BR2_TARGET_ARMADEUS_SDRAM_32
-	default "64"		if BR2_TARGET_ARMADEUS_SDRAM_64
+	default "16"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_16 || BR2_TARGET_ARMADEUS_SDRAM_16
+	default "32"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_32 || BR2_TARGET_ARMADEUS_SDRAM_32
+	default "64"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_64 || BR2_TARGET_ARMADEUS_SDRAM_64
+	default "128"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_128
+	default "256"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_256
 
 
-config BR2_PACKAGE_LINUX_ARM
-	bool "linux"
-	default n
-	depends BR2_arm && BR2_TARGET_ARMADEUS
-	select BR2_TARGET_U-BOOT
-	help
-	    The Linux kernel.
-	    http://www.kernel.org/
-choice
-	prompt "Linux kernel version"
-	default BR2_PACKAGE_LINUX_VERSION_2_6_23_1
-	depends on BR2_PACKAGE_LINUX_ARM
-	help
-	    Linux kernel version you want to use with your Armadeus board.
-	    If you plan to use MMC/SD cards then choose 2.6.18.1 or later,
-            otherwise 2.6.12 should be sufficient and is more used/tested.
-
-config BR2_PACKAGE_LINUX_VERSION_2_6_12
-	bool "2.6.12"
-config BR2_PACKAGE_LINUX_VERSION_2_6_17
-	bool "2.6.17"
-config BR2_PACKAGE_LINUX_VERSION_2_6_18_1
-	bool "2.6.18.1"
-config BR2_PACKAGE_LINUX_VERSION_2_6_23_1
-        bool "2.6.23.1"
-config BR2_PACKAGE_LINUX_VERSION_2_6_24
-        bool "2.6.24"
-endchoice
-
-config BR2_PACKAGE_LINUX_VERSION
-	string
-	default "2.6.12"	if BR2_PACKAGE_LINUX_VERSION_2_6_12
-	default "2.6.17"	if BR2_PACKAGE_LINUX_VERSION_2_6_17
-	default "2.6.18.1"	if BR2_PACKAGE_LINUX_VERSION_2_6_18_1
-        default "2.6.23.1"      if BR2_PACKAGE_LINUX_VERSION_2_6_23_1
-        default "2.6.24.3"      if BR2_PACKAGE_LINUX_VERSION_2_6_24
-
-config BR2_TARGET_U-BOOT
-	bool "U-Boot"
-	default n
-	depends BR2_arm && BR2_TARGET_ARMADEUS
-	help
-	  The U-Boot universal bootloader for embedded systems.
 
 endif
-

@@ -13,3 +13,6 @@ config POD_DRIVERS
     All drivers for FPGA components
 
 
+
+source "drivers/armadeus/fpga/POD/void/Kconfig"
+

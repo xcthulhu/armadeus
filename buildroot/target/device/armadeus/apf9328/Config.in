@@ -1,0 +1,37 @@
+if BR2_TARGET_ARMADEUS_APF9328
+
+choice
+	prompt "Target SDRAM size"
+	default BR2_TARGET_ARMADEUS_SDRAM_16 if BR2_TARGET_ARMADEUS_APF9328
+	depends on BR2_TARGET_ARMADEUS_APF9328
+	help
+	  Target SDRAM size (Default 16MB).
+
+config BR2_TARGET_ARMADEUS_SDRAM_8
+	depends on BR2_TARGET_ARMADEUS_APF9328
+	bool "8MB"
+	help
+	  Target 8MB SDRAM size.
+
+config BR2_TARGET_ARMADEUS_SDRAM_16
+	depends on BR2_TARGET_ARMADEUS_APF9328
+	bool "16MB"
+	help
+	  Target 16MB SDRAM size (Default).
+
+config BR2_TARGET_ARMADEUS_SDRAM_32
+	depends on BR2_TARGET_ARMADEUS_APF9328
+	bool "32MB"
+	help
+	  Target 32MB SDRAM size.
+
+config BR2_TARGET_ARMADEUS_SDRAM_64
+	depends on BR2_TARGET_ARMADEUS_APF9328
+	bool "64MB"
+	help
+	  Target 64MB SDRAM size.
+
+endchoice
+
+endif
+

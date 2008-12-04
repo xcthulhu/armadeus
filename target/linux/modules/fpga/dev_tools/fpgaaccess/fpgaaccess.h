@@ -47,7 +47,11 @@
 #include <asm/io.h>
 
 /* hardware addresses */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/hardware.h>
+#else
+#include <mach/hardware.h>
+#endif
 
 #endif
 
@@ -119,3 +123,4 @@ static void __exit fpgaaccess_exit(void);
 
 module_init(fpgaaccess_init);
 module_exit(fpgaaccess_exit);
+

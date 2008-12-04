@@ -1,7 +1,7 @@
-/******************************************************************************
- * Philips ISP176x Host Controller Interface code file
+/*******************************************************************************
+ * NXP ISP176x Host Controller Interface code file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,13 +24,17 @@
  * History:     
  *
  * Date                  Author                  Comments
- * ------------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------
  * June 21, 2005         krishan                  Initial version
  * July 4, 2005          krishan                  Handling unprotected urbs
  * Feb 6, 2006           Grant H.                 Added ISO support
  * April 21, 2006        Grant H.                 Added bug fixes
- * Nov 04, 2007          NC (armadeus)            Add 2.6.23 compatibility
- ********************************************************************************
+ * May 02 2007           Prabhakar                ported to 2.6.20 with 
+ *                                                backward compatibility 
+ *                                                with 2.6.9
+ * Nov 04, 2007          NC (Armadeus)            Add 2.6.23 compatibility
+ * Nov 11, 2008          JB (Armadeus)            Add 2.6.27 compatibility
+ *******************************************************************************
  */
 
 #include <linux/module.h>
@@ -103,7 +107,7 @@ extern  unsigned long phcd_submit_iso( phci_hcd *hcd,
 /* used when updating hcd data */
 static spinlock_t hcd_data_lock = SPIN_LOCK_UNLOCKED;
 
-static const char       hcd_name [] = "Philips";
+static const char       hcd_name [] = "ISP1761HCD";
 static td_ptd_map_buff_t td_ptd_map_buff[TD_PTD_TOTAL_BUFF_TYPES];      /* td-ptd map buffer for all 1362 buffers */
 
 static __u8             td_ptd_pipe_x_buff_type[TD_PTD_TOTAL_BUFF_TYPES] = {    
@@ -770,7 +774,11 @@ pehci_hcd_urb_complete(phci_hcd *hcd,struct ehci_qh *qh, struct urb *urb,
         urb->status = 0;
 
     spin_unlock(&hcd->lock);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
     usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
+#else
+    usb_hcd_giveback_urb (&hcd->usb_hcd, urb, urb->status);
+#endif
     spin_lock(&hcd->lock);
 
     /*lets handle to the remove case*/
@@ -1298,8 +1306,11 @@ void phcd_iso_handler(phci_hcd *hcd)
                 spin_unlock(&hcd->lock);
 
                 /* Perform URB cleanup */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
                 usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
-
+#else
+                usb_hcd_giveback_urb (&hcd->usb_hcd, urb, urb->status);
+#endif
                 spin_lock(&hcd->lock);
                 continue;
             }/* if( last_td == TRUE ) */
@@ -1832,8 +1843,6 @@ pehci_hcd_atl_worker(phci_hcd *hcd)
             goto copylength;
         }
 
-
-
         /*read the reload count*/
         rl = (qha->td_info3 >> 23);
         rl &= 0xf;
@@ -2320,7 +2329,6 @@ pehci_hcd_irq(struct usb_hcd *usb_hcd) //struct isp1761_dev *dev, void *__irq_da
     if(!(usb_hcd->state & USB_STATE_READY)){
         //info("interrupt handler state not ready yet\n");
         return IRQ_NONE;
-	//return IRQ_HANDLED;
     }
 
     /*our host*/        
@@ -2415,7 +2423,6 @@ pehci_hcd_start(struct usb_hcd  *usb_hcd)
     /*Initialize host controller registers*/
     pehci_hcd_init_reg(pehci_hcd);
 
-
     /*reset the host controller*/
     retval = pehci_hcd_reset(usb_hcd);
     if(retval){
@@ -2423,10 +2430,8 @@ pehci_hcd_start(struct usb_hcd  *usb_hcd)
         return retval;
     }
 
-
     /*enable interrupts*/
     pehci_hcd_enable_interrupts(pehci_hcd);
-
 
     /*put controller into operational mode*/
     retval = pehci_hcd_start_controller(pehci_hcd);
@@ -2500,7 +2505,11 @@ pehci_hcd_stop(struct usb_hcd *usb_hcd)
 
 /*submit urb , other than root hub*/
     static int
-pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd,struct usb_host_endpoint *ep,struct urb *urb,gfp_t mem_flags)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct usb_host_endpoint *ep, struct urb *urb, gfp_t mem_flags)
+#else
+pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct urb *urb, gfp_t mem_flags)
+#endif
 {
 
     struct list_head    qtd_list;
@@ -2509,6 +2518,9 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd,struct usb_host_endpoint *ep,struc
     int status  = 0;
     int temp = 0, max = 0,num_tds = 0,mult = 0;
     urb_priv_t   *urb_priv = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+    struct usb_host_endpoint *ep = urb->ep;
+#endif
     pehci_entry("++ %s: Entered\n",__FUNCTION__);
     INIT_LIST_HEAD(&qtd_list);
     urb->transfer_flags &= ~EHCI_STATE_UNLINK;
@@ -2604,7 +2616,7 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd,struct usb_host_endpoint *ep,struc
             phci_hcd_make_qtd(pehci_hcd, &qtd_list,urb, &status);
             if(status < 0)
                 return status;
-            qh = phci_hcd_submit_interrupt(pehci_hcd,ep,&qtd_list, urb, &status);
+            qh = phci_hcd_submit_interrupt(pehci_hcd, ep, &qtd_list, urb, &status);
             if(status < 0)
                 return status;
             break;
@@ -2639,7 +2651,7 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd,struct usb_host_endpoint *ep,struc
     return 0;
 #else
     /*submit tds but iso*/
-    pehci_hcd_td_ptd_submit_urb(pehci_hcd,qh,qh->type);
+    pehci_hcd_td_ptd_submit_urb(pehci_hcd, qh, qh->type);
 #endif
     pehci_entry("-- %s: Exit\n",__FUNCTION__);
     return 0;
@@ -2651,10 +2663,16 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd,struct usb_host_endpoint *ep,struc
 
 /*unlink urb*/
     static int
-pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd,struct urb *urb)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb)
 {
 
     int status = 0;
+#else
+pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb, int status)
+{
+
+#endif
     td_ptd_map_buff_t *td_ptd_buf;
     td_ptd_map_t        *td_ptd_map;
     struct ehci_qh *qh = 0;
@@ -3090,7 +3108,7 @@ error:
 
 static const struct hc_driver pehci_driver = {
     .description =              hcd_name,
-    .product_desc = "PHILIPS ISP1761",
+    .product_desc = "NXP ISP1761",
     .hcd_priv_size = sizeof(phci_hcd) - sizeof(struct usb_hcd),
 
     .irq = pehci_hcd_irq,
@@ -3226,7 +3244,4 @@ MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 module_init (pehci_module_init);
 module_exit (pehci_module_cleanup);
-
-
-
 

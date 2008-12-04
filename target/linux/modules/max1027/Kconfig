@@ -1,10 +1,9 @@
 #
 #
 
-config ARMADEUS_FAST_MAX1027
+config ARMADEUS_MAX1027
         tristate "Armadeus Max1027 ADC driver (fast version)"
         default n
         depends on ARMADEUS_DRIVERS
         ---help---
-	  Fast version (full speed signal digitizing) of the Max1027
-	  driver.
+	  Max1027 fast driver

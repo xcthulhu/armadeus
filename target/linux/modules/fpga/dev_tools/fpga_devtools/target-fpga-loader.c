@@ -23,7 +23,12 @@
 
 #include "target-fpga-loader.h"
 #include "xilinx-fpga-loader.h"
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/hardware.h>
+#else
+#include <mach/hardware.h>
+#endif
 #include <asm/io.h>
 
 #define GPIO_PORT(x)  ((x >> 5) & 3)

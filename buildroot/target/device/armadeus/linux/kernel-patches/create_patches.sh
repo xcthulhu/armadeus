@@ -4,7 +4,7 @@ show_usage()
 {
     echo
     echo "Copy existing patches and rename them for new version:"
-    echo "    $0 old_version new_version"
+    echo "    $0 old_version_dir new_version_dir"
     echo
     exit 1
 }
@@ -33,7 +33,7 @@ for patches in $FILES; do
     #echo "renaming $1/$patches in $2/$new_name"
     mv $2/$patches $2/$new_name
 done
-rm -rf $2/$new_name/.svn
+rm -rf $2/.svn
 
 # Bye bye
 exit 0

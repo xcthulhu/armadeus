@@ -1,0 +1,23 @@
+--- linux-org/drivers/mtd/maps/Kconfig
++++ linux-imx/drivers/mtd/maps/Kconfig
+@@ -375,6 +375,10 @@ config MTD_SCB9328
+ 	tristate "CFI Flash device mapped on ARM Integrator/P720T"
+ 	depends on ARM && MTD_CFI
+ 
++config MTD_APF9328
++	tristate "CFI Flash device mapped on APF9328 board"
++	depends on ARM && MTD_CFI
++
+ config MTD_CDB89712
+ 	tristate "Cirrus CDB89712 evaluation board mappings"
+ 	depends on MTD_CFI && ARCH_CDB89712
+--- linux-org/drivers/mtd/maps/Makefile
++++ linux-imx/drivers/mtd/maps/Makefile
+@@ -61,6 +61,7 @@
+ obj-$(CONFIG_MTD_WRSBC8260)	+= wr_sbc82xx_flash.o
+ obj-$(CONFIG_MTD_DMV182)	+= dmv182.o
+ obj-$(CONFIG_MTD_SHARP_SL)	+= sharpsl-flash.o
++obj-$(CONFIG_MTD_APF9328)	+= apf9328.o
+ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
+ obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
+ obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o

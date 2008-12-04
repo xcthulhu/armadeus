@@ -6,8 +6,14 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/hardware.h>
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/hardware.h>
+#include <mach/imx-regs.h>
+#endif
 #include <asm/delay.h>
 #include <linux/usb/isp116x.h>
 
@@ -153,6 +159,6 @@ module_init(devfull_isp1761_init);
 module_exit(devfull_isp1761_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("JB/NC");
+MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain - Armadeus systems");
 MODULE_DESCRIPTION("APF9328 ISP1761 chip initialization driver");
 MODULE_VERSION("0.2");

@@ -1,7 +1,7 @@
-/**********************************************************************
- * Philips ISP176x host controller interface header file
+/***************************************************************************************************
+ * NXP ISP176x host controller interface header file
  *
- * (c) 2002 Koninklijke Philips Electronics N.V. All rights reserved. <usb.linux@philips.com>
+ * (c) 2006 NXP B.V., All rights reserved. <usb.linux@nxp.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +24,17 @@
  * History:     
  *
  * Date                Author                  Comments
- * ---------------------------------------------------------------------
+ * ----------------------------------------------------------------------------------------------------
  * May 16, 2003        krishan                  initial version
+ * May 02 2007	       Prabhakar		ported to 2.6.20 with backward compatibility with 2.6.9  
  *                                                                              
- ***********************************************************************/
+ *******************************************************************************************************/
 
 #ifndef __PEHCI_H__
 #define __PEHCI_H__
 
-#define DRIVER_AUTHOR "Philips Semiconductors"
-#define DRIVER_DESC "ISP1761 'Enhanced' Host Controller (EHCI) Driver"
+#define DRIVER_AUTHOR 	"NXP Semiconductors"
+#define DRIVER_DESC 	"ISP1761 Enhanced Host Controller (EHCI) Driver"
 
 /*    bus related stuff */
 #define __ACTIVE                0x01
@@ -556,7 +557,7 @@ static inline void phci_mem_cleanup (void) { return; }
 #define ISO_BUFFER                      0x4
 #define BUFFER_MAP                      0x7
 
-/* buffer type for Philips HC */
+/* buffer type for NXP HC */
 #define         TD_PTD_BUFF_TYPE_ATL    0       /* ATL buffer */
 #define         TD_PTD_BUFF_TYPE_INTL   1       /* INTL buffer */
 #define         TD_PTD_BUFF_TYPE_ISTL   2       /* ISO buffer */

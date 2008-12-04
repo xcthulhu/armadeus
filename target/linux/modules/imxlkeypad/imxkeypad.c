@@ -39,8 +39,13 @@
 #include <linux/ioport.h>
 
 #include <asm/io.h>
-#include <asm/arch/hardware.h>
 #include <asm/irq.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+#include <asm/arch/hardware.h>
+#else
+#include <mach/hardware.h>
+#endif
 
 MODULE_AUTHOR("Eric Jarrige");
 MODULE_DESCRIPTION("i.MXL keypad driver");
@@ -214,7 +219,7 @@ static struct imxkeypad imxkeypad;
 
 static int __init imxkeypad_init(void)
 {
-	int i, j, ret;
+	int i, ret;
 
 	printk(KERN_INFO "Initializing Armadeus keypad driver\n");
 
@@ -237,15 +242,15 @@ static int __init imxkeypad_init(void)
 	imxkeypad.input->keycode = imxkeypad.keycode;
 	imxkeypad.input->keycodesize = sizeof(unsigned short);
 	imxkeypad.input->keycodemax = ARRAY_SIZE(imxkeypad_keycode);
-	imxkeypad.input->private = &imxkeypad;
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	imxkeypad.input->private = &imxkeypad; /* Usefull ? */
+#endif
 	imxkeypad.input->name = "imxkeypad";
 	imxkeypad.input->phys = imxkeypad.phys;
 	imxkeypad.input->id.bustype = BUS_HOST;
 	imxkeypad.input->id.vendor = 0x0001;
 	imxkeypad.input->id.product = 0x0001;
 	imxkeypad.input->id.version = 0x0100;
-
 
 	printk(KERN_DEBUG "imxkeypad matrix size: %ld rows, %ld cols\n", size[0], size[1]);
 	imxkeypad.num_rows = size[0];
@@ -282,7 +287,7 @@ static int __init imxkeypad_init(void)
 	imxkeypad_activate_all(&imxkeypad);
 
 	/* register driver to the Linux Input layer */
-	input_register_device(imxkeypad.input);
+	input_register_device(imxkeypad.input); /* TODO: Handle returned value !! */
 
 	/* attempt to reserve the interrupts (on i.MXL each GPIO can generate it's own interrupt) */
 	for (i = 0; i < imxkeypad.num_rows; i++) {

@@ -24,7 +24,12 @@
 
 //#include "common.h"
 #include "ppdevemu.h"
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imx-regs.h>
+#else
+#include <mach/imx-regs.h>
+#endif
 #include <linux/moduleparam.h>
 
 extern void         gpioWriteOnPort( unsigned int, unsigned int );
@@ -138,7 +143,7 @@ static int procfile_ppdev_read( char *buffer, __attribute__ ((unused)) char **st
     // Get the status of the fpga TBDNICO
         
     // Put status to given buffer
-    len = sprintf(buffer, "Ben j'ai trop rien à dire là mais bon ça changera surement :-) !\n");
+    len = sprintf(buffer, "Nothing to say yet :-) !\n");
     
     //*start = buffer;
     *eof = 1;
