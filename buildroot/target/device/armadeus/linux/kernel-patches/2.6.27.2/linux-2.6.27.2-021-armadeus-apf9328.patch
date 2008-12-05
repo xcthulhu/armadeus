@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/arch/arm/mach-imx/apf9328.c	
 +++ linux-2.6.27.2.mod/arch/arm/mach-imx/apf9328.c	
-@@ -0,0 +1,579 @@
+@@ -0,0 +1,610 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -47,6 +47,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <mach/spi_imx.h>
 +#include <mach/imx-regs.h> // imx_gpio_mode()
 +#include <mach/imx-alsa.h>
++#include <linux/spi/max1027.h>
 +
 +#ifdef CONFIG_DM9000
 +#include <linux/dm9000.h>
@@ -54,8 +55,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#include "generic.h"
 +
-+#ifdef CONFIG_SENSORS_MAX1027_MODULE
-+#define CONFIG_SENSORS_MAX1027 1
++#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
++#define CONFIG_ARMADEUS_MAX1027 1
 +#endif
 +#ifdef CONFIG_SPI_IMX_MODULE
 +#define CONFIG_SPI_IMX 1
@@ -278,18 +279,38 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#endif //CONFIG_SPI_IMX
 +
-+#ifdef CONFIG_SENSORS_MAX1027
++#ifdef CONFIG_ARMADEUS_MAX1027
 +#define IMX_SPI1_SS_PIN 15 
 +#define IMX_SPI1_SS (1<<15)
-+static void max1027_init_cs(void)
-+{
-+    // SPI CSn is used as chip select but in GPIO mode
-+    OCR1(2) |= 3<<(IMX_SPI1_SS_PIN*2);
-+    DDIR(2) |= IMX_SPI1_SS;
++#define MAX1027_EOC_INT 13
++#define MAX1027_CNVST 14
++
++static int max1027_init(struct spi_device *spi)
++{	
++    imx_gpio_mode( PC14_PF_SPI1_SCLK );
++    imx_gpio_mode( PC16_PF_SPI1_MISO );
++    imx_gpio_mode( PC17_PF_SPI1_MOSI );
++
++
++    /* configure CNVST */
++    DR(0) |= 1 << MAX1027_CNVST; // Initializes it High
++    imx_gpio_mode( GPIO_PORTA | MAX1027_CNVST | GPIO_OUT | GPIO_GIUS | GPIO_DR );
++
++    /* configure EOC */
++    imx_gpio_mode( GPIO_PORTA | MAX1027_EOC_INT | GPIO_IN | GPIO_GIUS  );
++
++    /* SPI CSn is used as chip select but in GPIO mode */
 +    DR(2) |= IMX_SPI1_SS;
-+    GIUS(2) |= IMX_SPI1_SS;
-+    GIUS(2) &= ~(1<<14 | 1<<16 | 1<< 17); // Set SPI primary functions
++    imx_gpio_mode( GPIO_PORTC | IMX_SPI1_SS_PIN | GPIO_OUT | GPIO_GIUS | GPIO_DR  );
++    
++    return 0;
 +}
++
++static int max1027_exit(struct spi_device *spi)
++{
++    return 0; 
++}
++
 +static void max1027_cs(u32 command)
 +{
 +    if( command == SPI_CS_DEASSERT )
@@ -302,7 +323,18 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	.cs_control		= max1027_cs,
 +};
 +
-+#endif // CONFIG_SENSORS_MAX1027
++static struct max1027_config apf9328_max1027_config = {
++	.conv = MAX1027_CONV_DEFAULT,
++	.setup = MAX1027_SETUP_DEFAULT,
++	.avg = MAX1027_AVG_DEFAULT,
++        .cnvst_pin = (int)(MAX1027_CNVST|GPIO_PORTA),
++	.init = max1027_init,
++	.exit = max1027_exit
++};
++
++
++
++#endif // CONFIG_ARMADEUS_MAX1027
 +
 +#ifdef CONFIG_SPI_TSC2102
 +#define TSC2102_CS_GPIOB 17
@@ -410,7 +442,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +
 +static struct spi_board_info spi_board_info[] __initdata = {
-+#ifdef CONFIG_SENSORS_MAX1027
++#ifdef CONFIG_ARMADEUS_MAX1027
 +{
 +    .modalias			= "max1027",
 +    .controller_data 	= &max1027_hw,
@@ -418,6 +450,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    .bus_num			= 1, // SPI1
 +    .chip_select		= 0,
 +    .mode 				= 0,
++    .irq                = IRQ_GPIOA(MAX1027_EOC_INT),
++    .platform_data      = &apf9328_max1027_config,
 +},
 +#endif // CONFIG_SENSORS_MAX1027
 +#ifdef CONFIG_SPI_TSC2102
@@ -510,9 +544,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    imx_fb_set_gpios(); /* init PORTD ....*/
 +#endif
 +
-+#ifdef CONFIG_SENSORS_MAX1027
-+    max1027_init_cs();
-+#endif
 +#ifdef CONFIG_SPI_TSC2102
 +    tsc2102_init_gpio();
 +#endif
@@ -522,7 +553,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +    platform_add_devices(devices, ARRAY_SIZE(devices));
 +
-+#if defined (CONFIG_SENSORS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
 +    spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 +#endif 
 +
@@ -583,9 +614,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    .timer        = &imx_timer,
 +    .init_machine = apf9328_init,
 +MACHINE_END
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/arch/arm/mach-imx/apf9328_lcd_config.h	
 +++ linux-2.6.27.2.mod/arch/arm/mach-imx/apf9328_lcd_config.h	
 @@ -0,0 +1,200 @@
