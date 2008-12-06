@@ -14,3 +14,9 @@ config BR2_PACKAGE_SOCKETCAN
 	  as possible to the TCP/IP protocols to allow programmers, familiar 
 	  with network programming, to easily learn how to use CAN sockets.
 
+config BR2_PACKAGE_SOCKETCAN_TEST
+        bool "install test tools"
+        depends on BR2_PACKAGE_SOCKETCAN
+        help
+          Compile and install socketcan test tools too.
+

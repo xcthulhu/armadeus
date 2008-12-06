@@ -1,0 +1,63 @@
+diff -urN socketcan-svn-rev810.org/can-utils/Makefile socketcan-svn-rev810/can-utils/Makefile
+--- socketcan-svn-rev874.org/can-utils/Makefile	2008-07-16 10:52:02.000000000 +0200
++++ socketcan-svn-rev874/can-utils/Makefile	2008-07-16 11:19:21.000000000 +0200
+@@ -40,6 +40,10 @@
+ #
+ #  Send feedback to <socketcan-users@lists.berlios.de>
+ 
++ifeq ($(INSTALL_DIR),)
++	INSTALL_DIR=/usr/local/bin
++endif
++
+ MAKEFLAGS = -k
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+@@ -52,11 +56,17 @@
+ 
+ all: $(PROGRAMS)
+ 
++strip: all
++	$(STRIP_CMD) $(PROGRAMS)
++
+ clean:
+ 	rm -f $(PROGRAMS) *.o
+ 
+ install:
+-	cp -f $(PROGRAMS) /usr/local/bin
++	cp -f $(PROGRAMS) $(INSTALL_DIR)
++
++uninstall:
++	cd $(INSTALL_DIR); rm -f $(PROGRAMS)
+ 
+ distclean:
+ 	rm -f $(PROGRAMS) *.o *~
+--- socketcan-svn-rev874.org/test/Makefile	2008-12-06 22:22:28.000000000 +0100
++++ socketcan-svn-rev874/test/Makefile	2008-12-06 22:33:10.000000000 +0100
+@@ -40,6 +40,10 @@
+ #
+ #  Send feedback to <socketcan-users@lists.berlios.de>
+ 
++ifeq ($(INSTALL_DIR),)
++        INSTALL_DIR=/usr/local/bin
++endif
++
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+ 	    -fno-strict-aliasing \
+ 	    -DPF_CAN=29 \
+@@ -64,11 +68,14 @@
+ 
+ all: $(PROGRAMS)
+ 
++strip: all
++	$(STRIP_CMD) $(PROGRAMS)
++
+ install:
+-	cp -f $(PROGRAMS) /usr/local/bin
++	cp -f $(PROGRAMS) $(INSTALL_DIR)
+ 
+ clean:
+-	rm -f $(PROGRAMS)
++	cd $(INSTALL_DIR); rm -f $(PROGRAMS)
+ 
+ distclean:
+ 	rm -f $(PROGRAMS) *~

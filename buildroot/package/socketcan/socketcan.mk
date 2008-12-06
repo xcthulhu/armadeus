@@ -4,7 +4,7 @@
 #
 #############################################################
 SOCKETCAN_TRUNK:=http://svn.berlios.de/svnroot/repos/socketcan/trunk
-SOCKETCAN_REVISION:=810
+SOCKETCAN_REVISION:=874
 SOCKETCAN_NAME:=socketcan-svn-rev$(SOCKETCAN_REVISION)
 SOCKETCAN_DIR:=$(BUILD_DIR)/$(SOCKETCAN_NAME)
 SOCKETCAN_SOURCE:=$(SOCKETCAN_NAME).tar.bz2
@@ -29,12 +29,19 @@ $(SOCKETCAN_DIR)/.configured: $(SOCKETCAN_DIR)/.unpacked
 	touch $@
 
 $(SOCKETCAN_DIR)/.compiled: $(SOCKETCAN_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) -C $(SOCKETCAN_DIR)/can-utils
+	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(SOCKETCAN_DIR)/can-utils
+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
+	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(SOCKETCAN_DIR)/test
+endif
 	touch $@
 
 $(TARGET_DIR)/usr/bin/$(SOCKETCAN_EXE): $(SOCKETCAN_DIR)/.compiled
 	$(MAKE) STRIP_CMD="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" -C $(SOCKETCAN_DIR)/can-utils strip
 	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/can-utils install
+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
+	$(MAKE) STRIP_CMD="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" -C $(SOCKETCAN_DIR)/test strip
+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/test install
+endif
 	touch $@
 
 SOCKETCAN socketcan: uclibc $(TARGET_DIR)/usr/bin/$(SOCKETCAN_EXE)
