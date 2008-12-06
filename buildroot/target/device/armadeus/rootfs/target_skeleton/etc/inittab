@@ -22,6 +22,7 @@ null::sysinit:/bin/mount -t tmpfs -o size=64k,mode=0755 none /dev
 null::sysinit:/bin/mkdir /dev/pts
 null::sysinit:/bin/mount -t devpts devpts /dev/pts
 null::sysinit:/bin/mount -o remount,rw /
+null::sysinit:/bin/mount /tmp
 #::sysinit:/bin/mount -a # now done in S50mountfs to overcome NFS pbs
 null::sysinit:/bin/hostname -F /etc/hostname
 null::sysinit:/sbin/ifconfig lo 127.0.0.1 up
