@@ -263,7 +263,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +};
 +
 +static struct spi_imx_master imx_spi2_master_info = {
-+	.num_chipselect	= 1,
++	.num_chipselect	= 2,
 +	.enable_dma     = 0,
 +};
 +
@@ -473,7 +473,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 + .controller_data 	= &mcp251X_hw,
 + .bus_num           = 2,
 + .mode              = SPI_MODE_0,
-+ .chip_select       = 0,
++ .chip_select       = 1,
 + .irq               = IRQ_GPIOC( CAN_MPC251X_INT_GPIOC ),
 + .platform_data     = &apf9328_mcp251x_config,
 + },
