@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"3.3"
-#define CONFIG_IDENT_STRING	" apf9328 patch 3.3"
+#define CONFIG_ENV_VERSION 	"3.4"
+#define CONFIG_IDENT_STRING	" apf9328 patch 3.4"
 
 #define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
 #define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
@@ -211,7 +211,7 @@
 #define CONFIG_GATEWAYIP	192.168.000.1
 #define CONFIG_SERVERIP		192.168.000.2
 #define CONFIG_SRV_PATH		""
-#define CONFIG_ROOTPATH		"/tftpboot/root"
+#define CONFIG_ROOTPATH		"/tftpboot/apf9328-root"
 
 /*
  * General options for u-boot. Modify to save memory foot print
