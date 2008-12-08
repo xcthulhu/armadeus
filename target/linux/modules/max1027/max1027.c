@@ -29,9 +29,11 @@
 #include <linux/interrupt.h> /* request_irq */
 #include <linux/version.h>
 #include <linux/spi/max1027.h>
-#include <mach/gpio.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <linux/cdev.h>      /* struct class_device */
+#include <asm/arch/gpio.h>
+#else
+#include <mach/gpio.h>
 #endif
 #include <linux/device.h>
 #include <linux/err.h>
