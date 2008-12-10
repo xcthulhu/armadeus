@@ -1,10 +1,10 @@
---- buildroot/package/Config.in	2008-12-10 10:18:38.000000000 +0100
-+++ buildroot/package/Config.in.old	2008-12-10 10:18:00.000000000 +0100
-@@ -467,7 +467,6 @@ source "package/lua/Config.in"
+--- buildroot/package/Config.in.old	2008-12-10 10:18:00.000000000 +0100
++++ buildroot/package/Config.in	2008-12-10 10:18:38.000000000 +0100
+@@ -467,6 +467,7 @@ source "package/lua/Config.in"
  source "package/microperl/Config.in"
  source "package/python/Config.in"
  source "package/pyserial/Config.in"
--source "package/pymysql/Config.in"
++source "package/pymysql/Config.in"
  source "package/ruby/Config.in"
  source "package/tcl/Config.in"
  source "package/php/Config.in"
