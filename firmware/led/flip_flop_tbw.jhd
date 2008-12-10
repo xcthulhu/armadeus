@@ -1,3 +1,0 @@
-MODULE flip_flop_tbw
-SUBMODULE flip_flop
-INSTANCE UUT

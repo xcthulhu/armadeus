@@ -1,5 +1,0 @@
-vhdl work "flip_flop.vhd"
-vhdl work "debouncer.vhd"
-vhdl work "clock_divider.vhd"
-vhdl work "led_top.vhd"
-vhdl work "led_top_tbw.vhw"

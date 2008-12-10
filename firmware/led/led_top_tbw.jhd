@@ -1,3 +1,0 @@
-MODULE led_top_tbw
-SUBMODULE led_top
-INSTANCE UUT
