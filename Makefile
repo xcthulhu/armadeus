@@ -66,8 +66,13 @@ help:
 	@echo '  <Package>      - a single package (ex: u-boot linux or buildroot'
 	@echo
 	@echo 'Configuration:'
+	@echo ' Global:'
 	@echo '  menuconfig           - interactive curses-based configurator'
 	@echo '  oldconfig            - resolve any unresolved symbols in .config'
+	@echo ' Specific:'
+	@echo '  linux-menuconfig     - configure linux parameters'
+	@echo '  uclibc-menuconfig    - configure uclibc library parameters'
+	@echo '  busybox-menuconfig   - configure busybox shell parameters'
 	@echo
 	@echo 'Miscellaneous:'
 	@echo '  source                 - download all sources needed for offline-build'
