@@ -9,8 +9,8 @@ ARMADEUS-TESTSUITE_SOURCE:=$(BUILD_DIR)/../../target/test/
 ARMADEUS-TESTSUITE_DIR:=$(BUILD_DIR)/armadeus-testsuite-$(ARMADEUS-TESTSUITE_VER)
 ARMADEUS-TESTSUITE_CAT:=zcat
 ARMADEUS-TESTSUITE_BINARY:=test_env.sh
-ARMADEUS-TESTSUITE_TARGET_DIR:=/usr/bin/test
-ARMADEUS-TESTSUITE_TARGET_BINARY:=usr/bin/test/$(ARMADEUS-TESTSUITE_BINARY)
+ARMADEUS-TESTSUITE_TARGET_DIR:=/usr/bin/testsuite
+ARMADEUS-TESTSUITE_TARGET_BINARY:=$(ARMADEUS-TESTSUITE_TARGET_DIR)/$(ARMADEUS-TESTSUITE_BINARY)
 
 $(ARMADEUS-TESTSUITE_DIR)/.unpacked:
 	mkdir -p $(ARMADEUS-TESTSUITE_DIR)/
@@ -35,6 +35,6 @@ armadeus-testsuite-dirclean:
 # Toplevel Makefile options
 #
 #############################################################
-ifeq ($(strip $(BR2_PACKAGE_ARMADEUS-TESTSUITE)),y)
+ifeq ($(strip $(BR2_PACKAGE_ARMADEUS_TESTSUITE)),y)
 TARGETS+=armadeus-testsuite
 endif

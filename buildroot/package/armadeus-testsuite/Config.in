@@ -1,4 +1,4 @@
-config BR2_PACKAGE_ARMADEUS_TESTS
+config BR2_PACKAGE_ARMADEUS_TESTSUITE
 	bool "Armadeus Test Suite"
 	default n
 	help
