@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/sound/arm/imx-alsa.c	
 +++ linux-2.6.27.2.mod/sound/arm/imx-alsa.c	
-@@ -0,0 +1,682 @@
+@@ -0,0 +1,683 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
@@ -135,13 +135,14 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static int audio_dma_request(struct audio_stream *s,
 +			     void (*callback) (int, void *))
 +{
-+	int err=0;
++	int err=0, chan=0;
 +	ADEBUG();
 +
-+	err = imx_dma_request_by_prio(s->id, DMA_PRIO_HIGH);
-+	if (err < 0) {
++	chan = imx_dma_request_by_prio(s->id, DMA_PRIO_HIGH);
++	if (chan < 0) {
 +		printk(KERN_ERR "Unable to grab dma channel: %d\n", s->dma_dev);
 +	} else {
++		s->dma_dev = chan;
 +		err = imx_dma_setup_handlers(s->dma_dev,
 +		       snd_imx_alsa_dma_interrupt,
 +		       dma_err_handler,

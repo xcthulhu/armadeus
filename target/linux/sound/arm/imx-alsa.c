@@ -34,13 +34,12 @@
 #ifdef CONFIG_PM
 #include <linux/pm.h>
 #endif
-#include <sound/driver.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 
-#include <asm/arch/imx-alsa.h>
+#include <mach/imx-alsa.h>
 #include <linux/dma-mapping.h>
-#include <asm/arch/imx-dma.h>
+#include <mach/imx-dma.h>
 
 #define TSC_MASTER
 
@@ -130,13 +129,14 @@ static void dma_err_handler(int channel, void *data, int errcode)
 static int audio_dma_request(struct audio_stream *s,
 			     void (*callback) (int, void *))
 {
-	int err=0;
+	int err=0, chan=0;
 	ADEBUG();
 
-	err = imx_dma_request_by_prio(&(s->dma_dev), s->id, DMA_PRIO_HIGH);
-	if (err < 0) {
+	chan = imx_dma_request_by_prio(s->id, DMA_PRIO_HIGH);
+	if (chan < 0) {
 		printk(KERN_ERR "Unable to grab dma channel: %d\n", s->dma_dev);
 	} else {
+		s->dma_dev = chan;
 		err = imx_dma_setup_handlers(s->dma_dev,
 		       snd_imx_alsa_dma_interrupt,
 		       dma_err_handler,
@@ -239,7 +239,7 @@ static void audio_process_dma(struct audio_stream *s)
 							runtime->dma_area + offset,
 							dma_size,
 							DMA_TO_DEVICE);
-		if (dma_mapping_error(source)) {
+		if (dma_mapping_error((struct device*)NULL, source)) {
 			printk("Unable to map DMA buffer\n");
 			return;
 		}
@@ -382,7 +382,7 @@ static int snd_card_imx_alsa_open(struct snd_pcm_substream * substream)
 	int stream_id = substream->pstr->stream;
 	int err;
 	
-	printk ("snd_card_imx_alsa_open substream 0x%x\n", substream);
+	printk ("%s substream @: 0x%x\n", __func__, (unsigned int)substream);
 	chip->s[stream_id].stream = substream;
 	alsa_codec_config->codec_clock_on();
 	if (stream_id == SNDRV_PCM_STREAM_PLAYBACK) {
