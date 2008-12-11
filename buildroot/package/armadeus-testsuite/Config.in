@@ -1,0 +1,7 @@
+config BR2_PACKAGE_ARMADEUS_TESTS
+	bool "Armadeus Test Suite"
+	default n
+	help
+	  Install Armadeus "Test Suite" to allow automatic release validation.
+	  Test scripts will be installed on the APF in /usr/bin/test/ .
+
