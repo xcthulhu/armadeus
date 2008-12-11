@@ -41,5 +41,7 @@ echo
 echo
 ./test_imxregs.sh
 echo
+./test_sound.sh
+echo
 
 exit 0

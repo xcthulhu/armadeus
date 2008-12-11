@@ -27,3 +27,6 @@ TEMP_FILE="rnd_data.bin"
 TEMP_FILE_SIZE=6144 # kbytes
 WRITE_BENCH="/tmp/test_mmc.sh"
 SERVER_IP="192.168.0.17"
+
+mkdir -p $TEMP_DIR
+
