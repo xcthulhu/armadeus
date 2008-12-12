@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<platform>
-	<description>
-		<![CDATA[   gfdjgkfghdkfjghdf ]]>
-	</description>
-	<board type="APF9328" version="1"/>
-	<fpga type="XC3S200" speed="-4" package="TQ144" family="spartan" />
-</platform>
