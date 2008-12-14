@@ -35,7 +35,6 @@ BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 LINUX_VERSION:=$(shell echo $(BR2_LINUX26_VERSION))
 BOARD_NAME:=$(shell echo $(BR2_BOARD_NAME))
 ARCH:=$(shell echo $(BR2_GCC_TARGET_ARCH))
-UCLIBC_VERSION:=0.9.29
 
 ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
@@ -44,7 +43,6 @@ PATCH_DIR=patches
 TAR_OPTIONS=--exclude=.svn -xf 
 
 LINUX_DIR=$(BUILDROOT_DIR)/project_build_$(ARCH)/$(BOARD_NAME)/linux-$(LINUX_VERSION)
-UCLIBC_DIR=$(BUILDROOT_DIR)/toolchain_build_$(ARCH)/uClibc-$(UCLIBC_VERSION)
 BOARD_DIR=$(BUILDROOT_DIR)/target/device/armadeus/$(BOARD_NAME)/
 
 ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
@@ -169,12 +167,7 @@ buildroot-clean:
 buildroot-dirclean:
 	rm -rf $(BUILDROOT_DIR)	
 
-config-merge:
-	kompare $(BUILDROOT_DIR)/.config $(BOARD_DIR)/$(BOARD_NAME)_defconfig
-	kompare $(LINUX_DIR)/.config     $(BOARD_DIR)/$(BOARD_NAME)-linux-$(LINUX_VERSION).config
-	kompare $(UCLIBC_DIR)/.config    $(BOARD_DIR)/uClibc.config.arm
-
 PHONY_TARGETS+=dummy all linux-menuconfig linux26 linux26-clean buildroot-clean buildroot-dirclean
-PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config config-merge
+PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config
 .PHONY: $(PHONY_TARGETS)
 
