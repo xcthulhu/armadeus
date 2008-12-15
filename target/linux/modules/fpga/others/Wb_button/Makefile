@@ -2,13 +2,6 @@
 # Makefile for the Armadeus Wb_button drivers
 #
 
-BASE_DIR="../../../../../buildroot/"
-
-REL=`grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config | \
-      sed "s/BR2_PACKAGE_LINUX_VERSION=\\"//" | sed "s/\\"//"`
-
-ARMADEUS_KERNEL_DIR=$(BASE_DIR)build_arm/linux-$(REL)
-
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_BUTTON_DRIVER)	+= button.o
@@ -18,7 +11,10 @@ obj-$(CONFIG_ARMADEUS_BUTTON_DRIVER)	+= button.o
 
 else
 
-KDIR    := $(ARMADEUS_KERNEL_DIR)
+ARMADEUS_BASE_DIR=../../../../../..
+include $(ARMADEUS_BASE_DIR)/Makefile.in
+
+KDIR    := $(ARMADEUS_LINUX_DIR)
 PWD	:= $(shell pwd)
 
 default:
