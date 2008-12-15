@@ -1,0 +1,46 @@
+--- /home/fabien/virgin-armadeus/buildroot/package/database/mysql_client/Config.in	2008-12-15 13:18:29.000000000 +0100
++++ buildroot/package/database/mysql_client/Config.in	2008-12-15 11:00:35.000000000 +0100
+@@ -2,3 +2,21 @@ config BR2_PACKAGE_MYSQL_CLIENT
+ 	bool "MySQL 5.1 client"
+ 	help
+ 	  MySQL client
++
++if BR2_PACKAGE_MYSQL_CLIENT
++config BR2_PACKAGE_MYSQL_CLIENT_SHRINK
++	bool "MySQL client shrink"
++	help
++	  Reduce the size of MySQL package suppressing:
++	  usr/mysql-test/
++	  usr/sql-bench/
++	  usr/bin/mysql_client_test
++	  usr/bin/mysql_waitpid
++	  usr/bin/myisampack
++	  usr/bin/mysqldump
++	  usr/bin/mysqltest
++	  usr/bin/myisamchk
++	  usr/bin/myisam_ftdump
++	  usr/bin/myisamlog
++	  usr/bin/my_print_defaults
++endif
+--- /home/fabien/virgin-armadeus/buildroot/package/database/mysql_client/mysql_client.mk	2008-12-15 13:18:29.000000000 +0100
++++ buildroot/package/database/mysql_client/mysql_client.mk	2008-12-15 11:05:57.000000000 +0100
+@@ -28,3 +28,19 @@ MYSQL_CLIENT_CONF_OPT = \
+ 	$(ENABLE_DEBUG)
+ 
+ $(eval $(call AUTOTARGETS,package/database,mysql_client))
++
++ifeq ($(BR2_PACKAGE_MYSQL_CLIENT_SHRINK),y)
++$(MYSQL_CLIENT_HOOK_POST_INSTALL):
++	rm -rf $(TARGET_DIR)/usr/mysql-test/
++	rm -rf $(TARGET_DIR)/usr/sql-bench/
++	rm -rf $(TARGET_DIR)/usr/bin/mysql_client_test
++	rm -rf $(TARGET_DIR)/usr/bin/mysql_waitpid
++	rm -rf $(TARGET_DIR)/usr/bin/myisampack
++	rm -rf $(TARGET_DIR)/usr/bin/mysqldump
++	rm -rf $(TARGET_DIR)/usr/bin/mysqltest
++	rm -rf $(TARGET_DIR)/usr/bin/myisamchk
++	rm -rf $(TARGET_DIR)/usr/bin/myisam_ftdump
++	rm -rf $(TARGET_DIR)/usr/bin/myisamlog
++	rm -rf $(TARGET_DIR)/usr/bin/my_print_defaults
++	touch $@
++endif
