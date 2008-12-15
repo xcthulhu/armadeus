@@ -35,7 +35,7 @@
 /*#include <linux/i2c.h>
 #include <linux/i2c-dev.h>*/
 
-#include "imxregs.h"
+#include "../imxregs/imxregs.h"
 
 #define DEBUG TRUE
 
@@ -138,10 +138,10 @@ static void dumpentry(int i)
         switch (regs[i].type)
         {
             // Hexa printing
-            case 'x': 
+            case 'x':
                 printf("%8x", shiftdata);
             break;
-            case '<': 
+            case '<':
                 printf("%8u", 1 << shiftdata);
             break;
             // Decimal printing
@@ -317,34 +317,6 @@ int main(int argc, char *argv[])
     char *p;
     u32 val;
 
-    // No arguments -> dump all known registers
-    if (argc == 1) {
-        dumpall();
-        return 0;
-    }
-
-    // Uppercase first argument (register name)
-    if (argc >= 2) {
-        p = argv[1];
-        while (*p) {
-            *p = toupper(*p);
-            p++;
-        }
-    }
-
-    // Dump the content of the provided register
-    if (argc == 2) {
-        dumpmatching(argv[1]);
-        return 0;
-    }
-
-    // Put value to given register
-    if (argc == 3) {
-        sscanf(argv[2],"%i",&val);
-        setreg(argv[1], val);
-        return 0;
-    }
-
     if (argc == 4) {
         u32 type;
         float level;
@@ -362,16 +334,12 @@ int main(int argc, char *argv[])
         return 0;
     }
     // In all other cases, print Usage
-    printf("Usage: %s                - to dump all known registers\n"
-        "       %s <name>         - to dump named register\n"
-        "       %s <name> <value> - to set named register\n",
-        "       %s <signal_type> <samples> <scale> - to audio signal:\n",
-        "          <signal_type> 0:triangular 1:sinusoid",
-        "          <samples> nb sample per period",
-        "          <scale>  0.0 .. 1.0 signal amplitude\n",
-    "          tsc2102 has to be configured in master mode",
+    printf("Usage: %s <signal_type> <samples> <scale> - to audio signal:\n"
+           "          <signal_type> 0:triangular 1:sinusoid\n"
+           "          <samples> nb sample per period\n"
+           "          <scale>  0.0 .. 1.0 signal amplitude\n"
+           "    !! tsc210x has to be configured in master mode !!\n",
         argv[0], argv[0], argv[0], argv[0]);
 
     return 1;
 }
-
