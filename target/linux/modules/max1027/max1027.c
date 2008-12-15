@@ -20,6 +20,8 @@
  *
  */
 
+// #define DEBUG 1
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/fs.h>
@@ -47,7 +49,7 @@
 
 
 #define DRIVER_NAME    "max1027"
-#define DRIVER_VERSION "0.3"
+#define DRIVER_VERSION "0.4"
 
 
 /* Internal registers prefixes */
@@ -119,7 +121,7 @@ struct max1027 {
 	u8 reset_reg;
 	u8 uni_reg;
 	u8 bi_reg;
-    int cnvst; /* conversion start pin */
+	int cnvst; /* conversion start pin */
 
 	wait_queue_head_t conversion_wq;
 	struct tasklet_struct tasklet;
@@ -161,13 +163,24 @@ static void max1027_process_results(struct max1027 *max1027)
 	u8 msb, lsb;
 	u16 value;
 	int i=0, values_to_read=0, start=0;
+	unsigned int scan_mode, selected_channel;
 
 	pr_debug("%s", __FUNCTION__);
 
+	selected_channel = GET_SELECTED_CHANNEL(max1027->conv_reg);
+	if (selected_channel >= NB_CHANNELS)
+		selected_channel = NB_CHANNELS - 1;
+	scan_mode = GET_SCAN_MODE(max1027->conv_reg);
+	if (scan_mode == SCAN_MODE_00) {
+		values_to_read = selected_channel + 1;
+	} else if (scan_mode == SCAN_MODE_01) {
+		values_to_read = NB_CHANNELS - selected_channel + 1;
+	} else {
+		values_to_read = 1;
+	}
+
 	if( max1027->conv_reg & MAX1027_CONV_TEMP )
-		values_to_read = NB_CHANNELS+1;
-	else
-		values_to_read = NB_CHANNELS;
+		values_to_read += 1;
 
 #ifdef DEBUG
 	for( i=0; i<values_to_read*2; i++ ) {
@@ -191,10 +204,10 @@ static void max1027_process_results(struct max1027 *max1027)
 		msb = buffer[i*2] & 0x0f;
 		lsb = buffer[(i*2)+1];
 		value = ((msb << 8) | lsb) >> 2;
-		if( GET_SCAN_MODE(max1027->conv_reg) == SCAN_MODE_00 )
-		{
-			//size = GET_SELECTED_CHANNEL(max1027->conv_reg) + 1;
+		if( scan_mode == SCAN_MODE_00 ) {
 			max1027->results.ain[i-start] = value;
+		} else {
+			max1027->results.ain[selected_channel++] = value;
 		}
 		pr_debug("0x%04x ", value);
 	}
@@ -206,8 +219,8 @@ static void max1027_process_results(struct max1027 *max1027)
 		channel = max1027->channels[i];
 		if (channel != NULL) {
 			if ( channel->running ) {
-                channel->running = 0;
-                pr_debug(" %d", i);
+				channel->running = 0;
+				pr_debug(" %d", i);
 				wake_up_interruptible( &(channel->change_wq) );
 				// if (channel->async_queue)
 				//     kill_fasync(&channel->async_queue, SIGIO, POLL_IN);
@@ -215,7 +228,7 @@ static void max1027_process_results(struct max1027 *max1027)
 		}
 	}
 	max1027->conversion_running = 0;
-    wake_up_interruptible( &(max1027->conversion_wq) );
+	wake_up_interruptible( &(max1027->conversion_wq) );
 	pr_debug("\n");
 }
 
@@ -259,27 +272,27 @@ static ssize_t max1027_dev_read(struct file *file, char *buf, size_t count, loff
 
 	pr_debug("- %s %d byte(s) on minor %d -> channel %d\n", __FUNCTION__, count, minor, channel->id);
 	/* Launch conversion */
-    
+
 	mutex_lock(&max1027->update_lock);
 
 	while ( max1027->conversion_running ) 
-    {
+	{
 		if (file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
 
-        if (wait_event_interruptible(max1027->conversion_wq, !max1027->conversion_running))
- 			return -ERESTARTSYS;
-    }
+		if (wait_event_interruptible(max1027->conversion_wq, !max1027->conversion_running))
+			return -ERESTARTSYS;
+	}
 	max1027->conversion_running = 1;
-    /* if no convst pin */
-    if( max1027->cnvst < 0 ) {
-        max1027_send_cmd( current_spi, max1027->conv_reg );
-    }
-    else {
-        gpio_set_value(max1027->cnvst, 0);
-        udelay(2); /* must satisfy worst case clock mode 01 */
-        gpio_set_value(max1027->cnvst, 1);
-    }
+	/* if no convst pin */
+	if( max1027->cnvst < 0 ) {
+		max1027_send_cmd( current_spi, max1027->conv_reg );
+	}
+	else {
+		gpio_set_value(max1027->cnvst, 0);
+		udelay(2); /* must satisfy worst case clock mode 01 */
+		gpio_set_value(max1027->cnvst, 1);
+	}
 	mutex_unlock(&max1027->update_lock);
 
 	spin_lock_irq(&channel->lock);
@@ -615,7 +628,7 @@ static int max1027_create_sys_entries(struct spi_device *spi)
 	}
 
 	if ((status = device_create_file(&spi->dev, &dev_attr_temp1_input))){ 
-        printk(KERN_WARNING SYSFS_ERROR_STRING " temp1\n");
+		printk(KERN_WARNING SYSFS_ERROR_STRING " temp1\n");
 		goto end;
 	}
 
@@ -654,7 +667,7 @@ static int __devinit max1027_probe(struct spi_device *spi)
 	struct max1027_config *platform_info; 
 	int i, result;
 
-	pr_debug("%s", __FUNCTION__);
+	pr_debug("%s\n", __FUNCTION__);
 
 	platform_info = (struct max1027_config *)(spi->dev.platform_data);
 	if (!platform_info) {
@@ -681,22 +694,21 @@ static int __devinit max1027_probe(struct spi_device *spi)
 
 	init_waitqueue_head(&max1027->conversion_wq);
 
-
 	/* Setup any GPIO active */
-    result = platform_info->init(spi);
+	result = platform_info->init(spi);
 	if( result )
-    {
+	{
 		printk(KERN_WARNING DRIVER_NAME ": can't reserve gpios\n");
 		goto err_irq;
-    } 
-    max1027->cnvst = platform_info->cnvst_pin;
-    if( max1027->cnvst >= 0 )
-        gpio_set_value(max1027->cnvst, 1);
+	}
+	max1027->cnvst = platform_info->cnvst_pin;
+	if( max1027->cnvst >= 0 )
+		gpio_set_value(max1027->cnvst, 1);
 
 	/* Create /sys entries */
 	/* sysfs hook */
 	dev_set_drvdata(&spi->dev, max1027);
-    current_spi = spi;
+	current_spi = spi;
 
 #if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
 	/* register to hwmon */
@@ -765,7 +777,7 @@ static int __devexit max1027_remove(struct spi_device *spi)
 	unregister_chrdev(max1027_major, DRIVER_NAME);
 
 	free_irq(spi->irq, max1027);
-    /* free IOs*/
+	/* free IOs*/
 	platform_info->exit(spi);
 
 	dev_set_drvdata(&spi->dev, NULL);
