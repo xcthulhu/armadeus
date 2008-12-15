@@ -1,0 +1,19 @@
+#
+# Defines all important paths to ease sub-systems compilation.
+# !! Don't forget to define ARMADEUS_BASE_DIR relatively to your
+# calling directory before including this file !!
+#
+
+BUILDROOT_DIR=$(ARMADEUS_BASE_DIR)/buildroot
+-include $(BUILDROOT_DIR)/.config
+
+ARMADEUS_LINUX_VERSION:=$(shell echo $(BR2_LINUX26_VERSION))
+ARMADEUS_BOARD_NAME:=$(shell echo $(BR2_BOARD_NAME))
+ARMADEUS_TARGET_ARCH:=$(shell echo $(BR2_GCC_TARGET_ARCH))
+ARMADEUS_UCLIBC_VERSION:=0.9.29
+
+ARMADEUS_PATCH_DIR=patches
+ARMADEUS_LINUX_DIR=$(BUILDROOT_DIR)/project_build_$(ARMADEUS_TARGET_ARCH)/$(ARMADEUS_BOARD_NAME)/linux-$(ARMADEUS_LINUX_VERSION)
+ARMADEUS_UCLIBC_DIR=$(BUILDROOT_DIR)/toolchain_build_$(ARMADEUS_TARGET_ARCH)/uClibc-$(ARMADEUS_UCLIBC_VERSION)
+ARMADEUS_BOARD_DIR=$(BUILDROOT_DIR)/target/device/armadeus/$(ARMADEUS_BOARD_NAME)/
+
