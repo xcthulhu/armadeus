@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/include/linux/spi/tsc2102.h	
 +++ linux-2.6.27.2.mod/include/linux/spi/tsc2102.h	
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,177 @@
 +/*
 + * include/linux/spi/tsc2102.h
 + *
@@ -30,13 +30,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define __LINUX_SPI_TSC2102_H
 +
 +struct apm_power_info;
++
 +struct tsc2102_config {
 +	int use_internal;	/* Use internal reference voltage */
 +	uint32_t monitor;	/* What inputs are relevant */
-+	int temp_at25c;		/* Thermometer calibration data */
 +	void (*apm_report)(struct apm_power_info *info, int *battery);
 +				/* Report status to APM based on battery[] */
 +	void *alsa_config;	/* .platform_data for the ALSA device */
++	int (*init)(void);	/* allocate GPIOs */
++	void (*exit)(void); 
 +};
 +
 +#define TSC_BAT1	(1 << 0)
@@ -57,7 +59,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +extern int tsc2102_coords_cb(tsc2102_coords_t handler);
 +extern int tsc2102_ports_cb(tsc2102_ports_t handler);
 +extern int tsc2102_temp1_cb(tsc2102_temp_t handler);
-+extern int tsc2102_temp2_cb(tsc2102_temp_t handler);
 +
 +#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)
 +extern void tsc2102_set_volume(uint8_t left_ch, uint8_t right_ch);
@@ -185,14 +186,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/drivers/spi/tsc2102.c	
 +++ linux-2.6.27.2.mod/drivers/spi/tsc2102.c	
-@@ -0,0 +1,1148 @@
+@@ -0,0 +1,1000 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
 + * TSC2102 interface driver.
-+ * Copyright (C) 2007 Armadeus systems (nc)
-+ * 			-> fix dead locks, reorganize state machine
-+ *			-> fix scheduling while atomic and hwmon support			
++ * Copyright (C) 2008 Armadeus systems (nc)
++ * 			-> spi communication reworked to avoid deadlock
 + * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org> 
 + *
 + * This package is free software; you can redistribute it and/or modify
@@ -224,6 +224,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <linux/err.h>
 +#include <linux/hwmon.h>
 +#include <linux/hwmon-sysfs.h>
++#include <linux/workqueue.h>
 +
 +#include <asm/system.h>
 +#include <asm/irq.h>
@@ -236,19 +237,20 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif
 +
 +#ifdef CONFIG_MACH_APF9328    // TODO: Put MCLK choice in Kconfig ?? 
-+#define MCLK_16M 1  // DevFull
++#define MCLK_16M 1  
 +#endif // CONFIG_MACH_APF9328
 +
 +/* #define DEBUG */
 +#define DEBUG_AUDIO
 +
 +/* Bit field definitions for chip registers */
-+#define TSC2102_ADC_TS_CONTROL		0x8bf4
++#define TSC2102_ADC_TS_CONTROL		0x8bf5
 +#define TSC2102_ADC_SCAN_CONTROL	0x2ff4
 +#define TSC2102_ADC_T1_CONTROL		0x2bf4
 +#define TSC2102_ADC_T2_CONTROL		0x33f4
 +#define TSC2102_ADC_DAV			0x4000
 +#define TSC2102_ADC_PEN			0x0000
++#define TSC2102_ADC_PINTDAV		0x8000
 +#define TSC2102_ADC_INT_REF_125		0x0016
 +#define TSC2102_ADC_INT_REF_250		0x0017
 +#define TSC2102_ADC_REF			TSC2102_ADC_INT_REF_250 /*2.5V*/
@@ -283,6 +285,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#define CS_CHANGE(val)			0
 +
++#define SM_BAT_AUX 0
++#define SM_TEMP1   1
++
 +struct tsc2102_spi_req {
 +	struct spi_device *dev;
 +	uint16_t command;
@@ -300,27 +305,23 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	int state;			/* Scan modes */
 +	struct timer_list ts_timer;	/* Busy-wait for PEN UP */
 +	struct timer_list mode_timer;	/* Change .state every some time */
-+	int touch_in_progress;
++
 +	uint16_t status, adc_status, adc_data[4];
 +	tsc2102_touch_t touch_cb;
 +	tsc2102_coords_t coords_cb;
 +	tsc2102_ports_t ports_cb;
 +	tsc2102_temp_t temp1_cb;
-+	tsc2102_temp_t temp2_cb;
 +	unsigned int ts_msecs;		/* Interval for .ts_timer */
 +	unsigned int mode_msecs;	/* Interval for .mode_timer */
 +
 +	struct spi_device *spi;
-+	struct spi_transfer *transfers;
-+	struct tsc2102_spi_req req_adc;
-+	struct tsc2102_spi_req req_status;
-+	struct tsc2102_spi_req req_pressure;
-+	struct tsc2102_spi_req req_stopadc;
-+	struct tsc2102_spi_req req_mode;
-+	struct tsc2102_spi_req req_click;
 +
-+	int bat[2], aux[1], temp[2];
-+	struct class_device *hwmondev;
++	int bat[2], aux[1], temp;
++	struct device *hwmondev;
++	struct work_struct	work;
++	unsigned long		todo;
++#define WORK_CHANGE_MODE	0	/* change mode */
++
 +};
 +
 +static struct tsc2102_dev tsc;
@@ -408,91 +409,71 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	return ret;
 +}
 +
-+static void tsc2102_write_async(
-+		struct tsc2102_spi_req *spi, int page, u8 address, u16 data,
-+		void (*complete)(struct tsc2102_dev *context))
++static void tsc_work(struct work_struct *work)
 +{
-+	int ret;
++#define Z2STAT (1<<7)
++#define AXSTAT (1<<4)
++#define T1STAT (1<<2)
 +
-+	spi_message_init(&spi->message);
-+	spi->message.complete = (void (*)(void *)) complete;
-+	spi->message.context = &tsc;
-+
-+	/* Address */
-+	spi->command = (page << 11) | (address << 5);
-+	spi->transfer[0].tx_buf = &spi->command;
-+	spi->transfer[0].rx_buf = 0;
-+	spi->transfer[0].len = 2;
-+	spi_message_add_tail(&spi->transfer[0], &spi->message);
-+
-+	/* Data */
-+	spi->data = data;
-+	spi->transfer[1].tx_buf = &spi->data;
-+	spi->transfer[1].rx_buf = 0;
-+	spi->transfer[1].len = 2;
-+	spi->transfer[1].cs_change = CS_CHANGE(1);
-+	spi_message_add_tail(&spi->transfer[1], &spi->message);
-+
-+	ret = spi_async(spi->dev, &spi->message);
-+	if (ret)
-+		printk(KERN_ERR "%s: error %i in SPI request\n",
-+				__FUNCTION__, ret);
-+}
-+
-+static void tsc2102_reads_async(struct tsc2102_spi_req *spi,
-+		int page, u8 startaddress, u16 *data, int numregs,
-+		void (*complete)(struct tsc2102_dev *context))
-+{
-+	int ret, i, j;
-+
-+	spi_message_init(&spi->message);
-+	spi->message.complete = (void (*)(void *)) complete;
-+	spi->message.context = &tsc;
-+	i = 0;
-+	j = 0;
-+
-+	/* Address */
-+	spi->command = 0x8000 | (page << 11) | (startaddress << 5);
-+	spi->transfer[i].tx_buf = &spi->command;
-+	spi->transfer[i].rx_buf = 0;
-+	spi->transfer[i].len = 2;
-+	spi_message_add_tail(&spi->transfer[i ++], &spi->message);
-+
-+	/* Data */
-+	while (j < numregs) {
-+		spi->transfer[i].tx_buf = 0;
-+		spi->transfer[i].rx_buf = &data[j ++];
-+		spi->transfer[i].len = 2;
-+		spi->transfer[i].cs_change = CS_CHANGE(j == numregs);
-+		spi_message_add_tail(&spi->transfer[i ++], &spi->message);
++	int status;
++	
++ 	mutex_lock(&tsc.lock_sync);
++	/* state of SM has to be changed ? */
++	if( test_and_clear_bit( WORK_CHANGE_MODE,&tsc.todo) ){
++		/* change state of SM */
++		if( tsc.state == SM_TEMP1 ){
++			tsc.state = SM_BAT_AUX;
++			tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, 
++				TSC2102_ADC_DAV); 
++			tsc2102_write_sync(TSC2102_TS_ADC_CTRL, 
++				TSC2102_ADC_SCAN_CONTROL); 
++		}
++		else{
++			tsc.state = SM_TEMP1;
++			tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, 
++				TSC2102_ADC_DAV); 
++			tsc2102_write_sync(TSC2102_TS_ADC_CTRL, 
++				TSC2102_ADC_T1_CONTROL); 
++		}
 +	}
 +
-+	ret = spi_async(spi->dev, &spi->message);
-+	if (ret)
-+		printk(KERN_ERR "%s: error %i in SPI request\n",
-+				__FUNCTION__, ret);
-+}
++	status = tsc2102_read_sync(TSC2102_TS_STATUS_CTRL);
++	
++	if( status & Z2STAT){
++		int pendown;
++		tsc2102_reads_sync( TSC2102_TS_X, tsc.adc_data, 4);
++		pendown = tsc2102_read_sync(TSC2102_TS_ADC_CTRL) & TSC2102_ADC_PSTCM; 
++		/* avoid sending data if pen is up*/
++		if (tsc.coords_cb && pendown){
++			tsc.coords_cb(tsc.adc_data[0], tsc.adc_data[1], 
++					tsc.adc_data[2], tsc.adc_data[3]);
++		}
++	}
 +
-+static void tsc2102_read_async(struct tsc2102_spi_req *spi,
-+		int page, u8 address, u16 *ret,
-+		void (*complete)(struct tsc2102_dev *context))
-+{
-+	tsc2102_reads_async(spi, page, address, ret, 1, complete);
-+}
++	if( status & AXSTAT ){
++		tsc2102_reads_sync( TSC2102_TS_BAT1, tsc.adc_data, 3);
++		if (tsc.ports_cb)
++			tsc.ports_cb(tsc.adc_data[0], tsc.adc_data[1], 
++					tsc.adc_data[2]);
++		tsc.bat[0] = tsc.adc_data[0];
++		tsc.bat[1] = tsc.adc_data[1];
++		tsc.aux[0] = tsc.adc_data[2];
++		/* switch to pintdav and TS control */
++		tsc2102_write_sync( TSC2102_TS_ADC_CTRL, 
++				TSC2102_ADC_TS_CONTROL);
++		tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV); 
++	}
++	else if( status & T1STAT) {
++		tsc.temp = tsc2102_read_sync(TSC2102_TS_TEMP1);	
++		if (tsc.temp1_cb)
++			tsc.temp1_cb(tsc.temp);
++		/* switch to pintdav and TS control */
++		tsc2102_write_sync( TSC2102_TS_ADC_CTRL, 
++				TSC2102_ADC_TS_CONTROL);
++		tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV); 
++	}
 +
-+static void tsc2102_request_alloc(struct tsc2102_dev *dev,
-+		struct tsc2102_spi_req *spi, int direction, int numregs,
-+		struct spi_transfer **buffer)
-+{
-+	spi->dev = dev->spi;
-+
-+	if (direction == 1)	/* Write */
-+		numregs = 2;
-+	else			/* Read */
-+		numregs += 1;
-+
-+	spi->transfer = *buffer;
-+	*buffer += numregs;
++	mutex_unlock(&tsc.lock_sync);
 +}
 +
 +#define tsc2102_cb_register_func(cb, cb_t)	\
@@ -514,13 +495,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	return 0;	\
 +}
 +
++
 +tsc2102_cb_register_func(touch_cb, tsc2102_touch_t)
 +EXPORT_SYMBOL(tsc2102_touch_cb);
 +tsc2102_cb_register_func(coords_cb, tsc2102_coords_t)
 +EXPORT_SYMBOL(tsc2102_coords_cb);
 +tsc2102_cb_register_func(ports_cb, tsc2102_ports_t)
 +tsc2102_cb_register_func(temp1_cb, tsc2102_temp_t)
-+tsc2102_cb_register_func(temp2_cb, tsc2102_temp_t)
 +
 +#ifdef DEBUG
 +static void tsc2102_print_dav(void)
@@ -555,153 +536,34 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +}
 +#endif
 +
-+static void tsc2102_complete_dummy(struct tsc2102_dev *dev){}
-+
-+static inline void tsc2102_touchscreen_mode(struct tsc2102_dev *dev)
-+{
-+	spin_lock_irq(&dev->lock);
-+	dev->touch_in_progress = 1;
-+
-+	/* Scan X, Y, Z1, Z2, chip controlled, 12-bit, 16 samples, 500 usec */
-+	tsc2102_write_async(&dev->req_mode,
-+			TSC2102_TS_ADC_CTRL, TSC2102_ADC_TS_CONTROL,
-+			tsc2102_complete_dummy);
-+	spin_unlock_irq(&dev->lock);
-+}
-+
-+static void tsc2102_end_current_conversion(struct tsc2102_dev *dev)
-+{
-+	spin_lock_irq(&dev->lock);
-+	dev->touch_in_progress = 0;
-+	dev->state++;
-+	switch (dev->state) {
-+	/* Scan BAT1, BAT2, AUX, 12-bit, 16 samples, 500 usec */
-+	case 0: tsc2102_write_async(&dev->req_mode, TSC2102_TS_ADC_CTRL, 
-+			TSC2102_ADC_SCAN_CONTROL, tsc2102_complete_dummy);
-+		break;
-+	/* Scan TEMP1, 12-bit, 16 samples, 500 usec */
-+	case 1: tsc2102_write_async(&dev->req_mode, TSC2102_TS_ADC_CTRL, 
-+			TSC2102_ADC_T1_CONTROL,	tsc2102_complete_dummy);	
-+		break;
-+	/* Scan TEMP2, 12-bit, 16 samples, 500 usec */
-+	case 2:	tsc2102_write_async(&dev->req_mode, TSC2102_TS_ADC_CTRL, 
-+			TSC2102_ADC_T2_CONTROL,	tsc2102_complete_dummy);		
-+		break;
-+	default: 
-+		tsc2102_write_async(&dev->req_mode, TSC2102_TS_ADC_CTRL, 
-+			TSC2102_ADC_SCAN_CONTROL, tsc2102_complete_dummy);
-+		dev->state = 0;
-+		break;
-+	}
-+	spin_unlock_irq(&dev->lock);
-+	mod_timer(&dev->mode_timer, jiffies +
-+			msecs_to_jiffies(dev->mode_msecs));
-+}
-+
 +static void tsc2102_mode(unsigned long data)
 +{
 +	struct tsc2102_dev *dev = (struct tsc2102_dev *) data;
-+	spin_lock_irq(&dev->lock);
-+
-+	tsc2102_write_async(&dev->req_stopadc,
-+			TSC2102_TS_ADC_CTRL, TSC2102_ADC_ADST,
-+			tsc2102_end_current_conversion);
-+
-+	spin_unlock_irq(&dev->lock);
-+}
-+
-+/* Read touch screen data */
-+static void tsc2102_TS_data_report(struct tsc2102_dev *dev)
-+{
-+	if (dev->coords_cb)
-+		dev->coords_cb(
-+				dev->adc_data[0], dev->adc_data[1],
-+				dev->adc_data[2], dev->adc_data[3]);
-+}
-+
-+static void tsc2102_pressure_report(struct tsc2102_dev *dev)
-+{
-+	spin_lock_irq(&dev->lock);
++	/* request change of SM state */
++	set_bit(WORK_CHANGE_MODE, &dev->todo);
++	schedule_work(&dev->work);
++	/* restart mode timer */
 +	mod_timer(&dev->mode_timer, jiffies +
 +			msecs_to_jiffies(dev->mode_msecs));
-+
-+	tsc2102_reads_async(&dev->req_adc, TSC2102_TS_X,
-+			dev->adc_data, 4, tsc2102_TS_data_report);
-+
-+	if ( dev->adc_status & TSC2102_ADC_PSTCM) {
-+		mod_timer(&dev->ts_timer, jiffies +
-+				msecs_to_jiffies(dev->ts_msecs));
-+	}
-+	spin_unlock_irq(&dev->lock);
-+}
-+
-+static void tsc2102_scan_data_report(struct tsc2102_dev *dev)
-+{
-+	mod_timer(&dev->mode_timer, jiffies +
-+		msecs_to_jiffies(dev->mode_msecs));
-+	spin_lock_irq(&dev->lock);
-+	switch (dev->state)
-+	{
-+		case 0: if (dev->ports_cb)
-+				dev->ports_cb(dev->adc_data[0],
-+						dev->adc_data[1], dev->adc_data[2]);
-+			dev->bat[0] = dev->adc_data[0];
-+			dev->bat[1] = dev->adc_data[1];
-+			dev->aux[0] = dev->adc_data[2];
-+			break;
-+		
-+		case 1: if (dev->temp1_cb)
-+				dev->temp1_cb(*dev->adc_data);
-+			dev->temp[0] = *dev->adc_data;
-+			break;
-+
-+		case 2: if (dev->temp2_cb)
-+				dev->temp2_cb(*dev->adc_data);
-+			dev->temp[1] = *dev->adc_data;
-+			break;
-+		default: break;
-+	}
-+	tsc2102_touchscreen_mode(dev);
-+	spin_unlock_irq(&dev->lock);
 +}
 +
 +/* TSC has new data for us available.  */
 +static irqreturn_t tsc2102_handler(int irq, void *dev_id)
 +{
 +	struct tsc2102_dev *dev = (struct tsc2102_dev *) dev_id;
-+
-+	mod_timer(&dev->mode_timer, jiffies +
-+		msecs_to_jiffies(dev->mode_msecs));
-+
-+	spin_lock_irq(&dev->lock);
-+	if( dev->touch_in_progress ){
-+		tsc2102_read_async(&dev->req_pressure, TSC2102_TS_ADC_CTRL,
-+				&dev->adc_status, tsc2102_pressure_report);
-+	}
-+	else{
-+		switch(dev->state){
-+			case 0: tsc2102_reads_async(&dev->req_adc, TSC2102_TS_BAT1,
-+					dev->adc_data, 3, tsc2102_scan_data_report);
-+				break;
-+			case 1: tsc2102_read_async(&dev->req_adc, TSC2102_TS_TEMP1,
-+					dev->adc_data, tsc2102_scan_data_report);
-+				break;
-+			case 2: tsc2102_read_async(&dev->req_adc, TSC2102_TS_TEMP2,
-+					dev->adc_data, tsc2102_scan_data_report);
-+				break;
-+			default: break;
-+		}
-+	}
-+	spin_unlock_irq(&dev->lock);
++	/* restart pen up timer */
++	mod_timer(&tsc.ts_timer, jiffies + 
++			msecs_to_jiffies(tsc.ts_msecs));
++ 
++	schedule_work(&dev->work);
 +	return IRQ_HANDLED;
 +}
 +
 +static void tsc2102_pressure(unsigned long data)
 +{
 +	struct tsc2102_dev *dev = (struct tsc2102_dev *) data;
-+	if (dev->touch_cb){
++	if (dev->touch_cb)
 +		dev->touch_cb(0);
-+	}
 +}
 +
 +#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)
@@ -923,7 +785,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	/* 84 usec precharge time, 32 usec sense time */
 +	tsc2102_write_sync(TSC2102_TS_CONFIG_CTRL, TSC2102_CONFIG_TIMES);
 +
-+	/* PINT/DAV acts as DAV */
++	/* PINT/DAV acts as PINT */
 +	tsc2102_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_DAV);
 +
 +#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)	
@@ -945,8 +807,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif /* CONFIG_SOUND || CONFIG_SOUND_MODULE */
 +
 +	/* Init mode state machine */
-+	dev->state = 0; 
-+	dev->touch_in_progress = 0;
++	dev->state = SM_BAT_AUX; 
++
 +	/* Start mode timer */
 +	mod_timer(&dev->mode_timer, jiffies +
 +			msecs_to_jiffies(dev->mode_msecs));
@@ -1025,8 +887,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +TSC2102_INPUT(in0, bat[0])
 +TSC2102_INPUT(in1, bat[1])
 +TSC2102_INPUT(in2, aux[0])
-+TSC2102_INPUT(in3, temp[0])
-+TSC2102_INPUT(in4, temp[1])
++TSC2102_INPUT(in3, temp)
 +
 +static ssize_t show_temp1(struct device *dev,
 +		struct device_attribute *devattr, char *buf)
@@ -1034,17 +895,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	struct tsc2102_dev *devhwmon = dev_get_drvdata(dev);
 +	int value;
 +
-+	/*
-+	 * Use method #2 (differential) to calculate current temperature.
-+	 * The approximation curve is: y = ax + b
-+	 * where b = 185 and a = 0.61 (taken from TSC datasheet page 15)
-+	 * the result (x) is in degree Celcius
-+	 * As it is the silicium temperature, a compensation factor can specified to
-+	 * estimate the ambient temperature.
-+	 */
-+	value = (devhwmon->temp[1] - devhwmon->temp[0] - 185)*1639 ;	/* Celcius millidegree */
++	value = (-devhwmon->temp*7 + 8400)*50 ;	/* Celcius millidegree */
 +
-+	return sprintf(buf, "%i\n", value - devhwmon->pdata->temp_at25c);
++	return sprintf(buf, "%i\n", value);
 +}
 +static DEVICE_ATTR(temp1_input, S_IRUGO, show_temp1, NULL);
 +#endif	/* CONFIG_HWMON */
@@ -1072,6 +925,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +	del_timer(&dev->mode_timer);
 +	del_timer(&dev->ts_timer);
++	flush_scheduled_work();
 +
 +	if (dev->touch_cb)
 +		dev->touch_cb(0);
@@ -1140,6 +994,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	tsc.ts_msecs = 30;
 +	tsc.mode_msecs = 500;
 +	tsc.spi = spi;
++	INIT_WORK(&tsc.work, tsc_work);
 +
 +	/* Allocate enough struct spi_transfer's for all requests */
 +	spi_buffer = kzalloc(sizeof(struct spi_transfer) * 16, GFP_KERNEL);
@@ -1148,19 +1003,14 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		return -ENOMEM;
 +	}
 +
-+	tsc.transfers = spi_buffer;
-+	tsc2102_request_alloc(&tsc, &tsc.req_adc, 0, 4, &spi_buffer);
-+	tsc2102_request_alloc(&tsc, &tsc.req_status, 0, 1, &spi_buffer);
-+	tsc2102_request_alloc(&tsc, &tsc.req_pressure, 0, 1, &spi_buffer);
-+	tsc2102_request_alloc(&tsc, &tsc.req_stopadc, 1, 1, &spi_buffer);
-+	tsc2102_request_alloc(&tsc, &tsc.req_mode, 1, 1, &spi_buffer);
-+	tsc2102_request_alloc(&tsc, &tsc.req_click, 1, 1, &spi_buffer);
-+
 +	spin_lock_init(&tsc.lock);
 +	mutex_init(&tsc.lock_sync);
 +	mutex_lock(&tsc.lock_sync);
 +
-+	/* Get the BCLK - assuming the rate is at 12000000 */
++	/* allocate GPIO / IRQ if necessary */
++	if (pdata->init)
++		pdata->init();
++
 +#ifdef IMX_CLOCK_CONFIG
 +	tsc.bclk_ck = clk_get(0, "bclk"); TODO add clock mechanism to i.MX ???
 +	if (!tsc.bclk_ck) {
@@ -1172,7 +1022,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	clk_enable(tsc.bclk_ck);
 +#endif //IMX_CLOCK_CONFIG
 +
-+	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
++	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED | IRQF_SHARED | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
 +		printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", spi->irq);
 +		err = -EINVAL;
 +		goto err_clk;
@@ -1232,7 +1082,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	if (pdata->monitor & TSC_TEMP) {
 +		err |= device_create_file(&spi->dev, &dev_attr_temp1_input);
 +		err |= device_create_file(&spi->dev, &dev_attr_in3_input);
-+		err |= device_create_file(&spi->dev, &dev_attr_in4_input);
 +	}
 +
 +	if (err)
@@ -1256,6 +1105,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +err_timer:
 +	del_timer(&tsc.ts_timer);
 +	del_timer(&tsc.mode_timer);
++	flush_scheduled_work();
 +	dev_set_drvdata(&spi->dev, NULL);
 +err_clk:
 +/*	clk_disable(tsc.bclk_ck); TODO add clock mechanism to i.MX ???
@@ -1276,14 +1126,17 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +	dev_set_drvdata(&spi->dev, NULL);
 +
++	/* Release the GPIO/IRQ */
++	if (dev->pdata->exit)
++		dev->pdata->exit();
++
 +	/* Release the BCLK */
 +/*	clk_disable(dev->bclk_ck); TODO add clock mechanism to i.MX ???
 +	clk_put(dev->bclk_ck); */
 +
 +	del_timer(&tsc.mode_timer);
 +	del_timer(&tsc.ts_timer);
-+
-+	kfree(tsc.transfers);
++	flush_scheduled_work();	
 +
 +#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
 +	hwmon_device_unregister(dev->hwmondev);

@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.2.original/arch/arm/mach-imx/apf9328.c	
 +++ linux-2.6.27.2.mod/arch/arm/mach-imx/apf9328.c	
-@@ -0,0 +1,610 @@
+@@ -0,0 +1,607 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -340,7 +340,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define TSC2102_CS_GPIOB 17
 +#define TSC2102_INT_GPIOD 8 
 +
-+static void tsc2102_init_gpio(void)
++static int tsc2102_init_gpio(void)
 +{
 +    // Activate SPI2 port ----
 +    // PortB 17 is used as chip select (in GPIO mode)
@@ -370,6 +370,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    FMCR &= ~(SSI_TXCLK_SEL);
 +
 +    printk("TSC2102 GPIOs initialized\n");
++    return 0;
 +}
 +
 +// Chip select command for TSC2102
@@ -389,7 +390,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static struct tsc2102_config apf9328_tsc2102_config = {
 +    .use_internal = 1, // -> use internal voltage reference
 +    .monitor = TSC_BAT1 | TSC_AUX | TSC_TEMP,
-+    .temp_at25c = 2200,
++    .init = tsc2102_init_gpio
 +/*    .apm_report = palmte_get_power_status,
 +    .alsa_config = &palmte_alsa_config,*/
 +};
@@ -542,10 +543,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#ifdef CONFIG_FB_IMX    /* LCD */
 +    set_imx_fb_info(&apf9328_fb_info);
 +    imx_fb_set_gpios(); /* init PORTD ....*/
-+#endif
-+
-+#ifdef CONFIG_SPI_TSC2102
-+    tsc2102_init_gpio();
 +#endif
 +#ifdef CONFIG_CAN_MCP251X
 +    mcp251X_init_gpio();
