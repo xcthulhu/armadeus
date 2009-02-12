@@ -29,6 +29,9 @@ test_ethernet()
 		echo "No Ethernet interface found"
 		exit 1
 	fi
+	# To autoconfigure Internet access
+	udhcpc -q -i eth0
+
 	cd $TEMP_DIR
 	# Create temp bench file
 	echo "Creating random data file"
@@ -82,3 +85,4 @@ test_ethernet()
 }
 
 test_ethernet
+

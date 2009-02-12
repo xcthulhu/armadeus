@@ -32,17 +32,27 @@
 #include <ctype.h>
 #include <math.h>
 
-/*#include <linux/i2c.h>
-#include <linux/i2c-dev.h>*/
 
-#include "../imxregs/imxregs.h"
+//#define DEBUG TRUE
 
-#define DEBUG TRUE
+#ifdef IMXL
+#include "imxregs.h"
+#define SSI_TRANSMIT_DATA_REG    0x00218000
+#define SSI_FIFO_STATUS_REGISTER 0x00218020
+#else
+#include "imx27regs.h"
+#define SSI_TRANSMIT_DATA_REG    0x10010000
+#define SSI_FIFO_STATUS_REGISTER 0x1001002C
+#endif
+#define TFCNT_MASK               0x0F00
+#define TFCNT_SHIFT              8
+
 
 // fd for /dev/mem
 static int fd = -1;
-static int table[130712];
-static int ttable[130712];
+#define TEST_SIGNAL_MAX_SAMPLES 130712
+static int *table;
+// static int ttable[130712];
 
 // Get value of the register at the given address
 static int getmem(u32 addr)
@@ -104,80 +114,6 @@ static void putmem(u32 addr, u32 val)
     munmap(0,MAP_SIZE);
 }
 
-static u32 lastaddr = 0;
-static u32 newaddr = 1;
-static u32 data = 0;
-static u32 shiftdata;
-
-//
-// Show content of given register (index in reginfo struct)
-static void dumpentry(int i)
-{
-    int j;
-    
-    if (regs[i].addr != lastaddr) newaddr = 1;
-    if (newaddr) {
-        newaddr = 0;
-        lastaddr = regs[i].addr;
-        data = getmem(lastaddr);
-        printf("\n%s\n", regs[i].desc);
-        printf("%-24s 0x%08x  -> ", regs[i].name, data);
-        shiftdata = data;
-        for (j=32; j>0; j--) {
-            printf("%c", shiftdata & 0x80000000 ? '1' : '0');
-            shiftdata = shiftdata << 1;
-            if (j==9 || j==17 || j==25) printf(" ");
-        }
-    
-        printf("\n");
-    }
-    
-    if( (regs[i].shift != 0)  || (regs[i].mask != 0xffffffff) ) {
-        shiftdata = (data >> regs[i].shift) & regs[i].mask;
-        printf("%-25s  ", regs[i].name);
-        switch (regs[i].type)
-        {
-            // Hexa printing
-            case 'x':
-                printf("%8x", shiftdata);
-            break;
-            case '<':
-                printf("%8u", 1 << shiftdata);
-            break;
-            // Decimal printing
-            default:
-                printf("%8u", shiftdata);
-            break;
-        }
-        printf("  %s\n", regs[i].desc);
-    }
-}
-
-//
-// Show content of all supported registers
-static void dumpall(void)
-{
-    int i;
-    int n=sizeof(regs)/sizeof(struct reg_info);
-    
-    for( i=0; i<n; i++ ) {
-        dumpentry(i);
-    }
-}
-
-//
-// Show content of register with name starting with given string
-static void dumpmatching(char *name)
-{
-    int i;
-    int n=sizeof(regs)/sizeof(struct reg_info);
-    
-    for (i=0; i<n; i++) {
-        if (strstr(regs[i].name, name))
-            dumpentry(i);
-    }
-}
-
 //
 // Set content of register with given name
 static void setreg(char *name, u32 val)
@@ -209,7 +145,7 @@ static void setreg(char *name, u32 val)
     //printf("masked val: 0x%08x\n", val);
     mem |= val << regs[found].shift;
     //printf("Embedded value: 0x%08x\n", mem);
-    putmem(regs[found].addr, mem);   
+    putmem(regs[found].addr, mem);
 }
 
 static void audio(u32 type, u32 samples, float level)
@@ -219,19 +155,25 @@ static void audio(u32 type, u32 samples, float level)
     u32 counter = 0;
     u32 i;
 
+    table = malloc(TEST_SIGNAL_MAX_SAMPLES*sizeof(*table));
+    if (!table) {
+        printf("Not enough memory !\n");
+        exit(1);
+    }
+
     if (samples > 65536) samples = 65536;
     if (-1.0f > level) -1.0f;
     if ( 1.0f < level) 1.0f;
     
-    for (i=0;i<65536;i++)
-        ttable[i] = 0;
+//     for (i=0;i<65536;i++)
+//         ttable[i] = 0;
     
     if (0 == (type%2)) {
         u32 i=0;
-        for (i=0;i<(samples/2);i++) {
+        for (i=0; i<(samples/2); i++) {
             table[i] = roundf((-32768+ ((i*(65535/samples))*2*level)));
             table[samples-1-i] = roundf(((-32768 + ((i*(65535/samples))*2*level))));
-            /*printf("tab[%d]=%d tab[%d]=%d\n", i, table[i], (65536/inc)-1-i, table[(65536/inc)-1-i]);*/
+//              printf("tab[%d]=%x tab[%d]=%x\n", i, table[i], samples-1-i, table[samples-1-i]);
         }
     } else {
         u32 i=0;
@@ -242,7 +184,7 @@ static void audio(u32 type, u32 samples, float level)
         }
     }
     
-    //printf("putmem(0x%08x, 0x%08x)\n", 0x00218000, val);
+    //printf("putmem(0x%08x, 0x%08x)\n", SSI_TRANSMIT_DATA_REG, val);
     
     if (fd == -1) {
         fd = open("/dev/mem", O_RDWR | O_SYNC);
@@ -252,40 +194,42 @@ static void audio(u32 type, u32 samples, float level)
         }
     }
     
-    map = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x00218000 & ~MAP_MASK );
+    map = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, SSI_TRANSMIT_DATA_REG & ~MAP_MASK );
     if (map == (void*)-1 ) {
         perror("mmap() ssi");
         exit(1);
     }
     printf("Mapped ssi addr: 0x%x\n", map);
-    regaddr = map + (0x00218000 & MAP_MASK);
+    regaddr = map + (SSI_TRANSMIT_DATA_REG & MAP_MASK);
 
+#ifdef USE_DMA
     dma = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x00209000 & ~MAP_MASK );
     if (dma == (void*)-1 ) {
         perror("mmap() dma");
         exit(1);
     }
     printf("Mapped dma addr: 0x%x\n", dma);
-    
     *(volatile u32*)(dma+0x2CC) = 0x20A0; /* CCR9 */
+#endif
 
-    if (1 < type) {
+    if (type > 1) {
+#ifdef USE_DMA
         *(volatile u32*)(dma+0x2CC) = 0x2000; /* CCR9 */
         *(volatile u32*)(dma+0x2C0) = table; /* SAR9 */
-        *(volatile u32*)(dma+0x2C4) = ttable/*0x00218000*/; /* DAR9 */
+//         *(volatile u32*)(dma+0x2C4) = ttable/*SSI_TRANSMIT_DATA_REG*/; /* DAR9 */
         *(volatile u32*)(dma+0x2C8) = samples; /* CNTR9 */
         *(volatile u32*)(dma+0x2CC) = 0x2000; /* CCR9 */
         *(volatile u32*)(dma+0x2D0) = 16; /* RSSR9 */
         *(volatile u32*)(dma+0x2D4) = 16; /* BLR9 */
         *(volatile u32*)(dma+0x2CC) = 0x000F; /* CCR9 */
-        
+#endif
         while(1) {
-            while(6 < ((*(volatile u32*)(map + (0x00218020 & MAP_MASK)))&0x0F00)>>8 );
+            while(6 < ((*(volatile u32*)(map + (SSI_FIFO_STATUS_REGISTER & MAP_MASK))) & TFCNT_MASK) >> TFCNT_SHIFT );
             
             {
                 u32 i;
                 for (i=0;i<samples;i++)
-                    printf("tab[%d]=%d tab[%d]=%d\n", i, table[i], i, ttable[i]);
+                    printf("tab[%d]=%d tab[%d]=%d\n", i, table[i], i, /*t*/table[i]);
                 /**(volatile short*) regaddr = 32000;*/
                 /*	  *(volatile short*) regaddr = table[counter&0X0FFFF];
                     *(volatile short*) regaddr = table[counter&0X0FFFF];
@@ -295,16 +239,16 @@ static void audio(u32 type, u32 samples, float level)
         }
     } else {
         while(1) {
-            while(6 < ((*(volatile u32*)(map + (0x00218020 & MAP_MASK)))&0x0F00)>>8 );
-            
-            {
-                *(volatile u32*) regaddr = table[counter&0X0FFFF];
-                *(volatile u32*) regaddr = table[counter&0X0FFFF];
-                counter = (counter+1)%samples;
-            }
+            /* Wait 2 empty spaces in Transmit FIFO */
+            while(6 < ((*(volatile u32*)(map + (SSI_FIFO_STATUS_REGISTER & MAP_MASK))) & TFCNT_MASK) >> TFCNT_SHIFT );
+
+            *(volatile u32*) regaddr = table[counter & 0x0FFFF];
+            *(volatile u32*) regaddr = table[counter & 0x0FFFF];
+            counter = (counter+1) % samples;
         }
     }
-    
+
+    free(table);
     munmap(0,MAP_SIZE);
 }
 
@@ -321,19 +265,32 @@ int main(int argc, char *argv[])
         u32 type;
         float level;
 
+#ifdef IMXL
         setreg("SFCSR", 0x0088);
         setreg("STCCR", 0x6103);
         setreg("SRCCR", 0x6103);
-        setreg("STCR", 0x028D);
-        setreg("SCSR", 0xDB41);
+        setreg("STCR",  0x028D);
+        setreg("SCSR",  0xDB41);
+#else
+        setreg("PCCR0",   0xd5010013);
+        setreg("PCCR1",   0xa21a0e30);
+        setreg("PPCR1",   0x00001000);
+        setreg("HPCR1",   0xcc007000);
+        setreg("STCR_1",  0x0000028d); /* I2S mode */
+        setreg("SRCR_1",  0x0000028d); /* I2S mode */
+        setreg("STCCR_1", 0x0000e000);
+        setreg("SCR_1",   0x00000057); /* I2S mode */
+#endif
 
         sscanf(argv[1],"%i",&type);
         sscanf(argv[2],"%i",&val);
         sscanf(argv[3],"%f",&level);
         audio(type, val, level);
+
         return 0;
     }
     // In all other cases, print Usage
+    printf("Version : " VERSION "\n");
     printf("Usage: %s <signal_type> <samples> <scale> - to audio signal:\n"
            "          <signal_type> 0:triangular 1:sinusoid\n"
            "          <samples> nb sample per period\n"

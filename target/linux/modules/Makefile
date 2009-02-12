@@ -21,16 +21,17 @@ include $(ARMADEUS_BASE_DIR)/Makefile.in
 ifeq ($(LINUX_DIR),)
 LINUX_DIR:=$(ARMADEUS_LINUX_DIR)
 endif
-PWD:= $(shell pwd)
+KDIR	:= $(LINUX_DIR)
+PWD	:= $(shell pwd)
 
 default:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
+DIRS	:= $(shell ls)
 clean:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) clean
-
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
+	for directory in $(DIRS); do if [ -d "$$directory" ] && [ ! -L "$$directory" ]; then $(MAKE) -C $$directory clean; fi ; done	
+	
 install:
 	echo "Installing Armadeus drivers..."
 	 $(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install

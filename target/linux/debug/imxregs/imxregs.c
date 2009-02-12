@@ -238,21 +238,33 @@ static void setreg(char *name, u32 val)
    putmem(regs[found].addr, mem);   
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// MAIN
-//
+
+void usage(char* name)
+{
+    printf("%s for %s CPU\n"
+           "Usage: %s                - to dump all known registers\n"
+           "       %s <name>         - to dump named register\n"
+           "       %s <name> <value> - to set named register\n",
+           name, IMX_TYPE, name, name, name);
+}
+
 int main(int argc, char *argv[])
 {
     char *p;
     u32 val;
 
-    // No arguments -> dump all known registers
+    if ((0 == strcmp(argv[1],"-h")) || (0 == strcmp(argv[1],"--help"))) {
+        usage(argv[0]);
+        return 0;
+    }
+
+    /* No arguments -> dump all known registers */
     if (argc == 1) {
        dumpall();
        return 0;
     }
 
-    // Uppercase first argument (register name)
+    /* Uppercase first argument (register name) */
     if (argc >= 2) 
     {
         p = argv[1];
@@ -262,13 +274,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Dump the content of the provided register
+    /* Dump the content of the provided register */
     if (argc == 2) 
     {
        return( dumpmatching(argv[1]) );
     }
 
-    // Put value to given register
+    /* Put value to given register */
     if (argc == 3) 
     {
         sscanf(argv[2],"%i",&val);
@@ -276,11 +288,8 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // In all other cases, print Usage
-    printf("Usage: %s                - to dump all known registers\n"
-           "       %s <name>         - to dump named register\n"
-           "       %s <name> <value> - to set named register\n",
-           argv[0], argv[0], argv[0]);
+    /* In all other cases, print Usage */
+    usage(argv[0]);
            
     return 1;
 }

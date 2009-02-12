@@ -1,0 +1,73 @@
+--- linux-2.6.27.13.ref/drivers/net/fec_old.c	2009-02-10 20:47:01.000000000 +0100
++++ linux-2.6.27.13/drivers/net/fec_old.c	2009-02-10 22:33:32.000000000 +0100
+@@ -1277,6 +1277,52 @@
+ };
+ 
+ /* ------------------------------------------------------------------------- */
++/* register definitions for the LAN8700 */
++
++#define MII_LAN8700_SPECIAL	0x12
++#define MII_LAN8700_CR_RESET	0x8000
++
++static void mii_reset_delay_lan8700(uint mii_reg, struct net_device *dev)
++{
++	udelay(1000);
++}
++
++static phy_cmd_t const phy_cmd_lan8700_config[] = {
++	/*
++	 * Wake up from sleep if necessary
++	 * Reset PHY, then delay at least 300ns
++	 */
++	{mk_mii_write(MII_LAN8700_SPECIAL, 0x00FF), NULL},
++	{mk_mii_write(MII_REG_CR, MII_LAN8700_CR_RESET), mii_reset_delay_lan8700},
++	{mk_mii_read(MII_REG_CR), mii_parse_cr},
++	{mk_mii_read(MII_REG_ANAR), mii_parse_anar},
++	{mk_mii_end,}
++};
++static phy_cmd_t const phy_cmd_lan8700_startup[] = { /* startup - enable interrupts */
++	{mk_mii_write(MII_REG_ANAR, 0x01E0), NULL},
++	{mk_mii_write(MII_REG_CR, 0x1200), NULL},	/* autonegotiate */
++	{mk_mii_read(MII_REG_SR), mii_parse_sr},
++	{mk_mii_end,}
++};
++static phy_cmd_t const phy_cmd_lan8700_ack_int[] = {
++	/* ack_int - never happens, no interrupt */
++	{mk_mii_end,}
++};
++static phy_cmd_t const phy_cmd_lan8700_shutdown[] = {
++	{mk_mii_write(MII_REG_CR, 0x0800 /*BMCR_PDOWN*/), NULL},
++	{mk_mii_end,}
++};
++
++static phy_info_t phy_info_lan8700 = {
++	0x00007c0c,
++	"LAN8700",
++	.config   = phy_cmd_lan8700_config,
++	.startup  = phy_cmd_lan8700_startup,
++	.ack_int  = phy_cmd_lan8700_ack_int,
++	.shutdown = phy_cmd_lan8700_shutdown,
++};
++
++/* ------------------------------------------------------------------------- */
+ 
+ static phy_info_t const *const phy_info[] = {
+ 	&phy_info_lxt970,
+@@ -1285,6 +1331,7 @@
+ 	&phy_info_am79c874,
+ 	&phy_info_ks8721bl,
+ 	&phy_info_dp83848,
++	&phy_info_lan8700,
+ 	NULL
+ };
+ 
+@@ -2687,6 +2734,9 @@
+ 	if (fep->link) {
+ 		fec_stop(dev);
+ 	}
++	/* power down phy */
++	mii_do_cmd(dev, fep->phy->shutdown);
++
+ 	return 0;
+ }
+ 

@@ -8,7 +8,11 @@ IMXREGS_VER:=1.0
 IMXREGS_SOURCE:=$(BUILD_DIR)/../../target/linux/debug/imxregs/
 IMXREGS_DIR:=$(BUILD_DIR)/imxregs-$(IMXREGS_VER)
 IMXREGS_CAT:=zcat
+ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
+IMXREGS_BINARY:=imx27regs
+else
 IMXREGS_BINARY:=imxregs
+endif
 IMXREGS_TARGET_BINARY:=usr/bin/imxregs
 
 $(IMXREGS_DIR)/imxregs.c:

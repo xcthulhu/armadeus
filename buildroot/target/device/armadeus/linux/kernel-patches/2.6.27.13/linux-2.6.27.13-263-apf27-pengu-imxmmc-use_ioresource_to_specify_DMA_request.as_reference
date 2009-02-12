@@ -1,0 +1,57 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:04 +0000 (+0200)
+Subject: imxmmc: use ioresource to specify DMA request instead of hardcoding it
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=dd86f2a9ea8156d3a883c5a7654832f670f008a6
+
+imxmmc: use ioresource to specify DMA request instead of hardcoding it
+
+This patch replaces the hard coded DMA reqeust line
+in the imxmmc driver by a propper use of IORESOURCE_DMA.
+
+Signed-of-by: Marc Kleine-Budde <mkl@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index d5e5675..184dae6 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -67,6 +67,7 @@ struct imxmci_host {
+ 	unsigned int		dma_nents;
+ 	unsigned int		dma_size;
+ 	unsigned int		dma_dir;
++	unsigned int		dma_rss;
+ 	int			dma_allocated;
+ 
+ 	unsigned char		actual_bus_width;
+@@ -311,7 +312,7 @@ static void imxmci_setup_data(struct imxmci_host *host, struct mmc_data *data)
+ 	else
+ 		BLR(host->dma) = 16;	/* burst 16 byte read / 16 bytes write */
+ 
+-	RSSR(host->dma) = DMA_REQ_SDHC;
++	RSSR(host->dma) = host->dma_rss;
+ 
+ 	set_bit(IMXMCI_PEND_DMA_DATA_b, &host->pending_events);
+ 	clear_bit(IMXMCI_PEND_CPU_DATA_b, &host->pending_events);
+@@ -937,7 +938,7 @@ static int imxmci_probe(struct platform_device *pdev)
+ {
+ 	struct mmc_host *mmc;
+ 	struct imxmci_host *host = NULL;
+-	struct resource *r;
++	struct resource *r, *dma;
+ 	int ret = 0, irq;
+ 	u16 rev_no;
+ 
+@@ -1051,6 +1052,13 @@ static int imxmci_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, mmc);
+ 
++	dma = platform_get_resource(pdev, IORESOURCE_DMA, 0);
++	if (!dma) {
++		ret = -ENXIO;
++		goto out;
++	}
++	host->dma_rss = dma->start;
++
+ 	mmc_add_host(mmc);
+ 
+ 	return 0;

@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"3.4"
-#define CONFIG_IDENT_STRING	" apf9328 patch 3.4"
+#define CONFIG_ENV_VERSION 	"3.5"
+#define CONFIG_IDENT_STRING	" apf9328 patch 3.8"
 
 #define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
 #define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
@@ -158,26 +158,30 @@
 		"run addmmcargs addipargs; bootm ${kernel_addr}\0"	\
 	"firmware_autoload=0\0"					\
 	"flash_uboot=protect off ${uboot_addr} +${uboot_len};"		\
+		"echo Erasing FLASH;"					\
 		"era ${uboot_addr} +${uboot_len};"			\
 		"if cp.b ${fileaddr} ${uboot_addr} ${filesize};"	\
 			"then protect on ${uboot_addr} +${uboot_len};"	\
-				"echo Flashing uboot succeed;"		\
-			"else echo Flashing uboot failed;"		\
+				"echo Flashing of uboot succeed;"	\
+			"else echo Flashing of uboot failed;"		\
 		"fi; \0"						\
-	"flash_firmware=era ${firmware_addr} +${firmware_len};"	\
+	"flash_firmware=echo Erasing FLASH;"				\
+		"era ${firmware_addr} +${firmware_len};"		\
 		"if cp.b ${fileaddr} ${firmware_addr} ${filesize} ;"	\
-			"then echo Flashing Firmware succeed;"		\
-			"else echo Flashing Firmware failed;"		\
+			"then echo Flashing of Firmware succeed;"	\
+			"else echo Flashing of Firmware failed;"	\
 		"fi\0"							\
-	"flash_kernel=era ${kernel_addr} +${kernel_len};"		\
+	"flash_kernel=echo Erasing FLASH;"				\
+		"era ${kernel_addr} +${kernel_len};"			\
 		"if cp.b ${fileaddr} ${kernel_addr} ${filesize} ;"	\
-			"then echo Flashing kernel succeed;"		\
-			"else echo Flashing kernel failed;"		\
+			"then echo Flashing of kernel succeed;"		\
+			"else echo Flashing of kernel failed;"		\
 		"fi\0"							\
-	"flash_rootfs=era ${rootfs_addr} +${rootfs_len};"		\
+	"flash_rootfs=echo Erasing FLASH;"				\
+		"era ${rootfs_addr} +${rootfs_len};"			\
 		"if cp.b ${fileaddr} ${rootfs_addr} ${filesize};"	\
-			"then echo Flashing rootfs succeed;"		\
-			"else echo Flashing rootfs failed;"		\
+			"then echo Flashing of rootfs succeed;"		\
+			"else echo Flashing of rootfs failed;"		\
 		"fi\0"							\
 	"flash_reset_env=protect off ${env_addr} +${env_len};"		\
 		"era ${env_addr} +${env_len};"				\
@@ -588,7 +592,7 @@
 #define CFG_CS2_SYNC_BURST_CLK_DIV	0	/* 0 : divider is 1 */
 #define CFG_CS2_SYNC_DAT_OUT_LGTH	0	/* ns */
 
-/* CS3 configuration for  */
+/* CS3 configuration for ISP1760 */
 #define CFG_CS3_CHIP_SELECT_ENABLE	1	/* 1 : enable CS0 peripherals  */
 #define CFG_CS3_PIN_ASSERT		0	/* chip select pin state when */
 						/* chip select disabled  */
@@ -598,17 +602,17 @@
 #define CFG_CS3_WRITE_PROTECT		0	/* 1: write access prohibited  */
 #define CFG_CS3_EB_SIGNAL_CONTROL_WRITE	1	/* 1 when EB is used as write signal*/
 
-#define CFG_CS3_READ_CYC_LGTH		0	/* ns */
-#define CFG_CS3_OE_ASSERT_DLY		0	/* ns */
-#define CFG_CS3_OE_NEG_DLY		0	/* ns */
+#define CFG_CS3_READ_CYC_LGTH		110	/* ns */
+#define CFG_CS3_OE_ASSERT_DLY		45	/* ns */
+#define CFG_CS3_OE_NEG_DLY		40	/* ns */
 
-#define CFG_CS3_CS_NEG_LGTH 	0	/* max 30 ns CS HIGH to CS LOW at 100MHz */
+#define CFG_CS3_CS_NEG_LGTH 	30	/* max 30 ns CS HIGH to CS LOW at 100MHz */
 #define CFG_CS3_XTRA_DEAD_CYC	0	/* ns from CS HIGH to tristate bus */
 
 #define CFG_CS3_WRITE_XTRA_LGTH		0	/* ns */
-#define CFG_CS3_EB_ASSERT_DLY		0	/* ns */
-#define CFG_CS3_EB_NEG_DLY		0	/* ns */
-#define CFG_CS3_CS_ASSERT_NEG_DLY	0	/* ns */
+#define CFG_CS3_EB_ASSERT_DLY		45	/* ns */
+#define CFG_CS3_EB_NEG_DLY		45	/* ns */
+#define CFG_CS3_CS_ASSERT_NEG_DLY	35	/* ns */
 
 #define CFG_CS3_SYNC_ENABLE		0	/* enable synchronous burst mode*/
 #define CFG_CS3_SYNC_PAGE_MODE_EMUL	0	/* enable page mode emulation*/

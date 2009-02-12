@@ -31,7 +31,7 @@ GENERATE_PATCH_FROM_MULTIPLE_DEPENDS=rm -f $@; for file in $^; do $(PATCH_CMD) -
 
 ### ALSA/TSC2102 Patches: ---
 
-DEP1=include/asm-arm/arch-imx/imx-alsa.h
+DEP1=arch/arm/mach-imx/include/mach/imx-alsa.h
 TARGET1:=$(TMP_DIR)/$(LINUX_NAME)-090-armadeus-alsa-create_imx-alsa_h.patch
 $(TARGET1): $(DEP1)
 	@$(START_CMD)
@@ -71,10 +71,20 @@ $(TARGET4): $(DEP4)
 PATCHES+=$(TARGET4)
 FILES+=$(DEP4)
 
+DEP_SSI=sound/arm/imx-ssi.c sound/arm/imx-ssi.h arch/arm/mach-imx/include/mach/imx_ssi.h
+TARGET_SSI:=$(TMP_DIR)/$(LINUX_NAME)-095-armadeus-imx-ssi-add_driver.patch
+$(TARGET_SSI): $(DEP_SSI)
+	@$(START_CMD)
+	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
+	@$(CLEAN_PATCH_CMD)
+	@echo
+PATCHES+=$(TARGET_SSI)
+FILES+=$(DEP_SSI)
+                                 
 
 ### APF9328 Patches: ---
 
-DEP5=arch/arm/mach-imx/apf9328.c arch/arm/mach-imx/apf9328_lcd_config.h include/asm-arm/arch-imx/apf9328.h
+DEP5=arch/arm/mach-imx/apf9328.c arch/arm/mach-imx/apf9328_lcd_config.h arch/arm/mach-imx/include/mach/apf9328.h
 TARGET5:=$(TMP_DIR)/$(LINUX_NAME)-021-armadeus-apf9328.patch
 $(TARGET5): $(DEP5)
 	@$(START_CMD)
@@ -83,6 +93,17 @@ $(TARGET5): $(DEP5)
 	@echo
 PATCHES+=$(TARGET5)
 FILES+=$(DEP5)
+
+DEP_DMA=arch/arm/mach-imx/include/mach/imx-dma.h arch/arm/mach-imx/dma.c
+TARGET_DMA:=$(TMP_DIR)/$(LINUX_NAME)-097-armadeus-imx-dma-improvements.patch
+$(TARGET_DMA): $(DEP_DMA)
+	@$(START_CMD)
+	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
+	@$(CLEAN_PATCH_CMD)
+	@echo
+PATCHES+=$(TARGET_DMA)
+FILES+=$(DEP_DMA)
+
 
 ### APF27 Patches: ---
 

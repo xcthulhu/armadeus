@@ -9,6 +9,11 @@ PERIOD="1000 2000 3000 4000 5000 6000 7000 8000 9000 10000"
 FREQUENCY="100 200 300 400 500 600"
 DUTY="001 250 333 500 666 750 999"
 
+if [ ! -d "$SYS_DIR" ]; then
+	echo "Can't find /sys/ interface"
+	exit 1
+fi
+
 echo "Starting PWM test"
 echo 1 > $SYS_DIR/active
 
@@ -20,7 +25,7 @@ do
     sleep 5
 done
 
-#Test period setting            
+#Test period setting
 for period in $PERIOD
 do
     echo $period > $SYS_DIR/period

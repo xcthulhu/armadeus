@@ -1,0 +1,22 @@
+
+This patch makes imxmmc driver selectable on MXC platforms. (+ change Motorola -> Freescale)
+
+Signed-of-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+--- linux-2.6.27-rc9/drivers/mmc/host/Kconfig	2008-10-07 01:39:58.000000000 +0200
++++ linux-2.6.27-rc9.mod/drivers/mmc/host/Kconfig	2008-10-16 17:42:10.000000000 +0200
+@@ -115,10 +115,10 @@
+ 	  If unsure, say N.
+ 
+ config MMC_IMX
+-	tristate "Motorola i.MX Multimedia Card Interface support"
+-	depends on ARCH_IMX
++	tristate "Freescale i.MX Multimedia Card Interface support"
++	depends on ARCH_IMX || ARCH_MXC
+ 	help
+-	  This selects the Motorola i.MX Multimedia card Interface.
++	  This selects the Freescale i.MX Multimedia card Interface.
+ 	  If you have a i.MX platform with a Multimedia Card slot,
+ 	  say Y or M here.
+ 

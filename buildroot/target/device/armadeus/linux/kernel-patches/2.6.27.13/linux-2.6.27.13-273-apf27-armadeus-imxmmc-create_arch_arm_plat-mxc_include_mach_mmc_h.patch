@@ -1,0 +1,28 @@
+
+This patch adds mmc.h to platform specific includes.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+--- linux-2.6.27-rc9/arch/arm/plat-mxc/include/mach/mmc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.27-rc9.mod/arch/arm/plat-mxc/include/mach/mmc.h	2008-10-16 18:31:36.000000000 +0200
+@@ -0,0 +1,19 @@
++#ifndef ASMARM_ARCH_MMC_H
++#define ASMARM_ARCH_MMC_H
++
++#include <linux/mmc/host.h>
++
++struct device;
++
++struct imxmmc_platform_data {
++	int (*card_present)(struct device *);
++	int (*get_ro)(struct device *);
++	void (*set_bus_width)(struct device *, int width);
++	char* clk;
++	int (*init)(struct device *, irq_handler_t, void *);
++	void (*exit)(struct device *, void *);
++};
++
++extern void imx_set_mmc_info(struct imxmmc_platform_data *info);
++
++#endif

@@ -1,0 +1,13 @@
+#
+# Helpers Makefile for the Armadeus drivers
+#
+#
+
+default:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
+	rm -f modules.order
+	rm -rf .tmp_versions/
+

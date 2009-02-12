@@ -74,3 +74,22 @@ exit_failed()
 	exit 1
 }
 
+is_package_installed()
+{
+        EXE=`which $1 | head -n 1`
+        if [ -x "$EXE" ]; then
+                debug "$EXE"
+                return 0
+        else
+		echo "$1 is not installed !"
+                return 1
+        fi
+}
+
+wake_up_lcd()
+{
+	# Wake up LCD
+	echo 0 > /sys/class/graphics/fb0/blank
+	sleep 1
+}
+

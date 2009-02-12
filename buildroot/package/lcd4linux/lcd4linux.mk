@@ -4,9 +4,9 @@
 #
 #############################################################
 
-LCD4LINUX_VER:=0.10.0
+LCD4LINUX_VER:=0.10.1-RC2
 LCD4LINUX_SOURCE:=lcd4linux-$(LCD4LINUX_VER).tar.gz
-LCD4LINUX_SITE:=http://puzzle.dl.sourceforge.net/lcd4linux/
+LCD4LINUX_SITE:=http://ssl.bulix.org/projects/lcd4linux/raw-attachment/wiki/Download/
 LCD4LINUX_DIR:=$(BUILD_DIR)/lcd4linux-$(LCD4LINUX_VER)
 LCD4LINUX_CAT:=zcat
 LCD4LINUX_BINARY:=lcd4linux

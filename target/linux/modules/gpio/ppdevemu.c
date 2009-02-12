@@ -375,6 +375,7 @@ void __exit armadeus_ppdev_cleanup(void)
 {
     printk("PPDEV cleanup: ");
     remove_proc_entry( PPDEV_PROC_FILENAME, NULL );
+	remove_proc_entry( PPDEV_PROC_DIRNAME, NULL);
     printk("2 ");
     unregister_chrdev(ppdev_major, PPDEV_DEVICE_NAME);
 

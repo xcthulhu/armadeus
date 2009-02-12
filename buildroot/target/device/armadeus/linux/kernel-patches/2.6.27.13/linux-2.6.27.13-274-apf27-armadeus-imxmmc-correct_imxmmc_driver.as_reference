@@ -1,0 +1,187 @@
+
+This patch makes imxmmc.c compiles again and correct the following bugs:
+* on i.MX27 interrupts activation works the opposite way as i.MXL
+* reset sequence is different between 0x390 & 0x400 SDHC versions
+* DMA seems to work for small blocks on 0x400 SDHC
+* SDHC clock prescaler wasn't set correctly
+* DMA request for SDHC was set after DMA channel configuration
+
+
+Signed-of-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+--- linux-2.6.27-rc9/drivers/mmc/host/imxmmc.c	2008-10-16 19:42:15.000000000 +0200
++++ linux-2.6.27-rc9.mod/drivers/mmc/host/imxmmc.c	2008-10-16 19:32:28.000000000 +0200
+@@ -29,7 +29,7 @@
+ #include <asm/irq.h>
+ #include <asm/sizes.h>
+ #include <mach/mmc.h>
+-#include <mach/imx-dma.h>
++#include <mach/dma-mx1-mx2.h>
+ 
+ #include "imxmmc.h"
+ 
+@@ -38,9 +38,15 @@
+ 
+ #define DRIVER_NAME "imx-mmc"
+ 
++#ifdef ARCH_IMX /* have a better way ? */
+ #define IMXMCI_INT_MASK_DEFAULT (INT_MASK_BUF_READY | INT_MASK_DATA_TRAN | \
+ 				 INT_MASK_WRITE_OP_DONE | INT_MASK_END_CMD_RES | \
+ 				 INT_MASK_AUTO_CARD_DETECT | INT_MASK_DAT0_EN | INT_MASK_SDIO)
++#define activate_int(bit) imask &= ~bit;
++#else
++#define IMXMCI_INT_MASK_DEFAULT (0)
++#define activate_int(bit) imask |= bit;
++#endif
+ 
+ struct imxmci_host {
+ 	struct mmc_host		*mmc;
+@@ -184,16 +190,30 @@
+ static void imxmci_softreset(struct imxmci_host *host)
+ {
+ 	/* reset sequence */
+-	writew(0x08, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x0D, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
+-	writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++	if (host->rev_no == 0x390) {
++		writew(0x08, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x0D, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x05, host->base + MMC_REG_STR_STP_CLK);
++	} else {
++		writew(0x08, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x09, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x01, host->base + MMC_REG_STR_STP_CLK);
++		writew(0x3f, host->base + MMC_REG_CLK_RATE);
++	}
+ 
+ 	writew(0xff, host->base + MMC_REG_RES_TO);
+ 	writew(512, host->base + MMC_REG_BLK_LEN);
+@@ -243,14 +263,14 @@
+ 	writew(blksz, host->base + MMC_REG_BLK_LEN);
+ 
+ 	/*
+-	 * DMA cannot be used for small block sizes, we have to use CPU driven transfers otherwise.
++	 * On i.MXL: DMA cannot be used for small block sizes, we have to use CPU driven transfers otherwise.
+ 	 * We are in big troubles for non-512 byte transfers according to note in the paragraph
+ 	 * 20.6.7 of User Manual anyway, but we need to be able to transfer SCR at least.
+ 	 * The situation is even more complex in reality. The SDHC in not able to handle wll
+ 	 * partial FIFO fills and reads. The length has to be rounded up to burst size multiple.
+ 	 * This is required for SCR read at least.
+ 	 */
+-	if (datasz < 512) {
++	if ((datasz < 512) && (host->rev_no == 0x390)) {
+ 		host->dma_size = datasz;
+ 		if (data->flags & MMC_DATA_READ) {
+ 			host->dma_dir = DMA_FROM_DEVICE;
+@@ -361,14 +381,14 @@
+ 
+ 
+ 	imask = IMXMCI_INT_MASK_DEFAULT;
+-	/* 	imask &= ~INT_MASK_END_CMD_RES; */ FIXME();
++	activate_int(INT_MASK_END_CMD_RES);
+ 	if (cmdat & CMD_DAT_CONT_DATA_ENABLE) {
+ 		/* imask &= ~INT_MASK_BUF_READY; */
+-		imask &= ~INT_MASK_DATA_TRAN;
++		activate_int(INT_MASK_DATA_TRAN);
+ 		if (cmdat & CMD_DAT_CONT_WRITE)
+-			imask &= ~INT_MASK_WRITE_OP_DONE;
++			activate_int(INT_MASK_WRITE_OP_DONE);
+ 		if (test_bit(IMXMCI_PEND_CPU_DATA_b, &host->pending_events))
+-			imask &= ~INT_MASK_BUF_READY;
++			activate_int(INT_MASK_BUF_READY);
+ 	}
+ 
+ 	spin_lock_irqsave(&host->lock, flags);
+@@ -836,13 +856,13 @@
+ 	return (scaler << 4) | divider;
+ }
+ 
+-#define CLK_RATE 19200000
++#define CLK_RATE 19200000 /* Not configurable with platform data ? */
+ 
+ static void imxmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct imxmci_host *host = mmc_priv(mmc);
+-	int prescaler;
+ 	unsigned int blen;
++	u16 reg_clk_rate = 0;
+ 
+ 	if (host->pdata->set_bus_width)
+ 		host->pdata->set_bus_width(mmc_dev(mmc), ios->bus_width);
+@@ -872,10 +893,9 @@
+ 	}
+ 
+ 	if (ios->clock) {
+- 	if (ios->clock) {
+ 		unsigned long clk;
+ 		unsigned int divider, scaler;
+-		u16 reg_clk_rate, reg;
++		u16 reg;
+ 
+ 		clk = clk_get_rate(host->clk);
+ 		/* we want to have CLK_RATE (=19.2 MHz), the 7/8 is for rounding up */
+@@ -893,13 +913,12 @@
+ 		else
+ 			reg_clk_rate = imxmci_get_clk_rate_0x400(scaler, divider);
+ 
+-
+ 		/* enable controller */
+ 		reg = readw(host->base + MMC_REG_STR_STP_CLK);
+ 		writew(reg | STR_STP_CLK_ENABLE, host->base + MMC_REG_STR_STP_CLK);
+ 
+ 		imxmci_stop_clock(host);
+-		writew((prescaler << 3) | clk, host->base + MMC_REG_CLK_RATE);
++		writew(reg_clk_rate, host->base + MMC_REG_CLK_RATE);
+ 		/*
+ 		 * Under my understanding, clock should not be started there, because it would
+ 		 * initiate SDHC sequencer and send last or random command into card
+@@ -1058,6 +1077,13 @@
+ 		goto out;
+ 	}
+ 
++	dma = platform_get_resource(pdev, IORESOURCE_DMA, 0);
++	if (!dma) {
++		ret = -ENXIO;
++		goto out;
++	}
++	host->dma_rss = dma->start;
++
+ 	if (host->rev_no == 0x390)
+ 		memsize = IMX_DMA_MEMSIZE_16;
+ 	else
+@@ -1093,13 +1119,6 @@
+ 
+ 	platform_set_drvdata(pdev, mmc);
+ 
+-	dma = platform_get_resource(pdev, IORESOURCE_DMA, 0);
+-	if (!dma) {
+-		ret = -ENXIO;
+-		goto out;
+-	}
+-	host->dma_rss = dma->start;
+-
+ 	if (host->pdata->init)
+ 		host->pdata->init(&pdev->dev);
+ 

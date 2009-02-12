@@ -1,0 +1,12 @@
+--- linux-2.6.27.2.org/arch/arm/mach-imx/include/mach/hardware.h	2009-01-14 16:24:29.000000000 +0100
++++ linux-2.6.27.2/arch/arm/mach-imx/include/mach/hardware.h	2009-01-12 13:50:47.000000000 +0100
+@@ -23,6 +23,9 @@
+ #include <asm/sizes.h>
+ #include "imx-regs.h"
+ 
++/* the DMA code supports SG list chaining */
++#define ARCH_HAS_SG_CHAIN
++
+ #ifndef __ASSEMBLY__
+ # define __REG8(x)	(*((volatile u8 *)IO_ADDRESS(x)))
+ 

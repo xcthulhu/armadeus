@@ -1,0 +1,1 @@
+../imxregs/imx27regs.h

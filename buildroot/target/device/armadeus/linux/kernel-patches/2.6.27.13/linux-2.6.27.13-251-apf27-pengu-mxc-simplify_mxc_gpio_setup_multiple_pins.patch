@@ -1,0 +1,197 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Mon, 29 Sep 2008 11:30:44 +0000 (+0200)
+Subject: simplify mxc_gpio_setup_multiple_pins
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=8e5898fb20451e956f0922bb6f8ed03541ac4631
+
+simplify mxc_gpio_setup_multiple_pins
+
+mxc_gpio_setup_multiple_pins used to take several ALLOC_MODE flags. Most
+of them are unused, so simplify the function by removing the flags. Also,
+instead of using a confusing MXC_GPIO_ALLOC_MODE_RELEASE flag, add a
+mxc_gpio_release_multiple function.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/mach-mx2/pcm970-baseboard.c b/arch/arm/mach-mx2/pcm970-baseboard.c
+index 267f1c4..8c237ab 100644
+--- a/arch/arm/mach-mx2/pcm970-baseboard.c
++++ b/arch/arm/mach-mx2/pcm970-baseboard.c
+@@ -80,16 +80,15 @@ static int mxc_i2c0_pins[] = {
+ 
+ static int pcm038_i2c_0_init(struct platform_device *pdev)
+ {
+-	return mxc_gpio_setup_multiple_pins(mxc_i2c0_pins,
+-			ARRAY_SIZE(mxc_i2c0_pins),
+-			MXC_GPIO_ALLOC_MODE_NORMAL, "I2C0");
++	return mxc_gpio_setup_multiple(mxc_i2c0_pins,ARRAY_SIZE(mxc_i2c0_pins),
++			"I2C0");
+ }
+ 
+ static int pcm038_i2c_0_exit(struct platform_device *pdev)
+ {
+-	return mxc_gpio_setup_multiple_pins(mxc_i2c0_pins,
+-			ARRAY_SIZE(mxc_i2c0_pins),
+-			MXC_GPIO_ALLOC_MODE_RELEASE, "I2C0");
++	mxc_gpio_release_multiple(mxc_i2c0_pins, ARRAY_SIZE(mxc_i2c0_pins));
++
++	return 0;
+ }
+ 
+ static struct imx_i2c_platform_data pcm038_i2c_0_data = {
+@@ -110,16 +109,15 @@ static int mxc_fb_pins[] = {
+ 
+ static int pcm038_fb_init(struct platform_device *pdev)
+ {
+-	return mxc_gpio_setup_multiple_pins(mxc_fb_pins,
+-			ARRAY_SIZE(mxc_fb_pins),
+-			MXC_GPIO_ALLOC_MODE_NORMAL, "FB");
++	return mxc_gpio_setup_multiple(mxc_fb_pins, ARRAY_SIZE(mxc_fb_pins),
++			"FB");
+ }
+ 
+ static int pcm038_fb_exit(struct platform_device *pdev)
+ {
+-	return mxc_gpio_setup_multiple_pins(mxc_fb_pins,
+-			ARRAY_SIZE(mxc_fb_pins),
+-			MXC_GPIO_ALLOC_MODE_RELEASE, "FB");
++	mxc_gpio_release_multiple(mxc_fb_pins, ARRAY_SIZE(mxc_fb_pins));
++
++	return 0;
+ }
+ 
+ /*
+@@ -179,26 +177,24 @@ static int pcm970_camera_init(struct platform_device *pdev)
+ #ifdef CONFIG_MXC_PMIC
+ 	pmic_power_regulator_on(REGU_VCAM);
+ #endif
+-	return mxc_gpio_setup_multiple_pins(mxc_csi_pins,
+-			ARRAY_SIZE(mxc_csi_pins),
+-			MXC_GPIO_ALLOC_MODE_NORMAL, "CSI");
++	return mxc_gpio_setup_multiple(mxc_csi_pins, ARRAY_SIZE(mxc_csi_pins),
++			"CSI");
+ }
+ 
+ static int pcm970_camera_exit(struct platform_device *pdev)
+ {
+-	return mxc_gpio_setup_multiple_pins(mxc_csi_pins,
+-			ARRAY_SIZE(mxc_csi_pins),
+-			MXC_GPIO_ALLOC_MODE_RELEASE, "CSI");
++	mxc_gpio_release_multiple(mxc_csi_pins, ARRAY_SIZE(mxc_csi_pins));
++
++	return 0;
+ }
+ 
+ struct mx27_camera_platform_data pcm970_camera = {
+ 	.init = pcm970_camera_init,
+ 	.exit = pcm970_camera_exit,
+-	.clk  = 48000000,
++	.clk  = 26600000,
+ 	.flags = MX27_CAMERA_HSYNC_HIGH | MX27_CAMERA_GATED_CLOCK,
+ };
+ 
+-
+ /*
+  * system init for baseboard usage. Will be called by pcm038 init.
+  *
+diff --git a/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h b/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
+index b2e8f60..cc80b2a 100644
+--- a/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
++++ b/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
+@@ -21,12 +21,6 @@
+ 
+ #include <linux/io.h>
+ 
+-#define MXC_GPIO_ALLOC_MODE_NORMAL	0
+-#define MXC_GPIO_ALLOC_MODE_NO_ALLOC	1
+-#define MXC_GPIO_ALLOC_MODE_TRY_ALLOC	2
+-#define MXC_GPIO_ALLOC_MODE_ALLOC_ONLY	4
+-#define MXC_GPIO_ALLOC_MODE_RELEASE	8
+-
+ /*
+  *  GPIO Module and I/O Multiplexer
+  *  x = 0..3 for reg_A, reg_B, reg_C, reg_D
+@@ -102,8 +96,9 @@
+ #define GPIO_BOUT_1    (3 << GPIO_BOUT_SHIFT)
+ 
+ extern void mxc_gpio_mode(int gpio_mode);
+-extern int mxc_gpio_setup_multiple_pins(const int *pin_list, unsigned count,
+-					int alloc_mode, const char *label);
++extern int mxc_gpio_setup_multiple(const int *pin_list, unsigned count,
++					const char *label);
++extern void mxc_gpio_release_multiple(const int *pin_list, int count);
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+diff --git a/arch/arm/plat-mxc/iomux-mx1-mx2.c b/arch/arm/plat-mxc/iomux-mx1-mx2.c
+index d97387a..a8b34de 100644
+--- a/arch/arm/plat-mxc/iomux-mx1-mx2.c
++++ b/arch/arm/plat-mxc/iomux-mx1-mx2.c
+@@ -109,13 +109,14 @@ void mxc_gpio_mode(int gpio_mode)
+ }
+ EXPORT_SYMBOL(mxc_gpio_mode);
+ 
+-int mxc_gpio_setup_multiple_pins(const int *pin_list, unsigned count,
+-				int alloc_mode, const char *label)
++int mxc_gpio_setup_multiple(const int *pin_list, unsigned count,
++		const char *label)
+ {
+ 	const int *p = pin_list;
+ 	int i;
+ 	unsigned gpio;
+ 	unsigned mode;
++	int ret = -EINVAL;
+ 
+ 	for (i = 0; i < count; i++) {
+ 		gpio = *p & (GPIO_PIN_MASK | GPIO_PORT_MASK);
+@@ -124,33 +125,33 @@ int mxc_gpio_setup_multiple_pins(const int *pin_list, unsigned count,
+ 		if (gpio >= (GPIO_PORT_MAX + 1) * 32)
+ 			goto setup_error;
+ 
+-		if (alloc_mode & MXC_GPIO_ALLOC_MODE_RELEASE)
+-			gpio_free(gpio);
+-		else if (!(alloc_mode & MXC_GPIO_ALLOC_MODE_NO_ALLOC))
+-			if (gpio_request(gpio, label)
+-			   && !(alloc_mode & MXC_GPIO_ALLOC_MODE_TRY_ALLOC))
+-				goto setup_error;
++		ret = gpio_request(gpio, label);
++		if (ret)
++			goto setup_error;
+ 
+-		if (!(alloc_mode & (MXC_GPIO_ALLOC_MODE_ALLOC_ONLY |
+-				    MXC_GPIO_ALLOC_MODE_RELEASE)))
+-			mxc_gpio_mode(gpio | mode);
++		mxc_gpio_mode(gpio | mode);
+ 
+ 		p++;
+ 	}
+ 	return 0;
+ 
+ setup_error:
+-	if (alloc_mode & (MXC_GPIO_ALLOC_MODE_NO_ALLOC |
+-	    MXC_GPIO_ALLOC_MODE_TRY_ALLOC))
+-		return -EINVAL;
++	mxc_gpio_release_multiple(pin_list, i);
++	return ret;
++}
++EXPORT_SYMBOL(mxc_gpio_setup_multiple);
+ 
+-	while (p != pin_list) {
+-		p--;
+-		gpio = *p & (GPIO_PIN_MASK | GPIO_PORT_MASK);
++void mxc_gpio_release_multiple(const int *pin_list, int count)
++{
++	const int *p = pin_list;
++	int i;
++
++	for (i = 0; i < count; i++) {
++		unsigned gpio = *p & (GPIO_PIN_MASK | GPIO_PORT_MASK);
+ 		gpio_free(gpio);
++		p++;
+ 	}
+ 
+-	return -EINVAL;
+ }
+-EXPORT_SYMBOL(mxc_gpio_setup_multiple_pins);
++EXPORT_SYMBOL(mxc_gpio_release_multiple);
+ 

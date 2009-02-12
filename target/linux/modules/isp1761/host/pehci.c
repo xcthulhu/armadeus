@@ -2692,6 +2692,10 @@ pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb, int status)
     switch (usb_pipetype (urb->pipe)) {
         case PIPE_CONTROL:
         case PIPE_BULK:
+            if (!urb->hcpriv){
+                break;
+            }
+
             qh = urb_priv->qh;
 
 
@@ -2772,6 +2776,10 @@ pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb, int status)
             break;
         case PIPE_INTERRUPT:
             pehci_check("phci_1761_urb_dequeue: INTR needs to be done\n");
+            if (!urb->hcpriv){
+                break;
+            }
+
             qh = urb_priv->qh;
             td_ptd_buf = &td_ptd_map_buff[TD_PTD_BUFF_TYPE_INTL];
             td_ptd_map = &td_ptd_buf->map_list[qh->qtd_ptd_index];

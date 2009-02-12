@@ -1,0 +1,27 @@
+--- buildroot/package/Makefile.autotools.in.ori	2008-11-03 09:15:31.000000000 +0100
++++ buildroot/package/Makefile.autotools.in	2009-01-03 20:17:03.000000000 +0100
+@@ -135,16 +135,20 @@
+ $(BUILD_DIR)/%/.stamp_downloaded:
+ # support make source-check/external-deps
+ ifneq ($(SPIDER),)
+-	$(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_SOURCE)
+-	$(if $($(PKG)_PATCH),$(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_PATCH))
++	-$(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_SOURCE)
++	$(Q)test -e $(DL_DIR)/$($(PKG)_SOURCE) || $(WGET) -P $(DL_DIR) $(ALTERNATE_SITE)/$($(PKG)_SOURCE)
++	-$(if $($(PKG)_PATCH),$(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_PATCH))
++	$(if $($(PKG)_PATCH),$(Q)test -e $(DL_DIR)/$($(PKG)_PATCH) || $(WGET) -P $(DL_DIR) $(ALTERNATE_SITE)/$($(PKG)_PATCH))
+ else
+ 	$(call MESSAGE,"Downloading")
+ ifneq ($(strip $(subst ",,$(BR2_PRIMARY_SITE))),)
+ #"))
+ 	-$(Q)test -e $(DL_DIR)/$($(PKG)_SOURCE) || $(WGET) -P $(DL_DIR) $(BR2_PRIMARY_SITE)/$($(PKG)_SOURCE)
+ endif
+-	$(Q)test -e $(DL_DIR)/$($(PKG)_SOURCE) || $(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_SOURCE)
+-	$(if $($(PKG)_PATCH),$(Q)test -e $(DL_DIR)/$($(PKG)_PATCH) || $(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_PATCH))
++	-$(Q)test -e $(DL_DIR)/$($(PKG)_SOURCE) || $(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_SOURCE)
++	$(Q)test -e $(DL_DIR)/$($(PKG)_SOURCE) || $(WGET) -P $(DL_DIR) $(ALTERNATE_SITE)/$($(PKG)_SOURCE)
++	-$(if $($(PKG)_PATCH),$(Q)test -e $(DL_DIR)/$($(PKG)_PATCH) || $(WGET) -P $(DL_DIR) $($(PKG)_SITE)/$($(PKG)_PATCH))
++	$(if $($(PKG)_PATCH),$(Q)test -e $(DL_DIR)/$($(PKG)_PATCH) || $(WGET) -P $(DL_DIR) $(ALTERNATE_SITE)/$($(PKG)_PATCH))
+ 	$(Q)mkdir -p $(@D)
+ 	$(Q)touch $@
+ endif

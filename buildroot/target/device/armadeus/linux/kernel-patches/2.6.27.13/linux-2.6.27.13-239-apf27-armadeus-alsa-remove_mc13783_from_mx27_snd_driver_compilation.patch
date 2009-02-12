@@ -1,0 +1,18 @@
+Small patch to remove mc13783 stuff from alsa driver building for i.MX27
+
+--- linux-2.6.27.2.org/sound/arm/Makefile	2008-12-17 13:43:08.000000000 +0100
++++ linux-2.6.27.2/sound/arm/Makefile	2008-12-17 13:33:28.000000000 +0100
+@@ -14,8 +14,11 @@
+ obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
+ snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
+ 
+-snd-mc13783-objs		:= imx2-pcm.o imx2-ssi.o imx2-dam.o mc13783.o devdma.o
+-obj-$(CONFIG_SND_IMX2_PCM)	+= snd-mc13783.o
++#snd-mc13783-objs		:= imx2-pcm.o imx2-ssi.o imx2-dam.o mc13783.o devdma.o
++#obj-$(CONFIG_SND_IMX2_PCM)	+= snd-mc13783.o
++
++obj-$(CONFIG_SND_IMX2_PCM)     += snd-mx2.o
++snd-mx2-objs               := imx2-ssi.o imx2-dam.o devdma.o
+ 
+ obj-$(CONFIG_SND_IMX_TSC2102) += snd-imx-alsa-tsc2102.o
+ snd-imx-alsa-tsc2102-objs :=   imx-alsa.o imx-alsa-tsc2102.o imx-alsa-tsc2102-mixer.o

@@ -1,0 +1,53 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Tue, 9 Sep 2008 09:30:58 +0000 (+0200)
+Subject: pcm038: Add NAND resources
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=5ce9da70e185ac4e348b0956614a54269491aa76;hp=11cc83919fb0f1073062f5cc51d10e87b1612233
+
+pcm038: Add NAND resources
+
+This patch adds the platform device and resources for NAND
+on mx27 boards.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/mach-mx2/devices.c b/arch/arm/mach-mx2/devices.c
+index bd0559d..a0ee8d2 100644
+--- a/arch/arm/mach-mx2/devices.c
++++ b/arch/arm/mach-mx2/devices.c
+@@ -190,6 +190,25 @@ struct platform_device mxc_wdt = {
+ 	.resource = mxc_wdt_resources,
+ };
+ 
++static struct resource mxc_nand_resources[] = {
++	{
++		.start	= NFC_BASE_ADDR,
++		.end	= NFC_BASE_ADDR + 0xfff,
++		.flags	= IORESOURCE_MEM
++	}, {
++		.start	= MXC_INT_NANDFC,
++		.end	= MXC_INT_NANDFC,
++		.flags	= IORESOURCE_IRQ
++	},
++};
++
++struct platform_device mxc_nand_device = {
++	.name = "mxc_nand",
++	.id = 0,
++	.num_resources = ARRAY_SIZE(mxc_nand_resources),
++	.resource = mxc_nand_resources,
++};
++
+ /* GPIO port description */
+ static struct mxc_gpio_port imx_gpio_ports[] = {
+ 	[0] = {
+diff --git a/arch/arm/mach-mx2/devices.h b/arch/arm/mach-mx2/devices.h
+index c77a4b8..6ab616e 100644
+--- a/arch/arm/mach-mx2/devices.h
++++ b/arch/arm/mach-mx2/devices.h
+@@ -12,4 +12,4 @@ extern struct platform_device mxc_uart_device2;
+ extern struct platform_device mxc_uart_device3;
+ extern struct platform_device mxc_uart_device4;
+ extern struct platform_device mxc_uart_device5;
+-
++extern struct platform_device mxc_nand_device;

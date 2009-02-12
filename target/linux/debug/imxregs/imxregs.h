@@ -23,6 +23,8 @@
 
 #include "definitions.h"
 
+#define IMX_TYPE "i.MX1/L/S"
+
 static struct reg_info regs[] = 
 {
 // Watchdog

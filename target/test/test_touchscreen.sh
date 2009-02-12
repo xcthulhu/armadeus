@@ -23,7 +23,7 @@ test_touchscreen()
 	modprobe tsc2102_ts
 	sleep 1
 
-	dmesg | tail | grep "TSC2102 touchscreen driver initialized"
+	dmesg | tail | grep "TSC210x Touchscreen driver initialized"
 	if [ "$?" != 0 ]; then
 		echo "Hardware not found !"
 		exit_failed

@@ -1,0 +1,35 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:05 +0000 (+0200)
+Subject: imxmmc: remove remaining platform specific setup
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=845c34e7e3d951ae1a4af99dfa0dd95b0481c9f2
+
+imxmmc: remove remaining platform specific setup
+
+Remove the remaining calls to imx_gpio_mode() by hiding them
+in a platform specific function.
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 6fc82da..221eef6 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -811,13 +811,9 @@ static void imxmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	struct imxmci_host *host = mmc_priv(mmc);
+ 	int prescaler;
+ 
+-	if (ios->bus_width == MMC_BUS_WIDTH_4) {
+-		host->actual_bus_width = MMC_BUS_WIDTH_4;
+-		imx_gpio_mode(PB11_PF_SD_DAT3);
+-	} else {
+-		host->actual_bus_width = MMC_BUS_WIDTH_1;
+-		imx_gpio_mode(GPIO_PORTB | GPIO_IN | GPIO_PUEN | 11);
+-	}
++	if (host->pdata->set_bus_width)
++		host->pdata->set_bus_width(mmc_dev(mmc), ios->bus_width);
++	host->actual_bus_width = ios->bus_width;
+ 
+ 	if (host->power_mode != ios->power_mode) {
+ 		switch (ios->power_mode) {

@@ -18,12 +18,8 @@ include $(ARMADEUS_BASE_DIR)/Makefile.in
 KDIR    := $(ARMADEUS_LINUX_DIR)
 PWD	:= $(shell pwd)
 
-default:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-
-clean:
-	rm -f *.*o
-	rm -f Module.symvers
+# Armadeus custom drivers common targets (default, clean, etc...)
+include ../../../Makefile.in
     
 endif
 

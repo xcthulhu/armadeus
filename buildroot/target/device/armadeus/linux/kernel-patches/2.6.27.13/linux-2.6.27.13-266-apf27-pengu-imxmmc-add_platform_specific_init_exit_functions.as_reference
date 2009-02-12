@@ -1,0 +1,58 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:04 +0000 (+0200)
+Subject: imxmmc: add platform specific init/exit functions
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=753ea4439e7d05a3f82d38b3d37839412df5de6f
+
+imxmmc: add platform specific init/exit functions
+
+As GPIO initialization is platform specific remove it from the driver
+and introduce platform specific init/exit functions.
+
+FIXME: The mx1ads part is missing in this patch, also the changes to
+       the header file.
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 63afc04..6fc82da 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -999,16 +999,6 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	}
+ 	clk_enable(host->clk);
+ 
+-	imx_gpio_mode(PB8_PF_SD_DAT0);
+-	imx_gpio_mode(PB9_PF_SD_DAT1);
+-	imx_gpio_mode(PB10_PF_SD_DAT2);
+-	/* Configured as GPIO with pull-up to ensure right MCC card mode */
+-	/* Switched to PB11_PF_SD_DAT3 if 4 bit bus is configured */
+-	imx_gpio_mode(GPIO_PORTB | GPIO_IN | GPIO_PUEN | 11);
+-	/* imx_gpio_mode(PB11_PF_SD_DAT3); */
+-	imx_gpio_mode(PB12_PF_SD_CLK);
+-	imx_gpio_mode(PB13_PF_SD_CMD);
+-
+ 	imxmci_softreset(host);
+ 
+ 	rev_no = readw(host->base + MMC_REG_REV_NO);
+@@ -1060,6 +1050,9 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	}
+ 	host->dma_rss = dma->start;
+ 
++	if (host->pdata->init)
++		host->pdata->init(&pdev->dev);
++
+ 	mmc_add_host(mmc);
+ 
+ 	return 0;
+@@ -1095,6 +1088,9 @@ static int imxmci_remove(struct platform_device *pdev)
+ 		del_timer_sync(&host->timer);
+ 		mmc_remove_host(mmc);
+ 
++		if (host->pdata->exit)
++			host->pdata->exit(&pdev->dev);
++
+ 		free_irq(host->irq, host);
+ 		iounmap(host->base);
+ 		imx_dma_free(host->dma);

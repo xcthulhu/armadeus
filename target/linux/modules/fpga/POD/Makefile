@@ -8,17 +8,18 @@
 ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
-obj-$(CONFIG_POD_DRIVERS)   +=  void/
+obj-$(CONFIG_POD_DRIVERS)   +=  $(shell ls -F drivers/armadeus/fpga/POD/ | grep \/$)
 
 else
 
 # Part executed when called from standard make in this directory:
 
-ARMADEUS_BASE_DIR=../../../../..
-include $(ARMADEUS_BASE_DIR)/Makefile.in
-
+BASE_DIR:=../../../../buildroot/
+REL:=$(shell grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config |       sed -e 's/BR2_PACKAGE_LINUX_VERSION=//' | sed -e 's/"//g')
+#
+ARMADEUS_KERNEL_DIR:=$(BASE_DIR)build_arm/linux-$(REL)
 ifeq ($(LINUX_DIR),)
-LINUX_DIR:=$(ARMADEUS_LINUX_DIR)
+LINUX_DIR:=$(ARMADEUS_KERNEL_DIR)
 endif
 PWD:= $(shell pwd)
 

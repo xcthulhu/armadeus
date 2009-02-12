@@ -1,5 +1,5 @@
 /*
- *  Backlight Driver for i.MXL based platforms 
+ *  Backlight Driver for i.MX based platforms
  *
  *  Copyright (c) 2007 Julien Boibessot - Armadeus Project
  *
@@ -21,12 +21,17 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/imxfb.h>    /* Backlight machinfo struct is defined here */
-#include <asm/arch/imx-regs.h>
+#include <asm/arch/hardware.h>
 #else
 #include <mach/imxfb.h>        /* Backlight machinfo struct is defined here */
-#include <mach/imx-regs.h>
+#include <mach/hardware.h>
+#endif
+#ifdef CONFIG_ARCH_IMX
+#define LCDC_BASE_ADDR IMX_LCDC_BASE
 #endif
 
+#define DRIVER_NAME    "imx-bl"
+#define DRIVER_VERSION "0.2"
 
 static int imxbl_intensity;
 static DEFINE_MUTEX(bl_mutex);
@@ -52,14 +57,14 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 	if (imxbl_flags & IMXBL_BATTLOW)
 		intensity &= bl_machinfo->limit_mask;
 
-	// If a function was given in machine info then use it
+	/* If a method was given in machine info then use it */
 	if( bl_machinfo->set_bl_intensity ) {
 		bl_machinfo->set_bl_intensity(intensity);
-	} else { // Otherwise use this default one:
-		shadow = LCDC_PWMR;
-		shadow &= 0xffffff00;
+	} else { /* Otherwise use this default one: */
+		shadow = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c); /* PWMR / LPCCR */
+		shadow &= ~PWMR_PW(0xff);
 		shadow |= PWMR_PW(intensity);
-		LCDC_PWMR = shadow;
+		writel(shadow, IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
 		pr_debug("Setting backlight intensity to %d\n", intensity);
 	}
 
@@ -125,12 +130,12 @@ static int imxbl_probe(struct platform_device *pdev)
 	if (!machinfo->limit_mask)
 		machinfo->limit_mask = -1;
 
-	imx_backlight_device = backlight_device_register ("imxl-bl", &pdev->dev, NULL, &imxbl_ops);
-	if (IS_ERR (imx_backlight_device))
-    {
-        printk("Error imxBL\n");
+	imx_backlight_device = backlight_device_register(DRIVER_NAME,
+								&pdev->dev, NULL, &imxbl_ops);
+	if (IS_ERR (imx_backlight_device)) {
+		printk("can't register backlight device\n");
 		return PTR_ERR (imx_backlight_device);
-    }
+	}
 
 	platform_set_drvdata(pdev, imx_backlight_device);
 
@@ -139,7 +144,7 @@ static int imxbl_probe(struct platform_device *pdev)
 	imx_backlight_device->props.brightness = machinfo->default_intensity;
 	backlight_update_status(imx_backlight_device);
 
-	printk("i.MX Backlight driver initialized.\n");
+	printk("i.MX Backlight driver v" DRIVER_VERSION " initialized.\n");
 	return 0;
 }
 
@@ -163,23 +168,23 @@ static struct platform_driver imxbl_driver = {
 	.suspend	= imxbl_suspend,
 	.resume		= imxbl_resume,
 	.driver		= {
-		.name	= "imxl-bl",
+		.name	= DRIVER_NAME,
 	},
 };
 
 static int __init imxbl_init(void)
 {
-    return platform_driver_register(&imxbl_driver);
+	return platform_driver_register(&imxbl_driver);
 }
 
 static void __exit imxbl_exit(void)
 {
-    platform_driver_unregister(&imxbl_driver);
+	platform_driver_unregister(&imxbl_driver);
 }
 
 module_init(imxbl_init);
 module_exit(imxbl_exit);
 
 MODULE_AUTHOR("Julien Boibessot <julien.boibessot@armadeus.com>");
-MODULE_DESCRIPTION("i.MXL Backlight Driver");
+MODULE_DESCRIPTION("i.MX Backlight Driver");
 MODULE_LICENSE("GPL");

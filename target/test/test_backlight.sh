@@ -14,6 +14,7 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+SYS_DIR=/sys/class/backlight/imx-bl
 
 test_backlight()
 {
@@ -25,15 +26,19 @@ test_backlight()
 		echo "module not found"
 		exit 1
 	fi
-	cat /sys/class/backlight/imxl-bl/actual_brightness
+	current=`cat $SYS_DIR/actual_brightness`
+	echo "Current brightness level: $current / 256"
 
-	echo 50 > /sys/class/backlight/imxl-bl/brightness
+	echo 50 > $SYS_DIR/brightness
 	ask_user "Backlight set to LOW, if OK say y"
-	echo 200 > /sys/class/backlight/imxl-bl/brightness
+	echo 200 > $SYS_DIR/brightness
 	ask_user "Backlight set to HIGH, if OK say y"
 	if [ "$response" == "y" ]; then
 		echo_test_ok
+		exit 0
 	fi
+	exit_failed
 }
 
 test_backlight
+

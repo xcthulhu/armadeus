@@ -1,0 +1,12 @@
+--- buildroot/package/tslib/tslib.mk.ref	2009-01-01 17:19:34.000000000 +0100
++++ buildroot/package/tslib/tslib.mk	2009-01-03 18:56:28.000000000 +0100
+@@ -10,7 +10,8 @@
+ TSLIB_DIR:=$(BUILD_DIR)/tslib-$(TSLIB_VERSION)
+ 
+ $(DL_DIR)/$(TSLIB_SOURCE):
+-	$(WGET) -P $(DL_DIR) $(TSLIB_SITE)/$(TSLIB_SOURCE)
++	-$(WGET) -P $(DL_DIR) $(TSLIB_SITE)/$(TSLIB_SOURCE)
++	$(Q)test -e $@ || $(WGET) -O $@ $(ALTERNATE_SITE)/$(TSLIB_SOURCE)
+ 
+ tslib-source: $(DL_DIR)/$(TSLIB_SOURCE)
+ 

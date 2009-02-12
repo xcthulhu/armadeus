@@ -5,7 +5,7 @@
 #############################################################
 ALLEGRO_VERSION:=4.2.1
 ALLEGRO_SOURCE:=allegro-$(ALLEGRO_VERSION).tar.gz
-ALLEGRO_SITE:=http://dfn.dl.sourceforge.net/sourceforge/alleg/
+ALLEGRO_SITE:=http://downloads.sourceforge.net/alleg
 ALLEGRO_CAT:=zcat
 ALLEGRO_DIR:=$(BUILD_DIR)/allegro-$(ALLEGRO_VERSION)
 

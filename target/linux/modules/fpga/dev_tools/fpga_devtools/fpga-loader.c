@@ -159,7 +159,7 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
     int err = 0; int ret = 0;
     unsigned int minor;
     
-    PRINTF( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
+    //PRINTF( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
     
     // Extract the type and number bitfields, and don't decode wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
     if (_IOC_TYPE(cmd) != FPGA_IOCTL) return -ENOTTY;
@@ -201,7 +201,6 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
 static int createProcEntries( void )
 {
     static struct proc_dir_entry *fpga_Proc_File;
-
     // Create main directory
     proc_mkdir(FPGA_PROC_DIRNAME, NULL);
     // Create proc file to handle GPIO values
@@ -273,10 +272,12 @@ void __exit armadeus_fpga_cleanup(void)
 
     // Remove /proc entries    
     remove_proc_entry(FPGA_PROC_FILENAME, NULL);
+	// Remove /proc directory entry
+	remove_proc_entry(FPGA_PROC_DIRNAME, NULL);
     // De-register /dev interface
     unregister_chrdev(fpga_major, FPGA_DRIVER_NAME);
 
-    PRINTF("Ok !\n ");
+    PRINTF("Ok !\n");
 }
 
 //------------------------------------------------

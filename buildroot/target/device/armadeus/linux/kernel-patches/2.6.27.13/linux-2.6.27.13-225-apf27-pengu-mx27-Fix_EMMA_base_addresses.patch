@@ -1,0 +1,27 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Tue, 7 Oct 2008 08:31:07 +0000 (+0200)
+Subject: [ARM] MX27: Fix EMMA Base addresses
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=1c56cf17faa6f97274933f9f74634dff4acf04d0
+
+[ARM] MX27: Fix EMMA Base addresses
+
+The EMMA (Enhanced Multimedia Engine) is divided into two parts, the
+postprocessor and the preprocessor. Fix the base addresses.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/plat-mxc/include/mach/mx27.h b/arch/arm/plat-mxc/include/mach/mx27.h
+index a86db64..aade46d 100644
+--- a/arch/arm/plat-mxc/include/mach/mx27.h
++++ b/arch/arm/plat-mxc/include/mach/mx27.h
+@@ -72,7 +72,8 @@
+ /* for mx27*/
+ #define OTG_BASE_ADDR           USBOTG_BASE_ADDR
+ #define SAHARA_BASE_ADDR        (AIPI_BASE_ADDR + 0x25000)
+-#define EMMA_BASE_ADDR          (AIPI_BASE_ADDR + 0x26400)
++#define EMMA_PP_BASE_ADDR       (AIPI_BASE_ADDR + 0x26000)
++#define EMMA_PRP_BASE_ADDR      (AIPI_BASE_ADDR + 0x26400)
+ #define CCM_BASE_ADDR           (AIPI_BASE_ADDR + 0x27000)
+ #define SYSCTRL_BASE_ADDR       (AIPI_BASE_ADDR + 0x27800)
+ #define IIM_BASE_ADDR           (AIPI_BASE_ADDR + 0x28000)

@@ -15,7 +15,7 @@ source ./test_helpers.sh
 source ./test_env.sh
 
 TOLERANCE=1
-TEST_DURATION=5
+TEST_DURATION=10
 
 convert_in_secs()
 {
@@ -37,11 +37,11 @@ test_rtc()
 	date
 	if [ "$?" == 0 ]; then
 		echo "Please wait "$TEST_DURATION"s"
-#		hwclock -wu
+		hwclock -wu
 		DATE=`date +:%T`
 		BEFORE=`convert_in_secs $DATE`
 		sleep $TEST_DURATION
-#		hwclock -su
+		hwclock -su
 		DATE=`date +:%T`
 		AFTER=`convert_in_secs $DATE`
 		DIFF=$(($AFTER - $BEFORE - $TEST_DURATION))
@@ -56,3 +56,4 @@ test_rtc()
 }
 
 test_rtc
+

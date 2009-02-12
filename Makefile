@@ -1,6 +1,6 @@
-# Makefile for armadeus
+# Makefile for Armadeus
 #
-# Copyright (C) 2005-2007 by <jorasse@armadeus.com>
+# Copyright (C) 2005-2009 by the Armadeus Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #--------------------------------------------------------------
 
 BUILDROOT_DIR = buildroot
+include ./Makefile.in
 
 BUILDROOT_NAME=buildroot
 BUILDROOT_FILE_PATH:=downloads
@@ -31,25 +32,20 @@ BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 
--include $(BUILDROOT_DIR)/.config
-LINUX_VERSION:=$(shell echo $(BR2_LINUX26_VERSION))
-BOARD_NAME:=$(shell echo $(BR2_BOARD_NAME))
-ARCH:=$(shell echo $(BR2_GCC_TARGET_ARCH))
-
 ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
 PATCH_DIR=patches
 TAR_OPTIONS=--exclude=.svn -xf 
 
-LINUX_DIR=$(BUILDROOT_DIR)/project_build_$(ARCH)/$(BOARD_NAME)/linux-$(LINUX_VERSION)
-BOARD_DIR=$(BUILDROOT_DIR)/target/device/armadeus/$(BOARD_NAME)/
+ARMADEUS_ENV_FILE=armadeus_env.sh
+
 
 ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
                 echo "                                                   "; \
                 echo " System not configured. Use make <board>_defconfig " >&2; \
                 echo " armadeus valid configurations are:                " >&2; \
-                echo "     "$(shell find ./$(BUILDROOT_DIR)/target/device/armadeus -name *_defconfig|sed 's/.*\///');\
+                echo "     "$(shell find $(BUILDROOT_DIR)/target/device/armadeus -name *_defconfig|sed 's/.*\///');\
                 echo "                                                   "; \
 		echo -en "\033[0m";
 
@@ -116,24 +112,19 @@ buildauto: $(BUILDROOT_DIR)/.unpacked
 	$(MAKE) -C $(BUILDROOT_DIR)
 
 linux-menuconfig:
-	@if [ ! -e "target/linux/modules/fpga/POD/.pod" ] ; then \
-		if [ -x target/linux/modules/fpga/podscript.sh ]; then \
-			target/linux/modules/fpga/podscript.sh ; \
-		fi \
-	fi;
-	@if [ -e "$(LINUX_DIR)/.unpacked" ] ; then \
+	@if [ -e "$(ARMADEUS_LINUX_DIR)/.unpacked" ] ; then \
 		$(MAKE) -C $(BUILDROOT_DIR) linux26-menuconfig ; \
 	fi;
 
 linux26: $(BUILDROOT_DIR)/.configured
-	@-touch $(LINUX_DIR)/.config 
+	@-touch $(ARMADEUS_LINUX_DIR)/.config 
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26
 
 linux26-clean: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
 
 %_defconfig: $(BUILDROOT_DIR)/.unpacked
-	@if [ -e "./$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_defconfig,%,$@)/$@" ]; then \
+	@if [ -e "$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_defconfig,%,$@)/$@" ]; then \
 		rm -f $(BUILDROOT_DIR)/.config ; \
 		$(MAKE) -C $(BUILDROOT_DIR) $@ ; \
 		$(MAKE) -C $(BUILDROOT_DIR) menuconfig ; \
@@ -167,7 +158,13 @@ buildroot-clean:
 buildroot-dirclean:
 	rm -rf $(BUILDROOT_DIR)	
 
+# Generate shell's most useful variables:
+shell_env:
+	@echo ARMADEUS_LINUX_DIR=$(ARMADEUS_LINUX_DIR)   >  $(ARMADEUS_ENV_FILE)
+	@echo ARMADEUS_ROOTFS_DIR=$(ARMADEUS_ROOTFS_DIR) >> $(ARMADEUS_ENV_FILE)
+
+
 PHONY_TARGETS+=dummy all linux-menuconfig linux26 linux26-clean buildroot-clean buildroot-dirclean
-PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config
+PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config shell_env
 .PHONY: $(PHONY_TARGETS)
 

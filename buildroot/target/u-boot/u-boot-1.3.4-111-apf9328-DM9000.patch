@@ -1,104 +1,106 @@
-diff -purN u-boot-1.3.4.ref/drivers/net/dm9000x.c u-boot-1.3.4/drivers/net/dm9000x.c
---- u-boot-1.3.4.ref/drivers/net/dm9000x.c	2008-08-12 16:08:38.000000000 +0200
-+++ u-boot-1.3.4/drivers/net/dm9000x.c	2008-09-13 16:24:20.000000000 +0200
+--- ref/u-boot-1.3.4/drivers/net/dm9000x.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/drivers/net/dm9000x.c	2009-01-12 13:53:57.000000000 +0100
 @@ -130,6 +130,8 @@ static int dm9000_probe(void);
  static u16 phy_read(int);
  static void phy_write(int, u16);
  u16 read_srom_word(int);
-+static void write_srom_word(int offset, u16 val);
-+static void program_eeprom(char* mac_addr);
++void write_srom_word(int offset, u16 val);
++static void program_eeprom(unsigned char* mac_addr);
  static u8 DM9000_ior(int);
  static void DM9000_iow(int reg, u8 value);
  
-@@ -408,8 +410,18 @@ eth_init(bd_t * bd)
+@@ -246,7 +248,7 @@ dm9000_probe(void)
+ 	id_val |= DM9000_ior(DM9000_PIDL) << 16;
+ 	id_val |= DM9000_ior(DM9000_PIDH) << 24;
+ 	if (id_val == DM9000_ID) {
+-		printf("dm9000 i/o: 0x%x, id: 0x%x \n", CONFIG_DM9000_BASE,
++		DM9000_DBG("dm9000 i/o: 0x%x, id: 0x%x \n", CONFIG_DM9000_BASE,
+ 		       id_val);
+ 		return 0;
+ 	} else {
+@@ -408,6 +410,8 @@ eth_init(bd_t * bd)
  	u8 io_mode;
  	struct board_info *db = &dm9000_info;
  
-+	unsigned char env_enetaddr[6];
-+	char *tmp = getenv ("ethaddr");
-+	char *end;
++	unsigned char hw_enetaddr[6] = {0,0,0,0,0,0};
 +
  	DM9000_DBG("eth_init()\n");
  
-+	for (i=0; i<6; i++) {
-+		env_enetaddr[i] = tmp ? simple_strtoul(tmp, &end, 16) : 0;
-+		if (tmp)
-+			tmp = (*end) ? end+1 : end;
-+	}
-+
  	/* RESET device */
- 	dm9000_reset();
- 	dm9000_probe();
-@@ -477,10 +489,10 @@ eth_init(bd_t * bd)
- 		((u16 *) bd->bi_enetaddr)[i] = read_srom_word(i);
+@@ -419,19 +423,19 @@ eth_init(bd_t * bd)
+ 
+ 	switch (io_mode) {
+ 	case 0x0:  /* 16-bit mode */
+-		printf("DM9000: running in 16 bit mode\n");
++		DM9000_DBG("DM9000: running in 16 bit mode\n");
+ 		db->outblk    = dm9000_outblk_16bit;
+ 		db->inblk     = dm9000_inblk_16bit;
+ 		db->rx_status = dm9000_rx_status_16bit;
+ 		break;
+ 	case 0x01:  /* 32-bit mode */
+-		printf("DM9000: running in 32 bit mode\n");
++		DM9000_DBG("DM9000: running in 32 bit mode\n");
+ 		db->outblk    = dm9000_outblk_32bit;
+ 		db->inblk     = dm9000_inblk_32bit;
+ 		db->rx_status = dm9000_rx_status_32bit;
+ 		break;
+ 	case 0x02: /* 8 bit mode */
+-		printf("DM9000: running in 8 bit mode\n");
++		DM9000_DBG("DM9000: running in 8 bit mode\n");
+ 		db->outblk    = dm9000_outblk_8bit;
+ 		db->inblk     = dm9000_inblk_8bit;
+ 		db->rx_status = dm9000_rx_status_8bit;
+@@ -473,8 +477,8 @@ eth_init(bd_t * bd)
+ 
+ 	/* Set Node address */
+ #ifndef CONFIG_AT91SAM9261EK
+-	for (i = 0; i < 6; i++)
+-		((u16 *) bd->bi_enetaddr)[i] = read_srom_word(i);
++	for (i = 0; i < 3; i++)
++		((u16 *)hw_enetaddr)[i] = read_srom_word(i);
  #endif
  
--	if (is_zero_ether_addr(bd->bi_enetaddr) ||
-+/*	if (is_zero_ether_addr(bd->bi_enetaddr) ||
- 	    is_multicast_ether_addr(bd->bi_enetaddr)) {
--		/* try reading from environment */
--		u8 i;
-+*/		/* try reading from environment */
-+/*		u8 i;
- 		char *s, *e;
- 		s = getenv ("ethaddr");
- 		for (i = 0; i < 6; ++i) {
-@@ -490,10 +502,42 @@ eth_init(bd_t * bd)
- 				s = (*e) ? e + 1 : e;
+ 	if (is_zero_ether_addr(bd->bi_enetaddr) ||
+@@ -491,6 +495,38 @@ eth_init(bd_t * bd)
  		}
  	}
-+*/
-+	if (memcmp(env_enetaddr, "\0\0\0\0\0\0", 6) != 0 &&
-+	    memcmp(env_enetaddr, bd->bi_enetaddr, 6) != 0) {
-+		printf ("\nWarning: MAC addresses don't match:\n");
-+		printf ("\tHW MAC address:  "
+ 
++	/* reprogram eeprom if env eneteaddr is defined and eeprom erased
++	    or if env enetaddr is set to erase the eeprom (ff:ff:ff:ff:ff:ff)
++	 */
++	if (( memcmp(hw_enetaddr, "\xff\xff\xff\xff\xff\xff", 6) == 0 
++	      && (!is_zero_ether_addr(bd->bi_enetaddr))
++	    )
++	    || memcmp(bd->bi_enetaddr, "\xff\xff\xff\xff\xff\xff", 6) == 0) {
++		printf ("Warning: MAC addresses reprogramming..\n");
++		DM9000_DBG ("\tcurrent HW MAC address: "
++			"%02X:%02X:%02X:%02X:%02X:%02X\n",
++			hw_enetaddr[0], hw_enetaddr[1],
++			hw_enetaddr[2], hw_enetaddr[3],
++			hw_enetaddr[4], hw_enetaddr[5] );
++		DM9000_DBG ("\tnew HW MAC address: "
 +			"%02X:%02X:%02X:%02X:%02X:%02X\n",
 +			bd->bi_enetaddr[0], bd->bi_enetaddr[1],
 +			bd->bi_enetaddr[2], bd->bi_enetaddr[3],
-+			bd->bi_enetaddr[4], bd->bi_enetaddr[5] );
-+		printf ("\t\"ethaddr\" value: "
-+			"%02X:%02X:%02X:%02X:%02X:%02X\n",
-+			env_enetaddr[0], env_enetaddr[1],
-+			env_enetaddr[2], env_enetaddr[3],
-+			env_enetaddr[4], env_enetaddr[5]) ;
-+		program_eeprom(env_enetaddr);
-+		debug ("### Set MAC addr from environment\n");
-+		memcpy (bd->bi_enetaddr, env_enetaddr, 6);
++			bd->bi_enetaddr[4], bd->bi_enetaddr[5]) ;
++		program_eeprom(bd->bi_enetaddr);
 +	}
-+	if (!tmp) {
++
++	if (is_zero_ether_addr(bd->bi_enetaddr)) {
 +		char ethaddr[20];
++		memcpy (bd->bi_enetaddr, hw_enetaddr, 6);
 +		sprintf (ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X",
 +			 bd->bi_enetaddr[0], bd->bi_enetaddr[1],
 +			 bd->bi_enetaddr[2], bd->bi_enetaddr[3],
 +			 bd->bi_enetaddr[4], bd->bi_enetaddr[5]) ;
-+		debug ("### Set environment from HW MAC addr = \"%s\"\n", ethaddr);
++		DM9000_DBG ("### Set environment from HW MAC addr = \"%s\"\n", ethaddr);
 +		setenv ("ethaddr", ethaddr);
 +	}
- 
++
  	printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", bd->bi_enetaddr[0],
  	       bd->bi_enetaddr[1], bd->bi_enetaddr[2], bd->bi_enetaddr[3],
  	       bd->bi_enetaddr[4], bd->bi_enetaddr[5]);
-+	/*printf("FLASH:"); 
-+	for (i = 0; i < 8; i++)
-+		printf(" 0x%02X", read_srom_word(i));
-+	printf("\n"); */
-+
- 	for (i = 0, oft = 0x10; i < 6; i++, oft++)
- 		DM9000_iow(oft, bd->bi_enetaddr[i]);
- 	for (i = 0, oft = 0x16; i < 8; i++, oft++)
-@@ -688,7 +732,10 @@ read_srom_word(int offset)
- 	return (DM9000_ior(DM9000_EPDRL) + (DM9000_ior(DM9000_EPDRH) << 8));
- }
- 
--void
-+/*
-+ * Write a word data to SROM
-+ */
-+static void
- write_srom_word(int offset, u16 val)
- {
- 	DM9000_iow(DM9000_EPAR, offset);
-@@ -699,6 +746,28 @@ write_srom_word(int offset, u16 val)
+@@ -699,6 +735,28 @@ write_srom_word(int offset, u16 val)
  	DM9000_iow(DM9000_EPCR, 0);
  }
  
@@ -108,7 +110,7 @@ diff -purN u-boot-1.3.4.ref/drivers/net/dm9000x.c u-boot-1.3.4/drivers/net/dm900
 + * we don't have valid content on a new board
 + */
 +static void
-+program_eeprom(char* mac_addr)
++program_eeprom(unsigned char* mac_addr)
 +{
 +	u16 eeprom[] = { 0x8180, 0x8382, 0x8584,	/* MAC Address */
 +		0x0000 /*0x1455*/,		/* Autoload: accept nothing */
@@ -117,7 +119,7 @@ diff -purN u-boot-1.3.4.ref/drivers/net/dm9000x.c u-boot-1.3.4/drivers/net/dm900
 +		0x0180,		/* 0x0180 Wake-up mode control, PHY DIS*/
 +		0, 0, 0, 0
 +	};			
-+	u16* tmp = mac_addr;
++	u16* tmp = (u16*)mac_addr;
 +	int i;
 +	for (i = 0; i < 3; i++)
 +		eeprom[i] = *tmp++;

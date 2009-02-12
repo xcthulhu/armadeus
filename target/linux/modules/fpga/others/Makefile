@@ -20,19 +20,15 @@ include $(ARMADEUS_BASE_DIR)/Makefile.in
 ifeq ($(LINUX_DIR),)
 LINUX_DIR:=$(ARMADEUS_LINUX_DIR)
 endif
-PWD:= $(shell pwd)
+KDIR	:= $(LINUX_DIR)
+PWD	:= $(shell pwd)
 
-default:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) zImage modules
-
-clean:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) clean
+# Armadeus custom drivers common targets (default, clean, etc...)
+include ../../Makefile.in
 
 install:
 	echo "Installing Armadeus drivers..."
-	 $(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
+	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
     
 endif
 

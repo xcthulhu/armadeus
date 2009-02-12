@@ -1,0 +1,198 @@
+--- linux-2.6.27.2.org/sound/arm/imx2-ssi.h	2009-01-16 13:49:56.000000000 +0100
++++ linux-2.6.27.2/sound/arm/imx2-ssi.h	2009-01-14 18:39:45.000000000 +0100
+@@ -23,11 +23,11 @@
+ void imx_ssi_shutdown(struct snd_pcm_substream *substream, int ssi_id);
+ int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd, int ssi_id);
+ 
+-extern int imx_get_dma_tx_channel(int, int);
+-extern int imx_get_dma_rx_channel(int, int);
+-extern void __iomem *imx_get_dma_tx_address(int, int);
+-extern void __iomem *imx_get_dma_rx_address(int, int);
+-extern int setup_channel_to_iis_slave(int);
++extern int imx_ssi_get_dma_tx_channel(int, int);
++extern int imx_ssi_get_dma_rx_channel(int, int);
++extern void __iomem *imx_ssi_get_dma_tx_address(int, int);
++extern void __iomem *imx_ssi_get_dma_rx_address(int, int);
++extern int imx_ssi_setup_unit_to_iis_slave(int);
+ 
+ /* to handle it like a module */
+ extern int mx2_ssi_init(void);
+--- linux-2.6.27.2.org/sound/arm/imx2-ssi.c	2009-01-16 13:49:56.000000000 +0100
++++ linux-2.6.27.2/sound/arm/imx2-ssi.c	2009-01-16 15:02:43.000000000 +0100
+@@ -28,6 +28,7 @@
+ #include <sound/pcm.h>
+ #include <mach/imx_ssi.h>
+ #include "imx2-ssi.h"
++#include "imx2-dam.h"
+ 
+ #define DRV_NAME "mxc-ssi"
+ 
+@@ -102,7 +103,7 @@
+  *      --|    rigth     ||   left       |--------------------------------
+  *
+  */
+-int setup_channel_to_iis_slave(int id)
++int imx_ssi_setup_unit_to_iis_slave(int id)
+ {
+ 	u32 scr;
+ 
+@@ -110,7 +111,7 @@
+ 
+ 	pr_debug("%s called for unit %d\n", __func__, id);
+ 
+-	scr = SSI_SCR_SYN | SSI_SCR_NET;
++	scr = SSI_SCR_SYN | SSI_SCR_I2S_MODE_SLAVE; /* SSI_SCR_NET; */
+ 
+ 	/* disable this unit */
+ 	set_reg(scr, SSI_SCR, id);
+@@ -118,14 +119,16 @@
+ 	set_reg(SSI_STCR_TFEN0 |	/* FIFO 0 enabled */
+ 		SSI_STCR_TXBIT0 |	/* MSB first, data bits 0...15 are valid */
+ 		SSI_STCR_TSCKP |	/* send @falling edge */
+-		SSI_STCR_TFSL |		/* one-bit-long-frame */
++		SSI_STCR_TFSI |
++// 		SSI_STCR_TFSL |		/* one-bit-long-frame */
+ 		SSI_STCR_TEFS,		/* shift */
+ 		SSI_STCR, id);
+ 
+ 	set_reg(SSI_SRCR_RFEN0 |	/* FIFO 0 enabled */
+ 		SSI_SRCR_RXBIT0 |
+ 		SSI_SRCR_RSCKP |	/* capture @rising edge */
+-		SSI_SRCR_RFSL |		/* one-bit-long-frame */
++		SSI_STCR_TFSI |
++// 		SSI_SRCR_RFSL |		/* one-bit-long-frame */
+ 		SSI_SRCR_REFS,
+ 		SSI_SRCR, id);
+ 
+@@ -133,12 +136,12 @@
+ 	 * bit 0: first timeslot after sync    ____    ____    ____
+ 	 * bit 1: second timeslot after sync       ____    ____    ____
+ 	 */
+-	set_reg(0xFFFFFFFC, SSI_STMSK, id);
++// 	set_reg(0xFFFFFFFC, SSI_STMSK, id);
+ 	/*
+ 	 * these RX settings must correspond with the settings in PMIC's
+ 	 * reg 39 codec time slot settings
+ 	 */
+-	set_reg(0xFFFFFFFC, SSI_SRMSK, id);
++// 	set_reg(0xFFFFFFFC, SSI_SRMSK, id);
+ 
+ 	/*
+ 	 * Watermark settings:
+@@ -159,17 +162,18 @@
+ 	 * sample signal. In this case 16 bit per word, 32 bit per sample.
+ 	 * PMIC sends always 4 words (=2 samples) per sync!
+ 	 */
+-	set_reg(SSI_STCCR_WL(16) | SSI_STCCR_DC(1), SSI_STCCR, id);
+-	set_reg(SSI_SRCCR_WL(16) | SSI_SRCCR_DC(3), SSI_SRCCR, id);
++	set_reg(SSI_STCCR_WL(16) | SSI_STCCR_DC(0)/*1*/, SSI_STCCR, id);
++	set_reg(SSI_SRCCR_WL(16) | SSI_SRCCR_DC(0)/*3*/, SSI_SRCCR, id);
+ 
+ 	/* enable the unit */
+ 	set_reg(scr | SSI_SCR_SSIEN, SSI_SCR, id);
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(imx_ssi_setup_unit_to_iis_slave);
+ 
+ /* id: SSI unit, fifo: FIFO 0 or 1 of this unit */
+-int imx_get_dma_tx_channel(int id, int fifo)
++int imx_ssi_get_dma_tx_channel(int id, int fifo)
+ {
+ 	struct resource *res;
+ 
+@@ -186,9 +190,10 @@
+ 
+ 	return res->start;
+ }
++EXPORT_SYMBOL(imx_ssi_get_dma_tx_channel);
+ 
+ /* return physical address of the FIFO register */
+-void __iomem *imx_get_dma_tx_address(int id, int fifo)
++void __iomem *imx_ssi_get_dma_tx_address(int id, int fifo)
+ {
+ 	struct resource *res;
+ 	void __iomem *adr;
+@@ -207,9 +212,10 @@
+ 
+ 	return adr;
+ }
++EXPORT_SYMBOL(imx_ssi_get_dma_tx_address);
+ 
+ /* id: SSI unit, fifo: FIFO 0 or 1 of this unit */
+-int imx_get_dma_rx_channel(int id, int fifo)
++int imx_ssi_get_dma_rx_channel(int id, int fifo)
+ {
+ 	struct resource *res;
+ 
+@@ -226,9 +232,10 @@
+ 
+ 	return res->start;
+ }
++EXPORT_SYMBOL(imx_ssi_get_dma_rx_channel);
+ 
+ /* return physical address of the FIFO register */
+-void __iomem *imx_get_dma_rx_address(int id, int fifo)
++void __iomem *imx_ssi_get_dma_rx_address(int id, int fifo)
+ {
+ 	struct resource *res;
+ 	void __iomem *adr;
+@@ -247,6 +254,7 @@
+ 
+ 	return adr;
+ }
++EXPORT_SYMBOL(imx_ssi_get_dma_rx_address);
+ 
+ int imx_ssi_prepare(struct snd_pcm_substream *substream,
+                             int ssi_id)
+@@ -260,6 +268,7 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(imx_ssi_prepare);
+ 
+ void imx_ssi_shutdown(struct snd_pcm_substream *substream,
+                              int ssi_id)
+@@ -272,6 +281,8 @@
+ {
+ 	u32 scr = get_reg(SSI_SCR, ssi_id);
+ 
++	pr_debug("%s called for unit %d\n", __func__, ssi_id);
++
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+@@ -297,6 +308,7 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(imx_ssi_trigger);
+ 
+ static int __devinit mx2_iss_probe(struct platform_device *pdev)
+ {
+@@ -405,10 +417,24 @@
+ 
+ int __init mx2_ssi_init(void)
+ {
+-	return platform_driver_register(&mx2_iss_driver);
++	int err;
++
++	err = mx2_dam_init();
++	if (err != 0)
++		return err;
++	else
++		return platform_driver_register(&mx2_iss_driver);
+ }
+ 
+ void __exit mx2_ssi_exit(void)
+ {
++	mx2_dam_exit();
+ 	platform_driver_unregister(&mx2_iss_driver);
+ }
++
++module_init(mx2_ssi_init);
++module_exit(mx2_ssi_exit);
++
++MODULE_AUTHOR("Pengutronix");
++MODULE_DESCRIPTION("i.MX2 SSI Driver");
++MODULE_LICENSE("GPL");

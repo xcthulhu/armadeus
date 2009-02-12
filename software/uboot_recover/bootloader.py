@@ -70,6 +70,21 @@ class imxlBootloader:
             self.put("221000","B10A9267","l")
             self.get("8023000", "4","b")
             self.put("221000","810A9267","l")
+        elif self.ramSize == 32:
+            self.put("221000","911A9267","l")
+            self.get("8400000", "4","b")
+            self.put("221000","A11A9267","l")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.get("8000000", "4","b")
+            self.put("221000","B11A9267","l")
+            self.get("8446000", "4","b")
+            self.put("221000","811A9267","l")
         else:
             print "Warning ramSize %d not supported" % self.ramSize
     #--------------------------------------------------------------
@@ -155,7 +170,7 @@ class imxlBootloader:
         self.put("00220004", "00000D01", "l")  # Configure CS0 as 16bits wide bus
         self.put("10000000", "0060", "w")  # Clear block lock bit
         self.put("10000000", "00D0", "w")  # Clear block lock bit
-
+        self.waitFlashReady()
         self.eraseFlashBlock("10000000")
         self.eraseFlashBlock("10020000")
         if eraseAll == 'y':

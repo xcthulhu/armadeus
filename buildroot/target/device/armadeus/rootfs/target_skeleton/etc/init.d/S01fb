@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Update framebuffer modes config file, if needed
+# (required by SDL)
+#
+
+FILE=/etc/fb.modes
+
+if [ ! -f "$FILE" ]; then
+        fbset > $FILE
+fi
+
+exit 0
+

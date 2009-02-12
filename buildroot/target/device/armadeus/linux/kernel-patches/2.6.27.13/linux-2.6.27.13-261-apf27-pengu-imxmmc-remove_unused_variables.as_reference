@@ -1,0 +1,27 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:03 +0000 (+0200)
+Subject: imxmmc: Remove unused variables
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=32c3fff33cd82b47a4554a94af8bfdd0ea2a755f
+
+imxmmc: Remove unused variables
+
+This removes clkrt and cmdat from struct imxmci_host, they are
+unused.
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 02e9dd3..5c921b3 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -45,8 +45,6 @@ struct imxmci_host {
+ 	struct resource		*res;
+ 	int			irq;
+ 	imx_dmach_t		dma;
+-	unsigned int		clkrt;
+-	unsigned int		cmdat;
+ 	volatile unsigned int	imask;
+ 	unsigned int		power_mode;
+ 	unsigned int		present;

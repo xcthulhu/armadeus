@@ -6,7 +6,12 @@ failed()
     exit 1
 }
 
-BL_SYS_DIR="/sys/class/backlight/imxl-bl/"
+BL_SYS_DIR="/sys/class/backlight/imx-bl/"
+if [ ! -d "$BL_SYS_DIR" ]; then
+	echo "/sys interface not found:"
+	echo "  driver not loaded or wrong version !"
+	failed
+fi
 
 # Save actual brightness
 ACTUAL=`cat "$BL_SYS_DIR/actual_brightness"`

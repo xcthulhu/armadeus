@@ -5,7 +5,7 @@
 # Part executed when called from kernel build system:
 ifneq ($(KERNELRELEASE),)
 
-obj-$(CONFIG_VOID_DRIVER)	+= void.o
+obj-$(CONFIG_POD_DRIVERS)	+= void.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

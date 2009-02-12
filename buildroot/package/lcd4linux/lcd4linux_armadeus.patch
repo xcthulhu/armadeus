@@ -1,15 +1,15 @@
 diff -uprN lcd4linux-0.10.0/configure lcd4linux-0.10.0.armadeus/configure
 --- lcd4linux-0.10.0/configure	2005-06-10 13:21:49.000000000 +0200
 +++ lcd4linux-0.10.0.armadeus/configure	2005-09-11 20:39:47.000000000 +0200
-@@ -5893,7 +5893,7 @@ for driver in $drivers; do
-          NULL="yes"
+@@ -7242,7 +7242,7 @@ for driver in $drivers; do
+          picoLCD="yes"
           PNG="yes"
           PPM="yes"
--	 ROUTERBOARD="yes"
-+	 ROUTERBOARD="no"
+-         ROUTERBOARD="yes"
++         ROUTERBOARD="no"
+          SAMPLE="yes"
  	 SERDISPLIB="yes"
           SIMPLELCD="yes"
-          T6963="yes"
 diff -uprN lcd4linux-0.10.0/drv_generic_parport.c lcd4linux-0.10.0.armadeus/drv_generic_parport.c
 --- lcd4linux-0.10.0/drv_generic_parport.c	2005-05-08 06:32:44.000000000 +0200
 +++ lcd4linux-0.10.0.armadeus/drv_generic_parport.c	2005-09-11 20:46:27.000000000 +0200
@@ -177,26 +177,5 @@ diff -uprN lcd4linux-0.10.0/udelay.c lcd4linux-0.10.0.armadeus/udelay.c
  
  #ifdef USE_OLD_UDELAY
  
-@@ -158,7 +159,7 @@
- #include "udelay.h"
- 
- #ifdef USE_OLD_UDELAY
--
-+coucou
- unsigned long loops_per_usec;
- 
- void ndelay(const unsigned long nsec)
-diff -uprN lcd4linux-0.10.0/udelay.h lcd4linux-0.10.0.armadeus/udelay.h
---- lcd4linux-0.10.0/udelay.h	2005-05-08 06:32:45.000000000 +0200
-+++ lcd4linux-0.10.0.armadeus/udelay.h	2005-09-11 20:03:25.000000000 +0200
-@@ -76,7 +76,10 @@
- /* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
- static inline void rep_nop(void)
- {
-+/*
-     __asm__ __volatile__("rep; nop");
-+*/
-+    __asm__ __volatile__("nop");
- }
  
  

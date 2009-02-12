@@ -25,7 +25,7 @@ fi
 
 mkdir -p $MAX_DEV_DIR
 
-for channel in 0 1 2 3 4 5 6 7; do
+for channel in 0 1 2 3 4 5 6; do
 	minor=$channel
 	mknod $MAX_DEV_DIR/AIN$channel c $MAX_MAJOR $minor
 done

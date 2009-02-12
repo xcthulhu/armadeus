@@ -1,0 +1,42 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Tue, 9 Sep 2008 09:30:58 +0000 (+0200)
+Subject: pcm038: Add NAND support
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=391eb9d5e240ada4b8c9259af3066afd72aaaac0;hp=5ce9da70e185ac4e348b0956614a54269491aa76
+
+pcm038: Add NAND support
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/mach-mx2/pcm038.c b/arch/arm/mach-mx2/pcm038.c
+index 7f55746..ff62017 100644
+--- a/arch/arm/mach-mx2/pcm038.c
++++ b/arch/arm/mach-mx2/pcm038.c
+@@ -27,6 +27,7 @@
+ #include <asm/mach/time.h>
+ #include <mach/imx-uart.h>
+ #include <mach/board-pcm038.h>
++#include <mach/mxc_nand.h>
+ 
+ #include "devices.h"
+ 
+@@ -166,6 +167,11 @@ static void gpio_fec_inactive(void)
+ 			MXC_GPIO_ALLOC_MODE_RELEASE, "FEC");
+ }
+ 
++static struct mxc_nand_platform_data pcm038_nand_board_info = {
++	.width = 1,
++	.hw_ecc = 1,
++};
++
+ static struct platform_device *platform_devices[] __initdata = {
+ 	&pcm038_nor_mtd_device,
+ };
+@@ -177,6 +183,7 @@ static void __init pcm038_init(void)
+ 	mxc_register_device(&mxc_uart_device0, &uart_pdata[0]);
+ 	mxc_register_device(&mxc_uart_device1, &uart_pdata[1]);
+ 	mxc_register_device(&mxc_uart_device2, &uart_pdata[2]);
++	mxc_register_device(&mxc_nand_device, &pcm038_nand_board_info);
+ 
+ 	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
+ 

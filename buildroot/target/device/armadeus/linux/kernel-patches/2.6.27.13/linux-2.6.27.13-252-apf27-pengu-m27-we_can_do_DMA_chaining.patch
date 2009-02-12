@@ -1,0 +1,24 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 10 Sep 2008 12:28:55 +0000 (+0200)
+Subject: [ARM] MX27: We can do dma chaining
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=fab63c271e15d13901b182cfa95d175595bce206
+
+[ARM] MX27: We can do dma chaining
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/plat-mxc/include/mach/mx27.h b/arch/arm/plat-mxc/include/mach/mx27.h
+index aade46d..42cf7b8 100644
+--- a/arch/arm/plat-mxc/include/mach/mx27.h
++++ b/arch/arm/plat-mxc/include/mach/mx27.h
+@@ -24,6 +24,9 @@
+ #error "Do not include directly."
+ #endif
+ 
++/* the DMA code supports SG list chaining */
++#define ARCH_HAS_SG_CHAIN
++
+ /* IRAM */
+ #define IRAM_BASE_ADDR          0xFFFF4C00	/* internal ram */
+ 

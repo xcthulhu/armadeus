@@ -1,6 +1,26 @@
 --- buildroot/target/u-boot.ref/Config.in	2008-11-03 09:15:09.000000000 +0100
 +++ buildroot/target/u-boot/Config.in	2008-11-13 22:01:30.000000000 +0100
-@@ -80,3 +80,10 @@ config BR2_TARGET_UBOOT_TOOL_ENV
+@@ -7,11 +7,18 @@
+ config BR2_TARGET_UBOOT_BOARDNAME
+ 	string "board name"
+ 	depends on BR2_TARGET_UBOOT
+-	default "$(BOARD_NAME)"
++	default "$(BR2_BOARD_NAME)"
+ 	help
+ 	  One of U-Boot supported boards to be built.
+ 	  This will be suffixed with _config to meet U-Boot standard naming.
+ 
++config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
++	string "U-Boot header file"
++	depends on BR2_TARGET_UBOOT
++	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
++	help
++	  U-Boot config Header file to use to build U-Boot for your target.
++
+ config BR2_TARGET_UBOOT_CUSTOM_PATCH
+ 	string "custom patch"
+ 	depends on BR2_TARGET_UBOOT
+@@ -80,3 +87,10 @@
  	depends on BR2_TARGET_UBOOT
  	help
  	  Install fw_printenv / fw_setenv tools in target.

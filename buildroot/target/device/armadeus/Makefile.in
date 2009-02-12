@@ -27,8 +27,11 @@ include target/device/armadeus/u-boot/u-boot.mk
 include target/device/armadeus/rootfs/Makefile.in
 include target/device/armadeus/$(BOARD_NAME)/Makefile.in
 
+ifndef BR2_PACKAGE_BUSYBOX_CONFIG
 BR2_PACKAGE_BUSYBOX_CONFIG:=$(ARMADEUS_PATH)/busybox.config
-UCLIBC_CONFIG_FILE:=$(BOARD_PATH)/uClibc.config.$(ARCH)
+endif
+
+#UCLIBC_CONFIG_FILE:=$(BOARD_PATH)/uClibc.config.$(ARCH)
 
 endif
 

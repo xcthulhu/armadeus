@@ -1,0 +1,20 @@
+diff -urN buildroot/package.ori/libpcap/libpcap.mk buildroot/package/libpcap/libpcap.mk
+--- buildroot/package.ori/libpcap/libpcap.mk	2008-11-03 09:15:26.000000000 +0100
++++ buildroot/package/libpcap/libpcap.mk	2009-01-05 22:42:26.000000000 +0100
+@@ -34,6 +34,7 @@
+ 
+ $(LIBPCAP_DIR)/.unpacked: $(DL_DIR)/$(LIBPCAP_SOURCE)
+ 	$(LIBPCAP_CAT) $(DL_DIR)/$(LIBPCAP_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
++	rm -f $(LIBPCAP_DIR)/gencode.c.rej
+ 	toolchain/patch-kernel.sh $(LIBPCAP_DIR) package/libpcap/ \*.patch
+ 	$(CONFIG_UPDATE) $(LIBPCAP_DIR)
+ 	touch $@
+@@ -79,6 +80,6 @@
+ # Toplevel Makefile options
+ #
+ #############################################################
+-ifeq ($(strip $(BR2_PACKAGE_LIBPCAP)),y)
++ifeq ($(BR2_PACKAGE_LIBPCAP),y)
+ TARGETS+=libpcap
+ endif
+
