@@ -1,0 +1,8 @@
+config BR2_PACKAGE_AD9889CTRL
+	bool "ad9889ctrl"
+	depends on BR2_TARGET_ARMADEUS
+	default n
+	help
+	  Build AD9889 control tool. It allows you to configure the HDMI/DVI
+	  output of the DevFull directly from Linux userspace (command ad9889).
+
