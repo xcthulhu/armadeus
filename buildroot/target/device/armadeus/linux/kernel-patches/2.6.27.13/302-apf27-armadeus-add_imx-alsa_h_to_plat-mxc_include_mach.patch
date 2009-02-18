@@ -122,8 +122,8 @@ to mxc platform stuff...
 +void snd_imx_init_mixer(void);
 +
 +#ifdef CONFIG_PM
-+void snd_imx_suspend_mixer(void);
-+void snd_imx_resume_mixer(void);
++void snd_tsc210x_suspend_mixer(void);
++void snd_tsc210x_resume_mixer(void);
 +#endif
 +
 +int snd_imx_alsa_post_probe(struct platform_device *pdev, struct imx_alsa_codec_config *config);

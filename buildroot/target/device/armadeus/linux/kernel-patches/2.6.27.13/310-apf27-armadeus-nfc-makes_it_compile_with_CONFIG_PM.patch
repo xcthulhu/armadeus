@@ -1,0 +1,38 @@
+Index: linux-2.6.27.13/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.27.13.orig/drivers/mtd/nand/mxc_nand.c	2009-02-13 10:36:31.000000000 +0100
++++ linux-2.6.27.13/drivers/mtd/nand/mxc_nand.c	2009-02-13 10:49:24.000000000 +0100
+@@ -1060,7 +1060,8 @@
+ #ifdef CONFIG_PM
+ static int mxcnd_suspend(struct platform_device *pdev, pm_message_t state)
+ {
+-	struct mtd_info *info = platform_get_drvdata(pdev);
++	struct mxc_nand_host *host = platform_get_drvdata(pdev);
++	struct mtd_info *info = &(host->mtd);
+ 	int ret = 0;
+ 
+ 	DEBUG(MTD_DEBUG_LEVEL0, "MXC_ND : NAND suspend\n");
+@@ -1068,19 +1069,20 @@
+ 		ret = info->suspend(info);
+ 
+ 	/* Disable the NFC clock */
+-	clk_disable(nfc_clk);	/* FIXME */
++	clk_disable(host->clk);
+ 
+ 	return ret;
+ }
+ 
+ static int mxcnd_resume(struct platform_device *pdev)
+ {
+-	struct mtd_info *info = platform_get_drvdata(pdev);
++	struct mxc_nand_host *host = platform_get_drvdata(pdev);
++	struct mtd_info *info = &(host->mtd);
+ 	int ret = 0;
+ 
+ 	DEBUG(MTD_DEBUG_LEVEL0, "MXC_ND : NAND resume\n");
+ 	/* Enable the NFC clock */
+-	clk_enable(nfc_clk);	/* FIXME */
++	clk_enable(host->clk);
+ 
+ 	if (info)
+ 		info->resume(info);

@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-imx/include/mach/imx-alsa.h	
 +++ linux-2.6.27.13.mod/arch/arm/mach-imx/include/mach/imx-alsa.h	
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,152 @@
 +/*
 + * linux/include/asm-arm/arch-imx/imx-alsa.h
 + *
@@ -139,8 +139,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +void snd_imx_init_mixer(void);
 +
 +#ifdef CONFIG_PM
-+void snd_imx_suspend_mixer(void);
-+void snd_imx_resume_mixer(void);
++void snd_tsc210x_suspend_mixer(void);
++void snd_tsc210x_resume_mixer(void);
 +#endif
 +
 +int snd_imx_alsa_post_probe(struct platform_device *pdev, struct imx_alsa_codec_config *config);
@@ -155,3 +155,4 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +void snd_imx_alsa_dma_interrupt(int, void *);
 +
 +#endif
++
