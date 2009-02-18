@@ -32,7 +32,7 @@ GENERATE_PATCH_FROM_MULTIPLE_DEPENDS=rm -f $@; for file in $^; do $(PATCH_CMD) -
 ### ALSA/TSC2102 Patches: ---
 
 DEP1=arch/arm/mach-imx/include/mach/imx-alsa.h
-TARGET1:=$(TMP_DIR)/$(LINUX_NAME)-090-armadeus-alsa-create_imx-alsa_h.patch
+TARGET1:=$(TMP_DIR)/090-armadeus-alsa-create_imx-alsa_h.patch
 $(TARGET1): $(DEP1)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_SINGLE_DEPEND)
@@ -42,7 +42,7 @@ PATCHES+=$(TARGET1)
 FILES+=$(DEP1)
 
 DEP2=sound/arm/imx-alsa.c sound/arm/imx-alsa-dma.h sound/arm/imx-alsa-tsc2102.c sound/arm/imx-alsa-tsc2102.h sound/arm/imx-alsa-tsc2102-mixer.c
-TARGET2:=$(TMP_DIR)/$(LINUX_NAME)-091-armadeus-alsa-add_imx_ssi_tsc2102_driver.patch
+TARGET2:=$(TMP_DIR)/091-armadeus-alsa-add_imx_ssi_tsc2102_driver.patch
 $(TARGET2): $(DEP2)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
@@ -52,7 +52,7 @@ PATCHES+=$(TARGET2)
 FILES+=$(DEP2)
 
 DEP3=drivers/input/touchscreen/tsc2102_ts.c
-TARGET3:=$(TMP_DIR)/$(LINUX_NAME)-074-armadeus-tsc2102-touchscreen.patch
+TARGET3:=$(TMP_DIR)/074-armadeus-tsc2102-touchscreen.patch
 $(TARGET3): $(DEP3)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_SINGLE_DEPEND)
@@ -62,7 +62,7 @@ PATCHES+=$(TARGET3)
 FILES+=$(DEP3)
 
 DEP4=include/linux/spi/tsc2102.h drivers/spi/tsc2102.c
-TARGET4:=$(TMP_DIR)/$(LINUX_NAME)-073-armadeus-tsc2102.patch
+TARGET4:=$(TMP_DIR)/073-armadeus-tsc2102.patch
 $(TARGET4): $(DEP4)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
@@ -72,7 +72,7 @@ PATCHES+=$(TARGET4)
 FILES+=$(DEP4)
 
 DEP_SSI=sound/arm/imx-ssi.c sound/arm/imx-ssi.h arch/arm/mach-imx/include/mach/imx_ssi.h
-TARGET_SSI:=$(TMP_DIR)/$(LINUX_NAME)-095-armadeus-imx-ssi-add_driver.patch
+TARGET_SSI:=$(TMP_DIR)/095-armadeus-imx-ssi-add_driver.patch
 $(TARGET_SSI): $(DEP_SSI)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
@@ -85,7 +85,7 @@ FILES+=$(DEP_SSI)
 ### APF9328 Patches: ---
 
 DEP5=arch/arm/mach-imx/apf9328.c arch/arm/mach-imx/apf9328_lcd_config.h arch/arm/mach-imx/include/mach/apf9328.h
-TARGET5:=$(TMP_DIR)/$(LINUX_NAME)-021-armadeus-apf9328.patch
+TARGET5:=$(TMP_DIR)/021-armadeus-apf9328.patch
 $(TARGET5): $(DEP5)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
@@ -95,7 +95,7 @@ PATCHES+=$(TARGET5)
 FILES+=$(DEP5)
 
 DEP_DMA=arch/arm/mach-imx/include/mach/imx-dma.h arch/arm/mach-imx/dma.c
-TARGET_DMA:=$(TMP_DIR)/$(LINUX_NAME)-097-armadeus-imx-dma-improvements.patch
+TARGET_DMA:=$(TMP_DIR)/097-armadeus-imx-dma-improvements.patch
 $(TARGET_DMA): $(DEP_DMA)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
@@ -108,7 +108,7 @@ FILES+=$(DEP_DMA)
 ### APF27 Patches: ---
 
 DEP21=arch/arm/mach-mx2/apf27.c
-TARGET21:=$(TMP_DIR)/$(LINUX_NAME)-281-apf27-armadeus-add_apf27.c.patch
+TARGET21:=$(TMP_DIR)/281-apf27-armadeus-add_apf27.c.patch
 $(TARGET21): $(DEP21)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_SINGLE_DEPEND)
@@ -123,7 +123,7 @@ FILES+=$(DEP21)
 # Special case: drivers/video/imxfb.h doesn't exist
 FILES_O1=drivers/video/imxfb.c drivers/video/imxfb.h
 DEP_O1=drivers/video/imxfb.c
-TARGET_O1:=$(TMP_DIR)/$(LINUX_NAME)-013-armadeus-imxfb-improvements.patch
+TARGET_O1:=$(TMP_DIR)/013-armadeus-imxfb-improvements.patch
 $(TARGET_O1): $(DEP_O1)
 	@$(START_CMD)
 	@$(GENERATE_PATCH_FROM_MULTIPLE_DEPENDS)
