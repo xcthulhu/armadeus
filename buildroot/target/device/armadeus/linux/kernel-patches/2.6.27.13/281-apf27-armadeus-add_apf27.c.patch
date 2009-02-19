@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1109 @@
+@@ -0,0 +1,1118 @@
 + /*
 + * apf27.c
 + *
@@ -677,6 +677,11 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	return ret;
 +}
 +
++static void isp1504_suspend(void __iomem *view)
++{
++	ulpi_clear(SUSPENDM, ISP1504_FCNCTL, view);
++}
++
 +static int apf27_usbotg_init(struct platform_device *pdev)
 +{
 +	int ret;
@@ -972,18 +977,20 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +static void dump_gpio_port(int id)
 +{
-+        u32 reg;
-+
-+        reg =  __raw_readl(VA_GPIO_BASE + MXC_DDIR(id));
-+        printk("DDIR_%c: 0x%08x\n", port[id], reg);
-+        reg =  __raw_readl(VA_GPIO_BASE + MXC_DR(id));
-+        printk("DR_%c: 0x%08x\n", port[id], reg);
-+        reg =  __raw_readl(VA_GPIO_BASE + MXC_GIUS(id));
-+        printk("GIUS_%c: 0x%08x\n", port[id], reg);
-+        reg =  __raw_readl(VA_GPIO_BASE + MXC_OCR1(id));
-+        printk("OCR1_%c: 0x%08x\n", port[id], reg);
-+        reg =  __raw_readl(VA_GPIO_BASE + MXC_OCR2(id));
-+        printk("OCR2_%c: 0x%08x\n", port[id], reg);
++	u32 reg;
++	
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_DDIR(id));
++	printk("DDIR_%c: 0x%08x\n", port[id], reg);
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_DR(id));
++	printk("DR_%c: 0x%08x\n", port[id], reg);
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_GIUS(id));
++	printk("GIUS_%c: 0x%08x\n", port[id], reg);
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_OCR1(id));
++	printk("OCR1_%c: 0x%08x\n", port[id], reg);
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_OCR2(id));
++	printk("OCR2_%c: 0x%08x\n", port[id], reg);
++	reg =  __raw_readl(VA_GPIO_BASE + MXC_PUEN(id));
++	printk("PUEN_%c: 0x%08x\n", port[id], reg);
 +	printk("---\n");
 +}
 +
@@ -997,11 +1004,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	}
 +}
 +
-+
 +static int apf27_pm_suspend(struct sys_device *sd, pm_message_t state)
 +{
 +	printk("___ %s\n", __func__);
 +
++#ifdef CONFIG_USB_EHCI_MXC
++	isp1504_suspend((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
++#endif
 +	dump_clocks();
 +	dump_gpios();
 +
