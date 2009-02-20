@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1118 @@
+@@ -0,0 +1,1152 @@
 + /*
 + * apf27.c
 + *
@@ -679,6 +679,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +static void isp1504_suspend(void __iomem *view)
 +{
++	/* isp1504_set_vbus_power(view, 0); needed ? */
 +	ulpi_clear(SUSPENDM, ISP1504_FCNCTL, view);
 +}
 +
@@ -959,6 +960,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 0);
 +}
 +
++#ifdef APF27_PM_DEBUG
 +#define CCM_PCCR0               (IO_ADDRESS(CCM_BASE_ADDR) + 0x20)
 +#define CCM_PCCR1               (IO_ADDRESS(CCM_BASE_ADDR) + 0x24)
 +static void dump_clocks(void)
@@ -1004,6 +1006,34 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	}
 +}
 +
++/*	    DDIR         OCR1        OCR2        DR         GIUS        PUEN */
++u32 gpio_val[6][6] = {
++	{0x00000000, 0x00000000, 0xF000FFFF, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF}, /* A */
++	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFF3, 0xFFFFFFFF}, /* B */
++	{0x000003F8, 0x3FFFC000, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFC07}, /* C */
++	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF}, /* D */
++	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFFFFCCFF, 0xFFFFFFFF}, /* E */
++	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF}, /* F */
++};
++
++static void force_gpio_port(int id)
++{
++	__raw_writel(gpio_val[id][0], VA_GPIO_BASE + MXC_DDIR(id));
++	__raw_writel(gpio_val[id][1], VA_GPIO_BASE + MXC_OCR1(id));
++	__raw_writel(gpio_val[id][2], VA_GPIO_BASE + MXC_OCR2(id));
++	__raw_writel(gpio_val[id][3], VA_GPIO_BASE + MXC_DR(id));
++	__raw_writel(gpio_val[id][4], VA_GPIO_BASE + MXC_GIUS(id));
++	__raw_writel(gpio_val[id][5], VA_GPIO_BASE + MXC_PUEN(id));
++}
++
++static void apf27_force_gpios(void)
++{
++	force_gpio_port(0);
++	force_gpio_port(1);
++	force_gpio_port(3);
++}
++#endif /* APF27_PM_DEBUG */
++
 +static int apf27_pm_suspend(struct sys_device *sd, pm_message_t state)
 +{
 +	printk("___ %s\n", __func__);
@@ -1011,13 +1041,16 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#ifdef CONFIG_USB_EHCI_MXC
 +	isp1504_suspend((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
 +#endif
-+	dump_clocks();
-+	dump_gpios();
-+
 +	apf27dev_power_down();
 +#ifdef CONFIG_USE_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 1);
 +#endif
++#ifdef APF27_PM_DEBUG
++	apf27_force_gpios();
++	dump_clocks();
++	dump_gpios();
++#endif
++	__raw_writel(0x0c090c0A, IO_ADDRESS(SYSCTRL_BASE_ADDR + 0x1c)); /* WBCR */
 +
 +	return 0;
 +}
@@ -1025,6 +1058,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static int apf27_pm_resume(struct sys_device *sd)
 +{
 +	printk("___ %s\n", __func__);
++
 +	apf27dev_power_up();
 +#ifdef CONFIG_USE_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 0);
