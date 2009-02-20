@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1152 @@
+@@ -0,0 +1,1274 @@
 + /*
 + * apf27.c
 + *
@@ -67,7 +67,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <mach/imx_ssi.h>
 +#include <mach/imx-alsa.h>
 +#endif
-+
++#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
++#include "cpufreq_imx.h"
++#endif
 +#include "devices.h"
 +#include "crm_regs.h"
 +
@@ -844,7 +846,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +late_initcall(apf27_late_init);
 +
-+# if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
++#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
 +static struct imx_alsa_codec_config tsc2101_alsa_pdata;
 +
 +static struct resource ssi_resources[] = {
@@ -864,7 +866,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +        .platform_data = &tsc2101_alsa_pdata,
 +    }
 +};
-+#  define ALSA_SOUND &tsc2101_alsa_device
++#  define ALSA_SOUND &tsc2101_alsa_device,
 +# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
 +
 +#else
@@ -888,12 +890,132 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +}
 +#endif /* DEBUG */
 +
++
++/* APF27 frequency scaling stuff */
++#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
++
++static struct clk *mpll_main_0;
++static struct clk *mpll_main_1;
++static struct clk *cpu;
++
++static int apf27_cpufreq_init(struct platform_device *pd)
++{
++	mpll_main_0 = clk_get(NULL, "mpll_main.0");
++	mpll_main_1 = clk_get(NULL, "mpll_main.1");
++	cpu = clk_get(NULL, "cpu_clk");
++
++	if (IS_ERR(mpll_main_0) || IS_ERR(mpll_main_1) || IS_ERR(cpu)) {
++		printk("Cant get one of the required clocks\n");
++		/* FIXME error handling */
++	}
++
++	/* Switch Qvdd (=CPU core supply) to 1.45V (voltage for max core speed) */
++	/* The APF27 don't have a PMIC, so 1.45V is already here */
++
++	if (clk_get_rate(mpll_main_0) < 399000000) {
++		printk(KERN_INFO "Found MPLL running below ~400Mhz. Tuning "
++				"right now.\n");
++		/* here we should setup max frequencies, if not already setup by
++		   the bootloader, but in our case we fully trust our U-Boot ;-) */
++	}
++
++	return 0;
++}
++
++static int apf27_cpufreq_exit(struct platform_device *pd)
++{
++	clk_put(mpll_main_0);
++	clk_put(mpll_main_1);
++	clk_put(cpu);
++
++	return 0;
++}
++
++static int apf27_cpufreq_transit(unsigned long freq)
++{
++	uint32_t cscr;
++	struct clk *new_clk;
++
++	cscr = __raw_readl(CCM_CSCR);
++
++	switch(freq) {
++	case 133000:
++		/* AHB *can* run at 133MHz */
++		cscr &= ~CCM_CSCR_AHB_MASK;
++		cscr |= 0x01 << CCM_CSCR_AHB_OFFSET;	/* AHBDIV = 2 */
++
++		cscr &= ~CCM_CSCR_ARM_MASK;
++		cscr |= 0x01 << CCM_CSCR_ARM_OFFSET;	/* 133MHz */
++		cscr &= ~CCM_CSCR_ARM_SRC;
++		new_clk = mpll_main_1;
++		break;
++
++	case 266000:
++		/* AHB *can* run at 133MHz */
++		cscr &= ~CCM_CSCR_AHB_MASK;
++		cscr |= 0x01 << CCM_CSCR_AHB_OFFSET;	/* AHBDIV = 2 */
++
++		cscr &= ~CCM_CSCR_ARM_MASK;
++		cscr |= 0x00 << CCM_CSCR_ARM_OFFSET;	/* 266MHz speed */
++		cscr &= ~CCM_CSCR_ARM_SRC;
++		new_clk = mpll_main_1;
++		break;
++
++	case 400000:
++		/* AHB *must* run at 133MHz */
++		cscr &= ~CCM_CSCR_AHB_MASK;
++		cscr |= 0x01 << CCM_CSCR_AHB_OFFSET;	/* AHBDIV = 2 */
++
++		cscr &= ~CCM_CSCR_ARM_MASK;
++		cscr |= 0x00 << CCM_CSCR_ARM_OFFSET;	/* full speed */
++		cscr |= CCM_CSCR_ARM_SRC;
++		new_clk = mpll_main_0;
++		break;
++
++	default:
++		return -EINVAL;
++	}
++	__raw_writel(cscr, CCM_CSCR);
++	clk_set_parent(cpu, new_clk);
++
++	return 0;
++}
++
++static struct cpufreq_frequency_table apf27_freq_table[] = {
++	{0x01, .frequency = 133000 }, /* with 400MHz MPLL * 2 / (3*2) @ 1.45V Qvdd */
++	{0x02, .frequency = 266000 }, /* with 400MHz MPLL * 2 / (3*1) @ 1.45V Qvdd */
++	{0x03, .frequency = 400000 }, /* with 400MHz MPLL * 2 / (2*1) @ 1.45V Qvdd */
++	{0, CPUFREQ_TABLE_END}
++};
++
++static struct cpufreq_platform_data apf27_cpufreq_platform_data = {
++	.freq_table = apf27_freq_table,
++	.freq_entries = ARRAY_SIZE(apf27_freq_table),
++	.init = apf27_cpufreq_init,
++	.exit = apf27_cpufreq_exit,
++	.transit = apf27_cpufreq_transit
++};
++
++static struct platform_device apf27_cpu_frequency_device = {
++	.name = "imx_cpufreq",
++	.id = 0,
++	.dev = {
++		.platform_data = &apf27_cpufreq_platform_data,
++	}
++};
++# define CPU_FREQUENCY &apf27_cpu_frequency_device,
++#else
++# define CPU_FREQUENCY
++#endif /* CONFIG_CPU_FREQ_IMX27 */
++
++
 +static struct platform_device *platform_devices[] __initdata = {
 +//	&apf27_nand_mtd_device,
 +#ifdef CONFIG_IMX_BACKLIGHT
 +	&imxbl_device,
 +#endif
-+	ALSA_SOUND,
++	ALSA_SOUND
++	CPU_FREQUENCY
 +};
 +
 +
