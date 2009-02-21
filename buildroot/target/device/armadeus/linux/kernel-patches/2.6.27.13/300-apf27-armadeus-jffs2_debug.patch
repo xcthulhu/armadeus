@@ -23,6 +23,17 @@
  		/*
  		 * We believe totlen because the CRC on the node
  		 * _header_ was OK, just the node itself failed.
+@@ -1041,8 +1041,8 @@ static int jffs2_scan_dirent_node(struct
+ 
+ 	crc = crc32(0, fd->name, rd->nsize);
+ 	if (crc != je32_to_cpu(rd->name_crc)) {
+-		printk(KERN_NOTICE "jffs2_scan_dirent_node(): Name CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
+-		       ofs, je32_to_cpu(rd->name_crc), crc);
++		D1(printk(KERN_NOTICE "jffs2_scan_dirent_node(): Name CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
++		       ofs, je32_to_cpu(rd->name_crc), crc));
+ 		D1(printk(KERN_NOTICE "Name for which CRC failed is (now) '%s', ino #%d\n", fd->name, je32_to_cpu(rd->ino)));
+ 		jffs2_free_full_dirent(fd);
+ 		/* FIXME: Why do we believe totlen? */
 --- linux-2.6.27.2.ref/fs/jffs2/readinode.c	2008-12-19 14:03:21.000000000 +0100
 +++ linux-2.6.27.2/fs/jffs2/readinode.c	2008-12-19 14:03:44.000000000 +0100
 @@ -105,7 +105,7 @@ static int check_node_data(struct jffs2_
