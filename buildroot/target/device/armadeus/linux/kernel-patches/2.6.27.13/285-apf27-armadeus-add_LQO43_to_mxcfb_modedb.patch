@@ -14,8 +14,8 @@
 +		.left_margin = 3, .right_margin = 1, /* at least 3 & 1 */
 +		.upper_margin = 2, .lower_margin = 3,
 +		.hsync_len = 6, .vsync_len = 2,
-+		.sync = FB_SYNC_CLK_IDLE_EN,
-+		.vmode = FB_VMODE_NONINTERLACED | FB_SYNC_CLK_INVERT,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
 +		.flag = 0,
 +		},
  };
