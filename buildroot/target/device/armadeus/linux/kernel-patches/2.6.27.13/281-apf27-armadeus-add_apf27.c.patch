@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1274 @@
+@@ -0,0 +1,1286 @@
 + /*
 + * apf27.c
 + *
@@ -1055,6 +1055,18 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +	int err;
 +	
++#ifdef CONFIG_FB_MXC	
++	/* force LCD data/control lines to 0 before powering the LCD
++	otherwise start up conditions may not be respected */
++	int i;
++	for( i=5; i <=  31; i++ ){
++		mxc_gpio_mode( GPIO_PORTA | i | GPIO_OUT| GPIO_GPIO );
++		gpio_set_value(GPIO_PORTA | i, 0);
++	}
++	/* wait a few milli */
++	mdelay(5); 
++#endif
++
 +	err = mxc_gpio_setup_multiple(apf27dev_pwr_ctl_pins,
 +					ARRAY_SIZE(apf27dev_pwr_ctl_pins), "pwr-ctl");
 +	if (err < 0)
