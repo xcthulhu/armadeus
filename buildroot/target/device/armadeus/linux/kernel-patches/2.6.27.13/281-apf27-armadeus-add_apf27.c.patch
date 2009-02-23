@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1287 @@
+@@ -0,0 +1,1293 @@
 + /*
 + * apf27.c
 + *
@@ -59,6 +59,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
++#include <linux/spi/max1027.h>
++#include <linux/spi/tsc2102.h>
++#include "../../../drivers/net/can/mcp251x.h"
 +#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
@@ -72,15 +75,12 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include "crm_regs.h"
 +
 +#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
-+#include <linux/spi/max1027.h>
 +#define CONFIG_ARMADEUS_MAX1027 1
 +#endif
 +#ifdef CONFIG_SPI_TSC2102_MODULE
-+#include <linux/spi/tsc2102.h>
 +#define CONFIG_SPI_TSC2102 1
 +#endif
 +#ifdef CONFIG_CAN_MCP251X_MODULE
-+#include "../../../drivers/net/can/mcp251x.h"
 +#define CONFIG_CAN_MCP251X 1
 +#endif
 +#ifdef CONFIG_IMX_BACKLIGHT_MODULE
@@ -1045,6 +1045,11 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 1);
 +}
 +
++static void apf27dev_power_down(void)
++{
++	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 0);
++}
++
 +#ifdef CONFIG_USE_SWITCH_FOR_PM
 +static irqreturn_t apf27dev_user_switch_irq_handler(int irq, void *dev_id)
 +{
@@ -1055,11 +1060,12 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static int gpio_pwr_ctl_active(void)
 +{
 +	int err;
++
 +	
 +#ifdef CONFIG_FB_MXC	
++	int i;
 +	/* force LCD data/control lines to 0 before powering the LCD
 +	otherwise start up conditions may not be respected */
-+	int i;
 +	for( i=5; i <=  23; i++ ){
 +		mxc_gpio_mode( GPIO_PORTA | i | GPIO_OUT| GPIO_GPIO );
 +		gpio_set_value(GPIO_PORTA | i, 0);
@@ -1068,10 +1074,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	mdelay(5); 
 +#endif
 +
++
 +	err = mxc_gpio_setup_multiple(apf27dev_pwr_ctl_pins,
 +					ARRAY_SIZE(apf27dev_pwr_ctl_pins), "pwr-ctl");
 +	if (err < 0)
 +		pr_err("Failed to register power control pins !\n");
++
++
 +
 +	apf27dev_power_up();
 +#ifdef CONFIG_USE_LED_FOR_PM
@@ -1090,10 +1099,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#ifdef CONFIG_PM
 +
-+static void apf27dev_power_down(void)
-+{
-+	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 0);
-+}
++
 +
 +#ifdef APF27_PM_DEBUG
 +#define CCM_PCCR0               (IO_ADDRESS(CCM_BASE_ADDR) + 0x20)
