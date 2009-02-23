@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1286 @@
+@@ -0,0 +1,1287 @@
 + /*
 + * apf27.c
 + *
@@ -59,8 +59,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
-+#include <linux/spi/tsc2102.h>
-+#include <linux/spi/max1027.h>
 +#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
@@ -74,12 +72,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include "crm_regs.h"
 +
 +#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
++#include <linux/spi/max1027.h>
 +#define CONFIG_ARMADEUS_MAX1027 1
 +#endif
 +#ifdef CONFIG_SPI_TSC2102_MODULE
++#include <linux/spi/tsc2102.h>
 +#define CONFIG_SPI_TSC2102 1
 +#endif
 +#ifdef CONFIG_CAN_MCP251X_MODULE
++#include "../../../drivers/net/can/mcp251x.h"
 +#define CONFIG_CAN_MCP251X 1
 +#endif
 +#ifdef CONFIG_IMX_BACKLIGHT_MODULE
@@ -525,7 +526,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#ifdef CONFIG_SPI_TSC2102
 +#define TSC2101_INT 17
-+static int tsc2101_init_gpio(void)
++static int tsc2101_init_gpio(struct spi_device *spi)
 +{
 +	/* configure int pin as GPIO */
 +	mxc_gpio_mode( GPIO_PORTF | TSC2101_INT | GPIO_IN | GPIO_GPIO );
@@ -562,7 +563,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static void mcp251X_init_irq(void)
 +{
 +	/* configure int pin as GPIO */
-+	mxc_gpio_mode( GPIO_PORTD | CAN_MPC251X_INT | GPIO_IN | GPIO_GPIO);
++	mxc_gpio_mode( GPIO_PORTD | CAN_MCP251X_INT | GPIO_IN | GPIO_GPIO);
 +	/* configure irq */
 +}
 +
@@ -582,7 +583,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +static struct mcp251x_platform_data apf27_mcp251x_config = {
 +	.oscillator_frequency  = 16000000,
-+	.board_specific_setup  = NULL,
++	.board_specific_setup  = mcp251X_init_irq,
 +	.device_reset          = NULL,
 +	.transceiver_enable    = NULL,
 +};
@@ -623,7 +624,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 + .bus_num           = 1, // SPI2
 + .mode              = 0,
 + .chip_select       = 1,
-+ .irq               = IRQ_GPIOD(CAN_MPC251X_INT),
++ .irq               = IRQ_GPIOD(CAN_MCP251X_INT),
 + .platform_data     = &apf27_mcp251x_config,
 + },
 +#endif // CONFIG_CAN_MCP251X
