@@ -1,0 +1,68 @@
+--- ref/u-boot-1.3.4/drivers/rtc/ds1374.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/drivers/rtc/ds1374.c	2008-12-17 01:16:05.000000000 +0100
+@@ -113,6 +113,11 @@ int rtc_get (struct rtc_time *tm){
+ 	unsigned int limit;
+ 	unsigned char tmp;
+ 	unsigned int i;
++	int old_bus;
++
++	/* switch to correct I2C bus */
++	old_bus = I2C_GET_BUS();
++	I2C_SET_BUS(CFG_RTC_BUS_NUM);
+ 
+ 	/*
+ 	 * Since the reads are being performed one byte at a time,
+@@ -154,6 +159,9 @@ int rtc_get (struct rtc_time *tm){
+ 		tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday,
+ 		tm->tm_hour, tm->tm_min, tm->tm_sec);
+ 
++	/* switch back to original I2C bus */
++	I2C_SET_BUS(old_bus);
++
+ 	return rel;
+ }
+ 
+@@ -164,6 +172,11 @@ void rtc_set (struct rtc_time *tmp){
+ 
+ 	unsigned long time;
+ 	unsigned i;
++	int old_bus;
++
++	/* switch to correct I2C bus */
++	old_bus = I2C_GET_BUS();
++	I2C_SET_BUS(CFG_RTC_BUS_NUM);
+ 
+ 	DEBUGR ("Set DATE: %4d-%02d-%02d (wday=%d)  TIME: %2d:%02d:%02d\n",
+ 		tmp->tm_year, tmp->tm_mon, tmp->tm_mday, tmp->tm_wday,
+@@ -186,6 +199,9 @@ void rtc_set (struct rtc_time *tmp){
+ 
+ 	/* Start clock */
+ 	rtc_write(RTC_CTL_ADDR, RTC_CTL_BIT_EN_OSC, FALSE);
++
++	/* switch back to original I2C bus */
++	I2C_SET_BUS(old_bus);
+ }
+ 
+ /*
+@@ -198,6 +214,11 @@ void rtc_set (struct rtc_time *tmp){
+ void rtc_reset (void){
+ 
+ 	struct rtc_time tmp;
++	int old_bus;
++
++	/* switch to correct I2C bus */
++	old_bus = I2C_GET_BUS();
++	I2C_SET_BUS(CFG_RTC_BUS_NUM);
+ 
+ 	/* clear status flags */
+ 	rtc_write (RTC_SR_ADDR, (RTC_SR_BIT_AF|RTC_SR_BIT_OSF), FALSE); /* clearing OSF and AF */
+@@ -230,6 +251,9 @@ void rtc_reset (void){
+ 	rtc_write(RTC_WD_ALM_CNT_BYTE2_ADDR,0xAC, TRUE);
+ 	rtc_write(RTC_WD_ALM_CNT_BYTE1_ADDR,0xDE, TRUE);
+ 	rtc_write(RTC_WD_ALM_CNT_BYTE2_ADDR,0xAD, TRUE);
++
++	/* switch back to original I2C bus */
++	I2C_SET_BUS(old_bus);
+ }
+ 
+ /*

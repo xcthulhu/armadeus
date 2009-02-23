@@ -1,0 +1,4796 @@
+--- ref/u-boot-1.3.4/cpu/arm926ejs/config.mk	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/cpu/arm926ejs/config.mk	2008-12-29 16:27:49.000000000 +0100
+@@ -24,7 +24,7 @@
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+ 	-msoft-float
+ 
+-PLATFORM_CPPFLAGS += -march=armv4
++PLATFORM_CPPFLAGS += -march=armv5te
+ # =========================================================================
+ #
+ # Supply options according to compiler version
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/cmd_imxfuse.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/cmd_imxfuse.c	2009-01-07 18:20:21.000000000 +0100
+@@ -0,0 +1,328 @@
++/*
++ * cmd_imxfuse-c Interface to iMX IC Identification Module
++ * 	Based on Freescale iMX27 Board Support Package
++ *
++ * (C) Copyright 2008,2009 Eric Jarrige <eric.jarrige@armadeus.org>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <config.h>
++#include <common.h>
++#include <command.h>
++
++#ifdef CONFIG_CMD_IMX_FUSE
++
++#include <asm/arch/imx-regs.h>
++#include <asm/io.h>
++
++#define IIM_ERR_SHIFT	   8
++#define POLL_FUSE_PRGD	  (IIM_STAT_PRGD | (IIM_ERR_PRGE << IIM_ERR_SHIFT))
++#define POLL_FUSE_SNSD	  (IIM_STAT_SNSD | (IIM_ERR_SNSE << IIM_ERR_SHIFT))
++
++static void imx_fuse_op_start(void)
++{
++	/* Do not generate interrupt */
++	writel(0x00, &IIM_STATM);
++	// clear the status bits and error bits
++	writel(0x03, &IIM_STAT);
++	writel(0xFE, &IIM_ERR);
++}
++
++/*
++ * The action should be either:
++ *		  POLL_FUSE_PRGD 
++ * or:
++ *		  POLL_FUSE_SNSD
++ */
++static int imx_poll_fuse_op_done(int action)
++{
++
++	u32 status, error;
++
++	if (action != POLL_FUSE_PRGD && action != POLL_FUSE_SNSD) {
++		printf("%s(%d) invalid operation\n", __FUNCTION__, action);
++		return -1;
++	}
++
++	/* Poll busy bit till it is NOT set */
++	while ((readl(&IIM_STAT) & IIM_STAT_BUSY) != 0 ) {
++	}
++
++	/* Test for successful write */
++	status = readl(&IIM_STAT);
++	error = readl(&IIM_ERR);
++
++	if ((status & action) != 0 && (error & (action >> IIM_ERR_SHIFT)) == 0) {
++		if (error) {
++			printf("Even though the operation seems successful...\n");
++			printf("There are some error(s) at addr=0x%x: 0x%x\n",
++						readl(&IIM_ERR), error);
++		}
++		return 0;
++	}
++	printf("%s(0x%x) failed\n", __FUNCTION__, action);
++	printf("status address=0x%x, value=0x%x\n",
++				readl(&IIM_STAT), status);
++	printf("There are some error(s) at addr=0x%x: 0x%x\n",
++				readl(&IIM_ERR), error);
++	return -1;
++}
++
++static int imx_read_shadow_fuse(int bank, int row, int bit)
++{
++	printf("Shadow fuses at (bank:%d, row:%d) = 0x%x\n",
++		bank, row, readl(&IIM_BANK_REG(bank,row)));
++	return 0;
++}
++
++static int imx_sense_fuse(int bank, int row, int bit)
++{
++	int addr, addr_l, addr_h;
++
++	imx_fuse_op_start();
++	
++	/* Enable IIM Program Protect */
++	writel(0x0, &IIM_PROG_P);
++
++	addr = ((bank << 11) | (row << 3) | (bit & 0x7));
++	/* Set IIM Program Upper Address */
++	addr_h = (addr >> 8) & 0x000000FF;
++	/* Set IIM Program Lower Address */
++	addr_l = (addr & 0x000000FF);
++
++#ifdef IIM_FUSE_DEBUG
++	printf("%s: addr_h=0x%x, addr_l=0x%x\n",
++		__FUNCTION__, addr_h, addr_l);
++#endif
++	writel(addr_h, &IIM_UA);
++	writel(addr_l, &IIM_LA);
++
++	/* Start sensing */
++	writel(0x08, &IIM_FCTL);
++	if (imx_poll_fuse_op_done(POLL_FUSE_SNSD) != 0) {
++		printf("%s(bank: %d, row: %d, bit: %d failed\n",
++			__FUNCTION__, bank, row, bit);
++	}
++	
++	printf("fuses at (bank:%d, row:%d) = 0x%x\n",
++		bank, row, readl(&IIM_SDAT));
++	return 0;
++}
++
++/* Blow fuses based on the bank, row and bit positions (all 0-based)
++*/
++static int imx_fuse_blow(int bank,int row,int bit)
++{
++	int addr, addr_l, addr_h, ret = 1;
++
++	imx_fuse_op_start();
++
++	/* Disable IIM Program Protect */
++	writel(0xAA, &IIM_PROG_P);
++
++	addr = ((bank << 11) | (row << 3) | (bit & 0x7));
++	/* Set IIM Program Upper Address */
++	addr_h = (addr >> 8) & 0x000000FF;
++	/* Set IIM Program Lower Address */
++	addr_l = (addr & 0x000000FF);
++
++#ifdef IIM_FUSE_DEBUG
++	printf("blowing addr_h=0x%x, addr_l=0x%x\n", addr_h, addr_l);
++#endif
++
++	writel(addr_h, &IIM_UA);
++	writel(addr_l, &IIM_LA);
++	/* Start Programming */
++	writel(0x31, &IIM_FCTL);
++	if (imx_poll_fuse_op_done(POLL_FUSE_PRGD) == 0) {
++		ret = 0;
++	}
++
++	/* Enable IIM Program Protect */
++	writel(0x0, &IIM_PROG_P);
++	return ret;
++}
++
++/* Blow byte fuses based on the bank and row positions (all 0-based)
++*/
++static int imx_fuse_blow_byte(int bank,int row,unsigned char value)
++{
++	int i, ret = 0;
++
++		for (i = 0; i < 8; i++) {
++			if (((value >> i) & 0x1) == 0) {
++				continue;
++			}
++			ret |= imx_fuse_blow(bank, row, i);
++		}
++
++	return ret;
++}
++
++static int imx_mac_read(unsigned char pmac[6])
++{
++	int i;
++	int uninitialized = 0;
++
++	for (i=0;i<6;i++) {
++		pmac[6-1-i] = readl(&IIM_BANK_REG(0,(IIM0_MAC+i)));
++	}
++
++	/* uninitialized if all 00 */
++	if ((pmac[0] == 0) && (pmac[1] == 0) && (pmac[2] == 0) &&
++            (pmac[3] == 0) && (pmac[4] == 0) && (pmac[5] == 0))
++                uninitialized = 1;
++
++	/* uninitialized if all FF (could be safe) */
++        if ((pmac[0] == 0xff) && (pmac[1] == 0xff) && (pmac[2] == 0xff) &&
++	    (pmac[3] == 0xff) && (pmac[4] == 0xff) && (pmac[5] == 0xff))
++	        uninitialized = 1;
++
++	return uninitialized;
++}
++
++static int imx_mac_blow(unsigned char pmac[6])
++{
++	int i, ret = 1;
++	unsigned char mac[6];
++	int uninitialized = 0;
++
++	uninitialized = imx_mac_read(mac);
++
++	if (uninitialized) {
++		ret = 0;
++		for(i=0;i<6;i++) { 
++			ret |= imx_fuse_blow_byte(0, (IIM0_MAC+i), pmac[6 - 1 -i]);
++		}
++	}
++
++	return ret;
++}
++
++
++int do_imx_fuse(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
++{
++	uint32_t bank, row, value, i;
++	int ret = 1;
++
++	if (argc < 2) {
++		printf("It is too dangeous for you to use this command.\n");
++		printf("Usage:\n%s\n", cmdtp->usage);
++		return ret;
++	}
++
++	if ((!strcmp(argv[1], "sense"))&&((argc == 4))) {
++		bank = simple_strtoul(argv[2], NULL, 16);
++		row = simple_strtoul(argv[3], NULL, 16);
++
++		printf("Sense read fuse at bank:%d row:%d\n", bank, row);
++		ret = imx_sense_fuse(bank, row, 0);		
++	}else if ((!strcmp(argv[1], "read"))&&((argc == 4))) {
++		bank = simple_strtoul(argv[2], NULL, 16);
++		row = simple_strtoul(argv[3], NULL, 16);
++
++		printf("Shadow read fuse at bank:%d row:%d\n", bank, row);
++		ret = imx_read_shadow_fuse(bank, row, 0);		
++	}else if ((!strcmp(argv[1], "blow"))&&(argc == 5)) {
++		bank = simple_strtoul(argv[2], NULL, 16);
++		row = simple_strtoul(argv[3], NULL, 16);
++		value = simple_strtoul(argv[4], NULL, 16);
++		
++		printf("Blowing fuse at bank:%d row:%d value:%d\n",
++				bank, row, value);
++		for (i = 0; i < 8; i++) {
++			if (((value >> i) & 0x1) == 0) {
++				continue;
++			}
++			if (imx_fuse_blow(bank, row, i) != 0) {
++				printf("fuse_blow(bank: %d, row: %d, bit:"
++					" %d failed\n",	bank, row, i);
++			} else {
++				printf("fuse_blow(bank: %d, row: %d, bit:"
++					" %d successful\n", bank, row, i);
++				ret = 0;
++			}
++		}
++
++		/* read back fuse by shadow register if applicable */
++		ret |= imx_read_shadow_fuse(bank, row, 0);
++
++	}else if ((!strcmp(argv[1], "mac"))&&(argc == 2)) {
++		unsigned char mac[6];
++		ret = imx_mac_read(mac);
++
++		printf("%siMX mac_addr in fuse: %02X:%02X:%02X:%02X:%02X:%02X\n",
++		ret?"No ":"",
++		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++	}else if ((!strcmp(argv[1], "mac"))&&(argc == 3)) {
++		unsigned char mac[6];
++		char *tmp, *end;
++
++		tmp = argv[2];
++		/* convert MAC from string to int */
++		for (i=0; i<6; i++) {
++		mac[i] = tmp ? simple_strtoul(tmp, &end, 16) : 0;
++		if (tmp)
++			tmp = (*end) ? end+1 : end;
++		}
++
++		ret = imx_mac_blow(mac);
++		if (ret) {
++			printf("Failed to blow mac_addr in fuse: "
++				"%02X:%02X:%02X:%02X:%02X:%02X\n",
++				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++		} else {
++			imx_mac_read(mac);
++			printf("Mac_addr blowed in fuse: "
++				"%02X:%02X:%02X:%02X:%02X:%02X\n",
++				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++		}
++	}else if ((!strcmp(argv[1], "suid"))&&(argc == 2)) {
++
++		printf("iMX SUID: ");
++		for (i=0;i<6;i++) {
++			printf("%02x", readl(&IIM_BANK_REG(1,(IIM1_SUID+i))));
++		}
++		printf("\n");
++		ret = 0;
++	}else if ((!strcmp(argv[1], "scc_key"))&&(argc == 2)) {
++
++		printf("iMX SCC_KEY: ");
++		for (i=0;i<21;i++) {
++			printf("%02x", readl(&IIM_BANK_REG(0,(IIM0_SCC_KEY+i))));
++		}
++		printf("\n");
++		ret = 0;
++	} else { printf("arc:%d\n", argc);
++		printf("Usage:\n%s\n", cmdtp->usage);
++		return 1;
++	}
++
++	return ret;
++}
++
++U_BOOT_CMD(imxfuse, 5, 0, do_imx_fuse,
++	"imxfuse - Read/Blow some iMX fuses\n",\
++	"sense <bank> <row> - sense read iMX fuses at <bank>/<row>\n" \
++	"imxfuse read <bank> <row> - shadow read iMX fuses at <bank>/<row>\n" \
++	"imxfuse blow <bank> <row> <value> - blow <value> at <bank>/<row>\n"\
++	"	- Read/Blow 8 bits <Value> for some iMX fuses at <bank>/<row>\n"\
++	"imxfuse mac [<mac_addr>]  - read/blow <mac_addr> in iMX fuses\n"\
++	"imxfuse suid - read iMX SUID\n"\
++	"imxfuse scc_key - read iMX SCC_KEY\n");
++
++#endif /* CONFIG_CMD_IMX_FUSE */
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/fec_imx27.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/fec_imx27.c	2009-01-07 18:20:45.000000000 +0100
+@@ -0,0 +1,797 @@
++/*
++ * (C) Copyright 2008,2009 Eric Jarrige <eric.jarrige@armadeus.org>
++ * (C) Copyright 2008 Armadeus Systems nc
++ * (C) Copyright 2007 Pengutronix, Sascha Hauer <s.hauer@pengutronix.de>
++ * (C) Copyright 2007 Pengutronix, Juergen Beisert <j.beisert@pengutronix.de>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/************************** TODO eth_register + cleanup gfec !! *****/
++
++
++#include <common.h>
++#include <malloc.h>
++#include <net.h>
++#include "miiphy.h"
++#include "fec_imx27.h"
++
++#include <asm/arch/clock.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/io.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#ifdef CONFIG_DRIVER_FEC_IMX27
++
++#if !(defined(CONFIG_MII) || defined(CONFIG_CMD_MII))
++#error "CONFIG_MII has to be defined!"
++#endif
++
++//#undef CONFIG_FEC_IMX27_DEBUG
++#ifdef CONFIG_FEC_IMX27_DEBUG
++#define	PRINTF(fmt,args...)	printf (fmt ,##args)
++#else
++#define PRINTF(fmt,args...)
++#endif
++
++static int fec_miiphy_read(struct miiphy_device *mdev, uint8_t phyAddr,
++	uint8_t regAddr, uint16_t * retVal);
++static int fec_miiphy_write(struct miiphy_device *mdev, uint8_t phyAddr,
++	uint8_t regAddr, uint16_t data);
++
++typedef struct {
++	uint8_t data[1500];	/**< actual data */
++	int length;		/**< actual length */
++	int used;		/**< buffer in use or not */
++	uint8_t head[16];	/**< MAC header(6 + 6 + 2) + 2(aligned) */
++} NBUF;
++
++fec_priv gfec=
++{
++	.eth       = (ethernet_regs *)IMX_FEC_BASE,
++	.xcv_type  = MII100,
++	.rbd_base  = NULL,
++	.rbd_index = 0,
++	.tbd_base  = NULL,
++	.tbd_index = 0,
++	.miiphy =
++		{
++			CONFIG_PHY_ADDR,
++			fec_miiphy_read,
++			fec_miiphy_write,
++			0,
++			NULL
++		},
++	.bd        = NULL,
++};
++
++/*
++ * MII-interface related functions
++ */
++static int fec_miiphy_read(struct miiphy_device *mdev, uint8_t phyAddr,
++	uint8_t regAddr, uint16_t * retVal)
++{
++	struct eth_device *edev = mdev->edev;
++	fec_priv *fec = (fec_priv *)edev->priv;
++
++	uint32_t reg;		/* convenient holder for the PHY register */
++	uint32_t phy;		/* convenient holder for the PHY */
++	uint32_t start;
++
++	/*
++	 * reading from any PHY's register is done by properly
++	 * programming the FEC's MII data register.
++	 */
++	writel(FEC_IEVENT_MII, &fec->eth->ievent);
++	reg = regAddr << FEC_MII_DATA_RA_SHIFT;
++	phy = phyAddr << FEC_MII_DATA_PA_SHIFT;
++
++	writel(FEC_MII_DATA_ST | FEC_MII_DATA_OP_RD | FEC_MII_DATA_TA | phy | reg, &fec->eth->mii_data);
++
++	/*
++	 * wait for the related interrupt
++	 */
++	start = get_timer_masked(); /* get_time_ns(); */
++	while (!(readl(&fec->eth->ievent) & FEC_IEVENT_MII)) {
++		if (get_timer (start) > (CFG_HZ /1000)  /* is_timeout(start, MSECOND)*/) {
++			printf("Read MDIO failed...\n");
++			return -1;
++		}
++	}
++
++	/*
++	 * clear mii interrupt bit
++	 */
++	writel(FEC_IEVENT_MII, &fec->eth->ievent);
++
++	/*
++	 * it's now safe to read the PHY's register
++	 */
++	*retVal = readl(&fec->eth->mii_data);
++	PRINTF("fec_miiphy_read: phy: %02x reg:%02x val:%#x\n", phyAddr, regAddr, *retVal);
++	return 0;
++}
++
++static int fec_miiphy_write(struct miiphy_device *mdev, uint8_t phyAddr,
++	uint8_t regAddr, uint16_t data)
++{
++	struct eth_device *edev = mdev->edev;
++	fec_priv *fec = (fec_priv *)edev->priv;
++
++	uint32_t reg;		/* convenient holder for the PHY register */
++	uint32_t phy;		/* convenient holder for the PHY */
++	uint32_t start;
++
++	reg = regAddr << FEC_MII_DATA_RA_SHIFT;
++	phy = phyAddr << FEC_MII_DATA_PA_SHIFT;
++
++	writel(FEC_MII_DATA_ST | FEC_MII_DATA_OP_WR |
++		FEC_MII_DATA_TA | phy | reg | data, &fec->eth->mii_data);
++
++	/*
++	 * wait for the MII interrupt
++	 */
++	start = get_timer_masked(); /* get_time_ns(); */
++	while (!(readl(&fec->eth->ievent) & FEC_IEVENT_MII)) {
++		if (get_timer (start) > (CFG_HZ /1000)  /* is_timeout(start, MSECOND)*/) {
++			printf("Write MDIO failed...\n");
++			return -1;
++		}
++	}
++
++	/*
++	 * clear MII interrupt bit
++	 */
++	writel(FEC_IEVENT_MII, &fec->eth->ievent);
++	PRINTF("fec_miiphy_write: phy: %02x reg:%02x val:%#x\n", phyAddr, regAddr, data);
++
++	return 0;
++}
++
++static int fec_rx_task_enable(fec_priv *fec)
++{
++	writel(1 << 24, &fec->eth->r_des_active);
++	return 0;
++}
++
++static int fec_rx_task_disable(fec_priv *fec)
++{
++	return 0;
++}
++
++static int fec_tx_task_enable(fec_priv *fec)
++{
++	writel(1 << 24, &fec->eth->x_des_active);
++	return 0;
++}
++
++static int fec_tx_task_disable(fec_priv *fec)
++{
++	return 0;
++}
++
++/**
++ * Initialize receive task's buffer descriptors
++ * @param[in] fec all we know about the device yet
++ * @param[in] count receive buffer count to be allocated
++ * @param[in] size size of each receive buffer
++ * @return 0 on success
++ *
++ * For this task we need additional memory for the data buffers. And each
++ * data buffer requires some alignment. Thy must be aligned to a specific
++ * boundary each (DB_DATA_ALIGNMENT).
++ */
++static int fec_rbd_init(fec_priv *fec, int count, int size, int once)
++{
++	int ix;
++	uint32_t p=0;
++
++	if (!once) {
++		/* reserve data memory and consider alignment */
++		p = (uint32_t)malloc(size * count + DB_DATA_ALIGNMENT);
++		memset((void *)p, 0, size * count + DB_DATA_ALIGNMENT);
++		p += DB_DATA_ALIGNMENT-1;
++		p &= ~(DB_DATA_ALIGNMENT-1);
++	}
++
++	for (ix = 0; ix < count; ix++) {
++		if (!once) {
++			writel(p, &fec->rbd_base[ix].data_pointer);
++			p += size;
++		}
++		writew(FEC_RBD_EMPTY, &fec->rbd_base[ix].status);
++		writew(0, &fec->rbd_base[ix].data_length);
++	}
++	/*
++	 * mark the last RBD to close the ring
++	 */
++	writew(FEC_RBD_WRAP | FEC_RBD_EMPTY, &fec->rbd_base[ix - 1].status);
++	fec->rbd_index = 0;
++
++	return 0;
++}
++
++/**
++ * Initialize transmit task's buffer descriptors
++ * @param[in] fec all we know about the device yet
++ *
++ * Transmit buffers are created externally. We only have to init the BDs here.\n
++ * Note: There is a race condition in the hardware. When only one BD is in
++ * use it must be marked with the WRAP bit to use it for every transmitt.
++ * This bit in combination with the READY bit results into double transmit
++ * of each data buffer. It seems the state machine checks READY earlier then
++ * resetting it after the first transfer.
++ * Using two BDs solves this issue.
++ */
++static void fec_tbd_init(fec_priv *fec)
++{
++	writew(0x0000, &fec->tbd_base[0].status);
++	writew(FEC_TBD_WRAP, &fec->tbd_base[1].status);
++	fec->tbd_index = 0;
++}
++
++/**
++ * Mark the given read buffer descriptor as free
++ * @param[in] last 1 if this is the last buffer descriptor in the chain, else 0
++ * @param[in] pRbd buffer descriptor to mark free again
++ */
++static void fec_rbd_clean(int last, FEC_BD *pRbd)
++{
++	/*
++	 * Reset buffer descriptor as empty
++	 */
++	if (last)
++		writew(FEC_RBD_WRAP | FEC_RBD_EMPTY, &pRbd->status);
++	else
++		writew(FEC_RBD_EMPTY, &pRbd->status);
++	/*
++	 * no data in it
++	 */
++	writew(0, &pRbd->data_length);
++}
++
++static int fec_get_hwaddr(struct eth_device *dev, unsigned char *mac)
++{
++	int i;
++	int uninitialized = 0;
++
++	for (i=0;i<6;i++) {
++		mac[6-1-i] = readl(&IIM_BANK_REG(0,(IIM0_MAC+i)));
++	}
++
++	/* uninitialized if all 00 */
++	if ((mac[0] == 0) && (mac[1] == 0) && (mac[2] == 0) &&
++            (mac[3] == 0) && (mac[4] == 0) && (mac[5] == 0))
++                uninitialized = 1;
++
++	/* uninitialized if all FF (could be safe) */
++        if ((mac[0] == 0xff) && (mac[1] == 0xff) && (mac[2] == 0xff) &&
++	    (mac[3] == 0xff) && (mac[4] == 0xff) && (mac[5] == 0xff))
++	        uninitialized = 1;
++
++	return uninitialized;
++}
++
++static int fec_set_hwaddr(struct eth_device *dev, unsigned char *mac)
++{
++	fec_priv *fec = (fec_priv *)dev->priv;
++//#define WTF_IS_THIS
++#ifdef WTF_IS_THIS
++	uint32_t crc = 0xffffffff;	/* initial value */
++	uint8_t currByte;			/* byte for which to compute the CRC */
++	int byte;			/* loop - counter */
++	int bit;			/* loop - counter */
++
++	/*
++	 * The algorithm used is the following:
++	 * we loop on each of the six bytes of the provided address,
++	 * and we compute the CRC by left-shifting the previous
++	 * value by one position, so that each bit in the current
++	 * byte of the address may contribute the calculation. If
++	 * the latter and the MSB in the CRC are different, then
++	 * the CRC value so computed is also ex-ored with the
++	 * "polynomium generator". The current byte of the address
++	 * is also shifted right by one bit at each iteration.
++	 * This is because the CRC generatore in hardware is implemented
++	 * as a shift-register with as many ex-ores as the radixes
++	 * in the polynomium. This suggests that we represent the
++	 * polynomiumm itself as a 32-bit constant.
++	 */
++	for (byte = 0; byte < 6; byte++) {
++		currByte = mac[byte];
++		for (bit = 0; bit < 8; bit++) {
++			if ((currByte & 0x01) ^ (crc & 0x01)) {
++				crc >>= 1;
++				crc = crc ^ 0xedb88320;
++			} else {
++				crc >>= 1;
++			}
++			currByte >>= 1;
++		}
++	}
++
++	crc = crc >> 26;
++
++	/*
++	 * Set individual hash table register
++	 */
++	if (crc >= 32) {
++		fec->eth->iaddr1 = (1 << (crc - 32));
++		fec->eth->iaddr2 = 0;
++	} else {
++		fec->eth->iaddr1 = 0;
++		fec->eth->iaddr2 = (1 << crc);
++	}
++#else
++	writel(0, &fec->eth->iaddr1);
++	writel(0, &fec->eth->iaddr2);
++	writel(0, &fec->eth->gaddr1);
++	writel(0, &fec->eth->gaddr2);
++#endif
++	/*
++	 * Set physical address
++	 */
++ 	writel((mac[0] << 24) + (mac[1] << 16) + (mac[2] << 8) + mac[3], &fec->eth->paddr1);
++	writel((mac[4] << 24) + (mac[5] << 16) + 0x8808, &fec->eth->paddr2);
++
++        return 0;
++}
++
++/**
++ * Start the FEC engine
++ * @param[in] dev Our device to handle
++ */
++static int fec_open(struct eth_device *edev)
++{
++	fec_priv *fec = (fec_priv *)edev->priv;
++
++	PRINTF("fec_open: fec_open(dev)\n");
++	writel(1 << 2, &fec->eth->x_cntrl);	/* full-duplex, heartbeat disabled */
++	fec->rbd_index = 0;
++
++	/*
++	 * Enable FEC-Lite controller
++	 */
++	writel(FEC_ECNTRL_ETHER_EN, &fec->eth->ecntrl);
++
++	if (fec->xcv_type != SEVENWIRE) {
++		miiphy_wait_aneg(&fec->miiphy);
++		miiphy_print_status(&fec->miiphy);
++	}
++
++	/*
++	 * Enable SmartDMA receive task
++	 */
++	fec_rx_task_enable(fec);
++
++	udelay(100000);
++	return 0;
++}
++
++static int fec_init(struct eth_device *dev, bd_t* bd)
++{
++	static int once = 0;
++	uint32_t base;
++	fec_priv *fec = (fec_priv *)dev->priv;
++
++	if( !once )
++	{
++		/*
++		 * reserve memory for both buffer descriptor chains at once
++		 * Datasheet forces the startaddress of each chain is 16 byte aligned
++		 */
++		base = (uint32_t)malloc( (2 + FEC_RBD_NUM) * sizeof(FEC_BD) + DB_ALIGNMENT );
++		memset((void *)base, 0, (2 + FEC_RBD_NUM) * sizeof(FEC_BD) + DB_ALIGNMENT);
++		base += (DB_ALIGNMENT-1);
++		base &= ~(DB_ALIGNMENT-1);
++
++		fec->rbd_base = (FEC_BD*)base;
++
++		base += FEC_RBD_NUM * sizeof(FEC_BD);
++
++		fec->tbd_base = (FEC_BD*)base;
++	}
++
++	/*
++	 * Set interrupt mask register
++	 */
++	writel(0x00000000, &fec->eth->imask);
++
++	/*
++	 * Clear FEC-Lite interrupt event register(IEVENT)
++	 */
++	writel(0xffffffff, &fec->eth->ievent);
++
++
++	/*
++	 * Set FEC-Lite receive control register(R_CNTRL):
++	 */
++	if (fec->xcv_type == SEVENWIRE) {
++		/*
++		 * Frame length=1518; 7-wire mode
++		 */
++		writel(0x05ee0020, &fec->eth->r_cntrl);	/* FIXME 0x05ee0000 */
++	} else {
++		/*
++		 * Frame length=1518; MII mode;
++		 */
++		writel(0x05ee0024, &fec->eth->r_cntrl);	/* FIXME 0x05ee0004 */
++		/*
++		 * Set MII_SPEED = (1/(mii_speed * 2)) * System Clock
++		 * and do not drop the Preamble.
++		 */
++		writel((((imx_get_ahbclk() /1000000)+2) / 5) << 1, &fec->eth->mii_speed);	/* No MII for 7-wire mode */
++		PRINTF("fec_init: mii_speed %#lx\n", (((imx_get_ahbclk() /1000000)+2) / 5) << 1);
++	}
++	/*
++	 * Set Opcode/Pause Duration Register
++	 */
++	writel(0x00010020, &fec->eth->op_pause);	/* FIXME 0xffff0020; */
++	writel(0x2, &fec->eth->x_wmrk);
++	/*
++	 * Set multicast address filter
++	 */
++	writel(0x00000000, &fec->eth->gaddr1);
++	writel(0x00000000, &fec->eth->gaddr2);
++
++
++	/* clear MIB RAM */
++	long* mib_ptr = (long*)(IMX_FEC_BASE + 0x200);
++	while (mib_ptr <= (long*)(IMX_FEC_BASE + 0x2FC)) {
++		*mib_ptr++ = 0;
++	}
++
++	/* FIFO receive start register */	
++	writel(0x520, &fec->eth->r_fstart);
++
++	/* size and address of each buffer */
++	writel(FEC_MAX_PKT_SIZE, &fec->eth->emrbr);
++    	writel((uint32_t)fec->tbd_base, &fec->eth->etdsr);
++    	writel((uint32_t)fec->rbd_base, &fec->eth->erdsr);
++
++	/*
++	 * Initialize RxBD/TxBD rings
++	 */
++	fec_rbd_init(fec, FEC_RBD_NUM, FEC_MAX_PKT_SIZE, once);
++	fec_tbd_init(fec);
++
++
++	if (fec->xcv_type != SEVENWIRE)
++		miiphy_restart_aneg(&fec->miiphy);
++
++	once = 1;	/* malloc done now (and once) */
++
++	fec_open(dev);
++	return 0;
++}
++
++/**
++ * Halt the FEC engine
++ * @param[in] dev Our device to handle
++ */
++static void fec_halt(struct eth_device *dev)
++{
++	fec_priv *fec = &gfec;
++	int counter = 0xffff;
++
++	/*
++	 * issue graceful stop command to the FEC transmitter if necessary
++	 */
++	writel(FEC_ECNTRL_RESET | readl(&fec->eth->x_cntrl), &fec->eth->x_cntrl);
++
++	PRINTF("eth_halt: wait for stop regs\n");
++	/*
++	 * wait for graceful stop to register
++	 */
++	while ((counter--) && (!(readl(&fec->eth->ievent) & FEC_IEVENT_GRA)))
++		;	/* FIXME ensure time */
++
++	/*
++	 * Disable SmartDMA tasks
++	 */
++	fec_tx_task_disable(fec);
++	fec_rx_task_disable(fec);
++
++	/*
++	 * Disable the Ethernet Controller
++	 * Note: this will also reset the BD index counter!
++	 */
++	writel(0, &fec->eth->ecntrl);
++	fec->rbd_index = 0;
++	fec->tbd_index = 0;
++	PRINTF("eth_halt: done\n");
++}
++
++/**
++ * Transmit one frame
++ * @param[in] dev Our ethernet device to handle
++ * @param[in] packet Pointer to the data to be transmitted
++ * @param[in] length Data count in bytes
++ * @return 0 on success
++ */
++static int fec_send(struct eth_device *dev, volatile void* packet, int length)
++{
++	unsigned int status;
++
++	/*
++	 * This routine transmits one frame.  This routine only accepts
++	 * 6-byte Ethernet addresses.
++	 */
++	fec_priv *fec = (fec_priv *)dev->priv;
++
++	/*
++	 * Check for valid length of data.
++	 */
++	if ((length > 1500) || (length <= 0)) {
++		printf("Payload (%d) to large!\n", length);
++		return -1;
++	}
++
++	/*
++	 * Setup the transmitt buffer
++	 * Note: We are always using the first buffer for transmission,
++	 * the second will be empty and only used to stop the DMA engine
++	 */
++/*	{
++		int i;
++		PRINTF("fec_send %d bytes:", length);
++			for (i=0;i<length;i++)
++				PRINTF(" %02x", ((char*)packet)[i]);
++			PRINTF("\n");
++	}
++*/	writew(length, &fec->tbd_base[fec->tbd_index].data_length);
++	writel((uint32_t)packet, &fec->tbd_base[fec->tbd_index].data_pointer);
++	/*
++	 * update BD's status now
++	 * This block:
++	 * - is always the last in a chain (means no chain)
++	 * - should transmitt the CRC
++	 * - might be the last BD in the list, so the address counter should
++	 *   wrap (-> keep the WRAP flag)
++	 */
++	status = readw(&fec->tbd_base[fec->tbd_index].status) & FEC_TBD_WRAP;
++	status |= FEC_TBD_LAST | FEC_TBD_TC | FEC_TBD_READY;
++	writew(status, &fec->tbd_base[fec->tbd_index].status);
++
++	/*
++	 * Enable SmartDMA transmit task
++	 */
++	fec_tx_task_enable(fec);
++
++	/*
++	 * wait until frame is sent .
++	 */
++	while (readw(&fec->tbd_base[fec->tbd_index].status) & FEC_TBD_READY) {
++		/* FIXME: Timeout */
++	}
++	PRINTF("fec_send: status 0x%x index %d\n", readw(&fec->tbd_base[fec->tbd_index].status), fec->tbd_index);
++	/* for next transmission use the other buffer */
++	if (fec->tbd_index)
++		fec->tbd_index = 0;
++	else
++		fec->tbd_index = 1;
++
++	return 0;
++}
++
++/**
++ * Pull one frame from the card
++ * @param[in] dev Our ethernet device to handle
++ * @return Length of packet read
++ */
++static int fec_recv(struct eth_device *dev)
++{
++	fec_priv *fec = (fec_priv *)dev->priv;
++	FEC_BD *rbd = &fec->rbd_base[fec->rbd_index];
++	unsigned long ievent;
++	int frame_length, len = 0;
++	NBUF *frame;
++	uint16_t bd_status;
++	uchar buff[FEC_MAX_PKT_SIZE];
++
++	/*
++	 * Check if any critical events have happened
++	 */
++	ievent = readl(&fec->eth->ievent);
++	writel(ievent, &fec->eth->ievent);
++	PRINTF("fec_recv: ievent 0x%x\n", ievent );
++	if (ievent & FEC_IEVENT_BABR) {
++		fec_halt(dev);
++		fec_init(dev, fec->bd);
++		printf("some error: 0x%08lx\n", ievent);
++		return 0;
++	}
++	if (ievent & FEC_IEVENT_HBERR) {
++		/* Heartbeat error */
++		writel(0x00000001 | readl(&fec->eth->x_cntrl), &fec->eth->x_cntrl);
++	}
++	if (ievent & FEC_IEVENT_GRA) {
++		/* Graceful stop complete */
++		if (readl(&fec->eth->x_cntrl) & 0x00000001) {
++			fec_halt(dev);
++			writel(~0x00000001 & readl(&fec->eth->x_cntrl), &fec->eth->x_cntrl);
++			fec_init(dev, fec->bd);
++		}
++	}
++
++	/*
++	 * ensure reading the right buffer status
++	 */
++	bd_status = readw(&rbd->status);
++	PRINTF("fec_recv: status 0x%x\n", bd_status );
++
++	if (!(bd_status & FEC_RBD_EMPTY)) {
++		if ((bd_status & FEC_RBD_LAST) && !(bd_status & FEC_RBD_ERR) &&
++			((readw(&rbd->data_length) - 4) > 14)) {
++			/*
++			 * Get buffer address and size
++			 */
++			frame = (NBUF *)readl(&rbd->data_pointer);
++			frame_length = readw(&rbd->data_length) - 4;
++			/*
++			 *  Fill the buffer and pass it to upper layers
++			 */
++			memcpy(buff, frame->data, frame_length);
++/*			PRINTF("fec_recv %d bytes:", frame_length);
++			for (len=0;len<frame_length;len++)
++				PRINTF(" %02x", buff[len]);
++			PRINTF("\n");
++*/			NetReceive(buff, frame_length);
++			len = frame_length;
++		} else {
++			if (bd_status & FEC_RBD_ERR) {
++				printf("error frame: 0x%08lx 0x%08x\n", (ulong)rbd->data_pointer, bd_status);
++			}
++		}
++		/*
++		 * free the current buffer, restart the engine
++		 * and move forward to the next buffer
++		 */
++		fec_rbd_clean(fec->rbd_index == (FEC_RBD_NUM - 1) ? 1 : 0, rbd);
++		fec_rx_task_enable(fec);
++		fec->rbd_index = (fec->rbd_index + 1) % FEC_RBD_NUM;
++	}
++	PRINTF("fec_recv: stop\n");
++
++	return len;
++}
++
++static int fec_probe(bd_t * bd)
++{
++	/*struct fec_platform_data *pdata = (struct fec_platform_data *)dev->platform_data;*/
++	struct eth_device *edev;
++	fec_priv *fec = &gfec;
++	unsigned char ethaddr_str[20];
++	unsigned char ethaddr[6];
++	char *tmp = getenv ("ethaddr");
++	char *end;
++
++	/* enable FEC clock */
++	PCCR1 |= PCCR1_HCLK_FEC;
++	PCCR0 |= PCCR0_FEC_EN;
++
++	/*create and fill edev struct*/
++	edev = (struct eth_device *)malloc(sizeof(struct eth_device));
++	edev->priv = fec;
++	edev->init = fec_init;
++	edev->send = fec_send;
++	edev->recv = fec_recv;
++	edev->halt = fec_halt;
++
++	fec->eth = (ethernet_regs *)IMX_FEC_BASE;
++	fec->bd = bd;
++
++	/* Reset chip. */
++	writel(FEC_ECNTRL_RESET, &fec->eth->ecntrl);
++	while(readl(&fec->eth->ecntrl) & 1) {
++		udelay(10);
++	}
++
++	fec->xcv_type = MII100; /*pdata->xcv_type;*/
++
++	sprintf(edev->name, "FEC ETHERNET");
++
++	if (fec->xcv_type != SEVENWIRE) {
++		fec->miiphy.read = fec_miiphy_read;
++		fec->miiphy.write = fec_miiphy_write;
++		fec->miiphy.address = CONFIG_PHY_ADDR;
++		fec->miiphy.flags = fec->xcv_type == MII10 ? MIIPHY_FORCE_10 : 0;
++		fec->miiphy.edev = edev;
++
++		/* if multiple PHY have to be supported */
++		/*miiphy_register (edev_>name, fec_miiphy_read, fec_miiphy_write);*/
++	}
++
++	//eth_register(edev);
++
++	if (( NULL != tmp ) && (12 <= strlen(tmp))) {
++		int i;
++		/* convert MAC from string to int */
++		for (i=0; i<6; i++) {
++			ethaddr[i] = tmp ? simple_strtoul(tmp, &end, 16) : 0;
++			if (tmp)
++				tmp = (*end) ? end+1 : end;
++		}
++	}
++	else if (fec_get_hwaddr(edev, ethaddr) == 0) {
++		sprintf ((char*)ethaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X",
++			ethaddr[0], ethaddr[1], ethaddr[2], ethaddr[3],
++			ethaddr[4], ethaddr[5]);
++		printf("got MAC address from EEPROM: %s\n",ethaddr_str);
++		setenv ("ethaddr", (char*)ethaddr_str);
++	}
++	memcpy(edev->enetaddr, ethaddr, 6);
++	fec_set_hwaddr(edev, ethaddr);
++
++	return 0;
++}
++
++static int once = 0;
++
++int eth_init(bd_t * bd)
++{
++
++	if (!once)
++	{
++		PRINTF("eth_init: fec_probe(bd)\n");
++		fec_probe(bd);	
++		once = 1;
++	}	
++	PRINTF("eth_init: fec_init(gfec.miiphy.edev, bd)\n");
++	return fec_init(gfec.miiphy.edev, bd);
++};
++
++int fec_eth_initialize(bd_t *bd)
++{
++int lout=1;
++
++	if (!once)
++	{
++		PRINTF("eth_init: fec_probe(bd)\n");
++		lout = fec_probe(bd);	
++		once = 1;
++	}
++	return lout;	
++}
++
++int eth_send(volatile void *packet, int length)
++{
++	PRINTF("eth_send: fec_send(gfec.miiphy.edev, packet 0x%08lx, length)\n", packet);
++	return fec_send(gfec.miiphy.edev, packet, length);
++};
++
++int eth_rx(void){
++	PRINTF("eth_rcv: fec_rcv(gfec.miiphy.edev)\n");
++	return fec_recv(gfec.miiphy.edev);
++};
++
++
++void eth_halt(void)
++{
++	PRINTF("eth_halt: fec_halt(gfec)\n");
++	fec_halt(NULL);
++	return;
++};
++
++/**
++ * @file
++ * @brief Network driver for FreeScale's FEC implementation.
++ * This type of hardware can be found on i.MX27 CPUs
++ */
++
++#endif /* CONFIG_DRIVER_FEC_IMX27 */
++
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/fec_imx27.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/fec_imx27.h	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,306 @@
++/*
++ * (C) Copyright 2008 Armadeus Systems, nc 
++ * (C) Copyright 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ * (C) Copyright 2007 Pengutronix, Sascha Hauer <s.hauer@pengutronix.de>
++ * (C) Copyright 2007 Pengutronix, Juergen Beisert <j.beisert@pengutronix.de>
++ *
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * This file is based on mpc4200fec.h
++ * (C) Copyright Motorola, Inc., 2000
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++#ifdef CONFIG_DRIVER_FEC_IMX27
++
++#ifndef __IMX27_FEC_H
++#define __IMX27_FEC_H
++
++/**
++ * Layout description of the FEC
++ */
++typedef struct ethernet_register_set {
++
++/* [10:2]addr = 00 */
++
++/*  Control and status Registers (offset 000-1FF) */
++
++	uint32_t RES0[1];			/* MBAR_ETH + 0x000 */
++	uint32_t ievent;			/* MBAR_ETH + 0x004 */
++	uint32_t imask;				/* MBAR_ETH + 0x008 */
++
++	uint32_t RES1[1];      		/* MBAR_ETH + 0x00C */
++	uint32_t r_des_active;		/* MBAR_ETH + 0x010 */
++	uint32_t x_des_active;		/* MBAR_ETH + 0x014 */
++    uint32_t RES2[3];           /* MBAR_ETH + 0x018-20 */
++	uint32_t ecntrl;			/* MBAR_ETH + 0x024 */
++
++	uint32_t RES3[6];			/* MBAR_ETH + 0x028-03C */
++	uint32_t mii_data;			/* MBAR_ETH + 0x040 */
++	uint32_t mii_speed;			/* MBAR_ETH + 0x044 */
++    uint32_t RES4[7];           /* MBAR_ETH + 0x048-60 */
++	uint32_t mib_control;		/* MBAR_ETH + 0x064 */
++
++	uint32_t RES5[7];			/* MBAR_ETH + 0x068-80 */
++	uint32_t r_cntrl;			/* MBAR_ETH + 0x084 */
++	uint32_t RES6[15];			/* MBAR_ETH + 0x088-C0 */
++	uint32_t x_cntrl;			/* MBAR_ETH + 0x0C4 */
++	uint32_t RES7[7];			/* MBAR_ETH + 0x0C8-E0 */
++	uint32_t paddr1;			/* MBAR_ETH + 0x0E4 */
++	uint32_t paddr2;			/* MBAR_ETH + 0x0E8 */
++	uint32_t op_pause;			/* MBAR_ETH + 0x0EC */
++
++	uint32_t RES8[10];			/* MBAR_ETH + 0x0F0-114 */
++	uint32_t iaddr1;			/* MBAR_ETH + 0x118 */
++	uint32_t iaddr2;			/* MBAR_ETH + 0x11C */
++	uint32_t gaddr1;			/* MBAR_ETH + 0x120 */
++	uint32_t gaddr2;			/* MBAR_ETH + 0x124 */
++	uint32_t RES9[7];			/* MBAR_ETH + 0x128-140 */
++
++	uint32_t x_wmrk;			/* MBAR_ETH + 0x144 */
++	uint32_t RES10[1];			/* MBAR_ETH + 0x148 */
++	uint32_t r_bound;			/* MBAR_ETH + 0x14C */
++	uint32_t r_fstart;			/* MBAR_ETH + 0x150 */
++	uint32_t RES11[11];			/* MBAR_ETH + 0x154-17C */
++	uint32_t erdsr;				/* MBAR_ETH + 0x180 */
++	uint32_t etdsr;				/* MBAR_ETH + 0x184 */
++	uint32_t emrbr;			/* MBAR_ETH + 0x188 */
++	uint32_t RES12[29];			/* MBAR_ETH + 0x18C-1FC */
++
++/*  MIB COUNTERS (Offset 200-2FF) */
++
++	uint32_t rmon_t_drop;			/* MBAR_ETH + 0x200 */
++	uint32_t rmon_t_packets;		/* MBAR_ETH + 0x204 */
++	uint32_t rmon_t_bc_pkt;			/* MBAR_ETH + 0x208 */
++	uint32_t rmon_t_mc_pkt;			/* MBAR_ETH + 0x20C */
++	uint32_t rmon_t_crc_align;		/* MBAR_ETH + 0x210 */
++	uint32_t rmon_t_undersize;		/* MBAR_ETH + 0x214 */
++	uint32_t rmon_t_oversize;		/* MBAR_ETH + 0x218 */
++	uint32_t rmon_t_frag;			/* MBAR_ETH + 0x21C */
++	uint32_t rmon_t_jab;			/* MBAR_ETH + 0x220 */
++	uint32_t rmon_t_col;			/* MBAR_ETH + 0x224 */
++	uint32_t rmon_t_p64;			/* MBAR_ETH + 0x228 */
++	uint32_t rmon_t_p65to127;		/* MBAR_ETH + 0x22C */
++	uint32_t rmon_t_p128to255;		/* MBAR_ETH + 0x230 */
++	uint32_t rmon_t_p256to511;		/* MBAR_ETH + 0x234 */
++	uint32_t rmon_t_p512to1023;		/* MBAR_ETH + 0x238 */
++	uint32_t rmon_t_p1024to2047;	/* MBAR_ETH + 0x23C */
++	uint32_t rmon_t_p_gte2048;		/* MBAR_ETH + 0x240 */
++	uint32_t rmon_t_octets;			/* MBAR_ETH + 0x244 */
++	uint32_t ieee_t_drop;			/* MBAR_ETH + 0x248 */
++	uint32_t ieee_t_frame_ok;		/* MBAR_ETH + 0x24C */
++	uint32_t ieee_t_1col;			/* MBAR_ETH + 0x250 */
++	uint32_t ieee_t_mcol;			/* MBAR_ETH + 0x254 */
++	uint32_t ieee_t_def;			/* MBAR_ETH + 0x258 */
++	uint32_t ieee_t_lcol;			/* MBAR_ETH + 0x25C */
++	uint32_t ieee_t_excol;			/* MBAR_ETH + 0x260 */
++	uint32_t ieee_t_macerr;			/* MBAR_ETH + 0x264 */
++	uint32_t ieee_t_cserr;			/* MBAR_ETH + 0x268 */
++	uint32_t ieee_t_sqe;			/* MBAR_ETH + 0x26C */
++	uint32_t t_fdxfc;			    /* MBAR_ETH + 0x270 */
++	uint32_t ieee_t_octets_ok;		/* MBAR_ETH + 0x274 */
++
++	uint32_t RES13[2];			    /* MBAR_ETH + 0x278-27C */
++	uint32_t rmon_r_drop;			/* MBAR_ETH + 0x280 */
++	uint32_t rmon_r_packets;		/* MBAR_ETH + 0x284 */
++	uint32_t rmon_r_bc_pkt;			/* MBAR_ETH + 0x288 */
++	uint32_t rmon_r_mc_pkt;			/* MBAR_ETH + 0x28C */
++	uint32_t rmon_r_crc_align;		/* MBAR_ETH + 0x290 */
++	uint32_t rmon_r_undersize;		/* MBAR_ETH + 0x294 */
++	uint32_t rmon_r_oversize;		/* MBAR_ETH + 0x298 */
++	uint32_t rmon_r_frag;			/* MBAR_ETH + 0x29C */
++	uint32_t rmon_r_jab;			/* MBAR_ETH + 0x2A0 */
++
++	uint32_t rmon_r_resvd_0;		/* MBAR_ETH + 0x2A4 */
++
++	uint32_t rmon_r_p64;			/* MBAR_ETH + 0x2A8 */
++	uint32_t rmon_r_p65to127;		/* MBAR_ETH + 0x2AC */
++	uint32_t rmon_r_p128to255;		/* MBAR_ETH + 0x2B0 */
++	uint32_t rmon_r_p256to511;		/* MBAR_ETH + 0x2B4 */
++	uint32_t rmon_r_p512to1023;		/* MBAR_ETH + 0x2B8 */
++	uint32_t rmon_r_p1024to2047;	/* MBAR_ETH + 0x2BC */
++	uint32_t rmon_r_p_gte2048;		/* MBAR_ETH + 0x2C0 */
++	uint32_t rmon_r_octets;			/* MBAR_ETH + 0x2C4 */
++	uint32_t ieee_r_drop;			/* MBAR_ETH + 0x2C8 */
++	uint32_t ieee_r_frame_ok;		/* MBAR_ETH + 0x2CC */
++	uint32_t ieee_r_crc;			/* MBAR_ETH + 0x2D0 */
++	uint32_t ieee_r_align;			/* MBAR_ETH + 0x2D4 */
++	uint32_t r_macerr;			    /* MBAR_ETH + 0x2D8 */
++	uint32_t r_fdxfc;			    /* MBAR_ETH + 0x2DC */
++	uint32_t ieee_r_octets_ok;		/* MBAR_ETH + 0x2E0 */
++
++	uint32_t RES14[6];			/* MBAR_ETH + 0x2E4-2FC */
++
++	uint32_t RES15[64];			/* MBAR_ETH + 0x300-3FF */
++} ethernet_regs;
++
++#define FEC_IEVENT_HBERR                0x80000000
++#define FEC_IEVENT_BABR                 0x40000000
++#define FEC_IEVENT_BABT                 0x20000000
++#define FEC_IEVENT_GRA                  0x10000000
++#define FEC_IEVENT_TXF                  0x08000000
++#define FEC_IEVENT_TXB                  0x04000000
++#define FEC_IEVENT_RXF                  0x02000000
++#define FEC_IEVENT_RXB                  0x01000000
++#define FEC_IEVENT_MII                  0x00800000
++#define FEC_IEVENT_EBERR                0x00400000
++#define FEC_IEVENT_LC                   0x00200000
++#define FEC_IEVENT_RL                   0x00100000
++#define FEC_IEVENT_UN                   0x00080000
++
++#define FEC_IMASK_HBERR                 0x80000000
++#define FEC_IMASK_BABR                  0x40000000
++#define FEC_IMASKT_BABT                 0x20000000
++#define FEC_IMASK_GRA                   0x10000000
++#define FEC_IMASKT_TXF                  0x08000000
++#define FEC_IMASK_TXB                   0x04000000
++#define FEC_IMASKT_RXF                  0x02000000
++#define FEC_IMASK_RXB                   0x01000000
++#define FEC_IMASK_MII                   0x00800000
++#define FEC_IMASK_EBERR                 0x00400000
++#define FEC_IMASK_LC                    0x00200000
++#define FEC_IMASKT_RL                   0x00100000
++#define FEC_IMASK_UN                    0x00080000
++
++
++#define FEC_RCNTRL_MAX_FL_SHIFT         16
++#define FEC_RCNTRL_LOOP                 0x00000001
++#define FEC_RCNTRL_DRT                  0x00000002
++#define FEC_RCNTRL_MII_MODE             0x00000004
++#define FEC_RCNTRL_PROM                 0x00000008
++#define FEC_RCNTRL_BC_REJ               0x00000010
++#define FEC_RCNTRL_FCE                  0x00000020
++
++#define FEC_TCNTRL_GTS                  0x00000001
++#define FEC_TCNTRL_HBC                  0x00000002
++#define FEC_TCNTRL_FDEN                 0x00000004
++#define FEC_TCNTRL_TFC_PAUSE            0x00000008
++#define FEC_TCNTRL_RFC_PAUSE            0x00000010
++
++#define FEC_ECNTRL_RESET                0x00000001	/**< reset the FEC */
++#define FEC_ECNTRL_ETHER_EN             0x00000002	/**< enable the FEC */
++
++/**
++ * @brief Descriptor buffer alignment
++ *
++ * i.MX27 requires a 16 byte alignment (but for the first element only)
++ */
++#define DB_ALIGNMENT 16
++
++/**
++ * @brief Data buffer alignment
++ *
++ * i.MX27 requires a four byte alignment for transmit and 16 bits
++ * alignment for receive so take 16
++ * Note: Valid for member data_pointer in struct buffer_descriptor
++ */
++#define DB_DATA_ALIGNMENT 16
++
++/**
++ * @brief Receive & Transmit Buffer Descriptor definitions
++ *
++ * Note: The first BD must be aligned (see DB_ALIGNMENT)
++ */
++typedef struct buffer_descriptor {
++	uint16_t data_length;		/**< payload's length in bytes */
++	uint16_t status;		/**< BD's staus (see datasheet) */
++	uint32_t data_pointer;		/**< payload's buffer address */
++} FEC_BD;
++
++/**
++ * Supported phy types on this platform
++ */
++typedef enum {
++	SEVENWIRE,	/**< 7-wire       */
++	MII10,		/**< MII 10Mbps   */
++	MII100		/**< MII 100Mbps  */
++} xceiver_type;
++
++/**
++ * @brief i.MX27-FEC private structure
++ */
++typedef struct {
++	ethernet_regs *eth;		/**< pointer to register'S base */
++	xceiver_type xcv_type;		/**< transceiver type */
++	FEC_BD *rbd_base;		/**< RBD ring */
++	int rbd_index;			/**< next receive BD to read */
++	FEC_BD *tbd_base;		/**< TBD ring */
++	int tbd_index;			/**< next transmit BD to write */
++	struct miiphy_device miiphy;
++	bd_t * bd;
++} fec_priv;
++
++/**
++ * @brief Numbers of buffer descriptors for receiving
++ *
++ * The number defines the stocked memory buffers for the receiving task.
++ * Larger values makes no sense in this limited environment.
++ */
++#define FEC_RBD_NUM		64
++
++/**
++ * @brief Define the ethernet packet size limit in memory
++ *
++ * Note: Do not shrink this number. This will force the FEC to spread larger
++ * frames in more than one BD. This is nothing to worry about, but the current
++ * driver can't handle it.
++ */
++#define FEC_MAX_PKT_SIZE	1536
++
++/* Receive BD status bits */
++#define FEC_RBD_EMPTY		0x8000	/**< Receive BD status: Buffer is empty */
++#define FEC_RBD_WRAP		0x2000	/**< Receive BD status: Last BD in ring */
++#define FEC_RBD_LAST		0x0800	/**< Receive BD status: Buffer is last in frame (useless here!) */
++#define FEC_RBD_MISS		0x0100	/**< Receive BD status: Miss bit for prom mode */
++#define FEC_RBD_BC		0x0080	/**< Receive BD status: The received frame is broadcast frame */
++#define FEC_RBD_MC		0x0040	/**< Receive BD status: The received frame is multicast frame */
++#define FEC_RBD_LG		0x0020	/**< Receive BD status: Frame length violation */
++#define FEC_RBD_NO		0x0010	/**< Receive BD status: Nonoctet align frame */
++#define FEC_RBD_CR		0x0004	/**< Receive BD status: CRC error */
++#define FEC_RBD_OV		0x0002	/**< Receive BD status: Receive FIFO overrun */
++#define FEC_RBD_TR		0x0001	/**< Receive BD status: Frame is truncated */	
++#define FEC_RBD_ERR		(FEC_RBD_LG | FEC_RBD_NO | FEC_RBD_CR | \
++				FEC_RBD_OV | FEC_RBD_TR)
++
++/* Transmit BD status bits */
++#define FEC_TBD_READY		0x8000	/**< Tansmit BD status: Buffer is ready */
++#define FEC_TBD_WRAP		0x2000	/**< Tansmit BD status: Mark as last BD in ring */
++#define FEC_TBD_LAST		0x0800	/**< Tansmit BD status: Buffer is last in frame */
++#define FEC_TBD_TC		0x0400	/**< Tansmit BD status: Transmit the CRC */
++#define FEC_TBD_ABC		0x0200	/**< Tansmit BD status: Append bad CRC */
++
++/* MII-related definitios */
++#define FEC_MII_DATA_ST		0x40000000	/**< Start of frame delimiter */
++#define FEC_MII_DATA_OP_RD	0x20000000	/**< Perform a read operation */
++#define FEC_MII_DATA_OP_WR	0x10000000	/**< Perform a write operation */
++#define FEC_MII_DATA_PA_MSK	0x0f800000	/**< PHY Address field mask */
++#define FEC_MII_DATA_RA_MSK	0x007c0000	/**< PHY Register field mask */
++#define FEC_MII_DATA_TA		0x00020000	/**< Turnaround */
++#define FEC_MII_DATA_DATAMSK	0x0000ffff	/**< PHY data field */
++
++#define FEC_MII_DATA_RA_SHIFT	18	/* MII Register address bits */
++#define FEC_MII_DATA_PA_SHIFT	23	/* MII PHY address bits */
++
++#endif	/* __IMX27_FEC_H */
++
++#endif /* CONFIG_DRIVER_FEC_IMX27 */
++/**
++ * @file
++ * @brief Definitions for the FEC driver (i.MX27)
++ */
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/generic.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/generic.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,289 @@
++/*
++ *  Copyright (c) 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <asm/arch/imx-regs.h>
++/*#include <asm/arch/clock.h>
++#include <asm-generic/div64.h>
++#include <init.h>
++*/
++/*
++ *  get the system pll clock in Hz
++ *
++ *                  mfi + mfn / (mfd +1)
++ *  f = 2 * f_ref * --------------------
++ *                        pd + 1
++ */
++unsigned int imx_decode_pll(unsigned int pll, unsigned int f_ref)
++{
++/*	unsigned long long ll;
++	unsigned int quot;
++*/
++	unsigned int mfi = (pll >> 10) & 0xf;
++	unsigned int mfn = pll & 0x3ff;
++	unsigned int mfd = (pll >> 16) & 0x3ff;
++	unsigned int pd =  (pll >> 26) & 0xf;
++
++	mfi = mfi <= 5 ? 5 : mfi;
++
++/*	ll = 2 * (unsigned long long)f_ref * ( (mfi << 16) + (mfn << 16) / (mfd + 1));
++	quot = (pd + 1) * (1 << 16);
++	ll += quot / 2;
++	do_div(ll, quot);
++	return (unsigned int) ll;*/
++	return (2*(u64)f_ref* (mfi*(mfd+1) + mfn))/((mfd+1)*(pd+1));
++}
++
++static ulong clk_in_32k(void)
++{
++	return 1024 * CFG_OSC32;
++}
++
++static ulong clk_in_26m(void)
++{
++	if (CSCR & CSCR_OSC26M_DIV1P5) {
++		/* divide by 1.5 */
++		return 26000000 / 1.5;
++	} else {
++		/* divide by 1 */
++		return 26000000;
++	}
++}
++
++ulong imx_get_mpllclk(void)
++{
++	ulong cscr = CSCR;
++	ulong fref;
++
++	if (cscr & CSCR_MCU_SEL)
++		fref = clk_in_26m();
++	else
++		fref = clk_in_32k();
++
++	return imx_decode_pll(MPCTL0, fref);
++}
++
++ulong imx_get_armclk(void)
++{
++	ulong cscr = CSCR;
++	ulong fref = imx_get_mpllclk();
++	ulong div;
++
++	if (!(cscr & CSCR_ARM_SRC_MPLL))
++		fref = (fref * 2) / 3;
++
++	div = ((cscr >> 12) & 0x3) + 1;
++
++	return fref / div;
++}
++
++ulong imx_get_ahbclk(void)
++{
++	ulong cscr = CSCR;
++	ulong fref = imx_get_mpllclk();
++	ulong div;
++
++	div = ((cscr >> 8) & 0x3) + 1;
++
++	return fref * 2 / 3 / div;
++
++}
++
++ulong imx_get_spllclk(void)
++{
++	ulong cscr = CSCR;
++	ulong fref;
++
++	if (cscr & CSCR_SP_SEL)
++		fref = clk_in_26m();
++	else
++		fref = clk_in_32k();
++
++	return imx_decode_pll(SPCTL0, fref);
++}
++
++static ulong imx_get_usbclk(void)
++{
++        return (imx_get_spllclk() / (((CSCR >> 28) & 0x07) + 1));
++}
++
++static ulong imx_get_nfcclk(void)
++{
++        return (imx_get_ahbclk() / (((PCDR0 >> 6) & 0x0f) + 1));
++}
++
++static ulong imx_get_mshcclk(void)
++{
++        return (imx_get_mpllclk() * 2 / (((PCDR0 >> 0) & 0x3f) + 1) / 3);
++}
++
++static ulong imx_get_h264clk(void)
++{
++        return ((imx_get_mpllclk() * 4 ) / (((PCDR0 >> 10) & 0x3f) + 4) / 3);
++}
++
++static ulong imx_get_ssi1clk(void)
++{
++        return ((imx_get_mpllclk() * 4 ) / (((PCDR0 >> 16) & 0x3f) + 4) / 3);
++}
++
++static ulong imx_get_ssi2clk(void)
++{
++        return ((imx_get_mpllclk() * 4) / (((PCDR0 >> 26) & 0x3f) + 4) / 3);
++}
++
++static ulong imx_decode_perclk(ulong div)
++{
++        return (imx_get_mpllclk() * 2) / (div * 3);
++}
++
++ulong imx_get_perclk1(void)
++{
++	return imx_decode_perclk((PCDR1 & 0x3f) + 1);
++}
++
++ulong imx_get_perclk2(void)
++{
++	return imx_decode_perclk(((PCDR1 >> 8) & 0x3f) + 1);
++}
++
++ulong imx_get_perclk3(void)
++{
++	return imx_decode_perclk(((PCDR1 >> 16) & 0x3f) + 1);
++}
++
++ulong imx_get_perclk4(void)
++{
++	return imx_decode_perclk(((PCDR1 >> 24) & 0x3f) + 1);
++}
++
++int imx_dump_clocks(void)
++{
++	printf("mpll   : %10ld Hz\n", imx_get_mpllclk());
++	printf("spll   : %10ld Hz\n", imx_get_spllclk());
++	printf("arm    : %10ld Hz\n", imx_get_armclk());
++	printf("hclk   : %10ld Hz\n", imx_get_ahbclk());
++	printf("perclk1: %10ld Hz\n", imx_get_perclk1());
++	printf("perclk2: %10ld Hz\n", imx_get_perclk2());
++	printf("perclk3: %10ld Hz\n", imx_get_perclk3());
++	printf("perclk4: %10ld Hz\n", imx_get_perclk4());
++	printf("usbclk : %10ld Hz\n", imx_get_usbclk());
++	printf("nfcclk : %10ld Hz\n", imx_get_nfcclk());
++	printf("mshcclk: %10ld Hz\n", imx_get_mshcclk());
++	printf("h264clk: %10ld Hz\n", imx_get_h264clk());
++	printf("ssi1clk: %10ld Hz\n", imx_get_ssi1clk());
++	printf("ssi2clk: %10ld Hz\n", imx_get_ssi2clk());
++	printf("clkin26: %10ld Hz\n", clk_in_26m());
++	printf("clkin32: %10d Hz\n", CFG_OSC32);
++	printf("ESDCTL0: %#x ESDCTL1: %#x\n", ESDCTL0, ESDCTL1);
++	printf("ESDCFG0: %#x ESDCFG1: %#x\n", ESDCFG0,ESDCFG1);
++	printf("SDmdreg: %#x\n", CFG_SDRAM_1_BASE+CFG_SDRAM_MODE_REGISTER_VAL);
++	printf("SDemdreg: %#x\n", CFG_SDRAM_1_BASE+CFG_SDRAM_EXT_MODE_REGISTER_VAL);
++	printf("SDprech: %#x\n", CFG_SDRAM_PRECHARGE_ALL_VAL);
++	printf("SPL Saved boot: %#lx\n", *((long*)(0xa0200004)));
++	printf("uboot Saved boot: %#lx\n", *((long*)(0xa0200008)));
++
++	return 0;
++}
++
++
++/*void imx_gpio_mux(unsigned long mode)
++{
++       unsigned long reg, shift, tmp;
++
++       reg = IOMUXC_BASE + (mode & 0xfc);
++       shift = (~mode & 0x3) * 8;
++
++       tmp = __REG(reg);
++       tmp &= ~(0xff << shift);
++       tmp |= ((mode >> 8) & 0xff) << shift;
++       __REG(reg) = tmp;
++}
++*/
++#if defined(CONFIG_DISPLAY_CPUINFO)
++int print_cpuinfo (void)
++{
++       printf("CPU:   Freescale i.MX27 at %ld MHz\n",
++               imx_get_mpllclk() / 1000000);
++       imx_dump_clocks();
++       printf("\n");
++       return 0;
++}
++#endif
++
++void imx_gpio_mode(int gpio_mode)
++{
++	unsigned int pin = gpio_mode & GPIO_PIN_MASK;
++	unsigned int port = (gpio_mode & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
++	unsigned int ocr = (gpio_mode & GPIO_OCR_MASK) >> GPIO_OCR_SHIFT;
++	unsigned int aout = (gpio_mode & GPIO_AOUT_MASK) >> GPIO_AOUT_SHIFT;
++	unsigned int bout = (gpio_mode & GPIO_BOUT_MASK) >> GPIO_BOUT_SHIFT;
++	unsigned int tmp;
++
++	/* Pullup enable */
++	if(gpio_mode & GPIO_PUEN)
++		PUEN(port) |= (1 << pin);
++	else
++		PUEN(port) &= ~(1 << pin);
++
++	/* Data direction */
++	if(gpio_mode & GPIO_OUT)
++		DDIR(port) |= 1 << pin;
++	else
++		DDIR(port) &= ~(1 << pin);
++
++	/* Primary / alternate function */
++	if(gpio_mode & GPIO_AF)
++		GPR(port) |= (1 << pin);
++	else
++		GPR(port) &= ~(1 << pin);
++
++	/* use as gpio? */
++	if(!(gpio_mode & (GPIO_PF | GPIO_AF)))
++		GIUS(port) |= (1 << pin);
++	else
++		GIUS(port) &= ~(1 << pin);
++
++	/* Output / input configuration */
++	if (pin < 16) {
++		tmp = OCR1(port);
++		tmp &= ~(3 << (pin * 2));
++		tmp |= (ocr << (pin * 2));
++		OCR1(port) = tmp;
++
++		ICONFA1(port) &= ~(3 << (pin * 2));
++		ICONFA1(port) |= aout << (pin * 2);
++		ICONFB1(port) &= ~(3 << (pin * 2));
++		ICONFB1(port) |= bout << (pin * 2);
++	} else {
++		pin -= 16;
++
++		tmp = OCR2(port);
++		tmp &= ~(3 << (pin * 2));
++		tmp |= (ocr << (pin * 2));
++		OCR2(port) = tmp;
++
++		ICONFA2(port) &= ~(3 << (pin * 2));
++		ICONFA2(port) |= aout << (pin * 2);
++		ICONFB2(port) &= ~(3 << (pin * 2));
++		ICONFB2(port) |= bout << (pin * 2);
++	}
++
++}
++
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/i2c.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/i2c.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,407 @@
++/*
++ * Eric Jarrige <jorasse@users.sourceforge.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ *
++ */
++
++#include <common.h>
++
++#ifdef CONFIG_HARD_I2C
++
++#include <asm/io.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/imx-regs.h>
++#include <i2c.h>
++#include "i2c.h"
++
++/*#define       DEBUG_I2C*/
++
++/* current active I2C bus */
++static unsigned int bus_num = 0;
++
++static int hclk_dividers[] = {
++	30, 32, 36, 42, 48, 52, 60, 72,
++	80, 88, 104, 128, 144, 160, 192, 240,
++	288, 320, 384, 480, 576, 640, 768, 960,
++	1152, 1280, 1536, 1920, 2304, 2560, 3072, 3840,
++	22, 24, 26, 26, 32, 36, 40, 44,
++	48, 56, 64, 72, 80, 96, 112, 128,
++	160, 192, 224, 256, 320, 384, 448, 512,
++	640, 768, 896, 1024, 1280, 1536, 1792, 2048
++};
++
++unsigned long i2c_bases[] = {IMX_I2C1_BASE, IMX_I2C2_BASE};
++
++extern void imx_gpio_mode (int gpio_mode);
++
++/*-----------------------------------------------------------------------
++ * Definitions
++ */
++
++#define I2C_ACK		0	/* level to ack a byte */
++#define I2C_NOACK	1	/* level to noack a byte */
++
++
++#ifdef DEBUG_I2C
++#define PRINTD(fmt,args...)	do {	\
++	DECLARE_GLOBAL_DATA_PTR;	\
++	if (gd->have_console)		\
++		printf (fmt ,##args);	\
++	} while (0)
++#else
++#define PRINTD(fmt,args...)
++#endif
++
++/*-----------------------------------------------------------------------
++ * Local functions
++ */
++
++/*-----------------------------------------------------------------------
++ * START: High -> Low on SDA while SCL is High
++ * after check for a bus free
++ */
++static void
++imxi2c_send_start (void)
++{
++	while ((I2SR(bus_num) & I2SR_IBB)) ;
++	I2CR(bus_num) |= I2CR_MSTA;
++	I2SR(bus_num) &= ~I2SR_IIF;
++}
++
++/*-----------------------------------------------------------------------
++ * STOP: Low -> High on SDA while SCL is High
++ * after the end of previous transfer
++ */
++static void
++imxi2c_send_stop (void)
++{
++	while (!(I2SR(bus_num) & I2SR_ICF)) ;
++	I2CR(bus_num) &= ~I2CR_MSTA;
++}
++
++/*-----------------------------------------------------------------------
++ * Send 8 bits and look for an acknowledgement.
++ */
++static int
++imxi2c_write_byte (uchar data)
++{
++	while (!(I2SR(bus_num) & I2SR_ICF)) ;	/* Wait end of transfer */
++
++	I2CR(bus_num) |= I2CR_MTX;
++	I2SR(bus_num) &= ~I2SR_IIF;
++	I2DR(bus_num) = data;
++
++	while (!(I2SR(bus_num) & I2SR_IIF)) ;	/* checking IIF before ICF seems required */
++
++	I2SR(bus_num) &= ~I2SR_IIF;
++
++	while (!(I2SR(bus_num) & I2SR_ICF)) ;	/* Wait end of transfer */
++
++	return (I2SR(bus_num) & I2SR_RXAK);	/* not a nack is an ack */
++}
++
++/*-----------------------------------------------------------------------
++ * if ack == I2C_ACK, ACK the byte so can continue reading, else
++ * send I2C_NOACK to end the read.
++ */
++static uchar
++imxi2c_read_byte (int ack)
++{
++	int data;
++
++	while (!(I2SR(bus_num) & I2SR_ICF)) ;
++	I2CR(bus_num) &= ~I2CR_MTX;
++
++	if (ack)
++	{
++		I2CR(bus_num) |= I2CR_TXAK;
++	}
++	else
++	{
++		I2CR(bus_num) &= ~I2CR_TXAK;
++	}
++
++	data = I2DR(bus_num);
++	return (data);
++}
++
++/* ------------------------------------------------------------------------
++ * API Functions
++ * ------------------------------------------------------------------------
++ */
++
++/*-----------------------------------------------------------------------
++ * i2c_init compute the i2c divider to reach the requested speed
++ * see mxl reference manual
++ */
++void
++i2c_init (int speed, int slaveaddr)
++{
++	int i;
++
++#ifdef CONFIG_I2C_MULTI_BUS
++	imx_gpio_mode (PC5_PF_I2C2_DATA);
++	imx_gpio_mode (PC6_PF_I2C2_CLK);
++	PCCR0 |= PCCR0_I2C2_EN; /*enable I2C2 clock*/
++#endif
++	imx_gpio_mode (PD17_PF_I2C_DATA);
++	imx_gpio_mode (PD18_PF_I2C_CLK);
++	PCCR0 |= PCCR0_I2C1_EN; /*enable I2C2 clock*/
++
++	
++	for(i = 0; i < CONFIG_I2C_MULTI_BUS; i++){
++
++		i2c_set_bus_num(i);
++		I2CR(bus_num) = 0;
++
++		i2c_set_bus_speed(speed);
++
++		IADR(bus_num) = slaveaddr << 1;
++
++		I2CR(bus_num) = I2CR_IEN;
++		I2SR(bus_num) = 0;
++	}
++}
++
++/*-----------------------------------------------------------------------
++ * Probe to see if a chip is present. Also good for checking for the
++ * completion of EEPROM writes since the chip stops responding until
++ * the write completes (typically 10mSec).
++ * probe sends a read command to probe a an address
++ */
++int
++i2c_probe (uchar addr)
++{
++	int rc;
++
++	imxi2c_send_start ();
++	rc = imxi2c_write_byte ((addr << 1) | 0);
++	imxi2c_send_stop ();
++
++	return (rc ? 1 : 0);
++}
++
++/*-----------------------------------------------------------------------
++ * Read bytes
++ */
++int
++i2c_read (uchar chip, uint addr, int alen, uchar * buffer, int len)
++{
++	int shift;
++	PRINTD ("i2c_read: chip %02X addr %02X alen %d buffer %p len %d\n",
++		chip, addr, alen, buffer, len);
++
++#ifdef CFG_I2C_EEPROM_ADDR_OVERFLOW
++	/*
++	 * EEPROM chips that implement "address overflow" are ones
++	 * like Catalyst 24WC04/08/16 which has 9/10/11 bits of
++	 * address and the extra bits end up in the "chip address"
++	 * bit slots. This makes a 24WC08 (1Kbyte) chip look like
++	 * four 256 byte chips.
++	 *
++	 * Note that we consider the length of the address field to
++	 * still be one byte because the extra address bits are
++	 * hidden in the chip address.
++	 */
++	chip |= ((addr >> (alen * 8)) & CFG_I2C_EEPROM_ADDR_OVERFLOW);
++
++	PRINTD ("i2c_read: fix addr_overflow: chip %02X addr %02X\n",
++		chip, addr);
++#endif
++
++	/*
++	 * Do the addressing portion of a write cycle to set the
++	 * chip's address pointer. If the address length is zero,
++	 * don't do the normal write cycle to set the address pointer,
++	 * there is no address pointer in this chip.
++	 */
++	imxi2c_send_start ();
++	if (alen > 0)
++	{
++		if (imxi2c_write_byte (chip << 1))
++		{		/* write cycle */
++			imxi2c_send_stop ();
++			PRINTD ("i2c_read, no chip responded %02X\n", chip);
++			return (1);
++		}
++		shift = (alen - 1) * 8;
++		while (alen-- > 0)
++		{
++			if (imxi2c_write_byte (addr >> shift))
++			{
++				PRINTD ("i2c_read, address not <ACK>ed\n");
++				return (1);
++			}
++			shift -= 8;
++		}
++		imxi2c_send_stop ();	/* reportedly some chips need a full stop */
++		imxi2c_send_start ();
++	}
++	/*
++	 * Send the chip address again, this time for a read cycle.
++	 * Then read the data. On the last byte, we do a NACK instead
++	 * of an ACK(len == 0) to terminate the read.
++	 */
++	imxi2c_write_byte ((chip << 1) | 1);	/* read cycle */
++	imxi2c_read_byte (len <= 2);
++	while (len-- > 1)
++	{
++		*buffer++ = imxi2c_read_byte (len == 1);
++	}
++	imxi2c_send_stop ();
++	*buffer++ = imxi2c_read_byte (0);
++	return (0);
++}
++
++/*-----------------------------------------------------------------------
++ * Write bytes
++ */
++int
++i2c_write (uchar chip, uint addr, int alen, uchar * buffer, int len)
++{
++	int shift, failures = 0;
++
++	PRINTD ("i2c_write: chip %02X addr %02X alen %d buffer %p len %d\n",
++		chip, addr, alen, buffer, len);
++
++	imxi2c_send_start ();
++	if (imxi2c_write_byte (chip << 1))
++	{			/* write cycle */
++		imxi2c_send_stop ();
++		PRINTD ("i2c_write, no chip responded %02X\n", chip);
++		return (1);
++	}
++	shift = (alen - 1) * 8;
++	while (alen-- > 0)
++	{
++		if (imxi2c_write_byte (addr >> shift))
++		{
++			PRINTD ("i2c_write, address not <ACK>ed\n");
++			return (1);
++		}
++		shift -= 8;
++	}
++
++	while (len-- > 0)
++	{
++		if (imxi2c_write_byte (*buffer++))
++		{
++			failures++;
++		}
++	}
++	imxi2c_send_stop ();
++	return (failures);
++}
++
++/*-----------------------------------------------------------------------
++ * Read a register
++ */
++uchar
++i2c_reg_read (uchar i2c_addr, uchar reg)
++{
++	uchar buf;
++
++	i2c_read (i2c_addr, reg, 1, &buf, 1);
++
++	return (buf);
++}
++
++/*-----------------------------------------------------------------------
++ * Write a register
++ */
++void
++i2c_reg_write (uchar i2c_addr, uchar reg, uchar val)
++{
++	i2c_write (i2c_addr, reg, 1, &val, 1);
++}
++
++/*
++ * i2c_set_bus_num:
++ *
++ *  Change the active I2C bus.  Subsequent read/write calls will
++ *  go to this one.
++ *
++ *	bus - bus index, zero based
++ *
++ *	Returns: 0 on success, not 0 on failure
++ *
++ */
++int i2c_set_bus_num(unsigned int bus) {
++
++	if (bus >= CONFIG_I2C_MULTI_BUS) {
++		return 1;
++	}
++	bus_num = bus;
++
++	return 0;
++}
++
++/*
++ * i2c_get_bus_num:
++ *
++ *  Returns index of currently active I2C bus.  Zero-based.
++ */
++
++unsigned int i2c_get_bus_num(void) {
++	return bus_num;
++}
++
++/*
++ * i2c_set_bus_speed:
++ *
++ *  Change the speed of the active I2C bus
++ *
++ *	speed - bus speed in Hz
++ *
++ *	Returns: 0 on success, not 0 on failure
++ *
++ */
++int i2c_set_bus_speed(unsigned int speed){
++	int refDiv = imx_get_perclk3 () / speed;
++	int i, tmpIC;
++
++	tmpIC = (sizeof (hclk_dividers) / sizeof (int)) - 1;
++	for (i = tmpIC; i >= 0; i--)
++	{
++		if ((hclk_dividers[i] >= refDiv)
++		    && (hclk_dividers[i] < hclk_dividers[tmpIC]))
++		{
++			tmpIC = i;
++		}
++	}
++	IFDR(bus_num) = tmpIC;
++
++	return 0;
++}
++
++/*
++ * i2c_get_bus_speed:
++ *
++ *  Returns speed of currently active I2C bus in Hz
++ */
++unsigned int i2c_get_bus_speed(void){
++
++	int speed = imx_get_perclk3 () / hclk_dividers[IFDR(bus_num)];
++
++	return speed;
++}
++
++#endif /* CONFIG_HARD_I2C */
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/i2c.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/i2c.h	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,55 @@
++/*
++ * Eric Jarrige <jorasse@users.sourceforge.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ *
++ */
++#ifndef _i2c_h_
++#define _i2c_h_
++
++#include <asm/arch/imx-regs.h>
++
++/*
++ * I2C module
++ */
++extern unsigned long i2c_bases[];
++
++#define IADR(x)   __REG(i2c_bases[x] + 0x000) /* I2C Address Register */
++#define IFDR(x)   __REG(i2c_bases[x] + 0x004) /* I2C Frequency Divider Register*/
++#define I2CR(x)   __REG(i2c_bases[x] + 0x008) /* I2C Control Register */
++#define I2SR(x)   __REG(i2c_bases[x] + 0x00C) /* I2C Status Register */
++#define I2DR(x)   __REG(i2c_bases[x] + 0x010) /* I2C Data I/O Register */
++/* I2C Control Register Bit Fields */
++#define I2CR_IEN 	(1<<7)		/* I2C Enable */
++#define I2CR_IIEN 	(1<<6)		/* I2C Interrupt Enable */
++#define I2CR_MSTA 	(1<<5)		/* I2C Master/Slave Mode Select */
++#define I2CR_MTX 	(1<<4)		/* I2C Transmit/Receive Mode Select */
++#define I2CR_TXAK 	(1<<3)		/* I2C Transmit Acknowledge Enable */
++#define I2CR_RSTA 	(1<<2)		/* I2C Repeated START */
++#define I2SR_ICF 	(1<<7)		/* I2C Data Transfer */
++#define I2SR_IAAS 	(1<<6)		/* I2C Addressed As a Slave */
++#define I2SR_IBB 	(1<<5)		/* I2C Bus Busy */
++#define I2SR_IAL 	(1<<4)		/* I2C Arbitration Lost */
++#define I2SR_SRW 	(1<<2)		/* I2C Slave Read/Write	*/
++#define I2SR_IIF 	(1<<1)		/* I2C interrupt */
++#define I2SR_RXAK 	(1<<0)		/* I2C Received Acknowledge */
++
++
++#endif /* _i2c_h_ */
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/interrupt.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/interrupt.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,178 @@
++/*
++ * (C) Copyright 2002
++ * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
++ * Marius Groeger <mgroeger@sysgo.de>
++ *
++ * (C) Copyright 2002
++ * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
++ * Alex Zuepke <azu@sysgo.de>
++ *
++ * (C) Copyright 2002
++ * Gary Jennejohn, DENX Software Engineering, <gj@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/clock.h>
++
++#define GPT(x) __REG(IMX_TIM1_BASE + (x))
++
++/*uint64_t imx_clocksource_read(void)
++{
++	return GPT(GPT_TCN);
++}
++*/
++/*static struct clocksource cs = {
++	.read	= imx_clocksource_read,
++	.mask	= 0xffffffff,
++	.shift	= 10,
++};*/
++
++int timer_init (void)
++{
++	int i;
++	/* setup GP Timer 1 */
++	GPT(GPT_TCTL) = TCTL_SWR;
++
++#ifdef CONFIG_IMX27
++	PCCR0 |= PCCR0_GPT1_EN;
++	PCCR1 |= PCCR1_PERCLK1_EN;
++#endif
++
++	for (i = 0; i < 100; i++)
++		GPT(GPT_TCTL) = 0; /* We have no udelay by now */
++
++	GPT(GPT_TPRER) = imx_get_perclk1() / 1000000; /* 1 MHz */
++	GPT(GPT_TCTL) |= TCTL_FRR | (1<<TCTL_CLKSOURCE); /* Freerun Mode, PERCLK1 input */
++	GPT(GPT_TCTL) &= ~TCTL_TEN;
++	GPT(GPT_TCTL) |= TCTL_TEN; /* Enable timer */
++
++/*	cs.mult = clocksource_hz2mult(imx_get_perclk1(), cs.shift);
++
++	init_clock(&cs);*/
++
++	return 0;
++}
++
++void reset_timer_masked (void)
++{
++       GPT(GPT_TCTL) = 0;
++/*       GPT(GPT_TCTL) = GPTCR_CLKSOURCE_32 | GPTCR_TEN;*/ /* Freerun Mode, PERCLK1 input 
++*/
++	GPT(GPT_TCTL) |= TCTL_FRR | (1<<TCTL_CLKSOURCE); /* Freerun Mode, PERCLK1 input */
++	GPT(GPT_TCTL) &= ~TCTL_TEN;
++	GPT(GPT_TCTL) |= TCTL_TEN; /* Enable timer */
++
++}
++
++ulong get_timer_masked (void)
++{
++       ulong val = GPT(GPT_TCN);
++       return val;
++}
++
++ulong get_timer (ulong base)
++{
++       return get_timer_masked () - base;
++}
++
++void set_timer (ulong t)
++{
++}
++
++void reset_timer(void)
++{
++	reset_timer_masked();
++}
++
++/*
++ * This function is derived from PowerPC code (read timebase as long long).
++ * On ARM it just returns the timer value.
++ */
++unsigned long long get_ticks(void)
++{
++	return get_timer(0);
++}
++
++/*
++ * This function is derived from PowerPC code (timebase clock frequency).
++ * On ARM it returns the number of timer ticks per second.
++ */
++ulong get_tbclk (void)
++{
++	ulong tbclk;
++
++	tbclk = CFG_HZ;
++
++	return tbclk;
++}
++
++
++/* delay x useconds AND perserve advance timstamp value */
++void udelay (unsigned long usec)
++{
++       ulong tmo, tmp;
++
++ 	ulong endtime = get_timer_masked() + usec;
++	signed long diff;
++
++	do {
++		ulong now = get_timer_masked ();
++		diff = endtime - now;
++	} while (diff >= 0);
++
++	return;
++      if (usec >= 1000) {                     /* if "big" number, spread normalization to seconds */
++               tmo = usec / 1000;              /* start to normalize for usec to ticks per sec */
++               tmo *= CFG_HZ;                  /* find number of "ticks" to wait to achieve target */
++               tmo /= 1000;                    /* finish normalize. */
++       } else {                                        /* else small number, don't kill it prior to HZ multiply */
++               tmo = usec * CFG_HZ;
++               tmo /= (1000*1000);
++       }
++
++       tmp = get_timer (0);            /* get current timestamp */
++       if ( (tmo + tmp + 1) < tmp )/* if setting this forward will roll time stamp */
++               reset_timer_masked ();  /* reset "advancing" timestamp to 0, set lastinc value */
++       else
++               tmo     += tmp;                         /* else, set advancing stamp wake up time */
++       while (get_timer_masked () < tmo)/* loop till event */
++               /*NOP*/;
++}
++
++/*
++ * Reset the cpu by setting up the watchdog timer and let it time out
++ */
++void reset_cpu (ulong ignored)
++{
++	/* Disable watchdog and set Time-Out field to 0 */
++	WCR = 0x00000000;
++
++	/* Write Service Sequence */
++	WSR = 0x00005555;
++	WSR = 0x0000AAAA;
++
++	/* Enable watchdog */
++	WCR = WCR_WDE;
++
++	while (1);
++	/*NOTREACHED*/
++}
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/Makefile	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,46 @@
++#
++# (C) Copyright 2000-2006
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#miiphy.o
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(SOC).a
++
++COBJS	= interrupt.o serial.o generic.o i2c.o fec_imx27.o miiphy.o \
++	  nand_imx27.o cmd_imxfuse.o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
++
++all:	$(obj).depend $(LIB)
++
++$(LIB):	$(OBJS)
++	$(AR) $(ARFLAGS) $@ $(OBJS)
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,124 @@
++/*
++ * miiphy.c - generic phy abstraction
++ *
++ * (C) Copyright 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ * Copyright (c) 2007 Sascha Hauer <s.hauer@pengutronix.de>, Pengutronix
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <common.h>
++#include "miiphy.h"
++
++int miiphy_restart_aneg(struct miiphy_device *mdev)
++{
++	uint16_t status;
++	int timeout;
++
++	/* 
++	 * Wake up from sleep if necessary
++	 * Reset PHY, then delay 300ns
++	 */
++	mdev->write(mdev, mdev->address, MII_SPECIAL, 0x00FF);
++	mdev->write(mdev, mdev->address, MII_BMCR, BMCR_RESET);
++	udelay(1000);
++
++	if (mdev->flags & MIIPHY_FORCE_10) {
++		printf("Forcing 10 Mbps ethernet link... ");
++		mdev->read(mdev, mdev->address, MII_BMSR, &status);
++		mdev->write(mdev, mdev->address, MII_BMCR, BMCR_FULLDPLX | BMCR_CTST);
++
++		timeout = 20;
++		do {	/* wait for link status to go down */
++			udelay(10000);
++			if ((timeout--) == 0) {
++#if (DEBUG & 0x2)
++				printf("hmmm, should not have waited...");
++#endif
++				break;
++			}
++			mdev->read(mdev, mdev->address, MII_BMSR, &status);
++		} while (status & BMSR_LSTATUS);
++
++	} else {	/* MII100 */
++		/*
++		 * Set the auto-negotiation advertisement register bits
++		 */
++		mdev->write(mdev, mdev->address, MII_ADVERTISE, ADVERTISE_ALL);
++		mdev->write(mdev, mdev->address, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
++	}
++
++	return 0;
++}
++
++int miiphy_wait_aneg(struct miiphy_device *mdev)
++{
++	uint32_t start;
++	uint16_t status;
++
++	/*
++	 * Wait for AN completion
++	 */
++	start = get_timer_masked(); /* get_time_ns(); */
++	do {
++		if (get_timer (start) > (CFG_HZ * 5)) {
++			printf("%s: Autonegotiation timeout\n", mdev->edev->name);
++			return -1;
++		}
++
++		if (mdev->read(mdev, mdev->address, MII_BMSR, &status)) {
++			printf("%s: Autonegotiation failed. status: 0x%04x\n", mdev->edev->name, status);
++			return -1;
++		}
++	} while (!(status & BMSR_LSTATUS));
++
++	return 0;
++}
++
++int miiphy_print_status(struct miiphy_device *mdev)
++{
++	uint16_t bmsr, bmcr, lpa;
++	char *duplex;
++	int speed;
++
++	if (mdev->read(mdev, mdev->address, MII_BMSR, &bmsr) != 0)
++		goto err_out;
++	if (mdev->read(mdev, mdev->address, MII_BMCR, &bmcr) != 0)
++		goto err_out;
++	if (mdev->read(mdev, mdev->address, MII_LPA, &lpa) != 0)
++		goto err_out;
++
++	printf("%s: Link is %s", mdev->edev->name,
++			bmsr & BMSR_LSTATUS ? "up" : "down");
++
++	if (bmcr & BMCR_ANENABLE) {
++		duplex = lpa & LPA_DUPLEX ? "Full" : "Half";
++		speed = lpa & LPA_100 ? 100 : 10;
++	} else {
++		duplex = bmcr & BMCR_FULLDPLX ? "Full" : "Half";
++		speed = bmcr & BMCR_SPEED100 ? 100 : 10;
++	}
++
++	printf(" - %d/%s\n", speed, duplex);
++
++	return 0;
++err_out:
++	printf("%s: failed to read\n", mdev->edev->name);
++	return -1;
++}
++
++
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.h	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,156 @@
++/*
++ * linux/mii.h: definitions for MII-compatible transceivers
++ * Originally drivers/net/sunhme.h.
++ *
++ * (C) Copyright 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ * Copyright (C) 1996, 1999, 2001 David S. Miller (davem@redhat.com)
++ */
++
++#ifndef _MII_PHY_H_
++#define _MII_PHY_H_
++
++#include <net.h>
++
++#define MIIPHY_FORCE_10	1
++
++#define MII_BMCR            0x00        /* Basic mode control register */
++#define MII_BMSR            0x01        /* Basic mode status register  */
++#define MII_PHYSID1         0x02        /* PHYS ID 1                   */
++#define MII_PHYSID2         0x03        /* PHYS ID 2                   */
++#define MII_ADVERTISE       0x04        /* Advertisement control reg   */
++#define MII_LPA             0x05        /* Link partner ability reg    */
++#define MII_EXPANSION       0x06        /* Expansion register          */
++#define MII_CTRL1000        0x09        /* 1000BASE-T control          */
++#define MII_STAT1000        0x0a        /* 1000BASE-T status           */
++#define MII_ESTATUS	    0x0f	/* Extended Status	       */
++#define MII_SPECIAL         0x12        /* Disconnect counter          */
++#define MII_FCSCOUNTER      0x13        /* False carrier counter       */
++#define MII_NWAYTEST        0x14        /* N-way auto-neg test reg     */
++#define MII_RERRCOUNTER     0x15        /* Receive error counter       */
++#define MII_SREVISION       0x16        /* Silicon revision            */
++#define MII_RESV1           0x17        /* Reserved...                 */
++#define MII_LBRERROR        0x18        /* Lpback, rx, bypass error    */
++#define MII_PHYADDR         0x19        /* PHY address                 */
++#define MII_RESV2           0x1a        /* Reserved...                 */
++#define MII_TPISTATUS       0x1b        /* TPI status for 10mbps       */
++#define MII_NCONFIG         0x1c        /* Network interface config    */
++
++/* Basic mode control register. */
++#define BMCR_RESV               0x003f  /* Unused...                   */
++#define BMCR_SPEED1000		0x0040  /* MSB of Speed (1000)         */
++#define BMCR_CTST               0x0080  /* Collision test              */
++#define BMCR_FULLDPLX           0x0100  /* Full duplex                 */
++#define BMCR_ANRESTART          0x0200  /* Auto negotiation restart    */
++#define BMCR_ISOLATE            0x0400  /* Disconnect DP83840 from MII */
++#define BMCR_PDOWN              0x0800  /* Powerdown the DP83840       */
++#define BMCR_ANENABLE           0x1000  /* Enable auto negotiation     */
++#define BMCR_SPEED100           0x2000  /* Select 100Mbps              */
++#define BMCR_LOOPBACK           0x4000  /* TXD loopback bits           */
++#define BMCR_RESET              0x8000  /* Reset the DP83840           */
++
++/* Basic mode status register. */
++#define BMSR_ERCAP              0x0001  /* Ext-reg capability          */
++#define BMSR_JCD                0x0002  /* Jabber detected             */
++#define BMSR_LSTATUS            0x0004  /* Link status                 */
++#define BMSR_ANEGCAPABLE        0x0008  /* Able to do auto-negotiation */
++#define BMSR_RFAULT             0x0010  /* Remote fault detected       */
++#define BMSR_ANEGCOMPLETE       0x0020  /* Auto-negotiation complete   */
++#define BMSR_RESV               0x00c0  /* Unused...                   */
++#define BMSR_ESTATEN		0x0100	/* Extended Status in R15 */
++#define BMSR_100HALF2           0x0200  /* Can do 100BASE-T2 HDX */
++#define BMSR_100FULL2           0x0400  /* Can do 100BASE-T2 FDX */
++#define BMSR_10HALF             0x0800  /* Can do 10mbps, half-duplex  */
++#define BMSR_10FULL             0x1000  /* Can do 10mbps, full-duplex  */
++#define BMSR_100HALF            0x2000  /* Can do 100mbps, half-duplex */
++#define BMSR_100FULL            0x4000  /* Can do 100mbps, full-duplex */
++#define BMSR_100BASE4           0x8000  /* Can do 100mbps, 4k packets  */
++
++/* Advertisement control register. */
++#define ADVERTISE_SLCT          0x001f  /* Selector bits               */
++#define ADVERTISE_CSMA          0x0001  /* Only selector supported     */
++#define ADVERTISE_10HALF        0x0020  /* Try for 10mbps half-duplex  */
++#define ADVERTISE_1000XFULL     0x0020  /* Try for 1000BASE-X full-duplex */
++#define ADVERTISE_10FULL        0x0040  /* Try for 10mbps full-duplex  */
++#define ADVERTISE_1000XHALF     0x0040  /* Try for 1000BASE-X half-duplex */
++#define ADVERTISE_100HALF       0x0080  /* Try for 100mbps half-duplex */
++#define ADVERTISE_1000XPAUSE    0x0080  /* Try for 1000BASE-X pause    */
++#define ADVERTISE_100FULL       0x0100  /* Try for 100mbps full-duplex */
++#define ADVERTISE_1000XPSE_ASYM 0x0100  /* Try for 1000BASE-X asym pause */
++#define ADVERTISE_100BASE4      0x0200  /* Try for 100mbps 4k packets  */
++#define ADVERTISE_PAUSE_CAP     0x0400  /* Try for pause               */
++#define ADVERTISE_PAUSE_ASYM    0x0800  /* Try for asymetric pause     */
++#define ADVERTISE_RESV          0x1000  /* Unused...                   */
++#define ADVERTISE_RFAULT        0x2000  /* Say we can detect faults    */
++#define ADVERTISE_LPACK         0x4000  /* Ack link partners response  */
++#define ADVERTISE_NPAGE         0x8000  /* Next page bit               */
++
++#define ADVERTISE_FULL (ADVERTISE_100FULL | ADVERTISE_10FULL | \
++			ADVERTISE_CSMA)
++#define ADVERTISE_ALL (ADVERTISE_10HALF | ADVERTISE_10FULL | \
++                       ADVERTISE_100HALF | ADVERTISE_100FULL)
++
++/* Link partner ability register. */
++#define LPA_SLCT                0x001f  /* Same as advertise selector  */
++#define LPA_10HALF              0x0020  /* Can do 10mbps half-duplex   */
++#define LPA_1000XFULL           0x0020  /* Can do 1000BASE-X full-duplex */
++#define LPA_10FULL              0x0040  /* Can do 10mbps full-duplex   */
++#define LPA_1000XHALF           0x0040  /* Can do 1000BASE-X half-duplex */
++#define LPA_100HALF             0x0080  /* Can do 100mbps half-duplex  */
++#define LPA_1000XPAUSE          0x0080  /* Can do 1000BASE-X pause     */
++#define LPA_100FULL             0x0100  /* Can do 100mbps full-duplex  */
++#define LPA_1000XPAUSE_ASYM     0x0100  /* Can do 1000BASE-X pause asym*/
++#define LPA_100BASE4            0x0200  /* Can do 100mbps 4k packets   */
++#define LPA_PAUSE_CAP           0x0400  /* Can pause                   */
++#define LPA_PAUSE_ASYM          0x0800  /* Can pause asymetrically     */
++#define LPA_RESV                0x1000  /* Unused...                   */
++#define LPA_RFAULT              0x2000  /* Link partner faulted        */
++#define LPA_LPACK               0x4000  /* Link partner acked us       */
++#define LPA_NPAGE               0x8000  /* Next page bit               */
++
++#define LPA_DUPLEX		(LPA_10FULL | LPA_100FULL)
++#define LPA_100			(LPA_100FULL | LPA_100HALF | LPA_100BASE4)
++
++/* Expansion register for auto-negotiation. */
++#define EXPANSION_NWAY          0x0001  /* Can do N-way auto-nego      */
++#define EXPANSION_LCWP          0x0002  /* Got new RX page code word   */
++#define EXPANSION_ENABLENPAGE   0x0004  /* This enables npage words    */
++#define EXPANSION_NPCAPABLE     0x0008  /* Link partner supports npage */
++#define EXPANSION_MFAULTS       0x0010  /* Multiple faults detected    */
++#define EXPANSION_RESV          0xffe0  /* Unused...                   */
++
++#define ESTATUS_1000_TFULL	0x2000	/* Can do 1000BT Full */
++#define ESTATUS_1000_THALF	0x1000	/* Can do 1000BT Half */
++
++/* N-way test register. */
++#define NWAYTEST_RESV1          0x00ff  /* Unused...                   */
++#define NWAYTEST_LOOPBACK       0x0100  /* Enable loopback for N-way   */
++#define NWAYTEST_RESV2          0xfe00  /* Unused...                   */
++
++/* 1000BASE-T Control register */
++#define ADVERTISE_1000FULL      0x0200  /* Advertise 1000BASE-T full duplex */
++#define ADVERTISE_1000HALF      0x0100  /* Advertise 1000BASE-T half duplex */
++
++/* 1000BASE-T Status register */
++#define LPA_1000LOCALRXOK       0x2000  /* Link partner local receiver status */
++#define LPA_1000REMRXOK         0x1000  /* Link partner remote receiver status */
++#define LPA_1000FULL            0x0800  /* Link partner 1000BASE-T full duplex */
++#define LPA_1000HALF            0x0400  /* Link partner 1000BASE-T half duplex */
++
++struct miiphy_device {
++	/*struct device_d dev;*/
++
++	int address;	/* The address the phy has on the bus */
++	int (*read)(struct miiphy_device *mdev, uint8_t phy_addr, uint8_t reg_addr, uint16_t *value);
++	int (*write)(struct miiphy_device *mdev, uint8_t phy_addr, uint8_t reg_addr, uint16_t data);
++
++	int flags;
++
++	struct eth_device *edev;
++};
++
++int miiphy_register(struct miiphy_device *mdev);
++int miiphy_restart_aneg(struct miiphy_device *mdev);
++int miiphy_wait_aneg(struct miiphy_device *mdev);
++int miiphy_print_status(struct miiphy_device *mdev);
++
++#endif
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/nand_imx27.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/nand_imx27.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,1061 @@
++/*
++ * (C) Copyright 2008 (nc) Armadeus Systems
++ *  Copyright (c) 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ *
++ * Based on the Linux code of :
++ * Copyright 2004-2006 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#if defined(CONFIG_CMD_NAND) && !defined(CFG_NAND_LEGACY)
++
++#include <asm/errno.h>
++#include <nand.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/nand_imx27.h>
++
++#ifdef CFG_NFC_DEBUG
++# define NFC_DEBUG1(fmt, args...) printf(fmt, ##args)
++#else
++# define NFC_DEBUG1(fmt, args...)
++#endif
++
++
++static u8 g_bSpareOnly;
++static u8 g_bStatusRequest;
++static u16 g_colAddr;
++
++
++#define TROP_US_DELAY   10000
++
++#define MIN(x, y)		((x < y) ? x : y)
++
++/*
++ * OOB placement block for use with hardware ecc generation
++ */
++static struct nand_oobinfo nand_hw_eccoob_16 = {
++	.useecc = MTD_NANDECC_AUTOPLACE,
++	.eccbytes = 24,
++	.eccpos = {6, 7, 8, 9, 10, 11, 22, 23, 24, 25, 26, 27, 38, 39, 40, 41, 42, 43, 54, 55, 56, 57, 58, 59},
++	.oobfree = {{12, 10}, {28, 10}, {44, 10}, {60, 4}}
++};
++
++static struct nand_oobinfo nand_hw_eccoob_8 = {
++	.useecc = MTD_NANDECC_AUTOPLACE,
++	.eccbytes = 24,
++	.eccpos = {6, 7, 8, 9, 10, 5, 22, 23, 24, 25, 26, 21, 38, 39, 40, 41, 42, 37, 54, 55, 56, 57, 58, 53},
++	.oobfree = {{11, 10}, {27, 10}, {43, 10}, {59, 5}}
++};
++
++static uint8_t bbt_pattern[] = {'B', 'b', 't', '0' };
++static uint8_t mirror_pattern[] = {'1', 't', 'b', 'B' };
++
++static struct nand_bbt_descr bbt_main_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	12, 
++	.len = 4,
++	.veroffs = 4, 
++	.maxblocks = 4,
++	.pattern = bbt_pattern
++};
++
++static struct nand_bbt_descr bbt_mirror_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	12, 
++	.len = 4,
++	.veroffs = 4, 
++	.maxblocks = 4,
++	.pattern = mirror_pattern
++};
++
++static u_char nand_verify_buf[2048];
++
++/*
++ * not required for iMX27 NFC
++ */
++static void nfc_hwcontrol(struct mtd_info *mtdinfo, int cmd)
++{
++	return;
++}
++
++static int nfc_dev_ready(struct mtd_info *mtd)
++{
++	/* 
++	 * NFC handles R/B internally.Therefore,this function
++	 * always returns status as ready.
++	 */
++	return 1;
++}
++
++static void wait_op_done(int maxRetries, u16 param)
++{
++    int hsloop = 1000;
++	while (hsloop-- > 0) {
++		if (NFC_CONFIG2 & NFC_CONFIG2_INT) {
++			NFC_CONFIG2 &= ~NFC_CONFIG2_INT;
++			return;
++		}
++	}
++	while (maxRetries-- > 0) {
++		if (NFC_CONFIG2 & NFC_CONFIG2_INT) {
++			NFC_CONFIG2 &= ~NFC_CONFIG2_INT;
++			break;
++		}
++		udelay(1);
++	}
++	if (maxRetries <= 0)
++		printf("wait_op_done (%x): INT not set\n", NFC_FLASH_CMD);
++}
++
++
++/*!
++ * This function issues the specified command to the NAND device and
++ * waits for completion.
++ *
++ * @param       cmd     command for NAND Flash
++ */
++static void send_cmd(u16 cmd)
++{
++	NFC_DEBUG1("send_cmd(0x%x)\n", cmd);
++	NFC_FLASH_CMD = (u16) cmd;
++
++	NFC_CONFIG2 = NFC_CONFIG2_FCMD;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, cmd);
++}
++
++/*!
++ * This function sends an address (or partial address) to the
++ * NAND device.  The address is used to select the source/destination for
++ * a NAND command.
++ *
++ * @param       addr    address to be written to NFC.
++  */
++static void send_addr(u16 addr)
++{
++	NFC_DEBUG1("send_addr(0x%x)\n", addr);
++
++	NFC_FLASH_ADDR = addr;
++	NFC_CONFIG2 = NFC_CONFIG2_FADD;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, addr);
++}
++
++/*!
++ * This function requests the NANDFC to initate the transfer
++ * of data currently in the NANDFC RAM buffer to the NAND device.
++ *
++ * @param	buf_id	      Specify Internal RAM Buffer number (0-3)	
++ * @param       bSpareOnly    set 1 if only the spare area is transferred
++ */
++static void send_prog_page(u8 buf_id, u8 bSpareOnly)
++{
++	NFC_DEBUG1("send_prog_page (%d)\n", bSpareOnly);
++
++	/* NANDFC buffer 0 is used for page read/write */
++
++	NFC_BUF_ADDR = buf_id;
++
++	/* Configure spare or page+spare access */
++	if (!(FMCR & NF_FMS)) {
++		if (bSpareOnly) {
++			NFC_CONFIG1 |= NFC_CONFIG1_SP_EN;
++		} else {
++			NFC_CONFIG1 &= ~(NFC_CONFIG1_SP_EN);
++		}
++	}
++	NFC_CONFIG2 = NFC_CONFIG2_FDI;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, bSpareOnly);
++}
++
++#ifdef NFC_NAND_SOFT_ECC_CORRECTION
++/*!
++ * This function will correct the single bit ECC error
++ * iMX21 errata: If there are single bit errors in two consecutive page reads
++ * then the error is not  corrected by the NFC for the second page.
++ * Correct single bit error in driver
++ *
++ * @param  buf_id	Specify Internal RAM Buffer number (0-3)	
++ * @param  eccpos 	Ecc byte and bit position
++ * @param  bSpareOnly  	set to 1 if only spare area needs correction
++ */
++
++static void nfc_correct_error(u8 buf_id, u16 eccpos, u8 bSpareOnly)
++{
++	u16 col;
++	u8 pos;
++	volatile u16 *buf;
++
++	/* Get col & bit position of error
++	   these macros works for both 8 & 16 bits */
++	col = COLPOS(eccpos);	/* Get half-word position */
++	pos = BITPOS(eccpos);	/* Get bit position */
++
++	NFC_DEBUG1("nfc_correct_error (col=%d pos=%d), eccpos=%d\n", col, pos, eccpos);
++
++	/* Set the pointer for main / spare area */
++	if (!bSpareOnly) {
++		buf = (volatile u16 *)((ulong)IMX_NFC_MAIN_AREA0 + col + (512 * buf_id));
++	} else {
++		buf = (volatile u16 *)((ulong)IMX_NFC_SPARE_AREA0 + col + (16 * buf_id));
++	}
++
++	/* Fix the data */
++	*buf ^= (1 << pos);
++}
++#endif
++
++
++/*!
++ * This function will maintains state of single bit Error
++ * in Main & spare  area
++ *
++ * @param buf_id	Specify Internal RAM Buffer number (0-3)	
++ * @param spare  	set to true if only spare area needs correction
++ */
++static int nfc_correct_ecc(u8 buf_id, u8 spare)
++{
++	int lerr = 0;
++	u16 value, ecc_status_main, ecc_status_spare;
++	/* Read the ECC result */
++	ecc_status_main = NFC_ECC_STATUS_RESULT >> NFC_ECC_STAT_ERM_SHFT;
++	ecc_status_spare = NFC_ECC_STATUS_RESULT & NFC_ECC_STAT_ERS_MASK;
++
++	if (ecc_status_main){
++	        if(ecc_status_main == NFC_ECC_STAT_ERROR1) {
++			value = NFC_ECC_RSLT_MAIN_AREA;
++		    	/* Correct single bit error in Mainarea
++		    	   NFC will not correct the error in
++		    	   current page */
++			NFC_DEBUG1("nfc_correct_ecc: fix error in main area\n");
++#ifdef NFC_NAND_SOFT_ECC_CORRECTION
++			nfc_correct_error(buf_id, value, 0);
++#endif
++	        }
++	        else if(ecc_status_main == NFC_ECC_STAT_ERROR2) {
++			/* 2 bit error in Mainarea !! */
++			NFC_DEBUG1("nfc_correct_ecc: 2bit error in main area !!\n");
++			lerr = 1;
++	        }
++	}
++
++	if (ecc_status_spare){
++	        if(ecc_status_spare == NFC_ECC_STAT_ERROR1) {
++	    		value = NFC_ECC_RSLT_SPARE_AREA;
++		    	/* Correct single bit error in sparearea
++		    	   NFC will not correct the error in
++		    	   current page */
++			NFC_DEBUG1("nfc_correct_ecc: fix error in spare area\n");
++#ifdef NFC_NAND_SOFT_ECC_CORRECTION
++		    	nfc_correct_error(buf_id, value, 1);
++#endif
++	        }
++	        else if(ecc_status_spare == NFC_ECC_STAT_ERROR2) {
++		    	/* 2 bit error in Mainarea !! */
++			NFC_DEBUG1("nfc_correct_ecc: 2bit error in spare area !!\n");
++			lerr = 1;
++	        }
++	}
++
++	return lerr;
++}
++
++
++
++/*!
++ * This function requests the NANDFC to initated the transfer
++ * of data from the NAND device into in the NANDFC ram buffer.
++ *
++ * @param  	buf_id		Specify Internal RAM Buffer number (0-3)	
++ * @param   bSpareOnly  set 1 if only the spare area is transferred
++ */
++static int send_read_page(u8 buf_id, u8 bSpareOnly)
++{
++	int lerr = 0;
++	NFC_DEBUG1("send_read_page (%d)\n", bSpareOnly);
++	/* NANDFC buffer 0 is used for page read/write */
++	NFC_BUF_ADDR = buf_id;
++
++	/* Configure spare or page+spare access */
++	if (!(FMCR & NF_FMS)) {
++		if (bSpareOnly) {
++			NFC_CONFIG1 |= NFC_CONFIG1_SP_EN;
++		} else {
++			NFC_CONFIG1 &= ~(NFC_CONFIG1_SP_EN);
++		}
++	}
++
++	NFC_CONFIG2 = NFC_CONFIG2_FDO_PAGE;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, bSpareOnly);
++
++	lerr = nfc_correct_ecc(buf_id, bSpareOnly);
++
++	return lerr;
++}
++
++/*!
++ * This function requests the NANDFC to perform a read of the
++ * NAND device ID.
++ */
++static void send_read_id(struct mtd_info *mtd)
++{
++ 	struct nand_chip *this =  mtd->priv;
++
++    	NFC_DEBUG1("send_read_id \n");
++	/* NANDFC buffer 0 is used for device ID output */
++	NFC_BUF_ADDR = 0x0;
++
++	/* Read ID into main buffer */
++	NFC_CONFIG1 &= (~(NFC_CONFIG1_SP_EN));
++	NFC_CONFIG2 = NFC_CONFIG2_FDO_ID;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, 0);
++
++	if (this->options & NAND_BUSWIDTH_16) {
++		volatile u16 *mainBuf = (volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA0));
++
++		/*
++		 * Pack the every-other-byte result for 16-bit ID reads
++		 * into every-byte as the generic code expects and various
++		 * chips implement.
++		 */
++
++		mainBuf[0] = (mainBuf[0] & 0xff) | ((mainBuf[1] & 0xff) << 8);
++		mainBuf[1] = (mainBuf[2] & 0xff) | ((mainBuf[3] & 0xff) << 8);
++		mainBuf[2] = (mainBuf[4] & 0xff) | ((mainBuf[5] & 0xff) << 8);
++	}
++}
++
++static void send_read_lock_status(struct mtd_info *mtd, int page_addr)
++{
++	int block_addr = page_addr>>6;
++
++    	NFC_DEBUG1("get_lock_status %x\n", NFC_WRPR_STAT);
++
++	if ((NFC_WRPR_STAT & NFC_WRPR_US) && !(NFC_WRPR_STAT & NFC_WRPR_LTS) 
++		&& ((NFC_UNLOCKEND_BLKADDR >= block_addr)
++		&& (NFC_UNLOCKSTART_BLKADDR <= block_addr))) {
++		*(volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA0)) = NFC_WRPR_US;
++	} else if (NFC_WRPR_STAT & NFC_WRPR_LTS) {
++		*(volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA0))
++			= NFC_WRPR_STAT;
++	} else {
++		*(volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA0))
++			= NFC_WRPR_STAT & ~NFC_WRPR_US;
++	}
++	return;
++}
++
++/*!
++ * This function writes data of length \b len to buffer \b buf. The data to be
++ * written on NAND Flash is first copied to RAMbuffer. After the Data Input
++ * Operation by the NFC, the data is written to NAND Flash
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be written to NAND Flash
++ * @param       len     number of bytes to be written
++ */
++static void nfc_write_buf(struct mtd_info *mtd,
++			       const u_char * buf, int len)
++{
++	int n;
++	int i = 0;
++	volatile u32 *p;
++
++	NFC_DEBUG1("write buf nbbytes len %d, gcol %d\n", len, g_colAddr);
++
++	/* Adjust saved column address */
++	if (g_colAddr < mtd->oobblock && g_bSpareOnly)
++		g_colAddr += mtd->oobblock;
++
++	p = (volatile u32 *)((ulong)(IMX_NFC_MAIN_AREA0) + (g_colAddr & ~3));
++
++	n = mtd->oobblock + mtd->oobsize - g_colAddr;
++	n = min(len, n);
++
++	while (0 < n) {
++		int colByteShift = (g_colAddr & 3);
++		int m;
++
++		/* adjust 32 bit alignement transfer and last bytes */
++		if ((colByteShift) || (4 > n))
++		{
++			u32 mask = 0;
++			int nBytesWrite = 4;
++			
++			if (n<4) {
++				mask = 0xffffffff << (n<<3);
++				nBytesWrite = n;
++			}
++
++			if (colByteShift) {
++				mask = ~(~mask << (colByteShift<<3));
++				nBytesWrite -= colByteShift;
++			}
++
++			*p = (*p & mask) | (*((u32*)&buf[i]) << (colByteShift <<3));
++			p++;
++			n -= nBytesWrite;
++			g_colAddr += nBytesWrite;
++			i += nBytesWrite;
++		}
++
++		m = n & ~3;
++            	for( ; i<m; i+=4 ){
++        		*p++ = *((u32*) &buf[i]);
++            	}
++		n -= m;
++		g_colAddr += m;
++	}
++ }
++
++
++/*
++ * These functions are quite problematic for the NFC. Luckily they are
++ * not used in the current nand code, except for nand_command, which
++ * we've defined our own anyway. 
++ */
++static void nfc_write_word(struct mtd_info *mtd, u16 word)
++{
++	printf("nfc_write_word: WARNING, this function does not work with the iMX27 NFC!\n");
++}
++static void nfc_write_byte(struct mtd_info *mtd, u_char byte)
++{
++	printf("nfc_write_byte: WARNING, this function does not work with the iMX27 NFC!\n");
++}
++
++
++/*!
++ * This function id is used to read the data buffer from the NAND Flash. To
++ * read the data from NAND Flash first the data output cycle is initiated by
++ * the NFC, which copies the data to RAMbuffer. This data of length \b len is
++ * then copied to buffer \b buf.
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be read from NAND Flash
++ * @param       len     number of bytes to be read
++ */
++static void nfc_read_buf(struct mtd_info *mtd, u_char * buf, int len)
++{
++	int n;
++	int i = 0;
++	volatile u32 *p;
++
++	NFC_DEBUG1("read buf nbbytes len %d, gcol %d\n", len, g_colAddr);
++
++	/* Adjust saved column address */
++	if (g_colAddr < mtd->oobblock && g_bSpareOnly)
++		g_colAddr += mtd->oobblock;
++
++	p = (volatile u32 *)((ulong)(IMX_NFC_MAIN_AREA0) + (g_colAddr & ~3));
++
++	n = mtd->oobblock + mtd->oobsize - g_colAddr;
++	n = min(len, n);
++
++	while (0 < n) {
++		int colByteShift = g_colAddr & 3;
++		int m;
++
++		/* adjust 32 bit alignement transfer */		
++		if (colByteShift || (4 > n))
++		{
++			u_char data[4];			
++			int lj = 0;
++			int nBytesRead = (n<4)? n : 4;
++
++			nBytesRead -= colByteShift;
++
++
++			*((u32*)data) = *p++ >> (colByteShift<<3);
++			n -= nBytesRead;
++			g_colAddr += nBytesRead;
++
++			while(nBytesRead) {
++				buf[i++] = data[lj++];
++				nBytesRead--;	
++			}
++		}
++
++		m = n & ~3;
++		for( ; i<m; i+=4 ){
++        		*((u32*) &buf[i]) = *p++;
++		}
++		g_colAddr += m;
++		n -= m;
++	}
++}
++
++/*
++ * read a word. Not implemented as not used in NAND code.
++ */
++static u16 nfc_read_word(struct mtd_info *mtd)
++{
++	printf("nfc_read_word: UNIMPLEMENTED.\n");
++	return 0;
++}
++
++static u16 get_dev_status(void)
++{
++	volatile u16 *mainBuf = (volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA1));
++	u32 store;
++	u16 ret;
++	/* Issue status request to NAND device */
++
++	/* store the main area1 first word, later do recovery */
++	store = *((u32 *) mainBuf);
++	/*
++	 * NANDFC buffer 1 is used for device status to prevent
++	 * corruption of read/write buffer on status requests.
++	 */
++	NFC_BUF_ADDR = 1;
++
++	/* Send the Read status command before reading status */
++	send_cmd(NAND_CMD_STATUS);
++
++	/* Read status into main buffer */
++	NFC_CONFIG1 &= (~(NFC_CONFIG1_SP_EN));
++	NFC_CONFIG2 = NFC_CONFIG2_FDO_STATUS;
++
++	/* Wait for operation to complete */
++	wait_op_done(TROP_US_DELAY, 0);
++
++	/* get status, then recovery area 1 data */
++	ret = mainBuf[0];
++    	NFC_DEBUG1("get_dev_status %x\n", ret);
++	*((u32 *) mainBuf) = store;
++
++	/* Status is placed in first word of main buffer */
++	return ret;
++}
++
++
++/*!
++ * This function reads byte from the NAND Flash
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ *
++ * @return    data read from the NAND Flash
++ */
++static u_char nfc_read_byte(struct mtd_info *mtd)
++{
++	u_char retVal = 0;
++	u16 col, rdWord;
++	volatile u16 *mainBuf = (volatile u16 *)((ulong) (IMX_NFC_MAIN_AREA0));
++	volatile u16 *spareBuf = (volatile u16 *)((ulong) (IMX_NFC_SPARE_AREA0));
++
++	/* Check for status request */
++	if (g_bStatusRequest) {
++		return (get_dev_status() & 0xFF);
++	}
++
++	/* Get column for 16-bit access */
++	col = g_colAddr >> 1;
++
++	/* If we are accessing the spare region */
++	if (g_bSpareOnly) {
++		rdWord = spareBuf[col];
++	} else {
++		rdWord = mainBuf[col];
++	}
++
++	/* Pick upper/lower byte of word from RAM buffer */
++	if (g_colAddr & 0x1) {
++		retVal = (rdWord >> 8) & 0xFF;
++	} else {
++		retVal = rdWord & 0xFF;
++	}
++    	NFC_DEBUG1("\treval: %x, rdWord:%x \n",retVal, rdWord);
++
++	/* Update saved column address */
++	g_colAddr++;
++
++	return retVal;
++}
++
++/* this function is called after Programm and Erase Operations to
++ * check for success or failure */
++static int nfc_wait(struct mtd_info *mtd, struct nand_chip *this, int state)
++{
++ 	return 0;
++}
++
++static int nfc_correct_data(struct mtd_info *mtd, u_char * dat,
++				 u_char * read_ecc, u_char * calc_ecc)
++{
++	/*
++	 * 1-Bit errors are automatically corrected in HW.  No need for
++	 * additional correction.  2-Bit errors cannot be corrected by
++	 * HW ECC, so we need to return failure
++	 */
++	u16 ecc_status = NFC_ECC_STATUS_RESULT;
++
++	if (((ecc_status & NFC_ECC_STAT_ERS_MASK) == NFC_ECC_STAT_ERROR2) || 
++        ((ecc_status >> NFC_ECC_STAT_ERM_SHFT) == NFC_ECC_STAT_ERROR2)) {
++        NFC_DEBUG1("nfc_correct_data: 2 bit error!\n");
++        /*udelay(100000);*/
++		return -1;
++	}
++
++	return 0;
++}
++
++/*!
++ * This function is used by the upper layer to write command to NAND Flash for
++ * different operations to be carried out on NAND Flash
++ *
++ * @param       mtd             MTD structure for the NAND Flash
++ * @param       command         command for NAND Flash
++ * @param       column          column offset for the page read
++ * @param       page_addr       page to be read from NAND Flash
++ */
++static void nfc_cmdfunc(struct mtd_info *mtd, unsigned int command,
++			int column, int page_addr)
++{
++	int lerr = 0;
++	struct nand_chip *this =  mtd->priv;
++	u8 is2k_Pagesize;
++	NFC_DEBUG1("nfc_cmdfunc (cmd = 0x%x, col = 0x%x, page = 0x%x)\n",
++	      command, column, page_addr);
++
++	if ((FMCR & NF_FMS) == NF_FMS)
++		is2k_Pagesize = 1;
++
++	/*
++	 * Reset command state information
++	 */
++	g_bStatusRequest = 0;
++
++	/*
++	 * Command pre-processing step
++	 */
++	switch (command) {
++
++	case NAND_CMD_STATUS:
++		g_colAddr = 0;
++		g_bStatusRequest = 1;
++		break;
++
++	case NAND_CMD_READ0:
++		g_colAddr = column;
++		g_bSpareOnly = 0;
++		break;
++
++	case NAND_CMD_READOOB:
++		g_colAddr = column;
++		g_bSpareOnly = 1;
++		if (is2k_Pagesize)
++			command = NAND_CMD_READ0;	/* only READ0 is valid */
++		break;
++
++	case NAND_CMD_SEQIN:
++		if (column >= mtd->oobblock) {
++			if (is2k_Pagesize) {
++				/** 			 
++				  * FIXME: before send SEQIN command for write OOB,
++				  * We must read one page out. 			 
++				  * For K9F1GXX has no READ1 command to set current HW 			 
++				  * pointer to spare area, we must write the whole page including OOB together.			 
++				  */
++				/* call itself to read a page */
++				nfc_cmdfunc(mtd, NAND_CMD_READ0, 0,
++						 page_addr);
++			}
++			g_colAddr = column - mtd->oobblock;
++			g_bSpareOnly = 1;
++			/* Set program pointer to spare region */
++			if (!is2k_Pagesize)
++				send_cmd(NAND_CMD_READOOB);
++		} else {
++			g_bSpareOnly = 0;
++			g_colAddr = column;  
++			/* Set program pointer to page start */
++			if (!is2k_Pagesize)
++				send_cmd(NAND_CMD_READ0);
++		}
++		break;
++
++	case  NAND_CMD_PAGEPROG: 
++            if( this->eccmode == NAND_ECC_NONE )  {
++                /* special case for biterr generation */
++    	        NFC_CONFIG1 &= ~(NFC_CONFIG1_ECC_EN);
++                NFC_DEBUG1 ("nfc_cmdfunc: page prog without ECC\n");
++            }
++            else{
++    		/* Enable Ecc for page writes */
++    		NFC_CONFIG1 |= NFC_CONFIG1_ECC_EN;
++            }  
++    		send_prog_page(0, g_bSpareOnly);
++
++    		if (is2k_Pagesize) {
++    			/* data in 4 areas datas */
++    			send_prog_page(1, g_bSpareOnly);
++    			send_prog_page(2, g_bSpareOnly);
++    			send_prog_page(3, g_bSpareOnly);
++    		}
++    		break;
++
++   	case NAND_CMD_ERASE1: break;
++   	case NAND_CMD_LOCK:
++		NFC_UNLOCKSTART_BLKADDR = NFC_UNLOCKEND_BLKADDR = -1;
++		NFC_WRPROT = NFC_WRPROT_LOCKALL;
++		return;
++   	case NAND_CMD_LOCK_TIGHT:
++		NFC_UNLOCKSTART_BLKADDR = NFC_UNLOCKEND_BLKADDR = -1;
++		NFC_WRPROT = NFC_WRPROT_LOCKTIGHT;
++		return;
++   	case NAND_CMD_UNLOCK1:
++		NFC_UNLOCKSTART_BLKADDR= page_addr>>6;
++		return;
++   	case NAND_CMD_UNLOCK2:
++		NFC_UNLOCKEND_BLKADDR= page_addr>>6;
++		NFC_WRPROT = NFC_WRPROT_UNLOCKBLK;
++		return;
++   	case NAND_CMD_LOCK_STATUS:
++		g_colAddr = 0;g_bSpareOnly = 0;
++		send_read_lock_status(mtd, page_addr);
++		return;
++    default: break;
++	}
++
++
++	/*
++	 * Write out the command to the device.
++	 */
++
++	send_cmd(command);
++
++	/*
++	 * Write out column address, if necessary
++	 */
++	if (column != -1) {
++		/*
++		 * MXC NANDFC can only perform full page+spare or
++		 * spare-only read/write.  When the upper layers
++		 * layers perform a read/write buf operation,
++		 * we will used the saved column adress to index into
++		 * the full page.
++		 */
++		send_addr(0);
++		if (is2k_Pagesize)
++			send_addr(0);	/* another col addr cycle for 2k page */
++	}
++
++	/*
++	 * Write out page address, if necessary
++	 */
++	if (page_addr != -1) {
++		send_addr(page_addr & 0xff);	/* paddr_0 - p_addr_7 */
++
++		if (is2k_Pagesize) {
++			send_addr((page_addr >> 8) & 0xFF);
++			if (mtd->size >= 0x10000000) {
++				send_addr((page_addr >> 16) & 0xff);
++			}
++		} else {
++			/* One more address cycle for higher density devices */
++			if (mtd->size >= 0x4000000) {
++				send_addr((page_addr >> 8) & 0xff);	/* paddr_8 - paddr_15 */
++				send_addr((page_addr >> 16) & 0xff);
++			} else
++				send_addr((page_addr >> 8) & 0xff);	/* paddr_8 - paddr_15 */
++		}
++	}
++
++	/*
++	 * Command post-processing step
++	 */
++	switch (command) {
++
++	case NAND_CMD_RESET:
++			send_cmd(NAND_CMD_RESET);
++		break;
++
++	case NAND_CMD_READOOB:
++	case NAND_CMD_READ0:
++		if (is2k_Pagesize) {
++			/* send read confirm command */
++			send_cmd(NAND_CMD_READSTART);
++			/* read for each AREA */
++			lerr  = send_read_page(0, g_bSpareOnly);
++			lerr |= send_read_page(1, g_bSpareOnly);
++			lerr |= send_read_page(2, g_bSpareOnly);
++			lerr |= send_read_page(3, g_bSpareOnly);
++		} else {
++			lerr  = send_read_page(0, g_bSpareOnly);
++		}
++		if (lerr)
++			NFC_DEBUG1 ("Uncorrectable read error at 0x%08X!!\n",
++				page_addr<<((is2k_Pagesize)?11:5));
++		break;
++
++	case NAND_CMD_READID:
++		send_read_id(mtd);
++		break;
++
++	case NAND_CMD_PAGEPROG:
++#ifdef NFC_NAND_SOFT_ECC_CORRECTION
++		/* Disable Ecc after page writes */
++		NFC_CONFIG1 &= ~(NFC_CONFIG1_ECC_EN);
++#else
++		NFC_CONFIG1 |= NFC_CONFIG1_ECC_EN;
++#endif
++		break;
++
++	case NAND_CMD_STATUS:
++		break;
++
++	case NAND_CMD_ERASE2:
++		break;
++	default: break;
++	}
++}
++
++/*!
++ * This function is used by upper layer for select and deselect of the NAND
++ * chip
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       chip    val indicating select or deselect
++ */
++static void nfc_select_chip(struct mtd_info *mtd, int chip)
++{
++#ifdef CONFIG_MTD_NAND_MXC_FORCE_CE
++	if (chip > 0) {
++		NFC_DEBUG1("ERROR:  Illegal chip select (chip = %d)\n", chip);
++		return;
++	}
++
++	if (chip == -1) {
++		NFC_CONFIG1 &= (~(NFC_CONFIG1_CEn));
++		return;
++	}
++
++	NFC_CONFIG1 |= NFC_CONFIG1_CEn;
++#endif
++    NFC_DEBUG1("nfc_select_chip: %d)\n", chip);
++	switch (chip) {
++	case -1:
++		/* Disable the NFC clock */
++        PCCR1 &= ~PCCR1_NFC_BAUDEN;
++		break;
++	case 0:
++		/* Enable the NFC clock */
++        PCCR1 |= PCCR1_NFC_BAUDEN;
++		break;
++
++	default:
++		break;
++	}
++}
++
++
++static void nfc_enable_hwecc(struct mtd_info *mtd, int mode)
++{
++	/*
++	 * If HW ECC is enabled, we turn it on during init.  There is
++	 * no need to enable again here.
++	 */
++}
++
++static int nfc_calculate_ecc(struct mtd_info *mtd, const u_char * dat,
++				  u_char * ecc_code)
++{
++	/*
++	 * Just return success.  HW ECC does not read/write the NFC spare
++	 * buffer.  Only the FLASH spare area contains the calcuated ECC.
++	 */
++	struct nand_chip *this = mtd->priv;
++	NFC_DEBUG1("nfc_calculate_ecc: len = %d\n", this->eccbytes);
++	memset ((void*)ecc_code, 0xff, this->eccbytes);
++				
++	return 0;
++}
++
++/*!
++ * This function is used by the upper layer to verify the data in NAND Flash
++ * with the data in the \b buf.
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be verified
++ * @param       len     length of the data to be verified
++ *
++ * @return      -EFAULT if error else 0
++ *
++ */
++static int nfc_verify_buf(struct mtd_info *mtd, const u_char * buf, int len)
++{
++int lerr = 0;
++
++	NFC_DEBUG1("nfc_verify_buf(col = %d, len = %d)\n", g_colAddr, len);
++
++	nfc_read_buf(mtd, (u_char *)&nand_verify_buf[0], len);
++
++	if (!memcmp(buf, &nand_verify_buf[0], len)) {
++		NFC_DEBUG1("verify_buf: the buffer is OK\n");
++		lerr = 0;
++	} else {
++		NFC_DEBUG1("verify_buf: the buffer is wrong\n");
++		lerr = -EFAULT;
++	}
++	return lerr;
++}
++
++/*!
++ * nfc_block_markbad - mark a block bad
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be verified
++ * @param       ofs     offset to the bad block 
++ *
++ * @return      -EFAULT if error else 0
++ *
++ * This function is used by the upper layer to mark bad blocks
++ * We overload the default function to support NAND SPL capabilities to detect
++ * badblocks without scanning the BBT. The OOB is fill with 0
++ *
++ */
++static int nfc_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++	struct nand_chip *this = mtd->priv;
++	u_char buf[NAND_MAX_OOBSIZE] = {0, 0};
++	size_t	retlen;
++	int block, i, ret = 0;
++	long pages_per_block;
++
++	/* Get block number */
++	block = ((int) ofs) >> this->bbt_erase_shift;
++	this->bbt[block >> 2] |= 0x01 << ((block & 0x03) << 1);
++
++	/* Do we have a flash based bad block table ? */
++	if (this->options & NAND_USE_FLASH_BBT)
++		nand_update_bbt (mtd, ofs);
++
++	/* fill oob with 0 to make it detecable by SPL */
++	memset((void*)buf,0, mtd->oobsize);
++	
++	/* Calculate pages in each block */
++	pages_per_block = 1 << (this->phys_erase_shift - this->page_shift);
++
++	for(i=0; i< pages_per_block;i++) {
++		ret= mtd->write_oob (mtd, ofs , NAND_MAX_OOBSIZE, &retlen, buf); 
++		ofs += 1 << this->page_shift;
++	}
++
++	return ret;
++}
++
++/*
++ * Board-specific NAND initialization. The following members of the
++ * argument are board-specific (per include/linux/mtd/nand_new.h):
++ * - IO_ADDR_R?: address to read the 8 I/O lines of the flash device
++ * - IO_ADDR_W?: address to write the 8 I/O lines of the flash device
++ * - hwcontrol: hardwarespecific function for accesing control-lines
++ * - dev_ready: hardwarespecific function for  accesing device ready/busy line
++ * - enable_hwecc?: function to enable (reset)  hardware ecc generator. Must
++ *   only be provided if a hardware ECC is available
++ * - eccmode: mode of ecc, see defines
++ * - chip_delay: chip dependent delay for transfering data from array to
++ *   read regs (tR)
++ * - options: various chip options. They can partly be set to inform
++ *   nand_scan about special functionality. See the defines for further
++ *   explanation
++ * Members with a "?" were not set in the merged testing-NAND branch,
++ * so they are not set here either.
++ */
++int board_nand_init(struct nand_chip *nand)
++{
++	g_colAddr = 0;
++
++	/* 50 us command delay time */
++	nand->chip_delay = 5;
++
++	nand->hwcontrol = nfc_hwcontrol;
++	nand->waitfunc = nfc_wait;   
++	nand->read_byte = nfc_read_byte;
++	nand->write_byte = nfc_write_byte;
++	nand->read_word = nfc_read_word;
++	nand->write_word = nfc_write_word;
++	nand->read_buf = nfc_read_buf;
++	nand->write_buf = nfc_write_buf;
++    	nand->dev_ready =nfc_dev_ready;
++    	nand->select_chip = nfc_select_chip;
++    	nand->verify_buf = nfc_verify_buf;
++	nand->block_markbad = nfc_block_markbad;
++	nand->cmdfunc = nfc_cmdfunc;
++
++	/* hardware ECC */
++	nand->calculate_ecc = nfc_calculate_ecc; 
++	nand->enable_hwecc = nfc_enable_hwecc;  
++	nand->correct_data = nfc_correct_data;
++	nand->eccsize = 512;
++	nand->eccbytes = 3;
++	nand->eccmode = NAND_ECC_HW6_512;
++#ifdef NFC_NAND_SOFT_ECC_CORRECTION
++	/*
++	 * Fix iMX21 NFC bug: NFC fails to correct two single-bit errors if
++	 * they occur on consecutive pages, on data read accesses.
++	 *
++	 * NFC automatic ECC calculation is done during write
++	 * NFC ECC correction is done during read upon software control 
++	 */	
++	NFC_CONFIG1 &= ~(NFC_CONFIG1_ECC_EN);
++#else
++	NFC_CONFIG1 |= NFC_CONFIG1_ECC_EN;
++#endif
++	NFC_CONFIG1 |= NFC_CONFIG1_INT_MSK; /* disable interrupt */
++
++	/* NAND bus width determines access funtions used by upper layer */
++	if (FMCR & NF_16BIT_SEL) {
++		nand->options |= NAND_BUSWIDTH_16 | NAND_USE_FLASH_BBT;
++		nand->autooob = &nand_hw_eccoob_16;
++	} else {
++		nand->options |= NAND_USE_FLASH_BBT;
++		nand->autooob = &nand_hw_eccoob_8;
++	}
++
++	nand->bbt_td = &bbt_main_descr;
++	nand->bbt_md = &bbt_mirror_descr;
++	/* preset operation */
++	/* Unlock the internal RAM Buffer */
++	NFC_CONFIG = NFC_CONFIG_UNLOCKED;
++
++	/* Blocks to be unlocked */
++	NFC_UNLOCKSTART_BLKADDR = 0x0;
++	NFC_UNLOCKEND_BLKADDR = 0xFFFF;
++
++	/* Unlock Block Command for given address range */
++	NFC_WRPROT = NFC_WRPROT_UNLOCKBLK;
++
++	send_cmd(NAND_CMD_RESET);
++
++	return 0;
++}
++
++#endif
+--- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/serial.c	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/imx27/serial.c	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,314 @@
++/*
++ * (c) 2004 Sascha Hauer <sascha@saschahauer.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#include <common.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/clock.h>
++#include <malloc.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#ifdef CONFIG_IMX_SERIAL1
++#define UART_PHYS IMX_UART1_BASE
++#elif defined(CONFIG_IMX_SERIAL2)
++#define UART_PHYS IMX_UART2_BASE
++#elif defined(CONFIG_IMX_SERIAL3)
++#define UART_PHYS IMX_UART3_BASE
++#elif defined(CONFIG_IMX_SERIAL4)
++#define UART_PHYS IMX_UART4_BASE
++#elif defined(CONFIG_IMX_SERIAL5)
++#define UART_PHYS IMX_UART5_BASE
++#else
++#error "define CONFIG_IMX_SERIALx to use the i.mx27 UART driver"
++#endif
++
++#define URXD0(base) __REG( 0x0 +(base))  /* Receiver Register */
++#define URTX0(base) __REG( 0x40 +(base)) /* Transmitter Register */
++#define UCR1(base)  __REG( 0x80 +(base)) /* Control Register 1 */
++#define UCR2(base)  __REG( 0x84 +(base)) /* Control Register 2 */
++#define UCR3(base)  __REG( 0x88 +(base)) /* Control Register 3 */
++#define UCR4(base)  __REG( 0x8c +(base)) /* Control Register 4 */
++#define UFCR(base)  __REG( 0x90 +(base)) /* FIFO Control Register */
++#define USR1(base)  __REG( 0x94 +(base)) /* Status Register 1 */
++#define USR2(base)  __REG( 0x98 +(base)) /* Status Register 2 */
++#define UESC(base)  __REG( 0x9c +(base)) /* Escape Character Register */
++#define UTIM(base)  __REG( 0xa0 +(base)) /* Escape Timer Register */
++#define UBIR(base)  __REG( 0xa4 +(base)) /* BRM Incremental Register */
++#define UBMR(base)  __REG( 0xa8 +(base)) /* BRM Modulator Register */
++#define UBRC(base)  __REG( 0xac +(base)) /* Baud Rate Count Register */
++#ifdef CONFIG_IMX27
++#define ONEMS(base) __REG( 0xb0 +(base)) /* One Millisecond register (i.MX27) */
++#define UTS(base)   __REG( 0xb4 +(base)) /* UART Test Register */
++#endif
++#ifdef CONFIG_IMX1
++#define BIPR1(base) __REG( 0xb0 +(base)) /* Incremental Preset Register 1 */
++#define BIPR2(base) __REG( 0xb4 +(base)) /* Incremental Preset Register 2 */
++#define BIPR3(base) __REG( 0xb8 +(base)) /* Incremental Preset Register 3 */
++#define BIPR4(base) __REG( 0xbc +(base)) /* Incremental Preset Register 4 */
++#define BMPR1(base) __REG( 0xc0 +(base)) /* BRM Modulator Register 1 */
++#define BMPR2(base) __REG( 0xc4 +(base)) /* BRM Modulator Register 2 */
++#define BMPR3(base) __REG( 0xc8 +(base)) /* BRM Modulator Register 3 */
++#define BMPR4(base) __REG( 0xcc +(base)) /* BRM Modulator Register 4 */
++#define UTS(base)   __REG( 0xd0 +(base)) /* UART Test Register */
++#endif
++#ifdef CONFIG_IMX31
++# define ONEMS(base)	__REG( 0xb0 +(base)) /* One Millisecond register (i.MX27) */
++# define UTS(base)	__REG( 0xb4 +(base)) /* UART Test Register */
++#endif
++
++/* UART Control Register Bit Fields.*/
++#define  URXD_CHARRDY    (1<<15)
++#define  URXD_ERR        (1<<14)
++#define  URXD_OVRRUN     (1<<13)
++#define  URXD_FRMERR     (1<<12)
++#define  URXD_BRK        (1<<11)
++#define  URXD_PRERR      (1<<10)
++#define  UCR1_ADEN       (1<<15) /* Auto dectect interrupt */
++#define  UCR1_ADBR       (1<<14) /* Auto detect baud rate */
++#define  UCR1_TRDYEN     (1<<13) /* Transmitter ready interrupt enable */
++#define  UCR1_IDEN       (1<<12) /* Idle condition interrupt */
++#define  UCR1_RRDYEN     (1<<9)	 /* Recv ready interrupt enable */
++#define  UCR1_RDMAEN     (1<<8)	 /* Recv ready DMA enable */
++#define  UCR1_IREN       (1<<7)	 /* Infrared interface enable */
++#define  UCR1_TXMPTYEN   (1<<6)	 /* Transimitter empty interrupt enable */
++#define  UCR1_RTSDEN     (1<<5)	 /* RTS delta interrupt enable */
++#define  UCR1_SNDBRK     (1<<4)	 /* Send break */
++#define  UCR1_TDMAEN     (1<<3)	 /* Transmitter ready DMA enable */
++#define  UCR1_UARTCLKEN  (1<<2)	 /* UART clock enabled */
++#define  UCR1_DOZE       (1<<1)	 /* Doze */
++#define  UCR1_UARTEN     (1<<0)	 /* UART enabled */
++#define  UCR2_ESCI     	 (1<<15) /* Escape seq interrupt enable */
++#define  UCR2_IRTS  	 (1<<14) /* Ignore RTS pin */
++#define  UCR2_CTSC  	 (1<<13) /* CTS pin control */
++#define  UCR2_CTS        (1<<12) /* Clear to send */
++#define  UCR2_ESCEN      (1<<11) /* Escape enable */
++#define  UCR2_PREN       (1<<8)  /* Parity enable */
++#define  UCR2_PROE       (1<<7)  /* Parity odd/even */
++#define  UCR2_STPB       (1<<6)	 /* Stop */
++#define  UCR2_WS         (1<<5)	 /* Word size */
++#define  UCR2_RTSEN      (1<<4)	 /* Request to send interrupt enable */
++#define  UCR2_TXEN       (1<<2)	 /* Transmitter enabled */
++#define  UCR2_RXEN       (1<<1)	 /* Receiver enabled */
++#define  UCR2_SRST 	 (1<<0)	 /* SW reset */
++#define  UCR3_DTREN 	 (1<<13) /* DTR interrupt enable */
++#define  UCR3_PARERREN   (1<<12) /* Parity enable */
++#define  UCR3_FRAERREN   (1<<11) /* Frame error interrupt enable */
++#define  UCR3_DSR        (1<<10) /* Data set ready */
++#define  UCR3_DCD        (1<<9)  /* Data carrier detect */
++#define  UCR3_RI         (1<<8)  /* Ring indicator */
++#define  UCR3_TIMEOUTEN  (1<<7)  /* Timeout interrupt enable */
++#define  UCR3_RXDSEN	 (1<<6)  /* Receive status interrupt enable */
++#define  UCR3_AIRINTEN   (1<<5)  /* Async IR wake interrupt enable */
++#define  UCR3_AWAKEN	 (1<<4)  /* Async wake interrupt enable */
++#define  UCR3_REF25 	 (1<<3)  /* Ref freq 25 MHz (i.MXL / i.MX1) */
++#define  UCR3_REF30 	 (1<<2)  /* Ref Freq 30 MHz (i.MXL / i.MX1) */
++#define  UCR3_RXDMUXSEL  (1<<2)  /* RXD Muxed input select (i.MX27) */
++#define  UCR3_INVT  	 (1<<1)  /* Inverted Infrared transmission */
++#define  UCR3_BPEN  	 (1<<0)  /* Preset registers enable */
++#define  UCR4_CTSTL_32   (32<<10) /* CTS trigger level (32 chars) */
++#define  UCR4_INVR  	 (1<<9)  /* Inverted infrared reception */
++#define  UCR4_ENIRI 	 (1<<8)  /* Serial infrared interrupt enable */
++#define  UCR4_WKEN  	 (1<<7)  /* Wake interrupt enable */
++#define  UCR4_REF16 	 (1<<6)  /* Ref freq 16 MHz */
++#define  UCR4_IRSC  	 (1<<5)  /* IR special case */
++#define  UCR4_TCEN  	 (1<<3)  /* Transmit complete interrupt enable */
++#define  UCR4_BKEN  	 (1<<2)  /* Break condition interrupt enable */
++#define  UCR4_OREN  	 (1<<1)  /* Receiver overrun interrupt enable */
++#define  UCR4_DREN  	 (1<<0)  /* Recv data ready interrupt enable */
++#define  UFCR_RXTL_SHF   0       /* Receiver trigger level shift */
++#define  UFCR_RFDIV      (7<<7)  /* Reference freq divider mask */
++#define  UFCR_TXTL_SHF   10      /* Transmitter trigger level shift */
++#define  USR1_PARITYERR  (1<<15) /* PCONFIG_IMX_SERIAL1arity error interrupt flag */
++#define  USR1_RTSS  	 (1<<14) /* RTS pin status */
++#define  USR1_TRDY  	 (1<<13) /* Transmitter ready interrupt/dma flag */
++#define  USR1_RTSD  	 (1<<12) /* RTS delta */
++#define  USR1_ESCF  	 (1<<11) /* Escape seq interrupt flag */
++#define  USR1_FRAMERR    (1<<10) /* Frame error interrupt flag */
++#define  USR1_RRDY       (1<<9)	 /* Receiver ready interrupt/dma flag */
++#define  USR1_TIMEOUT    (1<<7)	 /* Receive timeout interrupt status */
++#define  USR1_RXDS  	 (1<<6)	 /* Receiver idle interrupt flag */
++#define  USR1_AIRINT	 (1<<5)	 /* Async IR wake interrupt flag */
++#define  USR1_AWAKE 	 (1<<4)	 /* Aysnc wake interrupt flag */
++#define  USR2_ADET  	 (1<<15) /* Auto baud rate detect complete */
++#define  USR2_TXFE  	 (1<<14) /* Transmit buffer FIFO empty */
++#define  USR2_DTRF  	 (1<<13) /* DTR edge interrupt flag */
++#define  USR2_IDLE  	 (1<<12) /* Idle condition */
++#define  USR2_IRINT 	 (1<<8)	 /* Serial infrared interrupt flag */
++#define  USR2_WAKE  	 (1<<7)	 /* Wake */
++#define  USR2_RTSF  	 (1<<4)	 /* RTS edge interrupt flag */
++#define  USR2_TXDC  	 (1<<3)	 /* Transmitter complete */
++#define  USR2_BRCD  	 (1<<2)	 /* Break condition */
++#define  USR2_ORE        (1<<1)	 /* Overrun error */
++#define  USR2_RDR        (1<<0)	 /* Recv data ready */
++#define  UTS_FRCPERR	 (1<<13) /* Force parity error */
++#define  UTS_LOOP        (1<<12) /* Loop tx and rx */
++#define  UTS_TXEMPTY	 (1<<6)	 /* TxFIFO empty */
++#define  UTS_RXEMPTY	 (1<<5)	 /* RxFIFO empty */
++#define  UTS_TXFULL 	 (1<<4)	 /* TxFIFO full */
++#define  UTS_RXFULL 	 (1<<3)	 /* RxFIFO full */
++#define  UTS_SOFTRST	 (1<<0)	 /* Software reset */
++
++/*
++ * create default values for different platforms
++ */
++#ifdef CONFIG_IMX1
++# define	UCR1_VAL (UCR1_UARTCLKEN)
++# define	UCR3_VAL 0
++# define	UCR4_VAL (UCR4_CTSTL_32 | UCR4_REF16)
++#endif
++#ifdef CONFIG_IMX27
++# define	UCR1_VAL (UCR1_UARTCLKEN)
++# define	UCR3_VAL (0x700 | UCR3_RXDMUXSEL)
++# define	UCR4_VAL UCR4_CTSTL_32
++#endif
++#ifdef CONFIG_IMX31
++# define	UCR1_VAL (0)
++# define	UCR3_VAL (0x700 | UCR3_RXDMUXSEL)
++# define	UCR4_VAL UCR4_CTSTL_32
++#endif
++
++static int imx_serial_reffreq(ulong base)
++{
++	ulong rfdiv;
++
++	rfdiv = (UFCR(base) >> 7) & 7;
++	rfdiv = rfdiv < 6 ? 6 - rfdiv : 7;
++
++	return imx_get_perclk1() / rfdiv;
++}
++
++/*
++ * Initialise the serial port with the given baudrate. The settings
++ * are always 8 data bits, no parity, 1 stop bit, no start bits.
++ *
++ */
++int serial_init(void)
++{
++/*	struct device_d *dev = cdev->dev;
++	ulong base = dev->map_base;
++*/
++
++	UCR1(UART_PHYS) = UCR1_VAL;
++	UCR2(UART_PHYS) = UCR2_WS | UCR2_IRTS;
++	UCR3(UART_PHYS) = UCR3_VAL;
++	UCR4(UART_PHYS) = UCR4_VAL;
++	UESC(UART_PHYS) = 0x0000002B;
++	UTIM(UART_PHYS) = 0;
++	UBIR(UART_PHYS) = 0;
++	UBMR(UART_PHYS) = 0;
++	UTS(UART_PHYS)  = 0;
++
++	/* Configure FIFOs */
++	UFCR(UART_PHYS) = 0xa81;
++
++#if defined(CONFIG_IMX27) || defined(CONFIG_IMX31)
++	ONEMS(UART_PHYS) = imx_serial_reffreq(UART_PHYS) / 1000;
++#endif
++
++	/* Set the numerator value minus one of the BRM ratio */
++	UBIR(UART_PHYS) = (gd->baudrate / 100) - 1;
++	/* Set the denominator value minus one of the BRM ratio    */
++	UBMR(UART_PHYS) = ((imx_serial_reffreq(UART_PHYS) / 1600) - 1);
++
++	/* Enable FIFOs */
++	UCR2(UART_PHYS) |= UCR2_SRST | UCR2_RXEN | UCR2_TXEN;
++
++  	/* Clear status flags */
++	USR2(UART_PHYS) |= USR2_ADET  |
++	          USR2_DTRF  |
++	          USR2_IDLE  |
++	          USR2_IRINT |
++	          USR2_WAKE  |
++	          USR2_RTSF  |
++	          USR2_BRCD  |
++	          USR2_ORE   |
++	          USR2_RDR;
++
++  	/* Clear status flags */
++	USR1(UART_PHYS) |= USR1_PARITYERR |
++	          USR1_RTSD      |
++	          USR1_ESCF      |
++	          USR1_FRAMERR   |
++	          USR1_AIRINT    |
++	          USR1_AWAKE;
++
++	UCR1(UART_PHYS) |= UCR1_UARTEN;
++
++	return 0;
++}
++
++void serial_putc(const char c)
++{
++	/* Wait for Tx FIFO not full */
++(*((volatile u32 *)(0x10008004))) = 0x0ffff;
++	while (UTS(UART_PHYS) & UTS_TXFULL);
++
++        URTX0(UART_PHYS) = c;
++(*((volatile u32 *)(0x10008004))) = 0xffffffff;
++	/* If \n, also do \r */
++	if (c == '\n')
++		serial_putc ('\r');
++}
++
++int serial_tstc(void)
++{
++	/* If receive fifo is empty, return false */
++	if (UTS(UART_PHYS) & UTS_RXEMPTY)
++		return 0;
++	return 1;
++}
++
++int serial_getc(void)
++{
++	unsigned char ch;
++
++	while (UTS(UART_PHYS) & UTS_RXEMPTY);
++
++	ch = URXD0(UART_PHYS);
++
++	return ch;
++}
++
++void serial_puts (const char *s)
++{
++       while (*s) {
++               serial_putc (*s++);
++       }
++}
++
++void serial_setbrg(void)
++{
++	ulong ucr1 = UCR1(UART_PHYS);
++
++	/* disable UART */
++	UCR1(UART_PHYS) &= ~UCR1_UARTEN;
++
++        if (!gd->baudrate)
++               gd->baudrate = CONFIG_BAUDRATE;
++
++	/* Set the numerator value minus one of the BRM ratio */
++	UBIR(UART_PHYS) = (gd->baudrate / 100) - 1;
++	/* Set the denominator value minus one of the BRM ratio    */
++	UBMR(UART_PHYS) = ((imx_serial_reffreq(UART_PHYS) / 1600) - 1);
++
++	UCR1(UART_PHYS) = ucr1;
++
++	return;
++}
++
+--- ref/u-boot-1.3.4/examples/Makefile	2009-01-07 18:28:35.000000000 +0100
++++ u-boot-1.3.4/examples/Makefile	2008-12-29 16:27:49.000000000 +0100
+@@ -34,6 +34,8 @@ ifeq ($(BOARD),omap2420h4)
+ LOAD_ADDR = 0x80300000
+ else ifeq ($(SOC),imx)
+ LOAD_ADDR = 0x08000000
++else ifeq ($(SOC),imx27)
++LOAD_ADDR = 0xA0000000
+ else
+ LOAD_ADDR = 0xc100000
+ endif
+--- ref/u-boot-1.3.4/include/asm-arm/arch-imx27/clock.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/include/asm-arm/arch-imx27/clock.h	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,27 @@
++
++#ifndef __ASM_ARCH_CLOCK_H
++#define __ASM_ARCH_CLOCK_H
++unsigned int imx_decode_pll(unsigned int pll, unsigned int f_ref);
++
++ulong imx_get_mpllclk(void);
++
++#ifdef CONFIG_IMX27
++ulong imx_get_armclk(void);
++#endif
++#ifdef CONFIG_IMX1
++static inline ulong imx_get_armclk(void)
++{
++	return imx_get_mpllclk();
++}
++#endif
++
++ulong imx_get_spllclk(void);
++ulong imx_get_fclk(void);
++ulong imx_get_hclk(void);
++ulong imx_get_bclk(void);
++ulong imx_get_perclk1(void);
++ulong imx_get_perclk2(void);
++ulong imx_get_perclk3(void);
++ulong imx_get_ahbclk(void);
++
++#endif /* __ASM_ARCH_CLOCK_H */
+--- ref/u-boot-1.3.4/include/asm-arm/arch-imx27/imx-regs.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/include/asm-arm/arch-imx27/imx-regs.h	2009-01-07 16:37:43.000000000 +0100
+@@ -0,0 +1,482 @@
++/*
++ *
++ * (c) 2007 Pengutronix, Sascha Hauer <s.hauer@pengutronix.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef _IMX_REGS_H
++#define _IMX_REGS_H
++
++/* ------------------------------------------------------------------------
++ *  Motorola IMX system registers
++ * ------------------------------------------------------------------------
++ */
++
++# ifndef __ASSEMBLY__
++# define __REG(x)	(*((volatile u32 *)(x)))
++# define __REG16(x)     (*(volatile u16 *)(x))
++# define __REG2(x,y)    (*(volatile u32 *)((u32)&__REG(x) + (y)))
++
++extern void imx_gpio_mode (int gpio_mode);
++
++# else
++#  define __REG(x) (x)
++#  define __REG16(x) (x)
++#  define __REG2(x,y) ((x)+(y))
++#endif
++
++#define IMX_IO_BASE		0x10000000
++
++#define IMX_AIPI1_BASE             (0x00000 + IMX_IO_BASE)
++#define IMX_WDT_BASE               (0x02000 + IMX_IO_BASE)
++#define IMX_TIM1_BASE              (0x03000 + IMX_IO_BASE)
++#define IMX_TIM2_BASE              (0x04000 + IMX_IO_BASE)
++#define IMX_TIM3_BASE              (0x05000 + IMX_IO_BASE)
++#define IMX_UART1_BASE             (0x0a000 + IMX_IO_BASE)
++#define IMX_UART2_BASE             (0x0b000 + IMX_IO_BASE)
++#define IMX_UART3_BASE             (0x0c000 + IMX_IO_BASE)
++#define IMX_UART4_BASE             (0x0d000 + IMX_IO_BASE)
++#define IMX_I2C1_BASE              (0x12000 + IMX_IO_BASE)
++#define IMX_GPIO_BASE              (0x15000 + IMX_IO_BASE)
++#define IMX_TIM4_BASE              (0x19000 + IMX_IO_BASE)
++#define IMX_TIM5_BASE              (0x1a000 + IMX_IO_BASE)
++#define IMX_UART5_BASE             (0x1b000 + IMX_IO_BASE)
++#define IMX_UART6_BASE             (0x1c000 + IMX_IO_BASE)
++#define IMX_I2C2_BASE              (0x1D000 + IMX_IO_BASE)
++#define IMX_TIM6_BASE              (0x1f000 + IMX_IO_BASE)
++#define IMX_AIPI2_BASE             (0x20000 + IMX_IO_BASE)
++#define IMX_PLL_BASE               (0x27000 + IMX_IO_BASE)
++#define IMX_SYSTEM_CTL_BASE        (0x27800 + IMX_IO_BASE)
++#define IMX_IIM_BASE               (0x28000 + IMX_IO_BASE)
++#define IMX_FEC_BASE               (0x2b000 + IMX_IO_BASE)
++
++#define IMX_ESD_BASE               (0xD8001000)
++#define IMX_WEIM_BASE              (0xD8002000)
++
++
++/* AIPI */
++#define AIPI1_PSR0	__REG(IMX_AIPI1_BASE + 0x00)
++#define AIPI1_PSR1	__REG(IMX_AIPI1_BASE + 0x04)
++#define AIPI2_PSR0	__REG(IMX_AIPI2_BASE + 0x00)
++#define AIPI2_PSR1	__REG(IMX_AIPI2_BASE + 0x04)
++
++/* System Control */
++#define FMCR	__REG(IMX_SYSTEM_CTL_BASE + 0x14)
++#define GPCR	__REG(IMX_SYSTEM_CTL_BASE + 0x18)
++#define WBCR	__REG(IMX_SYSTEM_CTL_BASE + 0x1C)
++#define DSCR1	__REG(IMX_SYSTEM_CTL_BASE + 0x20)
++#define DSCR2	__REG(IMX_SYSTEM_CTL_BASE + 0x24)
++#define DSCR3	__REG(IMX_SYSTEM_CTL_BASE + 0x28)
++#define DSCR4	__REG(IMX_SYSTEM_CTL_BASE + 0x2C)
++#define DSCR5	__REG(IMX_SYSTEM_CTL_BASE + 0x30)
++#define DSCR6	__REG(IMX_SYSTEM_CTL_BASE + 0x34)
++#define DSCR7	__REG(IMX_SYSTEM_CTL_BASE + 0x38)
++#define DSCR8	__REG(IMX_SYSTEM_CTL_BASE + 0x3C)
++#define DSCR9	__REG(IMX_SYSTEM_CTL_BASE + 0x40)
++#define DSCR10	__REG(IMX_SYSTEM_CTL_BASE + 0x44)
++#define DSCR11	__REG(IMX_SYSTEM_CTL_BASE + 0x48)
++#define DSCR12	__REG(IMX_SYSTEM_CTL_BASE + 0x4C)
++#define DSCR13	__REG(IMX_SYSTEM_CTL_BASE + 0x50)
++#define PSCR	__REG(IMX_SYSTEM_CTL_BASE + 0x54)
++#define PMCR	__REG(IMX_SYSTEM_CTL_BASE + 0x58)
++#define DCVR0	__REG(IMX_SYSTEM_CTL_BASE + 0x60)
++#define DCVR1	__REG(IMX_SYSTEM_CTL_BASE + 0x64)
++#define DCVR2	__REG(IMX_SYSTEM_CTL_BASE + 0x68)
++#define DCVR3	__REG(IMX_SYSTEM_CTL_BASE + 0x6C)
++
++/* FMCR System Control bit definition*/
++#define UART4_RXD_CTL 	(1<<25)		
++#define UART4_RTS_CTL 	(1<<24)		
++#define KP_COL6_CTL 	(1<<18)		
++#define KP_ROW7_CTL 	(1<<17)		
++#define KP_ROW6_CTL 	(1<<16)		
++#define PC_WAIT_B_CTL 	(1<<14)		 
++#define PC_READY_CTL 	(1<<13)		
++#define PC_VS1_CTL 	    (1<<12)		
++#define PC_VS2_CTL 	    (1<<11)		
++#define PC_BVD1_CTL 	(1<<10)		
++#define PC_BVD2_CTL 	(1<<9)		
++#define IOS16_CTL 	    (1<<8)		
++#define NF_FMS 	        (1<<5)		
++#define NF_16BIT_SEL 	(1<<4)		
++#define SLCDC_SEL 	    (1<<2)		
++#define SDCS1_SEL 	    (1<<1)		
++#define SDCS0_SEL 	    (1<<0)	
++
++
++/* Chip Select Registers */
++#define CS0U __REG(IMX_WEIM_BASE + 0x00) /* Chip Select 0 Upper Register    */
++#define CS0L __REG(IMX_WEIM_BASE + 0x04) /* Chip Select 0 Lower Register    */
++#define CS0A __REG(IMX_WEIM_BASE + 0x08) /* Chip Select 0 Addition Register */
++#define CS1U __REG(IMX_WEIM_BASE + 0x10) /* Chip Select 1 Upper Register    */
++#define CS1L __REG(IMX_WEIM_BASE + 0x14) /* Chip Select 1 Lower Register    */
++#define CS1A __REG(IMX_WEIM_BASE + 0x18) /* Chip Select 1 Addition Register */
++#define CS2U __REG(IMX_WEIM_BASE + 0x20) /* Chip Select 2 Upper Register    */
++#define CS2L __REG(IMX_WEIM_BASE + 0x24) /* Chip Select 2 Lower Register    */
++#define CS2A __REG(IMX_WEIM_BASE + 0x28) /* Chip Select 2 Addition Register */
++#define CS3U __REG(IMX_WEIM_BASE + 0x30) /* Chip Select 3 Upper Register    */
++#define CS3L __REG(IMX_WEIM_BASE + 0x34) /* Chip Select 3 Lower Register    */
++#define CS3A __REG(IMX_WEIM_BASE + 0x38) /* Chip Select 3 Addition Register */
++#define CS4U __REG(IMX_WEIM_BASE + 0x40) /* Chip Select 4 Upper Register    */
++#define CS4L __REG(IMX_WEIM_BASE + 0x44) /* Chip Select 4 Lower Register    */
++#define CS4A __REG(IMX_WEIM_BASE + 0x48) /* Chip Select 4 Addition Register */
++#define CS5U __REG(IMX_WEIM_BASE + 0x50) /* Chip Select 5 Upper Register    */
++#define CS5L __REG(IMX_WEIM_BASE + 0x54) /* Chip Select 5 Lower Register    */
++#define CS5A __REG(IMX_WEIM_BASE + 0x58) /* Chip Select 5 Addition Register */
++#define EIM  __REG(IMX_WEIM_BASE + 0x60) /* WEIM Configuration Register     */
++
++/* SDRAM Controller registers */
++#define ESDCTL0 __REG(IMX_ESD_BASE + 0x00) /* Enhanced SDRAM Control Register 0       */
++#define ESDCFG0 __REG(IMX_ESD_BASE + 0x04) /* Enhanced SDRAM Configuration Register 0 */
++#define ESDCTL1 __REG(IMX_ESD_BASE + 0x08) /* Enhanced SDRAM Control Register 1       */
++#define ESDCFG1 __REG(IMX_ESD_BASE + 0x0C) /* Enhanced SDRAM Configuration Register 1 */
++#define ESDMISC __REG(IMX_ESD_BASE + 0x10) /* Enhanced SDRAM Miscellanious Register   */
++
++/* Watchdog Registers*/
++#define WCR  __REG16(IMX_WDT_BASE + 0x00) /* Watchdog Control Register */
++#define WSR  __REG16(IMX_WDT_BASE + 0x04) /* Watchdog Service Register */
++#define WSTR __REG16(IMX_WDT_BASE + 0x08) /* Watchdog Status Register  */
++
++/* important definition of some bits of WCR */
++#define WCR_WDE 0x04
++
++/* PLL registers */
++#define CSCR		__REG(IMX_PLL_BASE + 0x00) /* Clock Source Control Register       */
++#define MPCTL0		__REG(IMX_PLL_BASE + 0x04) /* MCU PLL Control Register 0          */
++#define MPCTL1		__REG(IMX_PLL_BASE + 0x08) /* MCU PLL Control Register 1          */
++#define SPCTL0		__REG(IMX_PLL_BASE + 0x0c) /* System PLL Control Register 0       */
++#define SPCTL1		__REG(IMX_PLL_BASE + 0x10) /* System PLL Control Register 1       */
++#define OSC26MCTL	__REG(IMX_PLL_BASE + 0x14) /* Oscillator 26M Register             */
++#define PCDR0		__REG(IMX_PLL_BASE + 0x18) /* Peripheral Clock Divider Register 0 */
++#define PCDR1		__REG(IMX_PLL_BASE + 0x1c) /* Peripheral Clock Divider Register 1 */
++#define PCCR0		__REG(IMX_PLL_BASE + 0x20) /* Peripheral Clock Control Register 0 */
++#define PCCR1		__REG(IMX_PLL_BASE + 0x24) /* Peripheral Clock Control Register 1 */
++#define CCSR		__REG(IMX_PLL_BASE + 0x28) /* Clock Control Status Register       */
++
++#define CSCR_MPEN		(1 << 0)
++#define CSCR_SPEN		(1 << 1)
++#define CSCR_FPM_EN		(1 << 2)
++#define CSCR_OSC26M_DIS		(1 << 3)
++#define CSCR_OSC26M_DIV1P5	(1 << 4)
++#define CSCR_AHB_DIV
++#define CSCR_ARM_DIV
++#define CSCR_ARM_SRC_MPLL	(1 << 15)
++#define CSCR_MCU_SEL		(1 << 16)
++#define CSCR_SP_SEL		(1 << 17)
++#define CSCR_MPLL_RESTART	(1 << 18)
++#define CSCR_SPLL_RESTART	(1 << 19)
++#define CSCR_MSHC_SEL		(1 << 20)
++#define CSCR_H264_SEL		(1 << 21)
++#define CSCR_SSI1_SEL		(1 << 22)
++#define CSCR_SSI2_SEL		(1 << 23)
++#define CSCR_SD_CNT
++#define CSCR_USB_DIV
++#define CSCR_UPDATE_DIS		(1 << 31)
++
++#define MPCTL1_BRMO		(1 << 6)
++#define MPCTL1_LF		(1 << 15)
++
++#define PCCR0_SSI2_EN	(1 << 0)
++#define PCCR0_SSI1_EN	(1 << 1)
++#define PCCR0_SLCDC_EN	(1 << 2)
++#define PCCR0_SDHC3_EN	(1 << 3)
++#define PCCR0_SDHC2_EN	(1 << 4)
++#define PCCR0_SDHC1_EN	(1 << 5)
++#define PCCR0_SDC_EN	(1 << 6)
++#define PCCR0_SAHARA_EN	(1 << 7)
++#define PCCR0_RTIC_EN	(1 << 8)
++#define PCCR0_RTC_EN	(1 << 9)
++#define PCCR0_PWM_EN	(1 << 11)
++#define PCCR0_OWIRE_EN	(1 << 12)
++#define PCCR0_MSHC_EN	(1 << 13)
++#define PCCR0_LCDC_EN	(1 << 14)
++#define PCCR0_KPP_EN	(1 << 15)
++#define PCCR0_IIM_EN	(1 << 16)
++#define PCCR0_I2C2_EN	(1 << 17)
++#define PCCR0_I2C1_EN	(1 << 18)
++#define PCCR0_GPT6_EN	(1 << 19)
++#define PCCR0_GPT5_EN	(1 << 20)
++#define PCCR0_GPT4_EN	(1 << 21)
++#define PCCR0_GPT3_EN	(1 << 22)
++#define PCCR0_GPT2_EN	(1 << 23)
++#define PCCR0_GPT1_EN	(1 << 24)
++#define PCCR0_GPIO_EN	(1 << 25)
++#define PCCR0_FEC_EN	(1 << 26)
++#define PCCR0_EMMA_EN	(1 << 27)
++#define PCCR0_DMA_EN	(1 << 28)
++#define PCCR0_CSPI3_EN	(1 << 29)
++#define PCCR0_CSPI2_EN	(1 << 30)
++#define PCCR0_CSPI1_EN	(1 << 31)
++
++#define PCCR1_MSHC_BAUDEN	(1 << 2)
++#define PCCR1_NFC_BAUDEN	(1 << 3)
++#define PCCR1_SSI2_BAUDEN	(1 << 4)
++#define PCCR1_SSI1_BAUDEN	(1 << 5)
++#define PCCR1_H264_BAUDEN	(1 << 6)
++#define PCCR1_PERCLK4_EN	(1 << 7)
++#define PCCR1_PERCLK3_EN	(1 << 8)
++#define PCCR1_PERCLK2_EN	(1 << 9)
++#define PCCR1_PERCLK1_EN	(1 << 10)
++#define PCCR1_HCLK_USB		(1 << 11)
++#define PCCR1_HCLK_SLCDC	(1 << 12)
++#define PCCR1_HCLK_SAHARA	(1 << 13)
++#define PCCR1_HCLK_RTIC		(1 << 14)
++#define PCCR1_HCLK_LCDC		(1 << 15)
++#define PCCR1_HCLK_H264		(1 << 16)
++#define PCCR1_HCLK_FEC		(1 << 17)
++#define PCCR1_HCLK_EMMA		(1 << 18)
++#define PCCR1_HCLK_EMI		(1 << 19)
++#define PCCR1_HCLK_DMA		(1 << 20)
++#define PCCR1_HCLK_CSI		(1 << 21)
++#define PCCR1_HCLK_BROM		(1 << 22)
++#define PCCR1_HCLK_ATA		(1 << 23)
++#define PCCR1_WDT_EN		(1 << 24)
++#define PCCR1_USB_EN		(1 << 25)
++#define PCCR1_UART6_EN		(1 << 26)
++#define PCCR1_UART5_EN		(1 << 27)
++#define PCCR1_UART4_EN		(1 << 28)
++#define PCCR1_UART3_EN		(1 << 29)
++#define PCCR1_UART2_EN		(1 << 30)
++#define PCCR1_UART1_EN		(1 << 31)
++
++/* SDRAM Controller registers bitfields */
++#define ESDCTL_PRCT(x)		(((x) & 3f) << 0)
++#define ESDCTL_BL		(1 << 7)
++#define ESDCTL_FP		(1 << 8)
++#define ESDCTL_PWDT(x)		(((x) & 3) << 10)
++#define ESDCTL_SREFR(x)		(((x) & 7) << 13)
++#define ESDCTL_DSIZ_16_UPPER	(0 << 16)
++#define ESDCTL_DSIZ_16_LOWER	(0 << 16)
++#define ESDCTL_DSIZ_32		(0 << 16)
++#define ESDCTL_COL8		(0 << 20)
++#define ESDCTL_COL9		(1 << 20)
++#define ESDCTL_COL10		(2 << 20)
++#define ESDCTL_ROW11		(0 << 24)
++#define ESDCTL_ROW12		(1 << 24)
++#define ESDCTL_ROW13		(2 << 24)
++#define ESDCTL_ROW14		(3 << 24)
++#define ESDCTL_ROW15		(4 << 24)
++#define ESDCTL_SP		(1 << 27)
++#define ESDCTL_SMODE_NORMAL	(0 << 28)
++#define ESDCTL_SMODE_PRECHAGRE	(1 << 28)
++#define ESDCTL_SMODE_AUTO_REF	(2 << 28)
++#define ESDCTL_SMODE_LOAD_MODE	(3 << 28)
++#define ESDCTL_SMODE_MAN_REF	(4 << 28)
++#define ESDCTL_SDE		(1 << 31)
++
++#define ESDCFG_TRC(x)		(((x) & 0xf) << 0)
++#define ESDCFG_TRCD(x)		(((x) & 0x7) << 4)
++#define ESDCFG_TCAS(x)		(((x) & 0x3) << 8)
++#define ESDCFG_TRRD(x)		(((x) & 0x3) << 10)
++#define ESDCFG_TRAS(x)		(((x) & 0x7) << 12)
++#define ESDCFG_TWR		(1 << 15)
++#define ESDCFG_TMRD(x)		(((x) & 0x3) << 16)
++#define ESDCFG_TRP(x)		(((x) & 0x3) << 18)
++#define ESDCFG_TWTR		(1 << 20)
++#define ESDCFG_TXP(x)		(((x) & 0x3) << 21)
++
++#define ESDMISC_RST		(1 << 1)
++#define ESDMISC_MDDREN		(1 << 2)
++#define ESDMISC_MDDR_DL_RST	(1 << 3)
++#define ESDMISC_MDDR_MDIS	(1 << 4)
++#define ESDMISC_LHD		(1 << 5)
++#define ESDMISC_MA10_SHARE	(1 << 6)
++#define ESDMISC_SDRAM_RDY	(1 << 31)
++
++#define PC5_PF_I2C2_DATA	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 5)
++#define PC6_PF_I2C2_CLK		(GPIO_PORTC | GPIO_OUT | GPIO_PF | 6)
++#define PC7_PF_USBOTG_DATA5	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 7)
++#define PC8_PF_USBOTG_DATA6	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 8)
++#define PC9_PF_USBOTG_DATA0	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 9)
++#define PC10_PF_USBOTG_DATA2	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 10)
++#define PC11_PF_USBOTG_DATA1	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 11)
++#define PC12_PF_USBOTG_DATA4	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 12)
++#define PC13_PF_USBOTG_DATA3	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 13)
++
++#define PD0_AIN_FEC_TXD0	(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 0)
++#define PD1_AIN_FEC_TXD1	(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 1)
++#define PD2_AIN_FEC_TXD2	(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 2)
++#define PD3_AIN_FEC_TXD3	(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 3)
++#define PD4_AOUT_FEC_RX_ER	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 4)
++#define PD5_AOUT_FEC_RXD1	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 5)
++#define PD6_AOUT_FEC_RXD2	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 6)
++#define PD7_AOUT_FEC_RXD3	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 7)
++#define PD8_AF_FEC_MDIO		(GPIO_PORTD | GPIO_IN | GPIO_AF | 8)
++#define PD9_AIN_FEC_MDC		(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 9)
++#define PD10_AOUT_FEC_CRS	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 10)
++#define PD11_AOUT_FEC_TX_CLK	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 11)
++#define PD12_AOUT_FEC_RXD0	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 12)
++#define PD13_AOUT_FEC_RX_DV	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 13)
++#define PD14_AOUT_FEC_CLR	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 14)
++#define PD15_AOUT_FEC_COL	(GPIO_PORTD | GPIO_IN | GPIO_AOUT | 15)
++#define PD16_AIN_FEC_TX_ER	(GPIO_PORTD | GPIO_OUT | GPIO_AIN | 16)
++#define PF23_AIN_FEC_TX_EN	(GPIO_PORTF | GPIO_OUT | GPIO_AIN | 23)
++
++#define PE0_PF_USBOTG_NXT	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 0)
++#define PE1_PF_USBOTG_STP	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 1)
++#define PE2_PF_USBOTG_DIR	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 2)
++#define PE3_PF_UART2_CTS	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 3)
++#define PE4_PF_UART2_RTS	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 4)
++#define PE6_PF_UART2_TXD	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 6)
++#define PE7_PF_UART2_RXD	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 7)
++#define PE8_PF_UART3_TXD	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 8)
++#define PE9_PF_UART3_RXD	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 9)
++#define PE10_PF_UART3_CTS	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 10)
++#define PE11_PF_UART3_RTS	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 11)
++#define PE12_PF_UART1_TXD	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 12)
++#define PE13_PF_UART1_RXD	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 13)
++#define PE14_PF_UART1_CTS	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 14)
++#define PE15_PF_UART1_RTS	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 15)
++#define PD17_PF_I2C_DATA	(GPIO_PORTD | GPIO_OUT | GPIO_PF | 17)
++#define PD18_PF_I2C_CLK		(GPIO_PORTD | GPIO_OUT | GPIO_PF | 18)
++#define PE24_PF_USBOTG_CLK	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 24)
++#define PE25_PF_USBOTG_DATA7	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 25)
++
++/*
++ * Definitions for the clocksource driver
++ */
++/* Part 1: Registers */
++# define GPT_TCTL   0x00
++# define GPT_TPRER  0x04
++# define GPT_TCMP   0x08
++# define GPT_TCR    0x0c
++# define GPT_TCN    0x10
++# define GPT_TSTAT  0x14
++
++/* Part 2: Bitfields */
++#define TCTL_SWR       (1<<15) /* Software reset */
++#define TCTL_FRR       (1<<8)  /* Freerun / restart */
++#define TCTL_CAP       (3<<6)  /* Capture Edge */
++#define TCTL_OM        (1<<5)  /* output mode */
++#define TCTL_IRQEN     (1<<4)  /* interrupt enable */
++#define TCTL_CLKSOURCE (1)     /* Clock source bit position */
++#define TCTL_TEN       (1)     /* Timer enable */
++#define TPRER_PRES     (0xff)  /* Prescale */
++#define TSTAT_CAPT     (1<<1)  /* Capture event */
++#define TSTAT_COMP     (1)     /* Compare event */
++
++/*
++ *  GPIO Module and I/O Multiplexer
++ *  x = 0..3 for reg_A, reg_B, reg_C, reg_D
++ *
++ *  i.MX1 and i.MXL: 0 <= x <= 3
++ *  i.MX27         : 0 <= x <= 5
++ */
++#define PORTA 0
++#define PORTB 1
++#define PORTC 2
++#define PORTD 3
++#define PORTE 4
++#define PORTF 5
++
++#define DDIR(x)    __REG2(IMX_GPIO_BASE + 0x00, ((x) & 7) << 8)
++#define OCR1(x)    __REG2(IMX_GPIO_BASE + 0x04, ((x) & 7) << 8)
++#define OCR2(x)    __REG2(IMX_GPIO_BASE + 0x08, ((x) & 7) << 8)
++#define ICONFA1(x) __REG2(IMX_GPIO_BASE + 0x0c, ((x) & 7) << 8)
++#define ICONFA2(x) __REG2(IMX_GPIO_BASE + 0x10, ((x) & 7) << 8)
++#define ICONFB1(x) __REG2(IMX_GPIO_BASE + 0x14, ((x) & 7) << 8)
++#define ICONFB2(x) __REG2(IMX_GPIO_BASE + 0x18, ((x) & 7) << 8)
++#define DR(x)      __REG2(IMX_GPIO_BASE + 0x1c, ((x) & 7) << 8)
++#define GIUS(x)    __REG2(IMX_GPIO_BASE + 0x20, ((x) & 7) << 8)
++#define SSR(x)     __REG2(IMX_GPIO_BASE + 0x24, ((x) & 7) << 8)
++#define ICR1(x)    __REG2(IMX_GPIO_BASE + 0x28, ((x) & 7) << 8)
++#define ICR2(x)    __REG2(IMX_GPIO_BASE + 0x2c, ((x) & 7) << 8)
++#define IMR(x)     __REG2(IMX_GPIO_BASE + 0x30, ((x) & 7) << 8)
++#define ISR(x)     __REG2(IMX_GPIO_BASE + 0x34, ((x) & 7) << 8)
++#define GPR(x)     __REG2(IMX_GPIO_BASE + 0x38, ((x) & 7) << 8)
++#define SWR(x)     __REG2(IMX_GPIO_BASE + 0x3c, ((x) & 7) << 8)
++#define PUEN(x)    __REG2(IMX_GPIO_BASE + 0x40, ((x) & 7) << 8)
++
++#define GPIO_PIN_MASK 0x1f
++
++#define GPIO_PORT_SHIFT 5
++#define GPIO_PORT_MASK (0x7 << GPIO_PORT_SHIFT)
++
++#define GPIO_PORTA (PORTA << GPIO_PORT_SHIFT)
++#define GPIO_PORTB (PORTB << GPIO_PORT_SHIFT)
++#define GPIO_PORTC (PORTC << GPIO_PORT_SHIFT)
++#define GPIO_PORTD (PORTD << GPIO_PORT_SHIFT)
++#define GPIO_PORTE (PORTE << GPIO_PORT_SHIFT)
++#define GPIO_PORTF (PORTF << GPIO_PORT_SHIFT)
++
++#define GPIO_OUT   (1 << 8)
++#define GPIO_IN    (0 << 8)
++#define GPIO_PUEN  (1 << 9)
++
++#define GPIO_PF    (1 << 10)
++#define GPIO_AF    (1 << 11)
++
++#define GPIO_OCR_SHIFT 12
++#define GPIO_OCR_MASK (3 << GPIO_OCR_SHIFT)
++#define GPIO_AIN   (0 << GPIO_OCR_SHIFT)
++#define GPIO_BIN   (1 << GPIO_OCR_SHIFT)
++#define GPIO_CIN   (2 << GPIO_OCR_SHIFT)
++#define GPIO_GPIO  (3 << GPIO_OCR_SHIFT)
++
++#define GPIO_AOUT_SHIFT 14
++#define GPIO_AOUT_MASK (3 << GPIO_AOUT_SHIFT)
++#define GPIO_AOUT     (0 << GPIO_AOUT_SHIFT)
++#define GPIO_AOUT_ISR (1 << GPIO_AOUT_SHIFT)
++#define GPIO_AOUT_0   (2 << GPIO_AOUT_SHIFT)
++#define GPIO_AOUT_1   (3 << GPIO_AOUT_SHIFT)
++
++#define GPIO_BOUT_SHIFT 16
++#define GPIO_BOUT_MASK (3 << GPIO_BOUT_SHIFT)
++#define GPIO_BOUT      (0 << GPIO_BOUT_SHIFT)
++#define GPIO_BOUT_ISR  (1 << GPIO_BOUT_SHIFT)
++#define GPIO_BOUT_0    (2 << GPIO_BOUT_SHIFT)
++#define GPIO_BOUT_1    (3 << GPIO_BOUT_SHIFT)
++
++/* IIM Control Registers */
++#define IIM_STAT	__REG(IMX_IIM_BASE + 0x00)
++#define IIM_STAT_BUSY	(1 << 7)
++#define IIM_STAT_PRGD	(1 << 1)
++#define IIM_STAT_SNSD	(1 << 0)
++#define IIM_STATM	__REG(IMX_IIM_BASE + 0x04)
++#define IIM_ERR		__REG(IMX_IIM_BASE + 0x08)
++#define IIM_ERR_PRGE	(1 << 7)
++#define IIM_ERR_WPE	(1 << 6)
++#define IIM_ERR_OPE	(1 << 5)
++#define IIM_ERR_RPE	(1 << 4)
++#define IIM_ERR_WLRE	(1 << 3)
++#define IIM_ERR_SNSE	(1 << 2)
++#define IIM_ERR_PARITYE	(1 << 1)
++#define IIM_EMASK	__REG(IMX_IIM_BASE + 0x0C)
++#define IIM_FCTL	__REG(IMX_IIM_BASE + 0x10)
++#define IIM_UA		__REG(IMX_IIM_BASE + 0x14)
++#define IIM_LA		__REG(IMX_IIM_BASE + 0x18)
++#define IIM_SDAT	__REG(IMX_IIM_BASE + 0x1C)
++#define IIM_PREV	__REG(IMX_IIM_BASE + 0x20)
++#define IIM_SREV	__REG(IMX_IIM_BASE + 0x24)
++#define IIM_PROG_P	__REG(IMX_IIM_BASE + 0x28)
++#define IIM_SCS0	__REG(IMX_IIM_BASE + 0x2C)
++#define IIM_SCS1	__REG(IMX_IIM_BASE + 0x30)
++#define IIM_SCS2	__REG(IMX_IIM_BASE + 0x34)
++#define IIM_SCS3	__REG(IMX_IIM_BASE + 0x38)
++#define IIM_BANK_AREA	IMX_IIM_BASE + 0x800
++#define IIM_BANK_REG(x,y) __REG2(IIM_BANK_AREA + 0x400 * x, y<<2)
++/* Definitions for i.MX27 TO2 */
++#define IIM0_MAC		5
++#define IIM0_SCC_KEY		11
++#define IIM1_SUID		1
++
++
++#endif				/* _IMX_REGS_H */
++
+--- ref/u-boot-1.3.4/include/asm-arm/arch-imx27/nand_imx27.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-1.3.4/include/asm-arm/arch-imx27/nand_imx27.h	2008-12-29 16:27:49.000000000 +0100
+@@ -0,0 +1,138 @@
++/*
++ *  Copyright (c) 2008 Armadeus Systems, <nicolas.colombain@armadeus.com>
++ *  Copyright (c) 2008 Eric Jarrige <eric.jarrige@armadeus.org>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++
++
++#ifndef __IMX27_NAND_H
++#define __IMX27_NAND_H
++
++#include <asm/arch/imx-regs.h>
++
++ /* Macros to get byte and bit positions of ECC
++ */
++#define COLPOS(x)			((x) >> 4)
++#define BITPOS(x)			((x)& 0xf)
++
++/**
++ * Memory areas of the NFC
++ */
++#define IMX_NFC_BASE                    (0xD8000000)
++#define IMX_NFC_MAIN_AREA0              (0xD8000000)          
++#define IMX_NFC_MAIN_AREA1              (0xD8000200)  
++#define IMX_NFC_SPARE_AREA0             (0xD8000800)          
++#define IMX_NFC_REGS                    (0xD8000E00)
++
++/*
++ * NFC registers address offest
++ */
++#define NFC_OFFSET_BUFSIZE             (0x00) /* Internal SRAM Size */
++#define NFC_OFFSET_BLCK_ADD_LOCK       (0x02) /* NAND Flash Block Address for Lock Check */
++#define NFC_OFFSET_BUF_ADDR            (0x04) /* Buffer Number for Page Data Transfer To/
++                                                 From Flash Memory */
++#define NFC_OFFSET_FLASH_ADDR          (0x06) /* NAND Flash Address */
++#define NFC_OFFSET_FLASH_CMD           (0x08) /* NAND Flash Command */
++#define NFC_OFFSET_CONFIG              (0x0A) /* NFC Internal Buffer Lock Control */
++#define NFC_OFFSET_ECC_STATUS_RESULT   (0x0C) /* Controller Status/Result of Flash Operation */
++#define NFC_OFFSET_ECC_RSLT_MAIN_AREA  (0x0E) /* ECC Error Position of Main Area Data Error */
++#define NFC_OFFSET_ECC_RSLT_SPARE_AREA (0x10) /* ECC Error Position of Spare Area Data Error */
++#define NFC_OFFSET_WRPROT              (0x12) /* Nand Flash Write Protection */
++#define NFC_OFFSET_UNLOCKSTART_BLKADDR (0x14) /* Start Address for Write Protection Unlock */
++#define NFC_OFFSET_UNLOCKEND_BLKADDR   (0x16) /* End Address for Write Protection Unlock */
++#define NFC_OFFSET_WRPR_STAT           (0x18) /* Current Nand Flash Write Protection Status */
++#define NFC_OFFSET_CONFIG1             (0x1A) /* Nand Flash Operation Configuration 1 */
++#define NFC_OFFSET_CONFIG2             (0x1C) /* Nand Flash Operation Configuration 2 */
++
++/*
++ * NFC registers
++ */
++	/* Internal SRAM Size */
++#define NFC_BUFSIZE             __REG16(IMX_NFC_REGS + NFC_OFFSET_BUFSIZE)
++	/* NAND Flash Block Address for Lock Check */
++#define NFC_BLCK_ADD_LOCK       __REG16(IMX_NFC_REGS + NFC_OFFSET_BLCK_ADD_LOCK)
++	/* Buffer Number for Page Data Transfer To From Flash Memory */
++#define NFC_BUF_ADDR            __REG16(IMX_NFC_REGS + NFC_OFFSET_BUF_ADDR)
++	/* NAND Flash Address */
++#define NFC_FLASH_ADDR          __REG16(IMX_NFC_REGS + NFC_OFFSET_FLASH_ADDR)
++	/* NAND Flash Command */
++#define NFC_FLASH_CMD           __REG16(IMX_NFC_REGS + NFC_OFFSET_FLASH_CMD)
++	/* NFC Internal Buffer Lock Control */
++#define NFC_CONFIG              __REG16(IMX_NFC_REGS + NFC_OFFSET_CONFIG)
++	/* Controller Status/Result of Flash Operation */
++#define NFC_ECC_STATUS_RESULT   __REG16(IMX_NFC_REGS + NFC_OFFSET_ECC_STATUS_RESULT)
++	/* ECC Error Position of Main Area Data Error */
++#define NFC_ECC_RSLT_MAIN_AREA  __REG16(IMX_NFC_REGS + NFC_OFFSET_ECC_RSLT_MAIN_AREA)
++	/* ECC Error Position of Spare Area Data Error */
++#define NFC_ECC_RSLT_SPARE_AREA __REG16(IMX_NFC_REGS + NFC_OFFSET_ECC_RSLT_SPARE_AREA)
++	/* Nand Flash Write Protection */
++#define NFC_WRPROT              __REG16(IMX_NFC_REGS + NFC_OFFSET_WRPROT)
++	/* Start Address for Write Protection Unlock */
++#define NFC_UNLOCKSTART_BLKADDR __REG16(IMX_NFC_REGS + NFC_OFFSET_UNLOCKSTART_BLKADDR)
++	/* End Address for Write Protection Unlock */
++#define NFC_UNLOCKEND_BLKADDR   __REG16(IMX_NFC_REGS + NFC_OFFSET_UNLOCKEND_BLKADDR)
++	/* Current Nand Flash Write Protection Status */
++#define NFC_WRPR_STAT           __REG16(IMX_NFC_REGS + NFC_OFFSET_WRPR_STAT)
++	/* Nand Flash Operation Configuration 1 */
++#define NFC_CONFIG1             __REG16(IMX_NFC_REGS + NFC_OFFSET_CONFIG1)
++	/* Nand Flash Operation Configuration 2 */
++#define NFC_CONFIG2             __REG16(IMX_NFC_REGS + NFC_OFFSET_CONFIG2)
++
++/* NFC_ECC_STATUS_RESULT Status Register Bit Fields */
++#define NFC_ECC_STAT_ERM_SHFT 	(2)		    /* ERM shift */
++#define NFC_ECC_STAT_ERS_MASK 	(0x03)		/* ERS mask  */
++#define NFC_ECC_STAT_ERROR1 	(1<<0)		/* correctable error */
++#define NFC_ECC_STAT_ERROR2 	(1<<1)		/* non correctable error */
++
++/* NFC_CONFIG Control Register Bit Fields */
++#define NFC_CONFIG_UNLOCKED     (1<<1)		/* unlocked */
++#define NFC_CONFIG_LOCKED       (1<<0)		/* locked */
++/* NFC_WRPROT Control Register Bit Fields */
++#define NFC_WRPROT_UNLOCKBLK    (4<<0)		/* unlock block according to given address range */
++#define NFC_WRPROT_LOCKALL 	    (2<<0)		/* lock all */
++#define NFC_WRPROT_LOCKTIGHT    (1<<0)		/* lock-tight locked blocks */
++/* NFC_WRPR_STAT Status Register Bit Fields */
++#define NFC_WRPR_US 	        (1<<2)		/* Unlocked status	*/
++#define NFC_WRPR_LS 	        (1<<1)		/* Locked status */
++#define NFC_WRPR_LTS 	        (1<<0)		/* Lock-tight Status */
++/* NFC_CONFIG1 Control Register Bit Fields */
++#define NFC_CONFIG1_CEn 	    (1<<7)		/* Flash force CE */
++#define NFC_CONFIG1_RST 	    (1<<6)		/* Reset */
++#define NFC_CONFIG1_BIG 	    (1<<5)		/* Big Endian Mode */
++#define NFC_CONFIG1_INT_MSK     (1<<4)		/* Mask Interrupt Bit	*/
++#define NFC_CONFIG1_ECC_EN 	    (1<<3)		/* ECC operation enable */
++#define NFC_CONFIG1_SP_EN 	    (1<<2)		/* Flash spare enable */
++/* NFC_CONFIG2 Control Register Bit Fields */
++#define NFC_CONFIG2_INT	        (1<<15)		/* Interrupt */
++#define NFC_CONFIG2_FDO_STATUS	(4<<3)		/* Flash status output */
++#define NFC_CONFIG2_FDO_ID	    (2<<3)		/* Flash ID output */
++#define NFC_CONFIG2_FDO_PAGE    (1<<3)		/* Flash data output */
++#define NFC_CONFIG2_FDI         (1<<2)		/* Flash data input	*/
++#define NFC_CONFIG2_FADD 	    (1<<1)		/* Flash address input */
++#define NFC_CONFIG2_FCMD 	    (1<<0)		/* Flash command input */
++#endif	/* __IMX27_NAND_H */
++
++#define NAND_CMD_LOCK		0x2a
++#define NAND_CMD_LOCK_TIGHT	0x2c
++#define NAND_CMD_UNLOCK1	0x23
++#define NAND_CMD_UNLOCK2	0x24
++#define NAND_CMD_LOCK_STATUS	0x7a
++/**
++ * @file
++ * @brief Definitions for the NFC driver (i.MX27)
++ */
+--- ref/u-boot-1.3.4/net/eth.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/net/eth.c	2009-01-07 18:11:55.000000000 +0100
+@@ -609,7 +609,7 @@ extern int emac4xx_miiphy_initialize(bd_
+ extern int mcf52x2_miiphy_initialize(bd_t *bis);
+ extern int ns7520_miiphy_initialize(bd_t *bis);
+ extern int dm644x_eth_miiphy_initialize(bd_t *bis);
+-
++extern int fec_eth_initialize(bd_t *bis);
+ 
+ int eth_initialize(bd_t *bis)
+ {
+@@ -633,6 +633,9 @@ int eth_initialize(bd_t *bis)
+ #if defined(CONFIG_DRIVER_TI_EMAC)
+ 	dm644x_eth_miiphy_initialize(bis);
+ #endif
++#if defined(CONFIG_DRIVER_FEC_IMX27)
++	fec_eth_initialize(bis);
++#endif
+ 	return 0;
+ }
+ #endif
