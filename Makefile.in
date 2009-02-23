@@ -16,7 +16,7 @@ ARMADEUS_BOARD_NAME:=$(shell echo $(BR2_BOARD_NAME))
 ARMADEUS_TARGET_ARCH:=$(shell echo $(BR2_GCC_TARGET_ARCH))
 ARMADEUS_UCLIBC_VERSION:=0.9.29
 
-ARMADEUS_SDL_VERSION:=$(shell grep "SDL_VERSION:=" $(BUILDROOT_DIR)/package/sdl/sdl.mk | cut -d = -f 2)
+ARMADEUS_SDL_VERSION:=$(shell grep "SDL_VERSION:=" $(BUILDROOT_DIR)/package/sdl/sdl.mk 2>/dev/null | cut -d = -f 2)
 ifeq ($(ARMADEUS_SDL_VERSION),)
 ARMADEUS_SDL_VERSION:=SDL_NOT_INSTALLED
 endif
