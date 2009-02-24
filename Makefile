@@ -162,6 +162,7 @@ buildroot-dirclean:
 shell_env:
 	@echo ARMADEUS_LINUX_DIR=$(ARMADEUS_LINUX_DIR)   >  $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_ROOTFS_DIR=$(ARMADEUS_ROOTFS_DIR) >> $(ARMADEUS_ENV_FILE)
+	@echo ARMADEUS_ROOTFS_TAR=$(ARMADEUS_ROOTFS_TAR) >> $(ARMADEUS_ENV_FILE)
 
 
 PHONY_TARGETS+=dummy all linux-menuconfig linux26 linux26-clean buildroot-clean buildroot-dirclean
