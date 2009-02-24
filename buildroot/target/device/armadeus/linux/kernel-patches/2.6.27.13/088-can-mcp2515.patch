@@ -29,7 +29,7 @@ new file mode 100644
 index 0000000..43be336
 --- /dev/null
 +++ b/drivers/net/can/mcp251x.c
-@@ -0,0 +1,1006 @@
+@@ -0,0 +1,1004 @@
 +/* drivers/net/can/mcp251x.c
 + *
 + *	Driver for Microchip MCP251x CAN Controller with SPI Interface
@@ -458,6 +458,7 @@ index 0000000..43be336
 +static void mcp251x_hw_wakeup(struct spi_device *spi)
 +{
 +	struct mcp251x_priv *priv = dev_get_drvdata(&spi->dev);
++
 +	priv->wake = 1;
 +
 +	/* Can only wake up by generating a wake-up interrupt. */
@@ -530,7 +531,6 @@ index 0000000..43be336
 +		/* Put device into loopback mode */
 +		mcp251x_write_reg(spi, CANCTRL, CANCTRL_REQOP_LOOPBACK);
 +	} else {
-+
 +		/* Put device into normal mode */
 +		mcp251x_write_reg(spi, CANCTRL, CANCTRL_REQOP_NORMAL);
 +
@@ -635,7 +635,6 @@ index 0000000..43be336
 +	u8 intf;
 +
 +	for (;;) {
-+
 +		if (priv->wake) {
 +			/* Wait whilst the device wakes up */
 +            int i = 200 * (128 * USEC_PER_SEC / pdata->oscillator_frequency);
@@ -647,7 +646,6 @@ index 0000000..43be336
 +		}
 +
 +		intf = mcp251x_read_reg(spi, CANINTF);
-+
 +		if (intf == 0x00)
 +			break;
 +
@@ -743,9 +741,9 @@ index 0000000..43be336
 +		/* Clear everything except RX bits, don't want to miss any */
 +		mcp251x_write_bits(spi, CANINTF, intf & ~(CANINTF_RX0IF | CANINTF_RX1IF), 0x00);
 +	}
-+ 
++
 +	mcp251x_read_reg(spi, CANSTAT);
-+ 
++
 +	dev_dbg(&spi->dev, "interrupt ended\n");
 +}
 +
