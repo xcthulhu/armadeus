@@ -1,15 +1,248 @@
 
                 ChangeLog file for Armadeus Project
 
-Changes to be released
-- [BUILDROOT] Predefine GCC 4.2.1 by default 
-- [BUILDROOT] uppgrade MPFR to revision 2.3.2 fixing broken internet link issue
-- [UBOOT]     upgrade to U-Boot release 1.3.4
-- [uClibc]    undefine _POSIX_SPIN_LOCKS: still not yet implemented in uClibc 0.9.29
-                thanks to Creber 
+
+----
+
+Changes in release 3.0 (25 feb 2009 - SVN revisions 763 to 1097)
+
+* Buildroot:
+  Main changes: upgrade to 20081103 version, adding of AFP27 target, upgrade to GCC 4.2.1
+  Other changes:
+  - Deactivate ad9889 & testsuite packages for APF9328
+  - remove need of linux-2.6.XX- prefix in armadeus custom kernel patches
+  - Add ad9889ctl tool to buildroot
+  - Install all test scripts in the same dir
+  - Correct small bug in Makefile
+  - Put sdlwater in the right place and install it correctly
+  - Removes no more used alsa-driver package
+  - Makes madplayer work again
+  - upgrade and fix setserial 2.17-45
+  - delete deprecated cygwin patchs
+  - upgrade curl to buildroot libcurl
+  - upgrade package libpcap fixing patch failure
+  - Compiling pod drivers cleaned
+  - uClibc-0.9.29 pretends that spinclocks are available  ("#define _POSIX_SPIN_LOCKS" in posix_opt.h) whereas for ARM, this functionality is currently in development. As a consequence, third party applications looking for this define to internally enable spinlocking  may fail to compile. (As "clocktest" provided by Xenomai). This patch inhibits the faulty define. Thanks Creber
+  - upgrade to lcd4linux 0.10.1-RC2 and fix compilation failure
+  - Added alternate download site capabilities to autotool based package + mprf and tslib.
+  - [mplayer] armv4 does not support pld instruction
+  - Fixed busybox default configuration file.
+  - Fixed some path issue in default configuration
+  - Enable save/restore project config - including u-boot, uclibc and busybox configuration
+  - fixed patch failure when patch create new buildroot file - move tslib patch form patch directory to buidlroot/package/tslib
+  - Now generates automatically /etc/fb.modes depending on the framebuffer configuration at the first boot (corrects Bug [1980391]: Automatically generates /etc/fb.modes at startup)
+  - Makes tslib work with recent kernel
+  - Shrink size of mysql_client
+  - Now Linux is (again) compilable in a simple way (make in LINUX_DIR)
+  - Add a package to automatically install Armadeus validation testsuite
+  - ALSA is working again
+  - Add MySQL support module for Python
+  - re-populate default /dev even if we are now using mdev
+  - Don't try to mount configfs when doing mount -a
+  - Makes socketcan compilation works again + add test tools
+  - Add patch to allow madplay to compile for ALSA output
+  - corrects aplay: set_params:1012: unable to install sw params BUG
+  - Predefine GCC 4.2.1 by default
+  - Correct Bug [ 1981233 ] file_4.21.orig.tar.gz no more downloadable
+  - Change setserial download mirror
+  - SDL_ttf needs freetype package to compile
+  - strip cmd was not correct in sdl* packages
+  - Fixes bug 2019483 (SDL_ttf doesn't compile)
+  - Add Socket CAN package
+  - Add fr & de keyboard maps to rootfs skeleton
+  - Makes fbgrab package compilation produce a working executable
+  - Deactivate ivtv ouput when configuring mplayer
+  - Adding an usefull frame buffer grabber package (fbgrab)
+  - make apm9328 board deprecated and make the apf9328 the reference board
+  - Prevent /tmp to be remounted over and over when doing a mount -a (busybox mount doesn't check if filesystem is already mounted when called
+  - Add /etc/inetd.conf file with Telnet config already in
+  - added input devices to support keyboard and keypad
+  - fix bug 1904713: Unable to generate a JFFS2 image after a make
+* Linux:
+  Main changes: upgrade to 2.6.27, adding of APF27
+  Other changes:
+  - make MCP251x work again on APF27
+  - allow short circuit on headphone output for short time (tsc2101)
+  - allow tsc, max and mcp to be compiled as kernel module
+  - Makes spi_imx driver compiles as static
+  - Add CPU frequency scaling helpers to APF27
+  - Add some refinements in APF27 PM
+  - Add suspend of ISP1504 USB PHY
+  - Add power management infrastructure for APF27
+  - rename 2.6.23 armadeus linux patches to a more suitable name
+  - rename 2.6.27 armadeus linux patches to a more suitable name
+  - Makes tsc210x compiles with CONFIG_PM activated
+  - Add PHY power down + patch rework (APF27)
+  - Moves 2.6.27.2 patches to 2.6.27.13
+  - Custom MTD map is no more needed (APF9328)
+  - Reorg of imxmmc patches
+  - Correct wrong PWM init value for MTF-035 LCD
+  - Clean-up apf9328-isp1761 driver - hardware configuration moved to apf9328.c and u-boot 1.3.4 patch 3.5
+  - Improved console message with apf9328_devlight (ISP1760 device not present)
+  - Enhanced USB host driver ISP176x - Changed default configuration to statically include ISP1760 driver.
+  - Enhanced Identification test to check 32bit registers access (ISP176x)
+  - preliminary workaround to fix ISP1760/FTDI oops
+  - improved ISP1760 pre-fetch timing according datasheet - optimized RD/WR pulse width
+  - Add PWM driver to default apf9328 linux 2.6.27 config
+  - Makes PWM driver works again with 2.6.27 kernels
+  - Update desc. of backlight driver
+  - Factorizes common Makefile targets (default & clean) for Armadeus custom drivers
+  - Cleanup backlight driver to prepare i.MX27 compatibility
+  - improve tsc2102 driver
+  - Updates Armadeus custom drivers Makefiles with usage of new general Makefile.in
+  - Max1027: now handles conversion results from all scanning modes (10 is still perfectible)
+  - ALSA/TSC : imx_dma_request_by_prio() returns an available channel not an error.
+  - Activate EABI for 2.6.23 kernel (APF9328)
+  - Remove debugging + add ALSA in 2.6.23.1 APF9328 default config
+  - Updates Linux 2.6.23.1 APF9328 default MTD map to handle new FLASH partitionning
+  - Makes max1027 driver compiles again with Linux 2.6.23.1
+  - make mcp2515 working again
+  - make MAX1027 working again
+  - fpgaregs update
+  - Suppressing uart irq declarations [apf9328] 
+  - Make uart2 work (apf9328)
+  - Remove fpga/dev_tools/fpgaaccess/Module.symvers from SVN (it's a generated file)
+  - Remove fpga/dev_tools/fpgaaccess/fpgaregs from SVN (it's a generated executable)
+  - Remove fpga/dev_tools/fpgaaccess/.tmp_versions/ directory from SVN (it's a temp dir)
+  - Move old FPGA led driver to fpga/others/
+  - imxlkeypad driver config should not depend on FPGA one
+  - Changed linux patch naming convention to support next buildroot migration
+  - Allows fpgaregs to be compiled directly from its directory
+  - Change backlight PWM reference clock for LQ043 and MTF-035 LCDs
+  - Add MAX1027 driver in the default configuration
+  - In new version of max1027 driver: now handle the numerous scan modes of the device + correct some bugs + integrate hwmon interface (if configured) of old driver + do some cleanup
+  - remove led.c file from Wb_led driver
+  - do some cleanup in Wb_led driver
+  - correct GPIO driver Makefile (SF bug 1901559)
+  - First (working) version of new (faster) MAX1027 driver.
+  - Changing fpga driver tree
+  - Refactoring of generic GPIO driver, for handling interrupts and pull-up, still long way to go to reach state of the art, but it's usable... ;-) Next step is to integrate JiBee's work.
+  - FPGA's irq_manager driver should not be compiled if not selected
+  - Add some (temporary) kernel patches to test serial and irq IPs
+  - Add driver for OpenCore IRQ manager (generated by POD)
+  - Add automatic generation of 013-imxfb patch + removing of PWM register update when doing imxfb_set_par()
+  - Rename 013 patch (in 2.6.23)
+  - Split 013-framebuffer patch in 2
+  - Split framebuff patch in 2: imxfb & logo
+  - Rename I2C patch
+  - remove warning in apf9328_lcd_config.h compilation
+  - Improve backlight handling for Sharp LQ043
+  - Add first version (without IT) of OpenCore 16550 serial IP driver
+  - uppgrade MPFR to revision 2.3.2 fixing broken internet link issue
+  - Cleanup apf9328_init() + remove unneeded request_mem_region(IMX_CS1_PHYS)
+  - Update some 2.6.23.1 patches with new automatically built warning
+  - Add APF9328 FPGA interrupt definition to apf9328.h & apf9328.c + little cleanup
+  - Add very first stage of tools to easily manage our Linux kernel patches generation/maintenance
+  - remove led.mod.c file from Wb_led driver
+  - Allows isp1761 driver to be compiled as static or module (even if it's not working when compiled as static: bug opened)
+  - patches splitting continues...
+  - Extract build part of 021-apf9328 patch
+  - 020-scbfb patch is no more used so rename it so it won't be applied
+  - Add first version of ALSA drivers for TSC2102 / i.MXL SSI (should produce sound :-) )
+  - Add comment in spi2-reg-irq-defines patch
+  - Split tsc2102 spi patch in 2 parts (driver/build) + do some defines update in tsc2102.h
+  - Extract defconfig part (not used) from apf9328.diff
+  - fix build error when PM is activated
+  - Fix bug 1960067: ISP1761 scratch register
+  - change UART/DM9000 irq trig method from level to edge. (adeos compatibility)
+  - fix error when writing on an ext2 SD/MMC
+  - Now keycodes can be passed as insmod/modprobe parameters to imxkeypad driver
+  - Move i.MXL matrix keypad driver back to its correct directory
+  - Add some commentaries in imxkeypad driver
+  - Correct false commentar in apf9328
+  - Modify 2.6.23.1 default config to allow automatic build works again and put Sharp LQ043 as default LCD
+  - Add (partial) 2.6.24 kernel support + libertas over SPI control
+  - Changed imxkeypad kernel default configuration to be built as a module.
+  - updated imx keypad driver compatibility with recent linux kernel and fixed some bugs.
+  - adjust usb host first read timing (ISP1761)
+  - new fpgaregs, to read/write in 16bits on fpga driver+binary
+  - fix warning in fpgaaccess.c
+  - Led driver with /dev, /sys and interruption
+* U-Boot:
+  Main changes: upgrade to 1.3.4, adding of APF27
+  Other changes:
+   - Add missing APF27 patches
+   - PCCR init value cleanup
+   - Fixed relocation status & some compilation warnings
+   - Reprogram eeprom only when it is needed
+   - update reference uboot image to the latest version of patch 3.5
+   - Changed CS3 timings to support ISP1760 USB Host controler
+   - added board name to CONFIG_ROOTPATH
+   - Remove unexpected user configuration from the configuration file apf9328.h
+   - Fixed software examples loading address issues
+   - 50ns read cycle for CS1 (FPGA)
+   - patch 3.0 supporting u-boot release 1.3.4
+* Other:
+  Build:
+  - Add envt variable for rootfs tar archive
+  - Removes warning in Makefile.in when building clean view
+  - Make it easier to get some important shell environment variables (for access to the most used Armadeus directories)
+  - Add helper to compile armadeus sub-systems (custom drivers for example)
+  - Move buildroot archive to SourceForge
+  - Add SDL build dir envt
+  - remove timestamp in automatically generated patches
+  Test:
+  - Correct Boa test
+  - Makes RTC test effective
+  - Add script for madplay
+  - Add APF27 support to some scripts
+  - Add script to test Lua
+  - Add script to test Python
+  - Add a test to check SDL is running
+  - Update touchscreen test
+  - Add a test for strace (to be improved)
+  - Add a test for Boa web server
+  - Add dir to store Buildroot packages tests + add mplayer one
+  - Add test script for ADC
+  - Add sound test to global launcher
+  - Add script to test ALSA/sound
+  - Move some tests to packages/
+  - Add script to test TV output
+  Demos:
+  - input_test was crashing on APF due to SDL_DOUBLEBUF option
+  - Add missing sprite file for input_test
+  - Now input_test can check: keypads, keyboards, mouses and joysticks/trackballs
+  - rename keypad tool (part2)
+  - Rename keypad_test to input_test
+  - Correct Armanoid Makefile to let it handle TARGET=arm
+  - Improve backlight tool (compiling and running on target
+  - Makes armanoid compiles again + install it in correct directories
+  - First version of SDL+Tslib backlight controller
+  - Backport from apf2/ branch correction (rev [789]: Armanoid compilation)
+  Firmware:
+  - POD was moved to its own repository: http://www.sf.net/projects/periphondemand
+  - Makefile and testbench corrections
+  - Unit test driver for i2c_ocores IP
+  - [BRAMTest] Address shifted
+  - New version of Yvan Roch's servo IP
+  - Rename wishbone example's directory
+  - [testbench] read/write function improvements (wsc can be set)
+  - Wisbone simple design example
+  - Simple design to switch led,[apf_pkg] package for simulate read and write (imx), [Xtools] some tools to report synthezis problems
+  Debug:
+  - New version of imxssi
+  - imxregs: makes the distinguish between the two SSI register sets on i.MX27
+  - Now imxregs has the same name for i.MXL & i.MX27
+  - imxssi: removes what imxregs is already doing (very well ;-) )
+  - Found 2 indent styles in imxssi so I applied the most common one to the whole file
+  - Save some files from the dark side of the Force (= DOS text format)
+  - Save some files from the dark side of the Force (= DOS text format)
+  - Add UART1 registers to imxregs
+  - fix bug when writing 16bits values in fpgaregs.c
+  - LGPMR renamed LSCR1 in imxregs
+  - Add watchdog & GPTimer registers access in imxregs
+  - imxregs: say when register is not found
+  Misc:
+  - Remove unused host/ dir
+  - add apf27 uboot recover tool
+  - Add a tool to control HDMI controller of APF27_DEV
+
+----
 
 Changes in release 2.3 (11 February 2008)
 - [BUILDROOT] Change FTP server for buildroot and fakeroot files
+
+----
 
 Changes in release 2.2 (16 December 2007)
 - [UBOOT] U-Boot 1.1.6 patched 2.6
