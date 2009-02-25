@@ -1,0 +1,13 @@
+This directory contain FPGA projects that not included in POD
+(http://periphondemand.sourceforge.net/).
+
+* BRAMTest  : This is a simple project that instantiate RAM included in Spartan
+              to test communication between i.MX and FPGA.
+* PS2       : IP to drive a ps2 keyboard
+* led       : This project is described on ARMadeus Project wiki page 
+              http://www.armadeus.com/wiki/index.php?title=FPGA_and_led
+              it help FPGA beginners to make a simple design.
+* servo     : Drive multiple servo-motors.
+* sram_test : Drive external sram.
+* wishbone_example : This is a simple project to show a wishbone implementation.
+
