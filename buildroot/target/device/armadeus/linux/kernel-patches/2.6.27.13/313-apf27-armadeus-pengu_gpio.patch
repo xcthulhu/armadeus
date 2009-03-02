@@ -1,0 +1,18 @@
+This patch fixes an error in gpio.c (gpio_get)
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.27.13/arch/arm/plat-mxc/include/mach/ulpi.h
+===================================================================
+--- linux-2.6.27.13.orig/arch/arm/plat-mxc/gpio.c	2008-10-10 00:13:53.000000000 +0200
++++ linux-2.6.27.13/arch/arm/plat-mxc/gpio.c	2009-03-01 08:29:01.000000000 +0100
+@@ -187,8 +187,7 @@ static int mxc_gpio_get(struct gpio_chip
+ {
+ 	struct mxc_gpio_port *port =
+ 		container_of(chip, struct mxc_gpio_port, chip);
+-
+-	return (__raw_readl(port->base + GPIO_DR) >> offset) & 1;
++	return (__raw_readl(port->base + GPIO_PSR) >> offset) & 1;
+ }
+ 
+ static int mxc_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
