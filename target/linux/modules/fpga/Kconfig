@@ -15,6 +15,8 @@ source "drivers/armadeus/fpga/dev_tools/Kconfig"
 
 source "drivers/armadeus/fpga/others/Kconfig"
 
+source "drivers/armadeus/fpga/wishbone_example/Kconfig"
+
 source "drivers/armadeus/fpga/POD/Kconfig"
 
 endmenu

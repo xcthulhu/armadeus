@@ -1,0 +1,15 @@
+
+#
+# Armadeus custom drivers configuration
+#
+#
+                     
+#
+config WISHBONE_EXAMPLE_DRIVERS
+    tristate "Drivers for wishbone example"
+    default n                               
+    depends on ARMADEUS_FPGA_DRIVERS
+    ---help---
+    Drivers used for wishbone example design that can be
+    found in firmware/wishbone_example/
+

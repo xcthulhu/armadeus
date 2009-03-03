@@ -8,7 +8,7 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_FPGA_DRIVERS)	+= dev_tools/ others/ POD/
+obj-$(CONFIG_ARMADEUS_FPGA_DRIVERS)	+= dev_tools/ others/ POD/ wishbone_example/
 
 else
 
