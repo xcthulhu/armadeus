@@ -1,22 +1,22 @@
 This project is an exemple for wishbone interface . There are three Wb slaves :
 
 * irq_mngr : this slave joins irq from others wishbone IP and
-						 send it to i.mx processor.To manage these irq
-						 two registers are available :
-						 		irq_mask ( addr : 0x0000)        : enable irq writing 1
-						 		irq_pend/irq_ack (addr : 0x0002) : writing 1 acknowledge irq
-						 																			 and reading 1 inform that an irq pending.
-						This design use one irq for button push and release.
+             send it to i.mx processor.To manage these irq
+             two registers are available :
+                     irq_mask ( addr : 0x0000)        : enable irq writing 1
+                     irq_pend/irq_ack (addr : 0x0002) : writing 1 acknowledge irq
+                                                        and reading 1 inform that an irq pending.
+             This design use one irq for button push and release.
 
-* Wb_led   : a simple led register, one led is branched on register LSB.
-						 To switch on led write '0' on led register. Address register
-						 is :
-						 		LED (addr : 0x0004)
-* Wb_button: Simple button register, when button is pressed, register LSB
-						 is '0', and when it's release LSB is '1'. On each switching
-						 an interuption is send to irq_mngr.
-						 		button (addr : 0x0008)
+* wb_led   : a simple led register, one led is branched on register LSB.
+             To switch on led write '0' on led register. Address register
+             is :
+                     LED (addr : 0x0004)              : on/off led
+* wb_button: Simple button register, when button is pressed, register LSB
+             is '0', and when it's release LSB is '1'. On each switching
+             an interuption is send to irq_mngr. Address register is :
+                     button (addr : 0x0008)           : read pressed value
 
 see
-http://www.armadeus.com/wiki/index.php?title=FpgaArchitecture#La_composition_du_syst.C3.A8me_Wishbone
-(french) for more information about designing wishbone IP.
+http://www.armadeus.com/wiki/index.php?title=A_simple_design_with_Wishbone_bus
+for more informations about this design.

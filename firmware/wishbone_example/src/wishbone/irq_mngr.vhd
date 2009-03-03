@@ -55,9 +55,8 @@ library IEEE;
       wbs_s1_ack        : out std_logic;                      -- Access acknowledge
       wbs_s1_strobe     : in  std_logic;                      -- Data Strobe
       wbs_s1_write      : in  std_logic;                      -- Write access
-		  -- irq from other IP
+      -- irq from other IP
       wbs_s1_irq        : in  std_logic_vector(irq_count-1 downto 0);
-      
       -- Component external signals
       gls_irq           : out std_logic                       -- IRQ request
     );
@@ -67,92 +66,92 @@ library IEEE;
     Architecture RTL of irq_mngr is
 -- ----------------------------------------------------------------------------
 
-signal irq_r    : std_logic_vector(irq_count-1 downto 0);
-signal irq_pend : std_logic_vector(irq_count-1 downto 0);
-signal irq_ack  : std_logic_vector(irq_count-1 downto 0);
-signal irq_mask : std_logic_vector(irq_count-1 downto 0);
-
-signal readdata : std_logic_vector(15 downto 0);
-
-signal rd_ack : std_logic;
-signal wr_ack : std_logic;
-
-begin
-
--- ----------------------------------------------------------------------------
---  External signals synchronization process
--- ----------------------------------------------------------------------------
-process(gls_clk, gls_reset)
-begin
-  if(gls_reset='1') then
-    irq_r <= (others => '0');
-  elsif(rising_edge(gls_clk)) then
-    irq_r <= wbs_s1_irq;
-  end if;
-end process;
-
--- ----------------------------------------------------------------------------
---  Interruption requests latching process
--- ----------------------------------------------------------------------------
-process(gls_clk, gls_reset)
-begin
-  if(gls_reset='1') then
-    irq_pend <= (others => '0');
-  elsif(rising_edge(gls_clk)) then
-    irq_pend <= ((irq_pend or (irq_r and irq_mask)) and not (irq_ack));
-  end if;
-end process;
-
--- ----------------------------------------------------------------------------
---  Register reading process
--- ----------------------------------------------------------------------------
-process(gls_clk, gls_reset)
-begin
-  if(gls_reset='1') then
-    rd_ack    <= '0';
-    readdata  <= (others => '0');
-  elsif(falling_edge(gls_clk)) then
-    rd_ack  <= '0';
+    signal irq_r    : std_logic_vector(irq_count-1 downto 0);
+    signal irq_pend : std_logic_vector(irq_count-1 downto 0);
+    signal irq_ack  : std_logic_vector(irq_count-1 downto 0);
+    signal irq_mask : std_logic_vector(irq_count-1 downto 0);
     
-    if(wbs_s1_strobe = '1' and wbs_s1_write = '0') then
-      rd_ack  <= '1';
-      if(wbs_s1_address = '0') then
-        readdata(irq_count-1 downto 0) <= irq_mask;
-      else
-        readdata(irq_count-1 downto 0) <= irq_pend;
-      end if;
-    end if;
-  end if;
-end process;
+    signal readdata : std_logic_vector(15 downto 0);
+    
+    signal rd_ack : std_logic;
+    signal wr_ack : std_logic;
 
--- ----------------------------------------------------------------------------
---  Register update process
--- ----------------------------------------------------------------------------
-process(gls_clk, gls_reset)
 begin
-  if(gls_reset='1') then
-    irq_ack <= (others => '0');
-    wr_ack  <= '0';
-    irq_mask <= (others => '0');
-  elsif(falling_edge(gls_clk)) then
-    irq_ack <= (others => '0');
-    wr_ack  <= '0';
 
-    if(wbs_s1_strobe = '1' and wbs_s1_write = '1') then
-      wr_ack  <= '1';
-      if(wbs_s1_address = '0') then
-        irq_mask <= wbs_s1_writedata(irq_count-1 downto 0);
-      else
-        irq_ack <= wbs_s1_writedata(irq_count-1 downto 0);
+    -- ----------------------------------------------------------------------------
+    --  External signals synchronization process
+    -- ----------------------------------------------------------------------------
+    process(gls_clk, gls_reset)
+    begin
+      if(gls_reset='1') then
+        irq_r <= (others => '0');
+      elsif(rising_edge(gls_clk)) then
+        irq_r <= wbs_s1_irq;
       end if;
-    end if;
-  end if;
-end process;
-
-gls_irq <= irq_level when(unsigned(irq_pend) /= 0 and gls_reset = '0') else
-           not irq_level;
-
-wbs_s1_ack <= rd_ack or wr_ack;
-wbs_s1_readdata <= readdata when (wbs_s1_strobe = '1' and wbs_s1_write = '0') else (others => 'Z');
+    end process;
+    
+    -- ----------------------------------------------------------------------------
+    --  Interruption requests latching process
+    -- ----------------------------------------------------------------------------
+    process(gls_clk, gls_reset)
+    begin
+      if(gls_reset='1') then
+        irq_pend <= (others => '0');
+      elsif(rising_edge(gls_clk)) then
+        irq_pend <= ((irq_pend or (irq_r and irq_mask)) and not (irq_ack));
+      end if;
+    end process;
+    
+    -- ----------------------------------------------------------------------------
+    --  Register reading process
+    -- ----------------------------------------------------------------------------
+    process(gls_clk, gls_reset)
+    begin
+      if(gls_reset='1') then
+        rd_ack    <= '0';
+        readdata  <= (others => '0');
+      elsif(falling_edge(gls_clk)) then
+        rd_ack  <= '0';
+        
+        if(wbs_s1_strobe = '1' and wbs_s1_write = '0') then
+          rd_ack  <= '1';
+          if(wbs_s1_address = '0') then
+            readdata(irq_count-1 downto 0) <= irq_mask;
+          else
+            readdata(irq_count-1 downto 0) <= irq_pend;
+          end if;
+        end if;
+      end if;
+    end process;
+    
+    -- ----------------------------------------------------------------------------
+    --  Register update process
+    -- ----------------------------------------------------------------------------
+    process(gls_clk, gls_reset)
+    begin
+      if(gls_reset='1') then
+        irq_ack <= (others => '0');
+        wr_ack  <= '0';
+        irq_mask <= (others => '0');
+      elsif(falling_edge(gls_clk)) then
+        irq_ack <= (others => '0');
+        wr_ack  <= '0';
+    
+        if(wbs_s1_strobe = '1' and wbs_s1_write = '1') then
+          wr_ack  <= '1';
+          if(wbs_s1_address = '0') then
+            irq_mask <= wbs_s1_writedata(irq_count-1 downto 0);
+          else
+            irq_ack <= wbs_s1_writedata(irq_count-1 downto 0);
+          end if;
+        end if;
+      end if;
+    end process;
+    
+    gls_irq <= irq_level when(unsigned(irq_pend) /= 0 and gls_reset = '0') else
+               not irq_level;
+    
+    wbs_s1_ack <= rd_ack or wr_ack;
+    wbs_s1_readdata <= readdata when (wbs_s1_strobe = '1' and wbs_s1_write = '0') else (others => 'Z');
 
 end architecture RTL;
