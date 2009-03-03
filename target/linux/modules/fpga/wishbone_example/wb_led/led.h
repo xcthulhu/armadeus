@@ -1,7 +1,7 @@
 /*
  ***********************************************************************
  *
- * (c) Copyright 2007    Armadeus project
+ * (c) Copyright 2007	Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
  * Driver for Wishbone led IP
  *
@@ -47,8 +47,13 @@
 /* readw() writew() */
 #include <asm/io.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 /* hardware addresses */
-#include <asm/hardware.h>
+#	include <asm/hardware.h>
+#else
+#	include <mach/hardware.h>
+#endif
+
 
 /* for platform device */
 #include <linux/platform_device.h>
@@ -61,10 +66,10 @@
 #undef PDEBUG
 #ifdef LED_DEBUG
 # ifdef __KERNEL__
-    /* for kernel spage */
+	/* for kernel spage */
 #   define PDEBUG(fmt,args...) printk(KERN_DEBUG "LED : " fmt, ##args)
 # else
-    /* for user space */
+	/* for user space */
 #   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
 # endif
 #else
@@ -75,13 +80,19 @@
 #define FPGA_BASE_ADDR IMX_CS1_PHYS
 #define FPGA_MEM_SIZE  IMX_CS1_SIZE
 
-#define LED_NUMBER 2
+#define LED_NUMBER 1
+
+#define LED_REG_OFFSET (0x00)
+#define LED_ID_OFFSET  (0x02)
 
 /* platform device */
 struct plat_led_port{
-    const char   *name;    /* instance name  */
-    int          num;      /* instance number */
-    unsigned int membase;  /* ioremap base address */
+	const char  *name;		/* instance name  */
+	int			num;		/* instance number */
+	void		*membase;	/* virtual base address */
+	int			idnum;		/* identity number */
+	int			idoffset;	/* identity relative address */
+	struct led_dev *sdev;	/* struct for main device structure*/
 };
 
 

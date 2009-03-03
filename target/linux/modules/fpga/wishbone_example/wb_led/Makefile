@@ -1,13 +1,12 @@
 #
-# Makefile for the Armadeus Wb_button drivers
+# Makefile for the Armadeus FPGA led driver
 #
 
 ifneq ($(KERNELRELEASE),)
 
-obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_BUTTON_DRIVER)	+= board_buttons.o gbutton.o
+obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_LED_DRIVER)	+= board_leds.o g_led.o
 
 else
-
 
 ARMADEUS_BASE_DIR=../../../../../..
 include $(ARMADEUS_BASE_DIR)/Makefile.in
@@ -15,12 +14,13 @@ include $(ARMADEUS_BASE_DIR)/Makefile.in
 KDIR := $(ARMADEUS_LINUX_DIR)
 PWD  := $(shell pwd)
 
+
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 test:
-	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc testbutton.c -o testbutton
-	chmod 755 testbutton
+	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc -Wall testled.c -o testled
+	chmod 755 testled
 
 clean:
 	rm -f *.*o \
@@ -31,6 +31,6 @@ clean:
 	rm -f .*.cmd \
 	rm -rf .tmp_versions \
 	rm -f Module.symvers
-
+   
 endif
 

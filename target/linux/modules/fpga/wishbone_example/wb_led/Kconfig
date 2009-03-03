@@ -1,0 +1,9 @@
+#
+#
+
+config ARMADEUS_WISHBONE_EXAMPLE_LED_DRIVER
+        tristate "Wishbone Led driver"
+        default m
+        depends on ARMADEUS_WISHBONE_EXAMPLE_DRIVERS
+        ---help---
+        blink a led

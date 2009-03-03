@@ -1,5 +1,3 @@
-
- * ***********************************************************************
 /* a program to write/read values on fpga address map
  * Fabien Marteau <fabien.marteau@armadeus.com>
  * 7 april 2008
@@ -25,10 +23,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  **********************************************************************
- */
-
-
- *
  */
 
 #include <stdio.h>
@@ -63,7 +57,7 @@ int main(int argc, char *argv[])
   printf( "Testing button driver\n" );
 
   if(argc < 2){
-    perror("invalid arguments number\ntestled <button_filename>\n");
+    perror("invalide arguments number\ntestled <button_filename>\n");
     exit(EXIT_FAILURE);
   }
 
@@ -93,3 +87,4 @@ int main(int argc, char *argv[])
   close(fled);
   exit(0);
 }
+

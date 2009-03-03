@@ -8,20 +8,9 @@
 ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
-obj-$(CONFIG_WISHBONE_EXAMPLE_DRIVERS)   +=  
+obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_DRIVERS)   +=  wb_button/ wb_irq_mngr/ wb_led/
 	
 else
-
-# Part executed when called from standard make in this directory:
-
-BASE_DIR:=../../../../buildroot/
-REL:=$(shell grep "BR2_PACKAGE_LINUX_VERSION=" $(BASE_DIR).config |       sed -e 's/BR2_PACKAGE_LINUX_VERSION=//' | sed -e 's/"//g')
-#
-ARMADEUS_KERNEL_DIR:=$(BASE_DIR)build_arm/linux-$(REL)
-ifeq ($(LINUX_DIR),)
-LINUX_DIR:=$(ARMADEUS_KERNEL_DIR)
-endif
-PWD:= $(shell pwd)
 
 default:
 	echo "Your Linux source dir is: $(LINUX_DIR)"
@@ -34,6 +23,16 @@ clean:
 install:
 	echo "Installing Armadeus drivers..."
 	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
+
+clean:
+	rm -f *.*o \
+	rm -f *.mod.c \
+	rm -f *.cmd \
+	rm -f *.o.d \
+	rm -f *.order \
+	rm -f .*.cmd \
+	rm -rf .tmp_versions \
+	rm -f Module.symvers
 
 endif
 

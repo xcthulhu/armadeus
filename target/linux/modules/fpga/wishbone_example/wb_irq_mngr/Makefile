@@ -1,13 +1,15 @@
 #
-# Makefile for the Armadeus Wb_button drivers
+# Makefile for the Armadeus FPGA OpenCore IRQ manager IP
 #
 
 ifneq ($(KERNELRELEASE),)
 
-obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_BUTTON_DRIVER)	+= board_buttons.o gbutton.o
+# Part executed when called from kernel build system:
+
+obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_IRQ_MNGR_DRIVER) += irq_ocore.o test.o
+irq_ocore-objs	:= main.o 
 
 else
-
 
 ARMADEUS_BASE_DIR=../../../../../..
 include $(ARMADEUS_BASE_DIR)/Makefile.in
@@ -18,10 +20,6 @@ PWD  := $(shell pwd)
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
-test:
-	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc testbutton.c -o testbutton
-	chmod 755 testbutton
-
 clean:
 	rm -f *.*o \
 	rm -f *.mod.c \
@@ -31,6 +29,6 @@ clean:
 	rm -f .*.cmd \
 	rm -rf .tmp_versions \
 	rm -f Module.symvers
-
+   
 endif
 

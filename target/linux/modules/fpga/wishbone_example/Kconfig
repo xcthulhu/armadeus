@@ -5,11 +5,14 @@
 #
                      
 #
-config WISHBONE_EXAMPLE_DRIVERS
-    tristate "Drivers for wishbone example"
+config ARMADEUS_WISHBONE_EXAMPLE_DRIVERS
+    boolean "Drivers for wishbone example"
     default n                               
     depends on ARMADEUS_FPGA_DRIVERS
     ---help---
     Drivers used for wishbone example design that can be
     found in firmware/wishbone_example/
 
+source "drivers/armadeus/fpga/wishbone_example/wb_button/Kconfig"
+source "drivers/armadeus/fpga/wishbone_example/wb_led/Kconfig"
+source "drivers/armadeus/fpga/wishbone_example/wb_irq_mngr/Kconfig"

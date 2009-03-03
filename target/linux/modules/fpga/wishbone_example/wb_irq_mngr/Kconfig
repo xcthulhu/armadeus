@@ -1,0 +1,14 @@
+
+#
+# Armadeus custom drivers configuration
+#
+#
+                     
+#
+config ARMADEUS_WISHBONE_EXAMPLE_IRQ_MNGR_DRIVER
+    tristate "IRQ manager with wishbone interface"
+    default m
+    depends on ARMADEUS_WISHBONE_EXAMPLE_DRIVERS
+    ---help---
+
+

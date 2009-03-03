@@ -1,8 +1,0 @@
-#
-#
-
-config ARMADEUS_LED_DRIVER
-        tristate "Wishbone Led driver"
-        default n
-        depends on ARMADEUS_FPGA_OTHERS_DRIVERS
-        ---help---
