@@ -1,4 +1,4 @@
 # pinout 
-NET "button"  LOC = "P119" | IOSTANDARD = LVCMOS33 ; 
+NET "button"  LOC = "P141" | IOSTANDARD = LVCMOS33 ; 
 NET "clk"  LOC = "P55" | IOSTANDARD = LVCMOS33 ; 
-NET "led"  LOC = "P118" | IOSTANDARD = LVCMOS33 ; 
+NET "led"  LOC = "P116" | IOSTANDARD = LVCMOS33 ; 
