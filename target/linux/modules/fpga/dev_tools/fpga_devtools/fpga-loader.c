@@ -1,10 +1,9 @@
 /*
- ***********************************************************************
+ * Generic Xilinx FPGA loader
  *
- * (c) Copyright 2006    Armadeus project
- * Julien Boibessot <julien.boibessot@armadeus.com>
- * Nicolas Colombain <nicolas.colombain@armadeus.com>
- * Generic Xilinx FPGA loader 
+ * Copyright (C) 2006-2009 Julien Boibessot <julien.boibessot@armadeus.com>
+ *                         Nicolas Colombain <nicolas.colombain@armadeus.com>
+ *                         Armadeus Project / Armadeus systems
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +18,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- **********************************************************************
  */
+
+// #define DEBUG
+
 #include <linux/version.h>
 #include "fpga-loader.h"
 #include "xilinx-fpga-loader.h"
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/arch/imx-regs.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-#else
-#include <mach/imx-regs.h>
-#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
@@ -61,8 +54,6 @@ static unsigned char g_buffer[FPGA_BUFFER_SIZE];
 static unsigned char g_nb_users = 0;
 
 
-void __exit armadeus_fpga_cleanup(void);
-
 
 //------------------------------------------------
 //
@@ -71,7 +62,7 @@ void __exit armadeus_fpga_cleanup(void);
 static ssize_t armadeus_fpga_write(struct file *file, const char* pData, size_t count, loff_t *f_pos)
 {
     ssize_t ret = 0;
-   
+
     // Get exclusive access
     if (down_interruptible(&fpga_sema))
         return -ERESTARTSYS;
@@ -92,22 +83,33 @@ static ssize_t armadeus_fpga_write(struct file *file, const char* pData, size_t 
 out:
     // Release exclusive access
     up(&fpga_sema);
-    
+
     return( ret );
 }
 
 static int armadeus_fpga_open(struct inode *inode, struct file *file)
 {
     int ret;
-   
-    // Only one access at a time is permitted
+
+	/* Get exclusive access */
+	if (down_interruptible(&fpga_sema))
+		return -ERESTARTSYS;
+
+    /* Only one access at a time is permitted */
     if( g_nb_users > 0 )
         return( -EBUSY );
 
-    g_nb_users++;
-    ret = xilinx_init_load( g_current_desc );
+	ret = xilinx_init_load( g_current_desc );
+	if(!ret) {
+		printk("Starting FPGA download\n");
+		g_nb_users++;
+	}
 
-    PRINTF("Opening /dev/fpga/loader%d file, %d %d\n", MINOR(inode->i_rdev), fpga_descriptor, ret);
+    pr_debug("Opening /dev/fpga/loader%d file, %d %d\n", MINOR(inode->i_rdev), fpga_descriptor, ret);
+
+	/* Release exclusive access */
+	up(&fpga_sema);
+
     return ret;
 }
 
@@ -116,13 +118,16 @@ static int armadeus_fpga_release(struct inode *inode, struct file *file)
     if( g_nb_users > 0 )
         g_nb_users--;
 
-    PRINTF("Closing access to /dev/fpga/loader%d\n", MINOR(inode->i_rdev));
+	if( xilinx_finish_load(g_current_desc) )
+		printk("Failed to load FPGA !\n");
+
+    pr_debug("Closing access to /dev/fpga/loader%d\n", MINOR(inode->i_rdev));
     return 0;
 }
 
-//------------------------------------------------
-// PROC file
-//
+
+/* PROC file */
+
 static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void* data) 
 {
 	int ret;
@@ -134,10 +139,9 @@ static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **sta
 		/* we have finished to read, return 0 */
 		ret  = 0;
 	} else {
-        if ( data == NULL ){
+        if ( data == NULL ) {
             ret = xilinx_get_descriptor_info( -1, buffer );
-        }
-        else {
+        } else {
             ret = xilinx_get_descriptor_info( *((unsigned char*)data), buffer );
         }
 	}
@@ -145,15 +149,12 @@ static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **sta
 	return ret; 
 }
 
-
 static int procfile_fpga_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
 {
-    return count;    
+	return count;
 }
 
-//------------------------------------------------
-//  Handling of IOCTL calls 
-//
+/* Handling of IOCTL calls */
 int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
 {
     int err = 0; int ret = 0;
@@ -182,8 +183,8 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
         printk("Minor outside range: %d !\n", minor);
         return -EFAULT;
     }
-    
-    switch(cmd) 
+
+    switch(cmd)
     {
         default:
             return -ENOTTY;
@@ -195,96 +196,82 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
     return ret;
 }
 
-//
-// Create /proc entries for direct access (with echo/cat) to GPIOs config
-//
+/* Create /proc entries for direct access to FPGA config */
 static int createProcEntries( void )
 {
     static struct proc_dir_entry *fpga_Proc_File;
-    // Create main directory
-    proc_mkdir(FPGA_PROC_DIRNAME, NULL);
-    // Create proc file to handle GPIO values
-    fpga_Proc_File = create_proc_entry( FPGA_PROC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL );
 
-    if( fpga_Proc_File == NULL ) 
-    {
+    /* Create main directory */
+    proc_mkdir(FPGA_PROC_DIRNAME, NULL);
+
+    /* Create proc file */
+    fpga_Proc_File = create_proc_entry( FPGA_PROC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL );
+    if( fpga_Proc_File == NULL ) {
         printk(FPGA_DRIVER_NAME ": Could not register a" FPGA_PROC_FILENAME  ". Terminating\n");
-        armadeus_fpga_cleanup();
-        return -ENOMEM;
-    } 
-    else 
-    {
-        fpga_Proc_File->read_proc        = procfile_fpga_read;   
+        goto error;
+    } else {
+        fpga_Proc_File->read_proc        = procfile_fpga_read;
         fpga_Proc_File->write_proc       = procfile_fpga_write;
     }
-    
-    return(0);
+
+    return 0;
+error:
+	remove_proc_entry(FPGA_PROC_DIRNAME, NULL);
+	return -ENOMEM;
 }
 
 static struct file_operations fpga_fops = {
     .owner   = THIS_MODULE,
     .write   = armadeus_fpga_write,
-//    .read    = armadeus_fpga_read,
+/*    .read    = armadeus_fpga_read, Configuration saving not supported yet */
     .open    = armadeus_fpga_open,
     .release = armadeus_fpga_release,
     .ioctl   = armadeus_fpga_ioctl,
 };
 
-//
-// Module's initialization function
-//
 int __init armadeus_fpga_init(void)
 {
     static int result;
 
-     // Register the driver by getting a major number
+    /* Register the driver by getting a major number */
     result = register_chrdev(fpga_major, FPGA_DRIVER_NAME, &fpga_fops);
     if (result < 0) 
     {
         printk(KERN_WARNING FPGA_DRIVER_NAME ": can't get major %d\n", fpga_major);
         return result;
     }
-    if( fpga_major == 0 ) fpga_major = result; // dynamic Major allocation
+    if( fpga_major == 0 ) fpga_major = result; /* dynamic MAJOR allocation */
 
-    // Creating /proc entries
     result = createProcEntries();
     if( result < 0 ) return( result );
  
-    // Initialise FPGA  semaphore
     sema_init(&fpga_sema, 1);
  
-    // initialize the current fpga descriptor with the one by default
+    /* initialize the current fpga descriptor with the one by default */
     g_current_desc = xilinx_get_descriptor(fpga_descriptor);
     if( g_current_desc == NULL ){
         return -EINVAL;
     }
 
-    printk(FPGA_DRIVER_NAME " module " FPGA_DRIVER_VERSION " successfully loaded !\n");
+    printk(FPGA_DRIVER_NAME " v" FPGA_DRIVER_VERSION " successfully loaded !\n");
     return(0);
 }
 
-//
-// Module's cleanup function
-//
 void __exit armadeus_fpga_cleanup(void)
 {
-    PRINTF("Removing " FPGA_DRIVER_NAME " module: ");
+    pr_debug("Removing " FPGA_DRIVER_NAME ": ");
 
-    // Remove /proc entries    
     remove_proc_entry(FPGA_PROC_FILENAME, NULL);
-	// Remove /proc directory entry
 	remove_proc_entry(FPGA_PROC_DIRNAME, NULL);
-    // De-register /dev interface
     unregister_chrdev(fpga_major, FPGA_DRIVER_NAME);
 
-    PRINTF("Ok !\n");
+    pr_debug("Ok !\n");
 }
-
-//------------------------------------------------
 
 module_init(armadeus_fpga_init);
 module_exit(armadeus_fpga_cleanup);
 
-MODULE_AUTHOR("JB / NC");
-MODULE_DESCRIPTION("Armadeus fpga's loading driver");
+MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain");
+MODULE_DESCRIPTION("Armadeus FPGA loading driver");
 MODULE_LICENSE("GPL");
+

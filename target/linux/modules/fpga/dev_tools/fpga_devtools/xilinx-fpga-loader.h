@@ -1,9 +1,9 @@
 /*
- * (c) Copyright 2006    Armadeus project
- *  Nicolas Colombain <nicolas.colombain@armadeus.com>
- *  Xilinx FPGA support
+ * Xilinx FPGAs download support
+ * Copyright (C) 2006-2009 Nicolas Colombain <nicolas.colombain@armadeus.com>
+ *                         Armadeus Project / Armadeus systems
  *
- * Based on the implementation(uBoot) of: 
+ * Based on the implementation (U-Boot) of:
  * Rich Ireland, Enterasys Networks, rireland@enterasys.com.
  * Keith Outwater, keith_outwater@mvis.com
  *
@@ -31,8 +31,8 @@
 
 #include <linux/types.h>
 
-//#define FPGA_DEBUG
-#undef FPGA_DEBUG
+#define FPGA_DEBUG
+//#undef FPGA_DEBUG
 
 #ifdef FPGA_DEBUG
 #define	PRINTF(fmt,args...)	printk (fmt ,##args)
@@ -56,6 +56,7 @@
 typedef enum {					/* typedef Xilinx_iface	*/
 	min_xilinx_iface_type,		/* low range check value */
     slave_serial,				/* serial data and external clock */
+    slave_parallel,				/* parallel data and external clock */
     max_xilinx_iface_type		/* insert all new types before this */
 } Xilinx_iface;					/* end, typedef Xilinx_iface */
 
@@ -81,6 +82,12 @@ typedef int (*Xilinx_clk_fn)( int assert_clk );
 typedef int (*Xilinx_wr_fn)( int assert_write );
 typedef int (*Xilinx_pre_fn)(void);
 
+typedef int (*Xilinx_cs_fn)( int assert_cs);
+typedef int (*Xilinx_wdata_fn)( unsigned char data );
+typedef int (*Xilinx_busy_fn)(void);
+typedef int (*Xilinx_abort_fn)(void);
+typedef int (*Xilinx_post_fn)(void);
+
 /** struct of target specific low level functions */
 typedef struct {
 	Xilinx_pre_fn	pre;
@@ -91,6 +98,22 @@ typedef struct {
 	Xilinx_wr_fn	wr;
 } Xilinx_Spartan_Slave_Serial_fns;
 
+/* Slave Parallel Implementation function table */
+typedef struct {
+	Xilinx_pre_fn	pre;
+	Xilinx_pgm_fn	pgm;
+	Xilinx_clk_fn	clk;
+	Xilinx_init_fn	init;
+	Xilinx_done_fn	done;
+	Xilinx_wr_fn	wr;
+	Xilinx_cs_fn	cs;
+	Xilinx_wdata_fn	wdata;
+	Xilinx_busy_fn	busy;
+	Xilinx_abort_fn	abort;
+	Xilinx_post_fn	post;
+} Xilinx_Spartan3_Slave_Parallel_fns;
+
+
 /**
  *  program the FPGA. 
  *  return 0 if success, >0 while programming, <0 if error detected
@@ -98,10 +121,13 @@ typedef struct {
 size_t xilinx_load( Xilinx_desc *desc, const char *buf, size_t bsize );
 
 /**
- *  initialize the FPGA programming interface. 
+ *  initialize the FPGA programming interface.
  *  return 0 if success, <0 if error detected
  */ 
 int xilinx_init_load( Xilinx_desc *desc );
+
+/* terminate FGPA loading */
+int xilinx_finish_load( Xilinx_desc *desc );
 
 /** 
  *  get the descriptor infos, return the number of char placed in the buffer

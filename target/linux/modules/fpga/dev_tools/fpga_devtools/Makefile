@@ -1,17 +1,16 @@
 #
 # Makefile for the Armadeus FPGA loader driver
-# PATH=$HOME/nico/test/buildroot/build_arm_nofpu/staging_dir/bin:$PATH
-# make ARCH=arm
-# tftp -gr fpgaloader.ko -l /lib/modules/drivers/fpgaloader.ko 192.168.0.3
-# tftp -gr fpga_test.bit 192.168.0.3
-# insmod /lib/modules/drivers/fpgaloader.ko
-# dd if=fpga_test.bit of=/dev/fpga/loader
-
+#
 
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_FPGA_TOOL_DRIVER)	+= fpgaloader.o
-fpgaloader-objs   := target-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o 
+ifneq ($(CONFIG_MACH_APF27),)
+fpgaloader-objs   := apf27-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o 
+endif
+ifneq ($(CONFIG_MACH_APF9328),)
+fpgaloader-objs   := apf9328-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o
+endif
 
 else
 
@@ -25,8 +24,8 @@ default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 clean:
-	rm -f *.*o \
-    rm -f Module.symvers
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
+	rm -f modules.order Module.markers
    
 endif
 

@@ -28,7 +28,7 @@
 #define FPGA_PROC_DIRNAME   "driver/fpga"
 #define FPGA_PROC_FILENAME  FPGA_PROC_DIRNAME "/loader"
 
-#define FPGA_DRIVER_VERSION "v0.0.6"
+#define FPGA_DRIVER_VERSION "0.8"
 #define FPGA_DRIVER_NAME    "fpgaloader"
 
 // By default, we use dynamic allocation of major numbers

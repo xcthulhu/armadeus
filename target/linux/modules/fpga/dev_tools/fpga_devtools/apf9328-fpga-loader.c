@@ -1,5 +1,9 @@
 /*
- **********************************************************************
+ * APF9328 Xilinx FPGA download support
+ * Copyright (C) 2006-2009 Nicolas Colombain <nicolas.colombain@armadeus.com>
+ * Copyright (C) 2006-2009 Eric Jarrige <eric.jarrige@armadeus.com>
+ *                         Armadeus Project / Armadeus systems
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
@@ -13,16 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- **********************************************************************
+ *
+ */
 
-  (c) Copyright 2006    Armadeus project
-  Eric Jarrige <eric.jarrige@armadeus.com>
-  Nicolas Colombain <nicolas.colombain@armadeus.com>
-  Target Xilinx FPGA support
-*/
-
-#include "target-fpga-loader.h"
-#include "xilinx-fpga-loader.h"
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #include <asm/arch/hardware.h>
@@ -31,11 +28,19 @@
 #endif
 #include <asm/io.h>
 
-#define GPIO_PORT(x)  ((x >> 5) & 3)
-#define GPIO_SET(x)   (DR(GPIO_PORT(x)) |= (1<<(x & GPIO_PIN_MASK)))
-#define GPIO_CLEAR(x) (DR(GPIO_PORT(x)) &= ~(1<<(x & GPIO_PIN_MASK)))
-#define GPIO_WRITE(x,y) ( y ? GPIO_SET(x) : GPIO_CLEAR(x) )
-#define GPIO_READ(x)  ((SSR (GPIO_PORT(x)) & (1<<(x & GPIO_PIN_MASK))))
+#include "xilinx-fpga-loader.h"
+
+#define FPGA_INIT	(GPIO_PORTB | 15)	/* FPGA init pin (SSI input)  */
+#define FPGA_DONE	(GPIO_PORTB | 16)	/* FPGA done pin (SSI input)  */
+#define FPGA_DIN	(GPIO_PORTB | 17)	/* FPGA data pin (SSI output) */
+#define FPGA_PROGRAM	(GPIO_PORTB | 18)	/* FPGA prog pin (SSI output) */
+#define FPGA_CLOCK	(GPIO_PORTB | 19)	/* FPGA clk pin  (SSI output) */
+
+#define GPIO_PORT(x)	((x >> 5) & 3)
+#define GPIO_SET(x)	(DR(GPIO_PORT(x)) |= (1<<(x & GPIO_PIN_MASK)))
+#define GPIO_CLEAR(x)	(DR(GPIO_PORT(x)) &= ~(1<<(x & GPIO_PIN_MASK)))
+#define GPIO_WRITE(x,y)	( y ? GPIO_SET(x) : GPIO_CLEAR(x) )
+#define GPIO_READ(x)	((SSR (GPIO_PORT(x)) & (1<<(x & GPIO_PIN_MASK))))
 
 /*
  * Set the FPGA's active-low program line to the specified level
@@ -83,7 +88,7 @@ int fpga_wr_fn( int assert_write )
 
 int fpga_pre_fn( void )
 {
-    // Initialize GPIO pins
+	/* Initialize GPIO pins */
 	imx_gpio_mode (FPGA_INIT | GPIO_GIUS | GPIO_DR | GPIO_IN );
 	imx_gpio_mode (FPGA_DONE | GPIO_GIUS | GPIO_DR | GPIO_IN );
 	imx_gpio_mode (FPGA_DIN  | GPIO_GIUS | GPIO_DR | GPIO_OUT );
@@ -102,20 +107,18 @@ Xilinx_Spartan_Slave_Serial_fns fpga_fns = {
 	fpga_wr_fn,
 };
 
-Xilinx_desc target_fpga_desc[NB_TARGET_DESC] = {
+Xilinx_desc target_fpga_desc[/*NB_TARGET_DESC*/] = {
 	
-    { // first supported configuration (default)
-        Xilinx_Spartan,
-	    slave_serial,
-	    XILINX_XC3S200_SIZE,
-	    (void *) &fpga_fns
-    },
-
-   	{ // second one
-        Xilinx_Spartan,
-	    slave_serial,
-	    XILINX_XC3S400_SIZE,
-	    (void *) &fpga_fns
-     }
+	{ /* first supported configuration (default) */
+		Xilinx_Spartan,
+		slave_serial,
+		XILINX_XC3S200_SIZE,
+		(void *) &fpga_fns
+	},
+	{ /* second one */
+		Xilinx_Spartan,
+		slave_serial,
+		XILINX_XC3S400_SIZE,
+		(void *) &fpga_fns
+	},
 };
-
