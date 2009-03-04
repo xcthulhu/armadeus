@@ -23,14 +23,7 @@ use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity led_top is
-    port ( -- Imx pins
-           DataxD  : inout std_logic_vector(15 downto 0);
-           AddrxDI : in    std_logic_vector(12 downto 0);
-           WRxBI   : in    std_logic;  
-           RDxBI   : in    std_logic; 
-           CSxBI   : in    std_logic;
-
-           --Our pins
+    port ( 
            clk      : in  STD_LOGIC;
            button   : in  STD_LOGIC;
            led      : out  STD_LOGIC);
