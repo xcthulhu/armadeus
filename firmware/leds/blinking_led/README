@@ -1,0 +1,4 @@
+This is a very simple IP that blink a LED. On apf9328-devfull, the led is
+already soldered. On apf9328-devlight, it must be soldered according to
+figure here:
+http://www.armadeus.com/wiki/index.php?title=Une_led_qui_clignote_avec_le_spartan_3
