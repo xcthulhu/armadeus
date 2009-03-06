@@ -20,15 +20,11 @@
  *
  */
 
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/arch/hardware.h>
-#else
-#include <mach/hardware.h>
-#endif
 #include <asm/io.h>
+#include <linux/platform_device.h>
 
 #include "xilinx-fpga-loader.h"
+
 
 #define FPGA_INIT	(GPIO_PORTB | 15)	/* FPGA init pin (SSI input)  */
 #define FPGA_DONE	(GPIO_PORTB | 16)	/* FPGA done pin (SSI input)  */
@@ -45,7 +41,7 @@
 /*
  * Set the FPGA's active-low program line to the specified level
  */
-int fpga_pgm_fn( int assert )
+static int apf9328_fpga_pgm( int assert )
 {
 	GPIO_WRITE( FPGA_PROGRAM, !assert);
 	return assert;
@@ -54,7 +50,7 @@ int fpga_pgm_fn( int assert )
 /*
  * Set the FPGA's active-high clock line to the specified level
  */
-int fpga_clk_fn( int assert_clk )
+static int apf9328_fpga_clk( int assert_clk )
 {
 	GPIO_WRITE( FPGA_CLOCK, assert_clk);
 	return assert_clk;
@@ -64,7 +60,7 @@ int fpga_clk_fn( int assert_clk )
  * Test the state of the active-low FPGA INIT line.  Return 1 on INIT
  * asserted (low).
  */
-int fpga_init_fn( void )
+static int apf9328_fpga_init( void )
 {
 	return(!GPIO_READ(FPGA_INIT));
 }
@@ -72,7 +68,7 @@ int fpga_init_fn( void )
 /*
  * Test the state of the active-high FPGA DONE pin
  */
-int fpga_done_fn( void )
+static int apf9328_fpga_done( void )
 {
 	return(GPIO_READ(FPGA_DONE));
 }
@@ -80,13 +76,13 @@ int fpga_done_fn( void )
 /*
  * Set the FPGA's data line to the specified level
  */
-int fpga_wr_fn( int assert_write )
+static int apf9328_fpga_wr( int assert_write )
 {
 	GPIO_WRITE( FPGA_DIN, assert_write);
 	return assert_write;
 }
 
-int fpga_pre_fn( void )
+static int apf9328_fpga_pre( void )
 {
 	/* Initialize GPIO pins */
 	imx_gpio_mode (FPGA_INIT | GPIO_GIUS | GPIO_DR | GPIO_IN );
@@ -99,26 +95,36 @@ int fpga_pre_fn( void )
 
 
 Xilinx_Spartan_Slave_Serial_fns fpga_fns = {
-	fpga_pre_fn,
-	fpga_pgm_fn,
-	fpga_clk_fn,
-	fpga_init_fn,
-	fpga_done_fn,
-	fpga_wr_fn,
+	.pre = apf9328_fpga_pre,
+	.pgm = apf9328_fpga_pgm,
+	.clk = apf9328_fpga_clk,
+	.init = apf9328_fpga_init,
+	.done = apf9328_fpga_done,
+	.wr = apf9328_fpga_wr,
 };
 
-Xilinx_desc target_fpga_desc[/*NB_TARGET_DESC*/] = {
-	
-	{ /* first supported configuration (default) */
-		Xilinx_Spartan,
-		slave_serial,
-		XILINX_XC3S200_SIZE,
-		(void *) &fpga_fns
-	},
-	{ /* second one */
-		Xilinx_Spartan,
-		slave_serial,
-		XILINX_XC3S400_SIZE,
-		(void *) &fpga_fns
+struct fpga_desc apf9328_fpga_desc = {
+	.family = Xilinx_Spartan,
+	.iface = slave_serial,
+	.iface_fns = (void *) &fpga_fns
+};
+
+static struct platform_device fpga_device = {
+	.name		= "fpgaloader",
+	.id		= 0,
+	.dev = {
+		.platform_data	= &apf9328_fpga_desc,
 	},
 };
+
+static struct platform_device *devices[] __initdata = {
+	&fpga_device,
+};
+
+static int __init apf9328_fpga_initialize(void)
+{
+	platform_add_devices(devices, ARRAY_SIZE(devices));
+	return 0;
+}
+
+device_initcall(apf9328_fpga_initialize);

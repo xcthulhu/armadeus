@@ -6,10 +6,12 @@ ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_FPGA_TOOL_DRIVER)	+= fpgaloader.o
 ifneq ($(CONFIG_MACH_APF27),)
-fpgaloader-objs   := apf27-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o 
+fpgaloader-objs := xilinx-fpga-loader.o fpga-loader.o
+obj-y += apf27-fpga-loader.o
 endif
 ifneq ($(CONFIG_MACH_APF9328),)
-fpgaloader-objs   := apf9328-fpga-loader.o xilinx-fpga-loader.o fpga-loader.o
+fpgaloader-objs := xilinx-fpga-loader.o fpga-loader.o
+obj-y += apf9328-fpga-loader.o
 endif
 
 else

@@ -26,18 +26,19 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/fcntl.h>
+#include <linux/platform_device.h>
+#include <linux/miscdevice.h>
 #include <asm/uaccess.h>
 
 #include "fpga-loader.h"
 #include "xilinx-fpga-loader.h"
 
-#define DRIVER_VERSION "0.8"
+
+#define DRIVER_VERSION "0.9"
 #define DRIVER_NAME    "fpgaloader"
 
-
 /* global variables */
-static int fpga_major =  FPGA_MAJOR;
-Xilinx_desc* g_current_desc = NULL;
+struct fpga_desc *g_current_desc = NULL;
 struct semaphore fpga_sema;
 
 static unsigned char fpga_descriptor = 0; /* use default target_fpga_desc */
@@ -121,7 +122,7 @@ static int armadeus_fpga_release(struct inode *inode, struct file *file)
 static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void* data) 
 {
 	int ret;
-	
+
 	/* We give all of our information in one go, so if the user asks us if
 	   we have more information the answer should always be no.
 	   This is important because the standard read function from the
@@ -132,11 +133,7 @@ static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **sta
 		/* we have finished to read, return 0 */
 		ret  = 0;
 	} else {
-		if ( data == NULL ) {
-			ret = xilinx_get_descriptor_info( -1, buffer );
-		} else {
-			ret = xilinx_get_descriptor_info( *((unsigned char*)data), buffer );
-		}
+		ret = fpga_get_infos( g_current_desc, buffer );
 	}
 
 	return ret;
@@ -194,10 +191,10 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
 static int create_proc_entries( void )
 {
 	static struct proc_dir_entry *fpga_Proc_File;
-	
+
 	/* Create main directory */
 	proc_mkdir(FPGA_PROC_DIRNAME, NULL);
-	
+
 	/* Create proc file */
 	fpga_Proc_File = create_proc_entry( FPGA_PROC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL );
 	if( fpga_Proc_File == NULL ) {
@@ -207,7 +204,7 @@ static int create_proc_entries( void )
 		fpga_Proc_File->read_proc = procfile_fpga_read;
 		fpga_Proc_File->write_proc = procfile_fpga_write;
 	}
-	
+
 	return 0;
 error:
 	remove_proc_entry(FPGA_PROC_DIRNAME, NULL);
@@ -223,43 +220,102 @@ static struct file_operations fpga_fops = {
 	.ioctl   = armadeus_fpga_ioctl,
 };
 
-int __init armadeus_fpga_init(void)
+#ifdef CONFIG_PM
+static int armadeus_fpga_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	static int result;
-	
-	/* Register the driver by getting a major number */
-	result = register_chrdev(fpga_major, DRIVER_NAME, &fpga_fops);
-	if (result < 0) {
-		printk(KERN_WARNING DRIVER_NAME ": can't get major %d\n", fpga_major);
-		return result;
+	return 0;
+}
+
+static int armadeus_fpga_resume(struct platform_device *pdev)
+{
+	return 0;
+}
+#else
+#define armadeus_fpga_suspend	NULL
+#define armadeus_fpga_resume	NULL
+#endif
+
+static struct miscdevice fpgaloader_misc = {
+	.minor  = MISC_DYNAMIC_MINOR,
+	.name   = DRIVER_NAME,
+	.fops   = &fpga_fops,
+};
+
+
+static int armadeus_fpga_probe(struct platform_device *pdev)
+{
+	int result;
+	struct device *dev = &pdev->dev;
+	struct fpga_desc *platform_info;
+
+	platform_info = dev->platform_data;
+	if (platform_info == NULL) {
+		dev_err(&pdev->dev, "probe - no platform data supplied\n");
+		result = -ENODEV;
+		goto err_no_pdata;
 	}
-	if( fpga_major == 0 ) fpga_major = result; /* dynamic MAJOR allocation */
+
+	/* Register the driver through misc layer to get MAJOR/MINOR */
+	result = misc_register(&fpgaloader_misc);
+	if (result) {
+		printk(KERN_ERR "%s:%u: misc_register failed %d\n",
+				__func__, __LINE__, result);
+		goto err_no_pdata;
+	}
+
+	dev_dbg(&pdev->dev, "%s:%u: registered misc device %d\n",
+			__func__, __LINE__, fpgaloader_misc.minor);
 
 	result = create_proc_entries();
 	if( result < 0 )
-		return result;
+		goto err_misc;
 
 	sema_init(&fpga_sema, 1);
 
 	/* initialize the current fpga descriptor with the one by default */
-	g_current_desc = xilinx_get_descriptor(fpga_descriptor);
-	if( g_current_desc == NULL ){
-		return -EINVAL;
-	}
+	g_current_desc = platform_info;
 	
-	printk(DRIVER_NAME " v" DRIVER_VERSION " successfully loaded !\n");
 	return 0;
+
+err_misc:
+	misc_deregister(&fpgaloader_misc);
+err_no_pdata:
+	return result;
 }
 
-void __exit armadeus_fpga_cleanup(void)
+static int armadeus_fpga_remove(struct platform_device *pdev)
 {
 	remove_proc_entry(FPGA_PROC_FILENAME, NULL);
 	remove_proc_entry(FPGA_PROC_DIRNAME, NULL);
-	unregister_chrdev(fpga_major, DRIVER_NAME);
+	misc_deregister(&fpgaloader_misc);
+
+	return 0;
+}
+
+static struct platform_driver armadeus_fpga_driver = {
+	.probe		= armadeus_fpga_probe,
+	.remove		= armadeus_fpga_remove,
+	.suspend	= armadeus_fpga_suspend,
+	.resume		= armadeus_fpga_resume,
+	.driver		= {
+		.name	= DRIVER_NAME,
+	},
+};
+
+static int __init armadeus_fpga_init(void)
+{
+	printk(DRIVER_NAME " v" DRIVER_VERSION "\n");
+
+	return platform_driver_register(&armadeus_fpga_driver);
+}
+
+static void __exit armadeus_fpga_exit(void)
+{
+	platform_driver_unregister(&armadeus_fpga_driver);
 }
 
 module_init(armadeus_fpga_init);
-module_exit(armadeus_fpga_cleanup);
+module_exit(armadeus_fpga_exit);
 
 MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain");
 MODULE_DESCRIPTION("Armadeus FPGA loading driver");

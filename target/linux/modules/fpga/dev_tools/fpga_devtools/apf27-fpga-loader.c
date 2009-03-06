@@ -19,14 +19,12 @@
  *
  */
 
-#include <linux/version.h>
 #include <mach/iomux-mx1-mx2.h>
 #include <mach/gpio.h>
-#include <asm/io.h>
-#include <linux/kernel.h>
-#include <mach/hardware.h>
+#include <linux/platform_device.h>
 
 #include "xilinx-fpga-loader.h"
+
 
 #define FPGA_BASE_ADDR CS5_BASE_ADDR
 #define FPGA_VIRT_ADDR  (IO_ADDRESS(FPGA_BASE_ADDR) + 0x0)
@@ -34,8 +32,8 @@
 #define CFG_FPGA_PWR		(GPIO_PORTF | 19)	/* FPGA prog pin  */
 #define CFG_FPGA_PRG		(GPIO_PORTF | 11)	/* FPGA prog pin  */
 #define CFG_FPGA_CLK		(GPIO_PORTF | 15)	/* FPGA clk pin   */
-#define CFG_FPGA_RDATA		0xD6000000		/* FPGA data addr  */
-#define CFG_FPGA_WDATA		0xD6000000		/* FPGA data addr  */
+#define CFG_FPGA_RDATA		0xD6000000		/* FPGA data addr */
+#define CFG_FPGA_WDATA		0xD6000000		/* FPGA data addr */
 #define CFG_FPGA_INIT		(GPIO_PORTF | 12)	/* FPGA init pin  */
 #define CFG_FPGA_DONE		(GPIO_PORTF | 9)	/* FPGA done pin  */
 #define CFG_FPGA_RW		(GPIO_PORTF | 21)	/* FPGA done pin  */
@@ -43,11 +41,9 @@
 #define CFG_FPGA_SUSPEND	(GPIO_PORTF | 10)	/* FPGA done pin  */
 #define CFG_FPGA_RESET		(GPIO_PORTF | 7)	/* FPGA done pin  */
 
-#define NB_TARGET_DESC 2
-
 
 /* Initialize GPIO port before download */
-int fpga_pre_fn (void)
+int apf27_fpga_pre(void)
 {
 	gpio_set_value(CFG_FPGA_PWR, 1);
 	gpio_set_value(CFG_FPGA_PRG, 1);
@@ -75,7 +71,7 @@ int fpga_pre_fn (void)
 /*
  * Set the FPGA's active-low program line to the specified level
  */
-int fpga_pgm_fn (int assert)
+int apf27_fpga_pgm(int assert)
 {
 	gpio_set_value( CFG_FPGA_PRG, !assert);
 	return assert;
@@ -84,7 +80,7 @@ int fpga_pgm_fn (int assert)
 /*
  * Set the FPGA's active-high clock line to the specified level
  */
-int fpga_clk_fn (int assert_clk)
+int apf27_fpga_clk(int assert_clk)
 {
 	gpio_set_value( CFG_FPGA_CLK, !assert_clk);
 	return assert_clk;
@@ -94,7 +90,7 @@ int fpga_clk_fn (int assert_clk)
  * Test the state of the active-low FPGA INIT line.  Return 1 on INIT
  * asserted (low).
  */
-int fpga_init_fn (void)
+int apf27_fpga_init(void)
 {
 	int value;
 	value = gpio_get_value(CFG_FPGA_INIT);
@@ -104,7 +100,7 @@ int fpga_init_fn (void)
 /*
  * Test the state of the active-high FPGA DONE pin
  */
-int fpga_done_fn (void)
+int apf27_fpga_done(void)
 {
 	return(gpio_get_value(CFG_FPGA_DONE));
 }
@@ -112,30 +108,30 @@ int fpga_done_fn (void)
 /*
  * Set the FPGA's wr line to the specified level
  */
-int fpga_wr_fn (int assert_write)
+int apf27_fpga_wr(int assert_write)
 {
 	gpio_set_value( CFG_FPGA_RW, !assert_write);
 	return assert_write;
 }
 
-int fpga_cs_fn (int assert_cs)
+int apf27_fpga_cs(int assert_cs)
 {
 	gpio_set_value( CFG_FPGA_CS, !assert_cs);
 	return assert_cs;
 }
 
-int fpga_wdata_fn ( unsigned char data )
+int apf27_fpga_wdata( unsigned char data )
 {
 	__raw_writew(data, FPGA_VIRT_ADDR);
 	return data;
 }
 
-int fpga_busy_fn (void)
+int apf27_fpga_busy(void)
 {
 	return 0;
 }
- 
-int fpga_post_fn (void)
+
+int apf27_fpga_post(void)
 {
 	mxc_gpio_mode (CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
@@ -144,9 +140,9 @@ int fpga_post_fn (void)
 	return 1;
 }
 
-int fpga_abort_fn (void)
+int apf27_fpga_abort(void)
 {
-	fpga_post_fn();
+	apf27_fpga_post();
 	gpio_set_value(CFG_FPGA_PWR, 1);
 	return 1;
 }
@@ -157,30 +153,41 @@ int fpga_abort_fn (void)
  * Just take care about the file size
  */
 Xilinx_Spartan3_Slave_Parallel_fns fpga_fns = {
-	fpga_pre_fn,
-	fpga_pgm_fn,
-	fpga_clk_fn,
-	fpga_init_fn,
-	fpga_done_fn,
-	fpga_wr_fn,
-	fpga_cs_fn,
-	fpga_wdata_fn,
-	fpga_busy_fn,
-	fpga_abort_fn,
-	fpga_post_fn,
+	.pre = apf27_fpga_pre,
+	.pgm = apf27_fpga_pgm,
+	.clk = apf27_fpga_clk,
+	.init = apf27_fpga_init,
+	.done = apf27_fpga_done,
+	.wr = apf27_fpga_wr,
+	.cs = apf27_fpga_cs,
+	.wdata = apf27_fpga_wdata,
+	.busy = apf27_fpga_busy,
+	.abort = apf27_fpga_abort,
+	.post = apf27_fpga_post,
 };
 
-Xilinx_desc target_fpga_desc[NB_TARGET_DESC] = {
-	{
-		Xilinx_Spartan,
-		slave_parallel,
-		1196128l/8,
-		(void *) &fpga_fns 
-	},
-	{
-		Xilinx_Spartan,
-		slave_parallel,
-		1887216l/8,
-		(void *) &fpga_fns 
+struct fpga_desc apf27_fpga_desc = {
+	.family = Xilinx_Spartan,
+	.iface = slave_parallel,
+	.iface_fns = (void *) &fpga_fns
+};
+
+static struct platform_device fpga_device = {
+	.name		= "fpgaloader",
+	.id		= 0,
+	.dev = {
+		.platform_data	= &apf27_fpga_desc,
 	},
 };
+
+static struct platform_device *devices[] __initdata = {
+	&fpga_device,
+};
+
+static int __init apf27_fpga_initialize(void)
+{
+	platform_add_devices(devices, ARRAY_SIZE(devices));
+	return 0;
+}
+
+device_initcall(apf27_fpga_initialize);

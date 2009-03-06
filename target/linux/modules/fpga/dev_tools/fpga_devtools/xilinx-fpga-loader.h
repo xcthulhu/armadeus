@@ -31,16 +31,15 @@
 
 #include <linux/types.h>
 
+
 #define FPGA_DEBUG
 //#undef FPGA_DEBUG
 
 #ifdef FPGA_DEBUG
-#define	PRINTF(fmt,args...)	printk (fmt ,##args)
+#define PRINTF(fmt,args...)	printk (fmt ,##args)
 #else
-#define	PRINTF(fmt,args...)
+#define PRINTF(fmt,args...)
 #endif
-
-
 
 /* Spartan-III */
 #define XILINX_XC3S50_SIZE  	439264/8
@@ -53,25 +52,25 @@
 #define XILINX_XC3S5000_SIZE 	13271936/8
 
 
-typedef enum {					/* typedef Xilinx_iface	*/
+typedef enum {
 	min_xilinx_iface_type,		/* low range check value */
-    slave_serial,				/* serial data and external clock */
-    slave_parallel,				/* parallel data and external clock */
-    max_xilinx_iface_type		/* insert all new types before this */
-} Xilinx_iface;					/* end, typedef Xilinx_iface */
+	slave_serial,			/* serial data and external clock */
+	slave_parallel,			/* parallel data and external clock */
+	max_xilinx_iface_type		/* insert all new types before this */
+} Xilinx_iface;
 
-typedef enum {					/* typedef Xilinx_Family */
-	min_xilinx_type,			/* low range check value */
-    Xilinx_Spartan, 			/* Spartan-II Family */
-    max_xilinx_type				/* insert all new types before this */
-} Xilinx_Family;				/* end, typedef Xilinx_Family */
+typedef enum {
+	min_xilinx_type,		/* low range check value */
+	Xilinx_Spartan, 		/* Spartan-II Family */
+	max_xilinx_type			/* insert all new types before this */
+} Xilinx_Family;
 
-typedef struct {				/* typedef Xilinx_desc */
-    Xilinx_Family    family;	/* part type */
-    Xilinx_iface     iface;		/* interface type */
-    size_t           size;		/* bytes of data part can accept */
+struct fpga_desc {
+	Xilinx_Family    family;	/* part type */
+	Xilinx_iface     iface;		/* interface type */
+	size_t           size;		/* bytes of data part can accept */
 	void *           iface_fns;	/* interface function table */
-} Xilinx_desc;					/* end, typedef Xilinx_desc */
+};
 
 
 /** pointer to target specific low level function */
@@ -115,29 +114,23 @@ typedef struct {
 
 
 /**
- *  program the FPGA. 
+ *  program the FPGA.
  *  return 0 if success, >0 while programming, <0 if error detected
- */ 
-size_t xilinx_load( Xilinx_desc *desc, const char *buf, size_t bsize );
+ */
+size_t xilinx_load( struct fpga_desc *desc, const char *buf, size_t bsize );
 
 /**
- *  initialize the FPGA programming interface.
+ *  initialize the FPGA programming interface
  *  return 0 if success, <0 if error detected
- */ 
-int xilinx_init_load( Xilinx_desc *desc );
+ */
+int xilinx_init_load( struct fpga_desc *desc );
 
 /* terminate FGPA loading */
-int xilinx_finish_load( Xilinx_desc *desc );
+int xilinx_finish_load( struct fpga_desc *desc );
 
-/** 
+/**
  *  get the descriptor infos, return the number of char placed in the buffer
  */
-int xilinx_get_descriptor_info( int desc_id, char* buffer);
-
-/** 
- *  get the descriptor corresponding to desc_id
- *  return NULL if error
- */
-Xilinx_desc * xilinx_get_descriptor( unsigned char desc_id );
+int fpga_get_infos( struct fpga_desc *desc, char* buffer);
 
 #endif // __XILINX_FPGA_H__
