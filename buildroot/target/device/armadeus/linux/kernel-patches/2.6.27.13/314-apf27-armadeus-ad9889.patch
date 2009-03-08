@@ -448,3 +448,32 @@
 +
 +
 +#endif	/* __LINUX_VIDE0_AD9889_H */
+--- linux-2.6.27.13.orig/drivers/media/video/Makefile	2009-03-08 15:26:08.000000000 +0100
++++ linux-2.6.27.13/drivers/media/video/Makefile	2009-03-07 19:02:17.000000000 +0100
+@@ -46,6 +46,7 @@ obj-$(CONFIG_VIDEO_SAA717X) += saa717x.o
+ obj-$(CONFIG_VIDEO_SAA7127) += saa7127.o
+ obj-$(CONFIG_VIDEO_SAA7185) += saa7185.o
+ obj-$(CONFIG_VIDEO_SAA7191) += saa7191.o
++obj-$(CONFIG_VIDEO_AD9889) += ad9889.o
+ obj-$(CONFIG_VIDEO_ADV7170) += adv7170.o
+ obj-$(CONFIG_VIDEO_ADV7175) += adv7175.o
+ obj-$(CONFIG_VIDEO_VPX3220) += vpx3220.o
+--- linux-2.6.27.13.orig/drivers/media/video/Kconfig	2009-03-08 15:26:08.000000000 +0100
++++ linux-2.6.27.13.orig/drivers/media/video/Kconfig	2009-03-07 19:02:02.000000000 +0100
+@@ -407,6 +407,16 @@ config VIDEO_SAA7185
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called saa7185.
+ 
++config VIDEO_AD9889
++	tristate "Analog Devices AD9889 digital video encoders"
++	depends on VIDEO_V4L2 && I2C
++	---help---
++	  Support for the Analog Devices AD9889 digital video encoders.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ad9889.
++
++
+ config VIDEO_ADV7170
+ 	tristate "Analog Devices ADV7170 video encoder"
+ 	depends on VIDEO_V4L1 && I2C
