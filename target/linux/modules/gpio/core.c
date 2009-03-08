@@ -345,10 +345,10 @@ static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size
 
 	minor = MINOR(file->f_dentry->d_inode->i_rdev);
 
-    printk("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
+	pr_debug("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
 
-    if (down_interruptible(&gpio_sema)) /* Usefull ?? */
-        return -ERESTARTSYS;
+	if (down_interruptible(&gpio_sema)) /* Usefull ?? */
+        	return -ERESTARTSYS;
 
 	count = min(count, (size_t)4);
 	if (copy_from_user(&value, data, count)) {
@@ -357,11 +357,11 @@ static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size
 	}
 
 	if( gpio->nb_pins != 1) {
-		printk("Full port write: 0x%x\n", value);
+		pr_debug("Full port write: 0x%x\n", value);
 		writeOnPort( gpio->port, value );
 	} else {
 		value = value ? 1 : 0;
-		printk("Single pin write: %d\n", value);
+		pr_debug("Single pin write: %d\n", value);
 		imx_gpio_set_value( minor, value );
 	}
 	ret = count;
@@ -387,7 +387,7 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count
 
 	spin_lock_irq(&gpio->lock);
 
-    printk("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
+	pr_debug("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
 
 	while (!gpio->changed) {
 		spin_unlock_irq(&gpio->lock);
@@ -404,10 +404,10 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count
 
 	if( gpio->nb_pins != 1) {
 		value = readFromPort( gpio->port );
-		printk("Full port read: 0x%x\n", value);
+		pr_debug("Full port read: 0x%x\n", value);
 	} else {
 		value = imx_gpio_get_value( minor );
-		printk("Single pin read: %d\n", value);
+		pr_debug("Single pin read: %d\n", value);
 	}
 	
     value = readFromPort( minor );
@@ -511,9 +511,9 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 	}
 
 success:
-    printk("Opening /dev/gpio%d/%d file port:%d pin:%d\n", major, minor, gpio->port, gpio->number);
+	printk("Opening /dev/gpio%d/%d file port:%d pin:%d\n", major, minor, gpio->port, gpio->number);
 	gpio->initialized = 1;
-    return 0;
+	return 0;
 
 err_irq:
 	printk("%s error while requesting irq %d\n", __FUNCTION__, irq);
