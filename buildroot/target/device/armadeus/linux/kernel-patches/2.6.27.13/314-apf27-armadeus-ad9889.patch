@@ -56,32 +56,32 @@
 +
 +
 +struct ad9889_dev {
-+	struct mutex lock_sync;
++    struct mutex lock_sync;
 +    unsigned char edid_ready;
 +    int edid_block_map_offset;
 +    int next_segment;
 +
-+	struct i2c_client *client;
++    struct i2c_client *client;
 +    int force_hpd;
-+	struct work_struct	work;
++    struct work_struct	work;
 +    struct i2c_client *edid_ram;
 +};
 +
 +static int ad9889_read(struct i2c_client *client, u8 reg)
 +{
-+	return i2c_smbus_read_byte_data(client, reg);
++    return i2c_smbus_read_byte_data(client, reg);
 +}
 +
 +static int ad9889_write(struct i2c_client *client, u8 reg, u8 val)
 +{
-+	int i;
++    int i;
 +
-+	for (i = 0; i < 3; i++) {
-+		if (i2c_smbus_write_byte_data(client, reg, val) == 0)
-+			return 0;
-+	}
-+	printk(KERN_ERR "I2C Write Problem\n");
-+	return -1;
++    for (i = 0; i < 3; i++) {
++        if (i2c_smbus_write_byte_data(client, reg, val) == 0)
++            return 0;
++    }
++    printk(KERN_ERR "I2C Write Problem\n");
++    return -1;
 +}
 +
 +static void ad9889_av_mute_on(struct i2c_client *client)
@@ -275,70 +275,70 @@
 +      interrupt_remain1 = ad9889_read(client, 0x96);
 +      interrupt_remain2 = ad9889_read(client, 0x97);
 +    } 
-+ 	mutex_unlock(&ad9889->lock_sync);
++    mutex_unlock(&ad9889->lock_sync);
 +}
 +
 +/* ad9889 has new data for us available.  */
 +static irqreturn_t ad9889_handler(int irq, void *dev_id)
 +{
-+	struct ad9889_dev *dev = (struct ad9889_dev *) dev_id;
-+ 	schedule_work(&dev->work);
-+	return IRQ_HANDLED;
++    struct ad9889_dev *dev = (struct ad9889_dev *) dev_id;
++    schedule_work(&dev->work);
++    return IRQ_HANDLED;
 +}
 +
 +static int ad9889_probe(struct i2c_client *client,
-+			 const struct i2c_device_id *id)
++        const struct i2c_device_id *id)
 +{
-+	struct ad9889_config *pdata = client->dev.platform_data;
-+	struct ad9889_dev *ad9889;
-+	int err = -EINVAL;
++    struct ad9889_config *pdata = client->dev.platform_data;
++    struct ad9889_dev *ad9889;
++    int err = -EINVAL;
 +
-+	/* Check if the adapter supports the needed features */
-+	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
-+		return -EIO;
++    /* Check if the adapter supports the needed features */
++    if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
++        return -EIO;
 +
-+	if (!pdata) {
-+		printk(KERN_ERR "AD9889: Platform data not supplied\n");
-+		return -ENOENT;
-+	}
++    if (!pdata) {
++        printk(KERN_ERR "AD9889: Platform data not supplied\n");
++        return -ENOENT;
++    }
 +
-+	if (!client->irq) {
-+		printk(KERN_ERR "AD9889: Invalid irq value\n");
-+		return -ENOENT;
-+	}
++    if (!client->irq) {
++        printk(KERN_ERR "AD9889: Invalid irq value\n");
++        return -ENOENT;
++    }
 +
-+	ad9889 = kzalloc(sizeof(struct ad9889_dev), GFP_KERNEL);
++    ad9889 = kzalloc(sizeof(struct ad9889_dev), GFP_KERNEL);
 +
-+	if (ad9889 == NULL)
-+		return -ENOMEM;
++    if (ad9889 == NULL)
++        return -ENOMEM;
 +
 +    ad9889->client = client;
-+	i2c_set_clientdata(client, ad9889);
++    i2c_set_clientdata(client, ad9889);
 +
-+	INIT_WORK(&ad9889->work, ad9889_work);
-+	mutex_init(&ad9889->lock_sync);
-+	mutex_lock(&ad9889->lock_sync);
++    INIT_WORK(&ad9889->work, ad9889_work);
++    mutex_init(&ad9889->lock_sync);
++    mutex_lock(&ad9889->lock_sync);
 +
 +
-+	/* allocate GPIO / IRQ if necessary */
-+	if (pdata->init)
++    /* allocate GPIO / IRQ if necessary */
++    if (pdata->init)
 +        pdata->init();
 +
-+	if (request_irq(client->irq, ad9889_handler, IRQF_DISABLED | IRQF_SHARED 
++        if (request_irq(client->irq, ad9889_handler, IRQF_DISABLED | IRQF_SHARED 
 +                    | IRQF_TRIGGER_FALLING, "ad9889", ad9889)) {
-+		printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", client->irq);
-+		err = -EINVAL;
-+		goto err_irq;
-+	}
++        printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", client->irq);
++        err = -EINVAL;
++        goto err_irq;
++    }
 +
-+	printk("detecting ad9889 client on address 0x%x\n", client->addr << 1);
++    printk("detecting ad9889 client on address 0x%x\n", client->addr << 1);
 + 
 +    /* check whether the AD9889 is present */
 +    if( ad9889_read(client, 0xA5) != 0x04 ){
-+		printk("ad9889 not found\n");
-+		err = -ENODEV;
++        printk("ad9889 not found\n");
++        err = -ENODEV;
 +        goto err_presence;
-+	}        
++    }        
 +
 +    ad9889->edid_ram = i2c_new_dummy(client->adapter, pdata->EDID_I2C_addr);
 +    if( !ad9889->edid_ram ){
@@ -346,7 +346,7 @@
 +        goto err_presence;
 +    }
 +
-+	printk("ad9889 detected!\n");
++    printk("ad9889 detected!\n");
 +    /* reset */
 +    ad9889_write(client, 0x41, 0X20);
 +    mdelay(10);
@@ -366,51 +366,51 @@
 +    free_irq(client->irq, ad9889);
 +
 +err_irq:
-+	flush_scheduled_work();
-+   	kfree(i2c_get_clientdata(client));
-+	if (pdata->exit)
++    flush_scheduled_work();
++        kfree(i2c_get_clientdata(client));
++    if (pdata->exit)
 +        pdata->exit();
 +
-+	return 0;
++    return 0;
 +}
 +
 +/* ----------------------------------------------------------------------- */
 +
 +static int ad9889_remove(struct i2c_client *client)
 +{
-+	struct ad9889_config *pdata = client->dev.platform_data;
++    struct ad9889_config *pdata = client->dev.platform_data;
 +    struct ad9889_dev *ad9889 = i2c_get_clientdata(client); 
 +
 +    free_irq(client->irq, ad9889);
 +
-+	flush_scheduled_work();
++    flush_scheduled_work();
 +
-+	if (pdata->exit)
++    if (pdata->exit)
 +        pdata->exit();
 +
 +    i2c_unregister_device(ad9889->edid_ram);
 +
-+   	kfree(i2c_get_clientdata(client));
-+	kfree(ad9889);
++    kfree(i2c_get_clientdata(client));
++    kfree(ad9889);
 +
 +    mutex_unlock(&ad9889->lock_sync);
-+	return 0;
++    return 0;
 +}
 +
 +/* ----------------------------------------------------------------------- */
 +
 +static struct i2c_device_id ad9889_id[] = {
-+	{ "ad9889", 0 },	/* auto-detection */
-+	{ }
++    { "ad9889", 0 },	/* auto-detection */
++    { }
 +};
 +MODULE_DEVICE_TABLE(i2c, ad9889_id);
 +
 +static struct v4l2_i2c_driver_data v4l2_i2c_data = {
-+	.name = "ad9889",
-+	//.command = ad9889_command,
-+	.probe = ad9889_probe,
-+	.remove = ad9889_remove,
-+	.id_table = ad9889_id,
++    .name = "ad9889",
++    //.command = ad9889_command,
++    .probe = ad9889_probe,
++    .remove = ad9889_remove,
++    .id_table = ad9889_id,
 +};
 --- linux-2.6.27.13.orig/include/media/ad9889.h	2008-10-10 00:13:53.000000000 +0200
 +++ linux-2.6.27.13/include/media/ad9889.h	2009-03-01 08:29:01.000000000 +0100
@@ -439,8 +439,8 @@
 +#define __LINUX_VIDE0_AD9889_H
 +
 +struct ad9889_config {
-+	int (*init)(void);
-+	int (*exit)(void);
++    int (*init)(void);
++    int (*exit)(void);
 +    unsigned char EDID_I2C_addr; /*base address of the EDID ram*/
 +    unsigned char high_speed_clock; /* set to 1 if pixel clock >80MHz */
 +    unsigned char edge_capture; /* set to 1 for positive pixel clock capture*/
