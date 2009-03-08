@@ -30,12 +30,14 @@
 #include <linux/miscdevice.h>
 #include <asm/uaccess.h>
 
-#include "fpga-loader.h"
 #include "xilinx-fpga-loader.h"
 
 
 #define DRIVER_VERSION "0.9"
 #define DRIVER_NAME    "fpgaloader"
+#define FPGA_PROC_DIRNAME   "driver/fpga"
+#define FPGA_PROC_FILENAME  FPGA_PROC_DIRNAME "/loader"
+#define FPGA_IOCTL 0x10000000   /* !! TO BE BETTER DEFINED !! */
 
 /* global variables */
 struct fpga_desc *g_current_desc = NULL;
@@ -69,7 +71,7 @@ static ssize_t armadeus_fpga_write(struct file *file, const char* pData, size_t 
 		goto out;
 	}
 
-	ret = xilinx_load( g_current_desc, g_buffer, count );
+	ret = fpga_load( g_current_desc, g_buffer, count );
 
 out:
 	/* Release exclusive access */
@@ -90,7 +92,7 @@ static int armadeus_fpga_open(struct inode *inode, struct file *file)
 	if( g_nb_users > 0 )
 		return -EBUSY;
 
-	ret = xilinx_init_load( g_current_desc );
+	ret = fpga_init_load( g_current_desc );
 	if(!ret) {
 		printk("Starting FPGA download\n");
 		g_nb_users++;
@@ -106,7 +108,7 @@ static int armadeus_fpga_open(struct inode *inode, struct file *file)
 
 static int armadeus_fpga_release(struct inode *inode, struct file *file)
 {
-	if( xilinx_finish_load(g_current_desc) )
+	if( fpga_finish_load(g_current_desc) )
 		printk("Failed to load FPGA !\n");
 
 	pr_debug("Closing access to /dev/fpga/loader%d\n", MINOR(inode->i_rdev));
@@ -170,10 +172,10 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
 
 	/* Extract and test minor */
 	minor = MINOR(inode->i_rdev);
-	if( minor > FPGA_MAX_MINOR ) {
+/*	if( minor > FPGA_MAX_MINOR ) {
 		printk("Minor outside range: %d !\n", minor);
 		return -EFAULT;
-	}
+	}*/
 
 	switch(cmd)
 	{

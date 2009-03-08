@@ -65,9 +65,9 @@ int apf27_fpga_pre(void)
 	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
 	gpio_set_value(CFG_FPGA_PWR, 0);
-    fpga_addr = ioremap( FPGA_BASE_ADDR, 16);
-    if( fpga_addr == NULL ) 
-        return 0;
+	fpga_addr = ioremap( FPGA_BASE_ADDR, 16);
+	if( fpga_addr == NULL ) 
+		return 0;
 	return 1;
 }
 
@@ -140,7 +140,7 @@ int apf27_fpga_post(void)
 	mxc_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode (CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
 	gpio_set_value(CFG_FPGA_PRG, 1);
-    iounmap(fpga_addr);
+	iounmap(fpga_addr);
 	return 1;
 }
 

@@ -117,19 +117,19 @@ typedef struct {
  *  program the FPGA.
  *  return 0 if success, >0 while programming, <0 if error detected
  */
-size_t xilinx_load( struct fpga_desc *desc, const char *buf, size_t bsize );
+size_t fpga_load( struct fpga_desc *desc, const char *buf, size_t bsize );
 
 /**
  *  initialize the FPGA programming interface
  *  return 0 if success, <0 if error detected
  */
-int xilinx_init_load( struct fpga_desc *desc );
+int fpga_init_load( struct fpga_desc *desc );
 
 /* terminate FGPA loading */
-int xilinx_finish_load( struct fpga_desc *desc );
+int fpga_finish_load( struct fpga_desc *desc );
 
 /**
- *  get the descriptor infos, return the number of char placed in the buffer
+ *  get some infos about FPGA download, return the number of char placed in the buffer
  */
 int fpga_get_infos( struct fpga_desc *desc, char* buffer);
 

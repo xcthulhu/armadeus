@@ -34,27 +34,25 @@
 
 #include "xilinx-fpga-loader.h"
 
+
 #define CONFIG_FPGA_DELAY()
-#define CFG_FPGA_WAIT   20000  // uS
+#define CFG_FPGA_WAIT   20000  /* uS */
 
-size_t bytecount = 0; // total bytes received
+size_t bytecount = 0; /* total bytes received */
 
-/*
- * Timeout function
- */
+
+/* Timeout function */
 static unsigned long get_timer(unsigned long initTime)
 {
-    struct timeval tv;
-    do_gettimeofday(&tv);
-    if( tv.tv_usec > initTime )  // avoid overflow pb
-        return tv.tv_usec - initTime;
-    else
-        return initTime - tv.tv_usec;
+	struct timeval tv;
+	do_gettimeofday(&tv);
+	if( tv.tv_usec > initTime )  /* avoid overflow pb */
+		return tv.tv_usec - initTime;
+	else
+		return initTime - tv.tv_usec;
 }
 
-/*
- * dump the given descriptor infos
- */
+/* dump the given descriptor infos */
 static int xilinx_dump_descriptor_info( struct fpga_desc *desc, char* buffer )
 {
 	int len;
@@ -66,9 +64,9 @@ static int xilinx_dump_descriptor_info( struct fpga_desc *desc, char* buffer )
 }
 
 /**
- *  program the FPGA (serial mode). 
+ *  program the FPGA (serial mode).
  *  return 0 if success, >0 while programming, <0 if error detected
- */ 
+ */
 static size_t spartan_serial_load (struct fpga_desc *desc, const char* buf, size_t bsize)
 {
 	Xilinx_Spartan_Slave_Serial_fns *fn = desc->iface_fns;
@@ -119,7 +117,7 @@ static int spartan_serial_init (struct fpga_desc *desc)
 {
 	Xilinx_Spartan_Slave_Serial_fns *fn = desc->iface_fns;
 	if (fn) {
-		unsigned long ts;		/* timestamp */
+		unsigned long timestamp;
 
 		if(*fn->pre){
 			(*fn->pre)(); //Run the pre configuration function if there is one.
@@ -129,27 +127,27 @@ static int spartan_serial_init (struct fpga_desc *desc)
 		(*fn->pgm)(1);	/* Assert the program, commit */
 
 		/* Wait for INIT state (init low) */
-		ts = get_timer(0);		/* get current time */
+		timestamp = get_timer(0);		/* get current time */
 		do {
-			    CONFIG_FPGA_DELAY ();
-			    if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
-			    	PRINTF ("** Timeout waiting for INIT to start.\n");
-				    return -ETIMEDOUT;
-		    	}
+			CONFIG_FPGA_DELAY ();
+			if (get_timer(timestamp) > CFG_FPGA_WAIT) {
+				pr_debug("** Timeout waiting for INIT to start.\n");
+				return -ETIMEDOUT;
+			}
 		} while (!(*fn->init)());
 
 		/* Get ready for the burn */
 		CONFIG_FPGA_DELAY ();
 		(*fn->pgm)(0);	/* Deassert the program, commit */
 
-		ts = get_timer(0);		/* get current time */
+		timestamp = get_timer(0);		/* get current time */
 		/* Now wait for INIT to go high */
 		do {
-			    CONFIG_FPGA_DELAY ();
-			    if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
-				    PRINTF ("** Timeout waiting for INIT to clear.\n");
+			CONFIG_FPGA_DELAY ();
+			if (get_timer(timestamp) > CFG_FPGA_WAIT) {
+				pr_debug("** Timeout waiting for INIT to clear.\n");
 				return -ETIMEDOUT;
-			    }
+			}
 		} while ((*fn->init)());
 
 		bytecount = 0; /* reset byte count */
@@ -182,7 +180,7 @@ static int spartan_serial_finish(struct fpga_desc *desc)
 				return -ETIMEDOUT;
 			}
 		}
-        }
+	}
 	return 0;
 }
 
@@ -194,8 +192,9 @@ static int spartan_serial_finish(struct fpga_desc *desc)
 static int spartan_parallel_init (struct fpga_desc *desc)
 {
 	Xilinx_Spartan3_Slave_Parallel_fns *fn = desc->iface_fns;
+
 	if (fn) {
-		unsigned long ts;		/* timestamp */
+		unsigned long timestamp;
 		/*
 		 * Run the pre configuration function if there is one.
 		 */
@@ -206,12 +205,12 @@ static int spartan_parallel_init (struct fpga_desc *desc)
 
 		/* Establish the initial state */
 		(*fn->pgm) (1);	/* Assert the program, commit */
- 		ts = get_timer (0);		/* get current time */
+		timestamp = get_timer(0);		/* get current time */
 		/* Now wait for INIT to go down */
 		do {
 			CONFIG_FPGA_DELAY ();
-			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
-				PRINTF ("** Timeout waiting for INIT to set.\n");
+			if (get_timer(timestamp) > CFG_FPGA_WAIT) {
+				pr_debug("** Timeout waiting for INIT to set.\n");
 				(*fn->abort) ();	/* abort the burn */
 				return -ETIMEDOUT;
 			}
@@ -222,12 +221,12 @@ static int spartan_parallel_init (struct fpga_desc *desc)
 		CONFIG_FPGA_DELAY ();
 		(*fn->pgm) (0);	/* Deassert the program, commit */
 
-		ts = get_timer (0);		/* get current time */
+		timestamp = get_timer (0);		/* get current time */
 		/* Now wait for INIT and BUSY to go high */
 		do {
 			CONFIG_FPGA_DELAY ();
-			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
-				PRINTF ("** Timeout waiting for INIT to clear.\n");
+			if (get_timer(timestamp) > CFG_FPGA_WAIT) {
+				pr_debug("** Timeout waiting for INIT to clear.\n");
 				(*fn->abort) ();	/* abort the burn */
 				return -ETIMEDOUT;
 			}
@@ -235,15 +234,15 @@ static int spartan_parallel_init (struct fpga_desc *desc)
 		(*fn->wr) (1); /* Assert write, commit */
 		(*fn->cs) (1); /* Assert chip select, commit */
 		(*fn->clk) (1);	/* Assert the clock pin */
-        bytecount = 0; // reset byte count
-    }
-    return 0;
+		bytecount = 0; // reset byte count
+	}
+	return 0;
 }
 
 /**
- *  program the FPGA (parallel mode). 
+ *  program the FPGA (parallel mode).
  *  return 0 if success, >0 while programming, <0 if error detected
- */ 
+ */
 static size_t spartan_parallel_load (struct fpga_desc *desc, const char* buf, size_t bsize)
 {
 	unsigned long flags;
@@ -251,19 +250,18 @@ static size_t spartan_parallel_load (struct fpga_desc *desc, const char* buf, si
 
 	if (fn) {
 		/* Load the data */
-            size_t nbbyte = 0; // init local counter
+		size_t nbbyte = 0;
 
-            raw_local_irq_save(flags);
-
-		    while (nbbyte < bsize) {
-			    (*fn->clk) (1);	/* Assert the clock pin */
-			    CONFIG_FPGA_DELAY ();
- 		    	(*fn->wdata) (buf[nbbyte++]); /* write the data */
-			    CONFIG_FPGA_DELAY ();
-			    (*fn->clk) (0);	/* Deassert the clock pin */
-                bytecount++;
-    	    }
-            raw_local_irq_restore(flags);
+		raw_local_irq_save(flags);
+		 while (nbbyte < bsize) {
+			(*fn->clk) (1);	/* Assert the clock pin */
+			CONFIG_FPGA_DELAY ();
+ 			(*fn->wdata) (buf[nbbyte++]); /* write the data */
+			CONFIG_FPGA_DELAY ();
+			(*fn->clk) (0);	/* Deassert the clock pin */
+			bytecount++;
+		}
+		raw_local_irq_restore(flags);
 
 		return bsize;
 	}
@@ -305,69 +303,68 @@ static int spartan_parallel_finish(struct fpga_desc *desc)
 	return 0;
 }
 
-/**
- *  program the FPGA.
- *  return 0 if success, >0 while programming, <0 if error detected
- */
-size_t xilinx_load( struct fpga_desc *desc, const char *buf, size_t bsize )
-{
-    int ret = 0;
 
-    if( desc ) {
-        switch( desc->family ) /* check family */
-        {
-        case Xilinx_Spartan: 
-            {
-                switch( desc->iface ) /* check donwload hardware interface */
-                {
-                case slave_serial: ret = spartan_serial_load( desc, buf, bsize ); break;
-            	case slave_parallel: ret = spartan_parallel_load (desc, buf, bsize); break;
-                default: PRINTF("interface not supported!\n"); ret = -ENOSYS; break;
-                }
-            }
-            break;
-        default: PRINTF("family not supported!\n"); ret = -ENOSYS; break;
-        }
-    }
-    else {
-        PRINTF("invalid FPGA descriptor!\n");
-        ret = -EINVAL;
-    }
-    return ret;
+size_t fpga_load( struct fpga_desc *desc, const char *buf, size_t bsize )
+{
+	int ret = 0;
+
+	if( desc ) {
+		switch( desc->family ) /* check family */
+		{
+		case Xilinx_Spartan:
+		{
+			switch( desc->iface ) /* check download hardware interface */
+			{
+			case slave_serial: ret = spartan_serial_load( desc, buf, bsize ); break;
+			case slave_parallel: ret = spartan_parallel_load (desc, buf, bsize); break;
+			default: PRINTF("interface not supported!\n"); ret = -ENOSYS; break;
+			}
+		}
+		break;
+		default:
+			PRINTF("family not supported!\n"); 
+			ret = -ENOSYS; 
+		break;
+		}
+	}
+	else {
+		PRINTF("invalid FPGA descriptor!\n");
+		ret = -EINVAL;
+	}
+	return ret;
 }
 
-/**
- *  initialize the FPGA programming interface.
- *  return 0 if success, <0 if error detected
- */
-int xilinx_init_load( struct fpga_desc *desc )
+int fpga_init_load( struct fpga_desc *desc )
 {
-    int ret = 0;
+	int ret = 0;
 
-    if( desc ) {
-        switch( desc->family ) // check family
-        {
-        case Xilinx_Spartan: 
-            {
-                switch( desc->iface ) // check donwload hardware interface
-                {
-                case slave_serial: ret = spartan_serial_init( desc ); break;
-                case slave_parallel: ret = spartan_parallel_init( desc ); break;
-                default: PRINTF("interface not supported!\n"); ret = -ENOSYS; break;
-                }
-            }
-            break;
-        default: PRINTF("family not supported!\n"); ret = -ENOSYS; break;
-        }
-    }
-    else {
-        PRINTF("invalid FPGA descriptor!\n");
-        ret = -EINVAL;
-    }
-    return ret;
+	if( desc ) {
+		switch( desc->family )
+		{
+		case Xilinx_Spartan:
+		{
+			switch( desc->iface ) /* check donwload hardware interface */
+			{
+			case slave_serial: ret = spartan_serial_init( desc ); break;
+			case slave_parallel: ret = spartan_parallel_init( desc ); break;
+			default: pr_debug("interface not supported!\n"); ret = -ENOSYS; break;
+			}
+		}
+		break;
+		default: 
+			pr_debug("family not supported!\n");
+			ret = -ENOSYS; 
+		break;
+		}
+	}
+	else {
+		pr_debug("invalid FPGA descriptor!\n");
+		ret = -EINVAL;
+	}
+	return ret;
 }
 
-int xilinx_finish_load( struct fpga_desc *desc )
+int fpga_finish_load( struct fpga_desc *desc )
 {
 	int ret = 0;
 
@@ -385,28 +382,25 @@ int xilinx_finish_load( struct fpga_desc *desc )
 				ret = spartan_parallel_finish( desc );
 			break;
 			default: 
-				PRINTF("interface not supported!\n");
+				pr_debug("interface not supported!\n");
 				ret = -ENOSYS; 
 			break;
 			}
 		}
 		break;
 		default: 
-			PRINTF("family not supported!\n"); 
+			pr_debug("family not supported!\n"); 
 			ret = -ENOSYS; 
 		break;
 		}
 	} else {
-		PRINTF("invalid FPGA descriptor!\n");
+		pr_debug("invalid FPGA descriptor!\n");
 		ret = -EINVAL;
 	}
 
 	return ret;
 }
 
-/**
- *  get some infos about FPGA download
- */
 int fpga_get_infos( struct fpga_desc *desc, char* buffer )
 {
 	int len = 0;
