@@ -1,9 +1,6 @@
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1293 @@
+@@ -0,0 +1,1331 @@
 + /*
 + * apf27.c
 + *
@@ -62,6 +59,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <linux/spi/max1027.h>
 +#include <linux/spi/tsc2102.h>
 +#include "../../../drivers/net/can/mcp251x.h"
++#include <media/ad9889.h>
 +#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
@@ -86,7 +84,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#ifdef CONFIG_IMX_BACKLIGHT_MODULE
 +#define CONFIG_IMX_BACKLIGHT
 +#endif
-+
++#ifdef CONFIG_VIDEO_AD9889_MODULE
++#define CONFIG_VIDEO_AD9889 1
++#endif
 +
 +/*
 + * APF27 has a Micron 128MiB 1,8V NAND flash, 16 bits width
@@ -151,6 +151,32 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	},
 +};
 +
++#ifdef CONFIG_VIDEO_AD9889
++#define AD9889_INT 15
++
++static int ad9889_pins[] = {
++    (GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
++};
++
++static int ad9889_init(void)
++{
++    return mxc_gpio_setup_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
++}
++
++static int ad9889_exit(void)
++{
++    mxc_gpio_release_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins));
++    return 0;
++}
++
++static struct ad9889_config apf27_ad9889_config = {
++    .init = ad9889_init,
++    .exit = ad9889_exit,
++    .EDID_I2C_addr = 0x3f
++};
++
++#endif /* CONFIG_VIDEO_AD9889 */
++
 +static struct i2c_board_info apf27_i2c_devices_bus1[] = {
 +	[0] = {
 +		.type = "24c02",
@@ -159,6 +185,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		.platform_data = NULL,
 +		.irq = 0
 +	},
++#ifdef CONFIG_VIDEO_AD9889
++    [1] = {
++        .type = "ad9889",
++        .flags = 0,  
++        .addr = 0x39,	
++        .platform_data = &apf27_ad9889_config,
++        .irq = IRQ_GPIOC(AD9889_INT)
++    },
++#endif /* CONFIG_VIDEO_AD9889 */
 +};
 +#endif /* CONFIG_I2C */
 +
