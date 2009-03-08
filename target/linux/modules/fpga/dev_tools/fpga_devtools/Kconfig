@@ -1,9 +1,0 @@
-#
-
-#
-config ARMADEUS_FPGA_TOOL_DRIVER
-        tristate "Armadeus FPGA configuration driver"
-        default n
-        depends on ARMADEUS_FPGA_TEST
-        ---help---
-

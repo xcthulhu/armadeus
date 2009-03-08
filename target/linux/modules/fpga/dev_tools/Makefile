@@ -8,7 +8,7 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_FPGA_TEST)	+= fpga_devtools/ fpgaaccess/
+obj-$(CONFIG_ARMADEUS_FPGA_TEST)	+= loader/ fpgaaccess/
 
 else
 

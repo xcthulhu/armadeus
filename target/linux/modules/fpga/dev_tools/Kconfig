@@ -2,11 +2,11 @@
 # Armadeus custom drivers configuration
 #
 config ARMADEUS_FPGA_TEST
-	boolean "Driver for configuring and testing fpga"
+	boolean "Driver for configuring and testing FPGA"
 	default n
     depends on ARMADEUS_FPGA_DRIVERS
 	---help---
 	All drivers for FPGA components
 	
-source "drivers/armadeus/fpga/dev_tools/fpga_devtools/Kconfig"
+source "drivers/armadeus/fpga/dev_tools/loader/Kconfig"
 source "drivers/armadeus/fpga/dev_tools/fpgaaccess/Kconfig"
