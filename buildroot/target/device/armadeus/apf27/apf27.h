@@ -536,7 +536,8 @@
 /*#define CFG_ENV_IS_NOWHERE
 */
 #define	CFG_ENV_OFFSET		0x000A0000	/* NAND offset address for now*/
-#define	CFG_ENV_SIZE		0x00060000	/* 384kB ( 3 flash blocks )  */
+#define	CFG_ENV_SIZE		0x00020000	/* 128kB  */
+#define CFG_ENV_RANGE       0X00060000  /* 384kB ( 3 flash blocks )  */
 #define	CONFIG_ENV_OVERWRITE	1		/* env is writable now   */
 #define	CONFIG_FIRMWARE_OFFSET	0x00100000
 #define	CONFIG_FIRMWARE_LEN	0x00080000	/* 512kB ( 4 flash blocks )  */
