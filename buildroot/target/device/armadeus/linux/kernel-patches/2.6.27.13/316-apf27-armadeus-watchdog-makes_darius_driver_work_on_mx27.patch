@@ -1,0 +1,15 @@
+diff -urN -X linux-2.6.27.13/Documentation/dontdiff linux-2.6.27.13/drivers/watchdog/imx-wdt.c linux-2.6.27.13.mod/drivers/watchdog/imx-wdt.c
+--- linux-2.6.27.13/drivers/watchdog/imx-wdt.c	2009-03-09 19:15:42.000000000 +0100
++++ linux-2.6.27.13.mod/drivers/watchdog/imx-wdt.c	2009-03-09 19:09:54.000000000 +0100
+@@ -405,7 +405,11 @@
+ 	.suspend	= imx_wdt_suspend,
+ 	.resume		= imx_wdt_resume,
+ 	.driver		= {
++#ifdef CONFIG_MACH_MX1
+ 		.name	= "imx-wdt",
++#else
++		.name	= "mxc_wdt",
++#endif
+ 		.owner	= THIS_MODULE,
+ 	},
+ };

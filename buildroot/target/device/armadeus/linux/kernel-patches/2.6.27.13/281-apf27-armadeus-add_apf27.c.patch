@@ -1,6 +1,9 @@
+PATCH AUTOMATICALLY GENERATED
+DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
+(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1331 @@
+@@ -0,0 +1,1334 @@
 + /*
 + * apf27.c
 + *
@@ -1273,6 +1276,9 @@
 +	mxc_register_device(&mxc_uart_device2, &uart_pdata[1]);
 +	/*mxc_register_device(&mxc_uart_device2, &uart_pdata[2]);*/
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
++#ifdef CONFIG_WATCHDOG	
++	mxc_register_device(&mxc_wdt, NULL);
++#endif
 +#ifdef CONFIG_USB_EHCI_MXC
 +	mxc_register_device(&mxc_otg, &ehci0_pdata);
 +	mxc_register_device(&mxc_ehci1, &ehci1_pdata);
