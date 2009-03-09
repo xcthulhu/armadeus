@@ -145,6 +145,7 @@
 	"ntpserverip=217.147.208.1\0"					\
 	"mmcroot=/dev/mmcblk0p1\0"					\
 	"mmcrootfstype=ext2\0"						\
+	"quiet=1\0"						\
 	"addnfsargs=setenv bootargs ${bootargs} "			\
 		"root=/dev/nfs rw nfsroot=${serverip}:${rootpath}\0"    \
 	"addjffsargs=setenv bootargs ${bootargs} "			\
