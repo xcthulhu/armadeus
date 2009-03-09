@@ -1,6 +1,6 @@
-/* a program to test button driver
+/* Enable or disable led when button is pressed
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * 7 april 2008
+ * 9 mars 2009
  * fpgaaccess.h
  *
  * (c) Copyright 2008    Armadeus project
@@ -39,9 +39,11 @@
 #include <unistd.h>
 
 int fbutton;
+int fled;
 
 void quit(int pouet){
   close(fbutton);
+  close(fled);
   exit(0);
 }
 
@@ -54,37 +56,48 @@ int main(int argc, char *argv[])
 
   j=0;
 
-  printf( "Testing button driver\n" );
+  printf( "Blink a led pushing button\n" );
 
-  if(argc < 2){
-    perror("invalide arguments number\ntestbutton <button_filename>\n");
+  if(argc < 3){
+    perror("invalid arguments number\npush-led <button_filename> <led_filename>\n");
     exit(EXIT_FAILURE);
   }
 
   fbutton=open(argv[1],O_RDWR);
   if(fbutton<0){
-    perror("can't open file\n");
+    perror("can't open button file\n");
     exit(EXIT_FAILURE);
   }
 
   while(1){
-    i = (i==0)?1:0;
-    fflush(stdout);
 
-    /* read value */
+    /* read button value */
     if(read(fbutton,&j,1)<0){
       perror("read error\n");
       exit(EXIT_FAILURE);
     }
-    printf("Read %d\n",j);
 
     if(lseek(fbutton,0,SEEK_SET)<0){
       perror("lseek error\n");
       exit(EXIT_FAILURE);
     }
+
+	/* write led value */
+	fled=open(argv[2],O_RDWR);
+	if(fbutton<0){
+	  perror("can't open led file\n");
+	  exit(EXIT_FAILURE);
+	}
+
+	if(write(fled,&j,2)<=0){
+		perror("LED write error\n");
+		exit(EXIT_FAILURE);
+	}
+	close(fled);
   }
 
   close(fbutton);
+  close(fled);
   exit(0);
 }
 
