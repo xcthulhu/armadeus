@@ -56,7 +56,7 @@
 
 #define FULL_MINOR_TO_PORT(x) (MAX_MINOR - x)
 
-// Parameters order:
+/* Parameters order: */
 enum {
     DDIR_I = 0,
     OCR1_I,
@@ -76,7 +76,7 @@ enum {
     PUEN_I,
 };
 
-// Global variables
+/* Global variables */
 struct gpio_operations *driver_ops;
 static int gpio_major =  GPIO_MAJOR;
 
@@ -97,7 +97,7 @@ struct gpio_settings {
 	int type;
 };
 
-// Module parameters
+/* Module parameters */
 #define NB_CONFIG_REGS 16
 static int portA_init[NB_CONFIG_REGS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static int portA_init_nb = 0;
@@ -134,28 +134,29 @@ struct gpio_item {
 	int id;
 	struct class_device *gpio_dev;
 	struct cdev char_dev;
-// 	struct config_item item; TBDJUJU: Use configfs filesystem !
+	/* struct config_item item; TBDJUJU: Use configfs filesystem ! */
 };
 
 static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0 };
 
 
-// Static functions
+/* Static functions */
+
 static void __exit armadeus_gpio_cleanup(void);
 
 static int toString(unsigned long value, char* buffer, int number_of_bits) 
 {
-    static int i;
-
-    /* convert it into a string */
-    for(i=number_of_bits;i>0;i--){
-        buffer[number_of_bits-i]=test_bit(i-1,&value)?'1':'0';
-    }
-
-    buffer[number_of_bits] = '\n';
-    buffer[number_of_bits+1] = 0;
-
-    return number_of_bits+1;
+	static int i;
+	
+	/* convert it into a string */
+	for (i=number_of_bits;i>0;i--) {
+		buffer[number_of_bits-i]=test_bit(i-1,&value)?'1':'0';
+	}
+	
+	buffer[number_of_bits] = '\n';
+	buffer[number_of_bits+1] = 0;
+	
+	return number_of_bits+1;
 }
 
 /* Convert binary string ("010011") to int. Don't care of non '0' / '1' chars */
@@ -166,8 +167,7 @@ static unsigned long fromString(char* buffer, int number_of_bits)
 
 	ret_val = 0;
 	/* Create WORD to write from the string */
-	for( i=0, j=1; j<=number_of_bits; i++)
-	{
+	for ( i=0, j=1; j<=number_of_bits; i++) {
 		//printk("%x j=%d i=%d\n", buffer[i], j, i);
 		if (buffer[i] == '\0') break; /* EOC */
 	
@@ -180,162 +180,91 @@ static unsigned long fromString(char* buffer, int number_of_bits)
 		}
 	}
 
-	return(ret_val);
+	return ret_val;
 }
 
-//------------------------------------------------
-//
-// Low level functions
-//
+/*
+ * Low level functions
+ */
 #define DEFAULT_VALUE 0x12345678
-// These masks are for restricting user access to configuration of some criticals GPIO pins used by Armadeus and not configurable
+/* These masks are for restricting user access to configuration of some
+   criticals GPIO pins used by Armadeus and not configurable */
 static unsigned long MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF };
 #define PORT_A_MASK    0x0003FFFE
 #define PORT_B_MASK    0xF00FFF00
 #define PORT_C_MASK    0x0003E1F8
 #define PORT_D_MASK    0xFFFFFFFF
 
-static void initializePortA( void )
+static void initialize_port(int port, int* init_params)
 {
-    unsigned long lTemp;
-
-    // Initialize PORTA with module parameters
-    if( portA_init[DR_I] != 0 ) {      DR(PORT_A)      = portA_init[DR_I]; }  
-    if( portA_init[SSR_I] != 0 ) {     SSR(PORT_A)     = portA_init[SSR_I]; }   
-    if( portA_init[OCR1_I] != 0 ) {    OCR1(PORT_A)    = portA_init[OCR1_I]; }    /*else { default value are already set by iMX !!*/   
-    if( portA_init[OCR2_I] != 0 ) {    OCR2(PORT_A)    = portA_init[OCR2_I]; }  
-    if( portA_init[ICONFA1_I] != 0 ) { ICONFA1(PORT_A) = portA_init[ICONFA1_I]; }  
-    if( portA_init[ICONFA2_I] != 0 ) { ICONFA2(PORT_A) = portA_init[ICONFA2_I]; }  
-    if( portA_init[ICONFB1_I] != 0 ) { ICONFB1(PORT_A) = portA_init[ICONFB1_I]; } 
-    if( portA_init[ICONFB2_I] != 0 ) { ICONFB2(PORT_A) = portA_init[ICONFB2_I]; }
-    if( portA_init[DDIR_I] != 0 ) {    DDIR(PORT_A)    = portA_init[DDIR_I]; }
-    if( portA_init[SWR_I] != 0 ) {     SWR(PORT_A)     = portA_init[SWR_I]; } 
-    if( portA_init[GPR_I] != 0 ) {  lTemp = GPR(PORT_A)  & (~MASK[PORT_A]);  GPR(PORT_A)  = lTemp | (portA_init[GPR_I]  & MASK[PORT_A]); }  
-    if( portA_init[GIUS_I] != 0 ) { lTemp = GIUS(PORT_A) & (~MASK[PORT_A]);  GIUS(PORT_A) = lTemp | (portA_init[GIUS_I] & MASK[PORT_A]); }  
-    if( portA_init[PUEN_I] != 0 ) { lTemp = PUEN(PORT_A) & (~MASK[PORT_A]);  PUEN(PORT_A) = lTemp | (portA_init[PUEN_I] & MASK[PORT_A]); }  
-    if( portA_init[ICR1_I] != 0 ) {    ICR1(PORT_A)    = portA_init[ICR1_I]; }   
-    if( portA_init[ICR2_I] != 0 ) {    ICR2(PORT_A)    = portA_init[ICR2_I]; }  
-    if( portA_init[IMR_I] != 0 ) {     IMR(PORT_A)     = portA_init[IMR_I]; }  
+	unsigned long lTemp;
+	
+	/* Initialize PORT with module parameters */
+	if (init_params[DR_I]) {      DR(port)      = init_params[DR_I]; }
+	if (init_params[SSR_I]) {     SSR(port)     = init_params[SSR_I]; }
+	if (init_params[OCR1_I]) {    OCR1(port)    = init_params[OCR1_I]; }
+	/*else { default value are already set by iMX !!*/
+	if (init_params[OCR2_I]) {    OCR2(port)    = init_params[OCR2_I]; }
+	if (init_params[ICONFA1_I]) { ICONFA1(port) = init_params[ICONFA1_I]; }
+	if (init_params[ICONFA2_I]) { ICONFA2(port) = init_params[ICONFA2_I]; }
+	if (init_params[ICONFB1_I]) { ICONFB1(port) = init_params[ICONFB1_I]; }
+	if (init_params[ICONFB2_I]) { ICONFB2(port) = init_params[ICONFB2_I]; }
+	if (init_params[DDIR_I]) {    DDIR(port)    = init_params[DDIR_I]; }
+	if (init_params[SWR_I]) {     SWR(port)     = init_params[SWR_I]; }
+	if (init_params[GPR_I]) {  lTemp = GPR(port)  & (~MASK[port]);  GPR(port)  = lTemp | (init_params[GPR_I]  & MASK[port]); }
+	if (init_params[GIUS_I]) { lTemp = GIUS(port) & (~MASK[port]);  GIUS(port) = lTemp | (init_params[GIUS_I] & MASK[port]); }
+	if (init_params[PUEN_I]) { lTemp = PUEN(port) & (~MASK[port]);  PUEN(port) = lTemp | (init_params[PUEN_I] & MASK[port]); }
+	if (init_params[ICR1_I]) {    ICR1(port)    = init_params[ICR1_I]; }
+	if (init_params[ICR2_I]) {    ICR2(port)    = init_params[ICR2_I]; }
+	if (init_params[IMR_I]) {     IMR(port)     = init_params[IMR_I]; }
 }
 
-static void initializePortB( void )
+static void initialize_all_ports( void )
 {
-    unsigned long lTemp;
-
-    // Initialize PORTB with module parameters
-    if( portB_init[DR_I] != 0 ) {      DR(PORT_B)      = portB_init[DR_I]; }  
-    if( portB_init[SSR_I] != 0 ) {     SSR(PORT_B)     = portB_init[SSR_I]; }   
-    if( portB_init[OCR1_I] != 0 ) {    OCR1(PORT_B)    = portB_init[OCR1_I]; }    /*else { default value are already set by iMX !!*/   
-    if( portB_init[OCR2_I] != 0 ) {    OCR2(PORT_B)    = portB_init[OCR2_I]; }  
-    if( portB_init[ICONFA1_I] != 0 ) { ICONFA1(PORT_B) = portB_init[ICONFA1_I]; }  
-    if( portB_init[ICONFA2_I] != 0 ) { ICONFA2(PORT_B) = portB_init[ICONFA2_I]; }  
-    if( portB_init[ICONFB1_I] != 0 ) { ICONFB1(PORT_B) = portB_init[ICONFB1_I]; } 
-    if( portB_init[ICONFB2_I] != 0 ) { ICONFB2(PORT_B) = portB_init[ICONFB2_I]; }
-    if( portB_init[DDIR_I] != 0 ) {    DDIR(PORT_B)    = portB_init[DDIR_I]; }
-    if( portB_init[SWR_I] != 0 ) {     SWR(PORT_B)     = portB_init[SWR_I]; } 
-    if( portB_init[GPR_I] != 0 ) {  lTemp = GPR(PORT_B)  & (~MASK[PORT_B]);  GPR(PORT_B)  = lTemp | (portB_init[GPR_I]  & MASK[PORT_B]); }  
-    if( portB_init[GIUS_I] != 0 ) { lTemp = GIUS(PORT_B) & (~MASK[PORT_B]);  GIUS(PORT_B) = lTemp | (portB_init[GIUS_I] & MASK[PORT_B]); }  
-    if( portB_init[PUEN_I] != 0 ) { lTemp = PUEN(PORT_B) & (~MASK[PORT_B]);  PUEN(PORT_B) = lTemp | (portB_init[PUEN_I] & MASK[PORT_B]); }  
-    if( portB_init[ICR1_I] != 0 ) {    ICR1(PORT_B)    = portB_init[ICR1_I]; }   
-    if( portB_init[ICR2_I] != 0 ) {    ICR2(PORT_B)    = portB_init[ICR2_I]; }  
-    if( portB_init[IMR_I] != 0 ) {     IMR(PORT_B)     = portB_init[IMR_I]; }  
-}
-
-static void initializePortC( void )
-{
-    unsigned long lTemp;
-
-    // Initialize PORTC with module parameters
-    if( portC_init[DR_I] != 0 ) {      DR(PORT_C)      = portC_init[DR_I]; }  
-    if( portC_init[SSR_I] != 0 ) {     SSR(PORT_C)     = portC_init[SSR_I]; }   
-    if( portC_init[OCR1_I] != 0 ) {    OCR1(PORT_C)    = portC_init[OCR1_I]; }    /*else { default value are already set by iMX !!*/   
-    if( portC_init[OCR2_I] != 0 ) {    OCR2(PORT_C)    = portC_init[OCR2_I]; }  
-    if( portC_init[ICONFA1_I] != 0 ) { ICONFA1(PORT_C) = portC_init[ICONFA1_I]; }  
-    if( portC_init[ICONFA2_I] != 0 ) { ICONFA2(PORT_C) = portC_init[ICONFA2_I]; }  
-    if( portC_init[ICONFB1_I] != 0 ) { ICONFB1(PORT_C) = portC_init[ICONFB1_I]; } 
-    if( portC_init[ICONFB2_I] != 0 ) { ICONFB2(PORT_C) = portC_init[ICONFB2_I]; }
-    if( portC_init[DDIR_I] != 0 ) {    DDIR(PORT_C)    = portC_init[DDIR_I]; }
-    if( portC_init[SWR_I] != 0 ) {     SWR(PORT_C)     = portC_init[SWR_I]; } 
-    if( portC_init[GPR_I] != 0 ) {  lTemp = GPR(PORT_C)  & (~MASK[PORT_C]);  GPR(PORT_C)  = lTemp | (portC_init[GPR_I]  & MASK[PORT_C]); }  
-    if( portC_init[GIUS_I] != 0 ) { lTemp = GIUS(PORT_C) & (~MASK[PORT_C]);  GIUS(PORT_C) = lTemp | (portC_init[GIUS_I] & MASK[PORT_C]); }  
-    if( portC_init[PUEN_I] != 0 ) { lTemp = PUEN(PORT_C) & (~MASK[PORT_C]);  PUEN(PORT_C) = lTemp | (portC_init[PUEN_I] & MASK[PORT_C]); }  
-    if( portC_init[ICR1_I] != 0 ) {    ICR1(PORT_C)    = portC_init[ICR1_I]; }   
-    if( portC_init[ICR2_I] != 0 ) {    ICR2(PORT_C)    = portC_init[ICR2_I]; }  
-    if( portC_init[IMR_I] != 0 ) {     IMR(PORT_C)     = portC_init[IMR_I]; }  
-}
-
-static void initializePortD( void )
-{
-    unsigned long lTemp;
-
-    // Initialize PORTD with module parameters
-    if( portD_init[DR_I] != 0 ) {      DR(PORT_D)      = portD_init[DR_I]; }  
-    if( portD_init[SSR_I] != 0 ) {     SSR(PORT_D)     = portD_init[SSR_I]; }   
-    if( portD_init[OCR1_I] != 0 ) {    OCR1(PORT_D)    = portD_init[OCR1_I]; }    /*else { default value are already set by iMX !!*/   
-    if( portD_init[OCR2_I] != 0 ) {    OCR2(PORT_D)    = portD_init[OCR2_I]; }  
-    if( portD_init[ICONFA1_I] != 0 ) { ICONFA1(PORT_D) = portD_init[ICONFA1_I]; }  
-    if( portD_init[ICONFA2_I] != 0 ) { ICONFA2(PORT_D) = portD_init[ICONFA2_I]; }  
-    if( portD_init[ICONFB1_I] != 0 ) { ICONFB1(PORT_D) = portD_init[ICONFB1_I]; } 
-    if( portD_init[ICONFB2_I] != 0 ) { ICONFB2(PORT_D) = portD_init[ICONFB2_I]; }
-    if( portD_init[DDIR_I] != 0 ) {    DDIR(PORT_D)    = portD_init[DDIR_I]; }
-    if( portD_init[SWR_I] != 0 ) {     SWR(PORT_D)     = portD_init[SWR_I]; } 
-    if( portD_init[GPR_I] != 0 ) {  lTemp = GPR(PORT_D)  & (~MASK[PORT_D]);  GPR(PORT_D)  = lTemp | (portD_init[GPR_I]  & MASK[PORT_D]); }  
-    if( portD_init[GIUS_I] != 0 ) { lTemp = GIUS(PORT_D) & (~MASK[PORT_D]);  GIUS(PORT_D) = lTemp | (portD_init[GIUS_I] & MASK[PORT_D]); }  
-    if( portD_init[PUEN_I] != 0 ) { lTemp = PUEN(PORT_D) & (~MASK[PORT_D]);  PUEN(PORT_D) = lTemp | (portD_init[PUEN_I] & MASK[PORT_D]); }  
-    if( portD_init[ICR1_I] != 0 ) {    ICR1(PORT_D)    = portD_init[ICR1_I]; }   
-    if( portD_init[ICR2_I] != 0 ) {    ICR2(PORT_D)    = portD_init[ICR2_I]; }  
-    if( portD_init[IMR_I] != 0 ) {     IMR(PORT_D)     = portD_init[IMR_I]; }  
-}
-
-static void initializePorts( void )
-{
-    initializePortA();
-    initializePortB();
-    initializePortC();
-    initializePortD();
+	initialize_port(PORT_A, portA_init);
+	initialize_port(PORT_B, portB_init);
+	initialize_port(PORT_C, portC_init);
+	initialize_port(PORT_D, portD_init);
 }
 
 
-// TBDJUJU: replace the following functions with imx_gpio_xxx one !!
+/* TBDJUJU: replace the following functions with imx_gpio_xxx one !! */
 
 static void writeOnPort( unsigned int aPort, unsigned int aValue )
 {
-    //
-    DR(aPort) = (aValue & MASK[aPort]);
+	DR(aPort) = (aValue & MASK[aPort]);
 }
 
 static unsigned int readFromPort( unsigned int aPort )
 {
-    unsigned int port_value = 0;
-    
-    // Get the status of the gpio ports
-    port_value = (SSR(aPort));
-    
-    return( port_value );
+	unsigned int port_value = 0;
+
+	/* Get the status of the gpio ports */
+	port_value = (SSR(aPort));
+
+	return( port_value );
 }
 
 static void setPortDir( unsigned int aPort, unsigned int aDirMask )
 {
-    DDIR(aPort) = (aDirMask & 0xffffffff);
+	DDIR(aPort) = (aDirMask & 0xffffffff);
 }
 
 static unsigned int getPortDir( unsigned int aPort )
 {
-    unsigned int port_value = 0;
-    
-    // Get the status of the gpio direction registers TBDNICO
-    port_value = (DDIR(aPort));
-    
-    return( port_value );
+	unsigned int port_value = 0;
+	
+	/* Get the status of the gpio direction registers TBDNICO */
+	port_value = (DDIR(aPort));
+	
+	return( port_value );
 }
 
 char* port_name[NB_PORTS]  = { "PortA", "PortB", "PortC", "PortD" };
 char* port_setting_name[4] = { "Value", "Direction", "Pull-up", "Interrupt" };
 
-//------------------------------------------------
-//
-// Handles write() done on /dev/gpioxx
-//
+
+/* Handles write() done on /dev/gpioxx */
 static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size_t count, loff_t *offset)
 {
 	unsigned int minor=0;
@@ -367,27 +296,27 @@ static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size
 	ret = count;
 
 out:
-    up(&gpio_sema);
-    return ret;
+	up(&gpio_sema);
+	return ret;
 }
 
-//
-// Handles read() done on /dev/gpioxx
-//
-static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+/* Handles read() done on /dev/gpioxx */
+static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf,
+	size_t count, loff_t *ppos)
 {
-    unsigned minor = MINOR(file->f_dentry->d_inode->i_rdev);
-    u32 value=0;
-    ssize_t ret = 0;
-    u32 port_status;
+	unsigned minor = MINOR(file->f_dentry->d_inode->i_rdev);
+	u32 value=0;
+	ssize_t ret = 0;
+	u32 port_status;
 	struct gpio_item *gpio = file->private_data;
 
-    if (count == 0)
-        return count;
+	if (count == 0)
+		return count;
 
 	spin_lock_irq(&gpio->lock);
 
-	pr_debug("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__, count, minor, port_name[gpio->port], gpio->number);
+	pr_debug("- %s %d byte(s) on minor %d -> %s pin %d\n", __FUNCTION__,
+		 count, minor, port_name[gpio->port], gpio->number);
 
 	while (!gpio->changed) {
 		spin_unlock_irq(&gpio->lock);
@@ -402,7 +331,7 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count
 	}
 	gpio->changed = 0;
 
-	if( gpio->nb_pins != 1) {
+	if (gpio->nb_pins != 1) {
 		value = readFromPort( gpio->port );
 		pr_debug("Full port read: 0x%x\n", value);
 	} else {
@@ -410,19 +339,19 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf, size_t count
 		pr_debug("Single pin read: %d\n", value);
 	}
 	
-    value = readFromPort( minor );
-    port_status = (char)(value & 0xFF);
+	value = readFromPort( minor );
+	port_status = (char)(value & 0xFF);
 
 	count = min( count, (size_t)sizeof(u32) );
-    if ( copy_to_user(buf, &value, count) ) {
-        ret = -EFAULT;
-        goto out;
-    }
-    ret = count;
+	if (copy_to_user(buf, &value, count)) {
+		ret = -EFAULT;
+		goto out;
+	}
+	ret = count;
 
 out:
-    spin_unlock_irq(&gpio->lock);
-    return ret;
+	spin_unlock_irq(&gpio->lock);
+	return ret;
 }
 
 
@@ -448,12 +377,10 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-//
-// Handles open() done on /dev/gpioxx
-//
+/* Handles open() done on /dev/gpioxx */
 static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 {
-    unsigned minor = MINOR(inode->i_rdev);
+	unsigned minor = MINOR(inode->i_rdev);
 	unsigned int major = MAJOR(inode->i_rdev);
 	unsigned int irq;
 	int ret = 0;
@@ -468,7 +395,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 	spin_lock_init(&gpio->lock);
 	init_waitqueue_head(&gpio->change_wq);
 
-	switch(minor)
+	switch (minor)
 	{
 		/* Write all port pins in one time */
 		case FULL_PORTA_MINOR:
@@ -507,7 +434,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		ret = request_irq( irq, armadeus_gpio_interrupt, 0, "gpio", gpio );
 		if( ret )
 			goto err_irq;
-// 		set_irq_type( irq, IRQF_TRIGGER_FALLING ); TDBJUJU
+		/* set_irq_type( irq, IRQF_TRIGGER_FALLING ); TDBJUJU */
 	}
 
 success:
@@ -524,9 +451,7 @@ err_request:
 	return ret;
 }
 
-//
-// Handles close() done on /dev/gpioxx
-//
+/* Handles close() done on /dev/gpioxx */
 static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 {
 	unsigned minor = MINOR(inode->i_rdev);
@@ -546,91 +471,93 @@ static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-//------------------------------------------------
-//  Handling of IOCTL calls
-//
-int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
+/* Handling of IOCTL calls */
+int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
+	unsigned int cmd, unsigned long arg )
 {
-    int err = 0; int ret = 0;
-    int value=0;
-    unsigned int minor;
-    
-    printk( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
-    
-    // Extract the type and number bitfields, and don't decode wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
-    if (_IOC_TYPE(cmd) != PP_IOCTL) return -ENOTTY;
+	int err = 0; int ret = 0;
+	int value=0;
+	unsigned int minor;
 
-    // The direction is a bitmask, and VERIFY_WRITE catches R/W transfers. `Type' is user-oriented, while access_ok is kernel-oriented, 
-    // so the concept of "read" and "write" is reversed
-    if (_IOC_DIR(cmd) & _IOC_READ)
-        err = !access_ok(VERIFY_WRITE, (void *)arg, _IOC_SIZE(cmd));
-    else if (_IOC_DIR(cmd) & _IOC_WRITE)
-        err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
+	printk( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
 
-    if (err) return -EFAULT;
+	/* Extract the type and number bitfields, and don't decode wrong cmds:
+	   return ENOTTY (inappropriate ioctl) before access_ok() */
+	if (_IOC_TYPE(cmd) != PP_IOCTL) return -ENOTTY;
+	
+	/* The direction is a bitmask, and VERIFY_WRITE catches R/W transfers.
+	`Type' is user-oriented, while access_ok is kernel-oriented,
+	so the concept of "read" and "write" is reversed */
+	if (_IOC_DIR(cmd) & _IOC_READ)
+		err = !access_ok(VERIFY_WRITE, (void *)arg, _IOC_SIZE(cmd));
+	else if (_IOC_DIR(cmd) & _IOC_WRITE)
+		err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
 
-    // Obtain exclusive access
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
-    // Extract and test minor
-    minor = MINOR(inode->i_rdev);
-    if( minor < FULL_PORTD_MINOR ) {
-        printk("Minor outside range: %d !\n", minor);
-        return -EFAULT;
-    }
-    
-    switch(cmd) 
-    {
-        case GPIORDDIRECTION:
-            value = getPortDir( minor );
-            ret = __put_user(value, (unsigned int *)arg);
-        break;
+	if (err) return -EFAULT;
 
-        case GPIOWRDIRECTION:
-            ret = __get_user(value, (unsigned int *)arg);
+	/* Obtain exclusive access */
+	if (down_interruptible(&gpio_sema))
+		return -ERESTARTSYS;
+	/* Extract and test minor */
+	minor = MINOR(inode->i_rdev);
+	if (minor < FULL_PORTD_MINOR) {
+		printk("Minor outside range: %d !\n", minor);
+		return -EFAULT;
+	}
 
-            if( ret==0 ) {
-                setPortDir( minor, value );
-            }
-        break;
-
-        case GPIORDDATA:
-            value = readFromPort( minor );
-            ret = __put_user(value, (unsigned int *)arg);
-        break;
-
-        case GPIOWRDATA:
-            ret = __get_user(value, (unsigned int *)arg);
-            if( ret == 0 ) {
-                writeOnPort( minor, value );
-            }
-        break;
-
-        default:
-            return -ENOTTY;
-        break;
-    }
-    // Release exclusive access
-    up(&gpio_sema);
-
-    return ret;
+	switch(cmd)
+	{
+		case GPIORDDIRECTION:
+		value = getPortDir( minor );
+		ret = __put_user(value, (unsigned int *)arg);
+		break;
+	
+		case GPIOWRDIRECTION:
+		ret = __get_user(value, (unsigned int *)arg);
+	
+		if (ret==0) {
+			setPortDir( minor, value );
+		}
+		break;
+	
+		case GPIORDDATA:
+		value = readFromPort( minor );
+		ret = __put_user(value, (unsigned int *)arg);
+		break;
+	
+		case GPIOWRDATA:
+		ret = __get_user(value, (unsigned int *)arg);
+		if (ret == 0) {
+			writeOnPort( minor, value );
+		}
+		break;
+	
+		default:
+		return -ENOTTY;
+		break;
+	}
+	/* Release exclusive access */
+	up(&gpio_sema);
+	
+	return ret;
 }
 
 
-//------------------------------------------------
-// PROC file functions
-//
+/*
+ * PROC file functions
+ */
 
-static int armadeus_gpio_proc_read( char *buffer, char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void *data )
+static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
+	int buffer_length, int *eof, __attribute__ ((unused)) void *data)
 {
-    int len = 0; /* The number of bytes actually used */
-    unsigned int port_status = 0x66;
-    unsigned int port_ID = 0;
+	int len = 0; /* The number of bytes actually used */
+	unsigned int port_status = 0x66;
+	unsigned int port_ID = 0;
 	struct gpio_settings *settings = (struct gpio_settings *) data;
 
-    if( settings != NULL ) {
-        port_ID = settings->port;
-    }
+	if (settings != NULL) {
+		port_ID = settings->port;
+	}
 
 	/* We give all of our information in one go, so if the user asks us if we
 	   have more information the answer should always be no. This is important
@@ -638,11 +565,11 @@ static int armadeus_gpio_proc_read( char *buffer, char **start, off_t offset, in
 	   issue the read system call until the kernel replies that it has no more
 	   information, or until its buffer is filled
 	*/
-    if( offset > 0 || buffer_length < (number_of_pins[port_ID]+2) )
-        return 0;
+	if (offset > 0 || buffer_length < (number_of_pins[port_ID]+2))
+		return 0;
 
-    if (down_interruptible(&gpio_sema))
-        return -ERESTARTSYS;
+	if (down_interruptible(&gpio_sema))
+		return -ERESTARTSYS;
 
 	switch( settings->type )
 	{
@@ -651,7 +578,7 @@ static int armadeus_gpio_proc_read( char *buffer, char **start, off_t offset, in
 		break;
 
 		case DIRECTION:
-			// Get the status of the gpio direction registers TBDNICO
+			/* Get the status of the gpio direction registers TBDNICO */
 			printk("direction\n");
 			port_status = getPortDir(port_ID);
 		break;
@@ -674,11 +601,11 @@ static int armadeus_gpio_proc_read( char *buffer, char **start, off_t offset, in
 	len = toString(port_status, buffer, number_of_pins[port_ID]);
 	printk("0x%08x\n", port_status);
 
-    *eof = 1;
-    up(&gpio_sema);
-
-    // Return the length
-    return len;
+	*eof = 1;
+	up(&gpio_sema);
+	
+	/* Return the length */
+	return len;
 }
 
 static char new_gpio_state[MAX_NUMBER_OF_PINS*2];
@@ -690,36 +617,36 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 	unsigned int port_ID = 0;
 	struct gpio_settings *settings = (struct gpio_settings *) data;
 
-	if( settings != NULL ) {
+	if (settings != NULL) {
 		port_ID = settings->port;
 	}
 
-    /* Do some checks on parameters */
-    if( count <= 0 ) {
-        printk("Empty string transmitted !\n");
-        return 0;
-    }
+	/* Do some checks on parameters */
+	if (count <= 0) {
+		printk("Empty string transmitted !\n");
+		return 0;
+	}
 	if (count > (MAX_NUMBER_OF_PINS + 1))
 		printk("GPIO port registers are only 32bits !\n");
-	if( count > (sizeof(new_gpio_state)) ) {
+	if (count > (sizeof(new_gpio_state))) {
 		len = sizeof(new_gpio_state);
 	} else {
 		len = count;
 	}
 
-    /* Get exclusive access to port */
-    if( down_interruptible(&gpio_sema) )
-        return -ERESTARTSYS;
+	/* Get exclusive access to port */
+	if( down_interruptible(&gpio_sema) )
+		return -ERESTARTSYS;
 
-    /* Get datas to write from user space */
-    if (copy_from_user(new_gpio_state, buf, len)) {
-        up(&gpio_sema);
-        return -EFAULT;
-    }
+	/* Get datas to write from user space */
+	if (copy_from_user(new_gpio_state, buf, len)) {
+		up(&gpio_sema);
+		return -EFAULT;
+	}
 
 	if( strlen(new_gpio_state) > 0 )
 	{
-		// Convert it from String to Int
+		/* Convert it from String to Int */
 		gpio_state = fromString( new_gpio_state, number_of_pins[port_ID] );
 
 		switch( settings->type )
@@ -748,11 +675,14 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 			break;
 		}
 
-		printk("/proc wrote 0x%x on %s %s register\n", gpio_state, port_name[port_ID], port_setting_name[settings->type]);
+		printk("/proc wrote 0x%x on %s %s register\n", gpio_state,
+			port_name[port_ID], port_setting_name[settings->type]);
     }
 
-    up(&gpio_sema);
-    return count; /* Makes as if we take all the data send even if we can't handle more than register size */
+	up(&gpio_sema);
+	/* Makes as if we take all the data sent even if we can't handle more 
+	than register size */
+	return count;
 }
 
 
@@ -768,10 +698,10 @@ static int initialize_entry( struct proc_config_entry *config )
 {
 	int i;
 
-	for( i=0; i<4; i++ )
+	for (i = 0; i < 4; i++)
 	{
 		config[i].entry = create_proc_entry( config[i].name, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
-		if( config[i].entry == NULL ) {
+		if (config[i].entry == NULL) {
 			printk(KERN_ERR DRIVER_NAME ": Couldn't register %s. Terminating.\n", config[i].name);
 			return -ENOMEM;
 		}
@@ -789,17 +719,17 @@ static int initialize_entry( struct proc_config_entry *config )
 /*
  * Create /proc entries for direct access (with echo/cat) to GPIOs config
  */
-static int create_proc_entries( void )
+static int create_proc_entries(void)
 {
 	struct proc_config_entry proc_config[NB_PORTS];
 	int ret;
 
-    printk("Creating /proc entries: ");
+	printk("Creating /proc entries: ");
 
-    /* Create main directory */
-    proc_mkdir(GPIO_PROC_DIRNAME, NULL);
+	/* Create main directory */
+	proc_mkdir(GPIO_PROC_DIRNAME, NULL);
 
-    /* Create proc file to handle GPIO values */
+	/* Create proc file to handle GPIO values */
 	proc_config[PORT_A].name = GPIO_PROC_PORTA_FILENAME;
 	proc_config[PORT_A].type = VALUE;
 	proc_config[PORT_B].name = GPIO_PROC_PORTB_FILENAME;
@@ -809,11 +739,11 @@ static int create_proc_entries( void )
 	proc_config[PORT_D].name = GPIO_PROC_PORTD_FILENAME;
 	proc_config[PORT_D].type = VALUE;
 
-	if( (ret = initialize_entry(proc_config)) )
+	if ((ret = initialize_entry(proc_config)))
 		return ret;
 	init_map |= GPIO_PROC_FILE;
 
-    /* Create proc file to handle GPIO direction settings */
+	/* Create proc file to handle GPIO direction settings */
 	proc_config[PORT_A].name = GPIO_PROC_PORTADIR_FILENAME;
 	proc_config[PORT_A].type = DIRECTION;
 	proc_config[PORT_B].name = GPIO_PROC_PORTBDIR_FILENAME;
@@ -823,7 +753,7 @@ static int create_proc_entries( void )
 	proc_config[PORT_D].name = GPIO_PROC_PORTDDIR_FILENAME;
 	proc_config[PORT_D].type = DIRECTION;
 
-	if( (ret = initialize_entry(proc_config)) )
+	if ((ret = initialize_entry(proc_config)))
 		return ret;
 	init_map |= SETTINGS_PROC_FILE;
 
@@ -837,7 +767,7 @@ static int create_proc_entries( void )
 	proc_config[PORT_D].name = GPIO_PROC_PORTD_IRQ_FILENAME;
 	proc_config[PORT_D].type = INTERRUPT;
 
-	if( (ret = initialize_entry(proc_config)) )
+	if ((ret = initialize_entry(proc_config)))
 		return ret;
 	init_map |= SETTINGS_IRQ_PROC_FILE;
 
@@ -851,106 +781,39 @@ static int create_proc_entries( void )
 	proc_config[PORT_D].name = GPIO_PROC_PORTD_PULLUP_FILENAME;
 	proc_config[PORT_D].type = PULL_UP;
 
-	if( (ret = initialize_entry(proc_config)) )
+	if ((ret = initialize_entry(proc_config)))
 		return ret;
 	init_map |= SETTINGS_PULLUP_PROC_FILE;
 
-    printk("OK!\n");
-    return(0);
+	printk("OK!\n");
+	return(0);
 }
 
-//
-// /dev functionnalities supported:
-//
-static struct file_operations gpio_fops = {
-    .owner   = THIS_MODULE,
-	.llseek  = no_llseek,
-    .write   = armadeus_gpio_dev_write,
-    .read    = armadeus_gpio_dev_read,
-    .open    = armadeus_gpio_dev_open,
-    .release = armadeus_gpio_dev_release,
-    .ioctl   = armadeus_gpio_dev_ioctl,
-};
-
-//
-// Module's initialization function
-//
-static int __init armadeus_gpio_init(void)
+static void remove_proc_entries(void)
 {
-    static int result, i;
-
-    printk("Initializing Armadeus GPIOs driver\n");
-    printk("    PortA Parameters (%i): ", portA_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portA_init[i]); } printk("\n");
-    printk("    PortB Parameters (%i): ", portB_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portB_init[i]); } printk("\n");
-    printk("    PortC Parameters (%i): ", portC_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portC_init[i]); } printk("\n");
-    printk("    PortD Parameters (%i): ", portD_init_nb); for( i=0; i< NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portD_init[i]); } printk("\n");
-    init_map = 0;
-
-    // Configure HW ports/GPIOs with default values or given parameters
-    initializePorts();
-
-    /* Register the driver as character device by getting a major number */
-    result = register_chrdev(gpio_major, DRIVER_NAME, &gpio_fops);
-    if (result < 0) 
-    {
-        printk(KERN_WARNING DRIVER_NAME ": can't get major %d\n", gpio_major);
-        return result;
-    }
-    if( gpio_major == 0 ) gpio_major = result; /* dynamic Major allocation */
-
-	/* Creates /proc entries */
-	if( (result = create_proc_entries()) ) {
-		armadeus_gpio_cleanup();
-		return( result );
+	/* Remove /proc entries */
+	if (init_map & GPIO_PROC_FILE) {
+		printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_FILENAME " & Co\n" );
+		remove_proc_entry( GPIO_PROC_PORTA_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTB_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTC_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTD_FILENAME, NULL);
 	}
-
-    // Initialise GPIO port access semaphore
-    sema_init(&gpio_sema, 1);
-
-    // Set GPIOs to initial state
-    // iMX and parameters will do it
-
-    printk( DRIVER_NAME " " DRIVER_VERSION " successfully loaded !\n");
-
-    return(0);
-}
-
-//
-// Module's cleanup function
-//
-static void __exit armadeus_gpio_cleanup(void)
-{
-    printk("Cleanup:\n");
-
-	/* TBDJUJU free config[i].entry->data first ?? */
-
-    // Remove /proc entries
-    if( init_map & GPIO_PROC_FILE )
-    {
-        printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_FILENAME " & Co\n" );
-        remove_proc_entry( GPIO_PROC_PORTA_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTB_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTC_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTD_FILENAME, NULL);
-    }
-    if( init_map & SETTINGS_PROC_FILE )
-    {
-        printk( DRIVER_NAME " removing " GPIO_PROC_PORTADIR_FILENAME " & Co\n" );
-        remove_proc_entry( GPIO_PROC_PORTADIR_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTBDIR_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTCDIR_FILENAME, NULL);
-        remove_proc_entry( GPIO_PROC_PORTDDIR_FILENAME, NULL);
-    }
-    if( init_map & SETTINGS_IRQ_PROC_FILE )
-    {
+	if (init_map & SETTINGS_PROC_FILE) {
+		printk( DRIVER_NAME " removing " GPIO_PROC_PORTADIR_FILENAME " & Co\n" );
+		remove_proc_entry( GPIO_PROC_PORTADIR_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTBDIR_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTCDIR_FILENAME, NULL);
+		remove_proc_entry( GPIO_PROC_PORTDDIR_FILENAME, NULL);
+	}
+	if (init_map & SETTINGS_IRQ_PROC_FILE) {
 		printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_IRQ_FILENAME " & Co\n" );
 		remove_proc_entry( GPIO_PROC_PORTA_IRQ_FILENAME, NULL);
 		remove_proc_entry( GPIO_PROC_PORTB_IRQ_FILENAME, NULL);
 		remove_proc_entry( GPIO_PROC_PORTC_IRQ_FILENAME, NULL);
 		remove_proc_entry( GPIO_PROC_PORTD_IRQ_FILENAME, NULL);
-    }
-	if( init_map & SETTINGS_PULLUP_PROC_FILE )
-	{
+	}
+	if (init_map & SETTINGS_PULLUP_PROC_FILE) {
 		printk( DRIVER_NAME " removing " GPIO_PROC_PORTA_PULLUP_FILENAME " & Co\n" );
 		remove_proc_entry( GPIO_PROC_PORTA_PULLUP_FILENAME, NULL);
 		remove_proc_entry( GPIO_PROC_PORTB_PULLUP_FILENAME, NULL);
@@ -959,18 +822,73 @@ static void __exit armadeus_gpio_cleanup(void)
 	}
 
 	remove_proc_entry(GPIO_PROC_DIRNAME, NULL);
+}
+/* /dev functionnalities supported: */
+static struct file_operations gpio_fops = {
+	.owner   = THIS_MODULE,
+	.llseek  = no_llseek,
+	.write   = armadeus_gpio_dev_write,
+	.read    = armadeus_gpio_dev_read,
+	.open    = armadeus_gpio_dev_open,
+	.release = armadeus_gpio_dev_release,
+	.ioctl   = armadeus_gpio_dev_ioctl,
+};
 
-    /* De-register from /dev interface */
-    unregister_chrdev(gpio_major, DRIVER_NAME);
+/* Module's initialization */
+static int __init armadeus_gpio_init(void)
+{
+	static int result, i;
+	
+	printk("Initializing Armadeus GPIOs driver\n");
+	printk("    PortA Parameters (%i): ", portA_init_nb);
+	for (i = 0; i < NB_CONFIG_REGS; i++) { printk(" 0x%x", portA_init[i]); } printk("\n");
+	printk("    PortB Parameters (%i): ", portB_init_nb);
+	for (i = 0; i < NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portB_init[i]); } printk("\n");
+	printk("    PortC Parameters (%i): ", portC_init_nb);
+	for (i = 0; i < NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portC_init[i]); } printk("\n");
+	printk("    PortD Parameters (%i): ", portD_init_nb);
+	for (i = 0; i < NB_CONFIG_REGS; i++ ) { printk(" 0x%x", portD_init[i]); } printk("\n");
+	init_map = 0;
 
-    printk("Ok !\n");
+	/* Configure HW ports/GPIOs with default values or given parameters */
+	initialize_all_ports();
+
+	/* Register the driver as character device by getting a major number */
+	result = register_chrdev(gpio_major, DRIVER_NAME, &gpio_fops);
+	if (result < 0) {
+		printk(KERN_WARNING DRIVER_NAME ": can't get major %d\n", gpio_major);
+		return result;
+	}
+	if (gpio_major == 0) gpio_major = result; /* dynamic Major allocation */
+
+	/* Creates /proc entries */
+	if ((result = create_proc_entries())) {
+		remove_proc_entries();
+		return result;
+	}
+
+	/* Initialise GPIO port access semaphore */
+	sema_init(&gpio_sema, 1);
+
+	/* Set GPIOs to initial state: iMX and parameters will do it */
+
+	printk( DRIVER_NAME " " DRIVER_VERSION " successfully loaded !\n");
+	return 0;
 }
 
-//------------------------------------------------
-//
-// API   TBDJUJU To be removed......
-//
+/* Module's cleanup */
+static void __exit armadeus_gpio_cleanup(void)
+{
+	/* TBDJUJU free config[i].entry->data first ?? */
+	remove_proc_entries();
 
+	/* De-register from /dev interface */
+	unregister_chrdev(gpio_major, DRIVER_NAME);
+}
+
+/*
+ * API To be removed ???
+ */
 void gpioWriteOnPort( unsigned int aPort, unsigned int aValue )
 {
     if( aPort >= NB_PORTS ) { aPort = NB_PORTS - 1; printk(DRIVER_NAME "port unknown !\n"); return; }
