@@ -26,7 +26,7 @@
 +	{mk_mii_end,}
 +};
 +static phy_cmd_t const phy_cmd_lan8700_startup[] = { /* startup - enable interrupts */
-+	{mk_mii_write(MII_REG_ANAR, 0x01E0), NULL},
++	{mk_mii_write(MII_REG_ANAR, 0x01E1), NULL},
 +	{mk_mii_write(MII_REG_CR, 0x1200), NULL},	/* autonegotiate */
 +	{mk_mii_read(MII_REG_SR), mii_parse_sr},
 +	{mk_mii_end,}
