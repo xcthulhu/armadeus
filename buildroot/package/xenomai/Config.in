@@ -1,0 +1,7 @@
+config BR2_PACKAGE_XENOMAI
+        bool "Xenomai"
+        help
+		Real-Time Framework for Linux
+
+		http://xenomai.org
+

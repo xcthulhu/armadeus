@@ -1,0 +1,24 @@
+diff -ru a/arch/arm/mach-imx/irq.c b/arch/arm/mach-imx/irq.c
+--- a/arch/arm/mach-imx/irq.c    2009-02-17 11:32:52.000000000 +0100
++++ b/arch/arm/mach-imx/irq.c       2009-02-23 14:12:43.000000000 +0100
+@@ -35,7 +35,7 @@
+ #include <asm/io.h>
+ 
+ #include <asm/mach/irq.h>
+-#include <asm/arch/imx-regs.h>
++#include <mach/imx-regs.h>
+ 
+ 
+ /* Used for IMX INTERRUPT priority: Still Experimental */ 
+diff -ru a/arch/arm/mach-imx/time.c b/arch/arm/mach-imx/time.c
+--- a/arch/arm/mach-imx/time.c	2009-02-25 17:03:34.000000000 +0100
++++ b/arch/arm/mach-imx/time.c	2009-02-25 16:36:16.000000000 +0100
+@@ -294,6 +294,8 @@
+ #ifdef CONFIG_IPIPE
+ void __ipipe_mach_acktimer(void)
+ {
++	uint32_t tstat;
++	tstat = IMX_TSTAT(TIMER_BASE);
+ 	IMX_TSTAT(TIMER_BASE) = 0;
+ }
+ 
