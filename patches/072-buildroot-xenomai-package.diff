@@ -1,6 +1,6 @@
 diff -ruN buildroot/package/Config.in buildroot.new/package/Config.in
---- buildroot.new/package/Config.in	2009-03-09 16:57:56.000000000 +0100
-+++ package/Config.in	2009-02-24 11:33:56.000000000 +0100
+--- buildroot/package/Config.in	2009-03-09 16:57:56.000000000 +0100
++++ buildroot.new/package/Config.in	2009-02-24 11:33:56.000000000 +0100
 @@ -121,6 +121,8 @@
  source "package/which/Config.in"
  endif
