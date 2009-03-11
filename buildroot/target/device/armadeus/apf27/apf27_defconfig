@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Mon Feb  2 20:39:06 2009
+# Wed Mar 11 17:06:45 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -362,6 +362,7 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_STARTUP_NOTIFICATION is not set
 BR2_PACKAGE_STRACE=y
 # BR2_PACKAGE_SUDO is not set
+# BR2_PACKAGE_XENOMAI is not set
 # BR2_DATABASE_SUPPORT is not set
 BR2_NETWORK_SUPPORT=y
 
