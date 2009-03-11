@@ -666,6 +666,19 @@
 
 #define CFG_EIM_VAL	0x00002000
 
+/* FPGA specific settings */
+/* CLKO */
+#define CFG_CCSR_VAL 0x00000307 
+/* drive strength CLKO set to 2*/
+#define CFG_DSCR10_VAL 0x00020000
+/* drive strength A1..A12 set to 2*/
+#define CFG_DSCR3_VAL 0x02AAAAA8
+/* drive strength ctrl*/
+#define CFG_DSCR7_VAL 0x008A08A0
+/* drive strength data*/
+#define CFG_DSCR2_VAL 0xAAAAAAAA
+
+
 /*
  * Default configuration for GPIOs and peripherals
  */
@@ -810,7 +823,7 @@
 
 /* SSIx CLKO NFC H264 MSHC */
 #define CFG_PCDR0_VAL\
-	(0x02000000						\
+	(0x02C00000						\
 	|((((CONFIG_SYS_CLK_FREQ/CONFIG_MSHC_FREQ)-1)&0x3F)<<0)	\
 	|((((CONFIG_HCLK_FREQ/CONFIG_NFC_FREQ)-1)&0x0F)<<6)	\
 	|(((((CONFIG_SYS_CLK_FREQ/CONFIG_H264_FREQ)-2)*2)&0x3F)<<10)\
