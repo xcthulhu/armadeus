@@ -500,7 +500,7 @@
 +extern int fpga_busy_fn (int cookie);
 --- ref/u-boot-1.3.4/board/armadeus/apf27/lowlevel_init.S	1970-01-01 01:00:00.000000000 +0100
 +++ u-boot-1.3.4/board/armadeus/apf27/lowlevel_init.S	2008-12-29 16:27:49.000000000 +0100
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,343 @@
 +/*
 + * For clock initialization, see chapter 3 of the "MCIMX27 Multimedia
 + * Applications Processor Reference Manual, Rev. 0.2".
@@ -676,6 +676,7 @@
 +	/* Configure PCCR0 and PCCR1 */
 +	writel(PCCR0, CFG_PCCR0_VAL)  
 +	writel(PCCR1, CFG_PCCR1_VAL)
++    
 +
 +.endm /* init_clock */
 +
@@ -817,6 +818,17 @@
 +	writel(EIM,  CFG_EIM_VAL)
 +
 +	port_init
++
++    /* Configure FPGA CLKO */
++	writel(CCSR, CFG_CCSR_VAL)
++
++    /* Configure strentgh for FPGA */
++	writel(DSCR10, CFG_DSCR10_VAL)
++	writel(DSCR3, CFG_DSCR3_VAL)
++	writel(DSCR7, CFG_DSCR7_VAL)
++	writel(DSCR2, CFG_DSCR2_VAL)
++
++
 +
 +	/* skip clock and sdram initialization if we run from ram */
 +	cmp	pc, #0xa0000000
