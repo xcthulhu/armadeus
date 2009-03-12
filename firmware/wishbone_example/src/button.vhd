@@ -34,7 +34,7 @@ Entity button is
 		-- irq
 		irq : out std_logic ;
 		-- fpga input
-		button 		: in std_logic 
+		button_i 		: in std_logic 
 	);
 end entity;
 
@@ -52,7 +52,7 @@ begin
 		if gls_reset = '1' then
 			reg <= (others => '0');
 		elsif rising_edge(gls_clk) then
-			reg <= "000000000000000"&button;
+			reg <= "000000000000000"&button_i;
 		end if;
 	end process cbutton;
 
@@ -64,12 +64,12 @@ begin
 			irq <= '0';
 			button_r <= '0';
 		elsif rising_edge(gls_clk) then
-			if button_r /= button then
+			if button_r /= button_i then
 				irq <= '1';
 			else
 				irq <= '0';
 			end if;
-			button_r <= button;
+			button_r <= button_i;
 		end if;
 	end process pbutton;
 

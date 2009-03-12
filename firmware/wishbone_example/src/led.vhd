@@ -34,7 +34,7 @@ use IEEE.numeric_std.all;
         wbs_write     : in std_logic ;
         wbs_ack       : out std_logic;
         -- out signals
-        led : out std_logic 
+        led_o : out std_logic 
     );
 end entity led;
 
@@ -45,8 +45,8 @@ Architecture led_1 of led is
     signal reg : std_logic_vector( wb_size-1 downto 0);
 begin
 
--- connect led
-led <= reg(0);
+-- connect led_o
+led_o <= reg(0);
 
 wbs_ack <= wbs_strobe;
 

@@ -11,12 +11,12 @@ LIBRARY_FILE=testbench/apf_test_pkg.vhd
 SYNTHESIS_FILE=$(PROJECT)_synthesis.vhd
 PLACE_AND_ROUTE_FILE=$(PROJECT)_timesim.vhd
 FILES=src/top_wishbone_example.vhd \
-	  src/imx9328_wb16_wrapper.vhd \
+	  src/wishbone_wrapper.vhd \
 	  src/rstgen_syscon.vhd \
 	  src/irq_mngr.vhd \
 	  src/led.vhd \
 	  src/button.vhd \
-	  src/imx9328_wb16_wrapper00_mwb16_intercon.vhd \
+	  src/intercon.vhd \
 	  testbench/apf_test_pkg.vhd
 
 # testbench

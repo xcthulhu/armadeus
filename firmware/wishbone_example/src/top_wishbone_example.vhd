@@ -18,15 +18,15 @@ entity top_wishbone_example is
 
     port
     (
-    imx9328_wb16_wrapper00_imx_data : inout std_logic_vector(15 downto 0);
-    imx9328_wb16_wrapper00_imx_address : in std_logic_vector(11 downto 0);
-    rstgen_syscon00_ext_clk : in std_logic;
-    imx9328_wb16_wrapper00_imx_cs_n : in std_logic;
-    imx9328_wb16_wrapper00_imx_eb3_n : in std_logic;
-    imx9328_wb16_wrapper00_imx_oe_n : in std_logic;
-    irq_mngr00_gls_irq : out std_logic;
-    led0_led : out std_logic;
-    button0_button : in std_logic
+        imx_data : inout std_logic_vector(15 downto 0);
+        imx_address : in std_logic_vector(11 downto 0);
+        ext_clk : in std_logic;
+        imx_cs_n : in std_logic;
+        imx_eb3_n : in std_logic;
+        imx_oe_n : in std_logic;
+        gls_irq : out std_logic;
+        led_o : out std_logic;
+        button_i : in std_logic
     );
 end entity top_wishbone_example;
 
@@ -53,7 +53,7 @@ architecture top_wishbone_example_1 of top_wishbone_example is
         );
         port (
             -- int_led
-            led  : out std_logic;
+            led_o  : out std_logic;
             -- candr
             gls_reset  : in std_logic;
             gls_clk  : in std_logic;
@@ -74,7 +74,7 @@ architecture top_wishbone_example_1 of top_wishbone_example is
         );
         port (
             -- int_button
-            button  : in std_logic;
+            button_i  : in std_logic;
             irq  : out std_logic;
             -- candr
             gls_reset  : in std_logic;
@@ -89,24 +89,24 @@ architecture top_wishbone_example_1 of top_wishbone_example is
         );
     end component;
 
-    component imx9328_wb16_wrapper
+    component wishbone_wrapper
         port (
             -- eim
             imx_address  : in std_logic_vector(11 downto 0);
-            imx_data  : inout std_logic_vector(15 downto 0);
-            imx_cs_n  : in std_logic;
-            imx_oe_n  : in std_logic;
+            imx_data   : inout std_logic_vector(15 downto 0);
+            imx_cs_n   : in std_logic;
+            imx_oe_n   : in std_logic;
             imx_eb3_n  : in std_logic;
             -- candr
-            gls_reset  : in std_logic;
-            gls_clk  : in std_logic;
+            gls_reset : in std_logic;
+            gls_clk   : in std_logic;
             -- mwb16
             wbm_address  : out std_logic_vector(12 downto 0);
-            wbm_readdata  : in std_logic_vector(15 downto 0);
-            wbm_writedata  : out std_logic_vector(15 downto 0);
-            wbm_strobe  : out std_logic;
+            wbm_readdata : in std_logic_vector(15 downto 0);
+            wbm_writedata: out std_logic_vector(15 downto 0);
+            wbm_strobe : out std_logic;
             wbm_write  : out std_logic;
-            wbm_ack  : in std_logic;
+            wbm_ack    : in std_logic;
             wbm_cycle  : out std_logic
         );
     end component;
@@ -136,7 +136,7 @@ architecture top_wishbone_example_1 of top_wishbone_example is
         );
     end component;
 
-    component imx9328_wb16_wrapper00_mwb16
+    component intercon
         port (
             -- irq_mngr00_swb16
             irq_mngr00_wbs_s1_address  : out std_logic_vector(1 downto 0);
@@ -170,18 +170,18 @@ architecture top_wishbone_example_1 of top_wishbone_example is
             -- button0_candr
             button0_gls_reset  : out std_logic;
             button0_gls_clk  : out std_logic;
-            -- imx9328_wb16_wrapper00_mwb16
-            imx9328_wb16_wrapper00_wbm_address  : in std_logic_vector(12 downto 0);
-            imx9328_wb16_wrapper00_wbm_readdata  : out std_logic_vector(15 downto 0);
-            imx9328_wb16_wrapper00_wbm_writedata  : in std_logic_vector(15 downto 0);
-            imx9328_wb16_wrapper00_wbm_strobe  : in std_logic;
-            imx9328_wb16_wrapper00_wbm_write  : in std_logic;
-            imx9328_wb16_wrapper00_wbm_ack  : out std_logic;
-            imx9328_wb16_wrapper00_wbm_cycle  : in std_logic;
-            -- imx9328_wb16_wrapper00_candr
-            imx9328_wb16_wrapper00_gls_reset  : out std_logic;
-            imx9328_wb16_wrapper00_gls_clk  : out std_logic;
-            -- rstgen_syscon00_imx9328_wb16_wrapper00
+            -- wrapper
+            wrapper_wbm_address  : in std_logic_vector(12 downto 0);
+            wrapper_wbm_readdata  : out std_logic_vector(15 downto 0);
+            wrapper_wbm_writedata  : in std_logic_vector(15 downto 0);
+            wrapper_wbm_strobe  : in std_logic;
+            wrapper_wbm_write  : in std_logic;
+            wrapper_wbm_ack  : out std_logic;
+            wrapper_wbm_cycle  : in std_logic;
+            -- wrapper_candr
+            wrapper_gls_reset  : out std_logic;
+            wrapper_gls_clk  : out std_logic;
+            -- rstgen_syscon00_wrapper
             rstgen_syscon00_gls_clk  : in std_logic;
             rstgen_syscon00_gls_reset  : in std_logic
         );
@@ -190,153 +190,90 @@ architecture top_wishbone_example_1 of top_wishbone_example is
     -- Signals declaration
     -------------------------
 
-    -- imx9328_wb16_wrapper00
-    -- eim
-    -- candr
-    signal imx9328_wb16_wrapper00_gls_reset :  std_logic;
-    signal imx9328_wb16_wrapper00_gls_clk :  std_logic;
-    -- mwb16
-    signal imx9328_wb16_wrapper00_wbm_address :  std_logic_vector(12 downto 0);
-    signal imx9328_wb16_wrapper00_wbm_readdata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_wbm_writedata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_wbm_strobe :  std_logic;
-    signal imx9328_wb16_wrapper00_wbm_write :  std_logic;
-    signal imx9328_wb16_wrapper00_wbm_ack :  std_logic;
-    signal imx9328_wb16_wrapper00_wbm_cycle :  std_logic;
-
-    -- rstgen_syscon00
-    -- candr
-    signal rstgen_syscon00_gls_clk :  std_logic;
-    signal rstgen_syscon00_gls_reset :  std_logic;
-    -- clk_ext
-
-    -- irq_mngr00
-    -- candr
-    signal irq_mngr00_gls_clk :  std_logic;
-    signal irq_mngr00_gls_reset :  std_logic;
-    -- swb16
-    signal irq_mngr00_wbs_s1_address :  std_logic_vector(1 downto 0);
-    signal irq_mngr00_wbs_s1_readdata :  std_logic_vector(15 downto 0);
-    signal irq_mngr00_wbs_s1_writedata :  std_logic_vector(15 downto 0);
-    signal irq_mngr00_wbs_s1_ack :  std_logic;
-    signal irq_mngr00_wbs_s1_strobe :  std_logic;
-    signal irq_mngr00_wbs_s1_cycle :  std_logic;
-    signal irq_mngr00_wbs_s1_write :  std_logic;
-    -- irq
-    signal irq_mngr00_irqport :  std_logic_vector(0 downto 0);
-    -- ext_irq
-
-    -- led0
-    -- int_led
-    -- candr
-    signal led0_gls_reset :  std_logic;
-    signal led0_gls_clk :  std_logic;
-    -- swb16
-    signal led0_wbs_add :  std_logic;
-    signal led0_wbs_writedata :  std_logic_vector(15 downto 0);
-    signal led0_wbs_readdata :  std_logic_vector(15 downto 0);
-    signal led0_wbs_strobe :  std_logic;
-    signal led0_wbs_cycle :  std_logic;
-    signal led0_wbs_write :  std_logic;
-    signal led0_wbs_ack :  std_logic;
-
-    -- button0
-    -- int_button
-    signal button0_irq :  std_logic;
-    -- candr
-    signal button0_gls_reset :  std_logic;
-    signal button0_gls_clk :  std_logic;
-    -- swb16
-    signal button0_wbs_add :  std_logic;
-    signal button0_wbs_readdata :  std_logic_vector(15 downto 0);
-    signal button0_wbs_strobe :  std_logic;
-    signal button0_wbs_write :  std_logic;
-    signal button0_wbs_ack :  std_logic;
-    signal button0_wbs_cycle :  std_logic;
-
-    -- imx9328_wb16_wrapper00_mwb16_intercon
+    -- intercon
     -- irq_mngr00_swb16
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_address :  std_logic_vector(1 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_readdata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_writedata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_ack :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_strobe :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_cycle :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_write :  std_logic;
+    signal intercon_irq_mngr00_wbs_s1_address :  std_logic_vector(1 downto 0);
+    signal intercon_irq_mngr00_wbs_s1_readdata :  std_logic_vector(15 downto 0);
+    signal intercon_irq_mngr00_wbs_s1_writedata :  std_logic_vector(15 downto 0);
+    signal intercon_irq_mngr00_wbs_s1_ack :  std_logic;
+    signal intercon_irq_mngr00_wbs_s1_strobe :  std_logic;
+    signal intercon_irq_mngr00_wbs_s1_cycle :  std_logic;
+    signal intercon_irq_mngr00_wbs_s1_write :  std_logic;
     -- irq_mngr00_candr
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_clk :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_reset :  std_logic;
+    signal intercon_irq_mngr00_gls_clk :  std_logic;
+    signal intercon_irq_mngr00_gls_reset :  std_logic;
     -- led0_swb16
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_add :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_writedata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_readdata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_strobe :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_cycle :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_write :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_ack :  std_logic;
+    signal intercon_led0_wbs_add :  std_logic;
+    signal intercon_led0_wbs_writedata :  std_logic_vector(15 downto 0);
+    signal intercon_led0_wbs_readdata :  std_logic_vector(15 downto 0);
+    signal intercon_led0_wbs_strobe :  std_logic;
+    signal intercon_led0_wbs_cycle :  std_logic;
+    signal intercon_led0_wbs_write :  std_logic;
+    signal intercon_led0_wbs_ack :  std_logic;
     -- led0_candr
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_reset :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_clk :  std_logic;
+    signal intercon_led0_gls_reset :  std_logic;
+    signal intercon_led0_gls_clk :  std_logic;
     -- button0_swb16
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_add :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_readdata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_strobe :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_write :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_ack :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_cycle :  std_logic;
+    signal intercon_button0_wbs_add :  std_logic;
+    signal intercon_button0_wbs_readdata :  std_logic_vector(15 downto 0);
+    signal intercon_button0_wbs_strobe :  std_logic;
+    signal intercon_button0_wbs_write :  std_logic;
+    signal intercon_button0_wbs_ack :  std_logic;
+    signal intercon_button0_wbs_cycle :  std_logic;
     -- button0_candr
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_reset :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_clk :  std_logic;
-    -- imx9328_wb16_wrapper00_mwb16
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_address :  std_logic_vector(12 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_readdata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_writedata :  std_logic_vector(15 downto 0);
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_strobe :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_write :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_ack :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_cycle :  std_logic;
-    -- imx9328_wb16_wrapper00_candr
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_reset :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_clk :  std_logic;
-    -- rstgen_syscon00_imx9328_wb16_wrapper00
-    signal imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_clk :  std_logic;
-    signal imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_reset :  std_logic;
+    signal intercon_button0_gls_reset :  std_logic;
+    signal intercon_button0_gls_clk :  std_logic;
+    -- wrapper
+    signal intercon_wrapper_wbm_address :  std_logic_vector(12 downto 0);
+    signal intercon_wrapper_wbm_readdata :  std_logic_vector(15 downto 0);
+    signal intercon_wrapper_wbm_writedata :  std_logic_vector(15 downto 0);
+    signal intercon_wrapper_wbm_strobe :  std_logic;
+    signal intercon_wrapper_wbm_write :  std_logic;
+    signal intercon_wrapper_wbm_ack :  std_logic;
+    signal intercon_wrapper_wbm_cycle :  std_logic;
+    -- wrapper_candr
+    signal intercon_wrapper_gls_reset :  std_logic;
+    signal intercon_wrapper_gls_clk :  std_logic;
+    -- rstgen_syscon00_wrapper
+    signal intercon_rstgen_syscon00_gls_clk :  std_logic;
+    signal intercon_rstgen_syscon00_gls_reset :  std_logic;
 
-    -- void pins
+    -- irq_mngr
+    signal irq_mngr00_irqport : std_logic_vector( 0 downto 0) ; 
 
 begin
     -------------------------
     -- declare instances
     -------------------------
 
-    imx9328_wb16_wrapper00 : imx9328_wb16_wrapper
+    wrapper : wishbone_wrapper
     port map (
             -- eim
-            imx_address => imx9328_wb16_wrapper00_imx_address,
-            imx_data => imx9328_wb16_wrapper00_imx_data,
-            imx_cs_n => imx9328_wb16_wrapper00_imx_cs_n,
-            imx_oe_n => imx9328_wb16_wrapper00_imx_oe_n,
-            imx_eb3_n => imx9328_wb16_wrapper00_imx_eb3_n,
+            imx_address => imx_address,
+            imx_data    => imx_data,
+            imx_cs_n    => imx_cs_n,
+            imx_oe_n    => imx_oe_n,
+            imx_eb3_n   => imx_eb3_n,
             -- candr
-            gls_reset => imx9328_wb16_wrapper00_gls_reset,
-            gls_clk => imx9328_wb16_wrapper00_gls_clk,
+            gls_reset    => intercon_wrapper_gls_reset,
+            gls_clk      => intercon_wrapper_gls_clk,
             -- mwb16
-            wbm_address => imx9328_wb16_wrapper00_wbm_address,
-            wbm_readdata => imx9328_wb16_wrapper00_wbm_readdata,
-            wbm_writedata => imx9328_wb16_wrapper00_wbm_writedata,
-            wbm_strobe => imx9328_wb16_wrapper00_wbm_strobe,
-            wbm_write => imx9328_wb16_wrapper00_wbm_write,
-            wbm_ack => imx9328_wb16_wrapper00_wbm_ack,
-            wbm_cycle => imx9328_wb16_wrapper00_wbm_cycle
+            wbm_address  => intercon_wrapper_wbm_address,
+            wbm_readdata => intercon_wrapper_wbm_readdata,
+            wbm_writedata=> intercon_wrapper_wbm_writedata,
+            wbm_strobe   => intercon_wrapper_wbm_strobe,
+            wbm_write    => intercon_wrapper_wbm_write,
+            wbm_ack      => intercon_wrapper_wbm_ack,
+            wbm_cycle    => intercon_wrapper_wbm_cycle
             );
 
     rstgen_syscon00 : rstgen_syscon
     port map (
             -- candr
-            gls_clk => rstgen_syscon00_gls_clk,
-            gls_reset => rstgen_syscon00_gls_reset,
+            gls_clk   => intercon_rstgen_syscon00_gls_clk,
+            gls_reset => intercon_rstgen_syscon00_gls_reset,
             -- clk_ext
-            ext_clk => rstgen_syscon00_ext_clk
+            ext_clk   => ext_clk
             );
 
     irq_mngr00 : irq_mngr
@@ -347,20 +284,20 @@ begin
         )
     port map (
             -- candr
-            gls_clk => irq_mngr00_gls_clk,
-            gls_reset => irq_mngr00_gls_reset,
+            gls_clk         => intercon_irq_mngr00_gls_clk,
+            gls_reset       => intercon_irq_mngr00_gls_reset,
             -- swb16
-            wbs_s1_address => irq_mngr00_wbs_s1_address,
-            wbs_s1_readdata => irq_mngr00_wbs_s1_readdata,
-            wbs_s1_writedata => irq_mngr00_wbs_s1_writedata,
-            wbs_s1_ack => irq_mngr00_wbs_s1_ack,
-            wbs_s1_strobe => irq_mngr00_wbs_s1_strobe,
-            wbs_s1_cycle => irq_mngr00_wbs_s1_cycle,
-            wbs_s1_write => irq_mngr00_wbs_s1_write,
+            wbs_s1_address  => intercon_irq_mngr00_wbs_s1_address,
+            wbs_s1_readdata => intercon_irq_mngr00_wbs_s1_readdata,
+            wbs_s1_writedata=> intercon_irq_mngr00_wbs_s1_writedata,
+            wbs_s1_ack      => intercon_irq_mngr00_wbs_s1_ack,
+            wbs_s1_strobe   => intercon_irq_mngr00_wbs_s1_strobe,
+            wbs_s1_cycle    => intercon_irq_mngr00_wbs_s1_cycle,
+            wbs_s1_write    => intercon_irq_mngr00_wbs_s1_write,
             -- irq
-            irqport => irq_mngr00_irqport,
+            irqport         => irq_mngr00_irqport,
             -- ext_irq
-            gls_irq => irq_mngr00_gls_irq
+            gls_irq         => gls_irq
             );
 
     led0 : led
@@ -370,18 +307,18 @@ begin
         )
     port map (
             -- int_led
-            led => led0_led,
+            led_o        => led_o,
             -- candr
-            gls_reset => led0_gls_reset,
-            gls_clk => led0_gls_clk,
+            gls_reset    => intercon_led0_gls_reset,
+            gls_clk      => intercon_led0_gls_clk,
             -- swb16
-            wbs_add => led0_wbs_add,
-            wbs_writedata => led0_wbs_writedata,
-            wbs_readdata => led0_wbs_readdata,
-            wbs_strobe => led0_wbs_strobe,
-            wbs_cycle => led0_wbs_cycle,
-            wbs_write => led0_wbs_write,
-            wbs_ack => led0_wbs_ack
+            wbs_add      => intercon_led0_wbs_add,
+            wbs_writedata=> intercon_led0_wbs_writedata,
+            wbs_readdata => intercon_led0_wbs_readdata,
+            wbs_strobe   => intercon_led0_wbs_strobe,
+            wbs_cycle    => intercon_led0_wbs_cycle,
+            wbs_write    => intercon_led0_wbs_write,
+            wbs_ack      => intercon_led0_wbs_ack
             );
 
     button0 : button
@@ -390,146 +327,69 @@ begin
         )
     port map (
             -- int_button
-            button => button0_button,
-            irq => button0_irq,
+            button_i     => button_i,
+            irq          => irq_mngr00_irqport(0), 
             -- candr
-            gls_reset => button0_gls_reset,
-            gls_clk => button0_gls_clk,
+            gls_reset    => intercon_button0_gls_reset,
+            gls_clk      => intercon_button0_gls_clk,
             -- swb16
-            wbs_add => button0_wbs_add,
-            wbs_readdata => button0_wbs_readdata,
-            wbs_strobe => button0_wbs_strobe,
-            wbs_write => button0_wbs_write,
-            wbs_ack => button0_wbs_ack,
-            wbs_cycle => button0_wbs_cycle
+            wbs_add      => intercon_button0_wbs_add,
+            wbs_readdata => intercon_button0_wbs_readdata,
+            wbs_strobe   => intercon_button0_wbs_strobe,
+            wbs_write    => intercon_button0_wbs_write,
+            wbs_ack      => intercon_button0_wbs_ack,
+            wbs_cycle    => intercon_button0_wbs_cycle
             );
 
-    imx9328_wb16_wrapper00_mwb16_intercon : imx9328_wb16_wrapper00_mwb16
+    intercon_intercon : intercon
     port map (
             -- irq_mngr00_swb16
-            irq_mngr00_wbs_s1_address => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_address,
-            irq_mngr00_wbs_s1_readdata => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_readdata,
-            irq_mngr00_wbs_s1_writedata => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_writedata,
-            irq_mngr00_wbs_s1_ack => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_ack,
-            irq_mngr00_wbs_s1_strobe => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_strobe,
-            irq_mngr00_wbs_s1_cycle => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_cycle,
-            irq_mngr00_wbs_s1_write => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_write,
+            irq_mngr00_wbs_s1_address   => intercon_irq_mngr00_wbs_s1_address,
+            irq_mngr00_wbs_s1_readdata  => intercon_irq_mngr00_wbs_s1_readdata,
+            irq_mngr00_wbs_s1_writedata => intercon_irq_mngr00_wbs_s1_writedata,
+            irq_mngr00_wbs_s1_ack       => intercon_irq_mngr00_wbs_s1_ack,
+            irq_mngr00_wbs_s1_strobe    => intercon_irq_mngr00_wbs_s1_strobe,
+            irq_mngr00_wbs_s1_cycle     => intercon_irq_mngr00_wbs_s1_cycle,
+            irq_mngr00_wbs_s1_write     => intercon_irq_mngr00_wbs_s1_write,
             -- irq_mngr00_candr
-            irq_mngr00_gls_clk => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_clk,
-            irq_mngr00_gls_reset => imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_reset,
+            irq_mngr00_gls_clk          => intercon_irq_mngr00_gls_clk,
+            irq_mngr00_gls_reset        => intercon_irq_mngr00_gls_reset,
             -- led0_swb16
-            led0_wbs_add => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_add,
-            led0_wbs_writedata => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_writedata,
-            led0_wbs_readdata => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_readdata,
-            led0_wbs_strobe => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_strobe,
-            led0_wbs_cycle => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_cycle,
-            led0_wbs_write => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_write,
-            led0_wbs_ack => imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_ack,
+            led0_wbs_add                => intercon_led0_wbs_add,
+            led0_wbs_writedata          => intercon_led0_wbs_writedata,
+            led0_wbs_readdata           => intercon_led0_wbs_readdata,
+            led0_wbs_strobe             => intercon_led0_wbs_strobe,
+            led0_wbs_cycle              => intercon_led0_wbs_cycle,
+            led0_wbs_write              => intercon_led0_wbs_write,
+            led0_wbs_ack                => intercon_led0_wbs_ack,
             -- led0_candr
-            led0_gls_reset => imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_reset,
-            led0_gls_clk => imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_clk,
+            led0_gls_reset              => intercon_led0_gls_reset,
+            led0_gls_clk                => intercon_led0_gls_clk,
             -- button0_swb16
-            button0_wbs_add => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_add,
-            button0_wbs_readdata => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_readdata,
-            button0_wbs_strobe => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_strobe,
-            button0_wbs_write => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_write,
-            button0_wbs_ack => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_ack,
-            button0_wbs_cycle => imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_cycle,
+            button0_wbs_add             => intercon_button0_wbs_add,
+            button0_wbs_readdata        => intercon_button0_wbs_readdata,
+            button0_wbs_strobe          => intercon_button0_wbs_strobe,
+            button0_wbs_write           => intercon_button0_wbs_write,
+            button0_wbs_ack             => intercon_button0_wbs_ack,
+            button0_wbs_cycle           => intercon_button0_wbs_cycle,
             -- button0_candr
-            button0_gls_reset => imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_reset,
-            button0_gls_clk => imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_clk,
-            -- imx9328_wb16_wrapper00_mwb16
-            imx9328_wb16_wrapper00_wbm_address => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_address,
-            imx9328_wb16_wrapper00_wbm_readdata => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_readdata,
-            imx9328_wb16_wrapper00_wbm_writedata => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_writedata,
-            imx9328_wb16_wrapper00_wbm_strobe => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_strobe,
-            imx9328_wb16_wrapper00_wbm_write => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_write,
-            imx9328_wb16_wrapper00_wbm_ack => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_ack,
-            imx9328_wb16_wrapper00_wbm_cycle => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_cycle,
-            -- imx9328_wb16_wrapper00_candr
-            imx9328_wb16_wrapper00_gls_reset => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_reset,
-            imx9328_wb16_wrapper00_gls_clk => imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_clk,
-            -- rstgen_syscon00_imx9328_wb16_wrapper00
-            rstgen_syscon00_gls_clk => imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_clk,
-            rstgen_syscon00_gls_reset => imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_reset
+            button0_gls_reset           => intercon_button0_gls_reset,
+            button0_gls_clk             => intercon_button0_gls_clk,
+            -- intercon
+            wrapper_wbm_address         => intercon_wrapper_wbm_address,
+            wrapper_wbm_readdata        => intercon_wrapper_wbm_readdata,
+            wrapper_wbm_writedata       => intercon_wrapper_wbm_writedata,
+            wrapper_wbm_strobe          => intercon_wrapper_wbm_strobe,
+            wrapper_wbm_write           => intercon_wrapper_wbm_write,
+            wrapper_wbm_ack             => intercon_wrapper_wbm_ack,
+            wrapper_wbm_cycle           => intercon_wrapper_wbm_cycle,
+            -- wrapper_candr
+            wrapper_gls_reset           => intercon_wrapper_gls_reset,
+            wrapper_gls_clk             => intercon_wrapper_gls_clk,
+            -- rstgen_syscon00_wrapper
+            rstgen_syscon00_gls_clk     => intercon_rstgen_syscon00_gls_clk,
+            rstgen_syscon00_gls_reset   => intercon_rstgen_syscon00_gls_reset
             );
 
-    ---------------------------
-    -- instances connections --
-    ---------------------------
-
-    -- connect imx9328_wb16_wrapper00
-        -- eim
-        -- candr
-        imx9328_wb16_wrapper00_gls_reset <= imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_reset;
-        imx9328_wb16_wrapper00_gls_clk <= imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_gls_clk;
-        -- mwb16
-        imx9328_wb16_wrapper00_wbm_readdata <= imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_readdata;
-        imx9328_wb16_wrapper00_wbm_ack <= imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_ack;
-
-    -- connect rstgen_syscon00
-        -- candr
-        -- clk_ext
-
-    -- connect irq_mngr00
-        -- candr
-        irq_mngr00_gls_clk <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_clk;
-        irq_mngr00_gls_reset <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_gls_reset;
-        -- swb16
-        irq_mngr00_wbs_s1_address <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_address;
-        irq_mngr00_wbs_s1_writedata <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_writedata;
-        irq_mngr00_wbs_s1_strobe <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_strobe;
-        irq_mngr00_wbs_s1_cycle <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_cycle;
-        irq_mngr00_wbs_s1_write <= imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_write;
-        -- irq
-        irq_mngr00_irqport(0) <= button0_irq;
-        -- ext_irq
-
-    -- connect led0
-        -- int_led
-        -- candr
-        led0_gls_reset <= imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_reset;
-        led0_gls_clk <= imx9328_wb16_wrapper00_mwb16_intercon_led0_gls_clk;
-        -- swb16
-        led0_wbs_add <= imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_add;
-        led0_wbs_writedata <= imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_writedata;
-        led0_wbs_strobe <= imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_strobe;
-        led0_wbs_cycle <= imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_cycle;
-        led0_wbs_write <= imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_write;
-
-    -- connect button0
-        -- int_button
-        -- candr
-        button0_gls_reset <= imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_reset;
-        button0_gls_clk <= imx9328_wb16_wrapper00_mwb16_intercon_button0_gls_clk;
-        -- swb16
-        button0_wbs_add <= imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_add;
-        button0_wbs_strobe <= imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_strobe;
-        button0_wbs_write <= imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_write;
-        button0_wbs_cycle <= imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_cycle;
-
-    -- connect imx9328_wb16_wrapper00_mwb16_intercon
-        -- irq_mngr00_swb16
-        imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_readdata <= irq_mngr00_wbs_s1_readdata;
-        imx9328_wb16_wrapper00_mwb16_intercon_irq_mngr00_wbs_s1_ack <= irq_mngr00_wbs_s1_ack;
-        -- irq_mngr00_candr
-        -- led0_swb16
-        imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_readdata <= led0_wbs_readdata;
-        imx9328_wb16_wrapper00_mwb16_intercon_led0_wbs_ack <= led0_wbs_ack;
-        -- led0_candr
-        -- button0_swb16
-        imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_readdata <= button0_wbs_readdata;
-        imx9328_wb16_wrapper00_mwb16_intercon_button0_wbs_ack <= button0_wbs_ack;
-        -- button0_candr
-        -- imx9328_wb16_wrapper00_mwb16
-        imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_address <= imx9328_wb16_wrapper00_wbm_address;
-        imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_writedata <= imx9328_wb16_wrapper00_wbm_writedata;
-        imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_strobe <= imx9328_wb16_wrapper00_wbm_strobe;
-        imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_write <= imx9328_wb16_wrapper00_wbm_write;
-        imx9328_wb16_wrapper00_mwb16_intercon_imx9328_wb16_wrapper00_wbm_cycle <= imx9328_wb16_wrapper00_wbm_cycle;
-        -- imx9328_wb16_wrapper00_candr
-        -- rstgen_syscon00_imx9328_wb16_wrapper00
-        imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_clk <= rstgen_syscon00_gls_clk;
-        imx9328_wb16_wrapper00_mwb16_intercon_rstgen_syscon00_gls_reset <= rstgen_syscon00_gls_reset;
-
 end architecture top_wishbone_example_1;
+

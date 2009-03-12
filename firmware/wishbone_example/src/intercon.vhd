@@ -3,10 +3,10 @@
 -- Author(s)   : 
 -- 
 -- Creation Date : 2009-03-03
--- File          : imx9328_wb16_wrapper00_mwb16.vhd
+-- File          : intercon.vhd
 --
 -- Abstract : 
--- Connect slaves to mwb16 from imx9328_wb16_wrapper00
+-- Connect slaves to mwb16 from wrapper
 --
 ---------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
 
-Entity imx9328_wb16_wrapper00_mwb16 is
+Entity intercon is
     port
     (
 
@@ -56,26 +56,26 @@ Entity imx9328_wb16_wrapper00_mwb16 is
         button0_gls_reset                        : out  std_logic;
         button0_gls_clk                          : out  std_logic;
 
-        -- imx9328_wb16_wrapper00_mwb16 connection
-        imx9328_wb16_wrapper00_wbm_address       : in   std_logic_vector(12 downto 0);
-        imx9328_wb16_wrapper00_wbm_readdata      : out  std_logic_vector(15 downto 0);
-        imx9328_wb16_wrapper00_wbm_writedata     : in   std_logic_vector(15 downto 0);
-        imx9328_wb16_wrapper00_wbm_strobe        : in   std_logic;
-        imx9328_wb16_wrapper00_wbm_write         : in   std_logic;
-        imx9328_wb16_wrapper00_wbm_ack           : out  std_logic;
-        imx9328_wb16_wrapper00_wbm_cycle         : in   std_logic;
+        -- intercon connection
+        wrapper_wbm_address       : in   std_logic_vector(12 downto 0);
+        wrapper_wbm_readdata      : out  std_logic_vector(15 downto 0);
+        wrapper_wbm_writedata     : in   std_logic_vector(15 downto 0);
+        wrapper_wbm_strobe        : in   std_logic;
+        wrapper_wbm_write         : in   std_logic;
+        wrapper_wbm_ack           : out  std_logic;
+        wrapper_wbm_cycle         : in   std_logic;
 
-        -- imx9328_wb16_wrapper00_candr connection
-        imx9328_wb16_wrapper00_gls_reset         : out  std_logic;
-        imx9328_wb16_wrapper00_gls_clk           : out  std_logic;
+        -- wrapper_candr connection
+        wrapper_gls_reset         : out  std_logic;
+        wrapper_gls_clk           : out  std_logic;
 
-        -- rstgen_syscon00_imx9328_wb16_wrapper00 connection
+        -- rstgen_syscon00_wrapper connection
         rstgen_syscon00_gls_clk                  : in   std_logic;
         rstgen_syscon00_gls_reset                : in   std_logic
     );
 end entity;
 
-architecture imx9328_wb16_wrapper00_mwb16_1 of imx9328_wb16_wrapper00_mwb16 is
+architecture intercon_1 of intercon is
     signal irq_mngr00_swb16_cs                      : std_logic := '0' ;
     signal led0_swb16_cs                            : std_logic := '0' ;
     signal button0_swb16_cs                         : std_logic := '0' ;
@@ -91,17 +91,17 @@ begin
     button0_gls_reset                        <= rstgen_syscon00_gls_reset;
     button0_gls_clk                          <= rstgen_syscon00_gls_clk;
 
-    imx9328_wb16_wrapper00_gls_reset         <= rstgen_syscon00_gls_reset;
-    imx9328_wb16_wrapper00_gls_clk           <= rstgen_syscon00_gls_clk;
+    wrapper_gls_reset         <= rstgen_syscon00_gls_reset;
+    wrapper_gls_clk           <= rstgen_syscon00_gls_clk;
 
 
     -- Address decoding  --
     -----------------------
-    irq_mngr00_wbs_s1_address <= imx9328_wb16_wrapper00_wbm_address(2 downto 1);
-    led0_wbs_add <= imx9328_wb16_wrapper00_wbm_address(1);
-    button0_wbs_add <= imx9328_wb16_wrapper00_wbm_address(1);
+    irq_mngr00_wbs_s1_address <= wrapper_wbm_address(2 downto 1);
+    led0_wbs_add <= wrapper_wbm_address(1);
+    button0_wbs_add <= wrapper_wbm_address(1);
 
-    decodeproc : process(rstgen_syscon00_gls_clk,rstgen_syscon00_gls_reset,imx9328_wb16_wrapper00_wbm_address)
+    decodeproc : process(rstgen_syscon00_gls_clk,rstgen_syscon00_gls_reset,wrapper_wbm_address)
     begin
         if rstgen_syscon00_gls_reset='1' then
             irq_mngr00_swb16_cs <= '0';
@@ -109,19 +109,19 @@ begin
             button0_swb16_cs <= '0';
         elsif rising_edge(rstgen_syscon00_gls_clk) then
 
-            if imx9328_wb16_wrapper00_wbm_address(12 downto 3)="0000000000" and imx9328_wb16_wrapper00_wbm_strobe='1' then
+            if wrapper_wbm_address(12 downto 3)="0000000000" and wrapper_wbm_strobe='1' then
                 irq_mngr00_swb16_cs <= '1';
             else
                 irq_mngr00_swb16_cs <= '0';
             end if;
 
-            if imx9328_wb16_wrapper00_wbm_address(12 downto 2)="00000000010" and imx9328_wb16_wrapper00_wbm_strobe='1' then
+            if wrapper_wbm_address(12 downto 2)="00000000010" and wrapper_wbm_strobe='1' then
                 led0_swb16_cs <= '1';
             else
                 led0_swb16_cs <= '0';
             end if;
 
-            if imx9328_wb16_wrapper00_wbm_address(12 downto 2)="00000000011" and imx9328_wb16_wrapper00_wbm_strobe='1' then
+            if wrapper_wbm_address(12 downto 2)="00000000011" and wrapper_wbm_strobe='1' then
                 button0_swb16_cs <= '1';
             else
                 button0_swb16_cs <= '0';
@@ -135,34 +135,34 @@ begin
     -----------------------------
 
     -- for irq_mngr00
-    irq_mngr00_wbs_s1_strobe <= (imx9328_wb16_wrapper00_wbm_strobe and irq_mngr00_swb16_cs );
-    irq_mngr00_wbs_s1_cycle <= (imx9328_wb16_wrapper00_wbm_cycle and irq_mngr00_swb16_cs );
-    irq_mngr00_wbs_s1_write <= (imx9328_wb16_wrapper00_wbm_write and irq_mngr00_swb16_cs );
-    irq_mngr00_wbs_s1_writedata <= imx9328_wb16_wrapper00_wbm_writedata when (imx9328_wb16_wrapper00_wbm_write and irq_mngr00_swb16_cs ) = '1' else (others => '0');
+    irq_mngr00_wbs_s1_strobe <= (wrapper_wbm_strobe and irq_mngr00_swb16_cs );
+    irq_mngr00_wbs_s1_cycle <= (wrapper_wbm_cycle and irq_mngr00_swb16_cs );
+    irq_mngr00_wbs_s1_write <= (wrapper_wbm_write and irq_mngr00_swb16_cs );
+    irq_mngr00_wbs_s1_writedata <= wrapper_wbm_writedata when (wrapper_wbm_write and irq_mngr00_swb16_cs ) = '1' else (others => '0');
 
     -- for led0
-    led0_wbs_strobe <= (imx9328_wb16_wrapper00_wbm_strobe and led0_swb16_cs );
-    led0_wbs_cycle <= (imx9328_wb16_wrapper00_wbm_cycle and led0_swb16_cs );
-    led0_wbs_write <= (imx9328_wb16_wrapper00_wbm_write and led0_swb16_cs );
-    led0_wbs_writedata <= imx9328_wb16_wrapper00_wbm_writedata when (imx9328_wb16_wrapper00_wbm_write and led0_swb16_cs ) = '1' else (others => '0');
+    led0_wbs_strobe <= (wrapper_wbm_strobe and led0_swb16_cs );
+    led0_wbs_cycle <= (wrapper_wbm_cycle and led0_swb16_cs );
+    led0_wbs_write <= (wrapper_wbm_write and led0_swb16_cs );
+    led0_wbs_writedata <= wrapper_wbm_writedata when (wrapper_wbm_write and led0_swb16_cs ) = '1' else (others => '0');
 
     -- for button0
-    button0_wbs_strobe <= (imx9328_wb16_wrapper00_wbm_strobe and button0_swb16_cs );
-    button0_wbs_cycle <= (imx9328_wb16_wrapper00_wbm_cycle and button0_swb16_cs );
+    button0_wbs_strobe <= (wrapper_wbm_strobe and button0_swb16_cs );
+    button0_wbs_cycle <= (wrapper_wbm_cycle and button0_swb16_cs );
     button0_wbs_write <= '0';
 
 
     -------------------------------
     -- Control signal for master --
     -------------------------------
-    imx9328_wb16_wrapper00_wbm_readdata <=  irq_mngr00_wbs_s1_readdata when irq_mngr00_swb16_cs='1' else
+    wrapper_wbm_readdata <=  irq_mngr00_wbs_s1_readdata when irq_mngr00_swb16_cs='1' else
                                        led0_wbs_readdata when led0_swb16_cs='1' else
                                        button0_wbs_readdata when button0_swb16_cs='1' else
                                        (others => '0');
-    imx9328_wb16_wrapper00_wbm_ack <=  (irq_mngr00_wbs_s1_ack and irq_mngr00_swb16_cs)
+    wrapper_wbm_ack <=  (irq_mngr00_wbs_s1_ack and irq_mngr00_swb16_cs)
                                     or 
                                 (led0_wbs_ack and led0_swb16_cs)
                                     or 
                                 (button0_wbs_ack and button0_swb16_cs);
 
-end architecture imx9328_wb16_wrapper00_mwb16_1;
+end architecture intercon_1;

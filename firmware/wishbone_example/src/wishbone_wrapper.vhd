@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 --
---  File          :  imx9328_wb16_wrapper.vhd
+--  File          :  wishbone_wrapper.vhd
 --  Related files :  (none)
 --
 --  Author(s)     :  Fabrice Mousset (fabrice.mousset@laposte.net)
@@ -23,37 +23,32 @@ library IEEE;
   use IEEE.numeric_std.all;
 
 -- ----------------------------------------------------------------------------
-    Entity imx9328_wb16_wrapper is
+    Entity wishbone_wrapper is
 -- ----------------------------------------------------------------------------
     port
     (
       -- i.MX Signals
-			imx_address : in    std_logic_vector(11 downto 0); -- LSB not used 
+      imx_address : in    std_logic_vector(11 downto 0); -- LSB not used 
       imx_data    : inout std_logic_vector(15 downto 0);
       imx_cs_n    : in    std_logic;
       imx_oe_n    : in    std_logic;
       imx_eb3_n   : in    std_logic;
-
       -- Global Signals
       gls_reset : in std_logic;
       gls_clk   : in std_logic;
-
-			-- Interrupt out for write error
---			int_err        : out std_logic; 
-
       -- Wishbone interface signals
       wbm_address    : out std_logic_vector(12 downto 0);  -- Address bus
       wbm_readdata   : in  std_logic_vector(15 downto 0);  -- Data bus for read access
       wbm_writedata  : out std_logic_vector(15 downto 0);  -- Data bus for write access
       wbm_strobe     : out std_logic;                      -- Data Strobe
       wbm_write      : out std_logic;                      -- Write access
-			wbm_ack				 : in std_logic ;		                   -- acknowledge
-      wbm_cycle      : out std_logic					   -- bus cycle in progress
+      wbm_ack        : in std_logic ;                      -- acknowledge
+      wbm_cycle      : out std_logic                       -- bus cycle in progress
     );
     end entity;
 
 -- ----------------------------------------------------------------------------
-    Architecture RTL of imx9328_wb16_wrapper is
+    Architecture RTL of wishbone_wrapper is
 -- ----------------------------------------------------------------------------
 
 signal write      : std_logic;

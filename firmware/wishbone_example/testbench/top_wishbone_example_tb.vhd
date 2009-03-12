@@ -58,27 +58,27 @@ architecture RTL of top_wishbone_example_tb is
     CONSTANT LED0_ID : std_logic_vector := x"000a";
     CONSTANT BUTTON0_ID : std_logic_vector := x"000c";
     CONSTANT BUTTON_REG : std_logic_vector := x"000e";
-    signal  imx9328_wb16_wrapper00_imx_data :  std_logic_vector(15 downto 0);
-    signal  imx9328_wb16_wrapper00_imx_address :  std_logic_vector(11 downto 0);
-    signal  rstgen_syscon00_ext_clk :  std_logic;
-    signal  imx9328_wb16_wrapper00_imx_cs_n :  std_logic;
-    signal  imx9328_wb16_wrapper00_imx_eb3_n :  std_logic;
-    signal  imx9328_wb16_wrapper00_imx_oe_n :  std_logic;
-    signal  irq_mngr00_gls_irq :  std_logic;
-    signal  led0_led :  std_logic;
-    signal  button0_button :  std_logic;
+    signal  imx_data :  std_logic_vector(15 downto 0);
+    signal  imx_address :  std_logic_vector(11 downto 0);
+    signal  ext_clk :  std_logic;
+    signal  imx_cs_n :  std_logic;
+    signal  imx_eb3_n :  std_logic;
+    signal  imx_oe_n :  std_logic;
+    signal  gls_irq :  std_logic;
+    signal  led_o    :  std_logic;
+    signal  button_i :  std_logic;
 
     component top_wishbone_example
     port (        
-        imx9328_wb16_wrapper00_imx_data    : inout std_logic_vector(15 downto 0);
-        imx9328_wb16_wrapper00_imx_address : in std_logic_vector(11 downto 0);
-        rstgen_syscon00_ext_clk            : in std_logic;
-        imx9328_wb16_wrapper00_imx_cs_n    : in std_logic;
-        imx9328_wb16_wrapper00_imx_eb3_n   : in std_logic;
-        imx9328_wb16_wrapper00_imx_oe_n    : in std_logic;
-        irq_mngr00_gls_irq : out std_logic;
-        led0_led           : out std_logic;
-        button0_button     : in std_logic
+        imx_data    : inout std_logic_vector(15 downto 0);
+        imx_address : in std_logic_vector(11 downto 0);
+        ext_clk     : in std_logic;
+        imx_cs_n    : in std_logic;
+        imx_eb3_n   : in std_logic;
+        imx_oe_n    : in std_logic;
+        gls_irq     : out std_logic;
+        led_o       : out std_logic;
+        button_i    : in std_logic
     );
     end component top_wishbone_example;
 
@@ -88,100 +88,100 @@ begin
 
     top : top_wishbone_example
     port map(
-        imx9328_wb16_wrapper00_imx_data => imx9328_wb16_wrapper00_imx_data,
-        imx9328_wb16_wrapper00_imx_address => imx9328_wb16_wrapper00_imx_address,
-        rstgen_syscon00_ext_clk => rstgen_syscon00_ext_clk,
-        imx9328_wb16_wrapper00_imx_cs_n => imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_eb3_n => imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_oe_n => imx9328_wb16_wrapper00_imx_oe_n,
-        irq_mngr00_gls_irq => irq_mngr00_gls_irq,
-        led0_led => led0_led,
-        button0_button => button0_button
+        imx_data => imx_data,
+        imx_address => imx_address,
+        ext_clk => ext_clk,
+        imx_cs_n => imx_cs_n,
+        imx_eb3_n => imx_eb3_n,
+        imx_oe_n => imx_oe_n,
+        gls_irq => gls_irq,
+        led_o => led_o,
+        button_i => button_i
     );
 
      -- test read/write
     stimulus : process
     begin
-        imx9328_wb16_wrapper00_imx_oe_n <= '1';
-        imx9328_wb16_wrapper00_imx_eb3_n <= '1';
-        imx9328_wb16_wrapper00_imx_cs_n <= '1';
-        imx9328_wb16_wrapper00_imx_address <= (others => 'Z');
-        imx9328_wb16_wrapper00_imx_data  <= (others => 'Z');
-        button0_button <= '0';
+        imx_oe_n <= '1';
+        imx_eb3_n <= '1';
+        imx_cs_n <= '1';
+        imx_address <= (others => 'Z');
+        imx_data  <= (others => 'Z');
+        button_i <= '0';
 
         wait for HALF_PERIODE*10;
 
         -- reset irq_pend
         imx_write(IRQ_PEND,x"0000",
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         -- write on irq_mask
         imx_write(IRQ_MASK,x"ffff",
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         -- read led value
         imx_read(LED_REG,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         assert value(0) = '0' report "Wrong led value" severity error;
 
         -- push button
-        button0_button <= '1';
+        button_i <= '1';
         wait for HALF_PERIODE*20;
-        assert irq_mngr00_gls_irq = '1' report "IRQ not raised" severity error;
+        assert gls_irq = '1' report "IRQ not raised" severity error;
         -- read button value
         imx_read(BUTTON_REG,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         assert value(0) = '1' report  "Failed to read button" severity error;
 
         -- Read irq pending
         imx_read(IRQ_PEND,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         assert value(0) = '1' report "IRQ pending error" severity error;
         -- Acknowledge irq
         imx_write(IRQ_PEND,x"ffff",
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         imx_read(IRQ_PEND,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         assert value(0) = '0' report "Acknowledge error" severity error;
 
-        -- release button0_button
-        button0_button <= '0';
+        -- release button_i
+        button_i <= '0';
         wait for HALF_PERIODE*20;
         -- Acknowledge irq
         imx_write(IRQ_PEND,x"ffff",
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         imx_read(IRQ_PEND,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         --read button value
         imx_read(BUTTON_REG,value,
-        rstgen_syscon00_ext_clk,imx9328_wb16_wrapper00_imx_cs_n,
-        imx9328_wb16_wrapper00_imx_oe_n, imx9328_wb16_wrapper00_imx_eb3_n,
-        imx9328_wb16_wrapper00_imx_address(11 downto 0),imx9328_wb16_wrapper00_imx_data,
+        ext_clk,imx_cs_n,
+        imx_oe_n, imx_eb3_n,
+        imx_address(11 downto 0),imx_data,
         4);
         assert value(0) = '0' report "Low read button error" severity error;
 
@@ -192,10 +192,11 @@ begin
    
     clockp : process
     begin
-        rstgen_syscon00_ext_clk <= '1';
+        ext_clk <= '1';
         wait for HALF_PERIODE;
-        rstgen_syscon00_ext_clk <= '0';
+        ext_clk <= '0';
         wait for HALF_PERIODE;
     end process clockp;
 
 end architecture RTL;
+
