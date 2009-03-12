@@ -639,7 +639,7 @@ index 0000000..43be336
 +			/* Wait whilst the device wakes up */
 +            int i = 200 * (128 * USEC_PER_SEC / pdata->oscillator_frequency);
 +            if( i> 1000 ) /*large delay, use mdelay*/
-+               mdelay( (i+500)/1000);
++               mdelay(10);
 +            else
 +    			udelay(i);
 +			priv->wake = 0;
