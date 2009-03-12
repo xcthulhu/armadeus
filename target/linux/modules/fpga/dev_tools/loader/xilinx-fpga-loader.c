@@ -298,6 +298,7 @@ static int spartan_parallel_finish(struct fpga_desc *desc)
 
 		(*fn->cs) (0);	/* Deassert the chip select */
 		(*fn->wr) (0);	/* Deassert the write pin */
+		(*fn->post) (); /* post init */
 	}
 
 	return 0;
