@@ -23,6 +23,7 @@ end Clk_div_led;
 
 architecture RTL of Clk_div_led is
   constant max_count : natural := 48000000;
+--  constant max_count : natural := 10000;
   signal Rst_n : std_logic;
 begin
 
@@ -35,7 +36,7 @@ begin
    begin
        if Rst_n = '0' then
            count := 0;
-           led_anode <= '1';
+           led_anode <= '0';
        elsif rising_edge(Clk) then
            if count < max_count/2 then
                led_anode    <='1';
@@ -50,3 +51,4 @@ begin
        end if;
    end process compteur; 
 end RTL;
+
