@@ -1,9 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/arch/arm/mach-mx2/apf27.c	
-+++ linux-2.6.27.13.mod/arch/arm/mach-mx2/apf27.c	
-@@ -0,0 +1,1329 @@
+Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-03-13 11:02:49.000000000 +0100
+@@ -0,0 +1,1303 @@
 + /*
 + * apf27.c
 + *
@@ -147,7 +149,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static struct i2c_board_info apf27_i2c_devices_bus0[] = {
 +	[0] = {
 +		.type = "ds1374",
-+		.flags = 0,  /* FIXME */ 
++		.flags = 0,  /* FIXME */
 +		.addr = 0x68,	/* E0=0, E1=1, E2=0 */
 +		.platform_data = NULL,
 +		.irq = 0
@@ -158,24 +160,24 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define AD9889_INT 15
 +
 +static int ad9889_pins[] = {
-+    (GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
++	(GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
 +};
 +
 +static int ad9889_init(void)
 +{
-+    return mxc_gpio_setup_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
++	return mxc_gpio_setup_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
 +}
 +
 +static int ad9889_exit(void)
 +{
-+    mxc_gpio_release_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins));
-+    return 0;
++	mxc_gpio_release_multiple(ad9889_pins, ARRAY_SIZE(ad9889_pins));
++	return 0;
 +}
 +
 +static struct ad9889_config apf27_ad9889_config = {
-+    .init = ad9889_init,
-+    .exit = ad9889_exit,
-+    .EDID_I2C_addr = 0x3f
++	.init = ad9889_init,
++	.exit = ad9889_exit,
++	.EDID_I2C_addr = 0x3f
 +};
 +
 +#endif /* CONFIG_VIDEO_AD9889 */
@@ -183,26 +185,26 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static struct i2c_board_info apf27_i2c_devices_bus1[] = {
 +	[0] = {
 +		.type = "24c02",
-+		.flags = 0,  /* FIXME */ 
++		.flags = 0,  /* FIXME */
 +		.addr = 0x50,	/* E0=0, E1=1, E2=0 */
 +		.platform_data = NULL,
 +		.irq = 0
 +	},
 +#ifdef CONFIG_VIDEO_AD9889
-+    [1] = {
-+        .type = "ad9889",
-+        .flags = 0,  
-+        .addr = 0x39,	
-+        .platform_data = &apf27_ad9889_config,
-+        .irq = IRQ_GPIOC(AD9889_INT)
-+    },
++	[1] = {
++		.type = "ad9889",
++		.flags = 0,
++		.addr = 0x39,
++		.platform_data = &apf27_ad9889_config,
++		.irq = IRQ_GPIOC(AD9889_INT)
++	},
 +#endif /* CONFIG_VIDEO_AD9889 */
 +};
 +#endif /* CONFIG_I2C */
 +
 +
 +#ifdef CONFIG_SPI
-+#define MAX1027_CS (GPIO_PORTD | 28) 
++#define MAX1027_CS (GPIO_PORTD | 28)
 +static int mxc_cspi0_pins[] = {
 +	(MAX1027_CS | GPIO_OUT | GPIO_GPIO ),
 +	//PD28_PF_CSPI1_SS0, /* MAX1027 */
@@ -214,19 +216,19 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define TSC2101_CS (GPIO_PORTD|21)
 +#define MCP251X_CS (GPIO_PORTD|20)
 +static int mxc_cspi1_pins[] = {
-+    (TSC2101_CS | GPIO_OUT | GPIO_GPIO ), /* <- Seulement si TSC sélectionné aussi !! */
-+    (MCP251X_CS | GPIO_OUT | GPIO_GPIO ),
-+    //PD19_PF_CSPI2_SS2,
-+    //PD20_PF_CSPI2_SS1,  /* MCP2515 */
-+    //PD21_PF_CSPI2_SS0,  /*TSC2101 */
-+    PD22_PF_CSPI2_SCLK,
-+    PD23_PF_CSPI2_MISO,
-+    PD24_PF_CSPI2_MOSI
++	(TSC2101_CS | GPIO_OUT | GPIO_GPIO ), /* <- Seulement si TSC sélectionné aussi !! */
++	(MCP251X_CS | GPIO_OUT | GPIO_GPIO ),
++	//PD19_PF_CSPI2_SS2,
++	//PD20_PF_CSPI2_SS1,  /* MCP2515 */
++	//PD21_PF_CSPI2_SS0,  /*TSC2101 */
++	PD22_PF_CSPI2_SCLK,
++	PD23_PF_CSPI2_MISO,
++	PD24_PF_CSPI2_MOSI
 +};
 +
 +static int gpio_spi0_active(struct platform_device *pdev)
 +{
-+	gpio_set_value(MAX1027_CS, 1);    
++	gpio_set_value(MAX1027_CS, 1);
 +	return mxc_gpio_setup_multiple(mxc_cspi0_pins, ARRAY_SIZE(mxc_cspi0_pins), "CSPI0");
 +}
 +
@@ -339,10 +341,10 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	mxc_gpio_setup_multiple(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins), "FEC");
 +}
 +
-+static void gpio_fec_inactive(void)
++/* static void gpio_fec_inactive(void)
 +{
 +	mxc_gpio_release_multiple(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins));
-+}
++} */
 +
 +#ifdef CONFIG_FB_MXC
 +static int mxc_lcd_pins[] = {
@@ -564,7 +566,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#ifdef CONFIG_SPI_TSC2102
 +#define TSC2101_INT 17
-+static int tsc2101_init_gpio(struct spi_device *spi)
++static int tsc2101_init_gpio(void)
 +{
 +	/* configure int pin as GPIO */
 +	mxc_gpio_mode( GPIO_PORTF | TSC2101_INT | GPIO_IN | GPIO_GPIO );
@@ -589,7 +591,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	.mclk =		12288000, /* MCLK value in Master mode */
 +	.use_internal = 1, /* -> use internal voltage reference */
 +	.monitor = 	TSC_BAT1 | TSC_AUX | TSC_TEMP,
-+	.init = 	tsc2101_init_gpio
++	.init = 	tsc2101_init_gpio,
 +/*    .apm_report = palmte_get_power_status,
 +    .alsa_config = &palmte_alsa_config,*/
 +};
@@ -831,7 +833,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static int gpio_ssi1_active(struct platform_device *pdev)
 +{
 +	int err;
-+	
++
 +	err = mxc_gpio_setup_multiple(mxc_ssi1_pins,
 +					ARRAY_SIZE(mxc_ssi1_pins), "mx2-sound");
 +	if (err < 0)
@@ -850,29 +852,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	.init = gpio_ssi1_active,
 +	.exit = gpio_ssi1_inactive
 +};
-+
-+static struct imx_sound_platform_data apf27_alsa_sound = {
-+       .connection = {
-+               [0] = {
-+                       .cpu_port = 1,  /* SSI1_* pin group */
-+                       .dev_port = 1   /* connected to port 1 of the PMIC */
-+               },
-+//                [1] = {
-+//                        .cpu_port = 4,  /* SSI4_* pin group */
-+//                        .dev_port = 2   /* connected to port 2 of the PMIC */
-+//                }
-+       },
-+};
-+
-+static struct platform_device apf27_alsa_sound_device = {
-+	.name = "imx-alsa",
-+	.id = 0,
-+	.dev = {
-+			.platform_data = &apf27_alsa_sound,
-+			.coherent_dma_mask = DMA_BIT_MASK(32)
-+	}
-+};
-+// #define ALSA_SOUND &apf27_alsa_sound_device,
 +
 +
 +static int apf27_late_init(void)
@@ -897,13 +876,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +};
 +
 +static struct platform_device tsc2101_alsa_device = {
-+    .name           = "tsc210x-alsa", // Should be the same as the driver name
-+    .id             = 0,
-+    .num_resources  = ARRAY_SIZE(ssi_resources),
-+    .resource       = ssi_resources,
-+    .dev            = {
-+        .platform_data = &tsc2101_alsa_pdata,
-+    }
++	.name           = "tsc210x-alsa", /* Should be the same as the driver name */
++	.id             = 0,
++	.num_resources  = ARRAY_SIZE(ssi_resources),
++	.resource       = ssi_resources,
++	.dev            = {
++		.platform_data = &tsc2101_alsa_pdata,
++	}
 +};
 +#  define ALSA_SOUND &tsc2101_alsa_device,
 +# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
@@ -1059,8 +1038,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +
 +/* APF27 power management stuff */
-+#define CONFIG_USE_LED_FOR_PM
-+#define CONFIG_USE_SWITCH_FOR_PM
 +
 +
 +#define APF27DEV_USER_SWITCH	(GPIO_PORTF | 13)
@@ -1070,10 +1047,10 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +static int apf27dev_pwr_ctl_pins[] = {
 +	(APF27DEV_POWER_DOWN_NOT | GPIO_OUT | GPIO_GPIO),
-+#ifdef CONFIG_USE_SWITCH_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_SWITCH_FOR_PM
 +	(APF27DEV_USER_SWITCH | GPIO_IN | GPIO_GPIO),
 +#endif
-+#ifdef CONFIG_USE_LED_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	(APF27DEV_USER_LED | GPIO_OUT | GPIO_GPIO),
 +#endif
 +};
@@ -1088,29 +1065,29 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 0);
 +}
 +
-+#ifdef CONFIG_USE_SWITCH_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_SWITCH_FOR_PM
 +static irqreturn_t apf27dev_user_switch_irq_handler(int irq, void *dev_id)
 +{
-+        return IRQ_HANDLED;
++	return IRQ_HANDLED;
 +}
 +#endif
 +
 +static int gpio_pwr_ctl_active(void)
 +{
 +	int err;
-+	
-+#ifdef CONFIG_FB_MXC	
++
++#ifdef CONFIG_FB_MXC
 +	int i;
 +	/* force LCD data/control lines to 0 before powering the LCD
 +	otherwise start up conditions may not be respected */
-+	for( i=5; i <=  31; i++ ){
-+        if( i!=30 ){
-+            gpio_set_value(GPIO_PORTA | i, 0);
-+            mxc_gpio_mode( GPIO_PORTA | i | GPIO_OUT| GPIO_GPIO );
-+        }
++	for (i = 5; i <=  31; i++) {
++		if (i != 30) {
++			gpio_set_value(GPIO_PORTA | i, 0);
++			mxc_gpio_mode(GPIO_PORTA | i | GPIO_OUT| GPIO_GPIO);
++		}
 +	}
 +	/* wait a few milli */
-+	mdelay(100); 
++	mdelay(100);
 +#endif
 +
 +	err = mxc_gpio_setup_multiple(apf27dev_pwr_ctl_pins,
@@ -1119,10 +1096,10 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		pr_err("Failed to register power control pins !\n");
 +
 +	apf27dev_power_up();
-+#ifdef CONFIG_USE_LED_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 0);
 +#endif
-+#ifdef CONFIG_USE_SWITCH_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_SWITCH_FOR_PM
 +	err = request_irq(APF27DEV_USER_SWITCH_IRQ, apf27dev_user_switch_irq_handler,
 +				IRQF_TRIGGER_FALLING,
 +				"PM irq", NULL);
@@ -1133,9 +1110,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	return err;
 +}
 +
++
 +#ifdef CONFIG_PM
-+
-+
 +
 +#ifdef APF27_PM_DEBUG
 +#define CCM_PCCR0               (IO_ADDRESS(CCM_BASE_ADDR) + 0x20)
@@ -1157,7 +1133,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static void dump_gpio_port(int id)
 +{
 +	u32 reg;
-+	
++
 +	reg =  __raw_readl(VA_GPIO_BASE + MXC_DDIR(id));
 +	printk("DDIR_%c: 0x%08x\n", port[id], reg);
 +	reg =  __raw_readl(VA_GPIO_BASE + MXC_DR(id));
@@ -1219,7 +1195,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	isp1504_suspend((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
 +#endif
 +	apf27dev_power_down();
-+#ifdef CONFIG_USE_LED_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 1);
 +#endif
 +#ifdef APF27_PM_DEBUG
@@ -1237,7 +1213,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	printk("___ %s\n", __func__);
 +
 +	apf27dev_power_up();
-+#ifdef CONFIG_USE_LED_FOR_PM
++#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 0);
 +#endif
 +
@@ -1274,7 +1250,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	mxc_register_device(&mxc_uart_device2, &uart_pdata[1]);
 +	/*mxc_register_device(&mxc_uart_device2, &uart_pdata[2]);*/
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
-+#ifdef CONFIG_WATCHDOG	
++#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
 +#endif
 +#ifdef CONFIG_USB_EHCI_MXC
