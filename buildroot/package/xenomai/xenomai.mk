@@ -35,32 +35,35 @@ $(DL_DIR)/$(ADEOS_SOURCE):
 
 xenomai-source: $(DL_DIR)/$(ADEOS_SOURCE)
 
-$(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(ADEOS_SOURCE) $(DL_DIR)/$(XENOMAI_SOURCE)
-	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $@
-
-$(XENOMAI_DIR)/.patched: $(XENOMAI_DIR)/.unpacked
-	toolchain/patch-kernel.sh $(XENOMAI_DIR) package/xenomai \
-		02-xenomai-supprSudo.patch
-	touch $@
-
-
-$(KERN_DIR)/.patch_xenomai: $(XENOMAI_DIR)/.patched
+$(KERN_DIR)/.patched.adeos: $(DL_DIR)/$(ADEOS_SOURCE)
 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		04-suppr-patch.patch
+		00-adeos-compatibility_with_armadeus.patch
 	toolchain/patch-kernel.sh $(LINUX26_DIR) $(DL_DIR) \
 		$(ADEOS_SOURCE)
 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		01-adeos-2.6.27-1.12-00.patch
+		01-adeos-$(ADEOS_VERSION)-imx_compatibility.patch
+	touch $@
+
+$(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
+	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	touch $@
+
+$(XENOMAI_DIR)/.patched.makefile: $(XENOMAI_DIR)/.unpacked
+	toolchain/patch-kernel.sh $(XENOMAI_DIR) package/xenomai \
+		02-xenomai-2.4.7-replace_sudo_with_fakeroot.patch
+	touch $@
+
+
+$(KERN_DIR)/.patched.xenomai: $(KERN_DIR)/.patched.adeos $(XENOMAI_DIR)/.patched.makefile
 	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
 		--linux=$(LINUX26_DIR) \
 		--arch=$(BR2_ARCH)
-	cat package/xenomai/configXenoKernel >> $(LINUX26_DIR)/.config
+	cat package/xenomai/xeno-kernel.config >> $(LINUX26_DIR)/.config
 	touch $@
-	
-xenomai-patch-kernel: $(KERN_DIR)/.patch_xenomai
 
-$(XENOMAI_DIR)/.configured: $(KERN_DIR)/.patch_xenomai
+xenomai-patch-kernel: $(KERN_DIR)/.patched.xenomai
+
+$(XENOMAI_DIR)/.configured: $(KERN_DIR)/.patched.xenomai
 	(cd $(XENOMAI_DIR); rm -rf config.cache; \
                 $(TARGET_CONFIGURE_OPTS) \
 		                $(TARGET_CONFIGURE_ARGS) \
