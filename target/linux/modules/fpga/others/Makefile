@@ -8,7 +8,8 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_FPGA_OTHERS_DRIVERS)	+= i2ctest/ ps2keyboard/
+obj-$(ARMADEUS_I2C_OCORE_IRQMNG) += i2ctest/ 
+obj-$(CONFIG_ARMADEUS_PS2KBD_DRIVER) += ps2keyboard/
 
 else
 

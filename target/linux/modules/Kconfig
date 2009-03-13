@@ -9,6 +9,9 @@ config ARMADEUS_DRIVERS
 	boolean "Support for specific Armadeus drivers"
 	default n
 	---help---
+
+comment "Misc."
+	depends on ARMADEUS_DRIVERS
 	  
 source "drivers/armadeus/generic/Kconfig"
 
@@ -30,7 +33,7 @@ source "drivers/armadeus/pwm/Kconfig"
 
 source "drivers/armadeus/backlight/Kconfig"
 
-comment "Communication bus related:"
+comment "Communication bus related"
 	depends on ARMADEUS_DRIVERS
 
 source "drivers/armadeus/isp1761/Kconfig"

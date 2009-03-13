@@ -3,13 +3,8 @@
 #
 #
 
-#
-config ARMADEUS_FPGA_OTHERS_DRIVERS
-	boolean "Others drivers for FPGA"
-	default n
-    depends on ARMADEUS_FPGA_DRIVERS
-	---help---
-	All drivers for FPGA components
+comment "Others drivers for the FPGA"
+	depends on ARMADEUS_FPGA_DRIVERS
 	
 source "drivers/armadeus/fpga/others/i2ctest/Kconfig"
 source "drivers/armadeus/fpga/others/ps2keyboard/Kconfig"
