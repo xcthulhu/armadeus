@@ -26,6 +26,7 @@ ADEOS_VERSION:=1.12-00
 ADEOS_SOURCE:=adeos-ipipe-$(shell echo $(BR2_KERNEL_THIS_VERSION))-arm-$(ADEOS_VERSION).patch
 ADEOS_SITE:=http://download.gna.org/adeos/patches/v2.6/arm/older/
 
+
 $(DL_DIR)/$(XENOMAI_SOURCE):
 	$(WGET) -P $(DL_DIR) $(XENOMAI_SITE)/$(XENOMAI_SOURCE)
 
@@ -38,16 +39,13 @@ $(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(ADEOS_SOURCE) $(DL_DIR)/$(XENOMAI_SOURCE)
 	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $@
 
-
-
-$(XENOMAI_DIR)/.patchXeno: $(XENOMAI_DIR)/.unpacked
+$(XENOMAI_DIR)/.patched: $(XENOMAI_DIR)/.unpacked
 	toolchain/patch-kernel.sh $(XENOMAI_DIR) package/xenomai \
 		02-xenomai-supprSudo.patch
-	touch $(XENOMAI_DIR)/.patchXeno
+	touch $@
 
 
-$(KERN_DIR)/.patch_xenomai: $(XENOMAI_DIR)/.patchXeno
-	@echo "$@"
+$(KERN_DIR)/.patch_xenomai: $(XENOMAI_DIR)/.patched
 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
 		04-suppr-patch.patch
 	toolchain/patch-kernel.sh $(LINUX26_DIR) $(DL_DIR) \
@@ -55,8 +53,8 @@ $(KERN_DIR)/.patch_xenomai: $(XENOMAI_DIR)/.patchXeno
 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
 		01-adeos-2.6.27-1.12-00.patch
 	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
-		--linux=${LINUX_DIR} \
-		--arch=arm
+		--linux=$(LINUX26_DIR) \
+		--arch=$(BR2_ARCH)
 	cat package/xenomai/configXenoKernel >> $(LINUX26_DIR)/.config
 	touch $@
 	
