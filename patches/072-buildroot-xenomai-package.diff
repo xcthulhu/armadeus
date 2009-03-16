@@ -13,13 +13,13 @@ diff -ruN buildroot/package/Config.in buildroot.new/package/Config.in
 diff -urN buildroot/target/linux/Makefile.in.advanced buildroot.new/target/linux/Makefile.in.advanced
 --- buildroot/target/linux/Makefile.in.advanced	2009-02-24 11:42:16.000000000 +0100
 +++ buildroot.new/target/linux/Makefile.in.advanced	2009-02-24 11:40:07.000000000 +0100
-@@ -278,6 +278,9 @@
- 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/openswan \
- 		linux-$(LINUX26_VERSION)\*.patch{,.gz,.bz2}
+@@ -382,6 +382,9 @@
+ 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
+ 	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
  endif
 +ifeq ($(BR2_PACKAGE_XENOMAI),y)
-+	make -C ../buildroot xenomai-patch-kernel
++		make -C ../buildroot xenomai-patch-kernel
 +endif
+ 	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) oldconfig
  	touch $@
- 
- $(LINUX26_DIR)/.patched.arch: $(LINUX26_DIR)/.patched
+
