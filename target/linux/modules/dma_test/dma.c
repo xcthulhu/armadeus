@@ -91,7 +91,7 @@ static void dma_test_callback(int channel, void *data)
 	if (nb_done > nb_todo) {
 		stop_time = (unsigned int)jiffies;
 		printk("%s: done (%d) at time 0x%08x\n", __func__, nb_done, stop_time);
-		printk("0x%08x 0x%08x\n", dma_dest_buffer.cpu_mem[0], dma_dest_buffer.cpu_mem[1024]);
+		printk("0x%08x 0x%08x\n", dma_dest_buffer.cpu_mem[0], dma_dest_buffer.cpu_mem[4096]);
 		printk("Tranferred %d Bytes in %d msecs\n", (buffer_size * nb_done), (stop_time - start_time)*10);
 		printk(" --> %d Bytes/secs\n", ((buffer_size * nb_done) / ((stop_time - start_time)*10)) * 1000);
 		nb_done = 0;
@@ -196,7 +196,7 @@ static int dma_test_proc_write( __attribute__ ((unused)) struct file *file, cons
 int __init dma_test_init(void)
 {
 	int err, dma_req;
-	unsigned int burstlen;
+	unsigned int burstlen, i;
 	static struct proc_dir_entry *proc_active;
 
 	/* Allocate memory buffers */
@@ -214,7 +214,9 @@ int __init dma_test_init(void)
 		return -ENOMEM;
 	}
 
-	memset(dma_source_buffer.cpu_mem, 0xa5, buffer_size);
+	for (i = 0; i <  (buffer_size/sizeof(u32)); i++) {
+		dma_source_buffer.cpu_mem[i] = i;
+	}
 	printk("DMA source virt: 0x%p  phys: 0x%08x\n", dma_source_buffer.cpu_mem, dma_source_buffer.dma_mem);
 	memset(dma_dest_buffer.cpu_mem, 0, buffer_size);
 	printk("DMA dest virt: 0x%p  phys: 0x%08x\n", dma_dest_buffer.cpu_mem, dma_dest_buffer.dma_mem);
