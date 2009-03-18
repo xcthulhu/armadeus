@@ -176,6 +176,9 @@
 			"then echo Flashing of Firmware succeed;"		\
 			"else echo Flashing of Firmware failed;"		\
 		"fi\0"							\
+	"fpga_config=tftpboot ${fileaddr} $firmware_name;"\
+		"run flash_firmware;"\
+		"fpga load 0 ${fileaddr} ${firmware_len};\0"\
 	"flash_kernel=nand erase ${kernel_offset} ${kernel_len};"	\
 		"if nand write.jffs2 ${fileaddr} ${kernel_offset} ${filesize} ;"\
 			"then echo Flashing of kernel succeed;"		\
@@ -325,6 +328,8 @@
 #define CONFIG_SSI2_FREQ	66	/* 66.50 MHz SSI2*/
 #define CONFIG_MSHC_FREQ	66	/* 66.50 MHz MSHC*/
 #define CONFIG_H264_FREQ	66	/* 66.50 MHz H264*/
+#define CONFIG_CLK0_DIV      0  /* Divide CLK0 by 1  */
+#define CONFIG_CLK0_EN       1  /* CLK0 enabled */
 
 /* external bus frequency (have to be a CONFIG_HCLK_FREQ ratio) */
 #define CONFIG_NFC_FREQ		44	/* NFC Clock up to 44 MHz wh 133MHz*/
@@ -660,7 +665,7 @@
 #define CFG_CS4A_VAL	0
 
 /* FPGA 16 bit data bus */
-#define CFG_CS5U_VAL	0x00000600
+#define CFG_CS5U_VAL	0x00000500
 #define CFG_CS5L_VAL	0x00000D01
 #define CFG_CS5A_VAL	0
 
@@ -668,13 +673,13 @@
 
 /* FPGA specific settings */
 /* CLKO */
-#define CFG_CCSR_VAL 0x00000307 
+#define CFG_CCSR_VAL 0x00000308
 /* drive strength CLKO set to 2*/
 #define CFG_DSCR10_VAL 0x00020000
 /* drive strength A1..A12 set to 2*/
 #define CFG_DSCR3_VAL 0x02AAAAA8
 /* drive strength ctrl*/
-#define CFG_DSCR7_VAL 0x008A08A0
+#define CFG_DSCR7_VAL 0x00020880
 /* drive strength data*/
 #define CFG_DSCR2_VAL 0xAAAAAAAA
 
@@ -823,11 +828,12 @@
 
 /* SSIx CLKO NFC H264 MSHC */
 #define CFG_PCDR0_VAL\
-	(0x02C00000						\
-	|((((CONFIG_SYS_CLK_FREQ/CONFIG_MSHC_FREQ)-1)&0x3F)<<0)	\
+	(((((CONFIG_SYS_CLK_FREQ/CONFIG_MSHC_FREQ)-1)&0x3F)<<0)	\
 	|((((CONFIG_HCLK_FREQ/CONFIG_NFC_FREQ)-1)&0x0F)<<6)	\
 	|(((((CONFIG_SYS_CLK_FREQ/CONFIG_H264_FREQ)-2)*2)&0x3F)<<10)\
 	|(((((CONFIG_SYS_CLK_FREQ/CONFIG_SSI1_FREQ)-2)*2)&0x3F)<<16)\
+	|(((CONFIG_CLK0_DIV)&0x07)<<22)\
+	|(((CONFIG_CLK0_EN)&0x01)<<25)\
 	|(((((CONFIG_SYS_CLK_FREQ/CONFIG_SSI2_FREQ)-2)*2)&0x3F)<<26))
 
 /* PERCLKx  */
