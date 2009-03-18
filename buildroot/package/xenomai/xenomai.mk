@@ -48,13 +48,7 @@ $(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
 	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $@
 
-$(XENOMAI_DIR)/.patched.makefile: $(XENOMAI_DIR)/.unpacked
-	toolchain/patch-kernel.sh $(XENOMAI_DIR) package/xenomai \
-		02-xenomai-2.4.7-replace_sudo_with_fakeroot.patch
-	touch $@
-
-
-$(KERN_DIR)/.patched.xenomai: $(KERN_DIR)/.patched.adeos $(XENOMAI_DIR)/.patched.makefile
+$(KERN_DIR)/.patched.xenomai: $(KERN_DIR)/.patched.adeos $(XENOMAI_DIR)/.unpacked
 	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
 		--linux=$(LINUX26_DIR) \
 		--arch=$(BR2_ARCH)
@@ -81,7 +75,7 @@ $(XENOMAI_DIR)/scripts/$(XENOMAI_BINARY): $(XENOMAI_DIR)/.configured
 
 $(TARGET_DIR)/$(XENOMAI_TARGET_BINARY): $(XENOMAI_DIR)/scripts/$(XENOMAI_BINARY)
 	echo $@
-	$(MAKE) -C $(XENOMAI_DIR) \
+	$(STAGING_DIR)/usr/bin/fakeroot $(MAKE) -C $(XENOMAI_DIR) \
 		CC=$(TARGET_CC) LD=$(TARGET_LD) \
 		DESTDIR=$(TARGET_DIR) install
 	rm -rf $(TARGET_DIR)/xenodoc
