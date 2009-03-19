@@ -2441,7 +2441,7 @@
 +#########################################################################
 --- ref/u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.c	1970-01-01 01:00:00.000000000 +0100
 +++ u-boot-1.3.4/cpu/arm926ejs/imx27/miiphy.c	2008-12-29 16:27:49.000000000 +0100
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,126 @@
 +/*
 + * miiphy.c - generic phy abstraction
 + *
@@ -2466,46 +2466,48 @@
 + */
 +
 +#include <common.h>
-+#include "miiphy.h"
++#include "miiphy.h" 
 +
 +int miiphy_restart_aneg(struct miiphy_device *mdev)
 +{
 +	uint16_t status;
 +	int timeout;
 +
-+	/* 
-+	 * Wake up from sleep if necessary
-+	 * Reset PHY, then delay 300ns
-+	 */
-+	mdev->write(mdev, mdev->address, MII_SPECIAL, 0x00FF);
-+	mdev->write(mdev, mdev->address, MII_BMCR, BMCR_RESET);
-+	udelay(1000);
-+
-+	if (mdev->flags & MIIPHY_FORCE_10) {
-+		printf("Forcing 10 Mbps ethernet link... ");
-+		mdev->read(mdev, mdev->address, MII_BMSR, &status);
-+		mdev->write(mdev, mdev->address, MII_BMCR, BMCR_FULLDPLX | BMCR_CTST);
-+
-+		timeout = 20;
-+		do {	/* wait for link status to go down */
-+			udelay(10000);
-+			if ((timeout--) == 0) {
-+#if (DEBUG & 0x2)
-+				printf("hmmm, should not have waited...");
-+#endif
-+				break;
-+			}
-+			mdev->read(mdev, mdev->address, MII_BMSR, &status);
-+		} while (status & BMSR_LSTATUS);
-+
-+	} else {	/* MII100 */
-+		/*
-+		 * Set the auto-negotiation advertisement register bits
++	mdev->read(mdev, mdev->address, MII_SPECIAL, &status);
++	if( status != 0xff){
++		/* 
++		 * Wake up from sleep if necessary
++		 * Reset PHY, then delay 300ns
 +		 */
-+		mdev->write(mdev, mdev->address, MII_ADVERTISE, ADVERTISE_ALL);
-+		mdev->write(mdev, mdev->address, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
-+	}
++		mdev->write(mdev, mdev->address, MII_SPECIAL, 0x00FF);
++		mdev->write(mdev, mdev->address, MII_BMCR, BMCR_RESET);
++		udelay(1000);
 +
++		if (mdev->flags & MIIPHY_FORCE_10) {
++			printf("Forcing 10 Mbps ethernet link... ");
++			mdev->read(mdev, mdev->address, MII_BMSR, &status);
++			mdev->write(mdev, mdev->address, MII_BMCR, BMCR_FULLDPLX | BMCR_CTST);
++
++			timeout = 20;
++			do {	/* wait for link status to go down */
++				udelay(10000);
++				if ((timeout--) == 0) {
++	#if (DEBUG & 0x2)
++					printf("hmmm, should not have waited...");
++	#endif
++					break;
++				}
++				mdev->read(mdev, mdev->address, MII_BMSR, &status);
++			} while (status & BMSR_LSTATUS);
++	
++		} else {	/* MII100 */
++			/*
++			 * Set the auto-negotiation advertisement register bits
++			 */
++			mdev->write(mdev, mdev->address, MII_ADVERTISE, ADVERTISE_ALL);
++			mdev->write(mdev, mdev->address, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
++		}
++	}
 +	return 0;
 +}
 +
