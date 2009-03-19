@@ -6,4 +6,3 @@ comment "Drivers for configuring and testing the FPGA"
 	depends on ARMADEUS_FPGA_DRIVERS
 	
 source "drivers/armadeus/fpga/dev_tools/loader/Kconfig"
-#source "drivers/armadeus/fpga/dev_tools/fpgaaccess/Kconfig"

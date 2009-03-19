@@ -1,9 +1,0 @@
-#
-#
-
-config ARMADEUS_FPGAACCESS_DRIVER
-	tristate "fpgaaccess driver"
-	default n
-	depends on ARMADEUS_FPGA_DRIVERS
-	---help---
-	  
