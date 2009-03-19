@@ -8,7 +8,7 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_FPGA_LOADER_DRIVER) += loader/
+obj-$(CONFIG_ARMADEUS_FPGA_DRIVERS) += loader/
 #obj-$(CONFIG_ARMADEUS_FPGAACCESS_DRIVER) += fpgaaccess/
 
 else
