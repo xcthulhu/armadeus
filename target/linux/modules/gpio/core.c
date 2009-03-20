@@ -22,7 +22,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-
+#define DEBUG 1
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
@@ -854,7 +854,7 @@ static int create_proc_entries(void)
 	/* Create proc file to handle GPIO interrupt settings */
 	for (i = 0; i < NB_PORTS; i++) {
 		sprintf(proc_config[i].name, "%s/%sirq", GPIO_PROC_DIRNAME, port_name[i]);
-		proc_config[i].type = DIRECTION;
+		proc_config[i].type = INTERRUPT;
 	}
 
 	if ((ret = initialize_proc_entry(proc_config)))
@@ -864,7 +864,7 @@ static int create_proc_entries(void)
 	/* Create proc file to handle GPIO pullup settings */
 	for (i = 0; i < NB_PORTS; i++) {
 		sprintf(proc_config[i].name, "%s/%spullup", GPIO_PROC_DIRNAME, port_name[i]);
-		proc_config[i].type = DIRECTION;
+		proc_config[i].type = PULL_UP;
 	}
 
 	if ((ret = initialize_proc_entry(proc_config)))
