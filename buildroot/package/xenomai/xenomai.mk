@@ -82,7 +82,7 @@ $(TARGET_DIR)/$(XENOMAI_TARGET_BINARY): $(XENOMAI_DIR)/scripts/$(XENOMAI_BINARY)
 	echo "/usr/xenomai/lib" > $(TARGET_DIR)/etc/ld.so.conf
 	echo -e 'export PATH=/usr/xenomai/bin:$${PATH}' >> $(TARGET_DIR)/etc/profile 
 
-xenomai: uclibc kernel-headers $(TARGET_DIR)/$(XENOMAI_TARGET_BINARY)
+xenomai: uclibc host-fakeroot kernel-headers $(TARGET_DIR)/$(XENOMAI_TARGET_BINARY)
 
 xenomai-clean:
 	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(XENOMAI_DIR) uninstall
