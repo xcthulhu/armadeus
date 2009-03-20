@@ -22,7 +22,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#define DEBUG 1
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
