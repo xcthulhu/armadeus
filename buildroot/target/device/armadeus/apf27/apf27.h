@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"1.5"
-#define CONFIG_IDENT_STRING	" apf27 patch 2.0"
+#define CONFIG_ENV_VERSION 	"1.6"
+#define CONFIG_IDENT_STRING	" apf27 patch 2.1"
 
 #define CONFIG_ARM926EJS	1	/* this is an ARM926EJS CPU */
 #define CONFIG_IMX27		1	/* in a Freescale i.MX27 Chip */
