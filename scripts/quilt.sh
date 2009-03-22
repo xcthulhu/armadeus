@@ -40,6 +40,10 @@ for patch in $PATCHES; do
 done
 
 quilt push -a
+if [ "$?" != 0 ]; then
+	echo "Please correct that"
+	exit 1
+fi
 
 quilt series >> .applied_patches_list
 
