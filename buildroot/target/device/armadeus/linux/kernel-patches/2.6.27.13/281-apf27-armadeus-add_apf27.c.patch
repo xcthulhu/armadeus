@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-03-13 11:02:49.000000000 +0100
-@@ -0,0 +1,1303 @@
++++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-03-20 09:21:52.000000000 +0100
+@@ -0,0 +1,1306 @@
 + /*
 + * apf27.c
 + *
@@ -216,7 +216,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#define TSC2101_CS (GPIO_PORTD|21)
 +#define MCP251X_CS (GPIO_PORTD|20)
 +static int mxc_cspi1_pins[] = {
-+	(TSC2101_CS | GPIO_OUT | GPIO_GPIO ), /* <- Seulement si TSC sélectionné aussi !! */
++	(TSC2101_CS | GPIO_OUT | GPIO_GPIO ), /* <- Only if TSC is selected too !! */
 +	(MCP251X_CS | GPIO_OUT | GPIO_GPIO ),
 +	//PD19_PF_CSPI2_SS2,
 +	//PD20_PF_CSPI2_SS1,  /* MCP2515 */
@@ -1034,6 +1034,9 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#endif
 +	ALSA_SOUND
 +	CPU_FREQUENCY
++#ifdef CONFIG_MXC_VPU
++	&mxc_vpu_device,
++#endif
 +};
 +
 +
