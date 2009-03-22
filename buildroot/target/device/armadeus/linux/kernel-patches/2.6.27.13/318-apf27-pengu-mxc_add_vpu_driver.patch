@@ -21,11 +21,11 @@ for UIO.
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 9722f8b..209a53d 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1268,6 +1268,8 @@ source "drivers/rtc/Kconfig"
+Index: linux-2.6.27.13/arch/arm/Kconfig
+===================================================================
+--- linux-2.6.27.13.orig/arch/arm/Kconfig	2009-03-22 14:56:45.000000000 +0100
++++ linux-2.6.27.13/arch/arm/Kconfig	2009-03-22 14:58:09.000000000 +0100
+@@ -1239,6 +1239,8 @@
  
  source "drivers/dma/Kconfig"
  
@@ -33,22 +33,20 @@ index 9722f8b..209a53d 100644
 +
  source "drivers/dca/Kconfig"
  
- source "drivers/auxdisplay/Kconfig"
-diff --git a/drivers/Makefile b/drivers/Makefile
-index fceb71a..99c847c 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -102,3 +102,4 @@ obj-$(CONFIG_SSB)		+= ssb/
+ source "drivers/regulator/Kconfig"
+Index: linux-2.6.27.13/drivers/Makefile
+===================================================================
+--- linux-2.6.27.13.orig/drivers/Makefile	2009-03-22 14:56:45.000000000 +0100
++++ linux-2.6.27.13/drivers/Makefile	2009-03-22 14:59:05.000000000 +0100
+@@ -100,3 +100,4 @@
+ obj-$(CONFIG_SSB)		+= ssb/
  obj-$(CONFIG_VIRTIO)		+= virtio/
  obj-$(CONFIG_REGULATOR)		+= regulator/
- obj-$(CONFIG_STAGING)		+= staging/
 +obj-y				+= mxc/
-\ No newline at end of file
-diff --git a/drivers/mxc/Kconfig b/drivers/mxc/Kconfig
-new file mode 100644
-index 0000000..90fcfd1
---- /dev/null
-+++ b/drivers/mxc/Kconfig
+Index: linux-2.6.27.13/drivers/mxc/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.27.13/drivers/mxc/Kconfig	2009-03-22 14:58:09.000000000 +0100
 @@ -0,0 +1,13 @@
 +# drivers/video/mxc/Kconfig
 +
@@ -402,7 +400,7 @@ index 0000000..e77601c
 + 		}
 +/* RMW: this is not portable across platforms */
 +#ifdef CONFIG_ARCH_MX27
-+		/* set/clear LHD (Latency Hiding Disable) bit in ESDCFG0 reg. 
++		/* set/clear LHD (Latency Hiding Disable) bit in ESDCFG0 reg.
 +		   Tends to fix MPEG4 issue on MX27 TO2 */
 +	case VPU_IOC_LHD:
 +		{
