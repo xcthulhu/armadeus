@@ -133,6 +133,15 @@ linux26-clean: $(BUILDROOT_DIR)/.configured
 		echo -e "\033[1m\nThis configuration does not exist !!\n\033[0m" ; \
 	fi;
 
+%_autoconf: $(BUILDROOT_DIR)/.unpacked
+	@if [ -e "$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_autoconf,%,$@)/$(patsubst %_autoconf,%,$@)_defconfig" ]; then \
+		rm -f $(BUILDROOT_DIR)/.config ; \
+		$(MAKE) -C $(BUILDROOT_DIR) $(patsubst %_autoconf,%,$@)_defconfig ; \
+		touch $(BUILDROOT_DIR)/.configured ; \
+	else \
+		echo -e "\033[1m\nThis configuration does not exist !!\n\033[0m" ; \
+	fi;
+
 all: $(BUILDROOT_DIR)/.configured
 	@echo "If your /bin/sh link doesn't point to /bin/bash, please correct that."
 	@ls -al /bin/sh | grep bash 
