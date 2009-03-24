@@ -1,0 +1,65 @@
+###### CONFIGURATION ######
+DEST_DIR=/tftpboot/local/bin
+ARMADEUS_BASE_DIR=/home/gwe/armadeus/armadeus/
+include $(ARMADEUS_BASE_DIR)/Makefile.in
+
+XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
+XENOCONFIG=$(shell PATH=$(XENO):$(XENO)/bin:$(PATH) which xeno-config 2>/dev/null)
+
+CC= arm-linux-gcc
+LD= arm-linux-ld
+CXX= arm-linux-g++
+AS= arm-linux-as
+NM= arm-linux-nm
+AR= arm-linux-ar
+SIZE= arm-linux-size
+OBJCOPY= arm-linux-objcopy
+
+
+EXEC=$(APPLICATIONS)
+
+
+ifneq ($(APPLICATIONS),)
+SRC= $(wildcard *.c)
+OBJ= $(SRC:.c=.o)
+EXEC= $(APPLICATIONS)
+CFLAGS=-g -W -Wall -I$(XENO)/include -I$(XENO)/include/native  -I$(XENO)/include/rtdm -D_GNU_SOURCE -D_REENTRANT
+LDFLAGS=-L$(XENO)/lib -Xlinker -rpath $(XENO)/lib -Xlinker $(XENO)/lib/libnative.a $(XENO)/lib/librtdm.a -lpthread -lnative -lrtdm
+$(EXEC) : $(OBJ)
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(OBJ): $(SRC)
+	$(CC) $(CFLAGS) -o $@ -c $<
+endif
+
+ifneq ($(MODULES),)
+EXEC=$(MODULES).ko
+
+KSRC=$(ARMADEUS_LINUX_DIR)
+#$(LOCALDIR)/linux-2.6.27.13
+KDIR=$(KSRC)
+OBJ     := ${patsubst %, %.o, $(MODULES)}
+CLEANMOD := ${patsubst %, .%*, $(MODULES)}
+PWD      := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
+obj-m        := $(OBJ)
+EXTRA_CFLAGS=-I$(KSRC)/include/xenomai -I$(KSRC)/include/xenomai/posix -I$(KSRC)/arch/arm/mach-imx/include/mach/
+CLEAN_MOD= modules.order *.ko *.mod.c *.mod.o *.symvers $(CLEANMOD) .tmp_versions
+$(EXEC):
+	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
+
+
+endif
+.PHONY: all
+all: $(EXEC)
+.PHONY: clean 
+clean:
+	rm -rf $(OBJ) $(CLEAN_MOD)
+	rm -f $(EXEC)
+	rm -f *.c~ *.h~ Makefile~
+.PHONY: install
+install: $(EXEC)
+	cp $(EXEC) $(DEST_DIR)/$(EXEC)
+
+.PHONY: mrproper
+mrproper: clean
+	rm -f $(DEST_DIR)/$(EXEC)
+

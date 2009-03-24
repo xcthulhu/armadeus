@@ -1,0 +1,6 @@
+** Distributed computing for overloading processor **
+
+Calculation and displays a fractal newton distributed.
+Master : creates processus with fork, distributes parts and displays the result.
+10 slaves : computes parts of the picture.
+10 esclaves qui font le calcul d'une partie de l'image.
