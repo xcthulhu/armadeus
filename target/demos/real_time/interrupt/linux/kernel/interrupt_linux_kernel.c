@@ -38,7 +38,7 @@ MODULE_LICENSE("GPL");
 
 /* irq handler */
 irqreturn_t interrupt_handler (int irqn, void *dev){
-	printk("toto plop\n");
+	printk("IT !\n");
 	return IRQ_HANDLED;
 }
 
@@ -46,9 +46,9 @@ irqreturn_t interrupt_handler (int irqn, void *dev){
 static int __init irq_init(void) {
 	int err;
 	printk("irq init\n");
-	err =request_irq(IRQ_NB, interrupt_handler, 0/*IRQF_SHARED*/,"test irq", NULL);
+	err =request_irq(IRQ_NB, interrupt_handler, 0,"test irq", NULL);
 	if (err!=0){
-		printk(KERN_INFO "erreur de request_irq\n");
+		printk(KERN_INFO "request_irq : error ");
 		switch (err) {
 			case -EINVAL:
 				printk("EINVAL\n");
@@ -65,7 +65,7 @@ static int __init irq_init(void) {
 		}
 		return err;
 	}
-	set_irq_type( IRQ_NB, IRQF_TRIGGER_FALLING );  //pour changer le front
+	set_irq_type( IRQ_NB, IRQF_TRIGGER_FALLING ); 
 	return 0;
 }
 

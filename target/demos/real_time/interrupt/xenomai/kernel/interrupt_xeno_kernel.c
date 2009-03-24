@@ -32,7 +32,7 @@
 MODULE_LICENSE("GPL");
 
 
-#define IRQ_NUMBER 70  /* Intercept interrupt #7 */
+#define IRQ_NUMBER 70  /* Intercept interrupt on portA6 */
 #define TASK_PRIO  99 /* Highest RT priority */
 #define TASK_MODE  0  /* No flags */
 #define TASK_STKSZ 0  /* Stack size (use default one) */
@@ -45,25 +45,24 @@ static int irq_server (xnintr_t *intr) {
 }
 
 static int __init irq_init(void) {
-  int err;
+	int err;
   
-  /* Version With 6 param only on kernel space */
-  err = rt_intr_create(&intr_desc,"MyIrq", IRQ_NUMBER, irq_server, NULL, 0);	 
-  if (err !=0){
-    printk("rt_intr_create : error\n");
-    return err;
-  }
-  
-  err = rt_intr_enable(&intr_desc); 
-  if (err != 0)
-    printk("rt_intr_enable : error\n");
-  else
-    printk("rt_intr_create : ok\n");	 
-  return err;
+	/* Version With 6 param only on kernel space */
+	err = rt_intr_create(&intr_desc,"MyIrq", IRQ_NUMBER, irq_server, NULL, 0);	 
+	if (err !=0){
+		printk("rt_intr_create : error\n");
+		return err;
+	}
+  	err = rt_intr_enable(&intr_desc); 
+	if (err != 0)
+		printk("rt_intr_enable : error\n");
+	else
+		printk("rt_intr_create : ok\n");	 
+	return err;
 }
 
 void __init irq_exit(void) {
-  rt_intr_delete(&intr_desc);
+	rt_intr_delete(&intr_desc);
 }
 
 module_init(irq_init);

@@ -25,7 +25,7 @@
 #include <native/task.h>
 #include <native/intr.h>
 
-#define IRQ_NUMBER 70  /* Intercept interrupt #7 */
+#define IRQ_NUMBER 70  /* Intercept interrupt on PA6 */
 #define TASK_PRIO  99 /* Highest RT priority */
 #define TASK_MODE  0  /* No flags */
 #define TASK_STKSZ 0  /* Stack size (use default one) */
@@ -42,7 +42,7 @@ void irq_server (void *cookie) {
     return;
   }
   for (;;) {
-    /* Wait for the next interrupt on channel #7. */
+    /* Wait for the next interrupt on channel 70. */
     err = rt_intr_wait(&intr_desc,TM_INFINITE);
 	printf("tata plop\n");    
     if (err > 0) {

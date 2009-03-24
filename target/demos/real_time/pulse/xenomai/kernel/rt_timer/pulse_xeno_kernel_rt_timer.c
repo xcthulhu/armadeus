@@ -42,52 +42,52 @@ static int end = 0;
 #define PORT_ADDR VA_GPIO_BASE + MXC_DR(0)
 
 void blink(void *arg){
-  int err, iomask;
-  printk(KERN_INFO "entrering blink\n");
+	int err, iomask;
+	printk(KERN_INFO "entrering blink\n");
   
-  if (imx_gpio_request(GPIO_PORTA | MINOR_PORT, "blink") < 0) {
-    gpio_free(MINOR_PORT);
-    return ;
-  }
-  imx_gpio_direction_output(GPIO_PORTA | MINOR_PORT,1);
+	if (imx_gpio_request(GPIO_PORTA | MINOR_PORT, "blink") < 0) {
+		gpio_free(MINOR_PORT);
+		return ;
+	}
+	imx_gpio_direction_output(GPIO_PORTA | MINOR_PORT,1);
   
-  if ((err = rt_task_set_periodic(NULL, TM_NOW,rt_timer_ns2ticks(TIMESLEEP)))){
-    printk("rt task set periodic failed \n");
-    return;
-  }
-  iomask=0;
+	if ((err = rt_task_set_periodic(NULL, TM_NOW,rt_timer_ns2ticks(TIMESLEEP)))){
+		printk("rt task set periodic failed \n");
+		return;
+	}
+  	iomask=0;
   
-  while(!end){
-    rt_task_wait_period(NULL);
-    imx_gpio_set_value(GPIO_PORTA | MINOR_PORT, iomask);
-    iomask^=1;
-  }
-  printk("fin\n");
+	while(!end){
+		rt_task_wait_period(NULL);
+		imx_gpio_set_value(GPIO_PORTA | MINOR_PORT, iomask);
+		iomask^=1;
+	}
+	printk("end\n");
 }
 
-
+/* loading (insmod) */
 static int __init blink_init(void) {
-  printk(KERN_INFO "blink_init\n");
-  if (rt_task_create(&blink_task, "blink", 0, 99, 0)) {
-    printk("task create error\n");
-    return -EBUSY;
-  }
-  if (rt_task_start(&blink_task, &blink, NULL)) { 
-    printk("task start error\n"); 
-    return -EBUSY; 
-  }
-  return 0;
+	printk(KERN_INFO "blink_init\n");
+	if (rt_task_create(&blink_task, "blink", 0, 99, 0)) {
+		printk("task create error\n");
+		return -EBUSY;
+	}
+	if (rt_task_start(&blink_task, &blink, NULL)) { 
+		printk("task start error\n"); 
+		return -EBUSY; 
+	}
+	return 0;
 }
 
-/* Fin de la tache (rmmod) */
+/* unloading (rmmod) */
 static void __init blink_exit(void) {
-  end = 1;
-  printk(KERN_INFO "blink_exit\n");
-  rt_task_delete(&blink_task);
-  rt_timer_stop();
-  gpio_free(MINOR_PORT);
+	end = 1;
+	printk(KERN_INFO "blink_exit\n");
+	rt_task_delete(&blink_task);
+	rt_timer_stop();
+	gpio_free(MINOR_PORT);
 }
 
-/* Points d'entrée API modules Linux */
+/* API kernel driver */
 module_init(blink_init);
 module_exit(blink_exit);

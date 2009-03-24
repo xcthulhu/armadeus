@@ -56,9 +56,7 @@ typedef struct elem_pict {
 } elemPict;
 
 
-/* methode utilisee pour le fils pour
- * faire son calcul
- */
+/* used by children process */
 void workChildren(elemPict *ep) {
   float ii,ri,r,i;
   int yy = 0,y=0;
@@ -98,11 +96,11 @@ void workChildren(elemPict *ep) {
 }
 
 
-/* Travail fait par le maitre */
+/* Used by the master */
 void workMaster(int *tabChildPipe, int global) {
   int nbChild = NB_CHILD;
   int i,lignDeb;
-  // Envoi de la commande de traitement
+  // Sending the command processing
   elemPict ep;
   for (i=0,lignDeb=0;i<NB_CHILD;i++,lignDeb+=24) {
     ep.x=0;
@@ -112,8 +110,8 @@ void workMaster(int *tabChildPipe, int global) {
     write(tabChildPipe[i],&ep,sizeof(elemPict));
   }
 
-  // Mise en attente de l'ensemble des calculs
-  do {
+  // Queuing of all the calculations
+  do { 	
     int size = read(global,&ep,sizeof(elemPict)+1);
     printf("recu de %d debut %d fin %d\n",ep.numFils,ep.y,ep.height+ep.numFils);
     if (size != sizeof(elemPict)) {
@@ -141,20 +139,16 @@ void prepareChild(int *reception, int *versMaster) {
   close(reception[LECTURE]);
 }
 
-/* pipe : 0 => lecture dans le pipe , 1 => ecriture dans le pipe */
-
 int main(int argc, char **argv) {
   int global[2];
   int tabChildPipe[NB_CHILD];
   int pidChildPipe[NB_CHILD];
-  /* Preparation de la pipe commune 
-   * enfant vers pere
-   */
+  
   if (pipe(global) == -1) {
     perror("pipeToMaster");
     return(EXIT_FAILURE);
   }
-  /* Création de tous les processus fils */
+  /* Children process creation */
   int pos;
   int receptionFils[2];
   for (pos = 0; pos < NB_CHILD; pos ++ ) {
@@ -168,30 +162,26 @@ int main(int argc, char **argv) {
       printf("ca merde\n");
       return -1;
       break;
-    case 0: // Fiston
+    case 0: 
       prepareChild(receptionFils, global);
       return EXIT_SUCCESS;
       break;
-    default: // C'est le pere
-      // Fermeture de la lecture
+    default:
       close(receptionFils[LECTURE]); 
       tabChildPipe[pos] = receptionFils[ECRITURE];
       pidChildPipe[pos] = pid;
       break;
     }
   }
-  // C'est plus que le code du pere 
   close(global[ECRITURE]);
   int fbfd = init_lcd();
   workMaster(tabChildPipe,global[LECTURE]);
-  close(global[LECTURE]); // Fermeture du pipe d'ecoute
-  // Fermeture des pipes des enfants
+  close(global[LECTURE]); 
+  
   for (pos = 0; pos < 1; pos++) {
     close (tabChildPipe[pos]);
   }
-  // Fermeture du framebuffer
   close(fbfd);
-  // Mise en attente de la fin des autres
   for (pos = 0; pos<1;pos ++) {
     waitpid(pidChildPipe[pos],NULL,0);
   }

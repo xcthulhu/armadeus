@@ -42,38 +42,37 @@ static int end = 0;
 #define PORT_ADDR VA_GPIO_BASE + MXC_DR(0)
 
 void blink(void *arg){
-  int iomask; 
-  printk(KERN_INFO "entrering blink\n");
-  iomask=0;
-  while(!end){
-    rtdm_task_wait_period();
-    gpio_set_value(MINOR_PORT, iomask);
-    iomask^=1;
-  }
-  printk("fin\n");
+	int iomask; 
+	printk(KERN_INFO "entrering blink\n");
+	iomask=0;
+	while(!end){
+		rtdm_task_wait_period();
+		gpio_set_value(MINOR_PORT, iomask);
+		iomask^=1;
+	}
+	printk("end\n");
 }
 
- 
+/* module load (insmod) */
 static int __init blink_init(void) {
-  printk(KERN_INFO "blink_init\n");
-  if (gpio_request(MINOR_PORT, "blink") < 0) {
-    gpio_free(MINOR_PORT);
-    return -EBUSY;
-  }
-  gpio_direction_output(MINOR_PORT,1);
-  
-  return rtdm_task_init(&blink_task, "blink", blink, NULL,
+	printk(KERN_INFO "blink_init\n");
+	if (gpio_request(MINOR_PORT, "blink") < 0) {
+		gpio_free(MINOR_PORT);
+		return -EBUSY;
+	}
+	gpio_direction_output(MINOR_PORT,1);
+  	return rtdm_task_init(&blink_task, "blink", blink, NULL,
 			99, TIMESLEEP);
 }
 
-/* Fin de la tache (rmmod) */
+/* module unload (rmmod) */
 static void __init blink_exit(void) {
-  end = 1;
-  printk(KERN_INFO "blink_exit\n");
-  rtdm_task_join_nrt(&blink_task,100);
-  gpio_free(MINOR_PORT);
+	end = 1;
+	printk(KERN_INFO "blink_exit\n");
+	rtdm_task_join_nrt(&blink_task,100);
+	gpio_free(MINOR_PORT);
 }
 
-/* Points d'entrée API modules Linux */
+/* API kernel driver */
 module_init(blink_init);
 module_exit(blink_exit);
