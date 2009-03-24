@@ -1265,7 +1265,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&imx_i2c_device1, &apf27_i2c_1_data);
 +
 +	i2c_register_board_info(0, apf27_i2c_devices_bus0,
-+				ARRAY_SIZE(apf27_i2c_devices_bus1));
++				ARRAY_SIZE(apf27_i2c_devices_bus0));
 +
 +	i2c_register_board_info(1, apf27_i2c_devices_bus1,
 +				ARRAY_SIZE(apf27_i2c_devices_bus1));
