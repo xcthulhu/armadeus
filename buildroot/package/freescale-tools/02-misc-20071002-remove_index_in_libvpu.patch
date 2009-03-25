@@ -1,0 +1,16 @@
+--- misc-20071002.org/lib/vpu/vpu_io.c	2009-03-17 17:35:38.000000000 +0100
++++ misc-20071002/lib/vpu/vpu_io.c	2009-03-17 17:55:35.000000000 +0100
+@@ -374,11 +374,11 @@
+ 	
+ 	while (fgets(line, 80, fp) != NULL) {
+ 		if (strncmp(line, "Hardware", 8) == 0) {
+-			str = index(line, ':');	
++			str = strchr(line, ':');	
+ 			strcpy(cpu, str + 2);
+ 		}
+ 		if (strncmp(line, "Revision", 8) == 0) {
+-			str = index(line, ':');	
++			str = strchr(line, ':');	
+ 			strcpy(rev, str + 2);
+ 		}
+ 	}
