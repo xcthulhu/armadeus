@@ -1,4 +1,4 @@
 ###### CONFIGURATION ######
-MODULES=irq_linux_kernel
+MODULES=interrupt_linux_kernel
 
-include /home/gwe/armadeus/stage/devel/Makefile.in
+-include /home/gwe/armadeus/armadeus/target/demos/real_time/Makefile.in

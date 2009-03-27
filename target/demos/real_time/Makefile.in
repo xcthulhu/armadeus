@@ -3,8 +3,6 @@ DEST_DIR=/tftpboot/local/bin
 ARMADEUS_BASE_DIR=/home/gwe/armadeus/armadeus/
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
-XENOCONFIG=$(shell PATH=$(XENO):$(XENO)/bin:$(PATH) which xeno-config 2>/dev/null)
 
 CC= arm-linux-gcc
 LD= arm-linux-ld
@@ -23,6 +21,7 @@ ifneq ($(APPLICATIONS),)
 SRC= $(wildcard *.c)
 OBJ= $(SRC:.c=.o)
 EXEC= $(APPLICATIONS)
+XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
 CFLAGS=-g -W -Wall -I$(XENO)/include -I$(XENO)/include/native  -I$(XENO)/include/rtdm -D_GNU_SOURCE -D_REENTRANT
 LDFLAGS=-L$(XENO)/lib -Xlinker -rpath $(XENO)/lib -Xlinker $(XENO)/lib/libnative.a $(XENO)/lib/librtdm.a -lpthread -lnative -lrtdm
 $(EXEC) : $(OBJ)
@@ -35,7 +34,6 @@ ifneq ($(MODULES),)
 EXEC=$(MODULES).ko
 
 KSRC=$(ARMADEUS_LINUX_DIR)
-#$(LOCALDIR)/linux-2.6.27.13
 KDIR=$(KSRC)
 OBJ     := ${patsubst %, %.o, $(MODULES)}
 CLEANMOD := ${patsubst %, .%*, $(MODULES)}

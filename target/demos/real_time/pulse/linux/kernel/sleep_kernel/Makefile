@@ -1,3 +1,3 @@
 ###### CONFIGURATION ######
 MODULES=pulse_linux_kernel_sleep
-include ../../../../Makefile.in
+-include /home/gwe/armadeus/armadeus/target/demos/real_time/Makefile.in
