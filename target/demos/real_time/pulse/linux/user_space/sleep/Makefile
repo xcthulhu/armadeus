@@ -1,3 +1,3 @@
 APPLICATIONS=pulse_linux_userspace_sleep
-
-include ../../../../Makefile.in
+ARMADEUS_BASE_DIR=../../../../../../..
+include $(ARMADEUS_BASE_DIR)/target/demos/real_time/Makefile.in

@@ -27,7 +27,7 @@
 #include <native/sem.h>
 #include <mach/hardware.h>
 #include <nucleus/types.h>
-#include <gpio.h>
+#include <asm/gpio.h>
 
 MODULE_LICENSE("GPL");
 

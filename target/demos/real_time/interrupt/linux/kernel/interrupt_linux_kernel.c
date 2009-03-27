@@ -27,7 +27,7 @@
 #include <asm/signal.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
-#include <gpio.h>
+#include <asm/gpio.h>
 
 #define IRQ_NB IRQ_GPIOA(6)
 

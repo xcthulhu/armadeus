@@ -1,3 +1,9 @@
 ###### CONFIGURATION ######
 MODULES=pulse_linux_kernel_timer
--include /home/gwe/armadeus/armadeus/target/demos/real_time/Makefile.in
+ifneq ($(KERNELRELEASE),)
+	obj-m := $(MODULES).o
+else
+        ARMADEUS_BASE_DIR=../../../../../../..
+	include $(ARMADEUS_BASE_DIR)/target/demos/real_time/Makefile.in
+endif
+

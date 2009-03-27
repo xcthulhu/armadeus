@@ -1,5 +1,5 @@
 ### List of applications to be build
 APPLICATIONS = pulse_xeno_userspace_timer
-
-include ../../../../Makefile.in
+ARMADEUS_BASE_DIR=../../../../../../..
+include $(ARMADEUS_BASE_DIR)/target/demos/real_time/Makefile.in
 

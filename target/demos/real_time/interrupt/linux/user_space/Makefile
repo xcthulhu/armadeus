@@ -1,4 +1,4 @@
 ###### CONFIGURATION ######
-APPLICATIONS=irq_linux_us
-
-include /home/gwe/armadeus/armadeus/target/demos/real_time/Makefile.in
+APPLICATIONS=interrupt_linux_us
+ARMADEUS_BASE_DIR=../../../../../..
+include $(ARMADEUS_BASE_DIR)/target/demos/real_time/Makefile.in

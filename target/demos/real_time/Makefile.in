@@ -1,6 +1,5 @@
 ###### CONFIGURATION ######
 DEST_DIR=/tftpboot/local/bin
-ARMADEUS_BASE_DIR=/home/gwe/armadeus/armadeus/
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
 
@@ -15,7 +14,8 @@ OBJCOPY= arm-linux-objcopy
 
 
 EXEC=$(APPLICATIONS)
-
+XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
+XENOCONFIG=$(shell PATH=$(XENO):$(XENO)/bin:$(PATH) which xeno-config 2>/dev/null)
 
 ifneq ($(APPLICATIONS),)
 SRC= $(wildcard *.c)
@@ -39,7 +39,7 @@ OBJ     := ${patsubst %, %.o, $(MODULES)}
 CLEANMOD := ${patsubst %, .%*, $(MODULES)}
 PWD      := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
 obj-m        := $(OBJ)
-EXTRA_CFLAGS=-I$(KSRC)/include/xenomai -I$(KSRC)/include/xenomai/posix -I$(KSRC)/arch/arm/mach-imx/include/mach/
+
 CLEAN_MOD= modules.order *.ko *.mod.c *.mod.o *.symvers $(CLEANMOD) .tmp_versions
 $(EXEC):
 	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules

@@ -27,7 +27,7 @@
 #include <native/timer.h>
 #include <rtdm/rtdm_driver.h>
 #include <mach/hardware.h>
-#include <gpio.h>
+#include <asm/gpio.h>
 
 MODULE_LICENSE("GPL");
 

@@ -1,5 +1,6 @@
 ### List of applications to be build
 APPLICATIONS = interrupt_xeno_userspace
 ### Set of compilation instructions
-include ../../../Makefile.in
+ARMADEUS_BASE_DIR=../../../../../..
+include $(ARMADEUS_BASE_DIR)/target/demos/real_time/Makefile.in
 

@@ -27,7 +27,7 @@
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/timer.h>
-#include <gpio.h>
+#include <asm/gpio.h>
 
 #define TIMESLEEP 10
 #define MINOR_PORT 4
