@@ -1,0 +1,39 @@
+--- linux-org/arch/arm/mach-imx/include/mach/imx-regs.h	2007-08-01 22:01:00.000000000 +0200
++++ linux/arch/arm/mach-imx/include/mach/imx-regs.h	2007-07-17 00:08:11.000000000 +0200
+@@ -39,6 +39,17 @@
+ #define IMX_AITC_BASE              (0x23000 + IMX_IO_BASE)
+ #define IMX_CSI_BASE               (0x24000 + IMX_IO_BASE)
+ 
++/* System control registers */
++
++#define FMCR __REG(0x1B808 + IMX_IO_BASE)
++/* FMCR bit fields */
++#define SPI2_RXD_SEL  (1 << 8)
++#define SSI_RXFS_SEL  (1 << 7)
++#define SSI_RXCLK_SEL (1 << 6)
++#define SSI_RXDAT_SEL (1 << 5)
++#define SSI_TXFS_SEL  (1 << 4)
++#define SSI_TXCLK_SEL (1 << 3)
++
+ /* PLL registers */
+ #define CSCR   __REG(IMX_PLL_BASE)        /* Clock Source Control Register */
+ #define CSCR_SPLL_RESTART	(1<<22)
+@@ -222,7 +232,7 @@
+ #define PD6_PF_LSCLK         ( GPIO_PORTD | GPIO_OUT | GPIO_PF | 6 )
+ #define PD7_PF_REV           ( GPIO_PORTD | GPIO_PF | 7 )
+ #define PD7_AF_UART2_DTR     ( GPIO_GIUS | GPIO_PORTD | GPIO_IN | GPIO_AF | 7 )
+-#define PD7_AIN_SPI2_SCLK    ( GPIO_GIUS | GPIO_PORTD | GPIO_AIN | 7 )
++#define PD7_AIN_SPI2_SCLK    ( GPIO_GIUS | GPIO_PORTD | GPIO_AIN | GPIO_OUT | 7 )
+ #define PD8_PF_CLS           ( GPIO_PORTD | GPIO_PF | 8 )
+ #define PD8_AF_UART2_DCD     ( GPIO_PORTD | GPIO_OUT | GPIO_AF | 8 )
+ #define PD8_AIN_SPI2_SS      ( GPIO_GIUS | GPIO_PORTD | GPIO_AIN | 8 )
+--- linux-org/arch/arm/mach-imx/include/mach/irqs.h	2006-10-14 05:34:03.000000000 +0200
++++ linux/arch/arm/mach-imx/include/mach/irqs.h	2007-07-15 15:59:04.000000000 +0200
+@@ -61,6 +61,7 @@
+ #define PWM_INT                     34
+ #define SDHC_INT                    35
+ #define I2C_INT                     39
++#define SPI2_INT                    40
+ #define CSPI_INT                    41
+ #define SSI_TX_INT                  42
+ #define SSI_TX_ERR_INT              43

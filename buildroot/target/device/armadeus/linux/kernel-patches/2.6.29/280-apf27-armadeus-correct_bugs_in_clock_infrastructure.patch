@@ -1,0 +1,11 @@
+--- linux-2.6.25-rc7/arch/arm/mach-mx2/clock_imx27.c	2008-04-03 18:40:14.000000000 +0200
++++ linux-2.6.25-rc7.mod/arch/arm/mach-mx2/clock_imx27.c	2008-09-15 11:05:33.000000000 +0200
+@@ -467,7 +467,7 @@
+ };
+ 
+ /* in Hz */
+-static unsigned long external_low_reference = 32768;
++static unsigned long external_low_reference = 32768 * 1024;
+ 
+ static unsigned long get_low_reference_clock_rate(struct clk *clk)
+ {

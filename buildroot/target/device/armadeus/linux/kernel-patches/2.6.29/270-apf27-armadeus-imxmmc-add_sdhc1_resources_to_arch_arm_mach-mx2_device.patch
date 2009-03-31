@@ -1,0 +1,110 @@
+From: Julien Boibessot <julien.boibessot@armadeus.com>
+Date: Thu, 23 Oct 2008 12:54:43 +0000 (+0200)
+Subject: [ARM] MX2: Add SDHC platform_devices and resources
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=8b56f823bdee0350ee191d5017cfc480248f0b3f
+
+[ARM] MX2: Add SDHC platform_devices and resources
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/arch/arm/mach-mx2/devices.c b/arch/arm/mach-mx2/devices.c
+index 02c19ad..b70393e 100644
+--- a/arch/arm/mach-mx2/devices.c
++++ b/arch/arm/mach-mx2/devices.c
+@@ -33,6 +33,7 @@
+ #include <linux/gpio.h>
+ 
+ #include <mach/hardware.h>
++#include <mach/mmc.h>
+ 
+ /*
+  * Resource definition for the MXC IrDA
+@@ -391,6 +392,73 @@ struct platform_device mxc_fb_device = {
+ };
+ 
+ /*
++ * Resource definition for the MXC SDHC
++ */
++static struct resource mxc_sdhc1_resources[] = {
++	[0] = {
++			.start = SDHC1_BASE_ADDR,
++			.end   = SDHC1_BASE_ADDR + SZ_4K - 1,
++			.flags = IORESOURCE_MEM,
++			},
++	[1] = {
++			.start = MXC_INT_SDHC1,
++			.end   = MXC_INT_SDHC1,
++			.flags = IORESOURCE_IRQ,
++			},
++	[2] = {
++			.name   = "sdhc1",
++			.start  = DMA_REQ_SDHC1,
++			.end    = DMA_REQ_SDHC1,
++			.flags  = IORESOURCE_DMA
++		},
++};
++
++static u64 mxc_sdhc1_dmamask = 0xffffffffUL;
++
++struct platform_device mxc_sdhc_device0 = {
++       .name           = "imx-mmc",
++       .id             = 0,
++       .dev            = {
++               .dma_mask = &mxc_sdhc1_dmamask,
++               .coherent_dma_mask = 0xffffffff,
++       },
++       .num_resources  = ARRAY_SIZE(mxc_sdhc1_resources),
++       .resource       = mxc_sdhc1_resources,
++};
++
++static struct resource mxc_sdhc2_resources[] = {
++	[0] = {
++			.start = SDHC2_BASE_ADDR,
++			.end   = SDHC2_BASE_ADDR + SZ_4K - 1,
++			.flags = IORESOURCE_MEM,
++			},
++	[1] = {
++			.start = MXC_INT_SDHC2,
++			.end   = MXC_INT_SDHC2,
++			.flags = IORESOURCE_IRQ,
++			},
++	[2] = {
++			.name   = "sdhc2",
++			.start  = DMA_REQ_SDHC2,
++			.end    = DMA_REQ_SDHC2,
++			.flags  = IORESOURCE_DMA
++		},
++};
++
++static u64 mxc_sdhc2_dmamask = 0xffffffffUL;
++
++struct platform_device mxc_sdhc_device1 = {
++       .name           = "imx-mmc",
++       .id             = 1,
++       .dev            = {
++               .dma_mask = &mxc_sdhc2_dmamask,
++               .coherent_dma_mask = 0xffffffff,
++       },
++       .num_resources  = ARRAY_SIZE(mxc_sdhc2_resources),
++       .resource       = mxc_sdhc2_resources,
++};
++
++/*
+  * SSI bus:
+  * - i.MX1: 2 channels
+  * - i.MX21: 2 channels
+diff --git a/arch/arm/mach-mx2/devices.h b/arch/arm/mach-mx2/devices.h
+index 243ac8a..bf0112d 100644
+--- a/arch/arm/mach-mx2/devices.h
++++ b/arch/arm/mach-mx2/devices.h
+@@ -21,6 +21,8 @@ extern struct platform_device mxc_spi_device2;
+ extern struct platform_device imx_i2c_device0;
+ extern struct platform_device imx_i2c_device1;
+ extern struct platform_device mxc_fb_device;
++extern struct platform_device mxc_sdhc_device0;
++extern struct platform_device mxc_sdhc_device1;
+ extern struct platform_device imx_ssi_device0;
+ extern struct platform_device imx_ssi_device1;
+ extern struct platform_device mxc_dam_device;

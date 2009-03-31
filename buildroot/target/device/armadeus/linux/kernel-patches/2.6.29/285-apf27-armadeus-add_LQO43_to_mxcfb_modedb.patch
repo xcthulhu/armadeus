@@ -1,0 +1,23 @@
+--- linux-2.6.27.2/drivers/video/mxc/mxcfb_modedb.c	2008-10-01 15:58:46.000000000 +0200
++++ linux-2.6.27.2.mod/drivers/video/mxc/mxcfb_modedb.c	2008-10-01 15:57:54.000000000 +0200
+@@ -74,6 +74,20 @@
+ 	       "TV-VGA", 60, 640, 480, 40574, 35, 45, 9, 1, 46, 5,
+ 	       0, FB_VMODE_NONINTERLACED, 0,
+ 	       },
++	[5] = {
++		/* PSP TFT */
++		.name = "Sharp-LQ043",
++		.refresh = 60,
++		.xres = 480,
++		.yres = 272,
++		.pixclock = 111111, /* picoS */
++		.left_margin = 3, .right_margin = 1, /* at least 3 & 1 */
++		.upper_margin = 2, .lower_margin = 3,
++		.hsync_len = 6, .vsync_len = 2,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
++		.flag = 0,
++		},
+ };
+ 
+ int mxcfb_modedb_sz = ARRAY_SIZE(mxcfb_modedb);

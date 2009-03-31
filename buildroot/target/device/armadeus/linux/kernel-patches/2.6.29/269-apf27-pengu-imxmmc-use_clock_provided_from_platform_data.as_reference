@@ -1,0 +1,30 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:05 +0000 (+0200)
+Subject: imxmmc: Use clock provided from platform data
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=df54dfb198a5ea55ff3863d02ed1c42ff9fc949d
+
+imxmmc: Use clock provided from platform data
+
+Instead of using a hardcoded clock name use the one provided
+in the platform data.
+
+NOTE: This patch may be obsoleted when we use the same clock
+      name for all architectures.
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 871e9b6..12cfbb0 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -1018,7 +1018,7 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	host->res = r;
+ 	host->irq = irq;
+ 
+-	host->clk = clk_get(&pdev->dev, "perclk2");
++	host->clk = clk_get(&pdev->dev, host->pdata->clk);
+ 	if (IS_ERR(host->clk)) {
+ 		ret = PTR_ERR(host->clk);
+ 		goto out;

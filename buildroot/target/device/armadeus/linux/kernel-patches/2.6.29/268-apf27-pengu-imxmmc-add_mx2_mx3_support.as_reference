@@ -1,0 +1,379 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:05 +0000 (+0200)
+Subject: imxmmc: add mx2/3 support
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=56a5c7b62320e7b872780bf1d6066c4495cd92c6
+
+imxmmc: add mx2/3 support
+
+This patch adds mx2/mx3 support (WIP)
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 221eef6..871e9b6 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -33,6 +33,9 @@
+ 
+ #include "imxmmc.h"
+ 
++
++#define STUCK_TIMO 10
++
+ #define DRIVER_NAME "imx-mmc"
+ 
+ #define IMXMCI_INT_MASK_DEFAULT (INT_MASK_BUF_READY | INT_MASK_DATA_TRAN | \
+@@ -69,6 +72,7 @@ struct imxmci_host {
+ 	unsigned int		dma_dir;
+ 	unsigned int		dma_rss;
+ 
++	u16			rev_no;
+ 	unsigned char		actual_bus_width;
+ 
+ 	int			prev_cmd_code;
+@@ -275,20 +279,13 @@ static void imxmci_setup_data(struct imxmci_host *host, struct mmc_data *data)
+ 
+ 		imx_dma_setup_sg(host->dma, data->sg, data->sg_len, datasz,
+ 				 host->res->start + MMC_REG_BUFFER_ACCESS, DMA_MODE_READ);
+-
+-		/*imx_dma_setup_mem2dev_ccr(host->dma, DMA_MODE_READ, IMX_DMA_WIDTH_16, CCR_REN);*/
+-		CCR(host->dma) = CCR_DMOD_LINEAR | CCR_DSIZ_32 | CCR_SMOD_FIFO | CCR_SSIZ_16 | CCR_REN;
+ 	} else {
+ 		host->dma_dir = DMA_TO_DEVICE;
+-
+ 		host->dma_nents = dma_map_sg(mmc_dev(host->mmc), data->sg,
+ 					     data->sg_len,  host->dma_dir);
+ 
+ 		imx_dma_setup_sg(host->dma, data->sg, data->sg_len, datasz,
+ 				 host->res->start + MMC_REG_BUFFER_ACCESS, DMA_MODE_WRITE);
+-
+-		/*imx_dma_setup_mem2dev_ccr(host->dma, DMA_MODE_WRITE, IMX_DMA_WIDTH_16, CCR_REN);*/
+-		CCR(host->dma) = CCR_SMOD_LINEAR | CCR_SSIZ_32 | CCR_DMOD_FIFO | CCR_DSIZ_16 | CCR_REN;
+ 	}
+ 
+ #if 1	/* This code is there only for consistency checking and can be disabled in future */
+@@ -306,13 +303,6 @@ static void imxmci_setup_data(struct imxmci_host *host, struct mmc_data *data)
+ 
+ 	wmb();
+ 
+-	if (host->actual_bus_width == MMC_BUS_WIDTH_4)
+-		BLR(host->dma) = 0;	/* burst 64 byte read / 64 bytes write */
+-	else
+-		BLR(host->dma) = 16;	/* burst 16 byte read / 16 bytes write */
+-
+-	RSSR(host->dma) = host->dma_rss;
+-
+ 	set_bit(IMXMCI_PEND_DMA_DATA_b, &host->pending_events);
+ 	clear_bit(IMXMCI_PEND_CPU_DATA_b, &host->pending_events);
+ 
+@@ -332,8 +322,9 @@ static void imxmci_start_cmd(struct imxmci_host *host, struct mmc_command *cmd,
+ 	/* Ensure, that clock are stopped else command programming and start fails */
+ 	imxmci_stop_clock(host);
+ 
+-	if (cmd->flags & MMC_RSP_BUSY)
++	if (WARN_ON(cmd->flags & MMC_RSP_BUSY)) {
+ 		cmdat |= CMD_DAT_CONT_BUSY;
++	}
+ 
+ 	switch (mmc_resp_type(cmd)) {
+ 	case MMC_RSP_R1: /* short CRC, OPCODE */
+@@ -357,8 +348,12 @@ static void imxmci_start_cmd(struct imxmci_host *host, struct mmc_command *cmd,
+ 		cmdat |= CMD_DAT_CONT_BUS_WIDTH_4;
+ 
+ 	writew(cmd->opcode, host->base + MMC_REG_CMD);
+-	writew(cmd->arg >> 16, host->base + MMC_REG_ARGH);
+-	writew(cmd->arg & 0xffff, host->base + MMC_REG_ARGL);
++	if (host->rev_no == 0x390) {
++		writew(cmd->arg >> 16, host->base + MMC_REG_ARGH);
++		writew(cmd->arg & 0xffff, host->base + MMC_REG_ARGL);
++	} else {
++		writel(cmd->arg, host->base + MMC_REG_ARG);
++	}
+ 	writew(cmdat, host->base + MMC_REG_CMD_DAT_CONT);
+ 
+ 	atomic_set(&host->stuck_timeout, 0);
+@@ -366,7 +361,7 @@ static void imxmci_start_cmd(struct imxmci_host *host, struct mmc_command *cmd,
+ 
+ 
+ 	imask = IMXMCI_INT_MASK_DEFAULT;
+-	imask &= ~INT_MASK_END_CMD_RES;
++	/* 	imask &= ~INT_MASK_END_CMD_RES; */ FIXME();
+ 	if (cmdat & CMD_DAT_CONT_DATA_ENABLE) {
+ 		/* imask &= ~INT_MASK_BUF_READY; */
+ 		imask &= ~INT_MASK_DATA_TRAN;
+@@ -382,7 +377,7 @@ static void imxmci_start_cmd(struct imxmci_host *host, struct mmc_command *cmd,
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	dev_dbg(mmc_dev(host->mmc), "CMD%02d (0x%02x) mask set to 0x%04x\n",
+-		cmd->opcode, cmd->opcode, imask);
++		cmd->opcode, cmd->arg, imask);
+ 
+ 	imxmci_start_clock(host);
+ }
+@@ -649,7 +644,11 @@ static irqreturn_t imxmci_irq(int irq, void *devid)
+ 	u32 stat = readw(host->base + MMC_REG_STATUS);
+ 	int handled = 1;
+ 
+-	writew(host->imask | INT_MASK_SDIO | INT_MASK_AUTO_CARD_DETECT, host->base + MMC_REG_INT_MASK);
++	if (host->rev_no == 0x390)
++		writew(host->imask | INT_MASK_SDIO | INT_MASK_AUTO_CARD_DETECT,
++				host->base + MMC_REG_INT_MASK);
++	else
++		writew(stat, host->base + MMC_REG_STATUS);
+ 
+ 	atomic_set(&host->stuck_timeout, 0);
+ 	host->status_reg = stat;
+@@ -657,7 +656,7 @@ static irqreturn_t imxmci_irq(int irq, void *devid)
+ 	set_bit(IMXMCI_PEND_STARTED_b, &host->pending_events);
+ 	tasklet_schedule(&host->tasklet);
+ 
+-	return IRQ_RETVAL(handled);;
++	return IRQ_HANDLED;
+ }
+ 
+ static void imxmci_tasklet_fnc(unsigned long data)
+@@ -667,7 +666,7 @@ static void imxmci_tasklet_fnc(unsigned long data)
+ 	unsigned int data_dir_mask = 0;	/* STATUS_WR_CRC_ERROR_CODE_MASK */
+ 	int timeout = 0;
+ 
+-	if (atomic_read(&host->stuck_timeout) > 4) {
++	if (atomic_read(&host->stuck_timeout) > STUCK_TIMO) {
+ 		char *what;
+ 		timeout = 1;
+ 		stat = readw(host->base + MMC_REG_STATUS);
+@@ -695,7 +694,8 @@ static void imxmci_tasklet_fnc(unsigned long data)
+ 			readw(host->base + MMC_REG_CMD_DAT_CONT),
+ 			readw(host->base + MMC_REG_BLK_LEN),
+ 			readw(host->base + MMC_REG_NOB),
+-			CCR(host->dma));
++			__raw_readw(IO_ADDRESS(DMA_BASE_ADDR) +
++				    IMX_DMA_CCR(host->dma)));
+ 		dev_err(mmc_dev(host->mmc), "CMD%d, prevCMD%d, bus %d-bit, dma_size = 0x%x\n",
+ 			host->cmd?host->cmd->opcode:0, host->prev_cmd_code, 1 << host->actual_bus_width, host->dma_size);
+ 	}
+@@ -718,17 +718,15 @@ static void imxmci_tasklet_fnc(unsigned long data)
+ 		if (test_bit(IMXMCI_PEND_CPU_DATA_b, &host->pending_events))
+ 			stat &= ~STATUS_CRC_READ_ERR;
+ 
+-		if (test_bit(IMXMCI_PEND_WAIT_RESP_b, &host->pending_events)) {
+-			imxmci_busy_wait_for_status(host, &stat,
+-						    STATUS_END_CMD_RESP | STATUS_ERR_MASK,
+-						    20, "imxmci_tasklet_fnc resp (ERRATUM #4)");
+-		}
+-
+ 		if (stat & (STATUS_END_CMD_RESP | STATUS_ERR_MASK)) {
+ 			if (test_and_clear_bit(IMXMCI_PEND_WAIT_RESP_b, &host->pending_events))
+ 				imxmci_cmd_done(host, stat);
+ 			if (host->data && (stat & STATUS_ERR_MASK))
+ 				imxmci_data_done(host, stat);
++		} else if (test_bit(IMXMCI_PEND_WAIT_RESP_b, &host->pending_events)) {
++			imxmci_busy_wait_for_status(host, &stat,
++						    STATUS_END_CMD_RESP | STATUS_ERR_MASK,
++						    20, "imxmci_tasklet_fnc resp (ERRATUM #4)");
+ 		}
+ 
+ 		if (test_bit(IMXMCI_PEND_CPU_DATA_b, &host->pending_events)) {
+@@ -804,17 +802,62 @@ static void imxmci_request(struct mmc_host *mmc, struct mmc_request *req)
+ 	imxmci_start_cmd(host, req->cmd, cmdat);
+ }
+ 
++static u16 imxmci_get_clk_rate_0x390(unsigned int scaler, unsigned int divider)
++{
++	u16 pre;
++
++	switch (divider) {
++	case 0:
++	case 1:
++		pre = 0;
++		break;
++	case 2:
++		pre = 1;
++		break;
++	case 3:
++		pre = 2;
++		break;
++	case 4:
++		pre = 4;
++		break;
++	case 5:
++	default:
++		pre = 5;
++		break;
++	}
++
++	return (pre << 3) | scaler;
++}
++
++static u16 imxmci_get_clk_rate_0x400(unsigned int scaler, unsigned int divider)
++{
++	divider = clamp_val(divider, 2, 16) - 1;
++
++	return (scaler << 4) | divider;
++}
++
+ #define CLK_RATE 19200000
+ 
+ static void imxmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct imxmci_host *host = mmc_priv(mmc);
+ 	int prescaler;
++	unsigned int blen;
+ 
+ 	if (host->pdata->set_bus_width)
+ 		host->pdata->set_bus_width(mmc_dev(mmc), ios->bus_width);
+ 	host->actual_bus_width = ios->bus_width;
+ 
++	/*
++	 * use burstlen of 64 in 4 bit mode (--> reg value  0)
++	 * use burstlen of 16 in 1 bit mode (--> reg value 16)
++	 */
++	if (ios->bus_width == MMC_BUS_WIDTH_4)
++		blen = 0;
++	else
++		blen = 16;
++	imx_dma_config_burstlen(host->dma, blen);
++
+ 	if (host->power_mode != ios->power_mode) {
+ 		switch (ios->power_mode) {
+ 		case MMC_POWER_OFF:
+@@ -829,39 +872,28 @@ static void imxmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	}
+ 
+ 	if (ios->clock) {
+-		unsigned int clk;
+-		u16 reg;
++ 	if (ios->clock) {
++		unsigned long clk;
++		unsigned int divider, scaler;
++		u16 reg_clk_rate, reg;
+ 
+-		/* The prescaler is 5 for PERCLK2 equal to 96MHz
+-		 * then 96MHz / 5 = 19.2 MHz
+-		 */
+ 		clk = clk_get_rate(host->clk);
+-		prescaler = (clk + (CLK_RATE * 7) / 8) / CLK_RATE;
+-		switch (prescaler) {
+-		case 0:
+-		case 1:	prescaler = 0;
+-			break;
+-		case 2:	prescaler = 1;
+-			break;
+-		case 3:	prescaler = 2;
+-			break;
+-		case 4:	prescaler = 4;
+-			break;
+-		default:
+-		case 5:	prescaler = 5;
+-			break;
+-		}
++		/* we want to have CLK_RATE (=19.2 MHz), the 7/8 is for rounding up */
++		divider = (clk + (CLK_RATE * 7) / 8) / CLK_RATE;
+ 
+-		dev_dbg(mmc_dev(host->mmc), "PERCLK2 %d MHz -> prescaler %d\n",
+-			clk, prescaler);
+-
+-		for (clk = 0; clk < 8; clk++) {
++		for (scaler = 0; scaler <= 7; scaler++) {
+ 			int x;
+-			x = CLK_RATE / (1 << clk);
++			x = clk / divider / (1 << scaler);
+ 			if (x <= ios->clock)
+ 				break;
+ 		}
+ 
++		if (host->rev_no == 0x390)
++			reg_clk_rate = imxmci_get_clk_rate_0x390(scaler, divider);
++		else
++			reg_clk_rate = imxmci_get_clk_rate_0x400(scaler, divider);
++
++
+ 		/* enable controller */
+ 		reg = readw(host->base + MMC_REG_STR_STP_CLK);
+ 		writew(reg | STR_STP_CLK_ENABLE, host->base + MMC_REG_STR_STP_CLK);
+@@ -879,6 +911,7 @@ static void imxmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			readw(host->base + MMC_REG_CLK_RATE));
+ 	} else {
+ 		imxmci_stop_clock(host);
++		writew(reg_clk_rate, host->base + MMC_REG_CLK_RATE);
+ 	}
+ }
+ 
+@@ -919,7 +952,7 @@ static void imxmci_check_status(unsigned long data)
+ 	if (test_bit(IMXMCI_PEND_WAIT_RESP_b, &host->pending_events) ||
+ 	    test_bit(IMXMCI_PEND_DMA_DATA_b, &host->pending_events)) {
+ 		atomic_inc(&host->stuck_timeout);
+-		if (atomic_read(&host->stuck_timeout) > 4)
++		if (atomic_read(&host->stuck_timeout) > STUCK_TIMO)
+ 			tasklet_schedule(&host->tasklet);
+ 	} else {
+ 		atomic_set(&host->stuck_timeout, 0);
+@@ -934,8 +967,7 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	struct mmc_host *mmc;
+ 	struct imxmci_host *host = NULL;
+ 	struct resource *r, *dma;
+-	int ret = 0, irq;
+-	u16 rev_no;
++	int ret = 0, irq, memsize;
+ 
+ 	printk(KERN_INFO "i.MX mmc driver\n");
+ 
+@@ -955,8 +987,6 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	mmc->ops = &imxmci_ops;
+-	mmc->f_min = 150000;
+-	mmc->f_max = CLK_RATE/2;
+ 	mmc->ocr_avail = MMC_VDD_32_33;
+ 	mmc->caps = MMC_CAP_4_BIT_DATA;
+ 
+@@ -995,12 +1025,17 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	}
+ 	clk_enable(host->clk);
+ 
++	mmc->f_min = clk_get_rate(host->clk) >> 7;
++	mmc->f_max = clk_get_rate(host->clk) >> 1;
++
+ 	imxmci_softreset(host);
+ 
+-	rev_no = readw(host->base + MMC_REG_REV_NO);
+-	if (rev_no != 0x390) {
++	host->rev_no = readw(host->base + MMC_REG_REV_NO);
++	if (host->rev_no != 0x390 &&
++	    host->rev_no != 0x400) {
++		ret = -ENODEV;
+ 		dev_err(mmc_dev(host->mmc), "wrong rev.no. 0x%08x. aborting.\n",
+-			readw(host->base + MMC_REG_REV_NO));
++			host->rev_no);
+ 		goto out;
+ 	}
+ 
+@@ -1016,7 +1051,26 @@ static int imxmci_probe(struct platform_device *pdev)
+ 		ret = -EBUSY;
+ 		goto out;
+ 	}
+-	imx_dma_setup_handlers(host->dma, imxmci_dma_irq, NULL, host);
++
++	ret = imx_dma_setup_handlers(host->dma, imxmci_dma_irq, NULL, host);
++	if (ret) {
++		dev_err(mmc_dev(host->mmc), "failed to setup DMA callback\n");
++		goto out;
++	}
++
++	if (host->rev_no == 0x390)
++		memsize = IMX_DMA_MEMSIZE_16;
++	else
++		memsize = IMX_DMA_MEMSIZE_32;
++
++	ret = imx_dma_config_channel(host->dma,
++				     memsize | IMX_DMA_TYPE_FIFO,
++				     IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
++				     host->dma_rss, 0);
++	if (ret) {
++		dev_err(mmc_dev(host->mmc), "failed to config DMA channel\n");
++		goto out;
++	}
+ 
+ 	tasklet_init(&host->tasklet, imxmci_tasklet_fnc, (unsigned long)host);
+ 	host->status_reg=0;

@@ -1,0 +1,27 @@
+--- linux-2.6.27.2.org/sound/arm/imx2-dam.h	2009-01-16 13:49:56.000000000 +0100
++++ linux-2.6.27.2/sound/arm/imx2-dam.h	2009-01-15 18:21:41.000000000 +0100
+@@ -17,4 +17,4 @@
+ 
+ extern int mx2_dam_init(void);
+ extern void mx2_dam_exit(void);
+-extern int dam_configure_sync_slave(int, int);
++extern int mx2_dam_configure_sync_slave(int, int);
+--- linux-2.6.27.2.org/sound/arm/imx2-dam.c	2009-01-16 13:49:56.000000000 +0100
++++ linux-2.6.27.2/sound/arm/imx2-dam.c	2009-01-16 14:04:15.000000000 +0100
+@@ -86,7 +86,7 @@
+  *    STFS (in)    TFS(out)          FS           SSI?_FS
+  *    STXD (out)                     Db           SSI?_TXD
+  */
+-int dam_configure_sync_slave(int ssi_unit, int ssi_pin)
++int mx2_dam_configure_sync_slave(int ssi_unit, int ssi_pin)
+ {
+ 	int host_port, target_port;
+ 	u32 host_val, target_val;
+@@ -135,6 +135,7 @@
+ 		ioread32(dam.io + _reg_DAM_PPCR(5)));
+ 	return 0;
+ }
++EXPORT_SYMBOL(mx2_dam_configure_sync_slave);
+ 
+ static int __devinit mx2_dam_probe(struct platform_device *pdev)
+ {

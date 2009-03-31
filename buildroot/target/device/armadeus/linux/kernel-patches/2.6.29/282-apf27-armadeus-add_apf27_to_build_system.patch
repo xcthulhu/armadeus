@@ -1,0 +1,27 @@
+--- ref/linux-2.6.27-rc9/arch/arm/mach-mx2/Kconfig	2008-10-14 00:51:57.000000000 +0200
++++ linux-2.6.27-rc9/arch/arm/mach-mx2/Kconfig	2008-10-10 09:09:36.000000000 +0200
+@@ -10,6 +10,14 @@ config MACH_MX27
+ comment "MX2 Platforms"
+ 	depends on ARCH_MX2
+ 
++config MACH_APF27
++	bool "Armadeus Systems APF27"
++	depends on MACH_MX27
++	select MXC_ULPI
++	help
++	  Include support for APF27 platform. This includes specific 
++	  configurations for the module and its peripherals.
++
+ config MACH_MX27ADS
+ 	bool "MX27ADS platform"
+ 	depends on MACH_MX27
+--- ref/linux-2.6.27-rc9/arch/arm/mach-mx2/Makefile	2008-10-14 00:51:55.000000000 +0200
++++ linux-2.6.27-rc9/arch/arm/mach-mx2/Makefile	2008-10-09 09:15:32.000000000 +0200
+@@ -10,6 +10,7 @@ obj-$(CONFIG_MACH_MX27) += cpu_imx27.o
+ obj-$(CONFIG_MACH_MX27) += clock_imx27.o
+ obj-$(CONFIG_CPU_FREQ_IMX27) +=  cpufreq_imx27.o
+ 
++obj-$(CONFIG_MACH_APF27)	+= apf27.o
+ obj-$(CONFIG_MACH_MX27ADS) += mx27ads.o
+ obj-$(CONFIG_MACH_PCM038) += pcm038.o
+ obj-$(CONFIG_MACH_PCM970_BASEBOARD) += pcm970-baseboard.o

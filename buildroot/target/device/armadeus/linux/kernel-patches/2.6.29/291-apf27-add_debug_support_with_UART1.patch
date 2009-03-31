@@ -1,0 +1,43 @@
+--- linux-2.6.27.2ref/arch/arm/plat-mxc/include/mach/board-apf27.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.27.2/arch/arm/plat-mxc/include/mach/board-apf27.h	2008-11-19 18:32:11.000000000 +0100
+@@ -0,0 +1,28 @@
++/*
++ * Copyright (C) 2008 Juergen Beisert (kernel@pengutronix.de)
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_MXC_BOARD_APF27_H__
++#define __ASM_ARCH_MXC_BOARD_APF27_H__
++
++/* mandatory for CONFIG_LL_DEBUG */
++
++#define MXC_LL_UART_PADDR       UART1_BASE_ADDR
++#define MXC_LL_UART_VADDR       AIPI_IO_ADDRESS(UART1_BASE_ADDR)
++
++
++#endif /* __ASM_ARCH_MXC_BOARD_PCM038_H__ */
+--- linux-2.6.27.2ref/arch/arm/plat-mxc/include/mach/debug-macro.S	2008-10-10 00:13:53.000000000 +0200
++++ linux-2.6.27.2/arch/arm/plat-mxc/include/mach/debug-macro.S	2008-11-19 18:27:56.000000000 +0100
+@@ -28,6 +28,9 @@
+ #ifdef CONFIG_MACH_PCM038
+ #include <mach/board-pcm038.h>
+ #endif
++#ifdef CONFIG_MACH_APF27
++#include <mach/board-apf27.h>
++#endif
+ 		.macro	addruart,rx
+ 		mrc	p15, 0, \rx, c1, c0
+ 		tst	\rx, #1			@ MMU enabled?

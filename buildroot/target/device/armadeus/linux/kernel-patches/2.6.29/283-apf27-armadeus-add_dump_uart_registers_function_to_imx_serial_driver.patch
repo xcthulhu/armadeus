@@ -1,0 +1,21 @@
+--- linux-2.6.25-rc7/drivers/serial/imx.c	2008-04-03 18:40:14.000000000 +0200
++++ linux-2.6.25-rc7.mod/drivers/serial/imx.c	2008-09-15 13:23:40.000000000 +0200
+@@ -661,6 +661,18 @@
+ 	writel(temp, sport->port.membase + UCR1);
+ }
+ 
++static void imx_serial_dump_registers(struct imx_port *sport)
++{
++	printk("UCR1: 0x%08x\n", readl(sport->port.membase + UCR1));
++	printk("UCR2: 0x%08x\n", readl(sport->port.membase + UCR2));
++	printk("UCR3: 0x%08x\n", readl(sport->port.membase + UCR3));
++	printk("UCR4: 0x%08x\n", readl(sport->port.membase + UCR4));
++	printk("UFCR: 0x%08x\n", readl(sport->port.membase + UFCR));
++	printk("UBIR: 0x%08x\n", readl(sport->port.membase + UBIR));
++	printk("UBMR: 0x%08x\n", readl(sport->port.membase + UBMR));
++	printk("UBRC: 0x%08x\n", readl(sport->port.membase + UBRC));
++}
++
+ static void
+ imx_set_termios(struct uart_port *port, struct ktermios *termios,
+ 		   struct ktermios *old)

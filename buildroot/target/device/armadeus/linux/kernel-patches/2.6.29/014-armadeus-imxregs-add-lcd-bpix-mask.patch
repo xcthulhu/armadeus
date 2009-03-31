@@ -1,0 +1,10 @@
+--- linux-2.6.27.2/arch/arm/mach-imx/include/mach/imx-regs.h
++++ linux-2.6.27.2.mod/arch/arm/mach-imx/include/mach/imx-regs.h
+@@ -411,6 +411,7 @@
+ #define PCR_BPIX_8      (3<<25)
+ #define PCR_BPIX_12     (4<<25)
+ #define PCR_BPIX_16     (4<<25)
++#define PCR_BPIX_MASK   (7<<25)
+ #define PCR_PIXPOL      (1<<24)
+ #define PCR_FLMPOL      (1<<23)
+ #define PCR_LPPOL       (1<<22)

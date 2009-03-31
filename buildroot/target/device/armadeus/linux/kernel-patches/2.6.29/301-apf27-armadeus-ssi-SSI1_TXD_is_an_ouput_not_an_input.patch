@@ -1,0 +1,11 @@
+--- linux-2.6.27.2.original/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
++++ linux-2.6.27.2/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
+@@ -329,7 +329,7 @@
+ #define PC19_PF_SSI4_CLK	(GPIO_PORTC | GPIO_IN  | GPIO_PF | 19)
+ #define PC20_PF_SSI1_FS		(GPIO_PORTC | GPIO_IN  | GPIO_PF | 20)
+ #define PC21_PF_SSI1_RXD	(GPIO_PORTC | GPIO_IN  | GPIO_PF | 21)
+-#define PC22_PF_SSI1_TXD	(GPIO_PORTC | GPIO_IN  | GPIO_PF | 22)
++#define PC22_PF_SSI1_TXD	(GPIO_PORTC | GPIO_OUT | GPIO_PF | 22)
+ #define PC23_PF_SSI1_CLK	(GPIO_PORTC | GPIO_IN  | GPIO_PF | 23)
+ #define PC24_PF_SSI2_FS		(GPIO_PORTC | GPIO_IN  | GPIO_PF | 24)
+ #define PC25_PF_SSI2_RXD	(GPIO_PORTC | GPIO_IN  | GPIO_PF | 25)

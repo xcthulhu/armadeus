@@ -1,0 +1,64 @@
+--- linux-2.6.27.2.original/sound/arm/Kconfig	2009-01-16 16:07:07.000000000 +0100
++++ linux-2.6.27.2/sound/arm/Kconfig	2009-01-16 16:21:06.000000000 +0100
+@@ -28,8 +28,19 @@
+ 	select SND_PCM
+ 	select SND_AC97_CODEC
+ 
++config SND_IMX_PCM
++        tristate "i.MX1/L SSI driver"
++        depends on SND && ARCH_IMX
++        select SND_PCM
++        help
++          Say Y here to include support for i.MX1/L based CPU cards with
++          sound output.
++
++          To compile this driver as a module, choose M here: the module
++          will be called snd-imx.
++
+ config SND_IMX2_PCM
+-	tristate "i.MX27/MC13783 driver"
++	tristate "i.MX27 SSI driver"
+ 	depends on SND && ARCH_MX2
+ 	select SND_PCM
+ 	help
+@@ -53,16 +64,16 @@
+ 	  the PXA2xx AC97 interface.
+ 
+ config SND_IMX_TSC2102
+- 	tristate "i.MX1/L TSC2102 alsa driver"
+- 	depends on ARCH_IMX && SND
++	tristate "TSC210x alsa driver"
++ 	depends on (SND_IMX_PCM || SND_IMX2_PCM)
+  	select SND_PCM
+ 	select SPI_TSC2102
+  	help
+- 	  Say Y here if you have an i.MX1/L platform board
+- 	  and a TSC2102 audio chip.
++ 	  Say Y here if you have an i.MX platform board
++ 	  and a TSC210x audio chip.
+ 
+  	  To compile this driver as a module, choose M here: the module
+- 	  will be called snd-imx-tsc2102.
++ 	  will be called snd-imx-tsc210x.
+ 
+ endif	# SND_ARM
+ 
+--- linux-2.6.27.2.original/sound/arm/Makefile	2009-01-16 16:07:07.000000000 +0100
++++ linux-2.6.27.2/sound/arm/Makefile	2009-01-16 16:17:49.000000000 +0100
+@@ -17,9 +17,12 @@
+ #snd-mc13783-objs		:= imx2-pcm.o imx2-ssi.o imx2-dam.o mc13783.o devdma.o
+ #obj-$(CONFIG_SND_IMX2_PCM)	+= snd-mc13783.o
+ 
+-obj-$(CONFIG_SND_IMX2_PCM)     += snd-mx2.o
+-snd-mx2-objs               := imx2-ssi.o imx2-dam.o devdma.o
++obj-$(CONFIG_SND_IMX2_PCM)	+= snd-mx2.o
++snd-mx2-objs			:= imx2-ssi.o imx2-dam.o
+ 
+-obj-$(CONFIG_SND_IMX_TSC2102) += snd-imx-alsa-tsc2102.o
+-snd-imx-alsa-tsc2102-objs :=   imx-alsa.o imx-alsa-tsc2102.o imx-alsa-tsc2102-mixer.o
++obj-$(CONFIG_SND_IMX_PCM)	+= snd-imx.o
++snd-imx-objs			:= imx-ssi.o
++
++obj-$(CONFIG_SND_IMX_TSC2102)	+= snd-imx-alsa-tsc2102.o
++snd-imx-alsa-tsc2102-objs	:= imx-alsa-tsc2102.o imx-alsa-tsc2102-mixer.o imx-alsa.o devdma.o
+ 

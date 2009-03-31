@@ -1,0 +1,22 @@
+Index: linux-2.6.27.13/kernel/power/Kconfig
+===================================================================
+--- linux-2.6.27.13.orig/kernel/power/Kconfig	2009-03-13 09:33:23.000000000 +0100
++++ linux-2.6.27.13/kernel/power/Kconfig	2009-03-13 10:09:37.000000000 +0100
+@@ -204,3 +204,17 @@
+ 	  random kernel OOPSes or reboots that don't seem to be related to
+ 	  anything, try disabling/enabling this option (or disabling/enabling
+ 	  APM in your BIOS).
++
++config USE_APF27DEV_IMX_LED_FOR_PM
++	bool "Use IMX LED of the APF27Dev for PM test"
++	depends on PM && MACH_APF27
++	help
++	  Use IMX LED of the APF27Dev board to show user when the system is
++	  out of sleep (LED on) or sleeping (LED off).
++
++config USE_APF27DEV_IMX_SWITCH_FOR_PM
++	bool "Use IMX switch of the APF27Dev for PM test"
++	depends on PM && MACH_APF27
++	help
++          Use IMX switch of the APF27Dev board to leave sleep mode.
++

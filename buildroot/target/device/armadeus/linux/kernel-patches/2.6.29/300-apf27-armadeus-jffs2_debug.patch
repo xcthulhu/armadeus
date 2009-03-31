@@ -1,0 +1,76 @@
+--- linux-2.6.27.2.ref/fs/jffs2/scan.c	2008-12-19 13:47:54.000000000 +0100
++++ linux-2.6.27.2/fs/jffs2/scan.c	2008-12-19 13:51:44.000000000 +0100
+@@ -647,7 +647,7 @@ scan_more:
+ 			inbuf_ofs = ofs - buf_ofs;
+ 			while (inbuf_ofs < scan_end) {
+ 				if (unlikely(*(uint32_t *)(&buf[inbuf_ofs]) != 0xffffffff)) {
+-					printk(KERN_WARNING "Empty flash at 0x%08x ends at 0x%08x\n",
++					printk(KERN_DEBUG "Empty flash at 0x%08x ends at 0x%08x\n",
+ 					       empty_start, ofs);
+ 					if ((err = jffs2_scan_dirty_space(c, jeb, ofs-empty_start)))
+ 						return err;
+@@ -715,7 +715,7 @@ scan_more:
+ 		}
+ 		if (je16_to_cpu(node->magic) != JFFS2_MAGIC_BITMASK) {
+ 			/* OK. We're out of possibilities. Whinge and move on */
+-			noisy_printk(&noise, "jffs2_scan_eraseblock(): Magic bitmask 0x%04x not found at 0x%08x: 0x%04x instead\n",
++			printk(KERN_DEBUG "jffs2_scan_eraseblock(): Magic bitmask 0x%04x not found at 0x%08x: 0x%04x instead\n",
+ 				     JFFS2_MAGIC_BITMASK, ofs,
+ 				     je16_to_cpu(node->magic));
+ 			if ((err = jffs2_scan_dirty_space(c, jeb, 4)))
+@@ -730,7 +730,7 @@ scan_more:
+ 		hdr_crc = crc32(0, &crcnode, sizeof(crcnode)-4);
+ 
+ 		if (hdr_crc != je32_to_cpu(node->hdr_crc)) {
+-			noisy_printk(&noise, "jffs2_scan_eraseblock(): Node at 0x%08x {0x%04x, 0x%04x, 0x%08x) has invalid CRC 0x%08x (calculated 0x%08x)\n",
++			printk(KERN_DEBUG "jffs2_scan_eraseblock(): Node at 0x%08x {0x%04x, 0x%04x, 0x%08x) has invalid CRC 0x%08x (calculated 0x%08x)\n",
+ 				     ofs, je16_to_cpu(node->magic),
+ 				     je16_to_cpu(node->nodetype),
+ 				     je32_to_cpu(node->totlen),
+@@ -932,7 +932,7 @@ struct jffs2_inode_cache *jffs2_scan_mak
+ 
+ 	ic = jffs2_alloc_inode_cache();
+ 	if (!ic) {
+-		printk(KERN_NOTICE "jffs2_scan_make_inode_cache(): allocation of inode cache failed\n");
++		printk(KERN_DEBUG "jffs2_scan_make_inode_cache(): allocation of inode cache failed\n");
+ 		return NULL;
+ 	}
+ 	memset(ic, 0, sizeof(*ic));
+@@ -965,7 +965,7 @@ static int jffs2_scan_inode_node(struct 
+ 	/* Check the node CRC in any case. */
+ 	crc = crc32(0, ri, sizeof(*ri)-8);
+ 	if (crc != je32_to_cpu(ri->node_crc)) {
+-		printk(KERN_NOTICE "jffs2_scan_inode_node(): CRC failed on "
++		printk(KERN_DEBUG "jffs2_scan_inode_node(): CRC failed on "
+ 		       "node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
+ 		       ofs, je32_to_cpu(ri->node_crc), crc);
+ 		/*
+@@ -1016,7 +1016,7 @@ static int jffs2_scan_dirent_node(struct
+ 	crc = crc32(0, rd, sizeof(*rd)-8);
+ 
+ 	if (crc != je32_to_cpu(rd->node_crc)) {
+-		printk(KERN_NOTICE "jffs2_scan_dirent_node(): Node CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
++		printk(KERN_DEBUG "jffs2_scan_dirent_node(): Node CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
+ 		       ofs, je32_to_cpu(rd->node_crc), crc);
+ 		/* We believe totlen because the CRC on the node _header_ was OK, just the node itself failed. */
+ 		if ((err = jffs2_scan_dirty_space(c, jeb, PAD(je32_to_cpu(rd->totlen)))))
+@@ -1041,7 +1041,7 @@ static int jffs2_scan_dirent_node(struct
+ 
+ 	crc = crc32(0, fd->name, rd->nsize);
+ 	if (crc != je32_to_cpu(rd->name_crc)) {
+-		printk(KERN_NOTICE "jffs2_scan_dirent_node(): Name CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
++		printk(KERN_DEBUG "jffs2_scan_dirent_node(): Name CRC failed on node at 0x%08x: Read 0x%08x, calculated 0x%08x\n",
+ 		       ofs, je32_to_cpu(rd->name_crc), crc);
+ 		D1(printk(KERN_NOTICE "Name for which CRC failed is (now) '%s', ino #%d\n", fd->name, je32_to_cpu(rd->ino)));
+ 		jffs2_free_full_dirent(fd);
+--- linux-2.6.27.2.ref/fs/jffs2/readinode.c	2008-12-19 14:03:21.000000000 +0100
++++ linux-2.6.27.2/fs/jffs2/readinode.c	2008-12-19 14:03:44.000000000 +0100
+@@ -105,7 +105,7 @@ static int check_node_data(struct jffs2_
+ #endif
+ 
+ 	if (crc != tn->data_crc) {
+-		JFFS2_NOTICE("wrong data CRC in data node at 0x%08x: read %#08x, calculated %#08x.\n",
++		dbg_readinode("wrong data CRC in data node at 0x%08x: read %#08x, calculated %#08x.\n",
+ 			     ref_offset(ref), tn->data_crc, crc);
+ 		return 1;
+ 	}

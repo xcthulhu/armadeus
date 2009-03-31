@@ -1,0 +1,72 @@
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Fri, 10 Oct 2008 10:05:04 +0000 (+0200)
+Subject: imxmmc: cleanup DMA handling
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=db089b97483db4ca410ec944156a09f2a16ee602
+
+imxmmc: cleanup DMA handling
+
+Simplify DMA channel allocation a bit.
+
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/mmc/host/imxmmc.c b/drivers/mmc/host/imxmmc.c
+index 184dae6..e87bf26 100644
+--- a/drivers/mmc/host/imxmmc.c
++++ b/drivers/mmc/host/imxmmc.c
+@@ -68,7 +68,6 @@ struct imxmci_host {
+ 	unsigned int		dma_size;
+ 	unsigned int		dma_dir;
+ 	unsigned int		dma_rss;
+-	int			dma_allocated;
+ 
+ 	unsigned char		actual_bus_width;
+ 
+@@ -981,7 +980,7 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	host->mmc = mmc;
+-	host->dma_allocated = 0;
++	host->dma = -1;
+ 	host->pdata = pdev->dev.platform_data;
+ 	if (!host->pdata)
+ 		dev_warn(&pdev->dev, "No platform data provided!\n");
+@@ -1023,12 +1022,11 @@ static int imxmci_probe(struct platform_device *pdev)
+ 	writew(host->imask, host->base + MMC_REG_INT_MASK);
+ 
+ 	host->dma = imx_dma_request_by_prio(DRIVER_NAME, DMA_PRIO_LOW);
+-	if(host->dma < 0) {
++	if (host->dma < 0) {
+ 		dev_err(mmc_dev(host->mmc), "imx_dma_request_by_prio failed\n");
+ 		ret = -EBUSY;
+ 		goto out;
+ 	}
+-	host->dma_allocated = 1;
+ 	imx_dma_setup_handlers(host->dma, imxmci_dma_irq, NULL, host);
+ 
+ 	tasklet_init(&host->tasklet, imxmci_tasklet_fnc, (unsigned long)host);
+@@ -1065,10 +1063,8 @@ static int imxmci_probe(struct platform_device *pdev)
+ 
+ out:
+ 	if (host) {
+-		if (host->dma_allocated) {
++		if (host->dma >= 0)
+ 			imx_dma_free(host->dma);
+-			host->dma_allocated = 0;
+-		}
+ 		if (host->clk) {
+ 			clk_disable(host->clk);
+ 			clk_put(host->clk);
+@@ -1098,10 +1094,7 @@ static int imxmci_remove(struct platform_device *pdev)
+ 
+ 		free_irq(host->irq, host);
+ 		iounmap(host->base);
+-		if (host->dma_allocated) {
+-			imx_dma_free(host->dma);
+-			host->dma_allocated = 0;
+-		}
++		imx_dma_free(host->dma);
+ 
+ 		tasklet_kill(&host->tasklet);
+ 

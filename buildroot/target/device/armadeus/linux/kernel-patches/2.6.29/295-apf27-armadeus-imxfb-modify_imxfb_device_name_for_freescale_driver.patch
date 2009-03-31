@@ -1,0 +1,11 @@
+--- linux-2.6.27.2/arch/arm/mach-mx2/devices.c	2008-12-02 15:49:07.000000000 +0100
++++ linux-2.6.27.2.mod/arch/arm/mach-mx2/devices.c	2008-12-03 16:31:10.000000000 +0100
+@@ -382,7 +382,7 @@
+ 
+ /* mxc lcd driver */
+ struct platform_device mxc_fb_device = {
+-	.name = "imx-fb",
++	.name = "mxc_sdc_fb", /* "imx-fb" if using pengu i.MX1/2/3 driver */
+ 	.id = 0,
+ 	.num_resources = ARRAY_SIZE(mxc_fb),
+ 	.resource = mxc_fb,

@@ -1,0 +1,16 @@
+--- linux-org/drivers/usb/gadget/zero.c	2006-09-20 05:42:06.000000000 +0200
++++ linux-imx/drivers/usb/gadget/zero.c	2006-10-01 14:30:04.000000000 +0200
+@@ -217,8 +217,13 @@ module_param (loopdefault, bool, S_IRUGO
+  * This device advertises two configurations; these numbers work
+  * on a pxa250 as well as more flexible hardware.
+  */
++#ifndef CONFIG_ARCH_IMX
+ #define	CONFIG_SOURCE_SINK	3
+ #define	CONFIG_LOOPBACK		2
++#else
++#define	CONFIG_SOURCE_SINK	1
++#define	CONFIG_LOOPBACK		2
++#endif
+ 
+ static struct usb_device_descriptor
+ device_desc = {
