@@ -545,7 +545,8 @@
 #define CFG_ENV_RANGE       0X00060000  /* 384kB ( 3 flash blocks )  */
 #define	CONFIG_ENV_OVERWRITE	1		/* env is writable now   */
 #define	CONFIG_FIRMWARE_OFFSET	0x00100000
-#define	CONFIG_FIRMWARE_LEN	0x00080000	/* 512kB ( 4 flash blocks )  */
+//#define	CONFIG_FIRMWARE_LEN	0x00080000	/* 512kB ( 4 flash blocks )  */
+#define	CONFIG_FIRMWARE_LEN	0x000249F0	/* 150kB  for 200k*/
 #define	CONFIG_KERNEL_OFFSET	0x00180000
 #define	CONFIG_KERNEL_LEN	0x00500000	/* 5.0MB */
 #define	CONFIG_ROOTFS_OFFSET	0x00680000
