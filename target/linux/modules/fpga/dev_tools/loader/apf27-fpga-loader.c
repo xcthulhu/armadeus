@@ -33,11 +33,11 @@
 #define CFG_FPGA_PRG		(GPIO_PORTF | 11)	/* FPGA prog pin  */
 #define CFG_FPGA_CLK		(GPIO_PORTF | 15)	/* FPGA clk pin   */
 #define CFG_FPGA_INIT		(GPIO_PORTF | 12)	/* FPGA init pin  */
-#define CFG_FPGA_DONE		(GPIO_PORTF | 9)	/* FPGA done pin  */
-#define CFG_FPGA_RW		(GPIO_PORTF | 21)	/* FPGA done pin  */
-#define CFG_FPGA_CS		(GPIO_PORTF | 22)	/* FPGA done pin  */
+#define CFG_FPGA_DONE		(GPIO_PORTF |  9)	/* FPGA done pin  */
+#define CFG_FPGA_RW			(GPIO_PORTF | 21)	/* FPGA done pin  */
+#define CFG_FPGA_CS			(GPIO_PORTF | 22)	/* FPGA done pin  */
 #define CFG_FPGA_SUSPEND	(GPIO_PORTF | 10)	/* FPGA done pin  */
-#define CFG_FPGA_RESET		(GPIO_PORTF | 7)	/* FPGA done pin  */
+#define CFG_FPGA_RESET		(GPIO_PORTF |  7)	/* FPGA done pin  */
 
 static void __iomem *fpga_addr;
 
@@ -64,6 +64,7 @@ int apf27_fpga_pre(void)
 	mxc_gpio_mode(CFG_FPGA_SUSPEND | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
+	gpio_set_value(CFG_FPGA_RESET,1);
 	gpio_set_value(CFG_FPGA_PWR, 0);
 	fpga_addr = ioremap( FPGA_BASE_ADDR, 16);
 	if( fpga_addr == NULL ) 
@@ -140,6 +141,7 @@ int apf27_fpga_post(void)
 	mxc_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode (CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
 	gpio_set_value(CFG_FPGA_PRG, 1);
+	gpio_set_value(CFG_FPGA_RESET,0);
 	iounmap(fpga_addr);
 	return 1;
 }
