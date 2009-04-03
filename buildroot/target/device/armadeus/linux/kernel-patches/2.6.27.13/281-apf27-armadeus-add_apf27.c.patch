@@ -5,7 +5,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-03-20 09:21:52.000000000 +0100
-@@ -0,0 +1,1306 @@
+@@ -0,0 +1,1379 @@
 + /*
 + * apf27.c
 + *
@@ -158,7 +158,6 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +
 +#ifdef CONFIG_VIDEO_AD9889
 +#define AD9889_INT 15
-+
 +static int ad9889_pins[] = {
 +	(GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
 +};
@@ -174,9 +173,79 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	return 0;
 +}
 +
++struct ad9889_fb_data {
++	struct fb_var_screeninfo var;
++	int PA31_GIUS_old_state;
++};
++
++static struct ad9889_fb_data apf27_ad9889_fb_data;
++extern void acquire_console_sem(void);
++extern void release_console_sem(void);
++
++static void ad9889_display_connected(void)
++{
++	struct fb_var_screeninfo temp_var;
++	struct fb_info *info = registered_fb[0];
++	extern int fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var);
++
++	apf27_ad9889_fb_data.PA31_GIUS_old_state = 0;
++	/* make sure the LCD OE_ACD pin is correctly configured*/
++	if( __raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80 == 0x80){
++		apf27_ad9889_fb_data.PA31_GIUS_old_state = 1;
++		mxc_gpio_mode( PA31_PF_OE_ACD );
++	}
++
++	/*save old FB params */
++	memcpy( &apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
++	memcpy( &temp_var, &info->var, sizeof(struct fb_var_screeninfo));
++	
++	/* set new FB params */ 
++	temp_var.xres = 640;
++	temp_var.yres = 480;	
++	temp_var.pixclock = 37538;
++	temp_var.left_margin = 0x2f;
++	temp_var.right_margin = 0x2f; /* at least 3 & 1 */
++	temp_var.upper_margin = 0x21; 
++	temp_var.lower_margin = 0xa; 
++	temp_var.hsync_len = 0x3f; 
++	temp_var.vsync_len = 0x2,
++	temp_var.sync = FB_SYNC_OE_ACT_HIGH;
++	temp_var.vmode = FB_VMODE_NONINTERLACED,
++	temp_var.nonstd = 0;
++
++	acquire_console_sem();
++	/* tel the FB client that params have been changed */
++	info->flags |= FBINFO_MISC_USEREVENT;
++	/* set new params */ 
++	fb_set_var(info, &temp_var);
++	info->flags &= ~FBINFO_MISC_USEREVENT;
++	release_console_sem();
++}
++
++static void ad9889_display_disconnected(void)
++{
++	struct fb_info *info = registered_fb[0];
++
++	/* restoree LCD OE_ACD pin */
++	if( apf27_ad9889_fb_data.PA31_GIUS_old_state )
++		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO);
++
++	/*restore old FB params */
++	acquire_console_sem();
++	/* inform the console that the FB params have been changed */
++	info->flags |= FBINFO_MISC_USEREVENT;
++	/* set new params */ 
++	fb_set_var(info, &apf27_ad9889_fb_data.var);
++	info->flags &= ~FBINFO_MISC_USEREVENT;
++	release_console_sem();
++}
++	
 +static struct ad9889_config apf27_ad9889_config = {
 +	.init = ad9889_init,
 +	.exit = ad9889_exit,
++	.display_connected = ad9889_display_connected,
++	.display_disconnected = ad9889_display_disconnected,
++	.data = &apf27_ad9889_fb_data,
 +	.EDID_I2C_addr = 0x3f
 +};
 +
@@ -379,8 +448,12 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#else
 +	PA30_PF_CONTRAST,
 +#endif
-+// 	PA31_PF_OE_ACD, /* For LQ043 OE_ACD is used as LCD Display ON/OFF */
++ 	/* For LQ043 OE_ACD is used as LCD Display ON/OFF */
++#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +    (GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO)
++#else
++ 	PA31_PF_OE_ACD
++#endif
 +};
 +
 +static int apf27_fb_init(struct platform_device *pdev)
