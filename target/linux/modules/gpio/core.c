@@ -30,6 +30,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <linux/interrupt.h> /* request_irq */
+#include <linux/irq.h>	     /* set_irq_type */
 #include <asm/gpio.h>        /* imx_gpio_... */
 #include <linux/cdev.h>      /* struct cdev */
 #include <mach/hardware.h>
@@ -175,6 +176,7 @@ struct gpio_item {
 	int port;
 	int nb_pins;
 	int number;
+	unsigned char irq_value;
 	u32 pin_mask;
 	u32 oe_mask;
 
@@ -193,8 +195,10 @@ struct gpio_item {
 
 #ifdef CONFIG_ARCH_IMX
 static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0 };
+static unsigned int shadows_irq2[NB_PORTS] = { 0, 0, 0, 0 };
 #else
 static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
+static unsigned int shadows_irq2[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
 #endif
 
 
@@ -202,13 +206,14 @@ static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
 
 static void __exit armadeus_gpio_cleanup(void);
 
-static int toString(unsigned long value, char* buffer, int number_of_bits) 
+static int toString(unsigned long value, char* buffer, int number_of_bits, int base)
 {
-	static int i;
+	static int i,j;
+	char mask = 0x01|base;
 	
 	/* convert it into a string */
-	for (i = number_of_bits; i > 0; i--) {
-		buffer[number_of_bits-i]=test_bit(i-1,&value)?'1':'0';
+	for (j=(base*number_of_bits)-(base), i = number_of_bits; i > 0; i--,j-=base) {
+		buffer[number_of_bits-i]=((value >> j)&mask)+'0';
 	}
 	
 	buffer[number_of_bits] = '\n';
@@ -218,7 +223,7 @@ static int toString(unsigned long value, char* buffer, int number_of_bits)
 }
 
 /* Convert binary string ("010011") to int. Don't care of non '0' / '1' chars */
-static unsigned long fromString(char* buffer, int number_of_bits) 
+static unsigned long fromString(char* buffer, int number_of_bits, int base)
 {
 	int i, j;
 	unsigned long ret_val=0;
@@ -228,17 +233,27 @@ static unsigned long fromString(char* buffer, int number_of_bits)
 	for ( i=0, j=1; j<=number_of_bits; i++) {
 		//printk("%x j=%d i=%d\n", buffer[i], j, i);
 		if (buffer[i] == '\0') break; /* EOC */
-	
-		if (buffer[i] == '0' || buffer[i] == '1') {
-			ret_val <<= 1;
-			if (buffer[i] == '1') {
-				ret_val |= 1;
-			}
-			j++;
-		}
+		
+		ret_val <<= base;
+		ret_val |=(buffer[i]-'0')&0xff;
+		j++;
 	}
 
 	return ret_val;
+}
+
+/* Return the interrupt config for a pin */
+static unsigned char getIrqFromPin(int num_pin, int num_port)
+{
+	unsigned long shad;
+	int portSize = number_of_pins[num_port];
+	if (num_pin < (portSize/2)) {
+		shad = shadows_irq2[num_port];
+	} else {
+		shad = shadows_irq[num_port];
+		num_pin-=(portSize/2);
+	}
+	return shad >> (/*portSize-2-*/(2*num_pin))& 3;
 }
 
 /*
@@ -460,18 +475,21 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	struct gpio_item *gpio = dev_id;
 	u32 old_state, new_state;
 
-	printk("IT for pin %d %d\n", gpio->port, gpio->number);
-
+//	printk("IT for pin %d %d\n", gpio->port, gpio->number);
+	
 	old_state = gpio->pin_state;
 	new_state = gpio_get_value(gpio->port|gpio->number);
 	gpio->pin_state = new_state;
-
-	if (new_state != old_state) {
+	
+	if ((gpio->irq_value != (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)) || new_state != old_state) {
 		gpio->changed = 1;
 		wake_up_interruptible(&gpio->change_wq);
 
 		if (gpio->async_queue)
 			kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
+		if (gpio->irq_value == (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)){
+			set_irq_type(irq, ((gpio->pin_state)?IRQF_TRIGGER_FALLING:IRQF_TRIGGER_RISING));
+		}
 	}
 
 	return IRQ_HANDLED;
@@ -534,12 +552,25 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 	}
 
 	/* Request interrupt if pin was configured for */
-	if (shadows_irq[gpio->port] & (1 << gpio->number)) {
+	gpio->irq_value = getIrqFromPin(gpio->number,gpio->port);
+	
+	if (gpio->irq_value) {
 		irq = IRQ_GPIOA(minor); /* irq number are continuous */
 		ret = request_irq(irq, armadeus_gpio_interrupt, 0, "gpio", gpio);
 		if (ret)
 			goto err_irq;
-		/* set_irq_type( irq, IRQF_TRIGGER_FALLING ); TDBJUJU */
+		switch (gpio->irq_value) {
+			case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):	
+				;
+			case IRQF_TRIGGER_RISING:
+				set_irq_type(irq, IRQF_TRIGGER_RISING);
+				break;
+			case IRQF_TRIGGER_FALLING:
+				set_irq_type(irq, IRQF_TRIGGER_FALLING);
+				break;
+			case IRQF_TRIGGER_NONE:
+				break;
+		}
 	}
 
 success:
@@ -564,7 +595,7 @@ static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 	unsigned int irq;
 
 	if (gpio->initialized) {
-		if (shadows_irq[gpio->port] & (1 << gpio->number) ) {
+		if (gpio->irq_value) {
 			irq = IRQ_GPIOA(minor);
 			free_irq(irq, gpio);
 		}
@@ -656,7 +687,7 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 	int buffer_length, int *eof, __attribute__ ((unused)) void *data)
 {
 	int len = 0; /* The number of bytes actually used */
-	unsigned int port_status = 0x66;
+	unsigned int port_status = 0x66, port_status2 = 0x66;
 	unsigned int port_ID = 0;
 	struct gpio_settings *settings = (struct gpio_settings *) data;
 
@@ -694,6 +725,7 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 
 		case INTERRUPT:
 			port_status = shadows_irq[port_ID];
+			port_status2 = shadows_irq2[port_ID];
 			printk("interrupt\n");
 		break;
 
@@ -702,8 +734,17 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 		break;
 	}
 	/* Put result to given chr buffer */
-	len = toString(port_status, buffer, number_of_pins[port_ID]);
-	printk("0x%08x\n", port_status);
+	if (settings->type != INTERRUPT){
+		len = toString(port_status, buffer, number_of_pins[port_ID], 1);
+	} else {
+		len = toString(port_status, buffer, number_of_pins[port_ID]/2, 2);
+		len += toString(port_status2, buffer+len-1, number_of_pins[port_ID]/2, 2);
+	}
+
+	printk("0x%08x", port_status);
+	if (settings->type == INTERRUPT)
+		printk("0x%08x", port_status2);
+	printk("\n");
 
 	*eof = 1;
 	up(&gpio_sema);
@@ -717,7 +758,7 @@ static char new_gpio_state[MAX_NUMBER_OF_PINS*2];
 static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
 {
 	int len;
-	unsigned int  gpio_state;
+	unsigned int  gpio_state=0, gpio_state2=0;
 	unsigned int port_ID = 0;
 	struct gpio_settings *settings = (struct gpio_settings *) data;
 
@@ -750,7 +791,12 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 
 	if (strlen(new_gpio_state) > 0) {
 		/* Convert it from String to Int */
-		gpio_state = fromString( new_gpio_state, number_of_pins[port_ID] );
+		if (settings->type != INTERRUPT)
+			gpio_state = fromString( new_gpio_state, number_of_pins[port_ID], 1);
+		else {
+			gpio_state =  fromString(new_gpio_state, number_of_pins[port_ID]/2, 2);
+			gpio_state2 = fromString(new_gpio_state+(number_of_pins[port_ID]/2), (number_of_pins[port_ID]/2), 2);
+		}
 
 		switch( settings->type )
 		{
@@ -770,6 +816,7 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 
 			case INTERRUPT:
 				shadows_irq[port_ID] = gpio_state;
+				shadows_irq2[port_ID] = gpio_state2;
 				printk("interrupt\n");
 			break;
 
@@ -778,8 +825,13 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 			break;
 		}
 
-		printk("/proc wrote 0x%x on %s %s register\n", gpio_state,
-			port_name[port_ID], port_setting_name[settings->type]);
+		if (settings->type != INTERRUPT)
+			printk("/proc wrote 0x%x", gpio_state);
+		else 
+			printk("/proc wrote 0x%x 0x%x",gpio_state, gpio_state2);
+		printk(" on %s %s register\n", port_name[port_ID], 
+			port_setting_name[settings->type]);
+
 	}
 
 	up(&gpio_sema);
