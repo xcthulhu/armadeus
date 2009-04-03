@@ -1,0 +1,34 @@
+diff -purN /home/fabien/apf27/buildroot/project_build_armv5te/apf27/u-boot-1.3.4/common/spartan3.c /home/fabien/tmp/spartan3.c
+--- ref/u-boot-1.3.4/common/spartan3.c	2006-11-02 15:15:01.000000000 +0100
++++ u-boot-1.3.4/common/spartan3.c	2006-11-25 22:48:54.000000000 +0100
+@@ -220,7 +220,7 @@ static int Spartan3_sp_load (Xilinx_desc
+ 		(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
+ 
+ 		/* Load the data */
+-		while (bytecount < bsize) {
++		while ( (*fn->done) (cookie) == FPGA_FAIL){
+ 			/* XXX - do we check for an Ctrl-C press in here ??? */
+ 			/* XXX - Check the error bit? */
+ 
+@@ -230,8 +230,8 @@ static int Spartan3_sp_load (Xilinx_desc
+ 			CONFIG_FPGA_DELAY ();
+ 			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
+ 
+-#ifdef CFG_FPGA_CHECK_BUSY
+ 			ts = get_timer (0);	/* get current time */
++#ifdef CFG_FPGA_CHECK_BUSY
+ 			while ((*fn->busy) (cookie)) {
+ 				/* XXX - we should have a check in here somewhere to
+ 				 * make sure we aren't busy forever... */
+@@ -248,6 +248,11 @@ static int Spartan3_sp_load (Xilinx_desc
+ 				}
+ 			}
+ #endif
++			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
++				puts ("** Timeout waiting for BUSY to clear.\n");
++				(*fn->abort) (cookie);	/* abort the burn */
++				return FPGA_FAIL;
++			}
+ 
+ #ifdef CFG_FPGA_PROG_FEEDBACK
+ 			if (bytecount % (bsize / 40) == 0)

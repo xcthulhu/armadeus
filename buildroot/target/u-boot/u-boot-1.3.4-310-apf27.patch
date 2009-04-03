@@ -417,11 +417,11 @@
 + {
 + 	PRINTF ("%s:%d: FPGA POST ", __FUNCTION__, __LINE__);
 + 
-+ 	GPIO_CLEAR(CFG_FPGA_RESET);	
 + 	imx_gpio_mode (CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
 + 	imx_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
 + 	imx_gpio_mode (CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
 + 	GPIO_SET(CFG_FPGA_PRG);	
++ 	GPIO_CLEAR(CFG_FPGA_RESET);	
 + 	imx_gpio_mode (CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 + 	return cookie;
 + }
