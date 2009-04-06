@@ -27,41 +27,39 @@
 #include <rtdm/rtdm_driver.h>
 #include <mach/hardware.h>
 #include <native/intr.h>
-
+#include "../../../common_kernel.h"
 
 MODULE_LICENSE("GPL");
 
 
-#define IRQ_NUMBER 70  /* Intercept interrupt on portA6 */
-#define TASK_PRIO  99 /* Highest RT priority */
-#define TASK_MODE  0  /* No flags */
-#define TASK_STKSZ 0  /* Stack size (use default one) */
+static RT_INTR intr_desc;
+static int iomask;
 
-RT_INTR intr_desc;
-
-static int irq_server (xnintr_t *intr) {
- 	printk("IT !\n");
+static int irq_server (xnintr_t *intr) 
+{
+     	imx_gpio_set_value(INTERRUPT_OUTPUT_PORT, iomask);
+       	iomask^=1;
 	return RT_INTR_HANDLED;
 }
 
-static int __init irq_init(void) {
+static int __init irq_init(void) 
+{
 	int err;
-  
+  	iomask = 0x00;
 	/* Version With 6 param only on kernel space */
-	err = rt_intr_create(&intr_desc,"MyIrq", IRQ_NUMBER, irq_server, NULL, 0);	 
+	err = rt_intr_create(&intr_desc,"MyIrq", INTERRUPT_INPUT_NB, irq_server, NULL, 0);	 
 	if (err !=0){
 		printk("rt_intr_create : error\n");
 		return err;
 	}
   	err = rt_intr_enable(&intr_desc); 
-	if (err != 0)
-		printk("rt_intr_enable : error\n");
-	else
+	if (err == 0)
 		printk("rt_intr_create : ok\n");	 
 	return err;
 }
 
-void __init irq_exit(void) {
+void __exit irq_exit(void) 
+{
 	rt_intr_delete(&intr_desc);
 }
 

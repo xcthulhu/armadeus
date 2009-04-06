@@ -28,47 +28,42 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+#include "../../../common.h"
 
-
-#define FALSE 0
-#define TRUE 1
-volatile int STOP=FALSE;
-int wait_flag=TRUE;
-void
-action (int signo, siginfo_t * si, void *data)
+int main (int argc, char **argv)
 {
-  printf (" -------------- Got the %d signal ------------\n", signo);
-}
+	int fd_input,fd_output, retval = 0, iomask=0x00;
 
-int
-main (int argc, char **argv)
-{
-  int fd, res, oflags, retval = 0;
-  unsigned int buffer;
-char buf[255];
+	// Open gpio file device for communication;
+  	fd_input = open (INTERRUPT_INPUT_DEV, O_RDONLY);
+  	if (fd_input < 0) {
+		printf ("Open Failed : %s\n",INTERRUPT_INPUT_DEV);
+		exit (EXIT_FAILURE);
+	}
+	fd_output = open(INTERRUPT_OUTPUT_DEV, O_RDWR);
+	if (fd_output < 0) {
+		printf("Open Failed : %s\n",INTERRUPT_OUTPUT_DEV);
+		exit (EXIT_FAILURE);
+	}
 
-  // Open gpio file device for communication;
-  fd = open ("/dev/gpio/PA6", O_RDONLY);
-  if (fd < 0)
-    {
-      printf ("Open Failed\n");
-      exit (EXIT_FAILURE);
-    }
-
-  // set this process as owner of device file
-  retval = fcntl (fd, F_SETOWN, getpid ());
-  if (retval < 0)
-    {
-      printf ("F_SETOWN fails \n");
-    }
-  while (STOP == FALSE)
-    {
-      usleep (100000);
-	  res = read (fd, buf, 255);
-	printf(".\n");
-	  buf[res] = 0;
-	  printf ("%d:%x:%d\n", (int)buf[6],buf, res);
-    }
-  close (fd);
-  exit (EXIT_SUCCESS);
+	// set this process as owner of device file
+	retval = fcntl (fd_input, F_SETOWN, getpid ());
+  	if (retval < 0) {
+		printf ("F_SETOWN fails \n");
+		return EXIT_FAILURE;
+	}
+	retval = fcntl(fd_output, F_SETOWN, getpid());
+	if (retval < 0) {
+		printf("F_SETOWN fails for %s\n",INTERRUPT_OUTPUT_DEV);
+		return EXIT_FAILURE;
+	}
+	char c;
+	while (1) {
+		read (fd_input, &c, 1);
+		write(fd_output, &iomask,sizeof(iomask));
+		iomask ^=1;// (iomask == 0x00)?0x01:0x00;
+	}
+  	close (fd_input);
+	close (fd_output);
+  	exit (EXIT_SUCCESS);
 }

@@ -28,29 +28,24 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <linux/ppdev.h>
 #include <signal.h>
 #include <sys/mman.h>
 
 #include <native/task.h>
 #include <native/timer.h>
+#include "../../../../common.h"
 
 RT_TASK blink_task;
 
-#define TIMESLEEP 10000000
-#define GPIOWRDIRECTION _IOW(PP_IOCTL, 0xF1, int)
-
-/* Revoir en se basant sur cross-link.c */
-
 void blink(void *arg){
 	int fd, iomask;
-  	if ((fd = open("/dev/gpio/PA4", O_RDWR))<0) {
-    		printf("Open error on /dev/gpio/portD\n");
+  	if ((fd = open(PULSE_OUTPUT_DEV, O_RDWR))<0) {
+    		printf("Open error on %s\n",PULSE_OUTPUT_DEV);
     		exit(0);
   	}
   	iomask=0x00;
 
-  	rt_task_set_periodic(NULL, TM_NOW, TIMESLEEP);
+  	rt_task_set_periodic(NULL, TM_NOW, TIMESLEEP*1000);
   
   	while(1){
     		rt_task_wait_period(NULL);

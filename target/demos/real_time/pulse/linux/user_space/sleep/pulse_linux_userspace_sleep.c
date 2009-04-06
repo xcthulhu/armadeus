@@ -28,22 +28,22 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include "../../../../common.h"
 
 int main(int argc, char **argv) {
-
-  int fd;
-  int iomask;    
-  if ((fd = open("/dev/gpio/PA4", O_RDWR))<0) {
-    printf("Open error on /dev/gpio/PA4\n");
-    exit(0);
-  }
-  iomask=0x00;
-  printf("Opened on /dev/gpio/PA4\n");
-  while(1){
-    iomask^=1;
-    write(fd,&iomask,sizeof(iomask));
-    usleep(10000);
-  }
-  close(fd);
-  exit(0);
+	int fd, iomask;    
+  	if ((fd = open(PULSE_OUTPUT_DEV, O_RDWR))<0) {
+		printf("Open error on %s\n",PULSE_OUTPUT_DEV);
+    		exit(0);
+  	}
+  	iomask=0x00;
+  	printf("Opened on %s\n",PULSE_OUTPUT_DEV);
+	
+	while(1){
+    		iomask^=1;
+    		write(fd,&iomask,sizeof(iomask));
+    		usleep(TIMESLEEP);
+	}
+	close(fd);
+	exit(0);
 }

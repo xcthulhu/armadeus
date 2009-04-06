@@ -28,30 +28,24 @@
 #include <mach/hardware.h>
 #include <nucleus/types.h>
 #include <asm/gpio.h>
+#include "../../../../common_kernel.h"
 
 MODULE_LICENSE("GPL");
 
 RT_TASK blink_task;
 static int end = 0;
 
-#define TIMESLEEP  10000000llu
-#define MINOR_PORT 4
-#define GPIOWRDIRECTION _IOW(PP_IOCTL, 0xF1, int)
-#define MXC_DR(x)      (0x1c + ((x) << 8))
-#define VA_GPIO_BASE       IO_ADDRESS(IMX_GPIO_BASE)
-#define PORT_ADDR VA_GPIO_BASE + MXC_DR(0)
-
 void blink(void *arg){
 	int err, iomask;
-	printk(KERN_INFO "entrering blink\n");
+	printk(KERN_INFO "entering blink\n");
   
-	if (imx_gpio_request(GPIO_PORTA | MINOR_PORT, "blink") < 0) {
-		gpio_free(MINOR_PORT);
+	if (imx_gpio_request(PULSE_OUTPUT_PORT, "blink") < 0) {
+		gpio_free(PULSE_OUTPUT_PORT);
 		return ;
 	}
-	imx_gpio_direction_output(GPIO_PORTA | MINOR_PORT,1);
+	imx_gpio_direction_output(PULSE_OUTPUT_PORT,1);
   
-	if ((err = rt_task_set_periodic(NULL, TM_NOW,rt_timer_ns2ticks(TIMESLEEP)))){
+	if ((err = rt_task_set_periodic(NULL, TM_NOW,rt_timer_ns2ticks(TIMESLEEP*1000)))){
 		printk("rt task set periodic failed \n");
 		return;
 	}
@@ -59,7 +53,7 @@ void blink(void *arg){
   
 	while(!end){
 		rt_task_wait_period(NULL);
-		imx_gpio_set_value(GPIO_PORTA | MINOR_PORT, iomask);
+		imx_gpio_set_value(PULSE_OUTPUT_PORT, iomask);
 		iomask^=1;
 	}
 	printk("end\n");
@@ -80,12 +74,12 @@ static int __init blink_init(void) {
 }
 
 /* unloading (rmmod) */
-static void __init blink_exit(void) {
+static void __exit blink_exit(void) {
 	end = 1;
 	printk(KERN_INFO "blink_exit\n");
 	rt_task_delete(&blink_task);
 	rt_timer_stop();
-	gpio_free(MINOR_PORT);
+	gpio_free(PULSE_OUTPUT_PORT);
 }
 
 /* API kernel driver */

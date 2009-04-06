@@ -1,5 +1,6 @@
 ### List of modules to be build
 MODULES= interrupt_xeno_kernel
+XENOMAI=y
 
 ifneq ($(KERNELRELEASE),)
 	EXTRA_CFLAGS := -I./include/xenomai -I./include/xenomai/posix -I./include/xenomai/native

@@ -28,26 +28,20 @@
 #include <rtdm/rtdm_driver.h>
 #include <mach/hardware.h>
 #include <asm/gpio.h>
+#include "../../../../common_kernel.h"
 
 MODULE_LICENSE("GPL");
 
 static rtdm_task_t blink_task;
-static int end = 0;
-
-#define TIMESLEEP 5000000
-#define MINOR_PORT 4
-#define GPIOWRDIRECTION _IOW(PP_IOCTL, 0xF1, int)
-#define MXC_DR(x)      (0x1c + ((x) << 8))
-#define VA_GPIO_BASE       IO_ADDRESS(IMX_GPIO_BASE)
-#define PORT_ADDR VA_GPIO_BASE + MXC_DR(0)
+static int volatile end = 0;
 
 void blink(void *arg){
 	int iomask; 
-	printk(KERN_INFO "entrering blink\n");
+	printk(KERN_INFO "entering blink\n");
 	iomask=0;
 	while(!end){
 		rtdm_task_wait_period();
-		gpio_set_value(MINOR_PORT, iomask);
+		gpio_set_value(PULSE_OUTPUT_PORT, iomask);
 		iomask^=1;
 	}
 	printk("end\n");
@@ -56,21 +50,21 @@ void blink(void *arg){
 /* module load (insmod) */
 static int __init blink_init(void) {
 	printk(KERN_INFO "blink_init\n");
-	if (gpio_request(MINOR_PORT, "blink") < 0) {
-		gpio_free(MINOR_PORT);
+	if (gpio_request(PULSE_OUTPUT_PORT, "blink") < 0) {
+		gpio_free(PULSE_OUTPUT_PORT);
 		return -EBUSY;
 	}
-	gpio_direction_output(MINOR_PORT,1);
+	gpio_direction_output(PULSE_OUTPUT_PORT,1);
   	return rtdm_task_init(&blink_task, "blink", blink, NULL,
-			99, TIMESLEEP);
+			99, TIMESLEEP*1000);
 }
 
 /* module unload (rmmod) */
-static void __init blink_exit(void) {
+static void __exit blink_exit(void) {
 	end = 1;
 	printk(KERN_INFO "blink_exit\n");
-	rtdm_task_join_nrt(&blink_task,100);
-	gpio_free(MINOR_PORT);
+	rtdm_task_join_nrt(&blink_task,1000);
+	gpio_free(PULSE_OUTPUT_PORT);
 }
 
 /* API kernel driver */

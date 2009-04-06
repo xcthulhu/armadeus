@@ -24,11 +24,7 @@
 #include <sys/mman.h>
 #include <native/task.h>
 #include <native/intr.h>
-
-#define IRQ_NUMBER 70  /* Intercept interrupt on PA6 */
-#define TASK_PRIO  99 /* Highest RT priority */
-#define TASK_MODE  0  /* No flags */
-#define TASK_STKSZ 0  /* Stack size (use default one) */
+#include "../../../common.h"
 
 RT_INTR intr_desc;
 
@@ -36,51 +32,54 @@ RT_TASK server_desc;
 void cleanup(void);
 
 void irq_server (void *cookie) {
-  int err;
-  if (rt_intr_enable(&intr_desc) != 0) {
-    printf("erreur pour enable\n");
-    return;
-  }
-  for (;;) {
-    /* Wait for the next interrupt on channel 70. */
-    err = rt_intr_wait(&intr_desc,TM_INFINITE);
-	printf("tata plop\n");    
-    if (err > 0) {
-      printf("interrupt retrouvee %d\n",err);
-    }
-  }
+	int fd ,iomask=0x00;
+	if (rt_intr_enable(&intr_desc) != 0) {
+		printf("Error : enabling IT\n");
+		return;
+	}
+	if ((fd = open(INTERRUPT_OUTPUT_DEV, O_RDWR))<0) {
+		printf("Open error on /dev/gpio/portD\n");
+		return;
+	}
+
+	for (;;) {
+    		/* Wait for the next interrupt. */
+    		if (rt_intr_wait(&intr_desc,TM_INFINITE) > 0) {
+			write(fd,&iomask,sizeof(iomask));
+			iomask^=1;
+    		}
+  	}
 }
 
 int main (int argc, char *argv[]) {
-  int err;
+	int err;
+
+	mlockall(MCL_CURRENT|MCL_FUTURE);
   
-  mlockall(MCL_CURRENT|MCL_FUTURE);
-  
-  /* Version With 4 param only on userSpace */
-  err = rt_intr_create(&intr_desc,"MyIrq",IRQ_NUMBER,0);
-  if (err != 0){
-    printf("rt_intr_create : error\n");
-    return 1;
-  } else
-    printf("rt_intr_create : ok\n");
- 
-  err = rt_task_create(&server_desc,
-		       "MyIrqServer",
-		       TASK_STKSZ,
-		       TASK_PRIO,
-		       TASK_MODE);
-  if (err == 0)
-    rt_task_start(&server_desc,&irq_server,NULL);
-  else{
-    printf("rt_task_start : error\n");
-    return 1;
-  }
-  getchar();
-  cleanup();
-  return 0;
+  	/* Version With 4 param only on userSpace */
+	err = rt_intr_create(&intr_desc,"MyIrq",70,0);
+  	if (err != 0){
+    		printf("rt_intr_create : error\n");
+    		return 1;
+	}
+
+	err = rt_task_create(&server_desc,
+		"MyIrqServer",
+		TASK_STKSZ,
+		TASK_PRIO,
+		TASK_MODE);
+  	if (err == 0)
+    		rt_task_start(&server_desc,&irq_server,NULL);
+  	else{
+    		printf("rt_task_start : error\n");
+    		return 1;
+  	}
+  	getchar();
+  	cleanup();
+  	return 0;
 }
 
 void cleanup (void) {
-  rt_intr_delete(&intr_desc);
-  rt_task_delete(&server_desc);
+	rt_intr_delete(&intr_desc);
+	rt_task_delete(&server_desc);
 }

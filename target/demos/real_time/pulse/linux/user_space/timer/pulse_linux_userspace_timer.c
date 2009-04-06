@@ -23,34 +23,45 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#define TIMESLEEP 1
-#define PORT "/dev/gpio/PA4"
-
+#include "../../../../common.h"
 int fd;
-int iomask;
-void test() {
-	printf("hello world\n");
+int iomask=0x00;
+
+void test(int signum) {
 	write(fd, &iomask, sizeof(iomask));
 	iomask ^=1;
 }
 
 int main(int argc, char **argv) { 	
-	fd = open(PORT,O_RDWR);
+	struct sigaction sa;
+	struct itimerval timer;
+
+	fd = open(PULSE_OUTPUT_DEV,O_RDWR);
 	if (fd < 0) {
 		printf("open : error\n");
 		return 1;
 	}
-	iomask = 1;
-	do {
-		signal(SIGALRM,test);
-		alarm(TIMESLEEP);
-		pause();
-	} while(1);
+	
+	/* Install test as the signal handler for SIGVTALRM */
+	memset(&sa, 0,sizeof(sa));
+	sa.sa_handler = &test;
+	sigaction(SIGVTALRM,&sa, NULL);
+	/* Configure the timer to expire after TIMESLEEP msec ... */
+	timer.it_value.tv_sec = 0;
+	timer.it_value.tv_usec = TIMESLEEP;
+	/* ... and every TIMESLEEP msec after that. */
+	timer.it_interval.tv_sec = 0;
+	timer.it_interval.tv_usec = TIMESLEEP;
+	/* Start a virtual timer. It counts down whenever this process is
+	 * executing */
+	setitimer(ITIMER_VIRTUAL, &timer, NULL);
+	while(1);
     return 0;
 }

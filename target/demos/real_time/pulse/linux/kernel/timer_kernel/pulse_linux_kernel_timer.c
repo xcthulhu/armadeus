@@ -29,9 +29,7 @@
 #include <linux/delay.h>
 #include <linux/timer.h>
 #include <asm/gpio.h>
-
-#define TIMESLEEP HZ/100
-#define MINOR_PORT 4
+#include "../../../../common_kernel.h"
 
 MODULE_AUTHOR("Gwenhael GOAVEC MEROU");
 MODULE_DESCRIPTION("sleep kernel test");
@@ -40,12 +38,12 @@ MODULE_LICENSE("GPL");
 
 static int iomask = 0x00;
 static struct timer_list mt;
-
+#define TS HZ/100
 /* timer callback*/
 void fonctionTimer(unsigned long arg) {
-	imx_gpio_set_value(MINOR_PORT, iomask);
+	imx_gpio_set_value(PULSE_OUTPUT_PORT, iomask);
 	iomask^=1;
-	mt.expires = jiffies+TIMESLEEP;
+	mt.expires = jiffies+TS;
 	add_timer(&mt);
 }
 
@@ -53,16 +51,17 @@ void fonctionTimer(unsigned long arg) {
 static int __init blink_init(void) {
 	current->state = TASK_INTERRUPTIBLE;
 	init_timer(&mt);
-	mt.expires = jiffies + TIMESLEEP;
+	mt.expires = jiffies + TS;
 	mt.data = (unsigned long) current;
 	mt.function = fonctionTimer;
 	add_timer(&mt);
+	
 	printk(KERN_INFO "blink_init\n");
 	return 0;
 }
 
 /* unloading (rmmod) */
-static void __init blink_exit(void) {
+static void __exit blink_exit(void) {
 	printk(KERN_INFO "blink_exit\n");
 	del_timer(&mt);
 }

@@ -3,31 +3,43 @@ DEST_DIR=/tftpboot/local/bin
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
 
-CC= arm-linux-gcc
-LD= arm-linux-ld
-CXX= arm-linux-g++
-AS= arm-linux-as
-NM= arm-linux-nm
-AR= arm-linux-ar
-SIZE= arm-linux-size
-OBJCOPY= arm-linux-objcopy
-
+CC= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+LD= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ld
+CXX= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
+AS= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-as
+NM= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-nm
+AR= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ar
+SIZE= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-size
+OBJCOPY= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-objcopy
 
 EXEC=$(APPLICATIONS)
-XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
-XENOCONFIG=$(shell PATH=$(XENO):$(XENO)/bin:$(PATH) which xeno-config 2>/dev/null)
 
 ifneq ($(APPLICATIONS),)
 SRC= $(wildcard *.c)
 OBJ= $(SRC:.c=.o)
 EXEC= $(APPLICATIONS)
+CFLAGS=-g -W -Wall -D_GNU_SOURCE -D_REENTRANT
+LDFLAGS=-lpthread
+ifeq ($(XENOMAI),y)
 XENO=$(ARMADEUS_ROOTFS_DIR)/usr/xenomai
-CFLAGS=-g -W -Wall -I$(XENO)/include -I$(XENO)/include/native  -I$(XENO)/include/rtdm -D_GNU_SOURCE -D_REENTRANT
-LDFLAGS=-L$(XENO)/lib -Xlinker -rpath $(XENO)/lib -Xlinker $(XENO)/lib/libnative.a $(XENO)/lib/librtdm.a -lpthread -lnative -lrtdm
+CFLAGS+=-I$(XENO)/include -I$(XENO)/include/native -I$(XENO)/include/rtdm 
+LDFLAGS+=-L$(XENO)/lib -Xlinker -rpath $(XENO)/lib -Xlinker $(XENO)/lib/libnative.a $(XENO)/lib/librtdm.a -lnative -lrtdm
+endif
+
 $(EXEC) : $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 $(OBJ): $(SRC)
 	$(CC) $(CFLAGS) -o $@ -c $<
+.PHONY: install
+ifeq ($(XENOMAI),y)
+install: $(EXEC)
+	mkdir -p $(DEST_DIR)/$(EXEC)
+	cp $(EXEC) $(DEST_DIR)/$(EXEC)
+	echo "$(EXEC):native:!./$(EXEC);popall:control_c" > /$(DEST_DIR)/$(EXEC)/.runinfo
+else
+install: $(EXEC)
+	cp $(EXEC) $(DEST_DIR)/$(EXEC)
+endif
 endif
 
 ifneq ($(MODULES),)
@@ -41,10 +53,12 @@ PWD      := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
 obj-m        := $(OBJ)
 
 CLEAN_MOD= modules.order *.ko *.mod.c *.mod.o *.symvers $(CLEANMOD) .tmp_versions
-$(EXEC):
+$(EXEC): $(MODULES).c
 	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
 
-
+.PHONY: install
+install: $(EXEC)
+	cp $(EXEC) $(DEST_DIR)/$(EXEC)
 endif
 .PHONY: all
 all: $(EXEC)
@@ -53,11 +67,8 @@ clean:
 	rm -rf $(OBJ) $(CLEAN_MOD)
 	rm -f $(EXEC)
 	rm -f *.c~ *.h~ Makefile~
-.PHONY: install
-install: $(EXEC)
-	cp $(EXEC) $(DEST_DIR)/$(EXEC)
 
 .PHONY: mrproper
 mrproper: clean
-	rm -f $(DEST_DIR)/$(EXEC)
+	rm -rf $(DEST_DIR)/$(EXEC)
 

@@ -26,21 +26,20 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <asm/gpio.h>
-
-
-#define IRQ_NB IRQ_GPIOA(6)
+#include "../../../common_kernel.h"
 
 MODULE_AUTHOR("Gwenhael GOAVEC MEROU");
 MODULE_DESCRIPTION("irq kernel test");
 MODULE_SUPPORTED_DEVICE("none");
 MODULE_LICENSE("GPL");
 
+static int iomask = 0x00;
 
 /* irq handler */
 static irqreturn_t test_interrupt_handler(int irqn, void *dev)
 {
-	printk("IT !\n");
-
+	imx_gpio_set_value(INTERRUPT_OUTPUT_PORT, iomask);
+	iomask^=1;
 	return IRQ_HANDLED;
 }
 
@@ -48,19 +47,19 @@ static int __init test_irq_init(void)
 {
 	int err;
 
-	err = request_irq(IRQ_NB, test_interrupt_handler, 0, "test irq", NULL);
+	err = request_irq(INTERRUPT_INPUT_NB, test_interrupt_handler, 0, "test irq", NULL);
 	if (err) {
-		printk(KERN_INFO "Error while requesting IRQ %d\n", IRQ_NB);
+		printk(KERN_INFO "Error while requesting IRQ %d\n", INTERRUPT_INPUT_NB);
 		return err;
 	}
-	set_irq_type(IRQ_NB, IRQF_TRIGGER_FALLING); 
+	set_irq_type(INTERRUPT_INPUT_NB, IRQF_TRIGGER_FALLING); 
 
 	return 0;
 }
 
 static void __exit test_irq_exit(void)
 {
-	free_irq(IRQ_NB, NULL);
+	free_irq(INTERRUPT_INPUT_NB, NULL);
 }
 
 module_init(test_irq_init);

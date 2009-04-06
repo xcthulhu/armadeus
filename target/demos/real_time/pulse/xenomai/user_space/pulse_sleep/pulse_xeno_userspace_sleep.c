@@ -21,28 +21,15 @@
 *
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <linux/ppdev.h>
 #include <signal.h>
-#include <sys/mman.h>
 
 #include <native/task.h>
 #include <native/timer.h>
 #include <rtdm/rtdm.h>
+#include "../../../../common.h"
 
 RT_TASK blink_task;
 int write_fd = -1;
-
-#define TIMESLEEP 10000000
-#define WRITE_FILE "gpio/PA4"
-
-#define GPIOWRDIRECTION _IOW(PP_IOCTL, 0xF1, int)
 
 void blink(void *arg){
 	int iomask;    
@@ -51,7 +38,7 @@ void blink(void *arg){
   	iomask=0x00;
 
   	while(1){
-    		rt_dev_write(write_fd,&iomask,sizeof(iomask));
+    		write(write_fd,&iomask,sizeof(iomask));
     		iomask^=1;
     		if (nanosleep(&tim,NULL) != 0) {
 		    	printf("erreur de usleep\n");
@@ -74,8 +61,8 @@ int main(int argc, char **argv) {
 
 
 	/* Ouverture du descripteur de fichier */
-	if ((write_fd = rt_dev_open(WRITE_FILE, 0)) < 0) {
-		printf("Cannot open /dev/%s\n",WRITE_FILE);
+	if ((write_fd = open(PULSE_OUTPUT_DEV, O_WRONLY)) < 0) {
+		printf("Cannot open /dev/%s\n",PULSE_OUTPUT_DEV);
 		return 1;
 	}
 
