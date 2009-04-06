@@ -42,6 +42,8 @@ $(KERN_DIR)/.patched.adeos: $(DL_DIR)/$(ADEOS_SOURCE)
 		$(ADEOS_SOURCE)
 	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
 		01-adeos-$(ADEOS_VERSION)-imx_compatibility.patch
+	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
+		02-xenomai-imx_gpio_set_value_inline.patch
 	touch $@
 
 $(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
