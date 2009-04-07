@@ -1,6 +1,6 @@
 /*
  * Small tool to demonstrate how to use (or not use ;-) ) Tslib + SDL library
- *   for the Armadeus project. www.armadeus.og
+ *   for the Armadeus project: http://www.armadeus.org
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -1,0 +1,15 @@
+Some program examples to show how to use some Armadeus boards functionnalities:
+- armanoid: 
+    SDL 2D game (very basic)
+- backlight_control:
+    Backlight control with SDL and Tslib (touchscreen)
+- gps:
+    NMEA decoding examples (GPS connected on 2nd serial port)
+- show_image:
+    SDL_image library usage example
+- input_test:
+    Event handling in SDL (keyboard, mouse, joypad)
+- real_time:
+    Xenomai examples
+- wolfenstein3d:
+    SDL 3D game (buggy)
