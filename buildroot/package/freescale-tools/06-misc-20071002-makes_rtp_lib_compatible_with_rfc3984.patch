@@ -1,0 +1,272 @@
+Makes VPU's RTP stuff compatible with RFC3984 (needed to transfer H.264 stream through network). Code was inspired by gstreamer's rtph264pay/depay one.
+
+1] This patch probably breaks H.263 & MPEG4 streams
+2] Only the Tx part is done yet
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+diff -X ../project_build_armv5te/apf27/linux-2.6.27.13/Documentation/dontdiff -urN misc-20071002.org/test/mxc_vpu_test/rtp.c misc-20071002/test/mxc_vpu_test/rtp.c
+--- misc-20071002.org/test/mxc_vpu_test/rtp.c	2009-03-18 08:45:40.000000000 +0100
++++ misc-20071002/test/mxc_vpu_test/rtp.c	2009-04-06 16:56:25.000000000 +0200
+@@ -19,27 +19,28 @@
+ #include <memory.h>
+ #include <sys/time.h>
+ #include <errno.h>
++
+ #include "udp.h"
+ #include "rtp.h"
+ 
+-#define RTP_VER		2
+-#define RTP_PAD		(1 << 2)
+-#define RTP_EXT		(1 << 3)
+-#define RTP_CC(count)	((count) << 4)
+-#define RTP_MRK		(1 << 8)
+-#define RTP_TYP(typ)	((typ) << 9)
++/* RTP Flags MSB: */
++#define RTP_VER		(2 << 6)
++#define RTP_PAD		(1 << 5)
++#define RTP_EXT		(1 << 4)
++#define RTP_CC(count)	((count) << 0)
++/* RTP Flags LSB: */
++#define RTP_MRK		(1 << 7)
++#define RTP_TYP(typ)	((typ) << 0)
++
+ 
+-#pragma pack(1)
+ typedef struct {
+-	unsigned short flag;
++	unsigned char flag_msb;
++	unsigned char flag_lsb;
+ 	unsigned short seq;
+ 	unsigned int time;
+ 	unsigned int ssrc;
+-	/* out of spec additions */
+-	unsigned short len;
+-	char chk;
+-} rtph_t;
+-#pragma pack()
++} __attribute__((packed)) rtph_t;
++
+ 
+ int rtp_init(rtp_t * t, int bufsize)
+ {
+@@ -57,7 +58,8 @@
+ 	}
+ 	t->txbuf = t->rxbuf + rt;
+ 	h = (rtph_t *) t->txbuf;
+-	h->flag = RTP_VER | RTP_TYP(t->type);
++	h->flag_msb = RTP_VER;
++	h->flag_lsb = RTP_TYP(t->type);
+ 
+ 	t->sock = udp_open(t->port, t->ip, &t->to);
+ 	if (t->sock < 0) {
+@@ -96,30 +98,67 @@
+ #endif
+ 
+ extern int g_state;
++
++#if 0
++int nal_decode(char *buf, int len)
++{
++	int i = 0;
++	int nb_nal = 0;
++
++	do
++	{
++		if ( (buf[i] == 0x00) && (buf[i+1] == 0x00) && (buf[i+2] == 0x00) && (buf[i+3] == 0x01)) {
++			nb_nal++;
++			i += 3;
++		}
++	} while (i++ < len);
++	return nb_nal;
++}
++#endif
++
++static inline int min(int a, int b)
++{
++	if (a < b)
++		return a;
++	else
++		return b;
++}
++
++// #define DEBUG(fmt, args...) printf(fmt, ## args)
++#define DEBUG(fmt, args...) do { ; } while (0)
++
++#define IS_ACCESS_UNIT(x) (((x) > 0x00) && ((x) < 0x06))
++
+ int rtp_tx(rtp_t * t, char *buf, int len)
+ {
+ 	rtph_t *h;
+-	int tlen;
++	int tlen, hlen;
+ 	int rt;
+ 	struct timeval tv;
++	static unsigned short seq_num = 0;
++	int nal_type, mtu;
++	unsigned char nal_header;
++	unsigned char* payload;
++	int start, end;
+ 
+ 	h = (rtph_t *) t->txbuf;
+-	h->flag &= ~RTP_MRK;
++	h->flag_lsb &= ~RTP_MRK;
+ 	gettimeofday(&tv, 0);
+-	h->time = (tv.tv_sec * 1000000) + tv.tv_usec;
+-	h->len = t->size;
+-	for (tlen = 0; len > 0; tlen += h->len) {
+-		if (len <= t->size) {
+-			h->len = len;
+-			h->flag |= RTP_MRK;
+-		}
++	h->time = htonl(((tv.tv_sec * 1000000) + tv.tv_usec)/10); /* important ? */
++	hlen = t->size;
+ 
+-		memcpy(h + 1, buf, h->len);
+-		rt = t->size + sizeof(rtph_t);
+-		h->chk = 0;
+-//g_state=123;
+-		h->chk = chk_gen((char *)h, rt);
+-//g_state=124;
++	/* Here we receive NALU one by one from codec,
++	   with 0x00000001 header, so skip it */
++	buf += 4;
++	len -= 4;
++
++	nal_type = buf[0] & 0x1f;
++	DEBUG("--- Processing packet with NAL type=%d\n", nal_type);
++	mtu = t->size;
++	if (len < mtu) {
++		DEBUG("NAL Unit fit in one packet datasize=%d mtu=%d\n", len, mtu);
++		memcpy(h + 1, buf, hlen);
++		rt = len + sizeof(rtph_t);
+ 		rt = sendto(t->sock, h, rt, 0,
+ 			    (struct sockaddr *)&t->to, sizeof(t->to));
+ 		if (rt < 0) {
+@@ -127,12 +166,55 @@
+ 			return rt;
+ 		}
+ 
+-		h->seq++;
+-		buf += h->len;
+-//		tlen += h->len;
+-		len -= h->len;
++		seq_num++;
++		h->seq = htons(seq_num);
++		return len;
++	} else {
++		/* Divide NALU according to Fragmentation Unit A spec */
++		DEBUG("NAL Unit DOES NOT fit in one packet datasize=%d mtu=%d\n", len, mtu);
++		/* We keep 2 bytes for FU indicator and FU Header */
++		hlen -= 2;
++		start = 1;
++		end = 0;
++		/* skip NAL header in first frame as it will be reconstructed */
++		nal_header = *buf;
++		buf++;
++		len--;
++		for (tlen = 0; len > 0; tlen += hlen) {
++			if (len <= t->size) {
++				hlen = len;
++				h->flag_lsb |= RTP_MRK;
++				end = 1;
++				DEBUG("Last ");
++			}
++			payload = (unsigned char*)(h+1);
++			/* FU indicator (FU-A) */
++			payload[0] = (nal_header & 0x60) | 28;
++			/* FU Header */
++			payload[1] = (start << 7) | (end << 6) | (nal_header & 0x1f);
++
++// 			memcpy(h + 1, buf, hlen);
++			memcpy(&payload[2], buf, hlen);
++
++			rt = min((len+2), t->size) + sizeof(rtph_t);
++			rt = sendto(t->sock, h, rt, 0,
++				(struct sockaddr *)&t->to, sizeof(t->to));
++			if (rt < 0) {
++				printf("%s: rtp_tx err %d %d\n", t->name, rt, errno);
++				return rt;
++			}
++			DEBUG("Packet 0x%04x of %d bytes sent (%02x %02x %02x)\n", seq_num, rt,
++				buf[0], buf[1], buf[2]);
++	
++			seq_num++;
++			h->seq = htons(seq_num);
++			buf += hlen;
++	//		tlen += h->len;
++			len -= hlen;
++			start = 0;
++		}
++		return tlen;
+ 	}
+-	return tlen;
+ }
+ 
+ int rtp_rx(rtp_t * t, char *buf, int len)
+@@ -167,16 +249,16 @@
+ //                              t->name, seq, rt);
+ 			t->err++;
+ 		      lp_skip:
+-			h->flag &= ~RTP_MRK;
++			h->flag_lsb &= ~RTP_MRK;
+ 			continue;
+ 		}
+ 
+-		if (h->len > t->size) {
++		/*if (h->len > t->size) {
+ 			printf("%s: rtp_rx warn pktlen=%d > buflen=%d\n",
+ 			       t->name, h->len, t->size);
+ 			t->err++;
+ 			goto lp_skip;
+-		}
++		}*/
+ 
+ 		if (seq != h->seq) {
+ //                      printf("%s: rtp_rx exp %d got %d\n", 
+@@ -192,7 +274,7 @@
+ 			}
+ #endif
+ 			/* skip remaining frags of pkt */
+-			while (!(h->flag & RTP_MRK)) {
++			while (!(h->flag_lsb & RTP_MRK)) {
+ 				slen = sizeof(t->to);
+ 				rt = recvfrom(t->sock, h,
+ 					      t->size + sizeof(rtph_t),
+@@ -209,14 +291,14 @@
+ 					printf("%s: rtp_rx(skip) warn pkt "
+ 					       "corrupt chk=%02X\n",
+ 					       t->name, rt);
+-					h->flag &= ~RTP_MRK;
++					h->flag_lsb &= ~RTP_MRK;
+ 					t->err++;
+ 				} else {
+ 					t->skip++;
+ 				}
+ 			}
+ 			tlen = 0;
+-			h->flag &= ~RTP_MRK;
++			h->flag_lsb &= ~RTP_MRK;
+ 			h->seq++;
+ 			tlen = 0;	/* discard previous frags of pkt */
+ 			seq = h->seq;
+@@ -225,7 +307,7 @@
+ 
+ 		h->seq++;
+ 		seq = h->seq;
+-		tlen += h->len;
++		/*tlen += h->len;*/
+ 		if (tlen > len) {
+ 			/* more data to read */
+ 			printf("%s: rtp_rx warn size %d < %d\n",
+@@ -233,8 +315,8 @@
+ 			return tlen;
+ 		}
+ 
+-		memcpy(buf + tlen - h->len, h + 1, h->len);
++		/*memcpy(buf + tlen - h->len, h + 1, h->len);*/
+ 	}
+-	while (!(h->flag & RTP_MRK));
++	while (!(h->flag_lsb & RTP_MRK));
+ 	return tlen;
+ }

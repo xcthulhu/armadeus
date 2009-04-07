@@ -1,0 +1,28 @@
+Compiles libvpu and mxc_vpu_test with debugging symbols (yes they are buggy ! ;-) ).
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+diff -X ../project_build_armv5te/apf27/linux-2.6.27.13/Documentation/dontdiff -urN misc-20071002.org/lib/vpu/Makefile misc-20071002/lib/vpu/Makefile
+--- misc-20071002.org/lib/vpu/Makefile	2009-03-18 08:45:44.000000000 +0100
++++ misc-20071002/lib/vpu/Makefile	2009-03-18 13:24:23.000000000 +0100
+@@ -15,7 +15,7 @@
+ 
+ all: $(LIB)
+ %.o: %.c
+-	$(CC) -D$(PLATFORM) -Wall -O2 -c $^ -o $@
++	$(CC) -D$(PLATFORM) -DDEBUG -g -Wall -O2 -c $^ -o $@
+ 
+ $(LIB): $(OBJ)
+ 	rm -f $(LIB)
+diff -X ../project_build_armv5te/apf27/linux-2.6.27.13/Documentation/dontdiff -urN misc-20071002.org/test/mxc_vpu_test/Makefile misc-20071002/test/mxc_vpu_test/Makefile
+--- misc-20071002.org/test/mxc_vpu_test/Makefile	2009-03-18 08:45:40.000000000 +0100
++++ misc-20071002/test/mxc_vpu_test/Makefile	2009-03-18 15:18:26.000000000 +0100
+@@ -43,7 +43,7 @@
+ 	mv $(TARGET1) $(OBJDIR)
+ 
+ %.o: %.c
+-	$(CC) -Wall -O2 -I $(LIBDIR) -c $^ -o $@
++	$(CC) -Wall -O2 -DDEBUG -I $(LIBDIR) -g -c $^ -o $@
+ #	$(CC) -Wall -c $^ -o $@
+ #	$(CC) -DDEBUG -DVGA_PANEL -c $^ -o $@
+ #	$(CC)  -DDEBUG -c $^ -o $@
