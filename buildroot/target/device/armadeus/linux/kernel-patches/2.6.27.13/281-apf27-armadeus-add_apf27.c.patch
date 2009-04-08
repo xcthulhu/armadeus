@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-08 11:23:11.000000000 +0200
-@@ -0,0 +1,1462 @@
++++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-08 15:48:50.000000000 +0200
+@@ -0,0 +1,1465 @@
 + /*
 + * apf27.c
 + *
@@ -217,17 +217,17 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	/*save old FB params */
 +	memcpy( &apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
 +	memcpy( &temp_var, &info->var, sizeof(struct fb_var_screeninfo));
-+	
-+	/* set new FB params */ 
++
++	/* set new FB params */
 +	temp_var.xres = 640;
-+	temp_var.yres = 480;	
++	temp_var.yres = 480;
 +	temp_var.pixclock = 37538;
 +	temp_var.left_margin = 0x2f;
 +	temp_var.right_margin = 0x2f; /* at least 3 & 1 */
-+	temp_var.upper_margin = 0x21; 
-+	temp_var.lower_margin = 0xa; 
-+	temp_var.hsync_len = 0x3f; 
-+	temp_var.vsync_len = 0x2,
++	temp_var.upper_margin = 0x21;
++	temp_var.lower_margin = 0xa;
++	temp_var.hsync_len = 0x3f;
++	temp_var.vsync_len = 0x02;
 +	temp_var.sync = FB_SYNC_OE_ACT_HIGH;
 +	temp_var.vmode = FB_VMODE_NONINTERLACED,
 +	temp_var.nonstd = 0;
@@ -235,7 +235,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	acquire_console_sem();
 +	/* tel the FB client that params have been changed */
 +	info->flags |= FBINFO_MISC_USEREVENT;
-+	/* set new params */ 
++	/* set new params */
 +	fb_set_var(info, &temp_var);
 +	info->flags &= ~FBINFO_MISC_USEREVENT;
 +	release_console_sem();
@@ -253,12 +253,12 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	acquire_console_sem();
 +	/* inform the console that the FB params have been changed */
 +	info->flags |= FBINFO_MISC_USEREVENT;
-+	/* set new params */ 
++	/* set new params */
 +	fb_set_var(info, &apf27_ad9889_fb_data.var);
 +	info->flags &= ~FBINFO_MISC_USEREVENT;
 +	release_console_sem();
 +}
-+	
++
 +static struct ad9889_config apf27_ad9889_config = {
 +	.init = ad9889_init,
 +	.exit = ad9889_exit,
@@ -467,18 +467,20 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#else
 +	PA30_PF_CONTRAST,
 +#endif
-+ 	/* For LQ043 OE_ACD is used as LCD Display ON/OFF */
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+    (GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO)
++	/* For LQ043 OE_ACD is used as LCD Display ON/OFF */
++	(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO)
 +#else
-+ 	PA31_PF_OE_ACD
++	PA31_PF_OE_ACD
 +#endif
 +};
 +
 +static int apf27_fb_init(struct platform_device *pdev)
 +{
++#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +	/* For LQ043 OE_ACD is used as LCD Display ON/OFF. shut down TFT */
 +	gpio_set_value(GPIO_PORTA | 31, 1);
++#endif
 +#ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
 +	/* For LQ057: activate backlight at startup */
 +	gpio_set_value(GPIO_PORTA | 30, 0);
@@ -511,7 +513,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	.limit_mask         = 0x7f, /* when battery is low */
 +	/* set_bl_intensity = put a function here if you want to overload default one, */
 +};
-+//    //extern struct platform_device imxfb_device; // filled in generic.c
++
 +static struct platform_device imxbl_device = {
 +	.name       = "imx-bl",
 +	.dev        = {
@@ -524,8 +526,10 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +
 +#endif /* CONFIG_FB_MXC */
 +
++
 +#ifdef CONFIG_MMC_MXC
-+#ifdef CONFIG_APF27_DEVTEST
++
++# ifdef CONFIG_APF27_DEVTEST
 +static int mxc_sdhc1_pins[] = {
 +	PE18_PF_SDHC1_D0,
 +	PE19_PF_SDHC1_D1,
@@ -560,7 +564,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	.init = apf27_sdhc1_init,
 +	.exit = apf27_sdhc1_exit,
 +};
-+#endif /* CONFIG_APF27_DEVTEST */
++# endif /* CONFIG_APF27_DEVTEST */
 +
 +static int mxc_sdhc2_pins[] = {
 +	PB4_PF_SDHC2_D0,
@@ -608,9 +612,9 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +
 +static inline void apf27_init_mmc(void)
 +{
-+#ifdef CONFIG_APF27_DEVTEST
++# ifdef CONFIG_APF27_DEVTEST
 +	mxc_register_device(&mxc_sdhc_device0, &apf27_sdhc1_pdata);
-+#endif
++# endif
 +	mxc_register_device(&mxc_sdhc_device1, &apf27_sdhc2_pdata);
 +}
 +#endif /* CONFIG_MMC_MXC */
@@ -676,7 +680,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +}
 +
 +static struct spi_imx_chip tsc2101_hw = {
-+	.cs_control		= tsc2101_cs,
++	.cs_control = tsc2101_cs,
 +};
 +
 +static struct tsc210x_config apf27_tsc2101_config = {
@@ -720,46 +724,46 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	.transceiver_enable    = NULL,
 +};
 +
-+#endif // CONFIG_CAN_MCP251X
++#endif /* CONFIG_CAN_MCP251X */
 +
 +
 +static struct spi_board_info spi_board_info[] __initdata = {
 +#ifdef CONFIG_ARMADEUS_MAX1027
-+{
-+    .modalias			= "max1027",
-+    .controller_data 	= &max1027_hw,
-+    .max_speed_hz		= 8000000,
-+    .bus_num			= 0, // SPI1
-+    .irq                = IRQ_GPIOE(MAX1027_EOC_INT),
-+    .chip_select		= 0, // SS0
-+    .mode 				= 0,
-+    .platform_data      = &apf27_max1027_config,
-+},
-+#endif // CONFIG_ARMADEUS_MAX1027
++	{
++		.modalias		= "max1027",
++		.controller_data 	= &max1027_hw,
++		.max_speed_hz		= 8000000,
++		.bus_num		= 0, /* SPI1 */
++		.irq			= IRQ_GPIOE(MAX1027_EOC_INT),
++		.chip_select		= 0, /* SS0 */
++		.mode 			= 0,
++		.platform_data		= &apf27_max1027_config,
++	},
++#endif /* CONFIG_ARMADEUS_MAX1027 */
 +#ifdef CONFIG_SPI_TSC2102
-+{
-+    .modalias			= "tsc210x",
-+    .controller_data 	= &tsc2101_hw,
-+    .max_speed_hz		= 8000000,
-+    .bus_num			= 1, // SPI2
-+    .irq                = IRQ_GPIOF(TSC2101_INT),
-+    .chip_select		= 0,
-+    .mode 				= 0,
-+    .platform_data      = &apf27_tsc2101_config,
-+},
++	{
++		.modalias		= "tsc210x",
++		.controller_data 	= &tsc2101_hw,
++		.max_speed_hz		= 8000000,
++		.bus_num		= 1, /* SPI2 */
++		.irq			= IRQ_GPIOF(TSC2101_INT),
++		.chip_select		= 0,
++		.mode 			= 0,
++		.platform_data		= &apf27_tsc2101_config,
++	},
 +#endif /* CONFIG_SPI_TSC2102 */
 +#ifdef CONFIG_CAN_MCP251X
-+ {
-+ .modalias          = "mcp251x",
-+ .controller_data 	= &mcp251X_hw,
-+ .max_speed_hz      = 8000000, /* 8MHz */
-+ .bus_num           = 1, // SPI2
-+ .mode              = 0,
-+ .chip_select       = 1,
-+ .irq               = IRQ_GPIOD(CAN_MCP251X_INT),
-+ .platform_data     = &apf27_mcp251x_config,
-+ },
-+#endif // CONFIG_CAN_MCP251X
++	{
++		.modalias          = "mcp251x",
++		.controller_data 	= &mcp251X_hw,
++		.max_speed_hz      = 8000000, /* 8MHz */
++		.bus_num           = 1, /* SPI2 */
++		.mode              = 0,
++		.chip_select       = 1,
++		.irq               = IRQ_GPIOD(CAN_MCP251X_INT),
++		.platform_data     = &apf27_mcp251x_config,
++	},
++#endif /* CONFIG_CAN_MCP251X */
 +};
 +
 +#ifdef CONFIG_USB_EHCI_MXC
@@ -973,8 +977,8 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	.num_resources  = ARRAY_SIZE(ssi_resources),
 +	.resource       = ssi_resources,
 +	.dev            = {
-+		.platform_data = &tsc2101_alsa_pdata,
-+	}
++				.platform_data = &tsc2101_alsa_pdata,
++			}
 +};
 +#  define ALSA_SOUND &tsc2101_alsa_device,
 +# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
@@ -1120,7 +1124,6 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +
 +
 +static struct platform_device *platform_devices[] __initdata = {
-+//	&apf27_nand_mtd_device,
 +#ifdef CONFIG_IMX_BACKLIGHT
 +	&imxbl_device,
 +#endif
