@@ -5,7 +5,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-08 15:48:50.000000000 +0200
-@@ -0,0 +1,1465 @@
+@@ -0,0 +1,1473 @@
 + /*
 + * apf27.c
 + *
@@ -798,6 +798,14 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	}
 +
 +	if (on) {
++
++		/* force disconnection of the DM/DP signals. This
++			avoid powering the connected device through these lines */
++		ulpi_set(RESET, ISP1504_FCNCTL, view);
++		mdelay(10); /*wait until the supply is really down*/
++		ulpi_clear(RESET, ISP1504_FCNCTL, view);
++		mdelay(1);
++
 +		ret = ulpi_set(DRV_VBUS_EXT |	/* enable external Vbus */
 +			    DRV_VBUS |		/* enable internal Vbus */
 +			    USE_EXT_VBUS_IND |	/* use external indicator */
