@@ -5,7 +5,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-08 15:48:50.000000000 +0200
-@@ -0,0 +1,1482 @@
+@@ -0,0 +1,1513 @@
 + /*
 + * apf27.c
 + *
@@ -64,6 +64,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#include <linux/spi/max1027.h>
 +#include <linux/spi/tsc2102.h>
 +#include "../../../drivers/net/can/mcp251x.h"
++#include "../../../drivers/armadeus/pwm/pwm.h"
 +#include <media/ad9889.h>
 +#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
 +#include <mach/imx_dam.h>
@@ -100,6 +101,31 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#endif
 +#ifdef CONFIG_VIDEO_OV96xx_MODULE
 +#define CONFIG_VIDEO_OV96xx 1
++#endif
++#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
++#define CONFIG_PWM
++#endif
++
++#ifdef CONFIG_PWM
++static int mxc_pwm0_pins[] = {
++	PE5_PF_PWM0
++};
++
++static int apf27_pwm_0_init(void)
++{
++	return mxc_gpio_setup_multiple(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins), "PWM0");
++}
++
++static int apf27_pwm_0_exit(void)
++{
++	mxc_gpio_release_multiple(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins));
++	return 0;
++}
++
++static struct imx_pwm_platform_data apf27_pwm_0_data = {
++	.init = apf27_pwm_0_init,
++	.exit = apf27_pwm_0_exit,
++};
 +#endif
 +
 +
@@ -156,6 +182,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	.init = apf27_i2c_1_init,
 +	.exit = apf27_i2c_1_exit,
 +};
++
 +static struct i2c_board_info apf27_i2c_devices_bus0[] = {
 +	[0] = {
 +		.type = "ds1374",
@@ -1426,6 +1453,10 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&mxc_uart_device2, &uart_pdata[1]);
 +	/*mxc_register_device(&mxc_uart_device2, &uart_pdata[2]);*/
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
++
++#ifdef CONFIG_PWM
++	mxc_register_device(&imx_pwm_device0, &apf27_pwm_0_data);
++#endif
 +#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
 +#endif
