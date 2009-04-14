@@ -21,11 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-//#define DEBUG 1
-
 #include <linux/module.h>
 #include <linux/version.h>
-
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/delay.h>
@@ -43,74 +40,85 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/string.h>
-#include <linux/init.h>
-#include <asm/bitops.h>
 #include <asm/io.h>
 #include <linux/errno.h>
 #include <linux/wait.h>
 #include <linux/pm.h>
+#include <linux/clk.h>
 /* For /sys */
 #include <linux/sysdev.h>
 /* For struct class */
 #include <linux/device.h>
 /* For circular buffer */
 #include <linux/circ_buf.h>
-
-#include <mach/hardware.h>
 #include <linux/platform_device.h>
-
 #include "pwm.h"
 
-// additional defines
-#define PWMC_PRESCALER_MASK 0x00007F00
-#define PWMC_REPEAT_MASK    0x0000000C
-#define PWMC_CLKSEL_MASK    0x00000003
-
-#define PWM_TEST
+#ifdef CONFIG_ARCH_MX2
+#define PWMCTRL 	(0x00)
+#define PWMSTATUS 	(0x04)
+#define PWMIRQ 		(0x08)
+#define PWMSAMPLE 	(0x0c)
+#define PWMPERIOD 	(0x10)  
+#define PWMCOUNTER 	(0x14)
+#define PWM_EN 				(1<<0)
+#define PWM_IRQEN 			(1<<0)			
+#define PWM_SWR 			(1<<3)
+#define PWM_CLKSRC_MASK 	(3<<16)
+#define PWM_CLKSRC_IPG 		(2<<16)
+#define PWM_CLKSRC_32K 		(3<<16)
+#define PWM_REPEAT_MASK 	(3<<1)
+#define PWM_HCTR			(1<<20)
+#define PWM_BCTR			(1<<21)
+#define PWM_FIFOAV			(7<<0)
+#define PWM_FIFO_EMPTY		(1<<3)
+#define PWM_REPEAT(x) 		(((x) & 0x03) << 1)
+#define PWM_CLKSEL_MASK 	(0)
+#define PWM_PRESCALER_MASK 	0x0000FFF0
+#define PWM_PRESCALER(x)	(((x-1) & 0xFFF) << 4)
+#define PWM_PERIOD(x)		((x) & 0xFFFF)
+#define PWM_SAMPLE(x)		((x) & 0xFFFF)		
+#define PWM_INT 			MXC_INT_PWM
+#define PWM_MAX_DEV			1
+#else
+#define PWMCTRL 	(0x00)
+#define PWMSTATUS 	(0x00)
+#define PWMIRQ  	(0x00)
+#define PWMSAMPLE 	(0x04)
+#define PWMPERIOD 	(0x08)
+#define PWMCOUNTER 	(0x0C)
+#define PWM_EN 			(1<<4)
+#define PWM_IRQEN 		PWMC_IRQEN
+#define PWM_SWR 		PWMC_SWR
+#define PWM_CLKSRC_MASK (1<<15)
+#define PWM_CLKSRC_IPG 	(0<<15)
+#define PWM_CLKSRC_32K 	(1<<15)
+#define PWM_HCTR 		PWMC_HCTR
+#define PWM_BCTR		PWMC_BCTR
+#define PWM_FIFOAV		PWMC_FIFOAV
+#define PWM_REPEAT_MASK 0x0000000C
+#define PWM_CLKSEL_MASK 0x00000003
+#define PWM_REPEAT(x) 	PWMC_REPEAT(x)
+#define PWM_PRESCALER_MASK 	0x00007F00
+#define PWM_PRESCALER(x) PWMC_PRESCALER(x)
+#define PWM_PERIOD(x) PWMP_PERIOD(x)
+#define PWM_SAMPLE(x) PWMS_SAMPLE(x)
+#define PWM_MAX_DEV			1
+#endif
 
 #define DRIVER_NAME         "imx-pwm"
-#define DRIVER_VERSION      "0.6"
-
-#define DEV_IRQ_NAME    DRIVER_NAME
-#define DEV_IRQ_ID      DRIVER_NAME
+#define DRIVER_VERSION      "0.7"
 
 //#define	PK(fmt, args...)	printk(fmt, ## args)
 #define	PK(...)
 
-
-struct pwm_device {
-	u32 reg;
-	int active;
-	unsigned duty;
-	/*const*/ struct pwm_table *entry;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	struct class_device class_dev;
-#else
-	struct device class_dev;
-#endif
+struct sound_circ_buf {
+	char* buf;
+	int write; /* == head */
+	int read;  /* == tail */
+	int size;
 };
-
-static struct class pwm_class;	/* forward declaration only */
-
-#define to_pwm_device(d) container_of(d, struct pwm_device, class_dev)
-
-
-/* Global variables */
-int     gPwmMode;
-int     g4bytes; /* count 4 bytes write occurence to FIFO */
-u8      *gpWriteBufPtr;
-u16     *gpWriteBufPtr16;
-int     gDataLen = PWM_DATA_8BIT;
-u16     gSampleValue;
-
-int     irq = 0;
-module_param(irq, int, 0);
-
-wait_queue_head_t write_wait;
-wait_queue_head_t exit_wait;
-struct fasync_struct *ts_fasync;
-
-int gMajor = 0;	/* TODO dynamic major for now */
+#define MAX_SOUND_BUFFER_SIZE (16*1024) /* !! Should be a power of 2 !! */
 
 typedef struct timer_list timer_blk_t;
 
@@ -120,94 +128,51 @@ typedef struct timerStruct
 	int     period;
 	void    (*timer_func)(unsigned long);
 	int     stop_flag;
-} PWM_Timer_t;
+} pwm_timer_t;
 
-static PWM_Timer_t pwmTimer;
-static timer_blk_t timer_blk;
 
 struct pwm_table {
-	long period;	/* in us */
-	unsigned max_period_val;
-	unsigned prescaler;
+	u32 period;	/* in us */
+	u32 prescaler;
 };
 
-struct pwm_table pwmdata;
-/*
- * Ready to use calculations
- */
-static const struct pwm_table pwm_table[]={
-	{
-		.period=1,	/* 1 us */
-		.max_period_val = 13,
-		.prescaler=1,
-	},
-	{
-		.period=5,	/* 5 us */
-		.max_period_val = 65,
-		.prescaler=1,
-	},
-	{
-		.period=10,	/* 10 us */
-		.max_period_val = 130,
-		.prescaler=1,
-	},
-	{
-		.period=20,	/* 20 us */
-		.max_period_val = 260,
-		.prescaler=1,
-	},
-	{
-		.period=50,	/* 50 us */
-		.max_period_val = 650,
-		.prescaler=1,
-	},
-	{
-		.period=100,	/* 100 us */
-		.max_period_val = 650,
-		.prescaler=2,
-	},
-	{
-		.period=500,	/* 500 us */
-		.max_period_val = 929,
-		.prescaler=7,
-	},
-	{
-		.period=1000,	/* 1ms */
-		.max_period_val = 1000,
-		.prescaler=13,
-	},
-	{
-		.period=2000,	/* 2ms */
-		.max_period_val = 1000,
-		.prescaler=26,
-	},
-	{
-		.period=3000,	/* 3ms */
-		.max_period_val = 1000,
-		.prescaler=39,
-	},
-	{
-		.period=4000,	/* 4ms */
-		.max_period_val = 1020,
-		.prescaler=51,
-	},
-	{
-		.period=5000,	/* 5ms */
-		.max_period_val = 1016,
-		.prescaler=64,
-	}
+struct pwm_device {
+	unsigned long membase;
+	unsigned int irq;
+	int active;
+	unsigned duty;
+	/*const*/ struct pwm_table entry;
+	int     mode;
+	int     nbbytes; /* count 4 bytes write occurence to FIFO */
+	int     dataLen;
+	u16     sampleValue;
+
+	wait_queue_head_t write_wait;
+	wait_queue_head_t exit_wait;
+
+	struct sound_circ_buf circ_buf;
+	pwm_timer_t timer;
+	timer_blk_t timer_blk;
+	struct clk *clk;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	struct class_device class_dev;
+#else
+	struct device class_dev;
+#endif
 };
+
+int gMajor = 0;
+static struct  pwm_device *dev_table[PWM_MAX_DEV];
+static struct class pwm_class;	/* forward declaration only */
+
+#define to_pwm_device(d) container_of(d, struct pwm_device, class_dev)
+
+//struct fasync_struct *ts_fasync;
 
 /****************************************************************
  * Circular buffer handling four sound playing
  ***************************************************************/
-
-struct sound_circ_buf {
-	char* buf;
-	int write; /* == head */
-	int read;  /* == tail */
-	int size;
-};
 
 static inline u8 get_byte_from_circbuf( struct sound_circ_buf* abuffer )
 {
@@ -235,43 +200,50 @@ static inline void increase_circbuf( struct sound_circ_buf* abuffer, int count )
 	pr_debug("Added %d bytes to buffer, now write is in pos %d\n", count, abuffer->write);
 }
 
-#define MAX_SOUND_BUFFER_SIZE (16*1024) /* !! Should be a power of 2 !! */
-static struct sound_circ_buf gPWM_Circ_Buf;
+
 
 /****************************************************************
  *
  ***************************************************************/
 
-static void inline unregister_sys_file( struct pwm_device *ppd );
+static void inline unregister_sys_file( struct pwm_device *pwm );
+
+
+static void write_bits(u32 bit, u32 mask, unsigned long reg)
+{
+	u32 temp;
+	temp = readl(reg) & ~mask;
+	writel(temp | (bit&mask), reg);
+}
 
 
 /**
  * setup_pwm_unit - common setup function whenever something was changed
- * @ppd: PWM unit to work with
+ * @pwm: PWM unit to work with
  */
-static void setup_pwm_unit(struct pwm_device *ppd)
+static void setup_pwm_unit(struct pwm_device *pwm)
 {
-	if (ppd->entry == NULL)
-		return;	/* do nothing, not fully configured yet */
-
-	if (ppd->active) {
+	if (pwm->active) {
 		/* Activate PWM */
-		PWMC |= PWMC_EN;
+		write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
+		write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
 		/* Setup prescaler */
 		pr_debug("Updating PWM registers\n");
-		PWMC = (PWMC & ~PWMC_PRESCALER_MASK) | PWMC_PRESCALER(ppd->entry->prescaler) /*| PWMC_REPEAT(3)*/;
+		write_bits( PWM_PRESCALER(pwm->entry.prescaler),
+					PWM_PRESCALER_MASK, pwm->membase + PWMCTRL ); /*| PWMC_REPEAT(3)*/;
 		/* Setup period */
-		PWMP = PWMP_PERIOD(ppd->entry->period);	
+		writel(PWM_PERIOD(pwm->entry.period) , pwm->membase + PWMPERIOD );
 		/* Setup duty cycle */
-		PWMS = PWMS_SAMPLE( (u32) ((ppd->entry->period * ppd->duty) / 1000) );
+		writel(PWM_SAMPLE( (u32) ((pwm->entry.period * pwm->duty) / 1000) ),
+					pwm->membase + PWMSAMPLE);
 	} else {
 		/* De-activate */
-		PWMC &= ~PWMC_EN;
+		write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 	}
 }
 
 /* timer */
-static int create_timer(PWM_Timer_t *timer)
+static int create_timer(pwm_timer_t *timer)
 {
 	init_timer(timer->timer_blk_ptr);
 	timer->timer_blk_ptr->function = timer->timer_func;
@@ -279,7 +251,7 @@ static int create_timer(PWM_Timer_t *timer)
 	return(0);
 }
 
-static int start_timer(PWM_Timer_t *timer)
+static int start_timer(pwm_timer_t *timer)
 {
 	timer->timer_blk_ptr->expires = jiffies + timer->period;
 	timer->stop_flag = 0;
@@ -289,7 +261,7 @@ static int start_timer(PWM_Timer_t *timer)
 	return(0);
 }
 
-static int stop_timer(PWM_Timer_t *timer)
+static int stop_timer(pwm_timer_t *timer)
 {
 	timer->stop_flag = 1;
 	del_timer_sync((struct timer_list *)timer->timer_blk_ptr);
@@ -297,20 +269,20 @@ static int stop_timer(PWM_Timer_t *timer)
 	return(0);
 }
 
-static void stop_pwm(void)
+static void stop_pwm(struct pwm_device *pwm)
 {
-	PWMC &= ~PWMC_IRQEN;    /* disable IRQ */
-	PWMC &= ~PWMC_EN;       /* disable PWM */
+	write_bits( ~PWM_IRQEN, PWM_IRQEN, pwm->membase + PWMIRQ );
+	write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 
-	gSampleValue = 0;
-	if(gPwmMode == PWM_TONE_MODE)
-		StopTimer(&pwmTimer);
+	pwm->sampleValue = 0;
+	if(pwm->mode == PWM_TONE_MODE)
+		stop_timer(&pwm->timer);
 
 	/* Can release file now */
-	wake_up_interruptible(&exit_wait);
+	wake_up_interruptible(&pwm->exit_wait);
 
 	PK("<1>data completed.\n");
-	PK("<1>PWMC = 0x%8x\n", (u32)PWMC);
+	PK("<1>PWMC = 0x%8x\n", readl(pwm->membase + PWMCTRL));
 }
 
 static void pwmIntFunc( unsigned long unused)
@@ -324,7 +296,7 @@ static void pwmIntFunc( unsigned long unused)
 //         PK("<1>PWMS = 0x%4x\n", (u16)_reg_PWM_PWMS);
 // 
 //         // 96M/128/2/period
-//         period = *gpWriteBufPtr16++;
+//         period = *writeBufPtr16++;
 // 
 //         if(period > 0)
 // //			PWMP = 96000000/128/12/2/period; //96000000/128/2*11
@@ -332,7 +304,7 @@ static void pwmIntFunc( unsigned long unused)
 //         PK("<1>PWMP = 0x%4x\n", (u16)PWMP);
 //         PK("<1>PWMCNT = 0x%4x\n", (u16)PWMCNT);
 // 
-//         StartTimer(&pwmTimer);
+//         StartTimer(&timer);
 // 
 //         gWriteCnt--;
 //     }
@@ -341,19 +313,14 @@ static void pwmIntFunc( unsigned long unused)
 
 }
 
-static int init_pwm(void)
+static int init_pwm(struct pwm_device *pwm)
 {
-	/* Init Port PA[2] : PWMO
-	Should be done in apf9328.c non ??? */
-	DDIR(0) |=  0x00000002;
-	GIUS(0) &= ~0x00000002;
-	GPR(0)  &= ~0x00000002;
-
 	/* Software reset */
-	PWMC |= PWMC_SWR;
+	write_bits( PWM_SWR, PWM_SWR, pwm->membase + PWMCTRL );
 	udelay(10);
 	/* Activate & de-activate PWM (seems to be necessary after a reset) */
-	PWMC |= PWMC_EN; PWMC &= ~PWMC_EN; 
+	write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
+	write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 
 	/* Enable interrupt */
 	//PWMC |= PWMC_IRQEN;
@@ -365,21 +332,26 @@ static int init_pwm(void)
 
 int pwm_release(struct inode * inode, struct file * filp)
 {
+	struct pwm_device *pwm = dev_table[iminor(inode)];
+
 	// wait unit gWriteCnt == 0
-	interruptible_sleep_on(&exit_wait);
+	interruptible_sleep_on(&pwm->exit_wait);
 	
-	if( gPWM_Circ_Buf.buf ) {
-		kfree( gPWM_Circ_Buf.buf );
-		gPWM_Circ_Buf.buf = 0;
+	if( pwm->circ_buf.buf ) {
+		kfree( pwm->circ_buf.buf );
+		pwm->circ_buf.buf = 0;
 	}
-	printk(DRIVER_NAME " released, 4 bytes FIFO usage: %d\n", g4bytes);
+	printk(DRIVER_NAME " released, 4 bytes FIFO usage: %d\n", pwm->nbbytes);
 	return 0;
 }
 
 int pwm_open(struct inode * inode, struct file * filp)
 {
+	struct pwm_device *pwm = dev_table[iminor(inode)];
+
+	pwm->dataLen = PWM_DATA_8BIT;
 	/* Init PWM hardware */
-	init_pwm();
+	init_pwm(pwm);
 	
 	pr_debug(DRIVER_NAME " opened \n");
 	return 0;
@@ -406,6 +378,7 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 {
 	char *str=NULL;
 	int ret = 0;
+	struct pwm_device *pwm = dev_table[iminor(inode)];
 
 	pr_debug("pwm_ioctl ----\n");
 	switch(cmd)
@@ -413,14 +386,14 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 		/* Set PWM Mode (Tone or Playback) */
 		case PWM_IOC_SMODE:
 		{
-			gPwmMode = arg;
+			pwm->mode = arg;
 	
-			if (gPwmMode == PWM_TONE_MODE) {
+			if (pwm->mode == PWM_TONE_MODE) {
 				/* create periodic timer when tone mode */
 				pr_debug("PWM Tone Mode.\n");
-				pwmTimer.timer_blk_ptr = &timer_blk;
-				pwmTimer.timer_func = pwmIntFunc;
-				create_timer(&pwmTimer);
+				pwm->timer.timer_blk_ptr = &pwm->timer_blk;
+				pwm->timer.timer_func = pwmIntFunc;
+				create_timer(&pwm->timer);
 			} else {
 				pr_debug("PWM Play Mode.\n");
 			}
@@ -430,49 +403,52 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 		/* Set Playback frequency/ouput rate */
 		case PWM_IOC_SFREQ:
 		{
-			PWMC &= ~PWMC_EN;                       // Disable PWM
-			PWMC &= ~PWMC_CLKSRC;                   // Select 16MHz PERCLK1 as CLK source
-			PWMC &= ~PWMC_PRESCALER_MASK;           // PRESCALER = 0   =>  use full 16MHz
-		
+			/* Disable PWM */
+			write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
+			/* Select 16MHz PERCLK1 as CLK source  */
+			write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
+			/* PRESCALER = 0   =>  use full IPG */
+			write_bits( 0, PWM_PRESCALER_MASK, pwm->membase + PWMCTRL );
+			/* CLKSEL = 0 => divide by 2 */
+			write_bits( 0, PWM_CLKSEL_MASK, pwm->membase + PWMCTRL );
+	
 			switch(arg)
 			{
 				case PWM_SAMPLING_32KHZ:
-					PWMC &= ~PWMC_REPEAT_MASK;      // REPEAT = 0 => divide by 1
-					PWMC &= ~PWMC_CLKSEL_MASK;      // CLKSEL = 0 => divide by 2
+					/* REPEAT = 0 => divide by 1 */
+					write_bits( 0, PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
 					/* 16MHz/256/1/2 = 32768 */
 					str = "32Khz";
 				break;
 				case PWM_SAMPLING_16KHZ:
-					PWMC &= ~PWMC_REPEAT_MASK;
-					PWMC |= PWMC_REPEAT(1);         // REPEAT = 01 => divide by 2
-					PWMC &= ~PWMC_CLKSEL_MASK;      // CLKSEL = 0 => divide by 2
+					/* REPEAT = 01 => divide by 2 */
+					write_bits( PWM_REPEAT(1), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
 					/* 16MHz/256/2/2 = 16384 */
 					str = "16Khz";
 				break;
 	
 				case PWM_SAMPLING_8KHZ:
 				default:
-					PWMC &= ~PWMC_REPEAT_MASK;
-					PWMC |= PWMC_REPEAT(2);         // REPEAT = 10 => divide by 4
-					PWMC &= ~PWMC_CLKSEL_MASK;      // CLKSEL = 0 => divide by 2
+					/* REPEAT = 10 => divide by 4*/
+					write_bits( PWM_REPEAT(1), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
 					/* 16MHz/256/4/2 = 8192 */
 					str = "8Khz";
 				break;
 			}
 			pr_debug("Sample rate = %s\n", str);
-			pr_debug("ioctl: PWMC = 0x%8x\n", PWMC);
+			pr_debug("ioctl: PWMC = 0x%8x\n", readl(pwm->membase+PWMCTRL));
 		}
 		break;
 
 		/* Set samples length (8 or 16 bits) */
 		case PWM_IOC_SDATALEN:
 		{
-			gDataLen = arg;
+			pwm->dataLen = arg;
 			if (arg == PWM_DATA_8BIT) {
-				PWMP = 0xfe; /* Period, 8bit */
+				writel(0xfe, pwm->membase + PWMPERIOD);
 				str = "8bit";
 			} else { /* if(arg == PWM_DATA_16BIT) */
-				PWMP = 0xfffe; /* Period, 16bit */
+				writel(0xfffe, pwm->membase + PWMPERIOD);
 				str = "16bit";
 			}
 			pr_debug("Data Length = %s\n", str);
@@ -480,32 +456,33 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 		break;
 
 		case PWM_IOC_SSAMPLE:
-			gSampleValue = arg;
+			pwm->sampleValue = arg;
 		break;
 
 		case PWM_IOC_SPERIOD:
-			if (gPwmMode == PWM_TONE_MODE)
+			if (pwm->mode == PWM_TONE_MODE)
 			{
 				PK("<1>PWM period = %d\n",(int)arg);
-				pwmTimer.period = arg/12;
+				pwm->timer.period = arg/12;
 			}
 		break;
 
 		case PWM_IOC_STOP:
-			stop_pwm();
+			stop_pwm(pwm);
 		break;
 
 		case PWM_IOC_SWAPDATA:
 			if (arg&PWM_SWAP_HCTRL) { /* Halfword FIFO data swapping */
-				PWMC |= PWMC_HCTR;
+				write_bits( PWM_REPEAT(1), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
+				write_bits( PWM_HCTR, PWM_HCTR, pwm->membase + PWMCTRL );
 			} else {
-				PWMC &= ~PWMC_HCTR;
+				write_bits( ~PWM_HCTR, PWM_HCTR, pwm->membase + PWMCTRL );
 			}
 		
 			if (arg & PWM_SWAP_BCTRL) { /* Byte FIFO data swapping */
-				PWMC |= PWMC_BCTR;
+				write_bits( PWM_BCTR, PWM_BCTR, pwm->membase + PWMCTRL );
 			} else {
-				PWMC &= ~PWMC_BCTR;
+				write_bits( ~PWM_BCTR, PWM_BCTR, pwm->membase + PWMCTRL );
 			}
 		break;
 
@@ -520,8 +497,9 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 ssize_t pwm_read(struct file * filp, char * buf, size_t count, loff_t * l)
 {
 	int ret = 0;
+	struct pwm_device *pwm = dev_table[iminor(filp->f_dentry->d_inode)];
 
-	if (PWMC & PWMC_IRQEN)
+	if (readl(pwm->membase+PWMIRQ) & PWM_IRQEN)
 		ret = 1; /* no data */
 	else
 		ret = 0; /* processing data */
@@ -535,70 +513,75 @@ static ssize_t pwm_write( struct file *filp, const char *buf, size_t count, loff
 {
 	int ret = 0;
 	int remaining_space = 0;
+	struct pwm_device *pwm = dev_table[iminor(filp->f_dentry->d_inode)];
+	struct sound_circ_buf *circ = &pwm->circ_buf;
+	
 
 	pr_debug( "pwm_write ----\n" );
 
 	if (count > MAX_SOUND_BUFFER_SIZE)
 		count = MAX_SOUND_BUFFER_SIZE;
 	/* First time, allocate the double buffer */
-	if (!gPWM_Circ_Buf.buf) {
-		gPWM_Circ_Buf.buf = kmalloc( count*2, GFP_KERNEL );
-		if (!gPWM_Circ_Buf.buf) {
+	if (!circ->buf) {
+		circ->buf = kmalloc( count*2, GFP_KERNEL );
+		if (!circ->buf) {
 			goto out;
 		} else {
 			/* Initialize circular buffer */
-			gPWM_Circ_Buf.read  = 0;
-			gPWM_Circ_Buf.write = 0;
-			gPWM_Circ_Buf.size  = MAX_SOUND_BUFFER_SIZE*2;
+			circ->read  = 0;
+			circ->write = 0;
+			circ->size  = MAX_SOUND_BUFFER_SIZE*2;
 		}
 	}
 
 	/* If there is enough space at the end of the buffer for all data in one copy, do it */
-	remaining_space = gPWM_Circ_Buf.size - gPWM_Circ_Buf.write;
+	remaining_space = circ->size - circ->write;
 	pr_debug("Remaining space to end: %d, must write: %d \n", remaining_space, count);
 	if (remaining_space >= count) {
 		// Get data from UserSpace
-		if( copy_from_user( gPWM_Circ_Buf.buf + gPWM_Circ_Buf.write , buf, count ) ) {
+		if( copy_from_user( circ->buf + circ->write , buf, count ) ) {
 		ret = -EFAULT; goto out;
 		}
-		increase_circbuf( &gPWM_Circ_Buf, count );
+		increase_circbuf( &pwm->circ_buf, count );
 	/* if not enough space, then */
 	} else {
 		/* Do it in 2 times */
-		if (copy_from_user(gPWM_Circ_Buf.buf + gPWM_Circ_Buf.write, buf, remaining_space)) {
+		if (copy_from_user(circ->buf + circ->write, buf, remaining_space)) {
 			ret = -EFAULT; goto out;
 		}
-		increase_circbuf( &gPWM_Circ_Buf, remaining_space );
-		if (copy_from_user(gPWM_Circ_Buf.buf + gPWM_Circ_Buf.write, buf, count - remaining_space)) {
+		increase_circbuf( &pwm->circ_buf, remaining_space );
+		if (copy_from_user(circ->buf + circ->write, buf, count - remaining_space)) {
 			ret = -EFAULT; goto out;
 		}
-		increase_circbuf(&gPWM_Circ_Buf, count - remaining_space);
+		increase_circbuf(&pwm->circ_buf, count - remaining_space);
 	}
 
 	/* Enable PWM */
-	PWMC |= PWMC_EN;
-	PWMS = 0x00000000;
+	write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
+	writel(0x00000000, pwm->membase  + PWMSAMPLE);
 
-	if (gPwmMode == PWM_PLAY_MODE) {
-		PWMC |= PWMC_IRQEN; /* Enable IRQ */
+	if (pwm->mode == PWM_PLAY_MODE) {
+		/* Enable IRQ */
+		write_bits( PWM_IRQEN, PWM_IRQEN, pwm->membase + PWMCTRL);
 	} else {
-		PWMS = gSampleValue;
-		PWMC |= 0x7f00; /* set prescaler to 128 */
-	/*        gpWriteBufPtr16 = (u16*)gpWriteBuf;
+		writel(pwm->sampleValue, pwm->membase  + PWMSAMPLE);
+		/* set prescaler to 128 */
+		write_bits(0x7f00 , PWM_PRESCALER_MASK, pwm->membase + PWMCTRL);
+		/*writeBufPtr16 = (u16*)gpWriteBuf;
 		gWriteCnt /= 2; //input size is 8bit size, need /2 to get 16bit size
-		StartTimer( &pwmTimer );*/
+		StartTimer( &timer );*/
 	}
 
 	/* Calculate how much space is left in buffer */
-	remaining_space = CIRC_SPACE(gPWM_Circ_Buf.write, gPWM_Circ_Buf.read, gPWM_Circ_Buf.size);
+	remaining_space = CIRC_SPACE(circ->write, circ->read, circ->size);
 	pr_debug("Space left: %d\n", remaining_space);
 	if (remaining_space < count) {
 		/* Pauses user app until interrupt handler has consumed some data */
-		interruptible_sleep_on(&write_wait);
+		interruptible_sleep_on(&pwm->write_wait);
 	}
 
 out:
-	pr_debug( "out pwm_write PWMC = 0x%8x ----\n", PWMC );
+	pr_debug( "out pwm_write PWMC = 0x%8x ----\n", readl(pwm->membase + PWMCTRL ));
 	return count;
 }
 
@@ -613,6 +596,52 @@ struct file_operations pwm_fops = {
 
 /////////////////////////////////////// END OF /DEV INTERFACE /////////////////////////////////////////////////////////
 
+#ifdef CONFIG_ARCH_MX2
+#define PWM_MIN_FREQUENCY 1      // Hz
+#define PWM_MAX_FREQUENCY 1000000 /* Hz */
+#else
+#define PWM_MIN_FREQUENCY 2       /* Hz */
+#define PWM_MAX_FREQUENCY 1000000 /* Hz */
+#endif
+
+static int get_current_pwm_clk_rate(struct pwm_device *pwm)
+{
+	if( (readl(pwm->membase + PWMCTRL) & PWM_CLKSRC_MASK) == PWM_CLKSRC_32K)
+		return 32768;
+#ifdef CONFIG_ARCH_MX2
+	return clk_get_rate(pwm->clk);
+#else
+	return 8000000; 
+#endif
+}
+
+/* result in Hz */
+static long get_pwm_min_freq(struct pwm_device *pwm)
+{
+	return PWM_MIN_FREQUENCY;
+}
+
+/* result in Hz */
+static long get_pwm_max_freq(struct pwm_device *pwm)
+{
+	return PWM_MAX_FREQUENCY;
+}
+
+/* freq in Hz */
+static void compute_pwm_params(u32 req_freq, struct pwm_device *pwm)
+{
+	u32 input_freq, divider;
+	input_freq = get_current_pwm_clk_rate(pwm);
+	divider = ((input_freq*10)/req_freq+5)/10;
+	if( divider/65536 ){
+		pwm->entry.prescaler = divider/65536 +1; 
+		pwm->entry.period = input_freq/(pwm->entry.prescaler*req_freq)-2;
+	}
+	else{
+		pwm->entry.period = divider-2;
+		pwm->entry.prescaler = 1;
+	}
+}
 
 /**
  * pwm_show_duty - return current duty setting
@@ -622,9 +651,9 @@ struct file_operations pwm_fops = {
 static ssize_t pwm_show_duty(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	ssize_t ret_size = 0;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
-	ret_size=sprintf(buf,"%u",ppd->duty);
+	ret_size=sprintf(buf,"%u",pwm->duty);
 
 	return ret_size;
 }
@@ -645,14 +674,14 @@ static ssize_t pwm_show_duty(struct device *dev, struct device_attribute *attr, 
 static ssize_t pwm_store_duty(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	long value;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
 	value = simple_strtol(buf, NULL, 10);
 	if ((value < 1) || (value > 999))
 		return -EIO;
 
-	ppd->duty=(unsigned)value;	
-	setup_pwm_unit(ppd);
+	pwm->duty=(unsigned)value;	
+	setup_pwm_unit(pwm);
 
 	return size;
 }
@@ -665,12 +694,9 @@ static ssize_t pwm_store_duty(struct device *dev, struct device_attribute *attr,
 static ssize_t pwm_show_period(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	ssize_t ret_size = 0;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
-	if (ppd->entry) /* already initialized? */
-		ret_size=sprintf(buf,"%ld",ppd->entry->period);
-	else
-		ret_size=sprintf(buf,"0");
+	ret_size=sprintf(buf,"%d",pwm->entry.period);
 
 	return ret_size;
 }
@@ -682,53 +708,19 @@ static ssize_t pwm_show_period(struct device *dev, struct device_attribute *attr
  * @size: size of buffer
  *
  * Returns the given @size or -EIO
- *
- * The min/max period depends on processors features.
- * Currently the i.MXl uses either PERCLK1 or CLK32 clock.s You can prescale
- * these clocks up to 1/128 (down to 203.125kHz).
- * The period is based on this prescaled clock and it's width depends on
- * the period register (PWMP). This register is 16 bits width.
- * So for PERCLK1 (16Mhz):
- * - min. period is (no prescale, PWMP = 1): ~62ns
- * - max. period is (max prescale, period control = 0xFFFF): ~520ms
- * For CLK32 (32KHz):
- * - min. period is ~31us
- * - max. period is 256s 
- *
- * The unit of the given value should be "us" (1E-6) and the value
- * between 1 and 500000.
  */
 
-#define PWM_MAX_PERIOD 500000    // us
-#define PWM_MIN_PERIOD 1         //us
-#define PWM_MIN_FREQUENCY 2      // Hz
-#define PWM_MAX_FREQUENCY 100000 // Hz
 static ssize_t pwm_store_period(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	long value/*,i*/;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 	
-	value = simple_strtol(buf, NULL, 10);
-	if ((value < PWM_MIN_PERIOD) && (value > PWM_MAX_PERIOD))
+	value = simple_strtol(buf, NULL, 10); // in us
+	if ((value < (1000000/get_pwm_max_freq(pwm))) || (value > (1000000/get_pwm_min_freq(pwm))))
 		return -EIO;
 
-/*    for( i=0; i<ARRAY_SIZE(pwm_table); i++ )
-    {
-        if (pwm_table[i].period >= value)
-                break;
-    }
-    if (i==ARRAY_SIZE(pwm_table))	// period not found in table?
-            return -EIO;
-
-	ppd->entry=&pwm_table[i];*/
-	ppd->entry=&pwmdata;
-	ppd->entry->period = value;
-	ppd->entry->prescaler = 8; // 1us / tick if CLKSEL is  = 0
-	ppd->entry->max_period_val = value;
-	/*printk(KERN_INFO "New period should be %ld us, and is %ld us\n",
-		value,ppd->entry->period);*/
-
-	setup_pwm_unit(ppd);
+	compute_pwm_params(1000000/value, pwm);
+	setup_pwm_unit(pwm);
 	return size;
 }
 
@@ -740,10 +732,10 @@ static ssize_t pwm_store_period(struct device *dev, struct device_attribute *att
 static ssize_t pwm_show_frequency(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	ssize_t ret_size = 0;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
-	if (ppd->entry)
-		ret_size = sprintf(buf,"%ld", (u32) 1000000/(ppd->entry->period));
+	if (pwm->entry.period)
+		ret_size = sprintf(buf,"%d", (u32) 1000000/(pwm->entry.period));
 	else
 		ret_size = sprintf(buf,"0");
 
@@ -765,21 +757,14 @@ static ssize_t pwm_show_frequency(struct device *dev, struct device_attribute *a
 static ssize_t pwm_store_frequency(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	long value;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
 	value = simple_strtol(buf, NULL, 10);
-	if( (value < PWM_MIN_FREQUENCY) && (value > PWM_MAX_FREQUENCY) )
+	if( (value < get_pwm_min_freq(pwm)) || (value > get_pwm_max_freq(pwm)) )
 		return -EIO;
 
-	/* Convert frequency into period */
-	value = (u32) (1000000 / value);
-
-	ppd->entry=&pwmdata;
-	ppd->entry->period = value;
-	ppd->entry->prescaler = 8; /* 1us / tick if CLKSEL is  = 0 */
-	ppd->entry->max_period_val = value;
-	/* Update hardware */
-	setup_pwm_unit(ppd);
+	compute_pwm_params(value, pwm);
+	setup_pwm_unit(pwm);
 
 	return( size );
 }
@@ -792,9 +777,9 @@ static ssize_t pwm_store_frequency(struct device *dev, struct device_attribute *
 static ssize_t pwm_show_state(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	ssize_t ret_size = 0;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
-	ret_size=sprintf(buf,"%d",ppd->active);
+	ret_size=sprintf(buf,"%d",pwm->active);
 
 	return ret_size;
 }
@@ -810,15 +795,15 @@ static ssize_t pwm_show_state(struct device *dev, struct device_attribute *attr,
 static ssize_t pwm_store_state(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	long value;
-	struct pwm_device *ppd = to_pwm_device(dev);
+	struct pwm_device *pwm = to_pwm_device(dev);
 
 	value = simple_strtol(buf, NULL, 10);
 	if (value != 0)
-		ppd->active=1;
+		pwm->active=1;
 	else
-		ppd->active=0;
+		pwm->active=0;
 
-	setup_pwm_unit(ppd);
+	setup_pwm_unit(pwm);
 
 	return size;
 }
@@ -848,59 +833,6 @@ static DEVICE_ATTR(frequency, S_IWUSR | S_IRUGO, pwm_show_frequency, pwm_store_f
  */
 static DEVICE_ATTR(active, S_IWUSR | S_IRUGO, pwm_show_state, pwm_store_state);
 
-/**
- * init_userinterface - setup the device and things the user will see
- * @pdev: platform device to work with
- * @address: physical address of this device
- *
- * Return 0 on success
- */
-static int init_userinterface(struct platform_device *pdev, u32 address)
-{
-	int rc = 0;
-	struct pwm_device *ppd;
-
-	if (unlikely((ppd = kmalloc(sizeof(struct pwm_device), GFP_KERNEL)) == NULL)) {
-		rc = -ENOMEM;
-		goto error_malloc;
-	}
-
-	memset(&ppd->class_dev, 0, sizeof(struct device));
-	ppd->class_dev.class = &pwm_class;
-	ppd->class_dev.parent = &pdev->dev;
-	snprintf(ppd->class_dev.bus_id, BUS_ID_SIZE, "pwm%i", pdev->id);
-	ppd->reg=address;
-	ppd->entry=NULL;
-	ppd->active=0;
-	ppd->duty=500; /* = 50.O% */
-
-	rc = device_register(&ppd->class_dev);
-	if (unlikely(rc)) goto error_register;
-
-	/* Register the attributes */
-	rc |= device_create_file(&ppd->class_dev, &dev_attr_duty);
-	if (unlikely(rc)) goto error_file;
-	rc |= device_create_file(&ppd->class_dev, &dev_attr_period);
-	if (unlikely(rc)) goto error_file;
-	rc |= device_create_file(&ppd->class_dev, &dev_attr_frequency);
-	if (unlikely(rc)) goto error_file;
-	rc |= device_create_file(&ppd->class_dev, &dev_attr_active);
-	if (unlikely(rc)) goto error_file;
-
-	pdev->dev.driver_data=ppd;
-	goto success;
-
-error_file:
-	printk(KERN_ERR "%s: class /sys file creation failed\n", DRIVER_NAME);
-	unregister_sys_file(ppd);
-error_register:
-	printk(KERN_ERR "%s: class registering failed\n", DRIVER_NAME);
-	kfree(ppd);
-error_malloc:
-	return rc;
-success:
-	return 0;
-}
 
 /*
  *  PWM interrupt handler (used in Play Mode only)
@@ -909,53 +841,56 @@ static irqreturn_t pwm_interrupt(int irq, void *dev_id)
 {
 	u32 status;
 	int remaining = 0;
+	struct pwm_device *pwm = (struct pwm_device *) dev_id;
 
 	/* Acknowledge interrupt */
-	status = PWMC;
-
-	remaining = CIRC_CNT( gPWM_Circ_Buf.write, gPWM_Circ_Buf.read, gPWM_Circ_Buf.size );
+#ifdef CONFIG_ARCH_MX2
+	write_bits(PWM_FIFO_EMPTY, PWM_FIFO_EMPTY, pwm->membase + PWMSTATUS);
+#else
+	status = readl(pwm->membase + PWMSTATUS);
+#endif
+	remaining = CIRC_CNT( pwm->circ_buf.write, pwm->circ_buf.read, pwm->circ_buf.size );
 	if( remaining <= 1024 && remaining > 1021 ) { // TODO make it better (I think a test each consumed sample is the only accurate solution
 		// Can accept new data now
-		wake_up_interruptible( &write_wait );
+		wake_up_interruptible( &pwm->write_wait );
 	}
 
 	/* End of sound buffer */
 	if( remaining < 3 ) {
-		if(gDataLen == PWM_DATA_8BIT) {
+		if(pwm->dataLen == PWM_DATA_8BIT) {
 			while( remaining ) {
-				PWMS = (u32)(get_byte_from_circbuf( &gPWM_Circ_Buf ));
+				writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
 				/*PK("<1>(%d) pwm_int: PWMS = 0x%8x\n", gWriteCnt, PWMS);*/
 				remaining--;
 			}
 		} else { /* PWM_DATA_16BIT) */
 			while( remaining ) {
-				PWMS = (u32)(get_word_from_circbuf( &gPWM_Circ_Buf ));
+				writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
 				//PK("<1>(%d) pwm_int: PWMS = 0x%8x\n", gWriteCnt, PWMS);
 				remaining--;
 			}
 		}
-
-		stop_pwm();
+		stop_pwm(pwm);
 		goto end;
 	}
 
 	/* Put sound samples in FIFO */
-	if (gDataLen == PWM_DATA_8BIT) {
-		PWMS = (u32)(get_byte_from_circbuf( &gPWM_Circ_Buf ));
-		PWMS = (u32)(get_byte_from_circbuf( &gPWM_Circ_Buf ));
-		PWMS = (u32)(get_byte_from_circbuf( &gPWM_Circ_Buf ));
-		if (PWMC & PWMC_FIFOAV) { /* TODO: verify if needed */
-			PWMS = (u32)(get_byte_from_circbuf( &gPWM_Circ_Buf ));
-			g4bytes++;
+	if (pwm->dataLen == PWM_DATA_8BIT) {
+		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		if ((readl(pwm->membase + PWMSTATUS) & PWM_FIFOAV) > 0) { /* TODO: verify if needed */
+			writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+			pwm->nbbytes++;
 		}
 	} else { /* PWM_DATA_16BIT) */
 		// TODO: put good value in PWMC_BCTR to auto swap bytes if needed (do it at write or ioctl)
-		PWMS = (u32)(get_word_from_circbuf( &gPWM_Circ_Buf ));
-		PWMS = (u32)(get_word_from_circbuf( &gPWM_Circ_Buf ));
-		PWMS = (u32)(get_word_from_circbuf( &gPWM_Circ_Buf ));
-		if (PWMC & PWMC_FIFOAV) { /* TODO: verify if needed */
-			PWMS = (u32)(get_word_from_circbuf( &gPWM_Circ_Buf ));
-			g4bytes++;
+		writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		if ((readl(pwm->membase + PWMSTATUS) & PWM_FIFOAV) > 0) { /* TODO: verify if needed */
+			writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+			pwm->nbbytes++;
 		}
 	}
 
@@ -963,104 +898,142 @@ end:
 	return(IRQ_HANDLED);
 }
 
-static int __init pwm_init_from_probe(void)
-{
-	int result;
-
-	/* Register our char device */
-	result = register_chrdev(0, DRIVER_NAME, &pwm_fops);
-	if (result < 0) {
-		printk("pwm driver: Unable to register driver\n");
-		goto end;
-	}
-	/* Dynamic Major allocation */
-	if (gMajor == 0) {
-		gMajor = result;
-		printk("PWM major number = %d\n",gMajor);
-	}
-
-	result = request_irq(PWM_INT, pwm_interrupt, IRQF_DISABLED, DEV_IRQ_NAME, DEV_IRQ_ID);
-	if (result) {
-		printk("<1>cannot init major= %d irq=%d\n", gMajor, irq);
-		unregister_chrdev(gMajor, DRIVER_NAME);
-		goto end;
-	}
-
-	/* init wait queue */
-	init_waitqueue_head(&write_wait);
-	init_waitqueue_head(&exit_wait);
-	pr_debug("Wait queues initialized\n");
-
-	/* init PWM hardware module */
-	init_pwm();
-
-	printk("i.MX PWM driver v" DRIVER_VERSION "\n");
-
-end:
-	return( result );
-}
-
 /**
  * imx_pwm_drv_probe - claim resources
  * @pdev: platform device to work with
- *
- * CAUTION: This functions rejects a PWM unit if its
- * not forwarded to any possible GPIO pin! In this case
- * it also returns -ENODEV
- *
- * Returns -ENODEV if there is no such device on this SoC, -EBUSY if this
- * resource is already claimed
  */
 static int imx_pwm_drv_probe(struct platform_device *pdev)
 {
 	int err=-ENODEV;
 	struct resource *res;
+	struct pwm_device *pwm;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	printk(KERN_INFO " Initializing PWM#%u...",pdev->id);
 
-	switch( pdev->id )
-	{
-		/* PWM0 */
-		case 0:
-		// Check if GPIO was initialized ??
-		break;
-	
-		default:
-		printk(DRIVER_NAME " failed. Unknown PWM%u device. Remember that this device only supports 1 PWM\n", pdev->id);
-		return err;
-		break;
+	if( pdev->id >= PWM_MAX_DEV )
+		printk(DRIVER_NAME " failed. Unknown PWM%u device. Remember that this device only supports %d PWM\n", pdev->id, PWM_MAX_DEV);
+
+	if (  dev_table[pdev->id] != NULL ) {
+		printk(KERN_ERR ": already used\n");
+		return -ENODEV;
 	}
 
-	if (unlikely(!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0))))
-		goto exit;
+	if (!pdata) {
+		printk(KERN_ERR "Platform data not supplied\n");
+		return -ENOENT;
+	}
 
-	if (unlikely(!request_mem_region( res->start, res->end - res->start + 1, "imx-pwm" ))) {
+	if (unlikely((pwm = kmalloc(sizeof(struct pwm_device), GFP_KERNEL)) == NULL)) {
+		return -ENOMEM;
+	}
+	memset(&pwm->class_dev, 0, sizeof(struct device));
+	pwm->class_dev.class = &pwm_class;
+	pwm->class_dev.parent = &pdev->dev;
+	snprintf(pwm->class_dev.bus_id, BUS_ID_SIZE, "pwm%i", pdev->id);
+	pwm->active=0;
+	pwm->duty=500; /* = 50.O% */
+	pdev->dev.driver_data=pwm;
+	dev_table[pdev->id] = pwm;
+
+	pwm->irq = platform_get_irq(pdev, 0);
+	if (pwm->irq < 0) {
+		printk(KERN_ERR "No interrupt defined\n");
+		err = -ENOENT;
+		goto error_malloc;
+	}
+
+	if (unlikely(!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0)))){
+		printk(KERN_ERR "Unable to get mem ressource\n");
+		err = -ENOENT;
+		goto error_malloc;
+	}
+
+	if (unlikely(!request_mem_region( res->start, res->end - res->start + 1, DRIVER_NAME ))) {
+		printk(KERN_ERR "Region busy\n");
 		err = -EBUSY;
-		goto exit;
+		goto error_malloc;
 	}
-	pwm_init_from_probe();
+	/* TODO: use iomap() */
+	pwm->membase = IO_ADDRESS(res->start);
+
+	/* Register our char device */
+	err = register_chrdev(gMajor, DRIVER_NAME, &pwm_fops);
+	if (err < 0) {
+		printk(KERN_ERR "pwm driver: Unable to register driver\n");
+		goto error_memreg;
+	}
+	/* Dynamic Major allocation */
+	if (gMajor == 0) {
+		gMajor = err;
+		printk("PWM major number = %d\n",gMajor);
+	}
+
+	err = request_irq(pwm->irq, pwm_interrupt, IRQF_DISABLED, DRIVER_NAME, pwm);
+	if (err) {
+		printk(KERN_ERR "<1>cannot init major= %d irq=%d\n", gMajor, pwm->irq);
+		goto error_chrdev;
+	}
+
+	/* init wait queue */
+	init_waitqueue_head(&pwm->write_wait);
+	init_waitqueue_head(&pwm->exit_wait);
+
+	/* init gpio */
+	if (pdata->init)
+		pdata->init();
 
 	/* Create /sys stuf */
-	if (unlikely((err=init_userinterface(pdev,res->start))))
-		goto release;
+	err = device_register(&pwm->class_dev);
+	if (unlikely(err)) goto error_irq;
 
-	printk("done.\n");
+	/* Register the attributes */
+	err |= device_create_file(&pwm->class_dev, &dev_attr_duty);
+	if (unlikely(err)) goto error_register;
+	err |= device_create_file(&pwm->class_dev, &dev_attr_period);
+	if (unlikely(err)) goto error_file;
+	err |= device_create_file(&pwm->class_dev, &dev_attr_frequency);
+	if (unlikely(err)) goto error_file;
+	err |= device_create_file(&pwm->class_dev, &dev_attr_active);
+	if (unlikely(err)) goto error_file;
+
+#ifdef CONFIG_ARCH_MX2
+	pwm->clk = clk_get(&pdev->dev, "pwm_clk");
+	if (IS_ERR(pwm->clk)) {
+		printk(KERN_ERR "probe - cannot get clock\n");
+		goto error_file;
+	}	
+	clk_enable(pwm->clk);
+#endif
+	/* init PWM hardware module */
+	init_pwm(pwm);
+
+	printk("i.MX PWM driver v" DRIVER_VERSION "\n");
 	return(0);
 
-release:
+error_file:
+	printk(KERN_ERR "%s: class /sys file creation failed\n", DRIVER_NAME);
+	unregister_sys_file(pwm);
+error_register:
+	device_unregister( &pwm->class_dev );
+error_irq:
+	free_irq(pwm->irq, pwm);
+error_chrdev:
+	unregister_chrdev(gMajor, DRIVER_NAME);
+error_memreg:
 	release_mem_region(res->start, res->end - res->start + 1);
-exit:
-	printk(KERN_INFO "not available.\n");
+error_malloc:
+	kfree(pwm);
 	return err;
 }
 
-static inline void unregister_sys_file( struct pwm_device *ppd )
+static inline void unregister_sys_file( struct pwm_device *pwm )
 {
 	/* Unregister /sys attributes */
-	device_remove_file( &ppd->class_dev, &dev_attr_active );
-	device_remove_file( &ppd->class_dev, &dev_attr_period );
-	device_remove_file( &ppd->class_dev, &dev_attr_frequency );
-	device_remove_file( &ppd->class_dev, &dev_attr_duty );
+	device_remove_file( &pwm->class_dev, &dev_attr_active );
+	device_remove_file( &pwm->class_dev, &dev_attr_period );
+	device_remove_file( &pwm->class_dev, &dev_attr_frequency );
+	device_remove_file( &pwm->class_dev, &dev_attr_duty );
 }
 
 /**
@@ -1070,15 +1043,19 @@ static inline void unregister_sys_file( struct pwm_device *ppd )
 static int imx_pwm_drv_remove (struct platform_device *pdev)
 {
 	struct resource *res;
-	struct pwm_device *ppd=(struct pwm_device*)pdev->dev.driver_data;
+	struct pwm_device *pwm=(struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
-	unregister_sys_file(ppd);
-	device_unregister( &ppd->class_dev );
-	kfree(ppd);
-
+	unregister_sys_file(pwm);
+	device_unregister( &pwm->class_dev );
+	free_irq(pwm->irq, pwm);
+	unregister_chrdev(gMajor, DRIVER_NAME);
 	res = platform_get_resource( pdev, IORESOURCE_MEM, 0 );
 	release_mem_region( res->start, res->end - res->start + 1 );
-
+	kfree(pwm);
+	dev_table[pdev->id] = NULL;
+	if( pdata->exit() )
+		pdata->exit();
 	return 0;
 }
 
@@ -1090,7 +1067,14 @@ static int imx_pwm_drv_remove (struct platform_device *pdev)
  */
 static int imx_pwm_drv_suspend (struct platform_device *pdev, pm_message_t state)
 {
-	printk("%s\n",__FUNCTION__);
+	struct pwm_device *pwm=(struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
+
+	clk_disable(pwm->clk);
+	dev_dbg(&pdev->dev, "suspended\n");
+	if( pdata->exit() )
+		pdata->exit();
+
 	return 0;
 }
 
@@ -1100,7 +1084,13 @@ static int imx_pwm_drv_suspend (struct platform_device *pdev, pm_message_t state
  */
 static int imx_pwm_drv_resume (struct platform_device *pdev)
 {
-	printk("%s\n",__FUNCTION__);
+	struct pwm_device *pwm=(struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
+
+	clk_enable(pwm->clk);
+	dev_dbg(&pdev->dev, "resumed\n");
+	if( pdata->init() )
+		pdata->init();
 	return 0;
 }
 #else
@@ -1128,7 +1118,6 @@ static struct platform_driver imx_pwm_driver = {
 		.name   = DRIVER_NAME,
 	},
 };
-
 
 static struct sysdev_class pwm_sysclass = {
 	.name = "pwm",
@@ -1178,15 +1167,13 @@ out_sysdev_class:
 
 static void __exit imx_pwm_exit(void)
 {
-	disable_irq(PWM_INT); /* should be done before free_irq no ? */
-	free_irq(PWM_INT, DEV_IRQ_ID);
-	unregister_chrdev(gMajor, DRIVER_NAME);
-
+	int i;
 	platform_driver_unregister(&imx_pwm_driver);
 	sysdev_unregister(&pwm_sys_device);
 	sysdev_class_unregister(&pwm_sysclass);
 	class_unregister(&pwm_class);
-
+	for(i=0; i<PWM_MAX_DEV; i++)
+		dev_table[i] = NULL;
 	printk(DRIVER_NAME " successfully unloaded\n");
 }
 

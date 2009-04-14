@@ -44,4 +44,9 @@
 #define	PWM_PLAY_MODE		1
 #define	PWM_TONE_MODE		2
 
+struct imx_pwm_platform_data {
+    int (*init)(void);
+    int (*exit)(void);
+};
+
 #endif
