@@ -1,6 +1,4 @@
 /*
- * definitions.h - imxregs common definitions
- *
  * Copyright (C) 2008 armadeus systems
  * Author: Fabien Marteau <fabien.marteau@armadeus.com>
  *
