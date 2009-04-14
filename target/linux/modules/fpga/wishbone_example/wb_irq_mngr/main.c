@@ -37,9 +37,16 @@
 #	include <mach/irqs.h>
 #endif
 #include <asm/irq.h>
-#include <asm/io.h> // readb() & Co
+#include <asm/io.h> /* readb() & Co */
 
 #include <asm/mach/irq.h>
+#ifdef CONFIG_MACH_APF27
+#include <mach/fpga.h> /* To remove when MX1 platform merged */
+#else
+#define VA_GPIO_BASE	IO_ADDRESS(IMX_GPIO_BASE)
+#define MXC_ISR(x)     (0x34 + ((x) << 8))
+#endif
+
 
 #if 0
 #define DEBUG_FPGA_IRQ(fmt,args...)	printk(KERN_DEBUG "IRQ_MNGR: " fmt,##args)
@@ -54,8 +61,8 @@
 
 #define NB_IT    (16)
 
-#define FPGA_IMR (APF9328_FPGA_VIRT + IRQ_MNGR_BASE + 0x00) /* Interrupt Mask Register */
-#define FPGA_ISR (APF9328_FPGA_VIRT + IRQ_MNGR_BASE + 0x02) /* Interrupt Status Register */
+#define FPGA_IMR (ARMADEUS_FPGA_BASE_ADDR_VIRT + IRQ_MNGR_BASE + 0x00) /* Interrupt Mask Register */
+#define FPGA_ISR (ARMADEUS_FPGA_BASE_ADDR_VIRT + IRQ_MNGR_BASE + 0x02) /* Interrupt Status Register */
 
 
 static int
@@ -73,9 +80,11 @@ imx_fpga_ack_irq(unsigned int irq)
 	DEBUG_FPGA_IRQ("%s: irq %d ack:0x%x\n", __FUNCTION__, irq, shadow);
 	writew( shadow, FPGA_ISR );
 
-	/* if last IT ack GPIO global IRQ */
-	if( readw(FPGA_ISR) == 0 )
-		ISR(IRQ_TO_REG(APF9328_FPGA_IRQ)) = 1 << (APF9328_FPGA_IRQ - IRQ_GPIOA(0));
+	/* if last IT, ack GPIO global IRQ */
+	if( readw(FPGA_ISR) == 0 ) {
+		__raw_writel(1 << (ARMADEUS_FPGA_IRQ & 0x1f),
+				VA_GPIO_BASE + MXC_ISR(IRQ_TO_REG(ARMADEUS_FPGA_IRQ)));
+	}
 }
 
 static void
@@ -139,21 +148,19 @@ static struct irq_chip imx_fpga_chip = {
 static int __init ocore_irq_mng_init(void)
 {
 	unsigned int irq;
-    u16 data;
-    int result=0;
+	u16 data;
+	int result=0;
 
 	DEBUG_FPGA_IRQ("Initializing FPGA IRQs\n");
 
-    /**************************/
-    /* check if ID is correct */
-    /**************************/
-    data = ioread16(APF9328_FPGA_VIRT+IRQ_MNGR_BASE+ID_OFFSET);
-    if(data != ID)
-    {
-        result = -1;
-        printk(KERN_WARNING "For irq_mngr id:%d doesn't match with id read %d,\n is device present ?\n",ID,data);
-        goto error_id;
-    }
+	/* check if ID is correct */
+	data = ioread16(ARMADEUS_FPGA_BASE_ADDR_VIRT + IRQ_MNGR_BASE + ID_OFFSET);
+	if (data != ID) {
+        	result = -1;
+        	printk(KERN_WARNING "For irq_mngr id:%d doesn't match with id"
+			 "read %d,\n is device present ?\n", ID, data);
+        	goto error_id;
+	}
 
 	/* Mask all interrupts initially */
 	writew(0, FPGA_IMR);
@@ -162,13 +169,13 @@ static int __init ocore_irq_mng_init(void)
 		set_irq_chip_and_handler( irq, &imx_fpga_chip, handle_edge_irq );
 		set_irq_flags(irq, IRQF_VALID);
 	}
-	set_irq_chained_handler(APF9328_FPGA_IRQ, imx_fpga_demux_handler);
+	set_irq_chained_handler(ARMADEUS_FPGA_IRQ, imx_fpga_demux_handler);
 
 	DEBUG_FPGA_IRQ("IRQs initialized\n");
 
 	return 0;
 error_id:
-    return result;
+	return result;
 }
 
 static void __exit ocore_irq_mng_exit(void)
@@ -179,7 +186,7 @@ static void __exit ocore_irq_mng_exit(void)
 		set_irq_handler(irq,NULL);
 		set_irq_flags(irq, 0);
 	}
-	set_irq_chained_handler(APF9328_FPGA_IRQ, NULL);
+	set_irq_chained_handler(ARMADEUS_FPGA_IRQ, NULL);
 
 	DEBUG_FPGA_IRQ("%s\n", __FUNCTION__);
 }
@@ -190,3 +197,4 @@ module_exit(ocore_irq_mng_exit);
 MODULE_AUTHOR("Julien Boibessot, <julien.boibessot@armadeus.com>");
 MODULE_DESCRIPTION("Armadeus OpenCore IRQ manager");
 MODULE_LICENSE("GPL");
+

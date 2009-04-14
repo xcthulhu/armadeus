@@ -29,10 +29,13 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <asm/irq.h>
+#ifdef CONFIG_MACH_APF27
+#include <mach/fpga.h> /* To remove when MX1 platform merged*/
+#endif
 
 
 /* Module's parameters: */
-static int interrupt=IRQ_FPGA(3);
+static int interrupt = IRQ_FPGA(3);
 module_param(interrupt, int, 0000);
 MODULE_PARM_DESC(interrupt, "IT to request");
 
@@ -53,13 +56,14 @@ static int __init irq_mng_test_init(void)
 	int result;
 	
 	/* IRQ registering */
-	if( (result=request_irq( interrupt, (irq_handler_t)fpga_interrupt, /*IRQF_SHARED*/0, "ocore_irq_test", &data)) < 0 )
-	{
+	if ((result = request_irq(interrupt, (irq_handler_t)fpga_interrupt,
+				/*IRQF_SHARED*/0, "ocore_irq_test", &data)) < 0) {
 		printk(KERN_ERR "Can't request IRQ n°%d\n", interrupt);
 		goto error;
 	}
 	
-	printk(KERN_INFO DRIVER_NAME " inserted (IRQ %d reserved), be sure to have correspondig IP loaded in the FPGA !\n", interrupt);
+	printk(KERN_INFO DRIVER_NAME " inserted (IRQ %d reserved), be sure to "
+		"have correspondig IP loaded in the FPGA !\n", interrupt);
 	return 0;
 	
 error:
@@ -79,3 +83,4 @@ module_exit(irq_mng_test_exit);
 MODULE_AUTHOR("Julien Boibessot, <julien.boibessot@armadeus.com>");
 MODULE_DESCRIPTION("OpenCore IRQ manager IP's test driver");
 MODULE_LICENSE("GPL");
+

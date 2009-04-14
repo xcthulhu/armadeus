@@ -1,9 +1,8 @@
 /*
- ***********************************************************************
+ * Specific led driver for generic led driver 
  *
  * (c) Copyright 2008	Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
- * Specific led driver for generic led driver 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- **********************************************************************
  */
 
 #include <linux/version.h>
@@ -26,21 +24,21 @@
 #include <linux/config.h>
 #endif
 
-/* form module/drivers */
 #include <linux/init.h>
 #include <linux/module.h>
-
-/* for platform device */
 #include <linux/platform_device.h>
-
+#ifdef CONFIG_MACH_APF27 /* to be removed when MX1 platform merged */
+#include <mach/fpga.h>
+#endif
 #include"led.h"
+
 
 static struct plat_led_port plat_led0_data = {
 	.name = "LED0",
-	.num=0,
+	.num = 0,
 	.membase = (void *)(ARMADEUS_FPGA_BASE_ADDR_VIRT + 0x8),
-	.idnum=2,
-	.idoffset=0x01 * (16 /8)
+	.idnum = 2,
+	.idoffset = 0x01 * (16 / 8),
 };
 
 
@@ -50,28 +48,23 @@ void plat_led_release(struct device *dev){
 
 static struct platform_device plat_led0_device = {
 	.name = "led",
-	.id=0,
-	.dev={
+	.id = 0,
+	.dev = {
 		.release = plat_led_release,
-		.platform_data=&plat_led0_data},
+		.platform_data=&plat_led0_data
+		},
 };
 
 
 static int __init sled_init(void)
 {
-	int ret=-1;
-	ret = platform_device_register(&plat_led0_device);
-	if(ret<0)return ret;
-
-	PDEBUG("*led inserted*\n");
-	return ret;
+	return platform_device_register(&plat_led0_device);
 }
 
 static void __exit sled_exit(void)
 {
 	printk(KERN_WARNING "deleting board_leds\n");
 	platform_device_unregister(&plat_led0_device);
-
 }
 
 module_init(sled_init);
