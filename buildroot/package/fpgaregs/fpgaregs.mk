@@ -9,6 +9,11 @@ FPGAREGS_SOURCE:=$(BUILD_DIR)/../../target/linux/debug/fpgaregs/
 FPGAREGS_DIR:=$(BUILD_DIR)/fpgaregs-$(FPGAREGS_VER)
 FPGAREGS_CAT:=zcat
 FPGAREGS_BINARY:=fpgaregs
+ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
+IMXREGS_BINARY:=fpga27regs
+else
+IMXREGS_BINARY:=fpgaregs
+endif
 FPGAREGS_TARGET_BINARY:=usr/bin/fpgaregs
 
 $(FPGAREGS_DIR)/fpgaregs.c:

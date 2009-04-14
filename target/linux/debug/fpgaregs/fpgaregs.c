@@ -44,7 +44,11 @@
 /* memory management */
 #include <sys/mman.h>
 
-#define FPGA_ADDRESS 0x12000000
+#ifdef IMX27
+#	include "fpga27regs.h"
+#else
+#	include "fpgaregs.h"
+#endif
 
 #define WORD_ACCESS (2)
 #define LONG_ACCESS (4)
