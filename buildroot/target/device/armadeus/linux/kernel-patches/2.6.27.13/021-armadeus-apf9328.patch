@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-imx/apf9328.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-imx/apf9328.c	
-@@ -0,0 +1,731 @@
+@@ -0,0 +1,763 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -50,7 +50,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#include <linux/spi/max1027.h>
 +#include <linux/usb/isp116x.h>
 +#include <mach/imx_ssi.h>
-+
++#include "../../../drivers/armadeus/pwm/pwm.h"
 +#ifdef CONFIG_DM9000
 +#include <linux/dm9000.h>
 +#endif
@@ -74,6 +74,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif
 +#ifdef CONFIG_ARMADEUS_ISP1761_MODULE
 +#define CONFIG_ARMADEUS_ISP1761 1
++#endif
++#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
++#define CONFIG_PWM
 +#endif
 +
 +// --- ISP1761
@@ -166,8 +169,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +};
 +#endif // CONFIG_DM9000
 +
-+// --- PWM RESSOURCE ---
-+// I don't think it needs an ifdef - JB
++
 +static struct resource pwm_resources[] = {
 +    [0] = {
 +        .start  = (IMX_PWM_BASE),
@@ -181,12 +183,40 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    },
 +};
 +
++#ifdef CONFIG_PWM
++static int apf9328_pwm_0_init(void)
++{
++    printk("setup gpio \n");
++	/* Init Port PA[2] : PWMO*/
++	DDIR(0) |=  0x00000002;
++	GIUS(0) &= ~0x00000002;
++	GPR(0)  &= ~0x00000002;
++	return 0;
++}
++
++static int apf9328_pwm_0_exit(void)
++{
++	return 0;
++}
++
++static struct imx_pwm_platform_data apf9328_pwm_0_data = {
++	.init = apf9328_pwm_0_init,
++	.exit = apf9328_pwm_0_exit,
++};
++
 +static struct platform_device imx_pwm_device = {
 +    .name           = "imx-pwm", // Should be the same as the driver name
 +    .id             = 0,
 +    .num_resources  = ARRAY_SIZE(pwm_resources),
 +    .resource       = pwm_resources,
++    .dev            = {
++        .platform_data = &apf9328_pwm_0_data,
++    }
 +};
++
++#endif
++
++
 +
 +#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
 +int apf9328_ssi_gpio_init(struct platform_device *pdev) 
@@ -630,7 +660,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    &imx_spi1,
 +    &imx_spi2,
 +#endif
++#ifdef CONFIG_PWM
 +    &imx_pwm_device,
++#endif
 +#ifdef CONFIG_IMX_BACKLIGHT
 +    &imxbl_device,
 +#endif
