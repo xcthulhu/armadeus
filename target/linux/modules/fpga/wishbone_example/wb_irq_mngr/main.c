@@ -22,6 +22,8 @@
  *
  */
 
+/*#define DEBUG*/
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -48,16 +50,9 @@
 #endif
 
 
-#if 0
-#define DEBUG_FPGA_IRQ(fmt,args...)	printk(KERN_DEBUG "IRQ_MNGR: " fmt,##args)
-#else
-#define DEBUG_FPGA_IRQ(fmt...)	do { } while (0)
-#endif
-
 #define IRQ_MNGR_BASE (0x0)
 #define ID (1)
 #define ID_OFFSET (0x02 *(16/8))
-
 
 #define NB_IT    (16)
 
@@ -77,7 +72,7 @@ imx_fpga_ack_irq(unsigned int irq)
 	int shadow;
 
 	shadow = 1 << ((irq - IRQ_FPGA_START) % NB_IT);
-	DEBUG_FPGA_IRQ("%s: irq %d ack:0x%x\n", __FUNCTION__, irq, shadow);
+	pr_debug("%s: irq %d ack:0x%x\n", __FUNCTION__, irq, shadow);
 	writew( shadow, FPGA_ISR );
 
 	/* if last IT, ack GPIO global IRQ */
@@ -94,7 +89,7 @@ imx_fpga_mask_irq(unsigned int irq)
 
 	shadow = readw(FPGA_IMR);
 	shadow &= ~( 1 << ((irq - IRQ_FPGA_START) % NB_IT));
-	DEBUG_FPGA_IRQ("%s: irq %d mask:0x%x\n", __FUNCTION__, irq, shadow);
+	pr_debug("%s: irq %d mask:0x%x\n", __FUNCTION__, irq, shadow);
 	writew( shadow, FPGA_IMR );
 }
 
@@ -105,19 +100,19 @@ imx_fpga_unmask_irq(unsigned int irq)
 
 	shadow = readw(FPGA_IMR);
 	shadow |= 1 << ((irq - IRQ_FPGA_START) % NB_IT);
-	DEBUG_FPGA_IRQ("%s: irq %d mask:0x%x\n", __FUNCTION__, irq, shadow);
-	writew( shadow, FPGA_IMR );
+	pr_debug("%s: irq %d mask:0x%x\n", __FUNCTION__, irq, shadow);
+	writew(shadow, FPGA_IMR);
 }
 
 static void
 imx_fpga_handler(unsigned int mask, unsigned int irq,
                  struct irq_desc *desc)
 {
-	DEBUG_FPGA_IRQ("%s: mask:0x%x\n", __FUNCTION__, mask);
+	pr_debug("%s: mask:0x%04x\n", __FUNCTION__, mask);
 	desc = irq_desc + irq;
 	while (mask) {
 		if (mask & 1) {
-			DEBUG_FPGA_IRQ("handling irq %d\n", irq);
+			pr_debug("handling irq %d\n", irq);
 			desc_handle_irq(irq, desc);
 		}
 		irq++;
@@ -149,14 +144,14 @@ static int __init ocore_irq_mng_init(void)
 {
 	unsigned int irq;
 	u16 data;
-	int result=0;
+	int result = 0;
 
-	DEBUG_FPGA_IRQ("Initializing FPGA IRQs\n");
+	pr_debug("Initializing FPGA IRQs\n");
 
 	/* check if ID is correct */
 	data = ioread16(ARMADEUS_FPGA_BASE_ADDR_VIRT + IRQ_MNGR_BASE + ID_OFFSET);
 	if (data != ID) {
-        	result = -1;
+        	result = -ENODEV;
         	printk(KERN_WARNING "For irq_mngr id:%d doesn't match with id"
 			 "read %d,\n is device present ?\n", ID, data);
         	goto error_id;
@@ -166,12 +161,13 @@ static int __init ocore_irq_mng_init(void)
 	writew(0, FPGA_IMR);
 
 	for (irq = IRQ_FPGA(0); irq < IRQ_FPGA(NB_IT-1); irq++) {
-		set_irq_chip_and_handler( irq, &imx_fpga_chip, handle_edge_irq );
+		pr_debug("IRQ %d\n", irq);
+		set_irq_chip_and_handler(irq, &imx_fpga_chip, handle_edge_irq);
 		set_irq_flags(irq, IRQF_VALID);
 	}
 	set_irq_chained_handler(ARMADEUS_FPGA_IRQ, imx_fpga_demux_handler);
 
-	DEBUG_FPGA_IRQ("IRQs initialized\n");
+	pr_debug("IRQs initialized\n");
 
 	return 0;
 error_id:
@@ -188,7 +184,7 @@ static void __exit ocore_irq_mng_exit(void)
 	}
 	set_irq_chained_handler(ARMADEUS_FPGA_IRQ, NULL);
 
-	DEBUG_FPGA_IRQ("%s\n", __FUNCTION__);
+	pr_debug("%s\n", __FUNCTION__);
 }
 
 module_init(ocore_irq_mng_init);
