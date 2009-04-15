@@ -1,7 +1,7 @@
 Index: linux-2.6.27.13/arch/arm/plat-mxc/include/mach/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/plat-mxc/include/mach/fpga.h	2009-04-14 16:30:36.000000000 +0200
++++ linux-2.6.27.13/arch/arm/plat-mxc/include/mach/fpga.h	2009-04-15 10:15:43.000000000 +0200
 @@ -0,0 +1,37 @@
 +/*
 + * Copyright (C) 2009 Armadeus Systems
@@ -26,17 +26,17 @@ Index: linux-2.6.27.13/arch/arm/plat-mxc/include/mach/fpga.h
 +
 +
 +#ifdef CONFIG_MACH_APF27
-+#include <mach/board-apf27.h>
++#include <mach/board-apf27.h> /* @ + IRQs are here */
 +#else
 +/* To complete when MX1 platform merged */
 +#endif
 +
 +/* FPGA interrupts number */
 +#ifdef CONFIG_MACH_APF27
-+#define IRQ_FPGA_START  (IRQ_GPIOF(32) + 1)
++#define IRQ_FPGA_START  (IRQ_GPIOF(32))
 +#endif
 +#define IRQ_FPGA(x)     (IRQ_FPGA_START + x)
-+
++#define NR_IRQS_FPGA	(32)
 +
 +#endif /* __ASM_ARCH_ARMADEUS_FPGA_H__ */
 +

@@ -1,0 +1,29 @@
+Index: linux-2.6.27.13/arch/arm/plat-mxc/include/mach/mx27.h
+===================================================================
+--- linux-2.6.27.13.orig/arch/arm/plat-mxc/include/mach/mx27.h	2009-04-15 10:16:59.000000000 +0200
++++ linux-2.6.27.13/arch/arm/plat-mxc/include/mach/mx27.h	2009-04-15 10:23:26.000000000 +0200
+@@ -289,7 +289,8 @@
+ #define cpu_is_mx27()		(1)
+ 
+ /* this CPU supports up to 192 GPIOs (don't forget the baseboard!) */
+-#define ARCH_NR_GPIOS		(192 + 16)
++#define MXC_MAX_GPIO_LINES	(192)
++#define ARCH_NR_GPIOS		(MXC_MAX_GPIO_LINES + 16)
+ 
+ /* OS clock tick rate */
+ #define CLOCK_TICK_RATE         13300000
+@@ -297,10 +298,11 @@
+ /* Start of RAM */
+ #define PHYS_OFFSET		SDRAM_BASE_ADDR
+ 
+-/* max interrupt lines count */
+-#define NR_IRQS			256
+-
+ /* count of internal interrupt sources */
+ #define MXC_MAX_INT_LINES	64
+ 
++/* max interrupt lines count */
++#define MXC_MAX_VIRTUAL_INTS	64
++#define NR_IRQS			(MXC_MAX_INT_LINES + MXC_MAX_GPIO_LINES + MXC_MAX_VIRTUAL_INTS)
++
+ #endif /* __ASM_ARCH_MXC_MX27_H__ */

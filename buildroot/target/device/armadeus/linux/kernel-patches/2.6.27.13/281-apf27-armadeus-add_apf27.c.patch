@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-14 16:09:10.000000000 +0200
-@@ -0,0 +1,1530 @@
++++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-15 11:05:40.000000000 +0200
+@@ -0,0 +1,1559 @@
 + /*
 + * apf27.c
 + *
@@ -1441,6 +1441,32 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +};
 +
 +
++/* FPGA */
++#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
++static int fpga_pins[] = {
++	(APF27_FPGA_INT_PIN | GPIO_IN | GPIO_GPIO),
++};
++
++static int apf27_fpga_init(void)
++{
++	int res;
++
++	res = mxc_gpio_setup_multiple(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
++	if (!res)
++		set_irq_type(APF27_FPGA_IRQ, IRQF_TRIGGER_RISING);
++
++	return res;
++}
++# if 0
++static int apf27_fpga_exit(void)
++{
++	mxc_gpio_release_multiple(fpga_pins, ARRAY_SIZE(fpga_pins));
++	return 0;
++}
++# endif
++#endif /* CONFIG_ARMADEUS_FPGA_DRIVERS */
++
++
 +static void __init apf27_init(void)
 +{
 +	sysdev_class_register(&apf27_pm_sysclass);
@@ -1496,6 +1522,9 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +#endif
 +#ifdef CONFIG_VIDEO_MX27
 +	mxc_register_device(&mx27_camera_device, &apf27_camera);
++#endif
++#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
++	apf27_fpga_init();
 +#endif
 +
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
