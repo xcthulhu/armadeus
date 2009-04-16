@@ -5,7 +5,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.27.13/arch/arm/mach-mx2/apf27.c	2009-04-15 11:05:40.000000000 +0200
-@@ -0,0 +1,1559 @@
+@@ -0,0 +1,1558 @@
 + /*
 + * apf27.c
 + *
@@ -882,14 +882,13 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	temp |= 2 << 30;
 +	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x184);
 +	pr_debug("PORTSC1 after: 0x%08x\n", temp);
-+
 +	mdelay(10);
 +
 +	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x140);
 +	temp |= 0x02; /* reset controller */
 +	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x140);
 +	pr_debug("reset controller: 0x%08x\n", temp);
-+	mdelay(10);
++	mdelay(50);
 +
 +	if (ret)
 +		mxc_gpio_release_multiple(mxc_usbotg_pins,
@@ -1483,7 +1482,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
-+	mxc_register_device(&imx_pwm_device0, &apf27_pwm_0_data);
++	mxc_register_device(&mxc_pwm_device0, &apf27_pwm_0_data);
 +#endif
 +#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
