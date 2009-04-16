@@ -160,10 +160,12 @@ static int __init ocore_irq_mng_init(void)
 	/* Mask all interrupts initially */
 	writew(0, FPGA_IMR);
 
-	for (irq = IRQ_FPGA(0); irq < IRQ_FPGA(NB_IT-1); irq++) {
+	for (irq = IRQ_FPGA(0); irq < IRQ_FPGA(NB_IT); irq++) {
 		pr_debug("IRQ %d\n", irq);
 		set_irq_chip_and_handler(irq, &imx_fpga_chip, handle_edge_irq);
 		set_irq_flags(irq, IRQF_VALID);
+		/* clear pending interrrupts */ 
+		imx_fpga_ack_irq(irq);
 	}
 	set_irq_chained_handler(ARMADEUS_FPGA_IRQ, imx_fpga_demux_handler);
 
@@ -177,7 +179,7 @@ error_id:
 static void __exit ocore_irq_mng_exit(void)
 {
 	unsigned int irq;
-	for (irq = IRQ_FPGA(0); irq < IRQ_FPGA(NB_IT-1); irq++) {
+	for (irq = IRQ_FPGA(0); irq < IRQ_FPGA(NB_IT); irq++) {
 		set_irq_chip( irq, NULL);
 		set_irq_handler(irq,NULL);
 		set_irq_flags(irq, 0);
