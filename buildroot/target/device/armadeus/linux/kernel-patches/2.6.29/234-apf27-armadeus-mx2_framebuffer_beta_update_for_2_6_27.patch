@@ -1,15 +1,18 @@
---- linux-2.6.27.2/drivers/video/mxc/mx2fb.c	2008-12-02 15:49:06.000000000 +0100
-+++ linux-2.6.27.2.mod/drivers/video/mxc/mx2fb.c	2008-12-03 17:31:04.000000000 +0100
-@@ -30,7 +30,7 @@
+Index: linux-2.6.29/drivers/video/mxc/mx2fb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/mxc/mx2fb.c	2009-04-02 13:15:33.000000000 +0200
++++ linux-2.6.29/drivers/video/mxc/mx2fb.c	2009-04-02 13:17:59.000000000 +0200
+@@ -30,7 +30,8 @@
  #include <linux/interrupt.h>
  #include <linux/clk.h>
  #include <asm/uaccess.h>
 -#include <asm/arch/imx_fb.h>
 +#include <mach/imx_fb.h>
++#include <mach/hardware.h>
  
  #include "mx2fb.h"
  
-@@ -997,7 +997,7 @@
+@@ -997,7 +998,7 @@
  	/* Read to clear the status */
  	status = __raw_readl(LCDC_REG(LCDC_LISR));
  
@@ -18,7 +21,7 @@
  		pr_info("Request LCDC IRQ failed.\n");
  	else {
  		spin_lock_irqsave(&mx2fb_notifier_list.lock, flags);
-@@ -1028,7 +1028,7 @@
+@@ -1028,7 +1029,7 @@
  	/* Disable all LCDC interrupt */
  	__raw_writel(0x0, LCDC_REG(LCDC_LIER));
  
@@ -27,8 +30,10 @@
  }
  
  int mx2fb_register_client(struct notifier_block *nb)
---- linux-2.6.27.2/drivers/video/mxc/mxcfb_modedb.c	2008-12-02 15:49:07.000000000 +0100
-+++ linux-2.6.27.2.mod/drivers/video/mxc/mxcfb_modedb.c	2008-12-03 17:31:04.000000000 +0100
+Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/mxc/mxcfb_modedb.c	2009-04-02 13:15:33.000000000 +0200
++++ linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c	2009-04-02 13:17:33.000000000 +0200
 @@ -17,7 +17,7 @@
   */
  

@@ -19,11 +19,11 @@ Signed-off-by: Juergen Beisert <j.beisert@pengutronix.de>
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
-index 4a11296..00a04a5 100644
---- a/drivers/net/Kconfig
-+++ b/drivers/net/Kconfig
-@@ -1833,6 +1833,13 @@ config FEC_MPC52xx_MDIO
+Index: linux-2.6.29/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/net/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/net/Kconfig	2009-03-31 09:28:31.000000000 +0200
+@@ -1875,6 +1875,13 @@
  	  If not sure, enable.
  	  If compiled as module, it will be called 'fec_mpc52xx_phy.ko'.
  
@@ -37,11 +37,11 @@ index 4a11296..00a04a5 100644
  config NE_H8300
  	tristate "NE2000 compatible support for H8/300"
  	depends on H8300
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index 7629c90..4633d9a 100644
---- a/drivers/net/Makefile
-+++ b/drivers/net/Makefile
-@@ -105,6 +105,7 @@ obj-$(CONFIG_FEC_MPC52xx) += fec_mpc52xx.o
+Index: linux-2.6.29/drivers/net/Makefile
+===================================================================
+--- linux-2.6.29.orig/drivers/net/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/net/Makefile	2009-03-31 09:28:31.000000000 +0200
+@@ -110,6 +110,7 @@
  ifeq ($(CONFIG_FEC_MPC52xx_MDIO),y)
  	obj-$(CONFIG_FEC_MPC52xx) += fec_mpc52xx_phy.o
  endif
@@ -49,11 +49,10 @@ index 7629c90..4633d9a 100644
  obj-$(CONFIG_68360_ENET) += 68360enet.o
  obj-$(CONFIG_WD80x3) += wd.o 8390.o
  obj-$(CONFIG_EL2) += 3c503.o 8390p.o
-diff --git a/drivers/net/fec_old.c b/drivers/net/fec_old.c
-new file mode 100644
-index 0000000..7da919a
---- /dev/null
-+++ b/drivers/net/fec_old.c
+Index: linux-2.6.29/drivers/net/fec_old.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/net/fec_old.c	2009-03-31 09:28:31.000000000 +0200
 @@ -0,0 +1,3184 @@
 +/*
 + * Fast Ethernet Controller (FEC) driver for Motorola MPC8xx.
@@ -3239,11 +3238,10 @@ index 0000000..7da919a
 +#endif
 +
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/fec_old.h b/drivers/net/fec_old.h
-new file mode 100644
-index 0000000..6af2ad0
---- /dev/null
-+++ b/drivers/net/fec_old.h
+Index: linux-2.6.29/drivers/net/fec_old.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/net/fec_old.h	2009-03-31 09:28:31.000000000 +0200
 @@ -0,0 +1,173 @@
 +/****************************************************************************/
 +

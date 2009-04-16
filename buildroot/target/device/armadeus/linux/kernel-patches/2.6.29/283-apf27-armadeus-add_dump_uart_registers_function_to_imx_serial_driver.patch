@@ -1,6 +1,8 @@
---- linux-2.6.25-rc7/drivers/serial/imx.c	2008-04-03 18:40:14.000000000 +0200
-+++ linux-2.6.25-rc7.mod/drivers/serial/imx.c	2008-09-15 13:23:40.000000000 +0200
-@@ -661,6 +661,18 @@
+Index: linux-2.6.29/drivers/serial/imx.c
+===================================================================
+--- linux-2.6.29.orig/drivers/serial/imx.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/serial/imx.c	2009-03-31 10:57:09.000000000 +0200
+@@ -657,6 +657,18 @@
  	writel(temp, sport->port.membase + UCR1);
  }
  

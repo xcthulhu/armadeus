@@ -1,6 +1,12 @@
---- ref/linux-2.6.27-rc9/arch/arm/mach-mx2/devices.c	2008-10-14 00:51:57.000000000 +0200
-+++ linux-2.6.27-rc9/arch/arm/mach-mx2/devices.c	2008-10-10 22:21:06.000000000 +0200
-@@ -505,7 +505,7 @@ static struct resource mxc_otg_resources
+Interrupt number of USB OTG module is not correct on MX2.
+
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 10:36:30.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 10:57:54.000000000 +0200
+@@ -589,7 +589,7 @@
  		.end   = OTG_BASE_ADDR + 0x1ff,
  		.flags = IORESOURCE_MEM,
  	}, {

@@ -11,12 +11,12 @@ Signed-off-by: Juergen Beisert <j.beisert@pengutronix.de>
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/arch/arm/mach-mx2/pcm038.c b/arch/arm/mach-mx2/pcm038.c
-index 7733a95..e6c0bfc 100644
---- a/arch/arm/mach-mx2/pcm038.c
-+++ b/arch/arm/mach-mx2/pcm038.c
-@@ -21,6 +21,10 @@
- #include <linux/mtd/physmap.h>
+Index: linux-2.6.29/arch/arm/mach-mx2/pcm038.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/pcm038.c	2009-03-31 09:48:13.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/pcm038.c	2009-03-31 09:59:56.000000000 +0200
+@@ -22,6 +22,10 @@
+ #include <linux/mtd/plat-ram.h>
  #include <linux/spi/spi.h>
  #include <linux/i2c.h>
 +#include <linux/cpufreq.h>
@@ -26,7 +26,7 @@ index 7733a95..e6c0bfc 100644
  #include <asm/mach/arch.h>
  #include <asm/mach-types.h>
  #include <asm/mach/time.h>
-@@ -33,10 +37,13 @@
+@@ -34,10 +38,13 @@
  #include <mach/imx-uart.h>
  #include <mach/imx_ssi.h>
  #include <mach/pmic/platform.h>
@@ -39,8 +39,8 @@ index 7733a95..e6c0bfc 100644
 +#include "crm_regs.h"
  
  /*
-  * Phytec's phyCORE-i.MX27 comes with 32MiB flash,
-@@ -283,8 +290,182 @@ static struct mxc_nand_platform_data pcm038_nand_board_info = {
+  * Phytec's PCM038 comes with 2MiB battery buffered SRAM,
+@@ -304,8 +311,182 @@
  	.hw_ecc = 1,
  };
  
@@ -220,6 +220,6 @@ index 7733a95..e6c0bfc 100644
  static struct platform_device *platform_devices[] __initdata = {
  	&pcm038_nor_mtd_device,
 +	CPU_FREQUENCY
+ 	&mxc_w1_master_device,
+ 	&pcm038_sram_mtd_device,
  };
- 
- static void __init pcm038_init(void)

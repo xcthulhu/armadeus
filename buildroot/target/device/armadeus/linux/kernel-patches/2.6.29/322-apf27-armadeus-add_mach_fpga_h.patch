@@ -1,0 +1,42 @@
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h	2009-04-14 19:04:28.000000000 +0200
+@@ -0,0 +1,37 @@
++/*
++ * Copyright (C) 2009 Armadeus Systems
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_ARMADEUS_FPGA_H__
++#define __ASM_ARCH_ARMADEUS_FPGA_H__
++
++
++#ifdef CONFIG_MACH_APF27
++#include <mach/board-apf27.h>
++#else
++/* To complete when MX1 platform merged */
++#endif
++
++/* FPGA interrupts number */
++#ifdef CONFIG_MACH_APF27
++#define IRQ_FPGA_START  (IRQ_GPIOF(32) + 1)
++#endif
++#define IRQ_FPGA(x)     (IRQ_FPGA_START + x)
++
++
++#endif /* __ASM_ARCH_ARMADEUS_FPGA_H__ */
++

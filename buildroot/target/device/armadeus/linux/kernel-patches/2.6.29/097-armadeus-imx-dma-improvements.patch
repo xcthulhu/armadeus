@@ -1,23 +1,24 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/arch/arm/mach-imx/include/mach/imx-dma.h	
-+++ linux-2.6.27.13.mod/arch/arm/mach-imx/include/mach/imx-dma.h	
+Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imx-dma.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imx-dma.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imx-dma.h	2009-03-30 11:36:29.000000000 +0200
 @@ -47,6 +47,7 @@
  	const char *name;
  	void (*irq_handler) (int, void *);
  	void (*err_handler) (int, void *, int errcode);
 +	void (*prog_handler) (int, void *, struct scatterlist *);
  	void *data;
- 	dmamode_t  dma_mode;
+ 	unsigned int  dma_mode;
  	struct scatterlist *sg;
-@@ -54,19 +55,38 @@
+@@ -54,14 +55,25 @@
  	unsigned int sgcount;
  	unsigned int resbytes;
  	int dma_num;
 +
 +	int in_use;
-+
 +	int hw_chaining;
  };
  
@@ -42,6 +43,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  
  /* The type to distinguish channel numbers parameter from ordinal int type */
  typedef int imx_dmach_t;
+@@ -71,6 +83,13 @@
+ #define DMA_MODE_MASK		1
  
  int
 +imx_dma_config_channel(int channel, unsigned int config_port,
@@ -52,9 +55,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +int
  imx_dma_setup_single(imx_dmach_t dma_ch, dma_addr_t dma_address,
- 		unsigned int dma_length, unsigned int dev_addr, dmamode_t dmamode);
+ 		unsigned int dma_length, unsigned int dev_addr, unsigned int dmamode);
  
-@@ -80,6 +100,10 @@
+@@ -84,6 +103,10 @@
  		void (*irq_handler) (int, void *),
  		void (*err_handler) (int, void *, int), void *data);
  
@@ -65,20 +68,19 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  void imx_dma_enable(imx_dmach_t dma_ch);
  
  void imx_dma_disable(imx_dmach_t dma_ch);
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/arch/arm/mach-imx/dma.c	
-+++ linux-2.6.27.13.mod/arch/arm/mach-imx/dma.c	
+Index: linux-2.6.29/arch/arm/mach-imx/dma.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/dma.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/arch/arm/mach-imx/dma.c	2009-03-30 11:31:04.000000000 +0200
 @@ -27,6 +27,7 @@
  #include <linux/kernel.h>
  #include <linux/interrupt.h>
  #include <linux/errno.h>
 +#include <linux/scatterlist.h>
  
+ #include <asm/scatterlist.h>
  #include <asm/system.h>
- #include <asm/irq.h>
-@@ -36,6 +37,26 @@
+@@ -37,6 +38,26 @@
  
  struct imx_dma_channel imx_dma_channels[IMX_DMA_CHANNELS];
  
@@ -105,7 +107,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  /*
   * imx_dma_sg_next - prepare next chunk for scatter-gather DMA emulation
   * @dma_ch: i.MX DMA channel number
-@@ -46,55 +67,31 @@
+@@ -47,55 +68,31 @@
   * during last block. Zero value can be used for @lastcount to setup DMA
   * for the first chunk.
   */
@@ -173,7 +175,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  }
  
  /*
-@@ -145,7 +142,6 @@
+@@ -146,7 +143,6 @@
  	imxdma->sg = NULL;
  	imxdma->sgcount = 0;
  	imxdma->dma_mode = dmamode;
@@ -181,7 +183,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  
  	if (!dma_address) {
  		printk(KERN_ERR "imxdma%d: imx_dma_setup_single null address\n",
-@@ -228,8 +224,10 @@
+@@ -229,8 +225,10 @@
  	int res;
  	struct imx_dma_channel *imxdma = &imx_dma_channels[dma_ch];
  
@@ -194,7 +196,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  	imxdma->dma_mode = dmamode;
  	imxdma->resbytes = dma_length;
  
-@@ -259,14 +257,43 @@
+@@ -260,14 +258,43 @@
  		return -EINVAL;
  	}
  
@@ -243,7 +245,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  
  /**
   * imx_dma_setup_handlers - setup i.MX DMA channel end and error notification handlers
-@@ -302,6 +329,32 @@
+@@ -303,6 +330,32 @@
  }
  
  /**
@@ -276,7 +278,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
   * imx_dma_enable - function to start i.MX DMA channel operation
   * @dma_ch: i.MX DMA channel number
   *
-@@ -325,10 +378,15 @@
+@@ -326,10 +379,15 @@
  		return;
  	}
  
@@ -292,7 +294,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  	local_irq_restore(flags);
  }
  
-@@ -336,16 +394,18 @@
+@@ -337,16 +395,18 @@
   * imx_dma_disable - stop, finish i.MX DMA channel operatin
   * @dma_ch: i.MX DMA channel number
   */
@@ -316,7 +318,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  	local_irq_restore(flags);
  }
  
-@@ -381,6 +441,7 @@
+@@ -382,6 +442,7 @@
  	imxdma->data = NULL;
  	imxdma->sg = NULL;
  	local_irq_restore(flags);
@@ -324,7 +326,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  	return 0;
  }
  
-@@ -452,6 +513,7 @@
+@@ -453,6 +514,7 @@
  	}
  
  	printk(KERN_ERR "%s: no free DMA channel found\n", __func__);
@@ -332,7 +334,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  
  	return -ENODEV;
  }
-@@ -512,6 +574,46 @@
+@@ -513,6 +575,46 @@
  	return IRQ_HANDLED;
  }
  
@@ -379,7 +381,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
  static irqreturn_t dma_irq_handler(int irq, void *dev_id)
  {
  	int i, disr = DISR;
-@@ -521,27 +623,8 @@
+@@ -522,27 +624,8 @@
  
  	DISR = disr;
  	for (i = 0; i < IMX_DMA_CHANNELS; i++) {

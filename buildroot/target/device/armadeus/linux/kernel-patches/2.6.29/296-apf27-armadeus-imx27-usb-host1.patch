@@ -1,6 +1,8 @@
---- linux-2.6.27.2.ref/arch/arm/mach-mx2/devices.c	2008-12-16 15:40:03.000000000 +0100
-+++ linux-2.6.27.2/arch/arm/mach-mx2/devices.c	2008-12-15 22:49:00.000000000 +0100
-@@ -589,6 +589,30 @@ struct platform_device mxc_otg = {
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 11:26:28.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 11:26:30.000000000 +0200
+@@ -605,6 +605,30 @@
  	.num_resources = ARRAY_SIZE(mxc_otg_resources),
  };
  
@@ -31,7 +33,7 @@
  static struct resource mxc_ehci2_resources[] = {
  	{
  		.start = OTG_BASE_ADDR + 0x400,
-@@ -604,7 +628,7 @@ static u64 ehci2_dmamask = ~(u32) 0;
+@@ -620,7 +644,7 @@
  
  struct platform_device mxc_ehci2 = {
  	.name = "mxc-ehci",
@@ -40,9 +42,11 @@
  	.dev = {
  		.coherent_dma_mask = 0xffffffff,
  		.dma_mask = &ehci2_dmamask,
---- linux-2.6.27.2.ref/arch/arm/mach-mx2/devices.h	2008-12-16 15:40:03.000000000 +0100
-+++ linux-2.6.27.2/arch/arm/mach-mx2/devices.h	2008-12-15 22:52:40.000000000 +0100
-@@ -27,4 +27,5 @@ extern struct platform_device imx_ssi_de
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.h	2009-03-31 10:36:30.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.h	2009-03-31 11:26:30.000000000 +0200
+@@ -28,4 +28,5 @@
  extern struct platform_device imx_ssi_device1;
  extern struct platform_device mxc_dam_device;
  extern struct platform_device mxc_otg;

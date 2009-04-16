@@ -21,11 +21,11 @@ for UIO.
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-Index: linux-2.6.27.13/arch/arm/Kconfig
+Index: linux-2.6.29/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.27.13.orig/arch/arm/Kconfig	2009-03-22 14:56:45.000000000 +0100
-+++ linux-2.6.27.13/arch/arm/Kconfig	2009-03-22 14:58:09.000000000 +0100
-@@ -1239,6 +1239,8 @@
+--- linux-2.6.29.orig/arch/arm/Kconfig	2009-03-31 09:40:03.000000000 +0200
++++ linux-2.6.29/arch/arm/Kconfig	2009-03-31 12:04:37.000000000 +0200
+@@ -1328,6 +1328,8 @@
  
  source "drivers/dma/Kconfig"
  
@@ -33,20 +33,11 @@ Index: linux-2.6.27.13/arch/arm/Kconfig
 +
  source "drivers/dca/Kconfig"
  
- source "drivers/regulator/Kconfig"
-Index: linux-2.6.27.13/drivers/Makefile
-===================================================================
---- linux-2.6.27.13.orig/drivers/Makefile	2009-03-22 14:56:45.000000000 +0100
-+++ linux-2.6.27.13/drivers/Makefile	2009-03-22 14:59:05.000000000 +0100
-@@ -100,3 +100,4 @@
- obj-$(CONFIG_SSB)		+= ssb/
- obj-$(CONFIG_VIRTIO)		+= virtio/
- obj-$(CONFIG_REGULATOR)		+= regulator/
-+obj-y				+= mxc/
-Index: linux-2.6.27.13/drivers/mxc/Kconfig
+ source "drivers/auxdisplay/Kconfig"
+Index: linux-2.6.29/drivers/mxc/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/drivers/mxc/Kconfig	2009-03-22 14:58:09.000000000 +0100
++++ linux-2.6.29/drivers/mxc/Kconfig	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,13 @@
 +# drivers/video/mxc/Kconfig
 +
@@ -61,20 +52,18 @@ Index: linux-2.6.27.13/drivers/mxc/Kconfig
 +endmenu
 +
 +endif
-diff --git a/drivers/mxc/Makefile b/drivers/mxc/Makefile
-new file mode 100644
-index 0000000..619ae8f
---- /dev/null
-+++ b/drivers/mxc/Makefile
+Index: linux-2.6.29/drivers/mxc/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/mxc/Makefile	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,3 @@
 +#
 +obj-$(CONFIG_MXC_VPU)		+= vpu/
 +
-diff --git a/drivers/mxc/vpu/Kconfig b/drivers/mxc/vpu/Kconfig
-new file mode 100644
-index 0000000..4dae100
---- /dev/null
-+++ b/drivers/mxc/vpu/Kconfig
+Index: linux-2.6.29/drivers/mxc/vpu/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/mxc/vpu/Kconfig	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,21 @@
 +#
 +# Codec configuration
@@ -97,11 +86,10 @@ index 0000000..4dae100
 +
 +endmenu
 +
-diff --git a/drivers/mxc/vpu/Makefile b/drivers/mxc/vpu/Makefile
-new file mode 100644
-index 0000000..ad96730
---- /dev/null
-+++ b/drivers/mxc/vpu/Makefile
+Index: linux-2.6.29/drivers/mxc/vpu/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/mxc/vpu/Makefile	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,10 @@
 +#
 +# Makefile for the VPU drivers.
@@ -113,11 +101,10 @@ index 0000000..ad96730
 +ifeq ($(CONFIG_MXC_VPU_DEBUG),y)
 +EXTRA_CFLAGS += -DDEBUG
 +endif
-diff --git a/drivers/mxc/vpu/mxc_vpu.c b/drivers/mxc/vpu/mxc_vpu.c
-new file mode 100644
-index 0000000..e77601c
---- /dev/null
-+++ b/drivers/mxc/vpu/mxc_vpu.c
+Index: linux-2.6.29/drivers/mxc/vpu/mxc_vpu.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/mxc/vpu/mxc_vpu.c	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,501 @@
 +/*
 + * Copyright 2006-2007 Freescale Semiconductor, Inc. All Rights Reserved.
@@ -620,11 +607,10 @@ index 0000000..e77601c
 +
 +module_init(vpu_init);
 +module_exit(vpu_exit);
-diff --git a/drivers/mxc/vpu/mxc_vpu.h b/drivers/mxc/vpu/mxc_vpu.h
-new file mode 100644
-index 0000000..df3b99f
---- /dev/null
-+++ b/drivers/mxc/vpu/mxc_vpu.h
+Index: linux-2.6.29/drivers/mxc/vpu/mxc_vpu.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/mxc/vpu/mxc_vpu.h	2009-03-31 12:04:37.000000000 +0200
 @@ -0,0 +1,22 @@
 +typedef struct vpu_mem_desc {
 +	u32 size;

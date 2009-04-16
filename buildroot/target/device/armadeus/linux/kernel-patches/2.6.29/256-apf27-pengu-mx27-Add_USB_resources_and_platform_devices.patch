@@ -8,11 +8,11 @@ X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commit
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/arch/arm/mach-mx2/devices.c b/arch/arm/mach-mx2/devices.c
-index 0207be3..7a75d57 100644
---- a/arch/arm/mach-mx2/devices.c
-+++ b/arch/arm/mach-mx2/devices.c
-@@ -497,6 +497,55 @@ struct platform_device mxc_dam_device = {
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 09:40:46.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 10:33:42.000000000 +0200
+@@ -513,6 +513,55 @@
  	.resource = &mxc_dam_resources
  };
  
@@ -68,11 +68,11 @@ index 0207be3..7a75d57 100644
  /* GPIO port description */
  static struct mxc_gpio_port imx_gpio_ports[] = {
  	[0] = {
-diff --git a/arch/arm/mach-mx2/devices.h b/arch/arm/mach-mx2/devices.h
-index a49c772..7badeb2 100644
---- a/arch/arm/mach-mx2/devices.h
-+++ b/arch/arm/mach-mx2/devices.h
-@@ -24,3 +24,5 @@ extern struct platform_device mxc_fb_device;
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.h	2009-03-31 09:40:46.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.h	2009-03-31 10:33:42.000000000 +0200
+@@ -25,3 +25,5 @@
  extern struct platform_device imx_ssi_device0;
  extern struct platform_device imx_ssi_device1;
  extern struct platform_device mxc_dam_device;

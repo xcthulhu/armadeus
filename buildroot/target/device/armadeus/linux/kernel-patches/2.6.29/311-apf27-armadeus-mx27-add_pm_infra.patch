@@ -1,7 +1,7 @@
-Index: linux-2.6.27.13/arch/arm/mach-mx2/Makefile
+Index: linux-2.6.29/arch/arm/mach-mx2/Makefile
 ===================================================================
---- linux-2.6.27.13.orig/arch/arm/mach-mx2/Makefile	2009-02-13 11:29:59.000000000 +0100
-+++ linux-2.6.27.13/arch/arm/mach-mx2/Makefile	2009-02-13 11:30:59.000000000 +0100
+--- linux-2.6.29.orig/arch/arm/mach-mx2/Makefile	2009-03-31 12:06:47.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/Makefile	2009-03-31 12:06:48.000000000 +0200
 @@ -9,6 +9,7 @@
  obj-$(CONFIG_MACH_MX27) += cpu_imx27.o
  obj-$(CONFIG_MACH_MX27) += clock_imx27.o
@@ -10,11 +10,11 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/Makefile
  
  obj-$(CONFIG_MACH_APF27)	+= apf27.o
  obj-$(CONFIG_MACH_MX27ADS) += mx27ads.o
-Index: linux-2.6.27.13/arch/arm/mach-mx2/pm.c
+Index: linux-2.6.29/arch/arm/mach-mx2/pm.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-mx2/pm.c	2009-02-18 14:06:54.000000000 +0100
-@@ -0,0 +1,149 @@
++++ linux-2.6.29/arch/arm/mach-mx2/pm.c	2009-04-02 09:14:00.000000000 +0200
+@@ -0,0 +1,150 @@
 +/*
 + * linux/arch/arm/mach-mx2/pm.c
 + *
@@ -51,6 +51,7 @@ Index: linux-2.6.27.13/arch/arm/mach-mx2/pm.c
 +#include <asm/io.h>
 +// #include <asm/arch/mxc_pm.h>
 +#include <mach/system.h> /* arch_idle() */
++#include <mach/hardware.h>
 +
 +
 +#define DOZE_MODE 0

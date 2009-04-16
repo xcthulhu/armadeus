@@ -1,12 +1,14 @@
 
 This patch adds DMA defines needed by imxmmc.c to compile.
 
-Signed-of-by: Julien Boibessot <julien.boibessot@armadeus.com>
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 ---
 
---- linux-2.6.27-rc9/arch/arm/plat-mxc/include/mach/dma-mx1-mx2.h	2008-10-16 19:42:15.000000000 +0200
-+++ linux-2.6.27-rc9.mod/arch/arm/plat-mxc/include/mach/dma-mx1-mx2.h	2008-10-16 18:41:31.000000000 +0200
-@@ -44,6 +44,11 @@
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/dma-mx1-mx2.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/dma-mx1-mx2.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/dma-mx1-mx2.h	2009-03-31 10:38:46.000000000 +0200
+@@ -46,6 +46,11 @@
  #define IMX_DMA_ERR_BUFFER    (1 << 3)
  #define IMX_DMA_ERR_TIMEOUT   (1 << 4)
  

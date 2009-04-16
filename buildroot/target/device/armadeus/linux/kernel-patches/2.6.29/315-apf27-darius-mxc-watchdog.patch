@@ -4,11 +4,11 @@ Driver for watchdog timer on Freesale IMX processors.
 
 Signed-off-by: Darius Augulis <augulis.darius@gmail.com>
 
-Index: linux-2.6.29-rc5/drivers/watchdog/Kconfig
+Index: linux-2.6.29/drivers/watchdog/Kconfig
 ===================================================================
---- linux-2.6.29-rc5.orig/drivers/watchdog/Kconfig
-+++ linux-2.6.29-rc5/drivers/watchdog/Kconfig
-@@ -66,6 +66,18 @@ config WM8350_WATCHDOG
+--- linux-2.6.29.orig/drivers/watchdog/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/watchdog/Kconfig	2009-03-31 12:02:58.000000000 +0200
+@@ -66,6 +66,18 @@
  
  # ARM Architecture
  
@@ -27,22 +27,22 @@ Index: linux-2.6.29-rc5/drivers/watchdog/Kconfig
  config AT91RM9200_WATCHDOG
  	tristate "AT91RM9200 watchdog"
  	depends on ARCH_AT91RM9200
-Index: linux-2.6.29-rc5/drivers/watchdog/Makefile
+Index: linux-2.6.29/drivers/watchdog/Makefile
 ===================================================================
---- linux-2.6.29-rc5.orig/drivers/watchdog/Makefile
-+++ linux-2.6.29-rc5/drivers/watchdog/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_PNX4008_WATCHDOG) += pnx400
- obj-$(CONFIG_PNX4008_WATCHDOG) += pnx4008_wdt.o
+--- linux-2.6.29.orig/drivers/watchdog/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/watchdog/Makefile	2009-03-31 12:03:30.000000000 +0200
+@@ -41,6 +41,7 @@
  obj-$(CONFIG_IOP_WATCHDOG) += iop_wdt.o
  obj-$(CONFIG_DAVINCI_WATCHDOG) += davinci_wdt.o
+ obj-$(CONFIG_ORION5X_WATCHDOG) += orion5x_wdt.o
 +obj-$(CONFIG_IMX_WDT) += imx-wdt.o
  
  # ARM26 Architecture
  
-Index: linux-2.6.29-rc5/drivers/watchdog/imx-wdt.c
+Index: linux-2.6.29/drivers/watchdog/imx-wdt.c
 ===================================================================
---- /dev/null
-+++ linux-2.6.29-rc5/drivers/watchdog/imx-wdt.c
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/watchdog/imx-wdt.c	2009-03-31 12:02:58.000000000 +0200
 @@ -0,0 +1,432 @@
 +/*
 + * Watchdog driver for IMX processors
@@ -476,9 +476,3 @@ Index: linux-2.6.29-rc5/drivers/watchdog/imx-wdt.c
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
 +MODULE_ALIAS("platform:imx-wdt");
--------------------------------------------------------------------
-List admin: http://lists.arm.linux.org.uk/mailman/listinfo/linux-arm-kernel
-FAQ:        http://www.arm.linux.org.uk/mailinglists/faq.php
-Etiquette:  http://www.arm.linux.org.uk/mailinglists/etiquette.php
-
-

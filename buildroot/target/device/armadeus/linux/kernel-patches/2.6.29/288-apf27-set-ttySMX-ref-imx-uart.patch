@@ -1,15 +1,21 @@
---- linux-2.6.27.2.ref/drivers/serial/imx.c	2008-11-05 22:42:26.000000000 +0100
-+++ linux-2.6.27.2/drivers/serial/imx.c	2008-11-06 22:09:31.000000000 +0100
+Gives the MX2/3 serial ports the same name as on MX1.
+
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+ 
+Index: linux-2.6.29/drivers/serial/imx.c
+===================================================================
+--- linux-2.6.29.orig/drivers/serial/imx.c	2009-03-31 10:57:09.000000000 +0200
++++ linux-2.6.29/drivers/serial/imx.c	2009-03-31 11:03:14.000000000 +0200
 @@ -188,9 +188,9 @@
  #endif
  
- #if defined CONFIG_ARCH_MX3 || defined CONFIG_ARCH_MX2
+ #ifdef CONFIG_ARCH_MXC
 -#define SERIAL_IMX_MAJOR        207
 -#define MINOR_START	        16
 -#define DEV_NAME		"ttymxc"
 +#define SERIAL_IMX_MAJOR        204
 +#define MINOR_START	        41
 +#define DEV_NAME		"ttySMX"
- #define MAX_INTERNAL_IRQ	MXC_MAX_INT_LINES
+ #define MAX_INTERNAL_IRQ	MXC_INTERNAL_IRQS
  #endif
  

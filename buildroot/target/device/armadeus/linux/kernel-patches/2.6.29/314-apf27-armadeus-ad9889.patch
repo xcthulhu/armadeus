@@ -1,5 +1,7 @@
---- linux-2.6.27.13.orig/drivers/media/video/ad9889.c	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.13/drivers/media/video/ad9889.c	2009-03-01 08:29:01.000000000 +0100
+Index: linux-2.6.29/drivers/media/video/ad9889.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/media/video/ad9889.c	2009-03-31 12:01:21.000000000 +0200
 @@ -0,0 +1,411 @@
 +/*
 + * ad9889 - Analog Devices AD9889 video encoder driver
@@ -85,7 +87,7 @@
 +}
 +
 +static void ad9889_av_mute_on(struct i2c_client *client)
-+{   
++{
 +    /* set chxPwrDwnI2C */
 +    ad9889_write(client, 0xa1, 0x38);
 +    /* set avmute*/
@@ -93,7 +95,7 @@
 +}
 +
 +static void ad9889_av_mute_off(struct i2c_client *client)
-+{   
++{
 +    /* clear chxPwrDwnI2C */
 +    ad9889_write(client, 0xa1, 0x0);
 +    /* clear avmute*/
@@ -104,9 +106,9 @@
 +static void ad9889_init(struct i2c_client *client)
 +{
 +    ad9889_av_mute_on(client);
-+    /* enable I2S0 and I2S standard format*/ 
++    /* enable I2S0 and I2S standard format*/
 +    ad9889_write(client, 0x0c, 0x04);
-+    /* power up */ 
++    /* power up */
 +    ad9889_write(client, 0x41, 0x10);
 +
 +    /* set static reserved registers*/
@@ -126,16 +128,16 @@
 +
 +static void setup_audio_video(struct i2c_client *client)
 +{
-+    unsigned char rgb_rgb[24] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0};  
++    unsigned char rgb_rgb[24] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0};
 +
 +    /* dvi*/
 +    ad9889_write(client, 0xaf, 0x00);
 +    /* write color map */
 +    i2c_smbus_write_block_data(client, 0x18,24,rgb_rgb);
 +    /* set CSC mode 1*/
-+    ad9889_write(client, 0x17, 0x08); 
++    ad9889_write(client, 0x17, 0x08);
 +    /* enable CSC */
-+    ad9889_write(client, 0x3b, 0x01); 
++    ad9889_write(client, 0x3b, 0x01);
 +    /* check input mode */
 +    if( (ad9889_read(client, 0x3E)>>2) == 1)
 +        printk("640x480 input mode detected\n");
@@ -148,7 +150,7 @@
 +{
 +    union i2c_smbus_data data;
 +    struct ad9889_config* config = client->dev.platform_data;
-+    struct ad9889_dev *ad9889 = i2c_get_clientdata(client); 
++    struct ad9889_dev *ad9889 = i2c_get_clientdata(client);
 +    int status, i;
 +
 +   /* EDID ram base address */
@@ -156,7 +158,7 @@
 +
 +    for( i=0; i<256/I2C_SMBUS_BLOCK_MAX; i++){
 +        data.block[0] = I2C_SMBUS_BLOCK_MAX;
-+        status = i2c_smbus_xfer(ad9889->edid_ram->adapter, config->EDID_I2C_addr, 
++        status = i2c_smbus_xfer(ad9889->edid_ram->adapter, config->EDID_I2C_addr,
 +                                ad9889->edid_ram->flags,
 +                                I2C_SMBUS_READ, i*32,
 +                                I2C_SMBUS_I2C_BLOCK_DATA, &data);
@@ -178,17 +180,17 @@
 +        int i;
 +        int xwidth;
 +        int aspect;
-+        int freq; 
++        int freq;
 +
 +        //printk("ESTABLISHED TIMING\n");
-+        //edid_dat[35];      
-+        //edid_dat[36];      
++        //edid_dat[35];
++        //edid_dat[36];
 +
 +        printk("Standard monitor timings\n");
 +        for(i=38; i<53; i+=2 ) {
 +            xwidth = edid_dat[i]*8 + 248;
 +            aspect = (edid_dat[i+1] & 0xC0) >> 6;
-+            freq = (edid_dat[i+1] &0x3f) +60; 
++            freq = (edid_dat[i+1] &0x3f) +60;
 +            printk("xwidth:%d, aspect:%s, freq:%d\n", xwidth, aspect?"4:3":"16/9", freq);
 +        }
 +    }
@@ -199,14 +201,14 @@
 +{
 +    if(ad9889_read(client, 0x42)&0x40) {
 +        /* wait until the cable is really inserted */
-+        mdelay(500);  
++        mdelay(500);
 +        /* set chxPwrDwnI2C down */
 +        ad9889_write(client, 0xa1, 0x38);
 +        /* power up chip */
 +        ad9889_write(client, 0x41, 0x10);
 +        ad9889_write(client, 0x94, 0x84);
 +        ad9889_write(client, 0x95, 0xC3);
-+    }    
++    }
 +}
 +
 +static void ad9889_work(struct work_struct *work)
@@ -226,9 +228,9 @@
 +    while((interrupt_remain1&0xC4)|(interrupt_remain2&0xc0)){
 +        interrupt_registers1 = ad9889_read(client, 0x96);
 +        interrupt_registers2 = ad9889_read(client, 0x97);
-+        printk("interrupt reg1 %x, interrupt reg2 %x\n", 
-+                interrupt_registers1, interrupt_registers2);  
-+       
++        printk("interrupt reg1 %x, interrupt reg2 %x\n",
++                interrupt_registers1, interrupt_registers2);
++
 +        /* check HPD then call hpd handler */
 +        if((interrupt_registers1 & HPD_INT) || ad9889->force_hpd ) {
 +            handle_hpd_interrupt(client);
@@ -237,11 +239,11 @@
 +            if( ad9889->force_hpd ){
 +                ad9889->force_hpd = 0;
 +                ad9889_write(client,0x96, HPD_INT);
-+                interrupt_registers1 |= HPD_INT;   
++                interrupt_registers1 |= HPD_INT;
 +            }
 +            interrupt_code |= HPD_INT;
 +        }
-+  
++
 +        /* check for EDID ready flag, then call EDID Handler */
 +        if((interrupt_registers1 & EDID_RDY_INT)) {
 +            if(!ad9889->edid_ready) {
@@ -249,32 +251,32 @@
 +                interrupt_code |= EDID_RDY_INT;
 +            }
 +        }
-+    
++
 +        /* re-enable the interrupt before requesting additional EDID */
-+        ad9889_write(client,0x96, interrupt_registers1);     
-+        ad9889_write(client, 0x97, interrupt_registers2);     
++        ad9889_write(client,0x96, interrupt_registers1);
++        ad9889_write(client, 0x97, interrupt_registers2);
 +
 +        /* if final EDID interrupt was processed tell system that EDID is ready and
 +        initiate audio video setup    */
-+   
++
 +        if(interrupt_code&EDID_RDY_INT) {
-+            if(ad9889->next_segment==0) {    
++            if(ad9889->next_segment==0) {
 +                ad9889_av_mute_on(client);
 +                ad9889_init(client);
 +                ad9889->edid_ready = 1;
-+                setup_audio_video(client); 
-+                ad9889_av_mute_off(client);            
++                setup_audio_video(client);
++                ad9889_av_mute_off(client);
 +            }
 +  		    else
 +                ad9889_write(client,0xc4, ad9889->edid_block_map_offset+ad9889->next_segment);
-+            
++
 +            if(ad9889->next_segment==0x40)
 +                ad9889->edid_block_map_offset=0x40;
 +        }
 +      /*Check if additional interrupts occured during processing*/
 +      interrupt_remain1 = ad9889_read(client, 0x96);
 +      interrupt_remain2 = ad9889_read(client, 0x97);
-+    } 
++    }
 +    mutex_unlock(&ad9889->lock_sync);
 +}
 +
@@ -324,7 +326,7 @@
 +    if (pdata->init)
 +        pdata->init();
 +
-+        if (request_irq(client->irq, ad9889_handler, IRQF_DISABLED | IRQF_SHARED 
++        if (request_irq(client->irq, ad9889_handler, IRQF_DISABLED | IRQF_SHARED
 +                    | IRQF_TRIGGER_FALLING, "ad9889", ad9889)) {
 +        printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", client->irq);
 +        err = -EINVAL;
@@ -332,13 +334,13 @@
 +    }
 +
 +    printk("detecting ad9889 client on address 0x%x\n", client->addr << 1);
-+ 
++
 +    /* check whether the AD9889 is present */
 +    if( ad9889_read(client, 0xA5) != 0x04 ){
 +        printk("ad9889 not found\n");
 +        err = -ENODEV;
 +        goto err_presence;
-+    }        
++    }
 +
 +    ad9889->edid_ram = i2c_new_dummy(client->adapter, pdata->EDID_I2C_addr);
 +    if( !ad9889->edid_ram ){
@@ -350,9 +352,9 @@
 +    /* reset */
 +    ad9889_write(client, 0x41, 0X20);
 +    mdelay(10);
-+    
++
 +    mutex_unlock(&ad9889->lock_sync);
-+	
++
 +    /* if a monitor is already connected, then simulate interrupt */
 +    err = ad9889_read(client, 0x42);
 +    if( err & 0x40){
@@ -379,7 +381,7 @@
 +static int ad9889_remove(struct i2c_client *client)
 +{
 +    struct ad9889_config *pdata = client->dev.platform_data;
-+    struct ad9889_dev *ad9889 = i2c_get_clientdata(client); 
++    struct ad9889_dev *ad9889 = i2c_get_clientdata(client);
 +
 +    free_irq(client->irq, ad9889);
 +
@@ -412,8 +414,10 @@
 +    .remove = ad9889_remove,
 +    .id_table = ad9889_id,
 +};
---- linux-2.6.27.13.orig/include/media/ad9889.h	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.13/include/media/ad9889.h	2009-03-01 08:29:01.000000000 +0100
+Index: linux-2.6.29/include/media/ad9889.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/include/media/ad9889.h	2009-03-31 11:52:42.000000000 +0200
 @@ -0,0 +1,33 @@
 +/*
 + * AD9889 driver
@@ -448,9 +452,11 @@
 +
 +
 +#endif	/* __LINUX_VIDE0_AD9889_H */
---- linux-2.6.27.13.orig/drivers/media/video/Makefile	2009-03-08 15:26:08.000000000 +0100
-+++ linux-2.6.27.13/drivers/media/video/Makefile	2009-03-07 19:02:17.000000000 +0100
-@@ -46,6 +46,7 @@ obj-$(CONFIG_VIDEO_SAA717X) += saa717x.o
+Index: linux-2.6.29/drivers/media/video/Makefile
+===================================================================
+--- linux-2.6.29.orig/drivers/media/video/Makefile	2009-03-31 09:38:25.000000000 +0200
++++ linux-2.6.29/drivers/media/video/Makefile	2009-03-31 11:52:42.000000000 +0200
+@@ -50,6 +50,7 @@
  obj-$(CONFIG_VIDEO_SAA7127) += saa7127.o
  obj-$(CONFIG_VIDEO_SAA7185) += saa7185.o
  obj-$(CONFIG_VIDEO_SAA7191) += saa7191.o
@@ -458,9 +464,11 @@
  obj-$(CONFIG_VIDEO_ADV7170) += adv7170.o
  obj-$(CONFIG_VIDEO_ADV7175) += adv7175.o
  obj-$(CONFIG_VIDEO_VPX3220) += vpx3220.o
---- linux-2.6.27.13.orig/drivers/media/video/Kconfig	2009-03-08 15:26:08.000000000 +0100
-+++ linux-2.6.27.13.orig/drivers/media/video/Kconfig	2009-03-07 19:02:02.000000000 +0100
-@@ -407,6 +407,16 @@ config VIDEO_SAA7185
+Index: linux-2.6.29/drivers/media/video/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/media/video/Kconfig	2009-03-31 09:38:25.000000000 +0200
++++ linux-2.6.29/drivers/media/video/Kconfig	2009-03-31 11:52:42.000000000 +0200
+@@ -428,6 +428,16 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called saa7185.
  

@@ -25,9 +25,9 @@ index ff62017..7733a95 100644
 --- a/arch/arm/mach-mx2/pcm038.c
 +++ b/arch/arm/mach-mx2/pcm038.c
 @@ -19,13 +19,20 @@
- 
  #include <linux/platform_device.h>
  #include <linux/mtd/physmap.h>
+ #include <linux/mtd/plat-ram.h>
 +#include <linux/spi/spi.h>
 +#include <linux/i2c.h>
  #include <asm/mach/arch.h>

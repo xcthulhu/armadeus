@@ -1,0 +1,29 @@
+
+[ARM] MX27: add i.MX27 SDHC2 GPIO declarations (no internal pullup/down by default)
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h	2009-04-02 10:08:47.000000000 +0200
+@@ -274,12 +274,12 @@
+ #define PA29_PF_VSYNC		(GPIO_PORTA | GPIO_OUT | GPIO_PF | 29)
+ #define PA30_PF_CONTRAST	(GPIO_PORTA | GPIO_OUT | GPIO_PF | 30)
+ #define PA31_PF_OE_ACD		(GPIO_PORTA | GPIO_OUT | GPIO_PF | 31)
+-#define PB4_PF_SD2_D0		(GPIO_PORTB | GPIO_PF |  4)
+-#define PB5_PF_SD2_D1		(GPIO_PORTB | GPIO_PF |  5)
+-#define PB6_PF_SD2_D2		(GPIO_PORTB | GPIO_PF |  6)
+-#define PB7_PF_SD2_D3		(GPIO_PORTB | GPIO_PF |  7)
+-#define PB8_PF_SD2_CMD		(GPIO_PORTB | GPIO_PF |  8)
+-#define PB9_PF_SD2_CLK		(GPIO_PORTB | GPIO_PF |  9)
++#define PB4_PF_SDHC2_D0		(GPIO_PORTB | GPIO_PF |  4)
++#define PB5_PF_SDHC2_D1		(GPIO_PORTB | GPIO_PF |  5)
++#define PB6_PF_SDHC2_D2		(GPIO_PORTB | GPIO_PF |  6)
++#define PB7_PF_SDHC2_D3		(GPIO_PORTB | GPIO_PF |  7)
++#define PB8_PF_SDHC2_CMD	(GPIO_PORTB | GPIO_PF |  8)
++#define PB9_PF_SDHC2_CLK	(GPIO_PORTB | GPIO_PF |  9)
+ #define PB10_PF_CSI_D0		(GPIO_PORTB | GPIO_OUT | GPIO_PF | 10)
+ #define PB10_AF_UART6_TXD	(GPIO_PORTB | GPIO_OUT | GPIO_AF | 10)
+ #define PB11_PF_CSI_D1		(GPIO_PORTB | GPIO_OUT | GPIO_PF | 11)

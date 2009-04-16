@@ -1,6 +1,8 @@
---- linux-2.6.27.2/arch/arm/mach-mx2/devices.c	2008-12-02 15:49:07.000000000 +0100
-+++ linux-2.6.27.2.mod/arch/arm/mach-mx2/devices.c	2008-12-03 16:31:10.000000000 +0100
-@@ -382,7 +382,7 @@
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 11:00:28.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 11:26:09.000000000 +0200
+@@ -398,7 +398,7 @@
  
  /* mxc lcd driver */
  struct platform_device mxc_fb_device = {

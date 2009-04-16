@@ -1,0 +1,13 @@
+Index: linux-2.6.29/drivers/net/fec_old.c
+===================================================================
+--- linux-2.6.29.orig/drivers/net/fec_old.c	2009-04-02 11:36:05.000000000 +0200
++++ linux-2.6.29/drivers/net/fec_old.c	2009-04-02 11:40:55.000000000 +0200
+@@ -1223,7 +1223,7 @@
+ 
+ static void mii_parse_dp8384x_sr2(uint mii_reg, struct net_device *dev)
+ {
+-	struct fec_enet_private *fep = dev->priv;
++	struct fec_enet_private *fep = dev->ml_priv;
+ 	volatile uint *s = &(fep->phy_status);
+ 
+ 	*s &= ~(PHY_STAT_SPMASK | PHY_STAT_LINK | PHY_STAT_ANC);

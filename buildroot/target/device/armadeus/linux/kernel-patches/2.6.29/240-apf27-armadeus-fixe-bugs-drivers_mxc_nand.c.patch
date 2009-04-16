@@ -1,6 +1,8 @@
---- linux-2.6.27-rc9/drivers/mtd/nand/mxc_nand.c	2008-12-11 12:00:19.000000000 +0100
-+++ linux-2.6.27-rc9.new/drivers/mtd/nand/mxc_nand.c	2008-12-11 10:50:03.000000000 +0100
-@@ -130,17 +130,42 @@ struct mxc_nand_host {
+Index: linux-2.6.29/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.29.orig/drivers/mtd/nand/mxc_nand.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/mtd/nand/mxc_nand.c	2009-03-31 10:18:28.000000000 +0200
+@@ -130,17 +130,42 @@
  
  /* OOB placement block for use with hardware ecc generation */
  static struct nand_ecclayout nand_hw_eccoob_8 = {
@@ -49,7 +51,7 @@
  #ifdef CONFIG_MTD_PARTITIONS
  static const char *part_probes[] = { "RedBoot", "cmdlinepart", NULL };
  #endif
-@@ -283,6 +308,7 @@ static void send_read_id(struct mxc_nand
+@@ -283,6 +308,7 @@
  	struct nand_chip *this = &host->nand;
  	uint16_t tmp;
  
@@ -57,7 +59,7 @@
  	/* NANDFC buffer 0 is used for device ID output */
  	writew(0x0, host->regs + NFC_BUF_ADDR);
  
-@@ -299,11 +325,9 @@ static void send_read_id(struct mxc_nand
+@@ -299,11 +325,9 @@
  	if (this->options & NAND_BUSWIDTH_16) {
  		void __iomem *main_buf = host->regs + MAIN_AREA0;
  		/* compress the ID info */
@@ -72,7 +74,7 @@
  	}
  }
  
-@@ -637,7 +661,22 @@ static void mxc_nand_read_buf(struct mtd
+@@ -637,7 +661,22 @@
  static int mxc_nand_verify_buf(struct mtd_info *mtd,
  				const u_char *buf, int len)
  {
@@ -96,7 +98,7 @@
  }
  
  /* This function is used by upper layer for select and
-@@ -700,6 +739,7 @@ static void mxc_nand_command(struct mtd_
+@@ -700,6 +739,7 @@
  
  	/* Reset command state information */
  	host->status_request = false;
@@ -104,7 +106,7 @@
  
  	/* Command pre-processing step */
  	switch (command) {
-@@ -723,6 +763,10 @@ static void mxc_nand_command(struct mtd_
+@@ -723,6 +763,10 @@
  			command = NAND_CMD_READ0; /* only READ0 is valid */
  		break;
  
@@ -115,7 +117,7 @@
  	case NAND_CMD_SEQIN:
  		if (column >= mtd->writesize) {
  			/*
-@@ -796,8 +840,8 @@ static void mxc_nand_command(struct mtd_
+@@ -796,8 +840,8 @@
  
  		if (host->pagesize_2k) {
  			send_addr(host, (page_addr >> 8) & 0xFF, false);
@@ -126,7 +128,7 @@
  		} else {
  			/* One more address cycle for higher density devices */
  			if (mtd->size >= 0x4000000) {
-@@ -866,6 +910,7 @@ static int __init mxcnd_probe(struct pla
+@@ -866,6 +910,7 @@
  	mtd = &host->mtd;
  	mtd->priv = this;
  	mtd->owner = THIS_MODULE;
@@ -134,7 +136,7 @@
  
  	/* 50 us command delay time */
  	this->chip_delay = 5;
-@@ -880,6 +925,9 @@ static int __init mxcnd_probe(struct pla
+@@ -880,6 +925,9 @@
  	this->read_buf = mxc_nand_read_buf;
  	this->verify_buf = mxc_nand_verify_buf;
  
@@ -144,7 +146,7 @@
  	host->clk = clk_get(&pdev->dev, "nfc_clk");
  	if (IS_ERR(host->clk))
  		goto eclk;
-@@ -948,8 +996,10 @@ static int __init mxcnd_probe(struct pla
+@@ -948,8 +996,10 @@
  
  	/* NAND bus width determines access funtions used by upper layer */
  	if (pdata->width == 2) {
@@ -156,12 +158,3 @@
  	}
  
  	host->pagesize_2k = 0;
-@@ -962,8 +1012,6 @@ static int __init mxcnd_probe(struct pla
- 		goto escan;
- 	}
- 
--	mtd->name = DRIVER_NAME;
--
- 	/* Register the partitions */
- #ifdef CONFIG_MTD_PARTITIONS
- 	nr_parts =

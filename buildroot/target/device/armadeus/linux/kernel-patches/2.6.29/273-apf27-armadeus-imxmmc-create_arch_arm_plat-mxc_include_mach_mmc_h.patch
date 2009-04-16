@@ -1,28 +1,20 @@
 
-This patch adds mmc.h to platform specific includes.
+This patch adds some missing functions to arch/arm/plat-mxc/include/mach/mmc.h
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 ---
 
---- linux-2.6.27-rc9/arch/arm/plat-mxc/include/mach/mmc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.27-rc9.mod/arch/arm/plat-mxc/include/mach/mmc.h	2008-10-16 18:31:36.000000000 +0200
-@@ -0,0 +1,19 @@
-+#ifndef ASMARM_ARCH_MMC_H
-+#define ASMARM_ARCH_MMC_H
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/mmc.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/mmc.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/mmc.h	2009-03-31 10:50:01.000000000 +0200
+@@ -31,6 +31,9 @@
+ 
+ 	/* adjust slot voltage */
+ 	void (*setpower)(struct device *, unsigned int vdd);
 +
-+#include <linux/mmc/host.h>
-+
-+struct device;
-+
-+struct imxmmc_platform_data {
 +	int (*card_present)(struct device *);
-+	int (*get_ro)(struct device *);
 +	void (*set_bus_width)(struct device *, int width);
-+	char* clk;
-+	int (*init)(struct device *, irq_handler_t, void *);
-+	void (*exit)(struct device *, void *);
-+};
-+
-+extern void imx_set_mmc_info(struct imxmmc_platform_data *info);
-+
-+#endif
+ };
+ 
+ #endif

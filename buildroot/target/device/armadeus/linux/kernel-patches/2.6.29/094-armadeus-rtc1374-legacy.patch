@@ -1,7 +1,9 @@
---- linux-2.6.27.2/drivers/rtc/Kconfig	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.2.new/drivers/rtc/Kconfig	2008-11-17 13:43:21.000000000 +0100
-@@ -152,6 +152,19 @@ config RTC_DRV_DS1374
- 	  This driver can also be built as a module.  If so, the module
+Index: linux-2.6.29/drivers/rtc/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/rtc/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/rtc/Kconfig	2009-03-30 11:21:26.000000000 +0200
+@@ -156,6 +156,19 @@
+ 	  This driver can also be built as a module. If so, the module
  	  will be called rtc-ds1374.
  
 +config RTC_DRV_DS1374_LEGACY
@@ -20,18 +22,22 @@
  config RTC_DRV_DS1672
  	tristate "Dallas/Maxim DS1672"
  	help
---- linux-2.6.27.2/drivers/rtc/Makefile	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.2.new/drivers/rtc/Makefile	2008-11-17 13:39:38.000000000 +0100
-@@ -27,6 +27,7 @@ obj-$(CONFIG_RTC_DRV_DS1302)	+= rtc-ds13
+Index: linux-2.6.29/drivers/rtc/Makefile
+===================================================================
+--- linux-2.6.29.orig/drivers/rtc/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/rtc/Makefile	2009-03-30 11:22:26.000000000 +0200
+@@ -30,6 +30,7 @@
  obj-$(CONFIG_RTC_DRV_DS1305)	+= rtc-ds1305.o
  obj-$(CONFIG_RTC_DRV_DS1307)	+= rtc-ds1307.o
  obj-$(CONFIG_RTC_DRV_DS1374)	+= rtc-ds1374.o
-+obj-$(CONFIG_RTC_DRV_DS1374_LEGACY)	+= rtc-ds1374-legacy.o
++obj-$(CONFIG_RTC_DRV_DS1374_LEGACY) += rtc-ds1374-legacy.o
+ obj-$(CONFIG_RTC_DRV_DS1390)	+= rtc-ds1390.o
  obj-$(CONFIG_RTC_DRV_DS1511)	+= rtc-ds1511.o
  obj-$(CONFIG_RTC_DRV_DS1553)	+= rtc-ds1553.o
- obj-$(CONFIG_RTC_DRV_DS1672)	+= rtc-ds1672.o
---- linux-2.6.27.2/drivers/rtc/rtc-ds1374-legacy.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.27.2.new/drivers/rtc/rtc-ds1374-legacy.c	2008-11-17 13:38:51.000000000 +0100
+Index: linux-2.6.29/drivers/rtc/rtc-ds1374-legacy.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/rtc/rtc-ds1374-legacy.c	2009-03-30 11:28:18.000000000 +0200
 @@ -0,0 +1,284 @@
 +/*
 + * An rtc/alarm/i2c driver for the Dallas ds1374
@@ -284,7 +290,7 @@
 +	err = device_create_file(&client->dev, &dev_attr_control);
 +    if (err)
 +        printk(KERN_WARNING "Unable to create sysfs attribute file for DS1374\n");
-+    else	
++    else
 +        return 0;
 +
 +exit_detach:
@@ -317,13 +323,15 @@
 +
 +module_init(ds1374_init);
 +module_exit(ds1374_exit);
---- linux-2.6.27.2/include/linux/i2c-id.h	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.2.new/include/linux/i2c-id.h	2008-11-16 21:44:27.000000000 +0100
-@@ -56,6 +56,7 @@
+Index: linux-2.6.29/include/linux/i2c-id.h
+===================================================================
+--- linux-2.6.29.orig/include/linux/i2c-id.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/include/linux/i2c-id.h	2009-03-30 11:27:47.000000000 +0200
+@@ -52,6 +52,7 @@
+ #define I2C_DRIVERID_SAA7191	57	/* video decoder		*/
  #define I2C_DRIVERID_INDYCAM	58	/* SGI IndyCam			*/
  #define I2C_DRIVERID_OVCAMCHIP	61	/* OmniVision CMOS image sens.	*/
- #define I2C_DRIVERID_MAX6900	63	/* MAX6900 real-time clock	*/
-+#define I2C_DRIVERID_DS1374	65	/* DS1374 real time clock	*/
++#define I2C_DRIVERID_DS1374	65      /* DS1374 real time clock	*/
  #define I2C_DRIVERID_SAA6752HS	67	/* MPEG2 encoder		*/
  #define I2C_DRIVERID_TVEEPROM	68	/* TV EEPROM			*/
  #define I2C_DRIVERID_WM8775	69	/* wm8775 audio processor	*/

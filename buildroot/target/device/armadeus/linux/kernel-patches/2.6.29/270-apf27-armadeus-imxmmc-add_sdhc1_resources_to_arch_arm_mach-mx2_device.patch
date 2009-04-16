@@ -9,19 +9,19 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/arch/arm/mach-mx2/devices.c b/arch/arm/mach-mx2/devices.c
-index 02c19ad..b70393e 100644
---- a/arch/arm/mach-mx2/devices.c
-+++ b/arch/arm/mach-mx2/devices.c
-@@ -33,6 +33,7 @@
- #include <linux/gpio.h>
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 10:35:55.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 10:36:30.000000000 +0200
+@@ -34,6 +34,7 @@
  
+ #include <mach/irqs.h>
  #include <mach/hardware.h>
 +#include <mach/mmc.h>
  
  /*
   * Resource definition for the MXC IrDA
-@@ -391,6 +392,73 @@ struct platform_device mxc_fb_device = {
+@@ -407,6 +408,73 @@
  };
  
  /*
@@ -95,11 +95,11 @@ index 02c19ad..b70393e 100644
   * SSI bus:
   * - i.MX1: 2 channels
   * - i.MX21: 2 channels
-diff --git a/arch/arm/mach-mx2/devices.h b/arch/arm/mach-mx2/devices.h
-index 243ac8a..bf0112d 100644
---- a/arch/arm/mach-mx2/devices.h
-+++ b/arch/arm/mach-mx2/devices.h
-@@ -21,6 +21,8 @@ extern struct platform_device mxc_spi_device2;
+Index: linux-2.6.29/arch/arm/mach-mx2/devices.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.h	2009-03-31 10:35:55.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.h	2009-03-31 10:36:30.000000000 +0200
+@@ -22,6 +22,8 @@
  extern struct platform_device imx_i2c_device0;
  extern struct platform_device imx_i2c_device1;
  extern struct platform_device mxc_fb_device;

@@ -1,9 +1,10 @@
-diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
---- a/drivers/input/touchscreen/Kconfig	2006-07-06 02:48:09.000000000 +0000
-+++ b/drivers/input/touchscreen/Kconfig	2006-08-17 23:35:38.000000000 +0000
-@@ -162,6 +162,20 @@ config TOUCHSCREEN_TOUCHWIN
+Index: linux-2.6.29/drivers/input/touchscreen/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/input/touchscreen/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/input/touchscreen/Kconfig	2009-03-30 11:14:08.000000000 +0200
+@@ -242,6 +242,20 @@
  	  To compile this driver as a module, choose M here: the
- 	  module will be called touchwin.
+ 	  module will be called atmel_tsadcc.
  
 +config TOUCHSCREEN_TSC2102
 +	tristate "TSC 2102 based touchscreens"
@@ -21,13 +22,16 @@ diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/Kconfig b/dr
 +
  config TOUCHSCREEN_UCB1400
  	tristate "Philips UCB1400 touchscreen"
- 	select AC97_BUS
-diff -pNaur -X b/Documentation/dontdiff a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
---- a/drivers/input/touchscreen/Makefile	2006-03-22 17:44:37.000000000 +0000
-+++ b/drivers/input/touchscreen/Makefile	2006-08-17 23:35:38.000000000 +0000
-@@ -17,4 +17,5 @@
- obj-$(CONFIG_TOUCHSCREEN_PENMOUNT)	+= penmount.o
+ 	depends on AC97_BUS
+Index: linux-2.6.29/drivers/input/touchscreen/Makefile
+===================================================================
+--- linux-2.6.29.orig/drivers/input/touchscreen/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/input/touchscreen/Makefile	2009-03-30 11:15:35.000000000 +0200
+@@ -25,6 +25,7 @@
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHIT213)	+= touchit213.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+= touchright.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
 +obj-$(CONFIG_TOUCHSCREEN_TSC2102)	+= tsc2102_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
  obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o

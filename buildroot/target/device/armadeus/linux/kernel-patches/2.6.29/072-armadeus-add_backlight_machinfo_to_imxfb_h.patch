@@ -1,15 +1,18 @@
---- linux-org/arch/arm/mach-imx/include/mach/imxfb.h
-+++ linux/arch/arm/mach-imx/include/mach/imxfb.h
-@@ -35,3 +35,12 @@
- 	void (*backlight_power)(int);
+Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-03-30 11:09:44.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-03-30 11:13:05.000000000 +0200
+@@ -82,3 +82,13 @@
  };
- void set_imx_fb_info(struct imxfb_mach_info *hard_imx_fb_info);
+ 
+ void set_imx_fb_info(struct imx_fb_platform_data *);
 +
-+// --- Backlight handling ---
++/* --- Backlight handling --- */
 +struct imxbl_machinfo {
 +	int max_intensity;
 +	int default_intensity;
-+	int limit_mask; // When battery is low
++	int limit_mask; /* When battery is low */
 +	void (*set_bl_intensity)(int intensity);
 +};
 +extern void imxbl_limit_intensity(int limit);
++
