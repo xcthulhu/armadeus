@@ -1,5 +1,5 @@
 /*
- * Armadeus Parallel port (ppdev) emulator
+ * Armadeus Parallel port (ppdev) emulation on APF9328 LCD port
  *
  * Copyright (C) 2006-2009 Julien Boibessot <julien.boibessot@armadeus.com>
  *                         Armadeus Project / Armadeus Systems
@@ -28,14 +28,18 @@
 #include <linux/moduleparam.h>
 /* Pretend we're PPDEV for IOCTL */
 #include <linux/ppdev.h>
-
+#include <asm/io.h>
+#include <mach/hardware.h>
+#ifdef CONFIG_ARCH_IMX /* TO BE REMOVED WHEN MX1 PLATFORM EXIST */
+#include "iomux-mx1.h"
+#endif
 
 extern void         gpioWriteOnPort( unsigned int, unsigned int );
 extern unsigned int gpioReadFromPort( unsigned int );
 extern void         gpioSetPortDir( unsigned int, unsigned int );
 extern unsigned int gpioGetPortDir( unsigned int );
 
-#define DRIVER_VERSION            "v0.1"
+#define DRIVER_VERSION            "v0.2"
 #define PPDEV_DEVICE_NAME "Armadeus_ppdev"
 
 /* by default, we use dynamic allocation of major numbers */
@@ -79,11 +83,17 @@ void __exit armadeus_ppdev_cleanup(void);
  */
 static void initialize_port( void )
 {
+	u32 temp;
+
 	/* If not already done by core module */
-	GIUS(PORT_D) = GIUS(PORT_D) | PORT_D_31_10_MASK; /* set only portD 31..10 */
-	PUEN(PORT_D) = PUEN(PORT_D) | PORT_D_31_10_MASK;
-	OCR1(PORT_D) = OCR1(PORT_D) | 0xFFFF0000;
-	OCR2(PORT_D) = OCR2(PORT_D) | 0xFFFFFFFF;
+	temp = __raw_readl(VA_GPIO_BASE + MXC_GIUS(PORT_D)) | PORT_D_31_10_MASK; /* set only portD 31..10 */
+	__raw_writel(temp, VA_GPIO_BASE + MXC_GIUS(PORT_D));
+	temp = __raw_readl(VA_GPIO_BASE + MXC_PUEN(PORT_D)) | PORT_D_31_10_MASK; /* set only portD 31..10 */
+	__raw_writel(temp, VA_GPIO_BASE + MXC_PUEN(PORT_D));
+	temp = __raw_readl(VA_GPIO_BASE + MXC_OCR1(PORT_D)) | 0xFFFF0000;
+	__raw_writel(temp, VA_GPIO_BASE + MXC_OCR1(PORT_D));
+	temp = __raw_readl(VA_GPIO_BASE + MXC_OCR2(PORT_D)) | 0xFFFFFFFF;
+	__raw_writel(temp, VA_GPIO_BASE + MXC_OCR2(PORT_D));
 }
 
 /* Handles write() done on /dev/ppdevxx */
@@ -146,7 +156,7 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 		return -ERESTARTSYS;
 
 	minor = MINOR(inode->i_rdev);
-	if( minor > PPDEV_MAX_MINOR ) {
+	if (minor > PPDEV_MAX_MINOR ) {
 		printk("Minor outside range: %d !\n", minor);
 		return -EFAULT;
 	}
@@ -162,13 +172,13 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 			/* Write ctrl infos on assigned ctrl ppdevlines how ??? */
 			printk("/FROB 0x%x/ ", value);
 			/* Get value from port and clear bits we will set */
-			lShadow = gpioReadFromPort( PORT_D );
+			lShadow = gpioReadFromPort(PORT_D);
 			/* Control lines are on PortD[14,13,12] */
 			lShadow &= 0xFFFF8FFF;
 			/* Control are written on iMX LCD Port control in GPIO mode, ie PortD[14,13,12] */
 			lShadow |= ((value & 0x0F) << 12);
 			/* Put it on port */
-			gpioWriteOnPort( PORT_D, lShadow );
+			gpioWriteOnPort(PORT_D, lShadow);
 			printk(" 0x%x /", lShadow);
 		break;
 
@@ -186,7 +196,7 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 				break;
 
 			/* Get value from port and clear bits we will set */
-			lShadow = gpioReadFromPort( PORT_D );
+			lShadow = gpioReadFromPort(PORT_D);
 			if (port_mode == 4) {
 				lShadow &= 0xFF000FFF; //0xFFF00FFF;
 				/* Control (4 highest bits) are written on iMX LCD
@@ -199,7 +209,7 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 				lShadow &= 0xFF807FFF;
 				lShadow |= ((value & 0xFF) << 15);
 			}
-			gpioWriteOnPort( PORT_D, lShadow );
+			gpioWriteOnPort(PORT_D, lShadow);
 			/*printk(" 0x%x /", lShadow); */
 		break;
 
@@ -207,9 +217,9 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 			if (port_mode == 4) {
 				/* Data (4 lowest bits) are read from iMX LCD port data
 				in GPIO mode, ie PortD[18-15] */
-				value = (gpioReadFromPort( PORT_D ) >> (15+4)) & 0x0F;
+				value = (gpioReadFromPort(PORT_D) >> (15+4)) & 0x0F;
 			} else {
-				value = (gpioReadFromPort( PORT_D ) >> 15) & 0xFF;
+				value = (gpioReadFromPort(PORT_D) >> 15) & 0xFF;
 			}
 			
 			ret = __put_user(value, (unsigned char *)arg);
@@ -220,11 +230,11 @@ int armadeus_ppdev_ioctl( struct inode *inode, struct file *filp, unsigned int c
 			ret = __get_user(value, (unsigned char *)arg);
 			printk("/DIR 0x%x/ ", value);
 			
-			if (port_mode == 4)
+			if (port_mode == 4) {
 				PP_DDIR_MASK = 0xFF807FFF; /* 1111 1111 1111 1000 0111 1111 1111 1111 ?? */
-			else
+			} else {
 				PP_DDIR_MASK = 0xFF807FFF; /* 1111 1111 1000 0000 0111 1111 1111 1111 */
-			
+			}
 			/* linux/ppdev.h define PPDATADIR as "Data line direction: non-zero for input mode."
 			For ppdevs, the logic is reversed - bit=1 == output
 			This is _not_ "generic" at all, but very much hard-wired towards being able to use an HD44780 LCD on the GPIO pins
@@ -281,7 +291,7 @@ int __init armadeus_ppdev_init(void)
 		return result;
 	}
 	/* Dynamic Major allocation */
-	if( ppdev_major == 0 )
+	if (ppdev_major == 0)
 		ppdev_major = result;
 
 	/* Initialise GPIO port access semaphore */
@@ -303,3 +313,4 @@ module_exit(armadeus_ppdev_cleanup);
 MODULE_AUTHOR("JB / NC");
 MODULE_DESCRIPTION("Armadeus Parallel Port");
 MODULE_LICENSE("GPL");
+

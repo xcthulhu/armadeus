@@ -39,24 +39,7 @@
 #include <mach/iomux-mx1-mx2.h>
 #endif
 #ifdef CONFIG_ARCH_IMX /* TO BE REMOVED WHEN MX1 PLATFORM EXIST */
-#define VA_GPIO_BASE	IO_ADDRESS(IMX_GPIO_BASE)
-#define MXC_DDIR(x)    (0x00 + ((x) << 8))
-#define MXC_OCR1(x)    (0x04 + ((x) << 8))
-#define MXC_OCR2(x)    (0x08 + ((x) << 8))
-#define MXC_ICONFA1(x) (0x0c + ((x) << 8))
-#define MXC_ICONFA2(x) (0x10 + ((x) << 8))
-#define MXC_ICONFB1(x) (0x14 + ((x) << 8))
-#define MXC_ICONFB2(x) (0x18 + ((x) << 8))
-#define MXC_DR(x)      (0x1c + ((x) << 8))
-#define MXC_GIUS(x)    (0x20 + ((x) << 8))
-#define MXC_SSR(x)     (0x24 + ((x) << 8))
-#define MXC_ICR1(x)    (0x28 + ((x) << 8))
-#define MXC_ICR2(x)    (0x2c + ((x) << 8))
-#define MXC_IMR(x)     (0x30 + ((x) << 8))
-#define MXC_ISR(x)     (0x34 + ((x) << 8))
-#define MXC_GPR(x)     (0x38 + ((x) << 8))
-#define MXC_SWR(x)     (0x3c + ((x) << 8))
-#define MXC_PUEN(x)    (0x40 + ((x) << 8))
+#include "iomux-mx1.h"
 #endif
 
 #include "core.h" /* for ioctl defs */
