@@ -70,8 +70,10 @@
 #define PWM_REPEAT_MASK 	(3<<1)
 #define PWM_HCTR			(1<<20)
 #define PWM_BCTR			(1<<21)
+#define PWM_FWM_3			(2<<26)
 #define PWM_FIFOAV			(7<<0)
 #define PWM_FIFO_EMPTY		(1<<3)
+#define PWM_FWM				(3<<26)	
 #define PWM_REPEAT(x) 		(((x) & 0x03) << 1)
 #define PWM_CLKSEL_MASK 	(0)
 #define PWM_PRESCALER_MASK 	0x0000FFF0
@@ -80,6 +82,10 @@
 #define PWM_SAMPLE(x)		((x) & 0xFFFF)		
 #define PWM_INT 			MXC_INT_PWM
 #define PWM_MAX_DEV			1
+
+#define PWM_MIN_FREQUENCY 1      // Hz
+#define PWM_MAX_FREQUENCY 1000000 /* Hz */
+
 #else
 #define PWMCTRL 	(0x00)
 #define PWMSTATUS 	(0x00)
@@ -93,6 +99,8 @@
 #define PWM_CLKSRC_MASK (1<<15)
 #define PWM_CLKSRC_IPG 	(0<<15)
 #define PWM_CLKSRC_32K 	(1<<15)
+#define PWM_FWM_3		(2<<26)
+#define PWM_FWM			(3<<26)	
 #define PWM_HCTR 		PWMC_HCTR
 #define PWM_BCTR		PWMC_BCTR
 #define PWM_FIFOAV		PWMC_FIFOAV
@@ -104,6 +112,10 @@
 #define PWM_PERIOD(x) PWMP_PERIOD(x)
 #define PWM_SAMPLE(x) PWMS_SAMPLE(x)
 #define PWM_MAX_DEV			1
+
+#define PWM_MIN_FREQUENCY 2       /* Hz */
+#define PWM_MAX_FREQUENCY 1000000 /* Hz */
+
 #endif
 
 #define DRIVER_NAME         "imx-pwm"
@@ -200,6 +212,45 @@ static inline void increase_circbuf( struct sound_circ_buf* abuffer, int count )
 	pr_debug("Added %d bytes to buffer, now write is in pos %d\n", count, abuffer->write);
 }
 
+static int get_current_pwm_clk_rate(struct pwm_device *pwm)
+{
+	if( (readl(pwm->membase + PWMCTRL) & PWM_CLKSRC_MASK) == PWM_CLKSRC_32K)
+		return 32768;
+#ifdef CONFIG_ARCH_MX2
+	return clk_get_rate(pwm->clk);
+#else
+	return 16000000; 
+#endif
+}
+
+/* result in Hz */
+static long get_pwm_min_freq(struct pwm_device *pwm)
+{
+	return PWM_MIN_FREQUENCY;
+}
+
+/* result in Hz */
+static long get_pwm_max_freq(struct pwm_device *pwm)
+{
+	return PWM_MAX_FREQUENCY;
+}
+
+/* freq in Hz */
+static void compute_pwm_params(u32 req_freq, struct pwm_device *pwm)
+{
+	u32 input_freq, divider;
+	input_freq = get_current_pwm_clk_rate(pwm);
+	divider = ((input_freq*10)/req_freq+5)/10;
+	if( divider/65536 ){
+		pwm->entry.prescaler = divider/65536 +1; 
+		pwm->entry.period = input_freq/(pwm->entry.prescaler*req_freq)-2;
+	}
+	else{
+		pwm->entry.period = divider-2;
+		pwm->entry.prescaler = 1;
+	}
+}
+
 
 
 /****************************************************************
@@ -216,6 +267,20 @@ static void write_bits(u32 bit, u32 mask, unsigned long reg)
 	writel(temp | (bit&mask), reg);
 }
 
+static void setup_pwm_params(struct pwm_device *pwm)
+{
+	write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
+	/* Setup prescaler */
+	pr_debug("Updating PWM registers\n");
+	write_bits( PWM_PRESCALER(pwm->entry.prescaler),
+				PWM_PRESCALER_MASK, pwm->membase + PWMCTRL ); /*| PWMC_REPEAT(3)*/;
+	/* Setup period */
+	writel(PWM_PERIOD(pwm->entry.period) , pwm->membase + PWMPERIOD );
+	/* Setup duty cycle */
+	writel(PWM_SAMPLE( (u32) ((pwm->entry.period * pwm->duty) / 1000) ),
+				pwm->membase + PWMSAMPLE);
+}
+
 
 /**
  * setup_pwm_unit - common setup function whenever something was changed
@@ -226,16 +291,7 @@ static void setup_pwm_unit(struct pwm_device *pwm)
 	if (pwm->active) {
 		/* Activate PWM */
 		write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
-		write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
-		/* Setup prescaler */
-		pr_debug("Updating PWM registers\n");
-		write_bits( PWM_PRESCALER(pwm->entry.prescaler),
-					PWM_PRESCALER_MASK, pwm->membase + PWMCTRL ); /*| PWMC_REPEAT(3)*/;
-		/* Setup period */
-		writel(PWM_PERIOD(pwm->entry.period) , pwm->membase + PWMPERIOD );
-		/* Setup duty cycle */
-		writel(PWM_SAMPLE( (u32) ((pwm->entry.period * pwm->duty) / 1000) ),
-					pwm->membase + PWMSAMPLE);
+		setup_pwm_params(pwm);
 	} else {
 		/* De-activate */
 		write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
@@ -322,9 +378,6 @@ static int init_pwm(struct pwm_device *pwm)
 	write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 	write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 
-	/* Enable interrupt */
-	//PWMC |= PWMC_IRQEN;
-
 	return 1;
 }
 
@@ -336,7 +389,12 @@ int pwm_release(struct inode * inode, struct file * filp)
 
 	// wait unit gWriteCnt == 0
 	interruptible_sleep_on(&pwm->exit_wait);
-	
+	if (pwm->mode == PWM_PLAY_MODE) {
+		/* disable IRQ */
+		write_bits( ~PWM_IRQEN, PWM_IRQEN, pwm->membase + PWMIRQ);
+	}	
+	write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
+
 	if( pwm->circ_buf.buf ) {
 		kfree( pwm->circ_buf.buf );
 		pwm->circ_buf.buf = 0;
@@ -349,7 +407,9 @@ int pwm_open(struct inode * inode, struct file * filp)
 {
 	struct pwm_device *pwm = dev_table[iminor(inode)];
 
+	pwm->circ_buf.buf = 0;
 	pwm->dataLen = PWM_DATA_8BIT;
+	pwm->nbbytes = 0;
 	/* Init PWM hardware */
 	init_pwm(pwm);
 	
@@ -403,35 +463,38 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 		/* Set Playback frequency/ouput rate */
 		case PWM_IOC_SFREQ:
 		{
+			int clock = get_current_pwm_clk_rate(pwm);
 			/* Disable PWM */
 			write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
-			/* Select 16MHz PERCLK1 as CLK source  */
+
+			if(!( (clock >= 16000000)  && (clock<17000000))){
+				printk("audio playback works only with a 16MHz input clock %d!\n", 
+						get_current_pwm_clk_rate(pwm));
+				break;
+			}
 			write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
-			/* PRESCALER = 0   =>  use full IPG */
-			write_bits( 0, PWM_PRESCALER_MASK, pwm->membase + PWMCTRL );
-			/* CLKSEL = 0 => divide by 2 */
-			write_bits( 0, PWM_CLKSEL_MASK, pwm->membase + PWMCTRL );
-	
+#ifdef CONFIG_ARCH_MX2
+			write_bits( PWM_PRESCALER(2),PWM_PRESCALER_MASK, pwm->membase + PWMCTRL );
+#else
+			write_bits( PWM_PRESCALER(1),PWM_PRESCALER_MASK, pwm->membase + PWMCTRL );
+#endif
 			switch(arg)
 			{
 				case PWM_SAMPLING_32KHZ:
 					/* REPEAT = 0 => divide by 1 */
 					write_bits( 0, PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
-					/* 16MHz/256/1/2 = 32768 */
 					str = "32Khz";
 				break;
 				case PWM_SAMPLING_16KHZ:
 					/* REPEAT = 01 => divide by 2 */
 					write_bits( PWM_REPEAT(1), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
-					/* 16MHz/256/2/2 = 16384 */
 					str = "16Khz";
 				break;
 	
 				case PWM_SAMPLING_8KHZ:
 				default:
 					/* REPEAT = 10 => divide by 4*/
-					write_bits( PWM_REPEAT(1), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
-					/* 16MHz/256/4/2 = 8192 */
+					write_bits( PWM_REPEAT(2), PWM_REPEAT_MASK, pwm->membase + PWMCTRL );
 					str = "8Khz";
 				break;
 			}
@@ -515,7 +578,6 @@ static ssize_t pwm_write( struct file *filp, const char *buf, size_t count, loff
 	int remaining_space = 0;
 	struct pwm_device *pwm = dev_table[iminor(filp->f_dentry->d_inode)];
 	struct sound_circ_buf *circ = &pwm->circ_buf;
-	
 
 	pr_debug( "pwm_write ----\n" );
 
@@ -523,7 +585,7 @@ static ssize_t pwm_write( struct file *filp, const char *buf, size_t count, loff
 		count = MAX_SOUND_BUFFER_SIZE;
 	/* First time, allocate the double buffer */
 	if (!circ->buf) {
-		circ->buf = kmalloc( count*2, GFP_KERNEL );
+		circ->buf = kmalloc( MAX_SOUND_BUFFER_SIZE*2, GFP_KERNEL );
 		if (!circ->buf) {
 			goto out;
 		} else {
@@ -533,6 +595,7 @@ static ssize_t pwm_write( struct file *filp, const char *buf, size_t count, loff
 			circ->size  = MAX_SOUND_BUFFER_SIZE*2;
 		}
 	}
+	pr_debug("write %x, %x, %x\n", readl(pwm->membase + PWMCTRL), readl(pwm->membase + PWMIRQ), readl(pwm->membase + PWMSTATUS));
 
 	/* If there is enough space at the end of the buffer for all data in one copy, do it */
 	remaining_space = circ->size - circ->write;
@@ -556,21 +619,21 @@ static ssize_t pwm_write( struct file *filp, const char *buf, size_t count, loff
 		increase_circbuf(&pwm->circ_buf, count - remaining_space);
 	}
 
-	/* Enable PWM */
-	write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
-	writel(0x00000000, pwm->membase  + PWMSAMPLE);
-
 	if (pwm->mode == PWM_PLAY_MODE) {
 		/* Enable IRQ */
-		write_bits( PWM_IRQEN, PWM_IRQEN, pwm->membase + PWMCTRL);
+		write_bits( PWM_IRQEN, PWM_IRQEN, pwm->membase + PWMIRQ);
 	} else {
 		writel(pwm->sampleValue, pwm->membase  + PWMSAMPLE);
-		/* set prescaler to 128 */
-		write_bits(0x7f00 , PWM_PRESCALER_MASK, pwm->membase + PWMCTRL);
+		/* set prescaler to the max */
+		write_bits(PWM_PRESCALER(0xffff) , PWM_PRESCALER_MASK, pwm->membase + PWMCTRL);
 		/*writeBufPtr16 = (u16*)gpWriteBuf;
 		gWriteCnt /= 2; //input size is 8bit size, need /2 to get 16bit size
 		StartTimer( &timer );*/
 	}
+	writel(0x00000000, pwm->membase  + PWMSAMPLE);
+	write_bits(  PWM_FWM_3 , PWM_FWM, pwm->membase + PWMCTRL );
+	/* Enable PWM */
+	write_bits( PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 
 	/* Calculate how much space is left in buffer */
 	remaining_space = CIRC_SPACE(circ->write, circ->read, circ->size);
@@ -596,52 +659,6 @@ struct file_operations pwm_fops = {
 
 /////////////////////////////////////// END OF /DEV INTERFACE /////////////////////////////////////////////////////////
 
-#ifdef CONFIG_ARCH_MX2
-#define PWM_MIN_FREQUENCY 1      // Hz
-#define PWM_MAX_FREQUENCY 1000000 /* Hz */
-#else
-#define PWM_MIN_FREQUENCY 2       /* Hz */
-#define PWM_MAX_FREQUENCY 1000000 /* Hz */
-#endif
-
-static int get_current_pwm_clk_rate(struct pwm_device *pwm)
-{
-	if( (readl(pwm->membase + PWMCTRL) & PWM_CLKSRC_MASK) == PWM_CLKSRC_32K)
-		return 32768;
-#ifdef CONFIG_ARCH_MX2
-	return clk_get_rate(pwm->clk);
-#else
-	return 8000000; 
-#endif
-}
-
-/* result in Hz */
-static long get_pwm_min_freq(struct pwm_device *pwm)
-{
-	return PWM_MIN_FREQUENCY;
-}
-
-/* result in Hz */
-static long get_pwm_max_freq(struct pwm_device *pwm)
-{
-	return PWM_MAX_FREQUENCY;
-}
-
-/* freq in Hz */
-static void compute_pwm_params(u32 req_freq, struct pwm_device *pwm)
-{
-	u32 input_freq, divider;
-	input_freq = get_current_pwm_clk_rate(pwm);
-	divider = ((input_freq*10)/req_freq+5)/10;
-	if( divider/65536 ){
-		pwm->entry.prescaler = divider/65536 +1; 
-		pwm->entry.period = input_freq/(pwm->entry.prescaler*req_freq)-2;
-	}
-	else{
-		pwm->entry.period = divider-2;
-		pwm->entry.prescaler = 1;
-	}
-}
 
 /**
  * pwm_show_duty - return current duty setting
@@ -879,10 +896,15 @@ static irqreturn_t pwm_interrupt(int irq, void *dev_id)
 		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
 		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
 		writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+#ifdef CONFIG_ARCH_MX2
+		if ((readl(pwm->membase + PWMSTATUS) & PWM_FIFOAV) == 3) { /* TODO: verify if needed */
+			writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
+		}
+#else
 		if ((readl(pwm->membase + PWMSTATUS) & PWM_FIFOAV) > 0) { /* TODO: verify if needed */
 			writel( (u32)(get_byte_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
-			pwm->nbbytes++;
 		}
+#endif
 	} else { /* PWM_DATA_16BIT) */
 		// TODO: put good value in PWMC_BCTR to auto swap bytes if needed (do it at write or ioctl)
 		writel( (u32)(get_word_from_circbuf( &pwm->circ_buf )), pwm->membase + PWMSAMPLE);
