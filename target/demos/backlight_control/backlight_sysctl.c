@@ -10,8 +10,8 @@ unsigned char current_brightness = 0;
 int max_brightness = 255;
 
 #ifdef TARGET
-#define BRIGHTNESS_SYS_FILE     "/sys/class/backlight/imxl-bl/brightness"
-#define MAX_BRIGHTNESS_SYS_FILE "/sys/class/backlight/imxl-bl/max_brightness"
+#define BRIGHTNESS_SYS_FILE     "/sys/class/backlight/imx-bl/brightness"
+#define MAX_BRIGHTNESS_SYS_FILE "/sys/class/backlight/imx-bl/max_brightness"
 #else
 #define BRIGHTNESS_SYS_FILE     "./backlight.dat"
 #define MAX_BRIGHTNESS_SYS_FILE "./backlight.dat"
