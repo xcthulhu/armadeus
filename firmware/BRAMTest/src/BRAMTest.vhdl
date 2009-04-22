@@ -13,6 +13,7 @@
 -- Dependencies: 
 --
 -- Revision: 
+-- Revision 0.02 - suppressing warning
 -- Revision 0.01 - File Created
 -- Additional Comments: 
 --
@@ -28,12 +29,11 @@ use UNISIM.VComponents.all;
 entity BRAMTest_Top is  -- this is the top
 	Port ( 
 		DataxD      : inout std_logic_vector(15 downto 0);
-		AddrxDI	  : in std_logic_vector(12 downto 0);
-		CSxBI		  : in std_logic;
-		WRxBI   	  : in std_logic;
-		RDxBI		  : in std_logic;
+		AddrxDI	    : in std_logic_vector(10 downto 1);
+		CSxBI		: in std_logic;
+		WRxBI   	: in std_logic;
+		RDxBI		: in std_logic;
 		ClkxCI      : in std_logic
-		--ResetxRB         : in std_logic
 		);
 end BRAMTest_Top;
 
