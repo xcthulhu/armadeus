@@ -101,7 +101,7 @@ begin
     led0_wbs_add <= wrapper_wbm_address(1);
     button0_wbs_add <= wrapper_wbm_address(1);
 
-    decodeproc : process(rstgen_syscon00_gls_clk,rstgen_syscon00_gls_reset,wrapper_wbm_address)
+    decodeproc : process(rstgen_syscon00_gls_clk,rstgen_syscon00_gls_reset)
     begin
         if rstgen_syscon00_gls_reset='1' then
             irq_mngr00_swb16_cs <= '0';

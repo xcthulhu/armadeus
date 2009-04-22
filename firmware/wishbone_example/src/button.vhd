@@ -41,7 +41,11 @@ end entity;
 
 ---------------------------------------------------------------------------
 Architecture button_1 of button is
-	---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+    -- registers mapping
+    constant REG_ID     : std_logic := '0';
+    constant REG_BUTTON : std_logic := '1';
+
 	signal button_r : std_logic ;
 	signal reg : std_logic_vector( 15 downto 0);
 begin
@@ -55,7 +59,6 @@ begin
 			reg <= "000000000000000"&button_i;
 		end if;
 	end process cbutton;
-
 
 	-- rise interruption
 	pbutton : process(gls_clk,gls_reset)
@@ -80,16 +83,16 @@ begin
 			wbs_ack <= '0';
 			wbs_readdata <= (others => '0');
 		elsif(rising_edge(gls_clk)) then
-            wbs_ack <= '0';
 			if(wbs_strobe = '1' and wbs_write = '0' and wbs_cycle = '1')then
     			wbs_ack <= '1';
-                if wbs_add = '0' then
+                if wbs_add = REG_ID then
 	    			wbs_readdata <= std_logic_vector(to_unsigned(id,16));
                 else
                     wbs_readdata <= reg;
                 end if;
             else
                 wbs_readdata <= (others => '0');
+                wbs_ack <= '0';
             end if;
 		end if;
 	end process pread;
