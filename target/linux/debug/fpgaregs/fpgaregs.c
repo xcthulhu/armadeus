@@ -1,14 +1,11 @@
 /************************************************************************
- * a program to write/read 16/32bits values on fpga address map using mmap()
- * 11 october 2008
- * fpgaregs_mmap.c
+ *
+ * fpgaregs.c
+ * a program to write/read 16/32 bits values on FPGA address map using mmap()
  *
  * (c) Copyright 2008 Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
  * Modified by Sebastien Van Cauwenberghe <svancau@gmail.com>
- *
- * A simple driver for reading and writing on
- * fpga through the character file /dev/mem
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,12 +50,13 @@
 #define WORD_ACCESS (2)
 #define LONG_ACCESS (4)
 
+
 void displayResult(char* text, unsigned int accesstype, unsigned int value, unsigned int address)
 {
-	if( accesstype == WORD_ACCESS )
-		printf("%s %04x at %08x\n",text, (unsigned short)value,address);
+	if (accesstype == WORD_ACCESS)
+		printf("%s %04x at %08x\n", text, (unsigned short)value, address);
 	else
-		printf("%s %08x at %08x\n",text, value,address);
+		printf("%s %08x at %08x\n", text, value, address);
 }
 
 
@@ -69,49 +67,46 @@ int main(int argc, char *argv[])
 	int ffpga, accesstype = LONG_ACCESS;
 	void* ptr_fpga;
 
-	if ((argc < 3) || (argc > 4)){
+	if ((argc < 3) || (argc > 4)) {
 		printf("invalid arguments number\nfpgaregs [w,l] fpga_reg_add [value].\n\tw: word access, l: long access\n\
 			   \tEx: fpgaregs w 0x10 0x1234, fpgaregs l 0x10 0x12345678\n");
 		return -1;
 	}
 
-	ffpga=open("/dev/mem",O_RDWR|O_SYNC);
-	if(ffpga<0){
+	ffpga = open("/dev/mem", O_RDWR|O_SYNC);
+	if (ffpga < 0) {
 		printf("can't open file /dev/mem\n");
 		return -1;
 	}
 
-
-	ptr_fpga = mmap (0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, ffpga, FPGA_ADDRESS);
-	if (ptr_fpga == MAP_FAILED)
-	{
-		printf ("mmap failed\n");
+	ptr_fpga = mmap(0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, ffpga, FPGA_ADDRESS);
+	if (ptr_fpga == MAP_FAILED) {
+		printf("mmap failed\n");
 		return -1;
 	}
 
 	address = (unsigned int)strtol(argv[2], (char **)NULL, 16);
 
-	if(argc<3){
+	if (argc < 3) {
 		printf("invalid command line");
-	}
-	else {  
-		if( *(argv[1]) == 'w' )
+	} else {
+		if (*(argv[1]) == 'w')
 			accesstype = WORD_ACCESS;
-		if(accesstype == WORD_ACCESS){
-			if(address%2 != 0){
-				printf("Can't read word in even address (%d)\n",address);
+		if (accesstype == WORD_ACCESS) {
+			if (address%2 != 0) {
+				printf("Can't read word in even address (%d)\n", address);
 				return -1;
 			}
-		}else{ /* LONG_ACCESS */
-			if(address%4 != 0){
-				printf("Can't read long in no-4-multiple address (%d)\n",address);
+		} else { /* LONG_ACCESS */
+			if (address%4 != 0) {
+				printf("Can't read long in no-4-multiple address (%d)\n", address);
 				return -1;
 			}
 		}
 
 		/* write value at address */
-		if(argc == 4){ 
-			value   = strtoul(argv[3], (char **)NULL, 16);
+		if (argc == 4) {
+			value = strtoul(argv[3], (char **)NULL, 16);
 			if (accesstype == WORD_ACCESS)
 				*(unsigned short*)(ptr_fpga+(address)) = (unsigned short)value;
 			else
@@ -120,7 +115,7 @@ int main(int argc, char *argv[])
 			displayResult("Write", accesstype, value, address);
 
 			/* read address value */
-		}else if(argc == 3){
+		} else if (argc == 3) {
 			if (accesstype == WORD_ACCESS)
 				value = *(unsigned short*)(ptr_fpga+(address));
 			else
@@ -132,4 +127,3 @@ int main(int argc, char *argv[])
 	close(ffpga);
 	return 0;
 }
-
