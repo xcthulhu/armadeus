@@ -1,6 +1,7 @@
 
-SERVER_DIR= .
-NETWORKING_DIR= ../Networking
+SERVER_DIR = .
+NETWORKING_DIR = ../Networking
+WIDGET_DIR = ../widgets
 
 CPP_ALWAYS_CREATE_SOURCE = TRUE
 
@@ -10,10 +11,10 @@ QT += network
 
 LANGUAGE = C++
 
-FORMS = $$SERVER_DIR/ApfServerDialog.ui
+FORMS = $$SERVER_DIR/ApfServerTabDialog.ui
 
 DEPENDPATH += $$NETWORKING_DIR/ \
-	$$SERVER_DIR		
+	$$SERVER_DIR
 
 HEADERS =      \
 	$$SERVER_DIR/ApfDacController.h \
@@ -23,14 +24,14 @@ HEADERS =      \
 	$$SERVER_DIR/ApfCore.h
 
 SOURCES = \
- 	$$SERVER_DIR/ApfDacController.cpp \
+	$$SERVER_DIR/ApfDacController.cpp \
 	$$SERVER_DIR/ApfServer.cpp \
 	$$SERVER_DIR/ApfCore.cpp \
- 	$$SERVER_DIR/ApfServerListener.cpp \
+	$$SERVER_DIR/ApfServerListener.cpp \
 	$$SERVER_DIR/ApfServerMain.cpp
 
 INCLUDEPATH += \
-	$$DEPENDPATH 
+	$$DEPENDPATH
 
 TARGET = ApfServer
 
@@ -39,6 +40,7 @@ MOC_DIR = $(OUTPUT_DIR)/mocs/
 UI_DIR = $(OUTPUT_DIR)/uis
 
 LIBS += \
-        -L$$NETWORKING_DIR/$(OUTPUT_DIR) -lApfNetwork
-        
+        -L$$NETWORKING_DIR/$(OUTPUT_DIR) -lApfNetwork \
+        -L$$WIDGET_DIR/$(OUTPUT_DIR) -lApfWidget
+
 DESTDIR = $(OUTPUT_DIR)

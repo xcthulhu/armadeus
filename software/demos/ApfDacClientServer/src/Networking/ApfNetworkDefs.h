@@ -27,15 +27,13 @@
 #define	__APFNETWORKDEFS_H_INCLUDED__
 
 
-
 namespace ApfNetworkDefs
 {
     // The Dynamic and/or Private Ports are those from 49152 through 65535
     static const unsigned int APF_SOCKET = 50154; //why not ?
-    static const unsigned int DATASTREAM_RELEASE = 5; 
-    static const  int MIN_DAC = 0; 
-    static const  int MAX_DAC = 32; 
-    
+    static const unsigned int DATASTREAM_RELEASE = 5;
+    static const  int MIN_DAC = 0;
+    static const  int MAX_DAC = 32;
 }
-#endif	// __APFNETWORKDEFS_H_INCLUDED__
 
+#endif	// __APFNETWORKDEFS_H_INCLUDED__

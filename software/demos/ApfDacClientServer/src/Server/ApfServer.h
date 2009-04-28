@@ -1,4 +1,3 @@
-
 /*
 **	THE ARMADEUS PROJECT
 **
@@ -21,7 +20,7 @@
 **	 ApfServer.h
 **
 **	author: carbure@users.sourceforge.net
-*/ 
+*/
 
 
 #ifndef	__APFSERVER_H_INCLUDED__
@@ -40,24 +39,28 @@
 #ifndef NOSERVERGUI
 #include <QDialog>
 #include <qpushbutton.h>
-#include "ui_ApfServerDialog.h"
+#include "ui_ApfServerTabDialog.h"
+#include "../widgets/qled.h"
+#include "../widgets/manometer.h"
+#include "../widgets/thermometer.h"
+#include "../widgets/qslide.h"
 #endif
 
 class ApfServerListener;
 
-using namespace ApfNetworkDefs; 
+using namespace ApfNetworkDefs;
 
 #ifndef NOSERVERGUI
-class ApfServer : public QDialog , public Ui::ApfServerDialog
+class ApfServer : public QDialog, public Ui::ApfServerTabDialog
 #else
 class ApfServer : public QObject
 #endif
 {
     Q_OBJECT
- 
+
 public:
 
-    ApfServer( ); 
+    ApfServer( );
     virtual ~ApfServer();
     void PutServerDebugMessage(const char * str);
     static ApfServer *getApfServerInstance();
@@ -66,7 +69,11 @@ public slots:
 
     void PutServerDebugMessage(const QString & str);
     void EndServer();
-    
+    void setLedValue(int id, bool);
+    void setManometerValue(int);
+    void setThermometerValue(int);
+    void setSlideText(const QString &);
+
 private:
 
     ApfServerListener *mApfServerListener;
@@ -77,6 +84,14 @@ private:
 protected:
 
     static ApfServer   * gApfServer;
+#ifndef NOSERVERGUI
+    QLed* mRedLed;
+    QLed* mGreenLed;
+    ManoMeter* mManometer;
+    ThermoMeter* mThermometer;
+    QGridLayout* mWidgetsLayout;
+    QSlide* mSlide;
+#endif
 };
-#endif	// __APFSERVER_H_INCLUDED__
 
+#endif	// __APFSERVER_H_INCLUDED__

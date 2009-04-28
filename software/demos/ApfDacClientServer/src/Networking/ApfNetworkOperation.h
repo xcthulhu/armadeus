@@ -38,11 +38,10 @@ class ApfNetworkOperation
 public:
 
     ApfNetworkOperation( ApfNetworkProtocol::Operation operation,
-    const QString &arg0, const QString &arg1=0,  const QString &arg2=0 );
+        const QString &arg0, const QString &arg1=0,  const QString &arg2=0 );
     ApfNetworkOperation( ApfNetworkProtocol::Operation operation,
-    const QByteArray &arg0, const QByteArray &arg1=0, const QByteArray &arg2=0 );
-            
-            
+        const QByteArray &arg0, const QByteArray &arg1=0, const QByteArray &arg2=0 );
+
     virtual ~ApfNetworkOperation();
 
     void setState( ApfNetworkProtocol::State state );
@@ -50,24 +49,24 @@ public:
     void setArg( int num, const QString &arg );
     void setRawArg( int num, const QByteArray &arg );
     void appendRawArg( int num, const QByteArray &arg );
-  
+
     ApfNetworkProtocol::Operation operation() const;
     ApfNetworkProtocol::State state() const;
     QString arg( int num ) const;
     QByteArray rawArg( int num ) const;
-        
+
 private:
 
 
 protected:
     friend class ApfNetworkProtocol;
-    
+
     ApfNetworkProtocol::Operation mOperation;
     ApfNetworkProtocol::State mState;
     ApfNetworkProtocol::Error  mErrorCode;
     QString mArg[3];
     QByteArray mRawArg[3];
-   
+
 };
 #endif	// __APFNETWORKOPERATION_H_INCLUDED__
 

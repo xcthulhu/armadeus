@@ -43,30 +43,34 @@ Q_OBJECT
 
 public:
 
-    ApfClient( QString host,int port=APF_SOCKET) ;
+	ApfClient( QString host,int port=APF_SOCKET) ;
 
-    virtual ~ApfClient();
+	virtual ~ApfClient();
 	void run();
 
 protected slots:    
 	void readData();
-    void displayError(QAbstractSocket::SocketError err);
+	void displayError(QAbstractSocket::SocketError err);
 	void setRightDac(int value);
 	void setLeftDac(int value);
 	void initConnection();
 	void endPeerConnection();
 	void userClose();
 	void timeOut();
+	void greenLEDChanged(int);
+	void redLEDChanged(int);
+	void setLED(int id, int state);
+	void updateLCDText();
 
 protected:
 
 	QString mHost;
 	int mPort;
-    QTcpSocket mSocket;
+	QTcpSocket mSocket;
 	QTimer mTimer;
 	int cnt;
 	int mPreviousLeft,mPreviousRight;
-    ApfNetworkProtocol *mApfNetworkProtocol;
+	ApfNetworkProtocol *mApfNetworkProtocol;
 };
 #endif	// __APFCLIENT_H_INCLUDED__
 

@@ -32,32 +32,30 @@
 #include <QIODevice>
 #include <QDataStream>
 
-
-
 #include "ApfNetworkDefs.h"
 
-
-
 using namespace ApfNetworkDefs;
- 
-class   ApfNetworkOperation;   
+class   ApfNetworkOperation;
+
 class ApfNetworkProtocol : public QObject
 {
     Q_OBJECT
-    
+
 public:
-    
-    typedef enum Operation 
+
+    typedef enum Operation
     {
         OpNone=0,               // no operation (or must be set by protocol)
         OpVersion,              // get ATS version (compatibility)
-        OpVersionRequest,              // request ATS version (compatibility)
+        OpVersionRequest,       // request ATS version (compatibility)
         OpPing,                 // check if remote is responding
-        OpDacLeft,          // upload a file
-        OpDacRight,            // upload a ATS data base file
+        OpDacLeft,              // change left DAC value
+        OpDacRight,             // change right DAC value
+        OpLed,                  // switch LEDs state
+        OpLcd,                  // show text on LCD
         OpExitStatus            // send process exit status
     };
-    
+
     typedef enum State
     {
         StWaiting = 0,
@@ -65,18 +63,17 @@ public:
         StDone,
         StFailed,
         StStopped
-    
     };
+
     typedef enum Error
     {
     // no error
         NoError = 0,
         ErrUnsupported,         // unsupported operation
         ErrIO                  // device error
-        
     };
 
-    
+
     ApfNetworkProtocol(QIODevice * d );
 
     virtual ~ApfNetworkProtocol();
@@ -84,24 +81,19 @@ public:
     int request(ApfNetworkOperation *ApfNetworkOperation);
     int getIOError(); // get error from last  operation 
     int readData(ApfNetworkOperation *ApfNetworkOperation);
-    
-signals:   
+
+signals:
     void    finished();
     void    unexpectedCode();
     void    inProgress(int percentDone);
-    
+
 private:
 
-
 protected:
-     
     QIODevice *mDevice;
     QDataStream *mDataStream;
-    
-    int mIOError;
 
+    int mIOError;
 };
 
-
 #endif	// __APFNETWORKPROTOCOL_H_INCLUDED__
-

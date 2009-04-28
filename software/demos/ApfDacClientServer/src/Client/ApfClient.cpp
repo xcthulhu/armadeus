@@ -23,10 +23,10 @@
 */
 
 
-#include <iostream> 
+#include <iostream>
 
-#include <sys/types.h> 
-#include <sys/stat.h>  
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <QMessageBox>
@@ -60,8 +60,8 @@ void ApfClient::run()
 	setupUi(this);
 	rightDacControl->setRange(MIN_DAC,MAX_DAC);
 	leftDacControl->setRange(MIN_DAC,MAX_DAC);
-	mPreviousLeft=-1;
-	mPreviousRight =-1;
+	mPreviousLeft = -1;
+	mPreviousRight = -1;
 
 	connect(&mSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,SLOT(displayError(QAbstractSocket::SocketError)));
 	connect(&mSocket, SIGNAL(readyRead()), this, SLOT(readData()));
@@ -71,28 +71,29 @@ void ApfClient::run()
 //	connect(rightDacControl, SIGNAL( valueChanged (int ) ), this, SLOT(setRightDac(int )));
 //	connect(leftDacControl, SIGNAL( valueChanged (int ) ), this, SLOT(setLeftDac(int )));
 	connect(cancelButton, SIGNAL( clicked ( ) ), this, SLOT(userClose( )));
+	connect(greenLEDBox, SIGNAL(stateChanged(int)), this, SLOT(greenLEDChanged(int)));
+	connect(redLEDBox, SIGNAL(stateChanged(int)), this, SLOT(redLEDChanged(int)));
+	connect(lcdButton, SIGNAL(released()), this, SLOT(updateLCDText()));
 
 	show();
 
 	mSocket.connectToHost(mHost,mPort);
 	//if ( mSocket.state() == QAbstractSocket::ConnectedState )
 	mApfNetworkProtocol = new ApfNetworkProtocol( & mSocket );
-
-
-
 }
+
 //******************************************************************************
 
 void ApfClient::readData()
 {
-        qDebug("Read data");
+	qDebug("Read data");
 }
 
 //******************************************************************************
 
 void ApfClient::initConnection()
 {
-    qDebug("Connected");
+	qDebug("Connected");
 
 	ApfNetworkOperation NetworkOperation(ApfNetworkProtocol::OpVersionRequest, QString(""));
 	mApfNetworkProtocol->request( &NetworkOperation );
@@ -103,7 +104,7 @@ void ApfClient::initConnection()
 
 void ApfClient::endPeerConnection()
 {
-    qDebug("Disconnected");
+	qDebug("Disconnected");
 
 	if (mSocket.state() == QAbstractSocket::UnconnectedState)
 	{
@@ -118,7 +119,7 @@ void ApfClient::endPeerConnection()
 
 void ApfClient::userClose()
 {
-    qDebug("Disconnected");
+	qDebug("Disconnected");
 	disconnect(rightDacControl, SIGNAL( valueChanged (int ) ), this, SLOT(setRightDac(int )));
 	disconnect(leftDacControl, SIGNAL( valueChanged (int ) ), this, SLOT(setLeftDac(int )));
 	disconnect(&mSocket, SIGNAL(disconnected()), this, SLOT(endPeerConnection()));
@@ -130,7 +131,7 @@ void ApfClient::userClose()
 void ApfClient::timeOut()
 {
 	int value;
-	if ( (cnt++%2) == 0)
+	if ((cnt++%2) == 0)
 	{
 		value = rightDacControl->value();
 		if (mPreviousRight != value) setRightDac(value);
@@ -164,9 +165,43 @@ void ApfClient::setLeftDac(int value)
 
 //******************************************************************************
 
+void ApfClient::greenLEDChanged(int aState)
+{
+	bool state;
+
+	state = aState ? true : false;
+	setLED(0, state);
+}
+
+void ApfClient::redLEDChanged(int aState)
+{
+	bool state;
+
+	state = aState ? true : false;
+	setLED(1, state);
+}
+
+void ApfClient::setLED(int id, int state)
+{
+	ApfNetworkOperation NetworkOperation(ApfNetworkProtocol::OpLed, QString("").sprintf("%d,%d", id, state));
+	mApfNetworkProtocol->request(&NetworkOperation);
+	usleep(80000);
+}
+
+//******************************************************************************
+
+void ApfClient::updateLCDText(void)
+{
+	ApfNetworkOperation NetworkOperation(ApfNetworkProtocol::OpLcd, lcdLineEdit->text());
+	mApfNetworkProtocol->request(&NetworkOperation);
+	usleep(80000);
+}
+
+//******************************************************************************
+
 void ApfClient::displayError(QAbstractSocket::SocketError err)
 {
-	switch (err) 
+	switch (err)
 	{
 		case QAbstractSocket::RemoteHostClosedError:
 			break;
@@ -189,4 +224,3 @@ void ApfClient::displayError(QAbstractSocket::SocketError err)
 	}
 	close();
 }
-

@@ -30,26 +30,24 @@
 ApfNetworkOperation::ApfNetworkOperation( ApfNetworkProtocol::Operation operation,
         const QString &arg0, const QString &arg1,  const QString &arg2 )
 {
-    mOperation = operation ;
+    mOperation = operation;
     setArg(0, arg0);
     setArg(1, arg1);
     setArg(2, arg2);
-    setState (ApfNetworkProtocol::StWaiting) ;
+    setState (ApfNetworkProtocol::StWaiting);
     setErrorCode(ApfNetworkProtocol::NoError);
- 
 }
 
 ApfNetworkOperation::ApfNetworkOperation( ApfNetworkProtocol::Operation operation,
          const QByteArray &arg0, const QByteArray &arg1, const QByteArray &arg2 )
 {
-    mOperation = operation ;
+    mOperation = operation;
     setRawArg(0, arg0);
     setRawArg(1, arg1);
     setRawArg(2, arg2);
-    setState (ApfNetworkProtocol::StWaiting) ;
+    setState (ApfNetworkProtocol::StWaiting);
     setErrorCode(ApfNetworkProtocol::NoError);
-
-}         
+}
 
 //*****************************************************************************
 
@@ -75,7 +73,7 @@ void ApfNetworkOperation::setErrorCode( ApfNetworkProtocol::Error ec )
 
 void ApfNetworkOperation::setArg( int num, const QString &arg )
 {
-    if ( num  < 3)
+    if (num  < 3)
     {
         mArg[num] = arg;
     }
@@ -85,7 +83,7 @@ void ApfNetworkOperation::setArg( int num, const QString &arg )
 
 void ApfNetworkOperation::setRawArg( int num, const QByteArray &arg )
 {
-    if ( num  < 3)
+    if (num  < 3)
     {
         mRawArg[num] = arg;
         mRawArg[num].detach();
@@ -96,23 +94,23 @@ void ApfNetworkOperation::setRawArg( int num, const QByteArray &arg )
 
 void ApfNetworkOperation::appendRawArg( int num, const QByteArray &arg )
 {
-   if ( num  < 3)
+    if (num  < 3)
     {
-        if  ( true == mRawArg[num].isNull ())
+        if  (true == mRawArg[num].isNull ())
         {
-            setRawArg(num,arg);  
-             mRawArg[num].detach();          
+            setRawArg(num,arg);
+            mRawArg[num].detach();
         }
         else
-        {        
-            int previousSize;            
-            previousSize = mRawArg[num].size();           
-            mRawArg[num].resize(previousSize + arg.size());            
+        {
+            int previousSize;
+            previousSize = mRawArg[num].size();
+            mRawArg[num].resize(previousSize + arg.size());
             memcpy (mRawArg[num].data()+ previousSize, arg.data(),  arg.size());
         }
     }
 }
-       
+
 //******************************************************************************
 
 ApfNetworkProtocol::Operation ApfNetworkOperation::operation() const
@@ -124,7 +122,7 @@ ApfNetworkProtocol::Operation ApfNetworkOperation::operation() const
 
 QString ApfNetworkOperation::arg( int num ) const
 {
-    if ( num  >2)
+    if (num  > 2)
     {
         num = 0;
     }
@@ -135,7 +133,7 @@ QString ApfNetworkOperation::arg( int num ) const
 
 QByteArray ApfNetworkOperation::rawArg( int num ) const
 {
-    if ( num  >2)
+    if (num  > 2)
     {
         num = 0;
     }
@@ -147,4 +145,3 @@ ApfNetworkProtocol::State ApfNetworkOperation::state() const
 {
     return mState;
 }
-

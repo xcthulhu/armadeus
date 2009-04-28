@@ -20,7 +20,7 @@
 **	 ApfServer.cpp
 **
 **	author: carbure@users.sourceforge.net
-*/ 
+*/
 
 #include <iostream>
 
@@ -49,32 +49,44 @@ ApfServer *ApfServer::gApfServer = 0;
 //******************************************************************************
 
 #ifndef NOSERVERGUI
-
-ApfServer::ApfServer(): QDialog(),mApfServerListener()
+ApfServer::ApfServer(): QDialog(), mApfServerListener()
 #else
 ApfServer::ApfServer() : mApfServerListener()
 #endif
-
 {
-
 #ifndef NOSERVERGUI
-	setupUi(this);
+    setupUi(this);
+    mRedLed = new QLed(tab_2);
+    mRedLed->setColor(QColor(200,0,0));
+    mGreenLed = new QLed(tab_2);
+    mGreenLed->setColor(QColor(0,200,0));
+    mSlide = new QSlide(tab_2);
+    mSlide->startTmr(true);
+    mManometer = new ManoMeter(tab_2);
+    mThermometer = new ThermoMeter(tab_2);
+    mWidgetsLayout = new QGridLayout(tab_2);
+    mWidgetsLayout->addWidget(mRedLed, 0, 0);
+    mWidgetsLayout->addWidget(mGreenLed, 2, 0);
+    QSpacerItem* spacerItem = new QSpacerItem(20, 80, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    mWidgetsLayout->addItem(spacerItem, 1, 0);
+    mWidgetsLayout->addWidget(mManometer, 1, 1, 2, 1);
+    mWidgetsLayout->addWidget(mSlide, 0, 1);
+    mWidgetsLayout->addWidget(mThermometer, 0, 2, 3, 1);
 #endif
     mApfServerListener = new ApfServerListener(0);
- 	PutServerDebugMessage(QString("Starting Apf server"));
+    PutServerDebugMessage(QString("Starting Apf server"));
     connect( mApfServerListener, SIGNAL( logText(const QString &) ), SLOT(PutServerDebugMessage(const QString &)) );
 #ifndef NOSERVERGUI
     connect( QuitButton, SIGNAL(clicked()), this, SLOT(EndServer()) );
- #endif
-	gApfServer = this;
-    
+#endif
+    gApfServer = this;
 }
 
 //******************************************************************************
 
 ApfServer *ApfServer::getApfServerInstance()
 {
-    return gApfServer;        
+    return gApfServer;
 }
 
 //******************************************************************************
@@ -82,43 +94,91 @@ ApfServer *ApfServer::getApfServerInstance()
 void ApfServer::EndServer()
 {
 #ifndef NOSERVERGUI
-	hide();
+    hide();
     qApp->exit(0);
 #else
-	exit(0);
+    exit(0);
 #endif
 }
 
-    
 //******************************************************************************
 
 ApfServer::~ApfServer()
 {
-     if ( 0 != mApfServerListener)
-     {
+    if (0 != mApfServerListener)
+    {
         delete mApfServerListener;
-     }
+    }
 }
 
 //******************************************************************************
 
 void ApfServer::PutServerDebugMessage(const char * str)
 {
-    PutServerDebugMessage (QString(str)) ;
+    PutServerDebugMessage (QString(str));
 }
 
 //******************************************************************************
 
 void ApfServer::PutServerDebugMessage(const QString & str)
 {
-
 #ifndef NOSERVERGUI
-	
-    if (mTextEdit)    
-	{
-		mTextEdit->append(str);
-	}	
+    if (mTextEdit)
+    {
+        mTextEdit->append(str);
+    }
 #else
-	std::cout << str.toAscii().data() << std::endl;
+    std::cout << str.toAscii().data() << std::endl;
+#endif
+}
+
+//******************************************************************************
+
+void ApfServer::setLedValue(int id, bool state)
+{
+#ifndef NOSERVERGUI
+    if (id == 0)
+    {
+        mGreenLed->setValue(state);
+    }
+    else
+    {
+        mRedLed->setValue(state);
+    }
+#else
+    std::cout << "Setting " << (id ? "Red" : "Green") << " LED to " << state << std::endl;
+#endif
+}
+
+//******************************************************************************
+
+void ApfServer::setManometerValue(int value)
+{
+#ifndef NOSERVERGUI
+    mManometer->setValue(value);
+#else
+    std::cout << "Setting Manometer to " << value << std::endl;
+#endif
+}
+
+//******************************************************************************
+
+void ApfServer::setThermometerValue(int value)
+{
+#ifndef NOSERVERGUI
+    mThermometer->setValue(value);
+#else
+    std::cout << "Setting Thermometer to " << value << std::endl;
+#endif
+}
+
+//******************************************************************************
+
+void ApfServer::setSlideText(const QString & atext)
+{
+#ifndef NOSERVERGUI
+    mSlide->setText(atext);
+#else
+    std::cout << "Setting LCD text to " << atext.toAscii().data() << std::endl;
 #endif
 }

@@ -32,6 +32,9 @@
 
 #ifndef NOSERVERGUI
 #include <QApplication>
+# ifdef Q_WS_QWS
+#include <QWSServer>
+# endif
 #else
 #include <QCoreApplication>
 #endif
@@ -42,32 +45,31 @@
 
 //using namespace std;
 
-void    runAsDaemon()
+void runAsDaemon()
 {
-
     int    pid( fork());
-    
-    if (pid < 0) 
+
+    if (pid < 0)
     {
         exit(EXIT_FAILURE);
     }
     /* If we got a good PID, then
     we can exit the parent process. */
-    if (pid > 0) 
+    if (pid > 0)
     {
         exit(EXIT_SUCCESS);
     }
     sleep(2);
     umask(0);
     int sid (setsid());
-    if (sid < 0) 
+    if (sid < 0)
     {
         /* Log the failure */
         exit(EXIT_FAILURE);
-    }  
-    
+    }
+
     /* Change the current working directory */
-    if ((chdir("/")) < 0) 
+    if ((chdir("/")) < 0)
     {
         /* Log the failure */
         exit(EXIT_FAILURE);
@@ -76,27 +78,31 @@ void    runAsDaemon()
     /* Close out the standard file descriptors */
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
-    close(STDERR_FILENO);  
+    close(STDERR_FILENO);
 }
 
 
 //******************************************************************************
 
 int main(int argc, char **argv)
-{   
-   
-#ifndef QT_DEBUG    
+{
+#ifndef QT_DEBUG
  //   runAsDaemon( );
 #endif
 
 #ifndef NOSERVERGUI
-   
     QApplication a( argc, argv );
+# ifdef Q_WS_QWS
+    // Hide mouse cursor:
+    QWSServer *sw =  QWSServer::instance ();
+    sw->setCursorVisible(false);
+# endif
+    // Show UI
     ApfServer AtsServer;
     AtsServer.show();
     return a.exec();
 #else
-	QCoreApplication a( argc, argv );
+    QCoreApplication a( argc, argv );
     ApfServer AtsServer;
     return a.exec();
 #endif

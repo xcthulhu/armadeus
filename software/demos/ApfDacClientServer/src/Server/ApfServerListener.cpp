@@ -38,10 +38,10 @@ ApfServerListener::ApfServerListener(QObject *parent):
 QTcpServer( parent ),mApfCore(0),mParent(parent)
 {
     connect( this, SIGNAL( newConnection() ),this, SLOT( newIncommingConnection() ) );
- 
-	bool ok= listen ( QHostAddress::Any, APF_SOCKET );
+
+    bool ok = listen(QHostAddress::Any, APF_SOCKET);
 //	bool ok =setSocketDescriptor (APF_SOCKET);
-    if ( !ok ) 
+    if ( !ok )
     {
         qWarning("Failed to bind to port %d", APF_SOCKET);
         exit(1);
@@ -56,42 +56,40 @@ ApfServerListener::~ApfServerListener()
 
 //******************************************************************************
 
-void ApfServerListener::newIncommingConnection() 
-
+void ApfServerListener::newIncommingConnection()
 {
-
-	emit logText(QString("").sprintf("Incoming connexion on port %d",APF_SOCKET));
+    emit logText(QString("").sprintf("Incoming connexion on port %d",APF_SOCKET));
     if ( 0 == mApfCore )
     {
         QTcpSocket *clientConnection = this->nextPendingConnection();
-        
-	emit logText(QString("").sprintf("Starting the APF core"));
+
+        emit logText(QString("").sprintf("Starting the APF core"));
         mApfCore = new ApfCore (clientConnection, this);
 
-        connect( mApfCore, SIGNAL( logText(const QString &) ), ApfServer::getApfServerInstance() ,SLOT(PutServerDebugMessage(const QString &)) );
+        connect( mApfCore, SIGNAL( logText(const QString &) ), ApfServer::getApfServerInstance(),
+                    SLOT(PutServerDebugMessage(const QString &)) );
         connect( mApfCore, SIGNAL( ApfCoreFinished() ), SLOT( coreDestroyed() ) );
-       
+        connect( mApfCore, SIGNAL(setLedValue(int, bool)), ApfServer::getApfServerInstance(), SLOT(setLedValue(int, bool)) );
+        connect( mApfCore, SIGNAL(setManometerValue(int)), ApfServer::getApfServerInstance(), SLOT(setManometerValue(int)) );
+        connect( mApfCore, SIGNAL(setThermometerValue(int)), ApfServer::getApfServerInstance(), SLOT(setThermometerValue(int)) );
+        connect( mApfCore, SIGNAL(updateText(const QString &)), ApfServer::getApfServerInstance(), SLOT(setSlideText(const QString &)) );
     }
     else
     {
-        emit logText(QString("").sprintf("APF core allready started. closing socket"));
+        emit logText(QString("").sprintf("APF core already started. closing socket"));
         close();
     }
-    
 }
 
 //******************************************************************************
 
 void ApfServerListener::coreDestroyed()
-
 {
-    
     if ( 0 != mApfCore )
     {
         emit logText(QString("").sprintf("APF core stopped\n"));
         delete mApfCore;
-        mApfCore =0;        
+        mApfCore = 0;
     }
     usleep(2000000);
 }
-

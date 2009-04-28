@@ -20,8 +20,9 @@
 **	 ApfNetworkProtocol.cpp
 **
 **	author: carbure@users.sourceforge.net
-*/ 
+*/
 
+#include <iostream>
 #include <unistd.h>
 
 #include "ApfNetworkProtocol.h"
@@ -33,8 +34,7 @@ ApfNetworkProtocol::ApfNetworkProtocol(QIODevice * d ) :
 mDevice(d)
 {
     mDataStream = new QDataStream(d);
-    mDataStream->setVersion(ApfNetworkDefs::DATASTREAM_RELEASE);     // Qt 3.1 and more 
-   
+    mDataStream->setVersion(ApfNetworkDefs::DATASTREAM_RELEASE);     // Qt 3.1 and more
 }
 
 //******************************************************************************
@@ -44,17 +44,17 @@ ApfNetworkProtocol::~ApfNetworkProtocol()
     delete mDataStream;
 }
 
-//******************************************************************************  
-     
+//******************************************************************************
+
 int ApfNetworkProtocol::request(ApfNetworkOperation *ApfNetworkOperation)
 {
     Q_CHECK_PTR(ApfNetworkOperation);
-    
+
     qint32 OP;
-    Operation operation(ApfNetworkOperation->operation());        
+    Operation operation(ApfNetworkOperation->operation());
     OP = (qint32) operation;
 
-    ApfNetworkOperation->setState(StInProgress); 
+    ApfNetworkOperation->setState(StInProgress);
     ApfNetworkOperation->setErrorCode(NoError);
 
     switch (operation)
@@ -63,41 +63,46 @@ int ApfNetworkProtocol::request(ApfNetworkOperation *ApfNetworkOperation)
             ApfNetworkOperation->setErrorCode(ErrUnsupported);
             ApfNetworkOperation->setState(StFailed); 
             return 0;
+
         case OpVersionRequest:
             {
                 *mDataStream << OP;
             }
             break;
+
         case OpDacLeft:
         case OpDacRight:
         case OpVersion:
+        case OpLed:
+        case OpLcd:
             {
-               	*mDataStream <<  OP;
-                *mDataStream <<  ApfNetworkOperation->mArg[0].toAscii().data();  
+                *mDataStream <<  OP;
+                *mDataStream <<  ApfNetworkOperation->mArg[0].toAscii().data();
             }
             break;
-  
-       	case OpNone:
+
+        case OpNone:
         case OpPing:
             break;
 
         case OpExitStatus:
             return 0;
-    }; 
-   if (  mDevice->waitForBytesWritten (10) == true)
+    }
+
+    if (mDevice->waitForBytesWritten(10) == true)
     {
         ApfNetworkOperation->setErrorCode(ErrIO);
-        ApfNetworkOperation->setState(StFailed);            
+        ApfNetworkOperation->setState(StFailed);
     }
     else
     {
         ApfNetworkOperation->setState(StDone);
     }
-    return (0);   
-    
+
+    return (0);
 }
-//******************************************************************************  
-    
+
+//******************************************************************************
 
 int ApfNetworkProtocol::readData(ApfNetworkOperation *ApfNetworkOperation)
 {
@@ -106,10 +111,9 @@ int ApfNetworkProtocol::readData(ApfNetworkOperation *ApfNetworkOperation)
     qint32 OP;
     Operation expectedOperation(ApfNetworkOperation->operation());
 
-        
     if (ApfNetworkOperation->mState != StInProgress)
     {
-        *mDataStream >>  OP;    
+        *mDataStream >>  OP;
         if ( (expectedOperation   != (Operation) OP)  && (ApfNetworkOperation->mState != StWaiting)  )
         {
             qWarning("Expected operation and current operation are different: %d vs. %d", expectedOperation , (Operation)OP);
@@ -121,7 +125,7 @@ int ApfNetworkProtocol::readData(ApfNetworkOperation *ApfNetworkOperation)
     }
     ApfNetworkOperation->mOperation = (Operation) OP;
     ApfNetworkOperation->setErrorCode(NoError);
-    
+
     switch (OP)
     {
         default:
@@ -131,45 +135,45 @@ int ApfNetworkProtocol::readData(ApfNetworkOperation *ApfNetworkOperation)
             qDebug("WARNING: Unexpected operation received");
             emit unexpectedCode();
             return -1;
-            
-		case OpDacLeft:
-		case OpDacRight:
+
+        case OpDacLeft:
+        case OpDacRight:
         case OpVersion:
-            {               
-                char * ptr =new char [mDevice->size()] ;
+        case OpLed:
+        case OpLcd:
+            {
+                char * ptr =new char [mDevice->size()];
                 *mDataStream >>  ptr;
-                ApfNetworkOperation->setArg(0,QString (ptr));
-                ApfNetworkOperation->setState (StDone);
+                ApfNetworkOperation->setArg(0, QString (ptr));
+                ApfNetworkOperation->setState(StDone);
                 delete [] ptr;
             }
             break;
+
         case OpVersionRequest:
-            {               
-				ApfNetworkOperation->setState (StDone);
-            }
+            ApfNetworkOperation->setState (StDone);
             break;
 
-
-		case OpNone:
-		case OpPing:
+        case OpNone:
+        case OpPing:
             break;
     }
-    
-    if ( mDataStream->status () != QDataStream::Ok)
+
+    if (mDataStream->status () != QDataStream::Ok)
     {
         ApfNetworkOperation->setErrorCode(ErrIO);
         ApfNetworkOperation->setState(StFailed);  
         qDebug ("The status is not Ok: %d\n",mDataStream->status ());
-        return -1;         
+        return -1;
     }
-    else if ( StDone== ApfNetworkOperation->state()) 
+    else if (StDone == ApfNetworkOperation->state())
     {
         emit finished();
     }
-    return (0);      
+    return (0);
 }
 
-//******************************************************************************  
+//******************************************************************************
 
 int ApfNetworkProtocol::getIOError()
 {

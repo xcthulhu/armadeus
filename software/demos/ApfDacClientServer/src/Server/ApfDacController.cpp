@@ -79,6 +79,7 @@ ApfDacController::~ApfDacController()
 void ApfDacController::setLeftDAC(int value)
 {
 	unsigned char buf[2];
+
 	if ( (mOpen==true) && (value>= mMinLeft) && (value <= mMaxLeft) )
 	{
 		value = (value * MAX5821M_MAX_DATA_VALUE) / (mMaxLeft-mMinLeft);
@@ -89,10 +90,9 @@ void ApfDacController::setLeftDAC(int value)
 		mDACOutput.command  =  MAX5821_LOAD_DAC_A_IN_REG_B ;
 		mDACOutput.data = value;
 		Build_extended_command( mPowerUpCommand, buf);
- 		write (mI2cBus, buf,2);
+		write (mI2cBus, buf,2);
 		Build_data_command(mDACOutput,buf);
- 		write (mI2cBus, buf,2);
-	
+		write (mI2cBus, buf,2);
 	}
 }
 
@@ -108,12 +108,12 @@ void ApfDacController::setRightDAC(int value)
 //		printf("Set the right DAC : %d\n", value);
 		mPowerUpCommand.ctrlA = POWER_CTRL_UNSELECTED;
 		mPowerUpCommand.ctrlB = POWER_CTRL_SELECTED;
-	    mDACOutput.command  =  MAX5821_LOAD_DAC_B_IN_REG_A ;	
+		mDACOutput.command  =  MAX5821_LOAD_DAC_B_IN_REG_A;
 		mDACOutput.data = value;
 		Build_extended_command( mPowerUpCommand, buf);
- 		write (mI2cBus, buf,2);
+		write (mI2cBus, buf,2);
 		Build_data_command(mDACOutput,buf);
- 		write (mI2cBus, buf,2);
+		write (mI2cBus, buf,2);
 	}
 }
 
@@ -133,11 +133,10 @@ void ApfDacController::setbothDAC(int value)
 		mDACOutput.command  =  MAX5821_LOAD_DAC_ALL_IN_UPDATE_ALL ;
 		mDACOutput.data = value;
 		Build_extended_command( mPowerUpCommand, buf);
- 		write (mI2cBus, buf,2);
+		write (mI2cBus, buf,2);
 		Build_data_command(mDACOutput,buf);
- 		write (mI2cBus, buf,2);
+		write (mI2cBus, buf,2);
 	}
-
 }
 
 //******************************************************************************

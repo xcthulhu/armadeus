@@ -1,19 +1,15 @@
 //
-//   KmAtsMain.cpp
+//   ApfClientMain.cpp
 //
-//   Copyright  : (c) 2005 by Kontron Medical
+//   Copyright  : (c) 2007 Armadeus Project
 //
-//   Email      :  info@kontronmedical.ch
 //
-// main for ATS client
-
 
 #include <iostream>
 #include <qapplication.h>
 
 #include "ApfHostChooser.h"
 #include "ApfClient.h"
-//#include "KmAtsSettings.h"
 
 int main(int argc, char **argv)
 {    
@@ -24,23 +20,21 @@ int main(int argc, char **argv)
 
     ApfHostChooser theApfHostChooser( &cancelled,hostUnderTest );
 	
-	theApfHostChooser.initialize();
-	theApfHostChooser.show();
+    theApfHostChooser.initialize();
+    theApfHostChooser.show();
     a.connect( &a, SIGNAL( lastWindowClosed() ), &a, SLOT( quit() ) );    
     a.exec();
     if (cancelled == true)
     {
         qDebug("User has cancelled");
         return 1;
-    }
-	else
-	{
-		ApfClient	theApfClient(hostUnderTest);
+    } else {
+        ApfClient theApfClient(hostUnderTest);
 
-		theApfClient.run();
+        theApfClient.run();
         qDebug("Selected host: %s",hostUnderTest.toAscii().data());
-		a.exec();  
-        return 0;
-		
-	}
+        a.exec();  
+        return 0;		
+    }
 }
+

@@ -36,10 +36,10 @@
 class ApfCore : public QTcpSocket
 {
     Q_OBJECT
-    
+
 public:
 
-    ApfCore(QTcpSocket *clientConnection, QObject *parent=0, const char *name=0 );
+    ApfCore(QTcpSocket *clientConnection, QObject *parent=0, const char *name=0);
 
     virtual ~ApfCore();
 
@@ -48,26 +48,34 @@ signals:
 //  output debug messages
     void logText( const QString& );
     void ApfCoreFinished();
-    
+    void setLedValue(int id, bool state);
+    void setManometerValue(int id);
+    void setThermometerValue(int id);
+    void updateText(const QString &);
+
 public slots:
 
     void exec();
     void data();
     void deleteLater();
-	void protocolError();
+    void protocolError();
 
 private:
 
-    
     QString mMessage;
-    
+
 protected:
     ApfNetworkProtocol        *mApfNetworkProtocol;
     ApfNetworkOperation       *mApfCurrentOperation;
     bool 	mVersionTransfered;
-	void    execVersion(ApfNetworkOperation *ApfNetworkOperation);
-	void    execSetDac(ApfNetworkOperation *ApfNetworkOperation);
-   	QTcpSocket *mSocket;
-	ApfDacController  mApfDacController;
+
+    void execVersion(ApfNetworkOperation*);
+    void execSetDac(ApfNetworkOperation*);
+    void execSetLed(ApfNetworkOperation*);
+    void execSetLcd(ApfNetworkOperation*);
+
+    QTcpSocket *mSocket;
+    ApfDacController  mApfDacController;
 };
+
 #endif	// __APFCORE_H_INCLUDED__
