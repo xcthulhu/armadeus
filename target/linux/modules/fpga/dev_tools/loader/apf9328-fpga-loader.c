@@ -22,9 +22,10 @@
 
 #include <asm/io.h>
 #include <linux/platform_device.h>
+#include <mach/hardware.h>
+#include <mach/gpio.h>
 
 #include "xilinx-fpga-loader.h"
-
 
 #define FPGA_INIT	(GPIO_PORTB | 15)	/* FPGA init pin (SSI input)  */
 #define FPGA_DONE	(GPIO_PORTB | 16)	/* FPGA done pin (SSI input)  */
@@ -32,18 +33,13 @@
 #define FPGA_PROGRAM	(GPIO_PORTB | 18)	/* FPGA prog pin (SSI output) */
 #define FPGA_CLOCK	(GPIO_PORTB | 19)	/* FPGA clk pin  (SSI output) */
 
-#define GPIO_PORT(x)	((x >> 5) & 3)
-#define GPIO_SET(x)	(DR(GPIO_PORT(x)) |= (1<<(x & GPIO_PIN_MASK)))
-#define GPIO_CLEAR(x)	(DR(GPIO_PORT(x)) &= ~(1<<(x & GPIO_PIN_MASK)))
-#define GPIO_WRITE(x,y)	( y ? GPIO_SET(x) : GPIO_CLEAR(x) )
-#define GPIO_READ(x)	((SSR (GPIO_PORT(x)) & (1<<(x & GPIO_PIN_MASK))))
 
 /*
  * Set the FPGA's active-low program line to the specified level
  */
 static int apf9328_fpga_pgm( int assert )
 {
-	GPIO_WRITE( FPGA_PROGRAM, !assert);
+	gpio_set_value(FPGA_PROGRAM, !assert);
 	return assert;
 }
 
@@ -52,7 +48,7 @@ static int apf9328_fpga_pgm( int assert )
  */
 static int apf9328_fpga_clk( int assert_clk )
 {
-	GPIO_WRITE( FPGA_CLOCK, assert_clk);
+	gpio_set_value(FPGA_CLOCK, assert_clk);
 	return assert_clk;
 }
 
@@ -62,7 +58,7 @@ static int apf9328_fpga_clk( int assert_clk )
  */
 static int apf9328_fpga_init( void )
 {
-	return(!GPIO_READ(FPGA_INIT));
+	return(!gpio_get_value(FPGA_INIT));
 }
 
 /*
@@ -70,7 +66,7 @@ static int apf9328_fpga_init( void )
  */
 static int apf9328_fpga_done( void )
 {
-	return(GPIO_READ(FPGA_DONE));
+	return(gpio_get_value(FPGA_DONE));
 }
 
 /*
@@ -78,18 +74,18 @@ static int apf9328_fpga_done( void )
  */
 static int apf9328_fpga_wr( int assert_write )
 {
-	GPIO_WRITE( FPGA_DIN, assert_write);
+	gpio_set_value(FPGA_DIN, assert_write);
 	return assert_write;
 }
 
 static int apf9328_fpga_pre( void )
 {
 	/* Initialize GPIO pins */
-	imx_gpio_mode (FPGA_INIT | GPIO_GIUS | GPIO_DR | GPIO_IN );
-	imx_gpio_mode (FPGA_DONE | GPIO_GIUS | GPIO_DR | GPIO_IN );
-	imx_gpio_mode (FPGA_DIN  | GPIO_GIUS | GPIO_DR | GPIO_OUT );
-	imx_gpio_mode (FPGA_PROGRAM | GPIO_GIUS | GPIO_DR | GPIO_OUT );
-	imx_gpio_mode (FPGA_CLOCK | GPIO_GIUS | GPIO_DR | GPIO_OUT );
+	imx_gpio_mode(FPGA_INIT | GPIO_GIUS | GPIO_DR | GPIO_IN);
+	imx_gpio_mode(FPGA_DONE | GPIO_GIUS | GPIO_DR | GPIO_IN);
+	imx_gpio_mode(FPGA_DIN  | GPIO_GIUS | GPIO_DR | GPIO_OUT);
+	imx_gpio_mode(FPGA_PROGRAM | GPIO_GIUS | GPIO_DR | GPIO_OUT);
+	imx_gpio_mode(FPGA_CLOCK | GPIO_GIUS | GPIO_DR | GPIO_OUT);
 	return 1;
 }
 
