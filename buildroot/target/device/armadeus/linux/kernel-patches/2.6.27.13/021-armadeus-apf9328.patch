@@ -3,7 +3,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-imx/apf9328.c	
 +++ linux-2.6.27.13.mod/arch/arm/mach-imx/apf9328.c	
-@@ -0,0 +1,763 @@
+@@ -0,0 +1,762 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -771,7 +771,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-imx/apf9328_lcd_config.h	
 +++ linux-2.6.27.13.mod/arch/arm/mach-imx/apf9328_lcd_config.h	
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,193 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -841,7 +841,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +}
 +
 +
-+static struct imx_fb_platform_data apf9328_fb_info __initdata = {
++static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +    .pixclock           = 62500,
 +    .bpp                = 16,

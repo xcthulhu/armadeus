@@ -1,0 +1,38 @@
+--- buildroot/target/linux/Config.in.advanced.org	2009-04-30 15:04:16.000000000 +0200
++++ buildroot/target/linux/Config.in.advanced	2009-04-30 15:11:02.000000000 +0200
+@@ -48,6 +48,7 @@
+ 
+ config BR2_KERNEL_NEXT_VERSION
+ 	string
++	default "2.6.29" if BR2_LINUX_2_6_28
+ 	default "2.6.28" if BR2_LINUX_2_6_27
+ 	default "2.6.27" if BR2_LINUX_2_6_26
+ 	default "2.6.26" if BR2_LINUX_2_6_25
+@@ -59,6 +60,7 @@
+ 
+ config BR2_KERNEL_THIS_VERSION
+ 	string
++	default "2.6.29" if BR2_LINUX_2_6_29
+ 	default "2.6.28" if BR2_LINUX_2_6_28
+ 	default "2.6.27" if BR2_LINUX_2_6_27
+ 	default "2.6.26" if BR2_LINUX_2_6_26
+@@ -138,11 +140,19 @@
+ 
+ config BR2_LINUX_2_6_STABLE
+ 	bool "The latest stable Linux kernel (2.6.26.3)"
++	depends on !BR2_TARGET_ARMADEUS
+ 	help
+ 	  Linux 2.6.26.3
+ 
++config BR2_LINUX_2_6_29
++	bool "Linux 2.6.29 (experimental)"
++	select BR2_KERNEL_BASE
++	help
++	  Linux 2.6.29
++
+ config BR2_LINUX_2_6_28
+ 	bool "Linux 2.6.28"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.28
