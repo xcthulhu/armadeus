@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
 --- linux-2.6.29.orig/drivers/video/imxfb.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-03-30 10:47:00.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-04-29 15:15:10.000000000 +0200
 @@ -437,6 +437,7 @@
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
@@ -17,11 +17,11 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  		goto failed_cmap;
  
  	imxfb_set_par(info);
-+	/* JB: The following parameters are only needed once at startup and so 
++	/* JB: The following parameters are only needed once at startup and so
 +		removed from from imxfb_set_par()/imxfb_activate_var() */
-+	LCDC_PWMR	= fbi->pwmr;
-+	LCDC_LSCR1	= fbi->lscr1;
-+	LCDC_DMACR	= fbi->dmacr;
++	writel(fbi->pwmr, fbi->regs + LCDC_PWMR);
++	writel(fbi->lscr1, fbi->regs + LCDC_LSCR1);
++	writel(fbi->dmacr, fbi->regs + LCDC_DMACR);
 +
  	ret = register_framebuffer(info);
  	if (ret < 0) {

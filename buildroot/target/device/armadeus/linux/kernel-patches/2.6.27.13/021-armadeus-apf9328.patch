@@ -219,7 +219,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +
 +#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
-+int apf9328_ssi_gpio_init(struct platform_device *pdev) 
++int apf9328_ssi_gpio_init(struct platform_device *pdev)
 +{
 +	/* Activate SSI on PortC */
 +	imx_gpio_mode(PC3_PF_SSI_RXFS);
@@ -233,7 +233,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	FMCR &= ~(SSI_TXFS_SEL);
 +	imx_gpio_mode(PC8_PF_SSI_TXCLK);
 +	FMCR &= ~(SSI_TXCLK_SEL);
-+	
++
 +	printk("SSI pins configured\n");
 +	return 0;
 +}
@@ -435,17 +435,16 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif //CONFIG_SPI_IMX
 +
 +#ifdef CONFIG_ARMADEUS_MAX1027
-+#define IMX_SPI1_SS_PIN 15 
++#define IMX_SPI1_SS_PIN 15
 +#define IMX_SPI1_SS (1<<15)
 +#define MAX1027_EOC_INT 13
 +#define MAX1027_CNVST 14
 +
 +static int max1027_init(struct spi_device *spi)
-+{	
++{
 +    imx_gpio_mode( PC14_PF_SPI1_SCLK );
 +    imx_gpio_mode( PC16_PF_SPI1_MISO );
 +    imx_gpio_mode( PC17_PF_SPI1_MOSI );
-+
 +
 +    /* configure CNVST */
 +    DR(0) |= 1 << MAX1027_CNVST; // Initializes it High
@@ -457,13 +456,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    /* SPI CSn is used as chip select but in GPIO mode */
 +    DR(2) |= IMX_SPI1_SS;
 +    imx_gpio_mode( GPIO_PORTC | IMX_SPI1_SS_PIN | GPIO_OUT | GPIO_GIUS | GPIO_DR  );
-+    
++
 +    return 0;
 +}
 +
 +static int max1027_exit(struct spi_device *spi)
 +{
-+    return 0; 
++    return 0;
 +}
 +
 +static void max1027_cs(u32 command)
@@ -493,7 +492,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#ifdef CONFIG_SPI_TSC2102
 +#define TSC2102_CS_GPIOB 17
-+#define TSC2102_INT_GPIOD 8 
++#define TSC2102_INT_GPIOD 8
 +
 +static int tsc2102_init_gpio(void)
 +{
@@ -543,7 +542,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#ifdef CONFIG_CAN_MCP251X
 +#define CAN_MPC251X_CS_GPIOB 19
-+#define CAN_MPC251X_INT_GPIOC 13 
++#define CAN_MPC251X_INT_GPIOC 13
 +
 +// Chip select command for MCP251X
 +static void mcp251X_cs(u32 command)
@@ -679,16 +678,16 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +    printk("--- Registering APF9328 ressources\n");
 +
-+    // Serial 
++    // Serial
 +	imx_gpio_mode(PC9_PF_UART1_CTS);
 +	imx_gpio_mode(PC10_PF_UART1_RTS);
 +	imx_gpio_mode(PC11_PF_UART1_TXD);
 +	imx_gpio_mode(PC12_PF_UART1_RXD);
 +
-+	imx_gpio_mode( PB30_PF_UART2_TXD ); 
-+	imx_gpio_mode( PB31_PF_UART2_RXD ); 
-+	imx_gpio_mode( PB28_PF_UART2_CTS ); 
-+	imx_gpio_mode( PB29_PF_UART2_RTS ); 
++	imx_gpio_mode( PB30_PF_UART2_TXD );
++	imx_gpio_mode( PB31_PF_UART2_RXD );
++	imx_gpio_mode( PB28_PF_UART2_CTS );
++	imx_gpio_mode( PB29_PF_UART2_RTS );
 +
 +#ifdef CONFIG_FB_IMX    /* LCD */
 +    set_imx_fb_info(&apf9328_fb_info);
@@ -705,7 +704,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
 +    spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-+#endif 
++#endif
 +
 +    printk("--- APF9328 ressources registered\n");
 +}
@@ -842,8 +841,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +}
 +
 +
++static struct imx_fb_platform_data apf9328_fb_info __initdata = {
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock           = 62500,
 +    .bpp                = 16,
 +    .xres               = 480,
@@ -856,15 +855,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    .right_margin       = 0,
 +    .lower_margin       = 3,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL | 
++    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
 +                          PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+    .pwmr               = 0x000003ff,    // Contrast with PWM @ Pixel clock / 256, max width by default
++    .pwmr               = 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .backlight_power    = apf9328_lcd_backlight_power,
 +    .lcd_power          = apf9328_lcd_power,
-+};
 +#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
-+static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock           = 62500,
 +    .bpp                = 16,
 +    .xres               = 320,
@@ -882,9 +879,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    .pwmr               = 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .backlight_power    = apf9328_lcd_backlight_power,
-+};
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
-+static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock           = 62500,
 +    .bpp                = 16,
 +    .xres               = 320,
@@ -899,31 +894,28 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
 +                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .pwmr               = 0,    // No contrast management
++    .pwmr               = 0,    /* No contrast management */
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
 +    .lcd_power          = apf9328_lcd_power,
-+};
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock           = 62500,
 +    .bpp                = 8,
 +    .xres               = 320,
 +    .yres               = 240,
-+ 
++
 +    .hsync_len          = 2,
 +    .vsync_len          = 2,
 +    .left_margin        = 2,
 +    .upper_margin       = 2,
 +    .right_margin       = 2,
 +    .lower_margin       = 2,
-+ 
-+    .pcr                = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) | 
++
++    .pcr                = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
 +                          PCR_END_BYTE_SWAP | PCR_PCD(3),
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
++    .pwmr               = 0,    /* No contrast management */
 +    .lcd_power          = apf9328_lcd_power,
-+};
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
-+static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +    .pixclock           = 62500,
 +    .bpp                = 16,
 +    .xres               = 240,
@@ -936,15 +928,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +    .right_margin       = 27,
 +    .lower_margin       = 4,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL | 
++    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
 +                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .pwmr               = 0,    // No contrast management
++    .pwmr               = 0,    /* No contrast management */
 +    .lcd_power          = apf9328_lcd_power,
-+};
 +#else
 +#error Please define a imxfb_mach_info structure with your LCD parameters here
-+#endif 
++#endif
++};
 +
 +/*
 + * Configure custom GPIOs needed by LCDs
@@ -1039,6 +1031,6 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +// USB HOST ISP1760: option available with APF_devfull
 +#define ISP1761_BASE       IMX_CS3_PHYS
 +#define ISP1761_GPIO_IRQ   ( GPIO_PORTC | 10 )
-+#define ISP1761_IRQ        ( IRQ_GPIOC(10) ) 
++#define ISP1761_IRQ        ( IRQ_GPIOC(10) )
 +
 +#endif // __ASM_ARCH_APF9328_H
