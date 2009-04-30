@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-04-29 17:01:46.000000000 +0200
-@@ -0,0 +1,730 @@
++++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-04-30 16:33:54.000000000 +0200
+@@ -0,0 +1,758 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -28,6 +28,8 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 + */
 +
 +#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <linux/mtd/physmap.h>
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/serial_8250.h>
@@ -621,6 +623,30 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +};
 +#endif // CONFIG_IMX_BACKLIGHT
 +
++/*
++ * The APF9328 can have up to 32MB NOR
++ */
++static struct resource flash_resource = {
++       .start  = IMX_CS0_PHYS,
++       .end    = IMX_CS0_PHYS + (32 * 1024 * 1024) - 1,
++       .flags  = IORESOURCE_MEM,
++};
++
++static struct physmap_flash_data apf9328_flash_data = {
++       .width  = 2,
++};
++
++static struct platform_device apf9328_flash_device = {
++       .name           = "physmap-flash",
++       .id             = 0,
++       .dev = {
++               .platform_data = &apf9328_flash_data,
++       },
++       .resource = &flash_resource,
++       .num_resources = 1,
++};
++
++
 +static struct platform_device *devices[] __initdata = {
 +    &imx_uart1_device,
 +    &imx_uart2_device,
@@ -642,13 +668,14 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#ifdef CONFIG_ARMADEUS_ISP1761
 +	&devfull_isp1761_device,
 +#endif
++	&apf9328_flash_device,
 +};
 +
 +static void __init apf9328_init(void)
 +{
-+    printk("--- Registering APF9328 ressources\n");
++	printk("--- Registering APF9328 ressources\n");
 +
-+    // Serial
++	// Serial
 +	imx_gpio_mode(PC9_PF_UART1_CTS);
 +	imx_gpio_mode(PC10_PF_UART1_RTS);
 +	imx_gpio_mode(PC11_PF_UART1_TXD);
@@ -736,6 +763,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +    .timer        = &imx_timer,
 +    .init_machine = apf9328_init,
 +MACHINE_END
++
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
