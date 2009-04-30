@@ -224,3 +224,10 @@ do \
 #undef DEBUG
 #endif
 /*******************END FOR ALL CONTROLLERS*******************************/
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28)
+#define info(format, arg...) printk(KERN_INFO KBUILD_MODNAME ": " format "\n" , ## arg)
+#define warn(format, arg...) printk(KERN_WARNING KBUILD_MODNAME ": " format "\n" , ## arg)
+#endif
+
