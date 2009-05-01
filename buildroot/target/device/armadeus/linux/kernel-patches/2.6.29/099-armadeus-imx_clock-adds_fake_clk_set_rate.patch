@@ -1,0 +1,20 @@
+Adds a fake clk_set_rate() until MX1 platform officially exists
+in plat-mxc. (This function is needed by imx_udc).
+
+Index: linux-2.6.29/arch/arm/mach-imx/clock.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/clock.c	2009-05-01 15:12:06.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/clock.c	2009-05-01 15:13:29.000000000 +0200
+@@ -217,6 +217,12 @@
+ }
+ EXPORT_SYMBOL(clk_get_rate);
+ 
++int clk_set_rate(struct clk *clk, unsigned long rate)
++{
++	return 0;
++}
++EXPORT_SYMBOL(clk_set_rate);
++
+ int imx_clocks_init(void)
+ {
+ 	int i;
