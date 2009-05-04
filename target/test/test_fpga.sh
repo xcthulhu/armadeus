@@ -17,22 +17,33 @@ source ./test_env.sh
 FPGA_LOAD_DEV="/dev/fpgaloader"
 TEST_BITFILE=/tmp/led.bit
 
+
+load_apf9328()
+{
+	dd if=./data/fpga/blinking_led_apf9328_200k.bit of=$FPGA_LOAD_DEV
+}
+
+load_apf27()
+{
+        dd if=./data/fpga/blinking_led_apf27_200k.bit of=$FPGA_LOAD_DEV
+}
+
 test_fpga_load()
 {
 	show_test_banner "FPGA"
 
 	modprobe fpgaloader
-	if [ "$?" != 0 ] || [ ! -c "$FPGA_LOAD_DEV" ] ; then
+	RES=$?
+	sleep 1
+	if [ "$RES" != 0 ] || [ ! -c "$FPGA_LOAD_DEV" ] ; then
 		echo "Module failed to load"
 		exit_failed
 	fi
 
 	cat /proc/driver/fpga/loader
-	echo "Downloading bitfile from Internet"
-	# Suppose that network was correctly set before
-	wget http://dl.free.fr/ppbCdFTqs -O $TEST_BITFILE
+
+	execute_for_target load_apf9328 load_apf27
 	
-	dd if=$TEST_BITFILE of=$FPGA_LOAD_DEV
 	if [ "$?" == 0 ]; then
 		ask_user "Did you see the LED on FPGA ? (y/n)"
 		if [ "$response" == "y" ]; then

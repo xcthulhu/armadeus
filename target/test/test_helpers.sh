@@ -93,3 +93,13 @@ wake_up_lcd()
 	sleep 1
 }
 
+execute_for_target()
+{
+	BOARD=`cat /etc/machine`
+	if [ "$BOARD" == "APF9328" ] && [ "$1" != "" ]; then
+                $1
+        fi
+        if [ "$BOARD" == "APF27" ] && [ "$2" != "" ]; then
+                $2
+        fi
+}

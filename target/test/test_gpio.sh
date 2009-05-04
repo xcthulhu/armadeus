@@ -49,13 +49,7 @@ test_led_gpio()
 		exit_failed
 	fi
 
-	BOARD=`cat /etc/machine`
-	if [ "$BOARD" == "APF9328" ]; then
-		blink_led_apf9328
-	fi
-	if [ "$BOARD" == "APF27" ]; then
-		blink_led_apf27
-	fi
+	execute_for_target blink_led_apf9328 blink_led_apf27
 
 	ask_user "Did you see a LED blinking ? (y/n)"
 	if [ "$response" != "y" ]; then
