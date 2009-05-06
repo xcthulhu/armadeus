@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-06 18:00:37.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-06 18:25:52.000000000 +0200
 @@ -0,0 +1,787 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -796,7 +796,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-06 18:01:27.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-06 18:37:00.000000000 +0200
 @@ -0,0 +1,278 @@
 +/*
 + *
@@ -895,96 +895,96 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +
 +static struct imx_fb_platform_data apf9328_fb_info /*__initdata*/ = {
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 480,
-+    .yres               = 272,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 480,
++	.yres		= 272,
 +
-+    .hsync_len          = 10,
-+    .vsync_len          = 3,
-+    .left_margin        = 2,
-+    .upper_margin       = 2,
-+    .right_margin       = 0,
-+    .lower_margin       = 3,
++	.hsync_len	= 10,
++	.vsync_len	= 3,
++	.left_margin	= 2,
++	.upper_margin	= 2,
++	.right_margin	= 0,
++	.lower_margin	= 3,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+                          PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+    .pwmr               = 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .backlight_power    = apf9328_lcd_backlight_power,
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
++				PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
++	.pwmr		= 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.backlight_power= apf9328_lcd_backlight_power,
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 30,
-+    .vsync_len          = 3,
-+    .left_margin        = 1,
-+    .upper_margin       = 20,
-+    .right_margin       = 68,
-+    .lower_margin       = 20,
++	.hsync_len	= 30,
++	.vsync_len	= 3,
++	.left_margin	= 1,
++	.upper_margin	= 20,
++	.right_margin	= 68,
++	.lower_margin	= 20,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
-+    .pwmr               = 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .backlight_power    = apf9328_lcd_backlight_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
++	.pwmr		= 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.backlight_power= apf9328_lcd_backlight_power,
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 9,
-+    .vsync_len          = 2,
-+    .left_margin        = 9,
-+    .upper_margin       = 0,
-+    .right_margin       = 27,
-+    .lower_margin       = 7,
++	.hsync_len	= 9,
++	.vsync_len	= 2,
++	.left_margin	= 9,
++	.upper_margin	= 0,
++	.right_margin	= 27,
++	.lower_margin	= 7,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .pwmr               = 0,    /* No contrast management */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++	.pwmr		= 0,    /* No contrast management */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+    .pixclock           = 62500,
-+    .bpp                = 8,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 8,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 2,
-+    .vsync_len          = 2,
-+    .left_margin        = 2,
-+    .upper_margin       = 2,
-+    .right_margin       = 2,
-+    .lower_margin       = 2,
++	.hsync_len	= 2,
++	.vsync_len	= 2,
++	.left_margin	= 2,
++	.upper_margin	= 2,
++	.right_margin	= 2,
++	.lower_margin	= 2,
 +
-+    .pcr                = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
-+                          PCR_END_BYTE_SWAP | PCR_PCD(3),
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .pwmr               = 0,    /* No contrast management */
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
++				PCR_END_BYTE_SWAP | PCR_PCD(3),
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.pwmr		= 0,    /* No contrast management */
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 240,
-+    .yres               = 320,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 240,
++	.yres		= 320,
 +
-+    .hsync_len          = 9,
-+    .vsync_len          = 2,
-+    .left_margin        = 9,
-+    .upper_margin       = 2,
-+    .right_margin       = 27,
-+    .lower_margin       = 4,
++	.hsync_len	= 9,
++	.vsync_len	= 2,
++	.left_margin	= 9,
++	.upper_margin	= 2,
++	.right_margin	= 27,
++	.lower_margin	= 4,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .pwmr               = 0,    /* No contrast management */
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.pwmr		= 0,    /* No contrast management */
++	.lcd_power	= apf9328_lcd_power,
 +#else
 +#error Please define a imxfb_mach_info structure with your LCD parameters here
 +#endif
@@ -1079,7 +1079,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-06 18:00:37.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-06 18:25:52.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
