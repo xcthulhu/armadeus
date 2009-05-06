@@ -239,7 +239,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +
 +	apf27_ad9889_fb_data.PA31_GIUS_old_state = 0;
 +	/* make sure the LCD OE_ACD pin is correctly configured*/
-+	if( __raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80 == 0x80){
++	if( __raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80000000){
 +		apf27_ad9889_fb_data.PA31_GIUS_old_state = 1;
 +		mxc_gpio_mode( PA31_PF_OE_ACD );
 +	}
