@@ -19,7 +19,6 @@ test_touchscreen()
 {
 	show_test_banner "Touchscreen"
 
-	modprobe spi_imx
 	modprobe tsc2102_ts
 	sleep 1
 
@@ -39,6 +38,10 @@ test_touchscreen()
 		echo "Can not communicate with Touchscreen"
 		exit_failed
 	fi
+
+	echo "You can now calibrate the Touch..."
+	sleep 1
+	ts_calibrate
 
 	echo_test_ok
 }

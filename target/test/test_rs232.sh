@@ -15,6 +15,16 @@ source ./test_helpers.sh
 source ./test_env.sh
 
 
+echo_jumper_help_apf9328()
+{
+	echo " (Pin 1 & 3 of UART connector)"
+}
+
+echo_jumper_help_apf27()
+{
+        echo " (Pin X & X of XXXX connector)"
+}
+
 test_serial_port()
 {
 	show_test_banner "Serial port $1"
@@ -24,14 +34,19 @@ test_serial_port()
 	
 	stty -F $SERIAL_DEVICE -echo
 	if [ "$?" == 0 ]; then
-		ask_user "Connect loopback jumper and press <ENTER>"
+		echo -n "Connect loopback jumper"
+		execute_for_target echo_jumper_help_apf9328 echo_jumper_help_apf27
+		ask_user "and then press <ENTER>"
 		cat $SERIAL_DEVICE > $TEMP_FILE & 
 		pid=$!
+		echo -n "."; sleep 1
 		echo "SERIAL PORT$1 IS WORKING !!" > $SERIAL_DEVICE
-		sleep 1
+		echo -n "."; sleep 1; echo
 		grep WORKING $TEMP_FILE
 		if [ "$?" == 0 ]; then
 			echo_test_ok
+		else
+			exit_failed
 		fi
 		kill $pid
 	else

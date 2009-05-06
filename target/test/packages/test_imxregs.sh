@@ -28,7 +28,7 @@ test_imxregs()
 		ID_REG="CID"
 		ID_VAL="0x2882101d"
 	else
-		ID_REG="SDIR"
+		ID_REG="SIDR"
 		ID_VAL="0x00d4c01d"
 	fi
 	echo "$APF"

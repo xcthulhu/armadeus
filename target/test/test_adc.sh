@@ -19,18 +19,19 @@ test_ADC()
 {
 	show_test_banner "ADC"
 
-	modprobe spi_imx
 	modprobe max1027
 	if [ "$?" == 0 ]; then
 		# Slow mode
 		let set=0x62; echo $set > /sys/bus/spi/devices/spi1.0/setup
-		sleep 0.1
+		echo "WAIT" > /dev/null
 		let conv=0xf9; echo $conv > /sys/bus/spi/devices/spi1.0/conversion
-		sleep 0.1
+		echo "WAIT" > /dev/null
 		temp=`cat /sys/bus/spi/devices/spi1.0/temp1_input`
 		if [ "$temp" != "0" ]; then
 			echo "Temp: $temp m°C"
 			echo_test_ok
+		else
+			exit_failed
 		fi
 	else
 		echo "Hardware not found !"
@@ -38,3 +39,4 @@ test_ADC()
 }
 
 test_ADC
+

@@ -31,7 +31,7 @@ test_mplayer()
 		# Get video
 		echo "Downloading file from Internet"
 		# Suppose that network was correctly set before
-		wget http://dl.free.fr/jVwLTYA1T -O $VIDEO_FILE_NAME
+		wget http://dl.free.fr/oBjrVd6n8 -O $VIDEO_FILE_NAME
 		# Launch it
 		$EXEC_NAME -nosound -fs $VIDEO_FILE_NAME
 		if [ "$?" == 0 ]; then

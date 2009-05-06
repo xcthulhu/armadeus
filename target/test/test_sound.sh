@@ -19,7 +19,6 @@ test_sound()
 {
 	show_test_banner "Sound / ALSA"
 
-	modprobe spi_imx
 	modprobe snd-imx-alsa-tsc2102
 	if [ "$?" != 0 ]; then
 		exit_failed
