@@ -1,0 +1,70 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 15 Jan 2009 14:37:22 +0000 (+0100)
+Subject: imxfb: add platform specific init/exit functions
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=563d8a4c0ab788043aaf8b41e406b645fdcb51f9
+
+imxfb: add platform specific init/exit functions
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-06 16:31:53.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-06 16:31:53.000000000 +0200
+@@ -76,6 +76,9 @@
+ 	u_char * fixed_screen_cpu;
+ 	dma_addr_t fixed_screen_dma;
+ 
++	int (*init)(struct platform_device*);
++	int (*exit)(struct platform_device*);
++
+ 	void (*lcd_power)(int);
+ 	void (*backlight_power)(int);
+ };
+Index: linux-2.6.29/drivers/video/imxfb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-06 16:23:38.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-06 16:31:53.000000000 +0200
+@@ -651,6 +651,12 @@
+ 		info->fix.smem_start = fbi->screen_dma;
+ 	}
+ 
++	if (pdata->init) {
++		ret = pdata->init(fbi->pdev);
++		if (ret)
++			goto failed_platform_init;
++	}
++
+ 	/*
+ 	 * This makes sure that our colour bitfield
+ 	 * descriptors are correctly initialised.
+@@ -681,6 +687,9 @@
+ failed_register:
+ 	fb_dealloc_cmap(&info->cmap);
+ failed_cmap:
++	if (pdata->exit)
++		pdata->exit(fbi->pdev);
++failed_platform_init:
+ 	if (!pdata->fixed_screen_cpu)
+ 		dma_free_writecombine(&pdev->dev,fbi->map_size,fbi->map_cpu,
+ 			fbi->map_dma);
+@@ -698,6 +707,7 @@
+ 
+ static int __devexit imxfb_remove(struct platform_device *pdev)
+ {
++	struct imx_fb_platform_data *pdata;
+ 	struct fb_info *info = platform_get_drvdata(pdev);
+ 	struct imxfb_info *fbi = info->par;
+ 	struct resource *res;
+@@ -708,6 +718,10 @@
+ 
+ 	unregister_framebuffer(info);
+ 
++	pdata = pdev->dev.platform_data;
++	if (pdata->exit)
++		pdata->exit(fbi->pdev);
++
+ 	fb_dealloc_cmap(&info->cmap);
+ 	kfree(info->pseudo_palette);
+ 	framebuffer_release(info);

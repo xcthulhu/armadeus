@@ -1,0 +1,21 @@
+
+This patch will have to be removed when MX1 platform will be functionnal.
+(redundant with 323-xxxxx.patch)
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+diff --git a/arch/arm/mach-imx/include/mach/imxfb.h b/arch/arm/mach-imx/include/mach/imxfb.h
+index 870d0d9..762a7b0 100644
+--- a/arch/arm/mach-imx/include/mach/imxfb.h
++++ b/arch/arm/mach-imx/include/mach/imxfb.h
+@@ -76,6 +76,9 @@ struct imx_fb_platform_data {
+ 	u_char * fixed_screen_cpu;
+ 	dma_addr_t fixed_screen_dma;
+ 
++	int (*init)(struct platform_device*);
++	int (*exit)(struct platform_device*);
++
+ 	void (*lcd_power)(int);
+ 	void (*backlight_power)(int);
+ };
