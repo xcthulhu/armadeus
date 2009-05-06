@@ -219,7 +219,7 @@ static int get_current_pwm_clk_rate(struct pwm_device *pwm)
 #ifdef CONFIG_ARCH_MX2
 	return clk_get_rate(pwm->clk);
 #else
-	return 16000000; 
+	return 8000000; 
 #endif
 }
 
