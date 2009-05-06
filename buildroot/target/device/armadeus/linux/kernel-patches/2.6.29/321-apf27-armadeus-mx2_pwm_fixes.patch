@@ -1,0 +1,32 @@
+Changes to have a working PWM on i.MX27:
+* adds pwm pin configuration
+* fixes pwm clock
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h	2009-04-14 19:03:37.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/iomux-mx1-mx2.h	2009-04-14 19:04:17.000000000 +0200
+@@ -384,6 +384,7 @@
+ #define PE2_PF_USBOTG_DIR	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 2)
+ #define PE3_PF_UART2_CTS	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 3)
+ #define PE4_PF_UART2_RTS	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 4)
++#define PE5_PF_PWM0		(GPIO_PORTE | GPIO_OUT | GPIO_PF | 5)
+ #define PE6_PF_UART2_TXD	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 6)
+ #define PE7_PF_UART2_RXD	(GPIO_PORTE | GPIO_IN  | GPIO_PF | 7)
+ #define PE8_PF_UART3_TXD	(GPIO_PORTE | GPIO_OUT | GPIO_PF | 8)
+Index: linux-2.6.29/arch/arm/mach-mx2/clock_imx27.c
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-mx2/clock_imx27.c	2009-04-14 19:03:37.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/clock_imx27.c	2009-04-14 19:04:17.000000000 +0200
+@@ -921,7 +921,7 @@
+ 		.parent = &per_clk[0],
+ 		.secondary = &pwm_clk[1],
+ 	}, {
+-		.name = "pwm_clk",
++		.name = "pwm_ipg_clk",
+ 		.parent = &ipg_clk,
+ 		.enable = _clk_enable,
+ 		.enable_reg = CCM_PCCR0,
