@@ -1,20 +1,17 @@
 #!/bin/ash
 
 #
-# This script will load Armadeus Max1027 module and create /dev/
+# This script will load Armadeus Max1027 module and create /dev/xxx entries
 #
 
 MAX_DEV_DIR=/dev/max1027
 
 if [ -d "$1" ]; then
-    MAX_MODULES_DIR="$1"
+	MAX_MODULES_DIR="$1"
+	insmod $MAX_MODULES_DIR/max1027.ko
 else
-    KERNEL_VERSION=`uname -r`
-    MAX_MODULES_DIR="/lib/modules/$KERNEL_VERSION/kernel/drivers/armadeus/max1027/"
-    echo "Using $MAX_MODULES_DIR as default modules dir as no param was passed"
+	modprobe max1027
 fi
-
-insmod $MAX_MODULES_DIR/max1027.ko
 
 MAX_MAJOR=`cat /proc/devices | grep max1027 | cut -d " " -f 1`
 
