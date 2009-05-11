@@ -5,7 +5,29 @@ Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
 --- linux-2.6.29.orig/drivers/video/imxfb.c	2009-03-24 00:12:14.000000000 +0100
 +++ linux-2.6.29/drivers/video/imxfb.c	2009-04-29 15:15:10.000000000 +0200
-@@ -437,6 +437,7 @@
+@@ -288,7 +288,7 @@ static int imxfb_check_var(struct fb_var
+ 	switch (var->bits_per_pixel) {
+ 	case 16:
+ 	default:
+-		if (readl(fbi->regs + LCDC_PCR) & PCR_TFT)
++		if ( fbi->pcr & PCR_TFT)
+ 			rgb = &def_rgb_16_tft;
+ 		else
+ 			rgb = &def_rgb_16_stn;
+@@ -373,10 +373,10 @@ static void imxfb_enable_controller(stru
+ 
+ 	writel(RMCR_LCDC_EN, fbi->regs + LCDC_RMCR);
+ 
+-	if (fbi->backlight_power)
+-		fbi->backlight_power(1);
+ 	if (fbi->lcd_power)
+ 		fbi->lcd_power(1);
++	if (fbi->backlight_power)
++		fbi->backlight_power(1);
+ }
+ 
+ static void imxfb_disable_controller(struct imxfb_info *fbi)
+@@ -437,6 +437,7 @@ static int imxfb_activate_var(struct fb_
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
  		var->upper_margin, var->lower_margin);
@@ -13,7 +35,7 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  #if DEBUG_VAR
  	if (var->xres < 16        || var->xres > 1024)
-@@ -661,6 +662,12 @@
+@@ -667,6 +668,12 @@ static int __init imxfb_probe(struct pla
  		goto failed_cmap;
  
  	imxfb_set_par(info);

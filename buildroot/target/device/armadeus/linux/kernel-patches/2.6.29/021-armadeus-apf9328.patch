@@ -797,7 +797,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-06 18:37:00.000000000 +0200
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,277 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -860,6 +860,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +		} while ((isr & LCDISR_EOF) == 0);
 +
 +		gpio_set_value(SHARP_LQ043_POWER_DOWN, 1);
++		mdelay(200);
 +	} else {
 +		gpio_set_value(SHARP_LQ043_POWER_DOWN, 0);
 +		mdelay(200); /* needs to wait 10 frames after DISP goes down
@@ -884,6 +885,8 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +	pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
 +
 +	pwmr = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
++	if( pwmr )
++		imx_gpio_mode(PD11_PF_CONTRAST);
 +	if (on) {
 +		pwmr |= PWMR_CC_EN;
 +	} else {
@@ -1056,13 +1059,9 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +		imx_gpio_mode(PD10_PF_SPL_SPR);
 +	}
 +
-+	if (fb_inf->pwmr) {
-+		imx_gpio_mode(PD11_PF_CONTRAST);
-+	} else {
-+		gpio_set_value(CONTRAST_LINE, 0); /* Initializes it Low */
-+		/* GPIO Function for CONTRAST pin */
-+		imx_gpio_mode(CONTRAST_LINE | GPIO_OUT | GPIO_GIUS | GPIO_DR);
-+	}
++	gpio_set_value(CONTRAST_LINE, 0); /* Initializes it Low */
++	/* GPIO Function for CONTRAST pin */
++	imx_gpio_mode(CONTRAST_LINE | GPIO_OUT | GPIO_GIUS | GPIO_DR);
 +
 +	return 0;
 +}
