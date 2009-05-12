@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Apr 16 18:36:27 2009
+# Tue May 12 23:04:44 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -767,6 +767,7 @@ BR2_MM_PATCH_SITE="http://ftp.kernel.org/pub/linux/kernel/people/akpm/patches/2.
 BR2_RC_MM_PATCH_DIR="$(BR2_KERNEL_NEXT_VERSION)-rc$(BR2_KERNEL_RC_LEVEL)/2.6.$(BR2_KERNEL_NEXT_VERSION)-rc$(BR2_KERNEL_RC_LEVEL)-mm$(BR2_KERNEL_MM_LEVEL)"
 BR2_KERNEL_PATCH_SITE="http://ftp.kernel.org/pub/linux/kernel/v2.6/"
 # BR2_LINUX_2_6_STABLE is not set
+# BR2_LINUX_2_6_29 is not set
 # BR2_LINUX_2_6_28 is not set
 BR2_LINUX_2_6_27=y
 # BR2_LINUX_2_6_26 is not set
