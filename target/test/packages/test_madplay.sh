@@ -28,15 +28,18 @@ test_madplay()
 		# Get music
 		echo "Downloading file from Internet"
 		# Suppose that network was correctly set before
-		wget http://dl.free.fr/hkaOiy3aT -O $MUSIC_FILE_NAME
+		wget http://dl.free.fr/orrXngocU -O $MUSIC_FILE_NAME
 		# Launch it
-		$EXEC_NAME $MUSIC_FILE_NAME
+		$EXEC_NAME $MUSIC_FILE_NAME &
+		PID=$!
 		if [ "$?" == 0 ]; then
+			sleep 10
 			ask_user "Was music correctly played ? If OK say y"
 			if [ "$response" == "y" ]; then
 				echo_test_ok
 				exit 0
 			fi
+			kill $PID
 		fi
 	fi
 	rm -f "$MUSIC_FILE_NAME"
