@@ -1,0 +1,28 @@
+
+Dont' know if it's the right way to do it but this patch allows sg_chain() to
+have ARCH_HAS_SG_CHAIN correctly defined (or not) when called.
+Otherwise sg_chain() oopses, even if ARCH_HAS_SG_CHAIN is defined in 
+hardware.h. (Wasn't needed for 2.6.27 kernel...)
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29/include/linux/scatterlist.h
+===================================================================
+--- linux-2.6.29.orig/include/linux/scatterlist.h	2009-05-11 17:19:30.000000000 +0200
++++ linux-2.6.29/include/linux/scatterlist.h	2009-05-11 17:25:01.000000000 +0200
+@@ -6,6 +6,7 @@
+ #include <linux/mm.h>
+ #include <linux/string.h>
+ #include <asm/io.h>
++#include <mach/hardware.h> /* needed to have ARCH_HAS_SG_CHAIN defined */
+ 
+ struct sg_table {
+ 	struct scatterlist *sgl;	/* the list */
+@@ -132,6 +133,7 @@
+ 			    struct scatterlist *sgl)
+ {
+ #ifndef ARCH_HAS_SG_CHAIN
++	printk("sg_chain oops !!!!!\n");
+ 	BUG();
+ #endif
+ 
