@@ -22,8 +22,10 @@ test_usb_gadget()
 	if [ "$?" == 0 ]; then
 		udhcpc -i eth0
 		echo "Downloading test file from Internet"
-		wget http://dl.free.fr/p9VCjtQuc -O /tmp/backing_file.gz
-		#tftp -g -r backing_file.gz -l /tmp/backing_file.gz $SERVER_IP
+		wget http://dl.free.fr/q9IKqqweK -O /tmp/backing_file.gz
+		if [ "$?" != 0 ]; then
+			exit_failed
+		fi
 		gunzip /tmp/backing_file.gz
 		modprobe g_file_storage file=/tmp/backing_file
 		sleep 1
