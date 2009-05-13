@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-imx/apf9328.c	2009-05-01 11:35:22.000000000 +0200
++++ linux-2.6.27.13/arch/arm/mach-imx/apf9328.c	2009-05-06 18:51:16.000000000 +0200
 @@ -0,0 +1,762 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -771,8 +771,8 @@ Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-01 10:34:16.000000000 +0200
-@@ -0,0 +1,193 @@
++++ linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-13 13:48:18.000000000 +0200
+@@ -0,0 +1,195 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -804,28 +804,29 @@ Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h
 + */
 +static void apf9328_lcd_power(int on)
 +{
-+    pr_debug("apf9328_lcd_power: %s\n", on ? "on":"off");
++	pr_debug("apf9328_lcd_power: %s\n", on ? "on":"off");
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+    if(on)
-+        DR(LCD_PORT) |= (1 << OPTREX_F51900_POWER_DOWN);
-+    else
-+        DR(LCD_PORT) &= ~(1 << OPTREX_F51900_POWER_DOWN);
++	if (on)
++		DR(LCD_PORT) |= (1 << OPTREX_F51900_POWER_DOWN);
++	else
++		DR(LCD_PORT) &= ~(1 << OPTREX_F51900_POWER_DOWN);
 +//#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
-+    // No LCD powerdown yet
++	/* No LCD powerdown yet */
 +#elif CONFIG_FB_IMX_SHARP_LQ043_TFT
-+    if(on) {
-+        mdelay(200); // at least ten frames have to be processed before
-+                     // enabling the display
-+        DR(LCD_PORT) |= (1 << SHARP_LQ043_POWER_DOWN);
-+   }
-+    else
-+        DR(LCD_PORT) &= ~(1 << SHARP_LQ043_POWER_DOWN);
++	if (on) {
++		mdelay(200); /* at least ten frames have to be processed before
++				enabling the display */
++		DR(LCD_PORT) |= (1 << SHARP_LQ043_POWER_DOWN);
++	} else {
++		DR(LCD_PORT) &= ~(1 << SHARP_LQ043_POWER_DOWN);
++	}
 +#else
-+    if(on)
-+        DR(LCD_PORT) &= ~(1 << CONTRAST_LINE);
-+    else
-+        DR(LCD_PORT) |= (1 << CONTRAST_LINE);
-+#endif // CONFIG_FB_IMX_OPTREX_F51900_CSTN
++	if (on) {
++		DR(LCD_PORT) &= ~(1 << CONTRAST_LINE);
++	} else {
++		DR(LCD_PORT) |= (1 << CONTRAST_LINE);
++	}
++#endif /* CONFIG_FB_IMX_OPTREX_F51900_CSTN */
 +}
 +
 +/*
@@ -833,107 +834,108 @@ Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h
 + */
 +static void apf9328_lcd_backlight_power(int on)
 +{
-+    pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
++	pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
 +
-+    if(on)
-+        LCDC_PWMR |= PWMR_CC_EN;
-+    else
-+        LCDC_PWMR &= ~PWMR_CC_EN;
++	if (on) {
++		LCDC_PWMR |= PWMR_CC_EN;
++	} else {
++		LCDC_PWMR &= ~PWMR_CC_EN;
++	}
 +}
 +
 +
 +static struct imxfb_mach_info apf9328_fb_info __initdata = {
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 480,
-+    .yres               = 272,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 480,
++	.yres		= 272,
 +
-+    .hsync_len          = 10,
-+    .vsync_len          = 3,
-+    .left_margin        = 2,
-+    .upper_margin       = 2,
-+    .right_margin       = 0,
-+    .lower_margin       = 3,
++	.hsync_len	= 10,
++	.vsync_len	= 3,
++	.left_margin	= 2,
++	.upper_margin	= 2,
++	.right_margin	= 0,
++	.lower_margin	= 3,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+                          PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+    .pwmr               = 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .backlight_power    = apf9328_lcd_backlight_power,
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
++				PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
++	.pwmr		= 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.backlight_power= apf9328_lcd_backlight_power,
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 30,
-+    .vsync_len          = 3,
-+    .left_margin        = 1,
-+    .upper_margin       = 20,
-+    .right_margin       = 68,
-+    .lower_margin       = 20,
++	.hsync_len	= 30,
++	.vsync_len	= 3,
++	.left_margin	= 1,
++	.upper_margin	= 20,
++	.right_margin	= 68,
++	.lower_margin	= 20,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
-+    .pwmr               = 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .backlight_power    = apf9328_lcd_backlight_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
++	.pwmr		= 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.backlight_power= apf9328_lcd_backlight_power,
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 9,
-+    .vsync_len          = 2,
-+    .left_margin        = 9,
-+    .upper_margin       = 0,
-+    .right_margin       = 27,
-+    .lower_margin       = 7,
++	.hsync_len	= 9,
++	.vsync_len	= 2,
++	.left_margin	= 9,
++	.upper_margin	= 0,
++	.right_margin	= 27,
++	.lower_margin	= 7,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .pwmr               = 0,    /* No contrast management */
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++	.pwmr		= 0,    /* No contrast management */
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+    .pixclock           = 62500,
-+    .bpp                = 8,
-+    .xres               = 320,
-+    .yres               = 240,
++	.pixclock	= 62500,
++	.bpp		= 8,
++	.xres		= 320,
++	.yres		= 240,
 +
-+    .hsync_len          = 2,
-+    .vsync_len          = 2,
-+    .left_margin        = 2,
-+    .upper_margin       = 2,
-+    .right_margin       = 2,
-+    .lower_margin       = 2,
++	.hsync_len	= 2,
++	.vsync_len	= 2,
++	.left_margin	= 2,
++	.upper_margin	= 2,
++	.right_margin	= 2,
++	.lower_margin	= 2,
 +
-+    .pcr                = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
-+                          PCR_END_BYTE_SWAP | PCR_PCD(3),
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .pwmr               = 0,    /* No contrast management */
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
++				PCR_END_BYTE_SWAP | PCR_PCD(3),
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.pwmr		= 0,    /* No contrast management */
++	.lcd_power	= apf9328_lcd_power,
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
-+    .pixclock           = 62500,
-+    .bpp                = 16,
-+    .xres               = 240,
-+    .yres               = 320,
++	.pixclock	= 62500,
++	.bpp		= 16,
++	.xres		= 240,
++	.yres		= 320,
 +
-+    .hsync_len          = 9,
-+    .vsync_len          = 2,
-+    .left_margin        = 9,
-+    .upper_margin       = 2,
-+    .right_margin       = 27,
-+    .lower_margin       = 4,
++	.hsync_len	= 9,
++	.vsync_len	= 2,
++	.left_margin	= 9,
++	.upper_margin	= 2,
++	.right_margin	= 27,
++	.lower_margin	= 4,
 +
-+    .pcr                = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
-+                          PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+    .dmacr              = DEFAULT_DMA_SETTINGS,
-+    .pwmr               = 0,    /* No contrast management */
-+    .lcd_power          = apf9328_lcd_power,
++	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
++				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.pwmr		= 0,    /* No contrast management */
++	.lcd_power	= apf9328_lcd_power,
 +#else
 +#error Please define a imxfb_mach_info structure with your LCD parameters here
 +#endif
@@ -946,30 +948,30 @@ Index: linux-2.6.27.13/arch/arm/mach-imx/apf9328_lcd_config.h
 +{
 +
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+    DR(LCD_PORT) |= (1 << OPTREX_F51900_POWER_DOWN); // Initializes it High
-+    imx_gpio_mode( GPIO_PORTD | OPTREX_F51900_POWER_DOWN | GPIO_OUT | GPIO_DR );
++	DR(LCD_PORT) |= (1 << OPTREX_F51900_POWER_DOWN); /* Initializes it Low */
++	imx_gpio_mode( GPIO_PORTD | OPTREX_F51900_POWER_DOWN | GPIO_OUT | GPIO_DR );
 +#else
-+    DR(LCD_PORT) &= ~(1 << CONTRAST_LINE); // Initializes it low
-+    // GPIO Function for CONTRAST pin (changed in imxfb if contrast is activated)
-+    imx_gpio_mode( GPIO_PORTD | CONTRAST_LINE | GPIO_OUT | GPIO_GIUS | GPIO_DR );
++	DR(LCD_PORT) &= ~(1 << CONTRAST_LINE); /* Initializes it Low */
++	// GPIO Function for CONTRAST pin (changed in imxfb if contrast is activated)
++	imx_gpio_mode( GPIO_PORTD | CONTRAST_LINE | GPIO_OUT | GPIO_GIUS | GPIO_DR );
 +#endif
 +
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT 
-+    // ACD_OE (SHARP_LQ043_POWER_DOWN) used as power down signal
-+    DR(LCD_PORT) &= ~(1 << SHARP_LQ043_POWER_DOWN); // Initializes it Low
-+    imx_gpio_mode( GPIO_PORTD | SHARP_LQ043_POWER_DOWN | GPIO_OUT | GPIO_GIUS | GPIO_DR ); 
++#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
++	/* ACD_OE (SHARP_LQ043_POWER_DOWN) used as power down signal */
++	DR(LCD_PORT) &= ~(1 << SHARP_LQ043_POWER_DOWN); /* Initializes it Low */
++	imx_gpio_mode( GPIO_PORTD | SHARP_LQ043_POWER_DOWN | GPIO_OUT | GPIO_GIUS | GPIO_DR );
 +#else
-+    // otherwise use ACD_OE as standard LCD controller signal
-+    imx_gpio_mode(PD12_PF_ACD_OE);
-+#endif // CONFIG_FB_IMX_SHARP_LQ043_TFT
++	/* otherwise use ACD_OE as standard LCD controller signal */
++	imx_gpio_mode(PD12_PF_ACD_OE);
++#endif /* CONFIG_FB_IMX_SHARP_LQ043_TFT */
 +}
-+#endif // CONFIG_FB_IMX
++#endif /* CONFIG_FB_IMX */
 +
-+#endif // APF9328_LCD_CONFIG_H
++#endif /* APF9328_LCD_CONFIG_H */
 Index: linux-2.6.27.13/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-01 10:34:16.000000000 +0200
++++ linux-2.6.27.13/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-06 18:51:16.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
