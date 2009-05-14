@@ -41,6 +41,7 @@
 #include <linux/vmalloc.h>
 #include <linux/string.h>
 #include <asm/io.h>
+#include <mach/hardware.h>
 #include <linux/errno.h>
 #include <linux/wait.h>
 #include <linux/pm.h>
@@ -240,6 +241,7 @@ static void compute_pwm_params(u32 req_freq, struct pwm_device *pwm)
 {
 	u32 input_freq, divider;
 	input_freq = get_current_pwm_clk_rate(pwm);
+//	printk("input freq, %x %x\n", input_freq, req_freq);
 	divider = ((input_freq*10)/req_freq+5)/10;
 	if( divider/65536 ){
 		pwm->entry.prescaler = divider/65536 +1; 
@@ -463,15 +465,15 @@ int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigne
 		/* Set Playback frequency/ouput rate */
 		case PWM_IOC_SFREQ:
 		{
-			int clock = get_current_pwm_clk_rate(pwm);
+			/*int clock = get_current_pwm_clk_rate(pwm);*/
 			/* Disable PWM */
 			write_bits( ~PWM_EN, PWM_EN, pwm->membase + PWMCTRL );
 
-			if(!( (clock >= 16000000)  && (clock<17000000))){
+/*			if(!( (clock >= 16000000)  && (clock<17000000))){
 				printk("audio playback works only with a 16MHz input clock %d!\n", 
 						get_current_pwm_clk_rate(pwm));
 				break;
-			}
+			}*/
 			write_bits( PWM_CLKSRC_IPG, PWM_CLKSRC_MASK, pwm->membase + PWMCTRL );
 #ifdef CONFIG_ARCH_MX2
 			write_bits( PWM_PRESCALER(2),PWM_PRESCALER_MASK, pwm->membase + PWMCTRL );
@@ -856,7 +858,6 @@ static DEVICE_ATTR(active, S_IWUSR | S_IRUGO, pwm_show_state, pwm_store_state);
  */
 static irqreturn_t pwm_interrupt(int irq, void *dev_id)
 {
-	u32 status;
 	int remaining = 0;
 	struct pwm_device *pwm = (struct pwm_device *) dev_id;
 
@@ -977,7 +978,7 @@ static int imx_pwm_drv_probe(struct platform_device *pdev)
 		goto error_malloc;
 	}
 	/* TODO: use iomap() */
-	pwm->membase = IO_ADDRESS(res->start);
+	pwm->membase = (unsigned long) IO_ADDRESS(res->start);
 
 	/* Register our char device */
 	err = register_chrdev(gMajor, DRIVER_NAME, &pwm_fops);
