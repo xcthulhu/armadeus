@@ -858,6 +858,7 @@ static DEVICE_ATTR(active, S_IWUSR | S_IRUGO, pwm_show_state, pwm_store_state);
  */
 static irqreturn_t pwm_interrupt(int irq, void *dev_id)
 {
+	u32 status;
 	int remaining = 0;
 	struct pwm_device *pwm = (struct pwm_device *) dev_id;
 
