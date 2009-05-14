@@ -115,12 +115,12 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +
 +static int apf27_pwm_0_init(void)
 +{
-+	return mxc_gpio_setup_multiple(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins), "PWM0");
++	return mxc_gpio_setup_multiple_pins(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins), "PWM0");
 +}
 +
 +static int apf27_pwm_0_exit(void)
 +{
-+	mxc_gpio_release_multiple(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins));
++	mxc_gpio_release_multiple_pins(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins));
 +	return 0;
 +}
 +
@@ -1458,7 +1458,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
-+	mxc_register_device(&imx_pwm_device0, &apf27_pwm_0_data);
++	mxc_register_device(&mxc_pwm_device0, &apf27_pwm_0_data);
 +#endif
 +#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
