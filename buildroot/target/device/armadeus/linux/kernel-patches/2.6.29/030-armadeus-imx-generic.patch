@@ -1,0 +1,110 @@
+--- linux-2.6.29.orig/arch/arm/mach-imx/generic.c	2009-03-30 11:16:06.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/generic.c	2009-03-30 11:18:12.000000000 +0200
+@@ -30,6 +30,7 @@
+ 
+ #include <asm/errno.h>
+ #include <mach/imxfb.h>
++#include <mach/usb.h>
+ #include <mach/hardware.h>
+ #include <mach/imx-regs.h>
+ 
+@@ -229,10 +230,13 @@ static struct resource imx_mmc_resources
+ 
+ static u64 imxmmmc_dmamask = 0xffffffffUL;
+ 
++static struct imxmmc_platform_data imx_mmc_info;
++
+ static struct platform_device imx_mmc_device = {
+ 	.name		= "imx-mmc",
+ 	.id		= 0,
+ 	.dev		= {
++		.platform_data	= &imx_mmc_info,
+ 		.dma_mask = &imxmmmc_dmamask,
+ 		.coherent_dma_mask = 0xffffffff,
+ 	},
+@@ -242,12 +246,12 @@ static struct platform_device imx_mmc_de
+ 
+ void __init imx_set_mmc_info(struct imxmmc_platform_data *info)
+ {
+-	imx_mmc_device.dev.platform_data = info;
++	memcpy(&imx_mmc_info,info,sizeof(struct imxmmc_platform_data));
+ }
+ 
+ static struct imx_fb_platform_data imx_fb_info;
+ 
+-void __init set_imx_fb_info(struct imx_fb_platform_data *hard_imx_fb_info)
++void set_imx_fb_info(struct imx_fb_platform_data *hard_imx_fb_info)
+ {
+ 	memcpy(&imx_fb_info,hard_imx_fb_info,sizeof(struct imx_fb_platform_data));
+ }
+@@ -279,9 +283,70 @@ static struct platform_device imxfb_devi
+ 	.resource	= imxfb_resources,
+ };
+ 
++static struct resource imx_usb_resources[] = {
++	[0] = {
++		.start	= 0x00212000,
++		.end	= 0x00212FFF,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= USBD_INT0,
++		.end	= USBD_INT0,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= USBD_INT1,
++		.end	= USBD_INT1,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= USBD_INT2,
++		.end	= USBD_INT2,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[4] = {
++		.start	= USBD_INT3,
++		.end	= USBD_INT3,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[5] = {
++		.start	= USBD_INT4,
++		.end	= USBD_INT4,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[6] = {
++		.start	= USBD_INT5,
++		.end	= USBD_INT5,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[7] = {
++		.start	= USBD_INT6,
++		.end	= USBD_INT6,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct imxusb_platform_data imx_usb_info;
++
++static struct platform_device imx_usb_device = {
++	.name		= "imx_udc",
++	.id		= 0,
++	.dev		= {
++ 		.platform_data	= &imx_usb_info,
++	},
++	.num_resources	= ARRAY_SIZE(imx_usb_resources),
++	.resource	= imx_usb_resources,
++};
++
++void set_imx_usb_info(struct imxusb_platform_data *hard_imx_usb_info)
++{
++	memcpy(&imx_usb_info,hard_imx_usb_info,sizeof(struct imxusb_platform_data));
++}
++
+ static struct platform_device *devices[] __initdata = {
+ 	&imx_mmc_device,
+ 	&imxfb_device,
++	&imx_usb_device,
+ };
+ 
+ static struct map_desc imx_io_desc[] __initdata = {

@@ -5,7 +5,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-06 18:25:52.000000000 +0200
-@@ -0,0 +1,787 @@
+@@ -0,0 +1,806 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -48,6 +48,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#include <asm/mach/arch.h>
 +#include <mach/imx-uart.h>
 +#include <mach/mmc.h>
++#include <mach/usb.h>
 +#include <mach/spi_imx.h>
 +#include <mach/imx-regs.h> /* imx_gpio_mode() */
 +#include <mach/imx-alsa.h>
@@ -82,6 +83,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
 +#endif
++
 +
 +/* --- ISP1761 */
 +#ifdef CONFIG_ARMADEUS_ISP1761
@@ -218,6 +220,22 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +};
 +
 +#endif /* CONFIG_PWM */
++
++static int apf9328_udc_0_init(struct device * dev)
++{
++	return 0;
++}
++
++static int apf9328_udc_0_exit(struct device * dev)
++{
++	return 0;
++}
++
++static struct imxusb_platform_data apf9328_udc_0_data = {
++	.init = apf9328_udc_0_init,
++	.exit = apf9328_udc_0_exit,
++};
++
 +
 +
 +#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
@@ -726,6 +744,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#ifdef CONFIG_ARMADEUS_ISP1761
 +	imx_gpio_mode( ISP1761_GPIO_IRQ | GPIO_IN | GPIO_GIUS ); /* Set up IRQ line. */
 +#endif
++	set_imx_usb_info(&apf9328_udc_0_data);
 +
 +	platform_add_devices(devices, ARRAY_SIZE(devices));
 +

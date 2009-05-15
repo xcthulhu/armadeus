@@ -21,7 +21,7 @@
  };
  
 +static struct clk clk_usb_clk = {
-+	.name = "usb_clk",
++	.name = "usbd_clk",
 +	.get_rate = imx_get_usb_clk,
 +};
 +

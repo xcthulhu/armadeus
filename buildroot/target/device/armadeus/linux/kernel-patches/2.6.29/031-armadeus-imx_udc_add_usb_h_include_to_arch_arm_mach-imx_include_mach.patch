@@ -5,7 +5,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/include/mach/usb.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29/arch/arm/mach-imx/include/mach/usb.h	2009-05-01 13:51:56.000000000 +0200
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,25 @@
 +/*
 + *	Copyright (C) 2008 Darius Augulis <augulis.darius@gmail.com>
 + *
@@ -27,5 +27,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/include/mach/usb.h
 +	int (*init)(struct device *);
 +	int (*exit)(struct device *);
 +};
++
++void set_imx_usb_info(struct imxusb_platform_data *hard_imx_usb_info);
 +
 +#endif /* __ASM_ARCH_MXC_USB */
