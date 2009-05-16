@@ -95,6 +95,8 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_D
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
 	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) \*.diff 
+# Since patches may add/delete packages, we process extra packages after patching
+	perl $(PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
 	touch $@
 
 $(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
