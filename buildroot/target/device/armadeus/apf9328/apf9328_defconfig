@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Wed Mar 11 17:08:11 2009
+# Sat May 16 17:41:31 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -319,6 +319,16 @@ BR2_HOST_FAKEROOT=y
 BR2_PACKAGE_PKGCONFIG=y
 # BR2_READLINE is not set
 # BR2_PACKAGE_PCRE is not set
+
+#
+# Armadeus specific packages
+#
+# BR2_PACKAGE_LIBDNET is not set
+# BR2_PACKAGE_MESALIB is not set
+# BR2_PACKAGE_IMXSSI is not set
+# BR2_PACKAGE_GPM is not set
+# BR2_PACKAGE_DUMMY is not set
+# BR2_PACKAGE_SNES9X is not set
 
 #
 # Other stuff
@@ -763,6 +773,7 @@ BR2_MM_PATCH_SITE="http://ftp.kernel.org/pub/linux/kernel/people/akpm/patches/2.
 BR2_RC_MM_PATCH_DIR="$(BR2_KERNEL_NEXT_VERSION)-rc$(BR2_KERNEL_RC_LEVEL)/2.6.$(BR2_KERNEL_NEXT_VERSION)-rc$(BR2_KERNEL_RC_LEVEL)-mm$(BR2_KERNEL_MM_LEVEL)"
 BR2_KERNEL_PATCH_SITE="http://ftp.kernel.org/pub/linux/kernel/v2.6/"
 # BR2_LINUX_2_6_STABLE is not set
+# BR2_LINUX_2_6_29 is not set
 # BR2_LINUX_2_6_28 is not set
 BR2_LINUX_2_6_27=y
 # BR2_LINUX_2_6_26 is not set
