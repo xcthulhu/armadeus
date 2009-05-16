@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Sat May 16 17:41:31 2009
+# Sat May 16 18:12:03 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -248,11 +248,11 @@ BR2_PACKAGE_GDB_HOST=y
 # BR2_GDB_VERSION_6_3 is not set
 # BR2_GDB_VERSION_6_4 is not set
 # BR2_GDB_VERSION_6_5 is not set
-BR2_GDB_VERSION_6_6=y
-# BR2_GDB_VERSION_6_7_1 is not set
+# BR2_GDB_VERSION_6_6 is not set
+BR2_GDB_VERSION_6_7_1=y
 # BR2_GDB_VERSION_6_8 is not set
 # BR2_GDB_VERSION_SNAPSHOT is not set
-BR2_GDB_VERSION="6.6"
+BR2_GDB_VERSION="6.7.1"
 
 #
 # Common Toolchain Options
