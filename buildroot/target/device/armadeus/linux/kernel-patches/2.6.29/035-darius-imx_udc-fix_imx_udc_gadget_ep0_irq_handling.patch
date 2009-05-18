@@ -1,0 +1,48 @@
+From: Darius Augulis <augulis.darius@gmail.com>
+Date: Wed, 21 Jan 2009 13:18:33 +0000 (+0200)
+Subject: USB: imx_udc: Fix IMX UDC gadget ep0 irq handling
+X-Git-Tag: v2.6.30-rc1~670^2~79
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=d24921a36df31332c32e1bb539671284d9e36bfa
+
+USB: imx_udc: Fix IMX UDC gadget ep0 irq handling
+
+Fix ep0 interrupt handling in IMX UDC Gadget.
+
+Signed-off-by: Darius Augulis <augulis.darius@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
+---
+
+diff --git a/drivers/usb/gadget/imx_udc.c b/drivers/usb/gadget/imx_udc.c
+index 3ee5bd8..e590464 100644
+--- a/drivers/usb/gadget/imx_udc.c
++++ b/drivers/usb/gadget/imx_udc.c
+@@ -1133,6 +1133,7 @@ end_irq:
+ static irqreturn_t imx_udc_ctrl_irq(int irq, void *dev)
+ {
+ 	struct imx_udc_struct *imx_usb = dev;
++	struct imx_ep_struct *imx_ep = &imx_usb->imx_ep[0];
+ 	int intr = __raw_readl(imx_usb->base + USB_EP_INTR(0));
+ 
+ 	dump_ep_intr(__func__, 0, intr, imx_usb->dev);
+@@ -1142,16 +1143,15 @@ static irqreturn_t imx_udc_ctrl_irq(int irq, void *dev)
+ 		return IRQ_HANDLED;
+ 	}
+ 
+-	/* DEVREQ IRQ has highest priority */
++	/* DEVREQ has highest priority */
+ 	if (intr & (EPINTR_DEVREQ | EPINTR_MDEVREQ))
+ 		handle_ep0_devreq(imx_usb);
+ 	/* Seem i.MX is missing EOF interrupt sometimes.
+-	 * Therefore we monitor both EOF and FIFO_EMPTY interrups
+-	 * when transmiting, and both EOF and FIFO_FULL when
+-	 * receiving data.
++	 * Therefore we don't monitor EOF.
++	 * We call handle_ep0() only if a request is queued for ep0.
+ 	 */
+-	else if (intr & (EPINTR_EOF | EPINTR_FIFO_EMPTY | EPINTR_FIFO_FULL))
+-		handle_ep0(&imx_usb->imx_ep[0]);
++	else if (!list_empty(&imx_ep->queue))
++		handle_ep0(imx_ep);
+ 
+ 	__raw_writel(intr, imx_usb->base + USB_EP_INTR(0));
+ 
