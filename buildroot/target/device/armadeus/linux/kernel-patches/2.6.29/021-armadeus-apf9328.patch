@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-06 18:25:52.000000000 +0200
-@@ -0,0 +1,806 @@
++++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-18 16:38:57.000000000 +0200
+@@ -0,0 +1,816 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -223,6 +223,16 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +
 +static int apf9328_udc_0_init(struct device * dev)
 +{
++	imx_gpio_mode(PC3_PF_SSI_RXFS);
++	imx_gpio_mode(PB20_PF_USBD_AFE);
++	imx_gpio_mode(PB21_PF_USBD_OE);
++	imx_gpio_mode(PB22_PF_USBD_RCV);
++	imx_gpio_mode(PB23_PF_USBD_SUSPND);
++	imx_gpio_mode(PB24_PF_USBD_VP);
++	imx_gpio_mode(PB25_PF_USBD_VM);
++	imx_gpio_mode(PB26_PF_USBD_VPO);
++	imx_gpio_mode(PB27_PF_USBD_VMO);
++
 +	return 0;
 +}
 +
@@ -815,7 +825,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-06 18:37:00.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-18 16:34:27.000000000 +0200
 @@ -0,0 +1,277 @@
 +/*
 + *
@@ -1097,7 +1107,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-06 18:25:52.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-18 16:34:27.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
