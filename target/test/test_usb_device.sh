@@ -18,7 +18,7 @@ test_usb_gadget()
 {
 	show_test_banner "USB gadget"
 	BACKING_FILE="/tmp/backing_file.gz"
-	dmesg | grep "imx_udc version"
+	dmesg | grep "imx_udc"
 	if [ "$?" == 0 ]; then
 		udhcpc -i eth0
 		echo "Downloading test file from Internet"
@@ -29,10 +29,16 @@ test_usb_gadget()
 		gunzip /tmp/backing_file.gz
 		modprobe g_file_storage file=/tmp/backing_file
 		sleep 1
-		ask_user "Please connect your board to your PC and see if a mass storage\ndevice is detected. When done, unmount it and press <ENTER>"
+		ask_user "Please connect your board to your PC and see if a mass storage\ndevice is detected. Try to open the image inside the device.\n Do you see something interesting ? ;-) (y/n)"
+		if [ "$response" == "y" ]; then
+                        echo_test_ok
+		else
+			exit_failed
+                fi
 	else
 		echo "UDC core not launched"
 	fi
 }
 
 test_usb_gadget
+
