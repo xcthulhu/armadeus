@@ -2,5 +2,7 @@ config BR2_PACKAGE_IMXSSI
 	bool "imxssi"
 	default n
 	help
-	  Build imxssi debug tool. It allows you to send a basic audio signal to the tsc2102 audio codec.
+	  Build imxssi debug tool.
+	  It allows you to send a basic audio signal to the tsc2102
+	  audio codec.
 
