@@ -125,7 +125,6 @@ begin
     variable ReadAccessEdgeDetect : std_logic;
   begin  -- process PS2register_read_syn
     if resetn = '0' then                -- asynchronous reset (active low)
-      readaccess        <= '0';
       ReadAccessPulse   <= '1';
       ReadAccessEdgeDetect := '0';
       DataOutRAMxD      <= (others => 'Z');
