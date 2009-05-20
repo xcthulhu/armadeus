@@ -19,6 +19,7 @@ GPIO_PROC_DIR=/proc/driver/gpio
 
 blink_led_apf27()
 {
+	cat $GPIO_PROC_DIR/portFdir | sed "s/[0-1]\([0-1]\{14\}\)$/1\1/" > $GPIO_PROC_DIR/portFmode
 	cat $GPIO_PROC_DIR/portFdir | sed "s/[0-1]\([0-1]\{14\}\)$/1\1/" > $GPIO_PROC_DIR/portFdir
 	for i in `seq 0 5`; do
 		echo -ne "\x01" > /dev/gpio/PF14
@@ -30,6 +31,7 @@ blink_led_apf27()
 
 blink_led_apf9328()
 {
+	cat $GPIO_PROC_DIR/portDdir | sed "s/[0-1]\([0-1]\{31\}\)$/1\1/" > $GPIO_PROC_DIR/portDmode
 	cat $GPIO_PROC_DIR/portDdir | sed "s/[0-1]\([0-1]\{31\}\)$/1\1/" > $GPIO_PROC_DIR/portDdir
 	for i in `seq 0 5`; do
 		echo -ne "\x00" > $GPIO_DEV_DIR/PD31
