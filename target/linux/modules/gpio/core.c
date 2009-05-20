@@ -46,7 +46,7 @@
 
 
 #define DRIVER_NAME    "Armadeus GPIOs driver"
-#define DRIVER_VERSION "v2.1"
+#define DRIVER_VERSION "v2.2"
 /* By default, we use dynamic allocation of major numbers -> MAJOR = 0 */
 #define GPIO_MAJOR 0
 #define GPIO_PROC_DIRNAME         "driver/gpio"
@@ -55,6 +55,7 @@
 #define SETTINGS_PROC_FILE        (1 << 3)
 #define SETTINGS_IRQ_PROC_FILE    (1 << 4)
 #define SETTINGS_PULLUP_PROC_FILE (1 << 5)
+#define SETTINGS_MODE_PROC_FILE   (1 << 6)
 
 #define MAX_NUMBER_OF_PINS 32
 
@@ -121,6 +122,7 @@ enum {
 	DIRECTION,
 	PULL_UP,
 	INTERRUPT,
+	MODE,
 };
 
 struct gpio_settings {
@@ -250,7 +252,7 @@ static unsigned char getIrqFromPin(int num_pin, int num_port)
 #ifdef CONFIG_ARCH_IMX
 static unsigned long PORT_MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF };
 #else
-static unsigned long PORT_MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+static unsigned long PORT_MASK[]= { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFF6060, 0xFFFE0000, 0x00FFFCFF8, 0x006B6C80 };
 #endif
 
 static void initialize_port(int port, int* init_params)
@@ -327,7 +329,7 @@ static void initialize_all_ports( void )
 
 static void writeOnPort( unsigned int aPort, unsigned int aValue )
 {
-	__raw_writel(aValue & PORT_MASK[aPort], VA_GPIO_BASE + MXC_DR(aPort));
+	__raw_writel(aValue, VA_GPIO_BASE + MXC_DR(aPort));
 }
 
 static unsigned int readFromPort( unsigned int aPort )
@@ -339,6 +341,36 @@ static unsigned int readFromPort( unsigned int aPort )
 
 	return port_value;
 }
+
+static void setPortMode ( unsigned int aPort, unsigned int aModeMask )
+{
+	int i;
+	int ocr1,ocr2;
+	
+	ocr1 = ocr2 = 0;
+	for( i=0; i< number_of_pins[aPort]; i++ )
+	{	
+		if( i<16 )
+		{
+			if( (aModeMask>>i)&1 ) 			
+				ocr1 = ocr1 | (3<<(i*2));
+		}
+		else
+		{
+			if( (aModeMask>>i)&1 ) 			
+				ocr2 = ocr2 | (3<<((i-16)*2));
+		}
+	}
+	__raw_writel(ocr1, VA_GPIO_BASE + MXC_OCR1(aPort));
+	__raw_writel(ocr2, VA_GPIO_BASE + MXC_OCR2(aPort));
+	__raw_writel(aModeMask & PORT_MASK[aPort], VA_GPIO_BASE + MXC_GIUS(aPort));
+}
+
+static void setPortPull ( unsigned int aPort, unsigned int aPullMask )
+{
+	__raw_writel(aPullMask & 0xffffffff, VA_GPIO_BASE + MXC_PUEN(aPort));
+}
+
 
 static void setPortDir( unsigned int aPort, unsigned int aDirMask )
 {
@@ -695,25 +727,26 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 		return -ERESTARTSYS;
 
 	switch (settings->type) {
+
+		case MODE:
+			port_status = __raw_readl(VA_GPIO_BASE + MXC_GIUS(port_ID));
+		break;
+
 		case VALUE:
 			port_status = readFromPort(port_ID);
 		break;
 
 		case DIRECTION:
-			/* Get the status of the gpio direction registers TBDNICO */
-			printk("direction\n");
 			port_status = getPortDir(port_ID);
 		break;
 
 		case PULL_UP:
 			port_status = __raw_readl(VA_GPIO_BASE + MXC_PUEN(port_ID));
-			printk("pull-up\n");
 		break;
 
 		case INTERRUPT:
 			port_status = shadows_irq[port_ID];
 			port_status2 = shadows_irq2[port_ID];
-			printk("interrupt\n");
 		break;
 
 		default:
@@ -787,24 +820,25 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 
 		switch( settings->type )
 		{
+			case MODE:
+				setPortMode(port_ID, gpio_state);
+			break;
+
 			case VALUE:
-				printk("value\n");
 				writeOnPort(port_ID, gpio_state);
 			break;
 
 			case DIRECTION:
-				printk("direction\n");
 				setPortDir(port_ID, gpio_state);
 			break;
 
 			case PULL_UP:
-				printk("pull-up\n");
+				setPortPull(port_ID, gpio_state);
 			break;
 
 			case INTERRUPT:
 				shadows_irq[port_ID] = gpio_state;
 				shadows_irq2[port_ID] = gpio_state2;
-				printk("interrupt\n");
 			break;
 
 			default:
@@ -879,6 +913,16 @@ static int create_proc_entries(void)
 		return ret;
 	init_map |= GPIO_PROC_FILE;
 
+	/* Create proc file to handle GPIO mode */
+	for (i = 0; i < NB_PORTS; i++) {
+		sprintf(proc_config[i].name, "%s/%smode", GPIO_PROC_DIRNAME, port_name[i]);
+		proc_config[i].type = MODE;
+	}
+
+	if ((ret = initialize_proc_entry(proc_config)))
+		return ret;
+	init_map |= SETTINGS_MODE_PROC_FILE;
+
 	/* Create proc file to handle GPIO direction settings */
 	for (i = 0; i < NB_PORTS; i++) {
 		sprintf(proc_config[i].name, "%s/%sdir", GPIO_PROC_DIRNAME, port_name[i]);
@@ -924,6 +968,13 @@ static void remove_proc_entries(void)
 		printk( DRIVER_NAME " removing /proc/.../portX\n" );
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%s", GPIO_PROC_DIRNAME, port_name[i]);
+			remove_proc_entry(proc_name, NULL);
+		}
+	}
+	if (init_map & SETTINGS_MODE_PROC_FILE) {
+		printk( DRIVER_NAME " removing /proc/.../portXmode\n" );
+		for (i = 0; i < NB_PORTS; i++) {
+			sprintf(proc_name, "%s/%smode", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
