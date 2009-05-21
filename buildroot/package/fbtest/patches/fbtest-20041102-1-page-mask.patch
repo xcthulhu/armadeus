@@ -1,0 +1,36 @@
+--- fbtest-20041102-1.org/fb.c	2003-04-04 14:07:55.000000000 +0200
++++ fbtest-20041102-1/fb.c	2009-05-20 10:32:32.000000000 +0200
+@@ -19,7 +19,6 @@
+ #include <sys/stat.h>
+ #include <unistd.h>
+ 
+-#include <asm/page.h>
+ 
+ #include "types.h"
+ #include "fb.h"
+@@ -179,6 +179,7 @@
+ void fb_map(void)
+ {
+     caddr_t addr;
++    unsigned long PAGE_MASK = ~(sysconf(_SC_PAGE_SIZE)-1);
+ 
+     Debug("fb_map()\n");
+     fb_start = (unsigned long)fb_fix.smem_start & PAGE_MASK;
+@@ -189,7 +190,7 @@
+     addr = mmap(NULL, fb_len, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, 0);
+     if (addr == (caddr_t)-1)
+ 	Fatal("mmap smem: %s\n", strerror(errno));
+-    fb = addr+fb_offset;
++    fb = (u8*)(addr+fb_offset);
+ }
+ 
+ 
+@@ -199,6 +200,8 @@
+ 
+ void fb_unmap(void)
+ {
++    unsigned long PAGE_MASK = ~(sysconf(_SC_PAGE_SIZE)-1);
++
+     Debug("fb_unmap()\n");
+     if (munmap((caddr_t)((unsigned long)fb & PAGE_MASK), fb_len) == -1)
+ 	Fatal("munmap smem: %s\n", strerror(errno));
