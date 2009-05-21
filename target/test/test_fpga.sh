@@ -26,7 +26,7 @@ load_apf9328()
 load_apf27()
 {
 	echo "I hope you have connected Pins 1 & 39 of J20 (power)"
-        dd if=./data/fpga/blinking_led_apf27_200k.bit of=$FPGA_LOAD_DEV
+	dd if=./data/fpga/blinking_led_apf27_200k.bit of=$FPGA_LOAD_DEV
 }
 
 test_fpga_load()
