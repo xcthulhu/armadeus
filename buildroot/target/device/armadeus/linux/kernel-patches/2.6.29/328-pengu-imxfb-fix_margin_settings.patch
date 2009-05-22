@@ -1,0 +1,31 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Sat, 14 Feb 2009 15:29:38 +0000 (+0100)
+Subject: imxfb: Fix margin settings
+X-Git-Tag: v2.6.30-rc1~636^2~29^2~17
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=7e8549bcee00d92040904361cb1840c7a5eda615
+
+imxfb: Fix margin settings
+
+The var->hsync_len, var->right_margin and var->left_margin fields
+should contain the real values, not the hardware dependent values.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/video/imxfb.c b/drivers/video/imxfb.c
+index 9dd2757..bd1cb75 100644
+--- a/drivers/video/imxfb.c
++++ b/drivers/video/imxfb.c
+@@ -495,9 +495,9 @@ static int imxfb_activate_var(struct fb_var_screeninfo *var, struct fb_info *inf
+ 			info->fix.id, var->lower_margin);
+ #endif
+ 
+-	writel(HCR_H_WIDTH(var->hsync_len) |
+-		HCR_H_WAIT_1(var->right_margin) |
+-		HCR_H_WAIT_2(var->left_margin),
++	writel(HCR_H_WIDTH(var->hsync_len - 1) |
++		HCR_H_WAIT_1(var->right_margin - 1) |
++		HCR_H_WAIT_2(var->left_margin - 3),
+ 		fbi->regs + LCDC_HCR);
+ 
+ 	writel(VCR_V_WIDTH(var->vsync_len) |

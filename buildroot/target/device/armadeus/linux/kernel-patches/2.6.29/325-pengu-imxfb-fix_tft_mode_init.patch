@@ -1,0 +1,28 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 26 Mar 2009 11:38:26 +0000 (+0100)
+Subject: imxfb: Fix TFT mode
+X-Git-Tag: v2.6.30-rc1~636^2~3^2
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=4d1e4e5a6387aad97590e2da9c6db1350f22f63a
+
+imxfb: Fix TFT mode
+
+We read from the PCR reg to determine whether to use TFT mode or not.
+This is not possible because it may not have been initialized with
+the correct value yet. Select it using fbi->pcr instead.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+diff --git a/drivers/video/imxfb.c b/drivers/video/imxfb.c
+index 8f7a2b2..15a0ee6 100644
+--- a/drivers/video/imxfb.c
++++ b/drivers/video/imxfb.c
+@@ -327,7 +327,7 @@ static int imxfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ 		break;
+ 	case 16:
+ 	default:
+-		if (readl(fbi->regs + LCDC_PCR) & PCR_TFT)
++		if (fbi->pcr & PCR_TFT)
+ 			rgb = &def_rgb_16_tft;
+ 		else
+ 			rgb = &def_rgb_16_stn;

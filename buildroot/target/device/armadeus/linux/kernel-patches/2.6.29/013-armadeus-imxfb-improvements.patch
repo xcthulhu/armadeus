@@ -1,33 +1,17 @@
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
+PWMR, LSCR1 and DMACR registers only need to be initialized once at startup, 
+not every time imxfb_set_par()/imxfb_activate_var() are called (for example 
+when using SDL).
+Setting these registers in imxfb_set_par()/imxfb_activate_var() has the side
+effect (for example) of shutting down the backlight when opening an 8bits
+SDL screen.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
 --- linux-2.6.29.orig/drivers/video/imxfb.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-04-29 15:15:10.000000000 +0200
-@@ -288,7 +288,7 @@ static int imxfb_check_var(struct fb_var
- 	switch (var->bits_per_pixel) {
- 	case 16:
- 	default:
--		if (readl(fbi->regs + LCDC_PCR) & PCR_TFT)
-+		if ( fbi->pcr & PCR_TFT)
- 			rgb = &def_rgb_16_tft;
- 		else
- 			rgb = &def_rgb_16_stn;
-@@ -373,10 +373,10 @@ static void imxfb_enable_controller(stru
- 
- 	writel(RMCR_LCDC_EN, fbi->regs + LCDC_RMCR);
- 
--	if (fbi->backlight_power)
--		fbi->backlight_power(1);
- 	if (fbi->lcd_power)
- 		fbi->lcd_power(1);
-+	if (fbi->backlight_power)
-+		fbi->backlight_power(1);
- }
- 
- static void imxfb_disable_controller(struct imxfb_info *fbi)
-@@ -437,6 +437,7 @@ static int imxfb_activate_var(struct fb_
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-20 14:58:44.000000000 +0200
+@@ -437,6 +437,7 @@
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
  		var->upper_margin, var->lower_margin);
@@ -35,7 +19,17 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  #if DEBUG_VAR
  	if (var->xres < 16        || var->xres > 1024)
-@@ -667,6 +668,12 @@ static int __init imxfb_probe(struct pla
+@@ -478,9 +479,6 @@
+ 	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
+ 			fbi->regs + LCDC_SIZE);
+ 	writel(fbi->pcr, fbi->regs + LCDC_PCR);
+-	writel(fbi->pwmr, fbi->regs + LCDC_PWMR);
+-	writel(fbi->lscr1, fbi->regs + LCDC_LSCR1);
+-	writel(fbi->dmacr, fbi->regs + LCDC_DMACR);
+ 
+ 	return 0;
+ }
+@@ -661,6 +659,12 @@
  		goto failed_cmap;
  
  	imxfb_set_par(info);

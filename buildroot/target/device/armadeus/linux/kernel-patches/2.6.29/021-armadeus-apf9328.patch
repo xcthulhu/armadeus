@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-18 16:38:57.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-21 21:20:41.000000000 +0200
 @@ -0,0 +1,816 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -825,7 +825,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-18 16:34:27.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-22 15:35:56.000000000 +0200
 @@ -0,0 +1,277 @@
 +/*
 + *
@@ -932,12 +932,12 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +	.xres		= 480,
 +	.yres		= 272,
 +
-+	.hsync_len	= 10,
-+	.vsync_len	= 3,
-+	.left_margin	= 2,
-+	.upper_margin	= 2,
-+	.right_margin	= 0,
-+	.lower_margin	= 3,
++	.hsync_len	= 41,
++	.vsync_len	= 10,
++	.left_margin	= 3, /* should be 2 but i.MX doesn't support it */
++	.upper_margin	= 3,
++	.right_margin	= 2,
++	.lower_margin	= 2,
 +
 +	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
 +				PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
@@ -951,11 +951,11 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +	.xres		= 320,
 +	.yres		= 240,
 +
-+	.hsync_len	= 30,
++	.hsync_len	= 31,
 +	.vsync_len	= 3,
-+	.left_margin	= 1,
++	.left_margin	= 4,
 +	.upper_margin	= 20,
-+	.right_margin	= 68,
++	.right_margin	= 69,
 +	.lower_margin	= 20,
 +
 +	.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
@@ -1107,7 +1107,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-18 16:34:27.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-21 21:20:41.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h

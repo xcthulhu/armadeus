@@ -1,0 +1,31 @@
+When configured with a TFT LCD interface i.MX(1/2) LCD controller can support
+16, 12, 8 & 4bpp framebuffers with the same hardware interface (12 to 16 bits).
+So if userspace app wants a 8bpp screen, we switch to 8bpp. This can save 
+ressources (mem + proc), when using SDL for example.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29/drivers/video/imxfb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-21 11:50:42.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-21 12:21:25.000000000 +0200
+@@ -478,7 +478,18 @@
+ 
+ 	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
+ 			fbi->regs + LCDC_SIZE);
+-	writel(fbi->pcr, fbi->regs + LCDC_PCR);
++
++	/* i.MX LCD controller can support 8bpp even if configured to output 16 bits (TFT) */
++	if ((var->bits_per_pixel == 8) && (fbi->pcr & PCR_TFT)) {
++		pr_debug("Switching imxfb to 8bpp\n");
++		writel((fbi->pcr & (~PCR_BPIX_MASK)) |
++			PCR_BPIX_8 |
++			PCR_END_BYTE_SWAP,
++			fbi->regs + LCDC_PCR);
++	} else {
++		writel(fbi->pcr, fbi->regs + LCDC_PCR);
++	}
++	writel(VPW_VPW(var->xres * var->bits_per_pixel / 8 / 4), fbi->regs + LCDC_VPW);
+ 
+ 	return 0;
+ }
