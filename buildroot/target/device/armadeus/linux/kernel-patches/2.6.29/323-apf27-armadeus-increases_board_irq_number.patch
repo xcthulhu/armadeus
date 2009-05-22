@@ -1,0 +1,25 @@
+Increases board reserved interrupts to 32. This is needed for the APF27
+FPGA.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/irqs.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/irqs.h	2009-05-22 18:19:00.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/irqs.h	2009-05-22 18:19:37.000000000 +0200
+@@ -27,13 +27,13 @@
+ #endif
+ 
+ /*
+- * The next 16 interrupts are for board specific purposes.  Since
++ * The next 32 interrupts are for board specific purposes.  Since
+  * the kernel can only run on one machine at a time, we can re-use
+  * these.  If you need more, increase MXC_BOARD_IRQS, but keep it
+  * within sensible limits.
+  */
+ #define MXC_BOARD_IRQ_START	(MXC_INTERNAL_IRQS + MXC_GPIO_IRQS)
+-#define MXC_BOARD_IRQS	16
++#define MXC_BOARD_IRQS	32
+ 
+ #define MXC_IPU_IRQ_START	(MXC_BOARD_IRQ_START + MXC_BOARD_IRQS)
+ 

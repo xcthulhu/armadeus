@@ -1,7 +1,7 @@
 From: Sascha Hauer <s.hauer@pengutronix.de>
-Date: Tue, 9 Sep 2008 09:33:11 +0000 (+0200)
+Date: Fri, 19 Dec 2008 13:32:25 +0000 (+0100)
 Subject: i.MX27 Camera support
-X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=dd2a1c355ff4e4f4da4bfd9c2083d402b4015a01
+X-Git-Url: http://pasiphae.extern.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=df7a35c4c07f0be0d4592ce85f5fdc3b0a281898
 
 i.MX27 Camera support
 
@@ -15,16 +15,20 @@ renamed to imx_camera.
 - use single dma transfers for camera instead of sg lists
 - implement emma support: No scaling or color space conversion
   support yet, only pure streaming to get rid of the dma engine
+20081017:
+- fix direction of pixel clock
+20081103:
+- implement setting of packing direction from platform
 
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
 diff --git a/arch/arm/plat-mxc/include/mach/imx_cam.h b/arch/arm/plat-mxc/include/mach/imx_cam.h
 new file mode 100644
-index 0000000..7d002f4
+index 0000000..2d704ae
 --- /dev/null
 +++ b/arch/arm/plat-mxc/include/mach/imx_cam.h
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,47 @@
 +/*
 +    imx-cam.h - i.MX27 camera driver header file
 +
@@ -57,6 +61,7 @@ index 0000000..7d002f4
 +#define MX27_CAMERA_GATED_CLOCK		(1 << 5)
 +#define MX27_CAMERA_INV_DATA		(1 << 6)
 +#define MX27_CAMERA_PCLK_SAMPLE_RISING	(1 << 7)
++#define MX27_CAMERA_PACK_DIR_MSB	(1 << 8)
 +
 +struct mx27_camera_platform_data {
 +	int (*init)(struct platform_device *);
@@ -72,12 +77,12 @@ index 0000000..7d002f4
 +#endif /* __ASM_ARCH_CAMERA_H_ */
 +
 diff --git a/drivers/media/video/Kconfig b/drivers/media/video/Kconfig
-index 3e9e0dc..281aaa7 100644
+index 47102c2..645d805 100644
 --- a/drivers/media/video/Kconfig
 +++ b/drivers/media/video/Kconfig
-@@ -974,4 +974,12 @@ config VIDEO_SH_MOBILE_CEU
- 	---help---
- 	  This is a v4l2 driver for the SuperH Mobile CEU Interface
+@@ -893,4 +893,12 @@ config USB_S2255
+ 
+ endif # V4L_USB_DRIVERS
  
 +config VIDEO_MX27
 +	tristate "i.MX27 Quick Capture Interface driver"
@@ -89,10 +94,10 @@ index 3e9e0dc..281aaa7 100644
 +
  endif # VIDEO_CAPTURE_DRIVERS
 diff --git a/drivers/media/video/Makefile b/drivers/media/video/Makefile
-index ef7c8d3..51a661e 100644
+index 16962f3..5f59ea9 100644
 --- a/drivers/media/video/Makefile
 +++ b/drivers/media/video/Makefile
-@@ -134,6 +134,7 @@ obj-$(CONFIG_VIDEO_VIVI) += vivi.o
+@@ -128,6 +128,7 @@ obj-$(CONFIG_VIDEO_VIVI) += vivi.o
  obj-$(CONFIG_VIDEO_CX23885) += cx23885/
  
  obj-$(CONFIG_VIDEO_PXA27x)	+= pxa_camera.o
@@ -102,10 +107,10 @@ index ef7c8d3..51a661e 100644
  obj-$(CONFIG_SOC_CAMERA_MT9M001)	+= mt9m001.o
 diff --git a/drivers/media/video/mx27_camera.c b/drivers/media/video/mx27_camera.c
 new file mode 100644
-index 0000000..52d5a81
+index 0000000..b61dec1
 --- /dev/null
 +++ b/drivers/media/video/mx27_camera.c
-@@ -0,0 +1,1183 @@
+@@ -0,0 +1,1185 @@
 +/*
 + * V4L2 Driver for MX27 camera host
 + *
@@ -395,7 +400,7 @@ index 0000000..52d5a81
 +	csicr1 = CSICR1_MCLKDIV(mclk_get_divisor(pcdev)) |
 +			CSICR1_MCLKEN;
 +	if (mx27_camera_emma(pcdev)) {
-+		csicr1 |=CSICR1_PRP_IF_EN | CSICR1_SWAP16_EN | CSICR1_FCC |
++		csicr1 |= CSICR1_PRP_IF_EN | CSICR1_FCC |
 +			CSICR1_RXFF_LEVEL(0);
 +	} else
 +		csicr1 |= CSICR1_SOF_INTEN | CSICR1_RXFF_LEVEL(2);
@@ -711,7 +716,7 @@ index 0000000..52d5a81
 +	if (ret < 0)
 +		return ret;
 +
-+	if (common_flags & SOCAM_PCLK_SAMPLE_RISING)
++	if (common_flags & SOCAM_PCLK_SAMPLE_FALLING)
 +		csicr1 |= CSICR1_INV_PCLK;
 +	if (common_flags & SOCAM_HSYNC_ACTIVE_HIGH)
 +		csicr1 |= CSICR1_HSYNC_POL;
@@ -727,6 +732,8 @@ index 0000000..52d5a81
 +		csicr1 |= CSICR1_GCLK_MODE;
 +	if (pcdev->platform_flags & MX27_CAMERA_INV_DATA)
 +		csicr1 |= CSICR1_INV_DATA;
++	if (pcdev->platform_flags & MX27_CAMERA_PACK_DIR_MSB)
++		csicr1 |= CSICR1_PACK_DIR;
 +
 +	if (mx27_camera_emma(pcdev)) {
 +		int bytesperline = (icd->width * icd->current_fmt->depth) >> 3;

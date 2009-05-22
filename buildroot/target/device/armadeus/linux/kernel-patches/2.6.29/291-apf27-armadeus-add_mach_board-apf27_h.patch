@@ -2,7 +2,7 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/board-apf27.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29/arch/arm/plat-mxc/include/mach/board-apf27.h	2009-04-14 18:34:53.000000000 +0200
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,45 @@
 +/*
 + * Copyright (C) 2008 Armadeus Systems
 + *
@@ -38,11 +38,13 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/board-apf27.h
 +/* FPGA addresses */
 +#define APF27_FPGA_VIRT (CS5_BASE_ADDR_VIRT)
 +#define APF27_FPGA_PHYS (CS5_BASE_ADDR)
-+#define APF27_FPGA_IRQ  (IRQ_GPIOF(12))
-+
 +#define ARMADEUS_FPGA_BASE_ADDR_VIRT (APF27_FPGA_VIRT)
 +#define ARMADEUS_FPGA_BASE_ADDR_PHYS (APF27_FPGA_PHYS)
-+#define ARMADEUS_FPGA_IRQ            (APF27_FPGA_IRQ)
++
++/* FPGA IRQ */
++#define APF27_FPGA_INT_PIN  (GPIO_PORTF | 12)
++#define APF27_FPGA_IRQ      (IRQ_GPIOF(APF27_FPGA_INT_PIN))
++#define ARMADEUS_FPGA_IRQ   (APF27_FPGA_IRQ)
 +
 +
 +#endif /* __ASM_ARCH_MXC_BOARD_APF27_H__ */
