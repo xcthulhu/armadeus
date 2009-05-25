@@ -19,15 +19,16 @@ renamed to imx_camera.
 - fix direction of pixel clock
 20081103:
 - implement setting of packing direction from platform
+20090525:
+- JB: update for 2.6.29
 
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-diff --git a/arch/arm/plat-mxc/include/mach/imx_cam.h b/arch/arm/plat-mxc/include/mach/imx_cam.h
-new file mode 100644
-index 0000000..2d704ae
---- /dev/null
-+++ b/arch/arm/plat-mxc/include/mach/imx_cam.h
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imx_cam.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imx_cam.h	2009-05-25 13:47:04.000000000 +0200
 @@ -0,0 +1,47 @@
 +/*
 +    imx-cam.h - i.MX27 camera driver header file
@@ -76,11 +77,11 @@ index 0000000..2d704ae
 +
 +#endif /* __ASM_ARCH_CAMERA_H_ */
 +
-diff --git a/drivers/media/video/Kconfig b/drivers/media/video/Kconfig
-index 47102c2..645d805 100644
---- a/drivers/media/video/Kconfig
-+++ b/drivers/media/video/Kconfig
-@@ -893,4 +893,12 @@ config USB_S2255
+Index: linux-2.6.29/drivers/media/video/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/media/video/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/media/video/Kconfig	2009-05-25 14:20:12.000000000 +0200
+@@ -929,4 +929,12 @@
  
  endif # V4L_USB_DRIVERS
  
@@ -93,24 +94,23 @@ index 47102c2..645d805 100644
 +	  This is a v4l2 driver for the i.MX27 Capture Interface
 +
  endif # VIDEO_CAPTURE_DRIVERS
-diff --git a/drivers/media/video/Makefile b/drivers/media/video/Makefile
-index 16962f3..5f59ea9 100644
---- a/drivers/media/video/Makefile
-+++ b/drivers/media/video/Makefile
-@@ -128,6 +128,7 @@ obj-$(CONFIG_VIDEO_VIVI) += vivi.o
+Index: linux-2.6.29/drivers/media/video/Makefile
+===================================================================
+--- linux-2.6.29.orig/drivers/media/video/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/media/video/Makefile	2009-05-25 14:20:12.000000000 +0200
+@@ -135,6 +135,7 @@
  obj-$(CONFIG_VIDEO_CX23885) += cx23885/
  
  obj-$(CONFIG_VIDEO_PXA27x)	+= pxa_camera.o
 +obj-$(CONFIG_VIDEO_MX27)	+= mx27_camera.o
  obj-$(CONFIG_VIDEO_SH_MOBILE_CEU)	+= sh_mobile_ceu_camera.o
+ obj-$(CONFIG_VIDEO_OMAP2)		+= omap2cam.o
  obj-$(CONFIG_SOC_CAMERA)	+= soc_camera.o
- obj-$(CONFIG_SOC_CAMERA_MT9M001)	+= mt9m001.o
-diff --git a/drivers/media/video/mx27_camera.c b/drivers/media/video/mx27_camera.c
-new file mode 100644
-index 0000000..b61dec1
---- /dev/null
-+++ b/drivers/media/video/mx27_camera.c
-@@ -0,0 +1,1185 @@
+Index: linux-2.6.29/drivers/media/video/mx27_camera.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29/drivers/media/video/mx27_camera.c	2009-05-25 14:19:49.000000000 +0200
+@@ -0,0 +1,1187 @@
 +/*
 + * V4L2 Driver for MX27 camera host
 + *
@@ -808,6 +808,7 @@ index 0000000..b61dec1
 +	return 0;
 +}
 +
++/* DEPRECATED
 +static int mx27_camera_try_bus_param(struct soc_camera_device *icd,
 +		__u32 pixfmt)
 +{
@@ -820,11 +821,12 @@ index 0000000..b61dec1
 +	return soc_camera_bus_param_compatible(camera_flags, bus_flags) ?
 +				0 : -EINVAL;
 +}
++*/
 +
 +static int mx27_camera_set_fmt_cap(struct soc_camera_device *icd,
 +				  __u32 pixfmt, struct v4l2_rect *rect)
 +{
-+	return icd->ops->set_fmt_cap(icd, pixfmt, rect);
++	return icd->ops->set_fmt(icd, pixfmt, rect);
 +}
 +
 +static int mx27_camera_try_fmt_cap(struct soc_camera_device *icd,
@@ -950,13 +952,13 @@ index 0000000..b61dec1
 +	.owner		= THIS_MODULE,
 +	.add		= mx27_camera_add_device,
 +	.remove		= mx27_camera_remove_device,
-+	.set_fmt_cap	= mx27_camera_set_fmt_cap,
-+	.try_fmt_cap	= mx27_camera_try_fmt_cap,
++	.set_fmt	= mx27_camera_set_fmt_cap,
++	.try_fmt	= mx27_camera_try_fmt_cap,
 +	.init_videobuf	= mx27_camera_init_videobuf,
 +	.reqbufs	= mx27_camera_reqbufs,
 +	.poll		= mx27_camera_poll,
 +	.querycap	= mx27_camera_querycap,
-+	.try_bus_param	= mx27_camera_try_bus_param,
++/*	.try_bus_param	= mx27_camera_try_bus_param, */
 +	.set_bus_param	= mx27_camera_set_bus_param,
 +};
 +

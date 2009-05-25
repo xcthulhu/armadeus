@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-04-14 17:57:01.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-05-25 14:12:14.000000000 +0200
 @@ -0,0 +1,1560 @@
 + /*
 + * apf27.c
@@ -1452,7 +1452,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +{
 +	int res;
 +
-+	res = mxc_gpio_setup_multiple(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
++	res = mxc_gpio_setup_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
 +	if (!res)
 +		set_irq_type(APF27_FPGA_IRQ, IRQF_TRIGGER_RISING);
 +

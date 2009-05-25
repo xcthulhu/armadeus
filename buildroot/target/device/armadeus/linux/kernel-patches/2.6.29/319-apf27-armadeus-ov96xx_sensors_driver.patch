@@ -4,11 +4,11 @@ Based on work from Trilok Soni <soni.trilok@gmail.com> on ov9640 driver for OMAP
 
 Signed-off-by: Julien boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.27.13/drivers/media/video/Kconfig
+Index: linux-2.6.29/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.27.13.orig/drivers/media/video/Kconfig	2009-03-23 14:43:41.000000000 +0100
-+++ linux-2.6.27.13/drivers/media/video/Kconfig	2009-03-23 14:52:38.000000000 +0100
-@@ -288,6 +288,13 @@
+--- linux-2.6.29.orig/drivers/media/video/Kconfig	2009-05-25 14:20:25.000000000 +0200
++++ linux-2.6.29/drivers/media/video/Kconfig	2009-05-25 14:20:25.000000000 +0200
+@@ -298,6 +298,13 @@
  	  OV7670 VGA camera.  It currently only works with the M88ALP01
  	  controller.
  
@@ -22,11 +22,11 @@ Index: linux-2.6.27.13/drivers/media/video/Kconfig
  config VIDEO_TCM825X
  	tristate "TCM825x camera sensor support"
  	depends on I2C && VIDEO_V4L2
-Index: linux-2.6.27.13/drivers/media/video/Makefile
+Index: linux-2.6.29/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.27.13.orig/drivers/media/video/Makefile	2009-03-23 14:53:18.000000000 +0100
-+++ linux-2.6.27.13/drivers/media/video/Makefile	2009-03-23 14:54:01.000000000 +0100
-@@ -105,6 +105,7 @@
+--- linux-2.6.29.orig/drivers/media/video/Makefile	2009-05-25 14:20:25.000000000 +0200
++++ linux-2.6.29/drivers/media/video/Makefile	2009-05-25 14:20:25.000000000 +0200
+@@ -106,6 +106,7 @@
  
  obj-$(CONFIG_VIDEO_CAFE_CCIC) += cafe_ccic.o
  obj-$(CONFIG_VIDEO_OV7670) 	+= ov7670.o
@@ -34,10 +34,10 @@ Index: linux-2.6.27.13/drivers/media/video/Makefile
  
  obj-$(CONFIG_VIDEO_TCM825X) += tcm825x.o
  
-Index: linux-2.6.27.13/drivers/media/video/ov96xx.c
+Index: linux-2.6.29/drivers/media/video/ov96xx.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.13/drivers/media/video/ov96xx.c	2009-03-26 19:39:07.000000000 +0100
++++ linux-2.6.29/drivers/media/video/ov96xx.c	2009-05-25 14:21:42.000000000 +0200
 @@ -0,0 +1,1785 @@
 +/*
 + * drivers/media/video/ov96xx.c
@@ -1208,7 +1208,7 @@ Index: linux-2.6.27.13/drivers/media/video/ov96xx.c
 +}
 +
 +static int ov96xx_get_chip_id(struct soc_camera_device *icd,
-+			       struct v4l2_chip_ident *id)
++			       struct v4l2_chip_ident_old *id)
 +{
 +/*	struct mt9m001 *mt9m001 = container_of(icd, struct mt9m001, icd);
 +
@@ -1687,8 +1687,8 @@ Index: linux-2.6.27.13/drivers/media/video/ov96xx.c
 +	.release		= ov96xx_release,
 +	.start_capture		= ov96xx_start_capture,
 +	.stop_capture		= ov96xx_stop_capture,
-+	.set_fmt_cap		= ov96xx_set_fmt_cap,
-+	.try_fmt_cap		= ov96xx_try_fmt_cap,
++	.set_fmt		= ov96xx_set_fmt_cap,
++	.try_fmt		= ov96xx_try_fmt_cap,
 +	.set_bus_param		= ov96xx_set_bus_param,
 +	.query_bus_param	= ov96xx_query_bus_param,
 +	.controls		= ov96xx_controls,
