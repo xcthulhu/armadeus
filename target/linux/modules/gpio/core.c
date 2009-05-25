@@ -592,7 +592,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 	}
 
 success:
-	printk("Opening /dev node for %s pin %d\n", port_name[gpio->port], gpio->number);
+	pr_debug("Opening /dev node for %s pin %d\n", port_name[gpio->port], gpio->number);
 	gpio->initialized = 1;
 	return 0;
 
@@ -620,7 +620,7 @@ static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 		gpio_free(minor);
 	}
 	kfree(gpio);
-	printk("Closing access to /dev/gpio/ minor %d\n", minor);
+	pr_debug("Closing access to /dev/gpio/ minor %d\n", minor);
 
 	return 0;
 }
@@ -633,7 +633,7 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 	int value=0;
 	unsigned int minor;
 
-	printk( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
+	printk(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
 
 	/* Extract the type and number bitfields, and don't decode wrong cmds:
 	   return ENOTTY (inappropriate ioctl) before access_ok() */
