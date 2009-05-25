@@ -19,6 +19,7 @@ WTIME=0
 RTIME=0
 #DEBUG=True
 
+# $1 = nb of test iterations
 test_ethernet()
 {
 	show_test_banner "Ethernet"
@@ -27,14 +28,21 @@ test_ethernet()
 	ifconfig eth0
 	if [ "$?" != 0 ]; then
 		echo "No Ethernet interface found"
-		exit 1
+		exit_failed
 	fi
 	# To autoconfigure Internet access
 	udhcpc -q -i eth0
 
+	# Check if Host is alive
+	ping -c 5 -W 2 $SERVER_IP
+	if [ "$?" != 0 ]; then
+		echo "No Host found at $SERVER_IP. Give me the right IP in test_env.sh"
+		exit_failed
+	fi
+
 	cd $TEMP_DIR
 	# Create temp bench file
-	echo "Creating random data file"
+	echo -e "\nCreating random data file"
 	if [ ! -f "$TEMP_FILE" ]; then
 		dd if=/dev/urandom of=$TEMP_FILE bs=1024 count=$TEMP_FILE_SIZE 2>/dev/null & pid=$!
 		# Show a kind of progress bar
@@ -47,12 +55,14 @@ test_ethernet()
 		echo
 	fi
 
-	for it in 1 2 3; do
+	for it in `seq $1`; do
 		echo "--- Test iteration n°$it ---"
 		echo "  Uploading"
-		time tftp -p -l $TEMP_FILE $SERVER_IP 2>/tmp/writetime
+		time tftp -p -l $TEMP_FILE -r `basename $TEMP_FILE` $SERVER_IP 2>/tmp/writetime
 		if [ "$?" == 0 ]; then
 			rm $TEMP_FILE
+		else
+			exit_failed
 		fi
 		echo "  Downloading"
 		time tftp -g -r $TEMP_FILE $SERVER_IP 2>/tmp/readtime
@@ -84,5 +94,9 @@ test_ethernet()
 	echo_test_ok
 }
 
-test_ethernet
+if [ "$1" != "" ]; then
+	test_ethernet $1
+else
+	test_ethernet 3
+fi
 
