@@ -1,3 +1,4 @@
+
 When configured with a TFT LCD interface i.MX(1/2) LCD controller can support
 16, 12, 8 & 4bpp framebuffers with the same hardware interface (12 to 16 bits).
 So if userspace app wants a 8bpp screen, we switch to 8bpp. This can save 
@@ -5,11 +6,35 @@ ressources (mem + proc), when using SDL for example.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
+Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 16:45:13.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 16:59:42.000000000 +0200
+@@ -14,6 +14,7 @@
+ #define PCR_BPIX_8	(3 << 25)
+ #define PCR_BPIX_12	(4 << 25)
+ #define PCR_BPIX_16	(4 << 25)
++#define PCR_BPIX_MASK	(7 << 25)
+ #define PCR_PIXPOL	(1 << 24)
+ #define PCR_FLMPOL	(1 << 23)
+ #define PCR_LPPOL	(1 << 22)
+Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 16:58:36.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 16:59:23.000000000 +0200
+@@ -14,6 +14,7 @@
+ #define PCR_BPIX_8	(3 << 25)
+ #define PCR_BPIX_12	(4 << 25)
+ #define PCR_BPIX_16	(4 << 25)
++#define PCR_BPIX_MASK	(7 << 25)
+ #define PCR_PIXPOL	(1 << 24)
+ #define PCR_FLMPOL	(1 << 23)
+ #define PCR_LPPOL	(1 << 22)
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-21 11:50:42.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-21 12:21:25.000000000 +0200
-@@ -478,7 +478,18 @@
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 16:45:14.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-26 16:57:31.000000000 +0200
+@@ -497,7 +497,18 @@
  
  	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
  			fbi->regs + LCDC_SIZE);
