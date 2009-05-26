@@ -9,9 +9,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-20 14:58:44.000000000 +0200
-@@ -437,6 +437,7 @@
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 19:35:11.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-26 19:37:20.000000000 +0200
+@@ -456,6 +456,7 @@
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
  		var->upper_margin, var->lower_margin);
@@ -19,7 +19,7 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  #if DEBUG_VAR
  	if (var->xres < 16        || var->xres > 1024)
-@@ -478,9 +479,6 @@
+@@ -497,9 +498,6 @@
  	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
  			fbi->regs + LCDC_SIZE);
  	writel(fbi->pcr, fbi->regs + LCDC_PCR);
@@ -29,7 +29,7 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  	return 0;
  }
-@@ -661,6 +659,12 @@
+@@ -686,6 +684,12 @@
  		goto failed_cmap;
  
  	imxfb_set_par(info);

@@ -7,9 +7,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-20 14:40:14.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-20 14:40:14.000000000 +0200
-@@ -373,10 +373,10 @@
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 19:35:11.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-26 19:37:34.000000000 +0200
+@@ -392,10 +392,10 @@
  
  	writel(RMCR_LCDC_EN, fbi->regs + LCDC_RMCR);
  
