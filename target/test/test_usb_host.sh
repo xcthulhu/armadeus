@@ -15,22 +15,28 @@ source ./test_helpers.sh
 source ./test_env.sh
 
 
+load_usb_host_driver_apf9328()
+{
+        modprobe apf9328-isp1761
+        modprobe hal_imx
+        modprobe pehci
+        if [ "$?" != 0 ]; then
+                echo "Unable to load USB Host modules !!"
+        fi
+}
+
 test_usb_host()
 {
 	show_test_banner "USB Host"
 
-	modprobe apf9328-isp1761
-	modprobe hal_imx
-	modprobe pehci
-	if [ "$?" != 0 ]; then
-		echo "Unable to load USB Host modules !!"
-	fi
-	dmesg | tail | grep "USB hub found"
+	execute_for_target load_usb_host_driver_apf9328 echo
+	dmesg | grep "USB hub found"
 	if [ "$?" != 0 ]; then
 		echo "USB Host was not found !!"
+		exit_failed
 	fi
 
-	echo "Please insert a USB key"
+	echo "Please insert a USB key (nothing will be erased)"
 	it=0
 	false
 	while [ "$?" != 0 ] && [ $it -le 15 ]; do
@@ -39,12 +45,13 @@ test_usb_host()
 		dmesg | tail | grep "Attached SCSI removable disk"
 	done
 
-	mount /dev/sda1 /mnt/mmc
-	ls /mnt/mmc/
+	mount `ls /dev/sd*1` /mnt/mmc && ls /mnt/mmc/
 	if [ "$?" == 0 ]; then
+		df -h
 		echo_test_ok
 	fi
 	umount /mnt/mmc
 }
 
 test_usb_host
+
