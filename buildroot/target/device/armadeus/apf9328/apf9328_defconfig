@@ -325,6 +325,7 @@ BR2_PACKAGE_PKGCONFIG=y
 #
 # BR2_PACKAGE_LIBDNET is not set
 # BR2_PACKAGE_MESALIB is not set
+# BR2_PACKAGE_FBTEST is not set
 # BR2_PACKAGE_IMXSSI is not set
 # BR2_PACKAGE_GPM is not set
 # BR2_PACKAGE_DUMMY is not set
