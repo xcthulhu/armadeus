@@ -8,8 +8,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 19:52:33.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-27 09:15:52.000000000 +0200
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-27 20:07:17.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-27 21:11:01.000000000 +0200
 @@ -14,6 +14,7 @@
  #define PCR_BPIX_8	(3 << 25)
  #define PCR_BPIX_12	(4 << 25)
@@ -20,20 +20,20 @@ Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
  #define PCR_LPPOL	(1 << 22)
 Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 19:52:35.000000000 +0200
-+++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 09:15:52.000000000 +0200
-@@ -14,6 +14,7 @@
- #define PCR_BPIX_8	(3 << 25)
- #define PCR_BPIX_12	(4 << 25)
- #define PCR_BPIX_16	(4 << 25)
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 21:09:24.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 21:11:39.000000000 +0200
+@@ -19,6 +19,7 @@
+ #define PCR_BPIX_16	(5 << 25)
+ #define PCR_BPIX_18	(6 << 25)
+ #endif
 +#define PCR_BPIX_MASK	(7 << 25)
  #define PCR_PIXPOL	(1 << 24)
  #define PCR_FLMPOL	(1 << 23)
  #define PCR_LPPOL	(1 << 22)
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-27 09:15:03.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-27 09:19:32.000000000 +0200
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-27 21:07:41.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-27 21:11:01.000000000 +0200
 @@ -523,7 +523,17 @@
  	/* add sync polarities */
  	pcr |= fbi->pcr & ~0x3F;

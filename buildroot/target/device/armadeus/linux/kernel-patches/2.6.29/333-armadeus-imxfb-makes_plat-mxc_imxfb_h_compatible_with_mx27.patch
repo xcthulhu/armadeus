@@ -7,8 +7,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 11:43:17.000000000 +0200
-+++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 11:49:26.000000000 +0200
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 20:07:19.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 21:09:24.000000000 +0200
 @@ -13,7 +13,12 @@
  #define PCR_BPIX_4	(2 << 25)
  #define PCR_BPIX_8	(3 << 25)
@@ -19,15 +19,6 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
 +#define PCR_BPIX_16	(5 << 25)
 +#define PCR_BPIX_18	(6 << 25)
 +#endif
- #define PCR_BPIX_MASK	(7 << 25)
  #define PCR_PIXPOL	(1 << 24)
  #define PCR_FLMPOL	(1 << 23)
-@@ -22,7 +27,7 @@
- #define PCR_OEPOL	(1 << 20)
- #define PCR_SCLKIDLE	(1 << 19)
- #define PCR_END_SEL	(1 << 18)
--#define PCR_END_BYTE_SWAP ( 1<< 17)
-+#define PCR_END_BYTE_SWAP (1 << 17)
- #define PCR_REV_VS	(1 << 16)
- #define PCR_ACD_SEL	(1 << 15)
- #define PCR_ACD(x)	(((x) & 0x7f) << 8)
+ #define PCR_LPPOL	(1 << 22)
