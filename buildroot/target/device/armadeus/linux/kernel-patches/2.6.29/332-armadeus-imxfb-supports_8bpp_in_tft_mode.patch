@@ -8,8 +8,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 16:45:13.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 16:59:42.000000000 +0200
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-26 19:52:33.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-05-27 09:15:52.000000000 +0200
 @@ -14,6 +14,7 @@
  #define PCR_BPIX_8	(3 << 25)
  #define PCR_BPIX_12	(4 << 25)
@@ -20,8 +20,8 @@ Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
  #define PCR_LPPOL	(1 << 22)
 Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 16:58:36.000000000 +0200
-+++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 16:59:23.000000000 +0200
+--- linux-2.6.29.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-26 19:52:35.000000000 +0200
++++ linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h	2009-05-27 09:15:52.000000000 +0200
 @@ -14,6 +14,7 @@
  #define PCR_BPIX_8	(3 << 25)
  #define PCR_BPIX_12	(4 << 25)
@@ -32,23 +32,22 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/imxfb.h
  #define PCR_LPPOL	(1 << 22)
 Index: linux-2.6.29/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 16:45:14.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-26 16:57:31.000000000 +0200
-@@ -497,7 +497,18 @@
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-27 09:15:03.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-27 09:19:32.000000000 +0200
+@@ -523,7 +523,17 @@
+ 	/* add sync polarities */
+ 	pcr |= fbi->pcr & ~0x3F;
  
- 	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
- 			fbi->regs + LCDC_SIZE);
--	writel(fbi->pcr, fbi->regs + LCDC_PCR);
-+
+-	writel(pcr, fbi->regs + LCDC_PCR);
 +	/* i.MX LCD controller can support 8bpp even if configured to output 16 bits (TFT) */
 +	if ((var->bits_per_pixel == 8) && (fbi->pcr & PCR_TFT)) {
 +		pr_debug("Switching imxfb to 8bpp\n");
-+		writel((fbi->pcr & (~PCR_BPIX_MASK)) |
++		writel((pcr & (~PCR_BPIX_MASK)) |
 +			PCR_BPIX_8 |
 +			PCR_END_BYTE_SWAP,
 +			fbi->regs + LCDC_PCR);
 +	} else {
-+		writel(fbi->pcr, fbi->regs + LCDC_PCR);
++		writel(pcr, fbi->regs + LCDC_PCR);
 +	}
 +	writel(VPW_VPW(var->xres * var->bits_per_pixel / 8 / 4), fbi->regs + LCDC_VPW);
  

@@ -1,0 +1,125 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 15 Jan 2009 14:21:00 +0000 (+0100)
+Subject: imxfb: add clock support
+X-Git-Url: http://git.pengutronix.de/?p=imx%2Flinux-2.6.git;a=commitdiff_plain;h=f909ef6437a8388e3f1272c67ee29071f930bd6b
+
+imxfb: add clock support
+
+v2: Added change from Martin Fuzzey: pixclock should be in pico seconds
+    instead of MHz.
+
+JB: modified to hardcode LCD clock name (until 2.6.3x)
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+
+Index: linux-2.6.29/drivers/video/imxfb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-27 09:33:59.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-05-27 10:28:58.000000000 +0200
+@@ -27,9 +27,11 @@
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/cpufreq.h>
++#include <linux/clk.h>
+ #include <linux/platform_device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/io.h>
++#include <linux/math64.h>
+ 
+ #include <mach/imxfb.h>
+ 
+@@ -142,6 +144,7 @@
+ struct imxfb_info {
+ 	struct platform_device  *pdev;
+ 	void __iomem		*regs;
++	struct clk		*clk;
+ 
+ 	u_int			max_bpp;
+ 	u_int			max_xres;
+@@ -392,6 +395,8 @@
+ 
+ 	writel(RMCR_LCDC_EN, fbi->regs + LCDC_RMCR);
+ 
++	clk_enable(fbi->clk);
++
+ 	if (fbi->backlight_power)
+ 		fbi->backlight_power(1);
+ 	if (fbi->lcd_power)
+@@ -407,6 +412,8 @@
+ 	if (fbi->lcd_power)
+ 		fbi->lcd_power(0);
+ 
++	clk_disable(fbi->clk);
++
+ 	writel(0, fbi->regs + LCDC_RMCR);
+ }
+ 
+@@ -450,6 +457,9 @@
+ static int imxfb_activate_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ {
+ 	struct imxfb_info *fbi = info->par;
++	unsigned int pcr, lcd_clk;
++	unsigned long long tmp;
++
+ 	pr_debug("var: xres=%d hslen=%d lm=%d rm=%d\n",
+ 		var->xres, var->hsync_len,
+ 		var->left_margin, var->right_margin);
+@@ -496,7 +506,23 @@
+ 
+ 	writel(SIZE_XMAX(var->xres) | SIZE_YMAX(var->yres),
+ 			fbi->regs + LCDC_SIZE);
+-	writel(fbi->pcr, fbi->regs + LCDC_PCR);
++
++	lcd_clk = clk_get_rate(fbi->clk);
++	tmp = var->pixclock * (unsigned long long)lcd_clk;
++	do_div(tmp, 1000000);
++	if (do_div(tmp, 1000000) > 500000)
++		tmp++;
++	pcr = (unsigned int)tmp;
++	if (--pcr > 0x3F) {
++		pcr = 0x3F;
++		printk(KERN_WARNING "Must limit pixel clock to %uHz\n",
++				lcd_clk / pcr);
++	}
++
++	/* add sync polarities */
++	pcr |= fbi->pcr & ~0x3F;
++
++	writel(pcr, fbi->regs + LCDC_PCR);
+ 	writel(fbi->pwmr, fbi->regs + LCDC_PWMR);
+ 	writel(fbi->lscr1, fbi->regs + LCDC_LSCR1);
+ 	writel(fbi->dmacr, fbi->regs + LCDC_DMACR);
+@@ -638,6 +664,13 @@
+ 		goto failed_req;
+ 	}
+ 
++	fbi->clk = clk_get(&pdev->dev, "lcdc_clk");
++	if (IS_ERR(fbi->clk)) {
++		ret = PTR_ERR(fbi->clk);;
++		dev_err(&pdev->dev, "unable to get clock: %d\n", ret);
++		goto failed_getclock;
++	}
++
+ 	fbi->regs = ioremap(res->start, resource_size(res));
+ 	if (fbi->regs == NULL) {
+ 		printk(KERN_ERR"Cannot map frame buffer registers\n");
+@@ -706,6 +739,8 @@
+ 		dma_free_writecombine(&pdev->dev,fbi->map_size,fbi->map_cpu,
+ 			fbi->map_dma);
+ failed_map:
++	clk_put(fbi->clk);
++failed_getclock:
+ 	iounmap(fbi->regs);
+ failed_ioremap:
+ 	release_mem_region(res->start, res->end - res->start);
+@@ -740,6 +775,9 @@
+ 
+ 	iounmap(fbi->regs);
+ 	release_mem_region(res->start, res->end - res->start + 1);
++	clk_disable(fbi->clk);
++	clk_put(fbi->clk);
++
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	return 0;
