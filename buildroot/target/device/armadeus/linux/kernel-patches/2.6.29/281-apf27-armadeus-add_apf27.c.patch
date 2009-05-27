@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-05-25 14:12:14.000000000 +0200
-@@ -0,0 +1,1560 @@
++++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-05-27 15:46:04.000000000 +0200
+@@ -0,0 +1,1571 @@
 + /*
 + * apf27.c
 + *
@@ -56,8 +56,9 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +#include <../mach-imx/include/mach/spi_imx.h>
 +#include <mach/imx-uart.h>
 +#include <mach/mmc.h>
++#ifdef CONFIG_FB_MXC
 +#include <mach/imx_fb.h>
-+#include <mach/imxfb.h>
++#endif
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
@@ -464,7 +465,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +	mxc_gpio_release_multiple_pins(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins));
 +} */
 +
-+#ifdef CONFIG_FB_MXC
++#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +static int mxc_lcd_pins[] = {
 +	PA5_PF_LSCLK,
 +	PA6_PF_LD0,
@@ -507,13 +508,15 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +
 +static int apf27_fb_init(struct platform_device *pdev)
 +{
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+	/* For LQ043 OE_ACD is used as LCD Display ON/OFF. shut down TFT */
++#ifdef CONFIG_FB_MXC
++# ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
++	/* For LQ043 OE_ACD is used as LCD Display ON/OFF: activate LCD */
 +	gpio_set_value(GPIO_PORTA | 31, 1);
-+#endif
-+#ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
++# endif
++# ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
 +	/* For LQ057: activate backlight at startup */
 +	gpio_set_value(GPIO_PORTA | 30, 0);
++# endif
 +#endif
 +
 +	return mxc_gpio_setup_multiple_pins(mxc_lcd_pins, ARRAY_SIZE(mxc_lcd_pins), "LCD");
@@ -526,17 +529,25 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +	return 0;
 +}
 +
++/* Freescale driver */
++#ifdef CONFIG_FB_MXC
 +static struct mxc_fb_platform_data apf27_fb_data = {
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
++# ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +	.mode = "Sharp-LQ043",
-+#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
++# elif CONFIG_FB_IMX_SHARP_LQ057_TFT
 +	.mode = "Sharp-LQ057",
-+#endif
++# endif
 +	.init = apf27_fb_init,
 +	.exit = apf27_fb_exit,
 +};
++#endif
 +
-+#ifdef CONFIG_IMX_BACKLIGHT
++/* Mainline driver */
++#ifdef CONFIG_FB_IMX
++#include "../mach-imx/apf9328_lcd_config.h"
++#endif
++
++# ifdef CONFIG_IMX_BACKLIGHT
 +static struct imxbl_machinfo imx_bl_machinfo = {
 +	.max_intensity      = 0xff,
 +	.default_intensity  = 0x90,
@@ -552,9 +563,9 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +	},
 +	.id        = 0,
 +};
-+#endif /* CONFIG_IMX_BACKLIGHT */
++# endif /* CONFIG_IMX_BACKLIGHT */
 +
-+#endif /* CONFIG_FB_MXC */
++#endif /* CONFIG_FB_MXC || CONFIG_FB_IMX */
 +
 +
 +#ifdef CONFIG_MMC_MXC
@@ -1514,7 +1525,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +				ARRAY_SIZE(spi_board_info));
 +#endif
 +
-+#ifdef CONFIG_FB_MXC
++#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +	mxc_register_device(&mxc_fb_device, &apf27_fb_data);
 +#endif
 +

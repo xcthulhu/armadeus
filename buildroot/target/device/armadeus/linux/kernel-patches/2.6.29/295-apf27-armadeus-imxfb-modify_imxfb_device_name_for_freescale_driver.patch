@@ -1,13 +1,17 @@
 Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-03-31 11:00:28.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-03-31 11:26:09.000000000 +0200
-@@ -398,7 +398,7 @@
+--- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-05-26 15:11:17.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-05-26 15:33:35.000000000 +0200
+@@ -398,7 +398,11 @@
  
  /* mxc lcd driver */
  struct platform_device mxc_fb_device = {
 -	.name = "imx-fb",
-+	.name = "mxc_sdc_fb", /* "imx-fb" if using pengu i.MX1/2/3 driver */
++#ifdef CONFIG_FB_IMX
++	.name = "imx-fb", /* Mainline driver */
++#elif CONFIG_FB_MXC
++	.name = "mxc_sdc_fb", /* Freescale driver */
++#endif
  	.id = 0,
  	.num_resources = ARRAY_SIZE(mxc_fb),
  	.resource = mxc_fb,

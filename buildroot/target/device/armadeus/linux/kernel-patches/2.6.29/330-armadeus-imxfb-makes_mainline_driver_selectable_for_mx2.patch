@@ -1,0 +1,13 @@
+Index: linux-2.6.29/drivers/video/Kconfig
+===================================================================
+--- linux-2.6.29.orig/drivers/video/Kconfig	2009-05-26 15:39:19.000000000 +0200
++++ linux-2.6.29/drivers/video/Kconfig	2009-05-26 15:40:54.000000000 +0200
+@@ -398,7 +398,7 @@
+ 
+ config FB_IMX
+ 	tristate "Motorola i.MX LCD support"
+-	depends on FB && ARM && ARCH_IMX
++	depends on FB && ARM && (ARCH_IMX || ARCH_MX2)
+ 	select FB_CFB_FILLRECT
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT

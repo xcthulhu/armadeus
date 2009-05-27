@@ -26,7 +26,7 @@ Index: drivers/video/Kconfig
  	select FB_CFB_IMAGEBLIT
  
 +config FB_MXC
-+	tristate "MXC Framebuffer support"
++	tristate "MXC Framebuffer support (Freescale driver)"
 +	depends on FB && ARM && ARCH_MX2
 +	select FB_CFB_FILLRECT
 +	select FB_CFB_COPYAREA

@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-21 21:20:41.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-27 09:33:57.000000000 +0200
 @@ -0,0 +1,816 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -825,8 +825,8 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-22 15:35:56.000000000 +0200
-@@ -0,0 +1,277 @@
++++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-27 17:11:00.000000000 +0200
+@@ -0,0 +1,301 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -837,46 +837,57 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 + *
 + */
 +
-+#ifndef APF9328_LCD_CONFIG_H
-+#define APF9328_LCD_CONFIG_H
++#ifndef APF_LCD_CONFIG_H
++#define APF_LCD_CONFIG_H
 +
 +
 +#ifdef CONFIG_FB_IMX
++
 +#include <mach/imxfb.h>
 +#include <linux/delay.h>
 +#include <mach/gpio.h>
 +
 +#ifdef CONFIG_ARCH_IMX
 +#define LCDC_BASE_ADDR	IMX_LCDC_BASE
-+#define LCDISR_EOF	(1 << 1)
 +#endif
++#define LCDISR_EOF	(1 << 1)
 +
++#ifdef CONFIG_MACH_APF9328
 +#define OPTREX_F51900_POWER_DOWN	(GPIO_PORTD | 7)	/* PD7_REV */
 +#define SHARP_LQ043_POWER_DOWN		(GPIO_PORTD | 12)	/* PD12_ACD_OE */
 +#define CONTRAST_LINE			(GPIO_PORTD | 11)	/* PD11_CONTRAST */
++#endif
++
++#ifdef CONFIG_MACH_APF27
++#define OPTREX_F51900_POWER_DOWN	(GPIO_PORTA | 24)	/* PA24_REV */
++#define SHARP_LQ043_POWER_DOWN		(GPIO_PORTA | 31)	/* PA31_OE_ACD */
++#define CONTRAST_LINE			(GPIO_PORTA | 30)	/* PA30_CONTRAST */
++#endif
 +
 +#define DEFAULT_DMA_SETTINGS        (DMACR_BURST | DMACR_HM(8) | DMACR_TM(4))
 +
-+
-+static int imx_fb_gpios_init(struct platform_device *pdev);
-+static int imx_fb_gpios_exit(struct platform_device *pdev);
++#ifdef CONFIG_MACH_APF9328
++static int apf9328_fb_init(struct platform_device *pdev);
++static int apf9328_fb_exit(struct platform_device *pdev);
++#endif
 +
 +/*
 + * Power on/off LCD's internal logic
 + */
-+static void apf9328_lcd_power(int on)
++static void apf_lcd_power(int on)
 +{
 +	u32 isr;
 +
-+	pr_debug("apf9328_lcd_power: %s\n", on ? "on":"off");
++	pr_debug("%s: %s\n", __func__, on ? "on":"off");
++	isr = 0;
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +	if (on)
 +		gpio_set_value(OPTREX_F51900_POWER_DOWN, 1);
 +	else
 +		gpio_set_value(OPTREX_F51900_POWER_DOWN, 0);
-+//#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
++#elif defined(CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT)
 +	/* No LCD powerdown yet */
-+#elif CONFIG_FB_IMX_SHARP_LQ043_TFT
++#elif defined(CONFIG_FB_IMX_SHARP_LQ043_TFT)
 +	if (on) {
 +		mdelay(200); /* at least ten frames have to be processed before
 +				enabling the display */
@@ -907,15 +918,17 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +/*
 + * Power on/off LCD's backlight
 + */
-+static void apf9328_lcd_backlight_power(int on)
++static void apf_lcd_backlight_power(int on)
 +{
 +	u32 pwmr;
 +
-+	pr_debug("apf9328_lcd_backlight_power: %s\n", on ? "on":"off");
++	pr_debug("%s: %s\n", __func__, on ? "on":"off");
 +
 +	pwmr = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
-+	if( pwmr )
++#ifdef CONFIG_MACH_APF9328
++	if (pwmr)
 +		imx_gpio_mode(PD11_PF_CONTRAST);
++#endif
 +	if (on) {
 +		pwmr |= PWMR_CC_EN;
 +	} else {
@@ -924,10 +937,13 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +	writel(pwmr, IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
 +}
 +
-+
++#ifdef CONFIG_MACH_APF9328
 +static struct imx_fb_platform_data apf9328_fb_info /*__initdata*/ = {
++#elif CONFIG_MACH_APF27
++static struct imx_fb_platform_data apf27_fb_data = {
++#endif
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+	.pixclock	= 62500,
++	.pixclock	= 125000, /* picoS -> ~8MHz */
 +	.bpp		= 16,
 +	.xres		= 480,
 +	.yres		= 272,
@@ -943,10 +959,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +				PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
 +	.pwmr		= 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
 +	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.backlight_power= apf9328_lcd_backlight_power,
-+	.lcd_power	= apf9328_lcd_power,
++	.backlight_power= apf_lcd_backlight_power,
++	.lcd_power	= apf_lcd_power,
 +#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
-+	.pixclock	= 62500,
++	.pixclock	= 156250, /* picoS -> ~6.4MHz */
 +	.bpp		= 16,
 +	.xres		= 320,
 +	.yres		= 240,
@@ -962,9 +978,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
 +	.pwmr		= 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
 +	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.backlight_power= apf9328_lcd_backlight_power,
++	.backlight_power= apf_lcd_backlight_power,
++	.lcd_power	= apf_lcd_power,
 +#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
-+	.pixclock	= 62500,
++	.pixclock	= 158730, /* picoS -> ~6.3MHz */
 +	.bpp		= 16,
 +	.xres		= 320,
 +	.yres		= 240,
@@ -980,7 +997,7 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +	.pwmr		= 0,    /* No contrast management */
 +	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.lcd_power	= apf9328_lcd_power,
++	.lcd_power	= apf_lcd_power,
 +#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +	.pixclock	= 62500,
 +	.bpp		= 8,
@@ -998,9 +1015,9 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +				PCR_END_BYTE_SWAP | PCR_PCD(3),
 +	.dmacr		= DEFAULT_DMA_SETTINGS,
 +	.pwmr		= 0,    /* No contrast management */
-+	.lcd_power	= apf9328_lcd_power,
++	.lcd_power	= apf_lcd_power,
 +#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
-+	.pixclock	= 62500,
++	.pixclock	= 158730, /* picoS -> ~6.3MHz */
 +	.bpp		= 16,
 +	.xres		= 240,
 +	.yres		= 320,
@@ -1016,18 +1033,24 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
 +	.dmacr		= DEFAULT_DMA_SETTINGS,
 +	.pwmr		= 0,    /* No contrast management */
-+	.lcd_power	= apf9328_lcd_power,
++	.lcd_power	= apf_lcd_power,
 +#else
-+#error Please define a imxfb_mach_info structure with your LCD parameters here
++#error Please define a imx_fb_platform_data structure with your LCD parameters
 +#endif
-+	.init		= imx_fb_gpios_init,
-+	.exit		= imx_fb_gpios_exit,
++#ifdef CONFIG_MACH_APF9328
++	.init		= apf9328_fb_init,
++	.exit		= apf9328_fb_exit,
++#elif CONFIG_MACH_APF27
++	.init		= apf27_fb_init,
++	.exit		= apf27_fb_exit,
++#endif
 +};
 +
 +/*
 + * Configure all GPIOs needed by LCDs
 + */
-+static int imx_fb_gpios_init(struct platform_device *pdev)
++#ifdef CONFIG_MACH_APF9328
++static int apf9328_fb_init(struct platform_device *pdev)
 +{
 +	struct imx_fb_platform_data *fb_inf = &apf9328_fb_info;
 +	int width;
@@ -1095,19 +1118,20 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +	return 0;
 +}
 +
-+static int imx_fb_gpios_exit(struct platform_device *pdev)
++static int apf9328_fb_exit(struct platform_device *pdev)
 +{
 +	/* TO BE DONE */
 +	return 0;
 +}
++#endif /* CONFIG_MACH_APF9328 */
 +
 +#endif /* CONFIG_FB_IMX */
 +
-+#endif /* APF9328_LCD_CONFIG_H */
++#endif /* APF_LCD_CONFIG_H */
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-21 21:20:41.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-27 09:33:57.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
