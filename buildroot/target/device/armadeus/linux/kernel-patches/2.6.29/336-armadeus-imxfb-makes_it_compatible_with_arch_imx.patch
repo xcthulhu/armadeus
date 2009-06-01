@@ -1,0 +1,19 @@
+
+To be removed when ARCH_MX1 is fully merged and ARCH_IMX is dead.
+
+
+Index: linux-2.6.29/drivers/video/imxfb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/imxfb.c	2009-06-01 17:12:03.000000000 +0200
++++ linux-2.6.29/drivers/video/imxfb.c	2009-06-01 17:12:58.000000000 +0200
+@@ -35,6 +35,10 @@
+ 
+ #include <mach/imxfb.h>
+ 
++#ifdef CONFIG_ARCH_IMX
++#define CONFIG_ARCH_MX1
++#endif
++
+ /*
+  * Complain if VAR is out of range.
+  */
