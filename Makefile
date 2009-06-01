@@ -36,7 +36,7 @@ ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
 PATCH_DIR=patches
-TAR_OPTIONS=--exclude=.svn -xf 
+TAR_OPTIONS=--exclude=.svn --exclude=.git -xf 
 
 ARMADEUS_ENV_FILE=armadeus_env.sh
 
@@ -93,7 +93,7 @@ $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE):
 
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_DIR)/*.diff
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
-	tar --exclude=.svn -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
+	tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) \*.diff 
 # Since patches may add/delete packages, we process extra packages after patching
 	perl $(PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)

@@ -34,6 +34,7 @@ for patches in $FILES; do
     mv $2/$patches $2/$new_name
 done
 rm -rf $2/.svn
+rm -rf $2/.git
 
 # Bye bye
 exit 0
