@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# sound module
+modprobe spi_imx
+modprobe snd-imx-alsa-tsc2102
+modprobe snd-pcm-oss
+modprobe snd-mixer-oss
+
+# azerty keyboard
+loadkmap < /etc/i18n/fr.kmap
+
+# mount SD card
+mount /dev/mmcblk0p1 /mnt/mmc/
+
+# if aplayer & data in /home
+cd /home
+# launch aplayer
+/home/aplayer /mnt/mmc
+
+
