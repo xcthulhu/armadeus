@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-05-27 15:46:04.000000000 +0200
-@@ -0,0 +1,1571 @@
++++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-06-02 15:40:48.000000000 +0200
+@@ -0,0 +1,1572 @@
 + /*
 + * apf27.c
 + *
@@ -58,6 +58,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +#include <mach/mmc.h>
 +#ifdef CONFIG_FB_MXC
 +#include <mach/imx_fb.h>
++#include <mach/imxfb.h>
 +#endif
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
