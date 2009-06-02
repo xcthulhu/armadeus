@@ -1,0 +1,13 @@
+--- buildrootref/target/ubifs/ubifsroot.mk	2008-11-03 00:15:09.000000000 -0800
++++ buildroot/target/ubifs/ubifsroot.mk	2009-06-02 14:39:18.000000000 -0700
+@@ -5,8 +5,8 @@
+ #############################################################
+ #MKFS_UBIFS_VERSION=2582f128dad78591bc3adcc87c343c690bb82e61
+ #MKFS_UBIFS_URL=http://git.infradead.org/users/dedekind/mkfs.ubifs.git?a=snapshot;h=$(MKFS_UBIFS_VERSION);sf=tgz
+-MKFS_UBIFS_VERSION=v0.4
+-MKFS_UBIFS_URL=http://git.infradead.org/users/dedekind/mkfs.ubifs.git?a=snapshot;h=refs/tags/mkfs.ubifs-$(MKFS_UBIFS_VERSION);sf=tgz
++MKFS_UBIFS_VERSION=head
++MKFS_UBIFS_URL=http://git.infradead.org/users/ahunter/mkfs.ubifs.git?a=snapshot;sf=tgz
+ MKFS_UBIFS_SOURCE:=mkfs.ubifs-$(MKFS_UBIFS_VERSION).tar.gz
+ MKFS_UBIFS_DIR:= $(BUILD_DIR)/mkfs-ubifs-$(MKFS_UBIFS_VERSION)
+ MKFS_UBIFS_CAT:=$(ZCAT)
