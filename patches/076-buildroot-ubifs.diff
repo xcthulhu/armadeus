@@ -6,8 +6,8 @@
  #MKFS_UBIFS_URL=http://git.infradead.org/users/dedekind/mkfs.ubifs.git?a=snapshot;h=$(MKFS_UBIFS_VERSION);sf=tgz
 -MKFS_UBIFS_VERSION=v0.4
 -MKFS_UBIFS_URL=http://git.infradead.org/users/dedekind/mkfs.ubifs.git?a=snapshot;h=refs/tags/mkfs.ubifs-$(MKFS_UBIFS_VERSION);sf=tgz
-+MKFS_UBIFS_VERSION=head
-+MKFS_UBIFS_URL=http://git.infradead.org/users/ahunter/mkfs.ubifs.git?a=snapshot;sf=tgz
++MKFS_UBIFS_VERSION=HEAD
++MKFS_UBIFS_URL=http://git.infradead.org/users/ahunter/mkfs.ubifs.git?a=snapshot;h=$(MKFS_UBIFS_VERSION);sf=tgz
  MKFS_UBIFS_SOURCE:=mkfs.ubifs-$(MKFS_UBIFS_VERSION).tar.gz
  MKFS_UBIFS_DIR:= $(BUILD_DIR)/mkfs-ubifs-$(MKFS_UBIFS_VERSION)
  MKFS_UBIFS_CAT:=$(ZCAT)
