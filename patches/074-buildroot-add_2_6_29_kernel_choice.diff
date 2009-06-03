@@ -25,7 +25,7 @@
  	  Linux 2.6.26.3
  
 +config BR2_LINUX_2_6_29
-+	bool "Linux 2.6.29 (experimental)"
++	bool "Linux 2.6.29"
 +	select BR2_KERNEL_BASE
 +	help
 +	  Linux 2.6.29
