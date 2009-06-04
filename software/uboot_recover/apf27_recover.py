@@ -31,6 +31,37 @@ import serial
 import thread
 import re
 
+class Error(Exception):
+    """ Manage specific error
+
+    attributes:
+        message -- the message
+        level   -- the exception level
+    """
+
+    def __init__(self,message,level=0):
+        self._message = message
+        self.level   = level
+        Exception.__init__(self,message)
+                
+    def __repr__(self):
+        return self.message
+
+    def _get_message(self): 
+        return self._message
+    def _set_message(self, message): 
+        self._message = message
+    message = property(_get_message, _set_message)
+
+
+    def __str__(self):
+        print self.message
+
+    def setLevel(self,level):
+        self.level = int(str(level))
+    def getLevel(self):
+        return self.level
+
 class apf27Bootloader:
 
     statuscode = {  0x8D: 'data specified is out of bounds',
@@ -74,10 +105,13 @@ class apf27Bootloader:
         #print 'get Status'
         self.port.write( self.buildcmd("0505" ,"00000000","b","00000000","00","0" ))
         result = self.port.read(4)
-        if len(result) > 0: 
-            print self.statuscode[ord(result[0])]
-            #for i in range(len(result)):
-            #    print '%02x' % ord(result[i]),
+        if len(result) > 0:
+            try:
+                print self.statuscode[ord(result[0])]
+                #for i in range(len(result)):
+                #    print '%02x' % ord(result[i]),
+            except KeyError,e:
+                print "Unknown status "+str(ord(result[0]))
         else:
             print '\nread timeout' 
 
@@ -325,7 +359,7 @@ if __name__ == "__main__":
     print "and be sure to have a u-boot.bin file in current dir"
     port = raw_input('Enter serial port number or name to use (/dev/ttySx under Linux and COMx under Windows: ')
     try:
-        ser = serial.Serial(port, SPEED, timeout=1) 
+        ser = serial.Serial(port, SPEED, timeout=3) 
     except Exception, msg:
         print "unable to open serial port %s" % port
 	print msg
