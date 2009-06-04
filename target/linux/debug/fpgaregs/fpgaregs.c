@@ -68,8 +68,13 @@ int main(int argc, char *argv[])
 	void* ptr_fpga;
 
 	if ((argc < 3) || (argc > 4)) {
-		printf("invalid arguments number\nfpgaregs [w,l] fpga_reg_add [value].\n\tw: word access, l: long access\n\
-			   \tEx: fpgaregs w 0x10 0x1234, fpgaregs l 0x10 0x12345678\n");
+		printf("invalid arguments number\n");
+		printf("fpgaregs for platform %s\n",PLATFORM);
+		printf("Usage:\n");
+		printf("fpgaregs [w,l] fpga_reg_add [value].\n");
+	    printf("        w: word access\n");
+		printf("        l: long access\n");
+		printf("\n          Ex: fpgaregs w 0x10 0x1234, fpgaregs l 0x10 0x12345678\n");
 		return -1;
 	}
 

@@ -18,5 +18,6 @@
  *
  */
 
+#define PLATFORM "APF9328"
 #define FPGA_ADDRESS 0x12000000
 

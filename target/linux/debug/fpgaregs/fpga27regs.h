@@ -18,4 +18,5 @@
  *
  */
 
+#define PLATFORM "APF27"
 #define FPGA_ADDRESS 0xD6000000
