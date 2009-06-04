@@ -1,0 +1,13 @@
+Index: linux-2.6.29/arch/arm/mach-imx/include/mach/hardware.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/hardware.h	2009-05-01 11:35:31.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/hardware.h	2009-05-01 13:59:45.000000000 +0200
+@@ -24,6 +24,8 @@
+ #include "imx-regs.h"
+ 
+ #ifndef __ASSEMBLY__
++# define __REG8(x)	(*((volatile u8 *)IO_ADDRESS(x)))
++
+ # define __REG(x)	(*((volatile u32 *)IO_ADDRESS(x)))
+ 
+ # define __REG2(x,y)        (*(volatile u32 *)((u32)&__REG(x) + (y)))

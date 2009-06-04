@@ -1,29 +1,10 @@
-Index: linux-2.6.29/arch/arm/mach-imx/include/mach/hardware.h
-===================================================================
---- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/hardware.h	2009-05-01 11:35:31.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/hardware.h	2009-05-01 13:59:45.000000000 +0200
-@@ -24,6 +24,8 @@
- #include "imx-regs.h"
- 
- #ifndef __ASSEMBLY__
-+# define __REG8(x)	(*((volatile u8 *)IO_ADDRESS(x)))
-+
- # define __REG(x)	(*((volatile u32 *)IO_ADDRESS(x)))
- 
- # define __REG2(x,y)        (*(volatile u32 *)((u32)&__REG(x) + (y)))
+
+JB: I think these declarations should only be in the corresponding driver...
+
 Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imx-regs.h
 ===================================================================
 --- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imx-regs.h	2009-05-01 11:33:45.000000000 +0200
 +++ linux-2.6.29/arch/arm/mach-imx/include/mach/imx-regs.h	2009-05-01 14:02:48.000000000 +0200
-@@ -186,7 +186,7 @@
- #define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
- #define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
- #define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
--#define PB22_PFUSBD_RCV      ( GPIO_PORTB | GPIO_PF | 22 )
-+#define PB22_PF_USBD_RCV     ( GPIO_PORTB | GPIO_PF | 22 )
- #define PB23_PF_USBD_SUSPND  ( GPIO_PORTB | GPIO_PF | 23 )
- #define PB24_PF_USBD_VP      ( GPIO_PORTB | GPIO_PF | 24 )
- #define PB25_PF_USBD_VM      ( GPIO_PORTB | GPIO_PF | 25 )
 @@ -373,4 +373,40 @@
  #define TSTAT_CAPT         (1<<1)
  #define TSTAT_COMP         (1<<0)

@@ -1,0 +1,13 @@
+Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imx-regs.h
+===================================================================
+--- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imx-regs.h	2009-05-01 11:33:45.000000000 +0200
++++ linux-2.6.29/arch/arm/mach-imx/include/mach/imx-regs.h	2009-05-01 14:02:48.000000000 +0200
+@@ -186,7 +186,7 @@
+ #define PB19_AF_SSI_TXCLK    ( GPIO_PORTB | GPIO_AF | 19 )
+ #define PB20_PF_USBD_AFE     ( GPIO_PORTB | GPIO_PF | 20 )
+ #define PB21_PF_USBD_OE      ( GPIO_PORTB | GPIO_PF | 21 )
+-#define PB22_PFUSBD_RCV      ( GPIO_PORTB | GPIO_PF | 22 )
++#define PB22_PF_USBD_RCV     ( GPIO_PORTB | GPIO_PF | 22 )
+ #define PB23_PF_USBD_SUSPND  ( GPIO_PORTB | GPIO_PF | 23 )
+ #define PB24_PF_USBD_VP      ( GPIO_PORTB | GPIO_PF | 24 )
+ #define PB25_PF_USBD_VM      ( GPIO_PORTB | GPIO_PF | 25 )
