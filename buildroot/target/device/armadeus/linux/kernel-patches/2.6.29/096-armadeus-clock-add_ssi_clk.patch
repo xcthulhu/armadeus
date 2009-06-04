@@ -1,5 +1,7 @@
---- linux-2.6.27.2.original/arch/arm/mach-imx/clock.c	2009-01-14 10:20:49.000000000 +0100
-+++ linux-2.6.27.2/arch/arm/mach-imx/clock.c	2009-01-14 09:55:02.000000000 +0100
+Index: linux-2.6.29.4/arch/arm/mach-imx/clock.c
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/clock.c	2009-06-04 11:30:48.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/clock.c	2009-06-04 11:38:52.000000000 +0200
 @@ -151,6 +151,11 @@
  	.get_rate = imx_get_perclk3,
  };
@@ -10,7 +12,7 @@
 +};
 +
  static struct clk clk_usb_clk = {
- 	.name = "usb_clk",
+ 	.name = "usbd_clk",
  	.get_rate = imx_get_usb_clk,
 @@ -165,6 +170,7 @@
  	&clk_mcu_clk,

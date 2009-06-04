@@ -1,6 +1,8 @@
---- linux-2.6.27.2.original/arch/arm/plat-mxc/include/mach/imxfb.h	2008-12-19 16:20:18.000000000 +0100
-+++ linux-2.6.27.2.mod/arch/arm/plat-mxc/include/mach/imxfb.h	2008-12-19 16:18:44.000000000 +0100
-@@ -83,3 +83,13 @@
+Index: linux-2.6.29.4/arch/arm/plat-mxc/include/mach/imxfb.h
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/plat-mxc/include/mach/imxfb.h	2009-06-04 11:30:50.000000000 +0200
++++ linux-2.6.29.4/arch/arm/plat-mxc/include/mach/imxfb.h	2009-06-04 11:30:50.000000000 +0200
+@@ -81,3 +81,13 @@
  };
  
  void set_imx_fb_info(struct imx_fb_platform_data *);

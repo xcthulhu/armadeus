@@ -3,11 +3,11 @@ Adds PWM ressources on MX2.
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
+Index: linux-2.6.29.4/arch/arm/mach-mx2/devices.c
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-mx2/devices.c	2009-04-14 19:03:43.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-mx2/devices.c	2009-04-14 19:04:01.000000000 +0200
-@@ -653,6 +653,25 @@
+--- linux-2.6.29.4.orig/arch/arm/mach-mx2/devices.c	2009-06-04 11:24:54.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/devices.c	2009-06-04 11:29:59.000000000 +0200
+@@ -657,6 +657,25 @@
  	.resource = mxc_ehci2_resources,
  };
  
@@ -20,7 +20,7 @@ Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
 +    [1] = {
 +        .start  = (MXC_INT_PWM),
 +        .end    = (MXC_INT_PWM),
-+        .flags  = IORESOURCE_IRQ, 
++        .flags  = IORESOURCE_IRQ,
 +    },
 +};
 +
@@ -33,10 +33,10 @@ Index: linux-2.6.29/arch/arm/mach-mx2/devices.c
  
  /* GPIO port description */
  static struct mxc_gpio_port imx_gpio_ports[] = {
-Index: linux-2.6.29/arch/arm/mach-mx2/devices.h
+Index: linux-2.6.29.4/arch/arm/mach-mx2/devices.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-mx2/devices.h	2009-04-14 19:03:43.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-mx2/devices.h	2009-04-14 19:04:01.000000000 +0200
+--- linux-2.6.29.4.orig/arch/arm/mach-mx2/devices.h	2009-06-04 11:24:54.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/devices.h	2009-06-04 11:24:55.000000000 +0200
 @@ -30,3 +30,4 @@
  extern struct platform_device mxc_otg;
  extern struct platform_device mxc_ehci1;

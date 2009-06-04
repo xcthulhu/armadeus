@@ -5,13 +5,13 @@ will be seen.
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.29/drivers/video/imxfb.c
+Index: linux-2.6.29.4/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 19:35:11.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-26 19:37:34.000000000 +0200
-@@ -392,10 +392,10 @@
+--- linux-2.6.29.4.orig/drivers/video/imxfb.c	2009-06-04 11:24:55.000000000 +0200
++++ linux-2.6.29.4/drivers/video/imxfb.c	2009-06-04 11:28:59.000000000 +0200
+@@ -397,10 +397,10 @@
  
- 	writel(RMCR_LCDC_EN, fbi->regs + LCDC_RMCR);
+ 	clk_enable(fbi->clk);
  
 -	if (fbi->backlight_power)
 -		fbi->backlight_power(1);

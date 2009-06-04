@@ -1,8 +1,8 @@
-Index: linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h
+Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/imxfb.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-03-30 11:09:44.000000000 +0200
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/imxfb.h	2009-03-30 11:13:05.000000000 +0200
-@@ -82,3 +82,13 @@
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/include/mach/imxfb.h	2009-06-04 11:30:48.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/imxfb.h	2009-06-04 11:30:49.000000000 +0200
+@@ -84,3 +84,13 @@
  };
  
  void set_imx_fb_info(struct imx_fb_platform_data *);

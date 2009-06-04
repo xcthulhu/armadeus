@@ -3,13 +3,13 @@ Increases max DMA zone size for MXC platform.
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.27.13/arch/arm/plat-mxc/include/mach/memory.h
+Index: linux-2.6.29.4/arch/arm/plat-mxc/include/mach/memory.h
 ===================================================================
---- linux-2.6.27.13.orig/arch/arm/plat-mxc/include/mach/memory.h	2009-03-27 17:52:54.000000000 +0100
-+++ linux-2.6.27.13/arch/arm/plat-mxc/include/mach/memory.h	2009-03-27 17:58:35.000000000 +0100
-@@ -26,4 +26,7 @@
-  */
- #define __bus_to_virt(a)	__phys_to_virt(a)
+--- linux-2.6.29.4.orig/arch/arm/plat-mxc/include/mach/memory.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/arch/arm/plat-mxc/include/mach/memory.h	2009-06-04 11:24:55.000000000 +0200
+@@ -19,4 +19,7 @@
+ #define PHYS_OFFSET		UL(0x80000000)
+ #endif
  
 +/* Override the ARM default */
 +#define CONSISTENT_DMA_SIZE SZ_4M
