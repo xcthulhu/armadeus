@@ -1,5 +1,7 @@
---- linux-org/arch/arm/mach-imx/include/mach/hardware.h
-+++ linux/arch/arm/mach-imx/include/mach/hardware.h
+Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/include/mach/hardware.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h	2009-06-04 10:05:01.000000000 +0200
 @@ -88,4 +88,8 @@
  #include "mx1ads.h"
  #endif
@@ -9,13 +11,14 @@
 +#endif
 +
  #endif
---- linux-org/arch/arm/mach-imx/Kconfig
-+++ linux/arch/arm/mach-imx/Kconfig
+Index: linux-2.6.29.4/arch/arm/mach-imx/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/arch/arm/mach-imx/Kconfig	2009-06-04 09:54:16.000000000 +0200
 @@ -1,6 +1,10 @@
  menu "IMX Implementations"
  	depends on ARCH_IMX
--
-+
+ 
 +choice
 +    prompt "Development board selection"
 +    depends on ARCH_IMX
@@ -23,7 +26,7 @@
  config ARCH_MX1ADS
  	bool "mx1ads"
  	depends on ARCH_IMX
-@@ -12,4 +16,38 @@
+@@ -8,4 +12,38 @@
  	help
  	  Say Y here if you are using the Motorola MX1ADS board
  
@@ -62,8 +65,10 @@
 +endchoice
 +
  endmenu
---- linux-org/arch/arm/mach-imx/Makefile
-+++ linux/arch/arm/mach-imx/Makefile
+Index: linux-2.6.29.4/arch/arm/mach-imx/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/arch/arm/mach-imx/Makefile	2009-06-04 09:54:16.000000000 +0200
 @@ -10,6 +10,7 @@
  
  # Specific board support
@@ -72,9 +77,11 @@
  
  # Support for blinky lights
  led-y := leds.o
---- linux-org/arch/arm/mach-imx/Makefile.boot
-+++ linux/arch/arm/mach-imx/Makefile.boot
-@@ -1,1 +1,2 @@
+Index: linux-2.6.29.4/arch/arm/mach-imx/Makefile.boot
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/Makefile.boot	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/arch/arm/mach-imx/Makefile.boot	2009-06-04 09:54:16.000000000 +0200
+@@ -1,2 +1,3 @@
      zreladdr-$(CONFIG_ARCH_MX1ADS)	:= 0x08008000
 +    zreladdr-$(CONFIG_MACH_APF9328) := 0x08008000
-\ No newline at end of file
+ 

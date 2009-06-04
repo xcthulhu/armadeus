@@ -1,6 +1,8 @@
---- linux-org/sound/arm/Kconfig	2007-10-12 18:43:44.000000000 +0200
-+++ linux/sound/arm/Kconfig	2008-07-17 17:39:17.000000000 +0200
-@@ -41,6 +41,18 @@
+Index: linux-2.6.29.4/sound/arm/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/sound/arm/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/sound/arm/Kconfig	2009-06-04 10:03:42.000000000 +0200
+@@ -50,5 +50,17 @@
  	  Say Y or M if you want to support any AC97 codec attached to
  	  the PXA2xx AC97 interface.
  
@@ -18,10 +20,11 @@
 +
  endif	# SND_ARM
  
- 
---- linux-org/sound/arm/Makefile	2007-10-12 18:43:44.000000000 +0200
-+++ linux/sound/arm/Makefile	2008-07-17 15:53:07.000000000 +0200
-@@ -13,3 +13,7 @@
+Index: linux-2.6.29.4/sound/arm/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/sound/arm/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/sound/arm/Makefile	2009-06-04 10:03:42.000000000 +0200
+@@ -17,3 +17,7 @@
  
  obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
  snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o

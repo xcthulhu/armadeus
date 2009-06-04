@@ -1,20 +1,24 @@
 This patch adds the possibility to have custom Armadeus drivers built in kernel or compiled as modules
 
---- linux-org/drivers/usb/Kconfig	2006-10-14 05:34:03.000000000 +0200
-+++ linux-imx/drivers/usb/Kconfig	2006-12-06 22:28:32.000000000 +0100
-@@ -148,3 +148,5 @@
- source "drivers/usb/gadget/Kconfig"
-
+Index: linux-2.6.29.4/drivers/usb/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/drivers/usb/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/usb/Kconfig	2009-06-04 10:03:42.000000000 +0200
+@@ -153,3 +153,5 @@
+ source "drivers/usb/otg/Kconfig"
+ 
  endif # USB_SUPPORT
 +
 +source "drivers/armadeus/Kconfig"
---- linux-org/drivers/Makefile.org       2007-05-09 10:48:51.000000000 +0200
-+++ linux-imx/drivers/Makefile   2007-05-09 10:57:09.000000000 +0200
-@@ -96,6 +96,7 @@
+Index: linux-2.6.29.4/drivers/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/drivers/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/Makefile	2009-06-04 09:54:16.000000000 +0200
+@@ -102,6 +102,7 @@
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/
 +obj-$(CONFIG_ARMADEUS_DRIVERS) += armadeus/
  obj-$(CONFIG_SSB)		+= ssb/
  obj-$(CONFIG_VIRTIO)		+= virtio/
- obj-$(CONFIG_REGULATOR)		+= regulator/
+ obj-$(CONFIG_STAGING)		+= staging/

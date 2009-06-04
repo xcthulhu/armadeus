@@ -1,6 +1,8 @@
---- linux-2.6.23/drivers/video/logo/Kconfig	2006-09-20 05:42:06.000000000 +0200
-+++ linux-2.6.23-imx/drivers/video/logo/Kconfig	2006-10-01 14:22:39.000000000 +0200
-@@ -70,5 +70,12 @@ config LOGO_M32R_CLUT224
+Index: linux-2.6.29.4/drivers/video/logo/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/logo/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/video/logo/Kconfig	2009-06-04 09:54:16.000000000 +0200
+@@ -82,4 +82,11 @@
  	depends on M32R
  	default y
  
@@ -12,9 +14,10 @@
 +      Choose this if you want to have the Armadeus Tux as boot logo
 +
  endif # LOGO
- 
---- linux-2.6.23/drivers/video/logo/logo_armadeus_clut224.ppm	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23-imx/drivers/video/logo/logo_armadeus_clut224.ppm	2006-10-01 14:22:39.000000000 +0200
+Index: linux-2.6.29.4/drivers/video/logo/logo_armadeus_clut224.ppm
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.4/drivers/video/logo/logo_armadeus_clut224.ppm	2009-06-04 09:54:16.000000000 +0200
 @@ -0,0 +1,19205 @@
 +P3
 +# CREATOR: The GIMP's PNM Filter Version 1.0
@@ -19221,17 +19224,19 @@
 +0
 +0
 +0
---- linux-2.6.23/drivers/video/logo/logo.c	2006-09-20 05:42:06.000000000 +0200
-+++ linux-2.6.23-imx/drivers/video/logo/logo.c	2006-10-01 14:22:39.000000000 +0200
-@@ -33,6 +33,7 @@ extern const struct linux_logo logo_supe
+Index: linux-2.6.29.4/drivers/video/logo/logo.c
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/logo/logo.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/video/logo/logo.c	2009-06-04 09:54:16.000000000 +0200
+@@ -35,6 +35,7 @@
  extern const struct linux_logo logo_superh_vga16;
  extern const struct linux_logo logo_superh_clut224;
  extern const struct linux_logo logo_m32r_clut224;
 +extern const struct linux_logo logo_armadeus_clut224;
  
- 
- const struct linux_logo *fb_find_logo(int depth)
-@@ -101,6 +102,10 @@ const struct linux_logo *fb_find_logo(in
+ static int nologo;
+ module_param(nologo, bool, 0);
+@@ -115,6 +116,10 @@
  		/* M32R Linux logo */
  		logo = &logo_m32r_clut224;
  #endif
@@ -19242,13 +19247,15 @@
  	}
  	return logo;
  }
---- linux-2.6.23/drivers/video/logo/Makefile	2006-09-20 05:42:06.000000000 +0200
-+++ linux-2.6.23-imx/drivers/video/logo/Makefile	2006-10-01 14:22:39.000000000 +0200
-@@ -13,6 +13,7 @@ obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_
+Index: linux-2.6.29.4/drivers/video/logo/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/logo/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/video/logo/Makefile	2009-06-04 09:54:16.000000000 +0200
+@@ -15,6 +15,7 @@
  obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
  obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
  obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o
 +obj-$(CONFIG_LOGO_ARMADEUS_CLUT224) += logo_armadeus_clut224.o
  
- # How to generate logo's
+ obj-$(CONFIG_SPU_BASE)			+= logo_spe_clut224.o
  

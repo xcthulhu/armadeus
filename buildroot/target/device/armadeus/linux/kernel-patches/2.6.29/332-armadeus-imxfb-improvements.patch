@@ -7,11 +7,11 @@ SDL screen.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.29/drivers/video/imxfb.c
+Index: linux-2.6.29.4/drivers/video/imxfb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/imxfb.c	2009-05-26 19:52:35.000000000 +0200
-+++ linux-2.6.29/drivers/video/imxfb.c	2009-05-27 09:14:31.000000000 +0200
-@@ -466,6 +466,7 @@
+--- linux-2.6.29.4.orig/drivers/video/imxfb.c	2009-06-04 10:38:09.000000000 +0200
++++ linux-2.6.29.4/drivers/video/imxfb.c	2009-06-04 10:39:02.000000000 +0200
+@@ -471,6 +471,7 @@
  	pr_debug("var: yres=%d vslen=%d um=%d bm=%d\n",
  		var->yres, var->vsync_len,
  		var->upper_margin, var->lower_margin);
@@ -19,7 +19,7 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  #if DEBUG_VAR
  	if (var->xres < 16        || var->xres > 1024)
-@@ -523,9 +524,6 @@
+@@ -528,9 +529,6 @@
  	pcr |= fbi->pcr & ~0x3F;
  
  	writel(pcr, fbi->regs + LCDC_PCR);
@@ -29,7 +29,7 @@ Index: linux-2.6.29/drivers/video/imxfb.c
  
  	return 0;
  }
-@@ -719,6 +717,12 @@
+@@ -724,6 +722,12 @@
  		goto failed_cmap;
  
  	imxfb_set_par(info);

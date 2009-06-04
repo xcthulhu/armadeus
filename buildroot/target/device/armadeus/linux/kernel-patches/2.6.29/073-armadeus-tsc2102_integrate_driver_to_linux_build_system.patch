@@ -1,6 +1,8 @@
---- linux-org/drivers/spi/Kconfig	2007-09-22 02:39:35.000000000 +0200
-+++ linux/drivers/spi/Kconfig		2007-09-16 11:08:17.000000000 +0200
-@@ -243,6 +243,14 @@ comment "SPI Protocol Masters"
+Index: linux-2.6.29.4/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/drivers/spi/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/spi/Kconfig	2009-06-04 10:03:41.000000000 +0200
+@@ -248,6 +248,14 @@
  	  sysfs interface, with each line presented as a kind of GPIO
  	  exposing both switch control and diagnostic feedback.
  
@@ -15,10 +17,12 @@
  #
  # Add new SPI protocol masters in alphabetical order above this line
  #
---- linux-2.6.23.original/drivers/spi/Makefile	2007-09-22 02:39:35.000000000 +0200
-+++ linux-2.6.23.mod/drivers/spi/Makefile	2007-09-16 11:08:16.000000000 +0200
-@@ -35,6 +35,7 @@ 
- obj-$(CONFIG_SPI_AT25)		+= at25.o
+Index: linux-2.6.29.4/drivers/spi/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/drivers/spi/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/spi/Makefile	2009-06-04 09:54:16.000000000 +0200
+@@ -35,6 +35,7 @@
+ # SPI protocol drivers (device/link on bus)
  obj-$(CONFIG_SPI_SPIDEV)	+= spidev.o
  obj-$(CONFIG_SPI_TLE62X0)	+= tle62x0.o
 +obj-$(CONFIG_SPI_TSC2102)	+= tsc2102.o

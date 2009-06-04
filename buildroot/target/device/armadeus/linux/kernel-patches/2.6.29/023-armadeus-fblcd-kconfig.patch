@@ -1,6 +1,8 @@
---- linux-org/drivers/video/Kconfig	2006-10-14 05:34:03.000000000 +0200
-+++ linux-imx/drivers/video/Kconfig	2007-01-07 22:24:25.000000000 +0100
-@@ -384,6 +384,7 @@ config FB_SA1100
+Index: linux-2.6.29.4/drivers/video/Kconfig
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.4/drivers/video/Kconfig	2009-06-04 10:03:43.000000000 +0200
+@@ -395,6 +395,7 @@
  	  If you plan to use the LCD display with your SA-1100 system, say
  	  Y here.
  
@@ -8,7 +10,7 @@
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -392,6 +393,42 @@ config FB_IMX
+@@ -402,6 +403,42 @@
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
