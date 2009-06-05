@@ -1,13 +1,8 @@
-/* a program to test button driver
- * Fabien Marteau <fabien.marteau@armadeus.com>
- * 7 april 2008
- * fpgaaccess.h
+/* 
+ * A simple program to test Wishbone button driver
  *
  * (c) Copyright 2008    Armadeus project
  * Fabien Marteau <fabien.marteau@armadeus.com>
- *
- * A simple driver for reading and writing on
- * fpga throught a character file /dev/fpgaaccess
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,45 +35,48 @@
 
 int fbutton;
 
-void quit(int pouet){
+void quit(int pouet) {
   close(fbutton);
   exit(0);
 }
 
+void usage(char *exe) {
+  if (exe) {
+    printf("\nUsage:\n");
+    printf("%s <button_device>\n", exe);
+  }
+}
+
 int main(int argc, char *argv[])
 {
-  unsigned short i,j;
+  unsigned short i, j=0;
 
   /* quit when Ctrl-C pressed */
   signal(SIGINT, quit);
 
-  j=0;
-
   printf( "Testing button driver\n" );
 
-  if(argc < 2){
-    perror("invalide arguments number\ntestbutton <button_filename>\n");
+  if (argc < 2) {
+    printf("invalid arguments number\n");
+    usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  fbutton=open(argv[1],O_RDWR);
-  if(fbutton<0){
-    perror("can't open file\n");
+  fbutton = open(argv[1], O_RDWR);
+  if (fbutton < 0) {
+    perror("can't open file");
     exit(EXIT_FAILURE);
   }
 
-  while(1){
-    i = (i==0)?1:0;
-    fflush(stdout);
-
+  while (1) {
     /* read value */
-    if(read(fbutton,&j,1)<0){
-      perror("read error\n");
+    if (read(fbutton, &j, 1) < 0) {
+      perror("read error");
       exit(EXIT_FAILURE);
     }
     printf("Read %d\n",j);
 
-    if(lseek(fbutton,0,SEEK_SET)<0){
+    if (lseek(fbutton, 0, SEEK_SET) < 0) {
       perror("lseek error\n");
       exit(EXIT_FAILURE);
     }

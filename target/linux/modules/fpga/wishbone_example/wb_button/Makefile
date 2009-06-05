@@ -19,8 +19,7 @@ default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 test:
-	~/armadeus/buildroot/build_arm/staging_dir/bin/arm-linux-gcc testbutton.c -o testbutton
-	chmod 755 testbutton
+	$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc testbutton.c -o testbutton
 
 clean:
 	rm -f *.*o \
