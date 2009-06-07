@@ -150,6 +150,8 @@
 		"root=/dev/nfs rw nfsroot=${serverip}:${rootpath}\0"    \
 	"addjffsargs=setenv bootargs ${bootargs} "			\
 		"root=/dev/mtdblock4 rootfstype=jffs2\0"   		\
+	"addubifsargs=setenv bootargs ${bootargs} "			\
+		"ubi.mtd=rootfs root=ubi0:rootfs rootfstype=ubifs\0"   		\
 	"addmmcargs=setenv bootargs ${bootargs} "			\
 		"root=${mmcroot} rootfstype=${mmcrootfstype}\0"   	\
 	"addipargs=setenv bootargs ${bootargs} "			\
@@ -159,6 +161,9 @@
 		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
 	"jffsboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addjffsargs addipargs; setenv autostart yes;"	\
+		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
+	"ubifsboot=setenv bootargs ${console} ${mtdparts};"		\
+		"run addubifsargs addipargs; setenv autostart yes;"	\
 		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
 	"mmcboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addmmcargs addipargs; setenv autostart yes;"	\
