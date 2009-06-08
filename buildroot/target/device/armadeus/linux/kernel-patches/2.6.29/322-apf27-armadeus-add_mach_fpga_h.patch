@@ -1,8 +1,8 @@
-Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h
+Index: linux-2.6.29.4/arch/arm/plat-mxc/include/mach/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h	2009-05-22 18:24:02.000000000 +0200
-@@ -0,0 +1,38 @@
++++ linux-2.6.29.4/arch/arm/plat-mxc/include/mach/fpga.h	2009-06-08 17:40:21.000000000 +0200
+@@ -0,0 +1,43 @@
 +/*
 + * Copyright (C) 2009 Armadeus Systems
 + *
@@ -31,6 +31,7 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h
 +#else
 +/* To complete when MX1 platform merged */
 +#endif
++#include <linux/platform_device.h>
 +
 +/* FPGA interrupts number */
 +#ifdef CONFIG_MACH_APF27
@@ -39,5 +40,9 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/fpga.h
 +#define IRQ_FPGA(x)     (IRQ_FPGA_START + x)
 +#define NR_IRQS_FPGA	(MXC_BOARD_IRQS)
 +
-+#endif /* __ASM_ARCH_ARMADEUS_FPGA_H__ */
++struct fpga_irq_mng_platform_data {
++	int (*init)(struct platform_device*);
++	void (*exit)(struct platform_device*);
++};
 +
++#endif /* __ASM_ARCH_ARMADEUS_FPGA_H__ */

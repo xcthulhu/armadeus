@@ -1,11 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
-Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
+Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328.c	2009-05-27 09:33:57.000000000 +0200
-@@ -0,0 +1,816 @@
++++ linux-2.6.29.4/arch/arm/mach-imx/apf9328.c	2009-06-08 19:07:17.000000000 +0200
+@@ -0,0 +1,849 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -58,6 +58,9 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#include "../../../drivers/armadeus/pwm/pwm.h"
 +#ifdef CONFIG_DM9000
 +#include <linux/dm9000.h>
++#endif
++#ifdef CONFIG_MACH_APF9328_FPGA
++#include "../plat-mxc/include/mach/fpga.h" /* To be removed when MX1 arch is fully integrated */
 +#endif
 +
 +#include "generic.h"
@@ -703,6 +706,34 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +	.num_resources = 1,
 +};
 +
++#ifdef CONFIG_MACH_APF9328_FPGA
++static int apf9328_fpga_irq_init(struct platform_device *pdev)
++{
++	int res = 0;
++
++	/* TODO */
++	set_irq_type(APF9328_FPGA_IRQ, IRQF_TRIGGER_RISING);
++
++	return res;
++}
++
++static void apf9328_fpga_irq_exit(struct platform_device *pdev)
++{
++	/* TODO */
++}
++
++struct fpga_irq_mng_platform_data apf9328_fpga_irq = {
++	.init = apf9328_fpga_irq_init,
++	.exit = apf9328_fpga_irq_exit,
++};
++
++struct platform_device apf9328_ocore_irq_mng_device = {
++	.name 	= "ocore_irq_mng",
++	.id 	= 0,
++	.dev 	= { .platform_data = &apf9328_fpga_irq, },
++};
++#endif /* CONFIG_MACH_APF9328_FPGA */
++
 +
 +static struct platform_device *devices[] __initdata = {
 +	&imx_uart1_device,
@@ -728,6 +759,9 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +	&devfull_isp1761_device,
 +#endif
 +	&apf9328_flash_device,
++#ifdef CONFIG_MACH_APF9328_FPGA
++	&apf9328_ocore_irq_mng_device,
++#endif
 +};
 +
 +static void __init apf9328_init(void)
@@ -778,8 +812,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +		.type       = MT_DEVICE
 +	},
 +#endif
++#ifdef CONFIG_MACH_APF9328_FPGA
 +	/* FPGA Memory mapping */
 +	{.virtual = IMX_CS1_VIRT, .pfn = __phys_to_pfn(IMX_CS1_PHYS), .length = IMX_CS1_SIZE, .type = MT_DEVICE},
++#endif
 +};
 +
 +void __init apf9328_map_io(void)
@@ -803,9 +839,6 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +#ifdef CONFIG_CAN_MCP251X
 +	set_irq_type( IRQ_GPIOC(CAN_MPC251X_INT_GPIOC), IRQF_TRIGGER_FALLING );
 +#endif
-+#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
-+	set_irq_type( APF9328_FPGA_IRQ, IRQF_TRIGGER_RISING );
-+#endif
 +#ifdef CONFIG_ARMADEUS_ISP1761
 +	set_irq_type( ISP1761_IRQ, IRQF_TRIGGER_FALLING );
 +#endif
@@ -822,10 +855,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328.c
 +	.timer        = &imx_timer,
 +	.init_machine = apf9328_init,
 +MACHINE_END
-Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
+Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h	2009-05-27 17:11:00.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h	2009-06-08 18:35:27.000000000 +0200
 @@ -0,0 +1,301 @@
 +/*
 + *
@@ -1128,10 +1161,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/apf9328_lcd_config.h
 +#endif /* CONFIG_FB_IMX */
 +
 +#endif /* APF_LCD_CONFIG_H */
-Index: linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h
+Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/apf9328.h	2009-05-27 09:33:57.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h	2009-06-08 18:35:27.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h

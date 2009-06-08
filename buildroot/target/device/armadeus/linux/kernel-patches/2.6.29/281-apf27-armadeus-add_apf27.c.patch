@@ -1,11 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
-Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
+Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/arch/arm/mach-mx2/apf27.c	2009-06-02 15:40:48.000000000 +0200
-@@ -0,0 +1,1572 @@
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-08 18:01:09.000000000 +0200
+@@ -0,0 +1,1583 @@
 + /*
 + * apf27.c
 + *
@@ -82,6 +82,9 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +#endif
 +#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
++#ifdef CONFIG_MACH_APF27_FPGA
++#include <mach/fpga.h>
++#endif
 +#include "devices.h"
 +#include "crm_regs.h"
 +
@@ -1455,12 +1458,12 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +
 +
 +/* FPGA */
-+#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
++#ifdef CONFIG_MACH_APF27_FPGA
 +static int fpga_pins[] = {
 +	(APF27_FPGA_INT_PIN | GPIO_IN | GPIO_GPIO),
 +};
 +
-+static int apf27_fpga_init(void)
++static int apf27_fpga_irq_init(struct platform_device *pdev)
 +{
 +	int res;
 +
@@ -1470,14 +1473,22 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +
 +	return res;
 +}
-+# if 0
-+static int apf27_fpga_exit(void)
++
++static void apf27_fpga_irq_exit(struct platform_device *pdev)
 +{
-+	mxc_gpio_release_multiple(fpga_pins, ARRAY_SIZE(fpga_pins));
-+	return 0;
++	mxc_gpio_release_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins));
 +}
-+# endif
-+#endif /* CONFIG_ARMADEUS_FPGA_DRIVERS */
++
++struct fpga_irq_mng_platform_data apf27_fpga_irq = {
++	.init = apf27_fpga_irq_init,
++	.exit = apf27_fpga_irq_exit,
++};
++
++struct platform_device apf27_ocore_irq_mng_device = {
++	.name = "ocore_irq_mng",
++	.id = 0,
++};
++#endif /* CONFIG_MACH_APF27_FPGA */
 +
 +
 +static void __init apf27_init(void)
@@ -1536,8 +1547,8 @@ Index: linux-2.6.29/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_VIDEO_MX27
 +	mxc_register_device(&mx27_camera_device, &apf27_camera);
 +#endif
-+#ifdef CONFIG_ARMADEUS_FPGA_DRIVERS
-+	apf27_fpga_init();
++#ifdef CONFIG_MACH_APF27_FPGA
++	mxc_register_device(&apf27_ocore_irq_mng_device, &apf27_fpga_irq);
 +#endif
 +
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
