@@ -1,6 +1,6 @@
 --- linux-2.6.27.13.ref/drivers/net/fec_old.c	2009-02-10 20:47:01.000000000 +0100
 +++ linux-2.6.27.13/drivers/net/fec_old.c	2009-02-10 22:33:32.000000000 +0100
-@@ -1277,6 +1277,52 @@
+@@ -1277,6 +1277,52 @@ static phy_info_t phy_info_dp83848 = {
  };
  
  /* ------------------------------------------------------------------------- */
@@ -53,7 +53,7 @@
  
  static phy_info_t const *const phy_info[] = {
  	&phy_info_lxt970,
-@@ -1285,6 +1331,7 @@
+@@ -1285,6 +1331,7 @@ static phy_info_t const *const phy_info[
  	&phy_info_am79c874,
  	&phy_info_ks8721bl,
  	&phy_info_dp83848,
@@ -61,7 +61,16 @@
  	NULL
  };
  
-@@ -2687,6 +2734,9 @@
+@@ -2099,7 +2146,7 @@ static void inline fec_set_mii(struct ne
+ 
+ 	fep->phy_speed = ((((rate / 2 + 4999999) / 2500000) / 2) & 0x3F) << 1;
+ 	fecp->fec_mii_speed = fep->phy_speed;
+-	fec_restart(dev, 0);
++	fec_restart(dev, 1);
+ }
+ 
+ #define FEC_IIM_BASE    IO_ADDRESS(IIM_BASE_ADDR)
+@@ -2687,6 +2734,9 @@ static int fec_enet_close(struct net_dev
  	if (fep->link) {
  		fec_stop(dev);
  	}
