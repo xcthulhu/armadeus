@@ -43,7 +43,7 @@ Index: linux-2.6.29/arch/arm/plat-mxc/include/mach/board-apf27.h
 +
 +/* FPGA IRQ */
 +#define APF27_FPGA_INT_PIN  (GPIO_PORTF | 12)
-+#define APF27_FPGA_IRQ      (IRQ_GPIOF(APF27_FPGA_INT_PIN))
++#define APF27_FPGA_IRQ      (IRQ_GPIOF(12))
 +#define ARMADEUS_FPGA_IRQ   (APF27_FPGA_IRQ)
 +
 +
