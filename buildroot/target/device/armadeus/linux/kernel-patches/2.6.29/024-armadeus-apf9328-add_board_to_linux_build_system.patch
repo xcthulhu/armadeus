@@ -1,7 +1,7 @@
 Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h
 ===================================================================
 --- linux-2.6.29.4.orig/arch/arm/mach-imx/include/mach/hardware.h	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h	2009-06-04 10:05:01.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h	2009-06-08 18:45:55.000000000 +0200
 @@ -88,4 +88,8 @@
  #include "mx1ads.h"
  #endif
@@ -14,7 +14,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/hardware.h
 Index: linux-2.6.29.4/arch/arm/mach-imx/Kconfig
 ===================================================================
 --- linux-2.6.29.4.orig/arch/arm/mach-imx/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/arch/arm/mach-imx/Kconfig	2009-06-04 09:54:16.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/Kconfig	2009-06-08 18:46:34.000000000 +0200
 @@ -1,6 +1,10 @@
  menu "IMX Implementations"
  	depends on ARCH_IMX
@@ -26,17 +26,23 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/Kconfig
  config ARCH_MX1ADS
  	bool "mx1ads"
  	depends on ARCH_IMX
-@@ -8,4 +12,38 @@
+@@ -8,4 +12,31 @@
  	help
  	  Say Y here if you are using the Motorola MX1ADS board
  
 +config MACH_APF9328
-+    bool "apf9328"
-+    depends on ARCH_IMX
-+    help
-+      Say Yes here if you are using the Armadeus APF9328 development board
++	bool "APF9328"
++	depends on ARCH_IMX
++	help
++	  Say Yes here if you are using the Armadeus APF9328 development board
 +
 +endchoice
++
++config MACH_APF9328_FPGA
++	bool "board has a FPGA"
++	depends on MACH_APF9328
++	help
++	  Select this if your APF9328 has an onboard FPGA
 +
 +choice
 +       prompt "APF9328 Flash available"
@@ -51,24 +57,11 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/Kconfig
 +
 +endchoice
 +
-+choice
-+       prompt "APF9328 RAM available"
-+       depends on MACH_APF9328
-+       default IMX_APF9328_RAM_32MB
-+
-+config IMX_SCB9328_RAM_16MB
-+       bool "16MB"
-+
-+config IMX_SCB9328_RAM_32MB
-+       bool "32MB"
-+
-+endchoice
-+
  endmenu
 Index: linux-2.6.29.4/arch/arm/mach-imx/Makefile
 ===================================================================
 --- linux-2.6.29.4.orig/arch/arm/mach-imx/Makefile	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/arch/arm/mach-imx/Makefile	2009-06-04 09:54:16.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/Makefile	2009-06-08 18:35:27.000000000 +0200
 @@ -10,6 +10,7 @@
  
  # Specific board support
@@ -80,7 +73,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/Makefile
 Index: linux-2.6.29.4/arch/arm/mach-imx/Makefile.boot
 ===================================================================
 --- linux-2.6.29.4.orig/arch/arm/mach-imx/Makefile.boot	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/arch/arm/mach-imx/Makefile.boot	2009-06-04 09:54:16.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/Makefile.boot	2009-06-08 18:35:27.000000000 +0200
 @@ -1,2 +1,3 @@
      zreladdr-$(CONFIG_ARCH_MX1ADS)	:= 0x08008000
 +    zreladdr-$(CONFIG_MACH_APF9328) := 0x08008000
