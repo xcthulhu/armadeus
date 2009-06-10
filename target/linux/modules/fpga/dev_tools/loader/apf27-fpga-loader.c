@@ -23,7 +23,7 @@
 #include <mach/gpio.h>
 #include <asm/io.h>
 #include <linux/platform_device.h>
-
+#include <linux/delay.h>
 #include "xilinx-fpga-loader.h"
 #include <mach/fpga.h>
 
@@ -37,10 +37,32 @@
 #define CFG_FPGA_SUSPEND	(GPIO_PORTF | 10)	/* FPGA done pin  */
 #define CFG_FPGA_RESET		(GPIO_PORTF |  7)	/* FPGA done pin  */
 
+static int fpga_shared_pins[] = {
+	(CFG_FPGA_INIT | GPIO_IN | GPIO_PUEN | GPIO_GPIO),
+};
+
+
 /* Initialize GPIO port before download */
 int apf27_fpga_pre(void)
 {
+	int res = 0;
+
+	/* initialize common gpio "shared" with other apps */
+	res = mxc_gpio_setup_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins), "FPGA_LOADER");
+	if( res ){
+		printk("FPGA prog pins already reserved !!\n");
+		return res;
+	}
+
+	mxc_gpio_mode(CFG_FPGA_CLK | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+	mxc_gpio_mode(CFG_FPGA_RW | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+	mxc_gpio_mode(CFG_FPGA_CS | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+
+	/*power off fpga*/
 	gpio_set_value(CFG_FPGA_PWR, 1);
+	mxc_gpio_mode(CFG_FPGA_PWR | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+	mdelay(10);
+
 	gpio_set_value(CFG_FPGA_PRG, 1);
 	gpio_set_value(CFG_FPGA_CLK, 1);
 	gpio_set_value(CFG_FPGA_RW, 1);
@@ -48,20 +70,19 @@ int apf27_fpga_pre(void)
 	gpio_set_value(CFG_FPGA_SUSPEND, 0);
 	gpio_set_value(CFG_FPGA_RESET, 0);
 
-	/* Initialize GPIO pins */
-	mxc_gpio_mode(CFG_FPGA_PWR | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	mxc_gpio_mode(CFG_FPGA_INIT | GPIO_IN | GPIO_PUEN | GPIO_GPIO);
+	/* Initialize specific GPIO pins */
 	mxc_gpio_mode(CFG_FPGA_DONE | GPIO_IN | GPIO_PUEN | GPIO_GPIO);
 	mxc_gpio_mode(CFG_FPGA_PRG | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	mxc_gpio_mode(CFG_FPGA_CLK | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	mxc_gpio_mode(CFG_FPGA_RW | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	mxc_gpio_mode(CFG_FPGA_CS | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 	mxc_gpio_mode(CFG_FPGA_SUSPEND | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
+	/* make sure the reset pin is active due to DLL start up */
+	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 	gpio_set_value(CFG_FPGA_RESET,1);
+
+	/* make sure the fpga is powered */
 	gpio_set_value(CFG_FPGA_PWR, 0);
-	return 1;
+
+	return res;
 }
 
 /*
@@ -129,14 +150,16 @@ int apf27_fpga_busy(void)
 
 int apf27_fpga_post(void)
 {
+	mxc_gpio_release_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins));
+	/* reconfigure bus ctrl signals */
 	mxc_gpio_mode (CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode (CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
+	/* end of prog */
 	gpio_set_value(CFG_FPGA_PRG, 1);
+	/* reset off */
 	gpio_set_value(CFG_FPGA_RESET,0);
  	mxc_gpio_mode (CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-
-	return 1;
 }
 
 int apf27_fpga_abort(void)

@@ -191,6 +191,7 @@ static int spartan_serial_finish(struct fpga_desc *desc)
  */
 static int spartan_parallel_init (struct fpga_desc *desc)
 {
+	int res = 0;
 	Xilinx_Spartan3_Slave_Parallel_fns *fn = desc->iface_fns;
 
 	if (fn) {
@@ -199,7 +200,7 @@ static int spartan_parallel_init (struct fpga_desc *desc)
 		 * Run the pre configuration function if there is one.
 		 */
 		if (*fn->pre) {
-			(*fn->pre) ();
+			if( (res = (*fn->pre) ()) ) return res;
 		}
 		mdelay(100);
 
