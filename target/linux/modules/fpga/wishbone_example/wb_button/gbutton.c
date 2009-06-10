@@ -213,20 +213,12 @@ static int button_probe(struct platform_device *pdev)
 	/******************************************/
 	/* Get the major and minor device numbers */
 	/******************************************/
+
     button_major = 251;
     button_minor = dev->num;
 
-	PDEBUG("%s:Get the major and minor device numbers\n",dev->name);
-	if (button_major) {
-		sdev->devno = MKDEV(button_major, button_minor);
-		result = register_chrdev_region(sdev->devno, 1,dev->name);
-	} else {
-		result = alloc_chrdev_region(&sdev->devno, 
-									 button_minor, 
-									 1, 
-									 dev->name);
-		button_major = MAJOR(sdev->devno);
-	}
+	sdev->devno = MKDEV(button_major, button_minor);
+	result = alloc_chrdev_region(&(sdev->devno),button_minor, 1,dev->name);
 	if (result < 0) {
 		printk(KERN_WARNING "%s: can't get major %d\n",
 							dev->name,button_major);
@@ -249,7 +241,6 @@ static int button_probe(struct platform_device *pdev)
     sdev->cdev.owner = THIS_MODULE;
     sdev->cdev.ops   = &button_fops;
 
-    /* Add the device to the kernel, connecting cdev to major/minor number */
     PDEBUG("%s: Add the device to the kernel, "
 		   "connecting cdev to major/minor number \n",dev->name);
     result = cdev_add(&sdev->cdev,sdev->devno,1);
