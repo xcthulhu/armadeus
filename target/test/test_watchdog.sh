@@ -27,7 +27,9 @@ test_watchdog()
 	fi
 
 	modprobe imx-wdt timeout=$SEC
-	if [ "$?" != 0 ] || [ ! -c "$WATCHDOG_DEV" ] ; then
+	RES=$?
+	sleep 1
+	if [ "$RES" != 0 ] || [ ! -c "$WATCHDOG_DEV" ] ; then
 		echo "Module failed to load"
 		exit_failed
 	fi
