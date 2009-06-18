@@ -22,7 +22,7 @@ echo_jumper_help_apf9328()
 
 echo_jumper_help_apf27()
 {
-        echo " (Pin X & X of XXXX connector)"
+        echo " (Pin 2 & 3 of J21 connector (between RS and J8))"
 }
 
 test_serial_port()
@@ -54,4 +54,10 @@ test_serial_port()
 	fi
 }
 
+if [ "$1" == "" ]; then
+	echo "Please give the port number to test !"
+	exit 1
+fi
+
 test_serial_port $1
+
