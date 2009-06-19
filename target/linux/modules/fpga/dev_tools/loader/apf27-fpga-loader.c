@@ -26,14 +26,19 @@
 #include <linux/delay.h>
 #include "xilinx-fpga-loader.h"
 #include <mach/fpga.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+#define mxc_gpio_setup_multiple_pins mxc_gpio_setup_multiple
+#define mxc_gpio_release_multiple_pins mxc_gpio_release_multiple
+#endif
 
 #define CFG_FPGA_PWR		(GPIO_PORTF | 19)	/* FPGA prog pin  */
 #define CFG_FPGA_PRG		(GPIO_PORTF | 11)	/* FPGA prog pin  */
 #define CFG_FPGA_CLK		(GPIO_PORTF | 15)	/* FPGA clk pin   */
 #define CFG_FPGA_INIT		(GPIO_PORTF | 12)	/* FPGA init pin  */
 #define CFG_FPGA_DONE		(GPIO_PORTF |  9)	/* FPGA done pin  */
-#define CFG_FPGA_RW			(GPIO_PORTF | 21)	/* FPGA done pin  */
-#define CFG_FPGA_CS			(GPIO_PORTF | 22)	/* FPGA done pin  */
+#define CFG_FPGA_RW		(GPIO_PORTF | 21)	/* FPGA done pin  */
+#define CFG_FPGA_CS		(GPIO_PORTF | 22)	/* FPGA done pin  */
 #define CFG_FPGA_SUSPEND	(GPIO_PORTF | 10)	/* FPGA done pin  */
 #define CFG_FPGA_RESET		(GPIO_PORTF |  7)	/* FPGA done pin  */
 
@@ -160,6 +165,8 @@ int apf27_fpga_post(void)
 	/* reset off */
 	gpio_set_value(CFG_FPGA_RESET,0);
  	mxc_gpio_mode (CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+
+	return 0;
 }
 
 int apf27_fpga_abort(void)
