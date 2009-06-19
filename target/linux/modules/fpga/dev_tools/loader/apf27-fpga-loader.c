@@ -54,7 +54,7 @@ int apf27_fpga_pre(void)
 
 	/* initialize common gpio "shared" with other apps */
 	res = mxc_gpio_setup_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins), "FPGA_LOADER");
-	if( res ){
+	if (res) {
 		printk("FPGA prog pins already reserved !!\n");
 		return res;
 	}
@@ -63,7 +63,7 @@ int apf27_fpga_pre(void)
 	mxc_gpio_mode(CFG_FPGA_RW | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 	mxc_gpio_mode(CFG_FPGA_CS | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
-	/*power off fpga*/
+	/* power off fpga */
 	gpio_set_value(CFG_FPGA_PWR, 1);
 	mxc_gpio_mode(CFG_FPGA_PWR | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 	mdelay(10);
@@ -95,7 +95,8 @@ int apf27_fpga_pre(void)
  */
 int apf27_fpga_pgm(int assert)
 {
-	gpio_set_value( CFG_FPGA_PRG, !assert);
+	gpio_set_value(CFG_FPGA_PRG, !assert);
+
 	return assert;
 }
 
@@ -105,6 +106,7 @@ int apf27_fpga_pgm(int assert)
 int apf27_fpga_clk(int assert_clk)
 {
 	gpio_set_value( CFG_FPGA_CLK, !assert_clk);
+
 	return assert_clk;
 }
 
@@ -115,7 +117,9 @@ int apf27_fpga_clk(int assert_clk)
 int apf27_fpga_init(void)
 {
 	int value;
+
 	value = gpio_get_value(CFG_FPGA_INIT);
+
 	return !value;
 }
 
@@ -124,7 +128,7 @@ int apf27_fpga_init(void)
  */
 int apf27_fpga_done(void)
 {
-	return(gpio_get_value(CFG_FPGA_DONE));
+	return gpio_get_value(CFG_FPGA_DONE);
 }
 
 /*
@@ -132,19 +136,22 @@ int apf27_fpga_done(void)
  */
 int apf27_fpga_wr(int assert_write)
 {
-	gpio_set_value( CFG_FPGA_RW, !assert_write);
+	gpio_set_value(CFG_FPGA_RW, !assert_write);
+
 	return assert_write;
 }
 
 int apf27_fpga_cs(int assert_cs)
 {
-	gpio_set_value( CFG_FPGA_CS, !assert_cs);
+	gpio_set_value(CFG_FPGA_CS, !assert_cs);
+
 	return assert_cs;
 }
 
 int apf27_fpga_wdata( unsigned char data )
 {
 	__raw_writew(data, ARMADEUS_FPGA_BASE_ADDR_VIRT);
+
 	return data;
 }
 
@@ -157,14 +164,14 @@ int apf27_fpga_post(void)
 {
 	mxc_gpio_release_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins));
 	/* reconfigure bus ctrl signals */
-	mxc_gpio_mode (CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
-	mxc_gpio_mode (CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
-	mxc_gpio_mode (CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
+	mxc_gpio_mode(CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
+	mxc_gpio_mode(CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
+	mxc_gpio_mode(CFG_FPGA_CLK | GPIO_PF | GPIO_PUEN);
 	/* end of prog */
 	gpio_set_value(CFG_FPGA_PRG, 1);
 	/* reset off */
-	gpio_set_value(CFG_FPGA_RESET,0);
- 	mxc_gpio_mode (CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+	gpio_set_value(CFG_FPGA_RESET, 0);
+ 	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
 	return 0;
 }
@@ -173,6 +180,7 @@ int apf27_fpga_abort(void)
 {
 	apf27_fpga_post();
 	gpio_set_value(CFG_FPGA_PWR, 1);
+
 	return 1;
 }
 
@@ -216,7 +224,9 @@ static struct platform_device *devices[] __initdata = {
 static int __init apf27_fpga_initialize(void)
 {
 	platform_add_devices(devices, ARRAY_SIZE(devices));
+
 	return 0;
 }
 
 device_initcall(apf27_fpga_initialize);
+
