@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-08 18:01:09.000000000 +0200
-@@ -0,0 +1,1583 @@
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-19 19:31:20.000000000 +0200
+@@ -0,0 +1,1584 @@
 + /*
 + * apf27.c
 + *
@@ -56,10 +56,11 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#include <../mach-imx/include/mach/spi_imx.h>
 +#include <mach/imx-uart.h>
 +#include <mach/mmc.h>
-+#ifdef CONFIG_FB_MXC
++#ifdef CONFIG_FB_MXC /* Freescale Framebuffer */
 +#include <mach/imx_fb.h>
 +#include <mach/imxfb.h>
 +#endif
++#include <linux/fb.h>
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
@@ -240,30 +241,31 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +{
 +	struct fb_var_screeninfo temp_var;
 +	struct fb_info *info = registered_fb[0];
-+	extern int fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var);
 +
 +	apf27_ad9889_fb_data.PA31_GIUS_old_state = 0;
-+	/* make sure the LCD OE_ACD pin is correctly configured*/
-+	if( __raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80000000){
++	/* make sure the LCD OE_ACD pin is correctly configured */
++	if (__raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80000000) {
 +		apf27_ad9889_fb_data.PA31_GIUS_old_state = 1;
-+		mxc_gpio_mode( PA31_PF_OE_ACD );
++		mxc_gpio_mode(PA31_PF_OE_ACD);
 +	}
 +
-+	/*save old FB params */
-+	memcpy( &apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
-+	memcpy( &temp_var, &info->var, sizeof(struct fb_var_screeninfo));
++	/* save old FB params */
++	memcpy(&apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
++	memcpy(&temp_var, &info->var, sizeof(struct fb_var_screeninfo));
 +
 +	/* set new FB params */
 +	temp_var.xres = 640;
 +	temp_var.yres = 480;
 +	temp_var.pixclock = 37538;
-+	temp_var.left_margin = 0x2f;
-+	temp_var.right_margin = 0x2f; /* at least 3 & 1 */
-+	temp_var.upper_margin = 0x21;
-+	temp_var.lower_margin = 0xa;
-+	temp_var.hsync_len = 0x3f;
-+	temp_var.vsync_len = 0x02;
-+	temp_var.sync = FB_SYNC_OE_ACT_HIGH;
++	temp_var.left_margin = 47;
++	temp_var.right_margin = 47; /* at least 3 & 1 */
++	temp_var.upper_margin = 33;
++	temp_var.lower_margin = 10;
++	temp_var.hsync_len = 63;
++	temp_var.vsync_len = 2;
++#ifdef CONFIG_FB_MXC
++	temp_var.sync = FB_SYNC_OE_ACT_HIGH; /* -> Will change PCR */
++#endif
 +	temp_var.vmode = FB_VMODE_NONINTERLACED,
 +	temp_var.nonstd = 0;
 +
@@ -280,15 +282,14 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +{
 +	struct fb_info *info = registered_fb[0];
 +
-+	/* restoree LCD OE_ACD pin */
-+	if( apf27_ad9889_fb_data.PA31_GIUS_old_state )
++	/* restore LCD OE_ACD pin */
++	if (apf27_ad9889_fb_data.PA31_GIUS_old_state)
 +		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO);
 +
-+	/*restore old FB params */
 +	acquire_console_sem();
 +	/* inform the console that the FB params have been changed */
 +	info->flags |= FBINFO_MISC_USEREVENT;
-+	/* set new params */
++	/* restore old FB params */
 +	fb_set_var(info, &apf27_ad9889_fb_data.var);
 +	info->flags &= ~FBINFO_MISC_USEREVENT;
 +	release_console_sem();
