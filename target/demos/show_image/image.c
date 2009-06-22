@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
 	screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16, SDL_ANYFORMAT);
 	if (!screen) {
 		printf("Unable to open display (%dx%d)\n", SCREEN_WIDTH, SCREEN_HEIGHT);
+		printf(" Have you tried with:  export SDL_NOMOUSE=1  ??\n");
 		return EXIT_FAILURE;
 	}
 
