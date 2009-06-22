@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-19 19:31:20.000000000 +0200
-@@ -0,0 +1,1584 @@
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-22 15:19:21.000000000 +0200
+@@ -0,0 +1,1587 @@
 + /*
 + * apf27.c
 + *
@@ -1202,9 +1202,12 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_VIDEO_MX27
 +
 +# ifdef CONFIG_VIDEO_OV96xx
++#define OV9653_PWDN	(GPIO_PORTC | 30) /* SSI3_TX as POWERDOWN*/
++#define OV9653_RESET	(GPIO_PORTC | 31) /* SSI3_CLK as RESET */
++
 +static int apf27dev_ov9653_ctl_pins[] = {
-+	(GPIO_PORTC | 30 | GPIO_OUT | GPIO_GPIO), /* SSI3_TX as POWERDOWN*/
-+	(GPIO_PORTC | 31 | GPIO_OUT | GPIO_GPIO), /* SSI3_CLK as RESET */
++	(OV9653_PWDN | GPIO_OUT | GPIO_GPIO),
++	(OV9653_RESET | GPIO_OUT | GPIO_GPIO),
 +};
 +# endif
 +
@@ -1229,13 +1232,13 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	/* To be put in ov96xx driver init part: */
 +	int err;
 +
-+	err = mxc_gpio_setup_multiple_pins( apf27dev_ov9653_ctl_pins,
-+		ARRAY_SIZE(mxc_csi_pins), "CSI");
++	err = mxc_gpio_setup_multiple_pins(apf27dev_ov9653_ctl_pins,
++		ARRAY_SIZE(apf27dev_ov9653_ctl_pins), "OV9653");
 +	if (err) {
 +		printk("Error %s", __func__);
 +	}
-+	gpio_set_value(GPIO_PORTC | 30, 0);
-+	gpio_set_value(GPIO_PORTC | 31, 0);
++	gpio_set_value(OV9653_PWDN, 0);
++	gpio_set_value(OV9653_RESET, 0);
 +# endif
 +
 +	return mxc_gpio_setup_multiple_pins(mxc_csi_pins,
