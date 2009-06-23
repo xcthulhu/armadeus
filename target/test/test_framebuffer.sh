@@ -20,10 +20,17 @@ test_framebuffer()
 {
 	show_test_banner "Framebuffer"
 	echo 0 > /sys/class/graphics/fb0/blank   # Leave FB sleep mode
+	# Stop blinking cursor
+	echo 0 > /sys/class/graphics/fbcon/cursor_blink
 
 	is_package_installed $EXEC_NAME
 	$EXEC_NAME
-	if [ "$?" == 0 ]; then
+	RES=$?
+
+	# Reactivate cursor
+	echo 1 > /sys/class/graphics/fbcon/cursor_blink
+	# Ask user for feedbacks
+	if [ "$RES" == 0 ]; then
 		ask_user "Did all the tests show fine ? If OK say y"
 			if [ "$response" == "y" ]; then
 				echo_test_ok
