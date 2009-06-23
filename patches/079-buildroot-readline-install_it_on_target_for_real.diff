@@ -4,10 +4,10 @@ Readline wasn't installed at all on the target.
 Already corrected in Buildroot's HEAD so remove it when update to latest Buildroot
 version will be effective.
 
-Index: armadeus_release-3.1/buildroot/package/readline/readline.mk
+Index: buildroot/package/readline/readline.mk
 ===================================================================
---- armadeus_release-3.1.orig/buildroot/package/readline/readline.mk	2009-06-23 16:22:46.000000000 +0200
-+++ armadeus_release-3.1/buildroot/package/readline/readline.mk	2009-06-23 16:23:14.000000000 +0200
+--- buildroot.orig/package/readline/readline.mk	2009-06-23 16:22:46.000000000 +0200
++++ buildroot/package/readline/readline.mk	2009-06-23 16:23:14.000000000 +0200
 @@ -79,7 +79,7 @@
  	rm -rf $(TARGET_DIR)/usr/include/readline
  endif
