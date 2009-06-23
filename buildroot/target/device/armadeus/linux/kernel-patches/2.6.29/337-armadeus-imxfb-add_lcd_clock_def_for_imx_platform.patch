@@ -1,0 +1,27 @@
+
+To be removed when MX1 architecture will work for APF9328.
+
+Index: linux-2.6.29.4/arch/arm/mach-imx/clock.c
+===================================================================
+--- linux-2.6.29.4.orig/arch/arm/mach-imx/clock.c	2009-06-23 16:05:51.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/clock.c	2009-06-23 16:07:22.000000000 +0200
+@@ -161,6 +161,11 @@
+ 	.get_rate = imx_get_usb_clk,
+ };
+ 
++static struct clk clk_lcd_clk = {
++        .name = "lcdc_clk",
++        .get_rate = imx_get_perclk2,
++};
++
+ static struct clk *clks[] = {
+ 	&clk_perclk1,
+ 	&clk_perclk2,
+@@ -171,6 +176,7 @@
+ 	&clk_uart_clk,
+ 	&clk_usb_clk,
+ 	&clk_ssi_clk,
++	&clk_lcd_clk,
+ };
+ 
+ static LIST_HEAD(clocks);
