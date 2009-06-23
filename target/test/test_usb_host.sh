@@ -29,7 +29,7 @@ test_usb_host()
 {
 	show_test_banner "USB Host"
 
-	execute_for_target load_usb_host_driver_apf9328 echo
+#	execute_for_target load_usb_host_driver_apf9328 echo
 	dmesg | grep "USB hub found"
 	if [ "$?" != 0 ]; then
 		echo "USB Host was not found !!"
@@ -39,7 +39,7 @@ test_usb_host()
 	echo "Please insert a USB key (nothing will be erased)"
 	it=0
 	false
-	while [ "$?" != 0 ] && [ $it -le 15 ]; do
+	while [ "$?" != 0 ] && [ $it -le 20 ]; do
 		it=$((it+1))
 		sleep 2
 		dmesg | tail | grep "Attached SCSI removable disk"
