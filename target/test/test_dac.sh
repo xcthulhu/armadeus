@@ -19,8 +19,11 @@ test_DAC()
 {
 	show_test_banner "DAC"
 
+	echo "This test is more probant with vumeters"
+
 	setDAC AB 500
 	if [ "$?" == 0 ]; then
+		sleep 2
 		setDAC AB 0
 		echo_test_ok
 	else
