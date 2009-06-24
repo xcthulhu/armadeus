@@ -21,10 +21,10 @@ for UIO.
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
 
-Index: linux-2.6.29/arch/arm/Kconfig
+Index: linux-2.6.29.4/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.29.orig/arch/arm/Kconfig	2009-03-31 09:40:03.000000000 +0200
-+++ linux-2.6.29/arch/arm/Kconfig	2009-03-31 12:04:37.000000000 +0200
+--- linux-2.6.29.4.orig/arch/arm/Kconfig	2009-06-24 10:49:35.000000000 +0200
++++ linux-2.6.29.4/arch/arm/Kconfig	2009-06-24 10:53:05.000000000 +0200
 @@ -1328,6 +1328,8 @@
  
  source "drivers/dma/Kconfig"
@@ -34,10 +34,20 @@ Index: linux-2.6.29/arch/arm/Kconfig
  source "drivers/dca/Kconfig"
  
  source "drivers/auxdisplay/Kconfig"
-Index: linux-2.6.29/drivers/mxc/Kconfig
+Index: linux-2.6.29.4/drivers/Makefile
+===================================================================
+--- linux-2.6.29.4.orig/drivers/Makefile	2009-06-24 17:35:14.000000000 +0200
++++ linux-2.6.29.4/drivers/Makefile	2009-06-24 17:36:52.000000000 +0200
+@@ -106,4 +106,5 @@
+ obj-$(CONFIG_SSB)		+= ssb/
+ obj-$(CONFIG_VIRTIO)		+= virtio/
+ obj-$(CONFIG_STAGING)		+= staging/
++obj-y				+= mxc/
+ obj-y				+= platform/
+Index: linux-2.6.29.4/drivers/mxc/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/Kconfig	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/Kconfig	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,13 @@
 +# drivers/video/mxc/Kconfig
 +
@@ -52,18 +62,18 @@ Index: linux-2.6.29/drivers/mxc/Kconfig
 +endmenu
 +
 +endif
-Index: linux-2.6.29/drivers/mxc/Makefile
+Index: linux-2.6.29.4/drivers/mxc/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/Makefile	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/Makefile	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,3 @@
 +#
 +obj-$(CONFIG_MXC_VPU)		+= vpu/
 +
-Index: linux-2.6.29/drivers/mxc/vpu/Kconfig
+Index: linux-2.6.29.4/drivers/mxc/vpu/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/vpu/Kconfig	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/vpu/Kconfig	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,21 @@
 +#
 +# Codec configuration
@@ -86,10 +96,10 @@ Index: linux-2.6.29/drivers/mxc/vpu/Kconfig
 +
 +endmenu
 +
-Index: linux-2.6.29/drivers/mxc/vpu/Makefile
+Index: linux-2.6.29.4/drivers/mxc/vpu/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/vpu/Makefile	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/vpu/Makefile	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,10 @@
 +#
 +# Makefile for the VPU drivers.
@@ -101,10 +111,10 @@ Index: linux-2.6.29/drivers/mxc/vpu/Makefile
 +ifeq ($(CONFIG_MXC_VPU_DEBUG),y)
 +EXTRA_CFLAGS += -DDEBUG
 +endif
-Index: linux-2.6.29/drivers/mxc/vpu/mxc_vpu.c
+Index: linux-2.6.29.4/drivers/mxc/vpu/mxc_vpu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/vpu/mxc_vpu.c	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/vpu/mxc_vpu.c	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,501 @@
 +/*
 + * Copyright 2006-2007 Freescale Semiconductor, Inc. All Rights Reserved.
@@ -607,10 +617,10 @@ Index: linux-2.6.29/drivers/mxc/vpu/mxc_vpu.c
 +
 +module_init(vpu_init);
 +module_exit(vpu_exit);
-Index: linux-2.6.29/drivers/mxc/vpu/mxc_vpu.h
+Index: linux-2.6.29.4/drivers/mxc/vpu/mxc_vpu.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29/drivers/mxc/vpu/mxc_vpu.h	2009-03-31 12:04:37.000000000 +0200
++++ linux-2.6.29.4/drivers/mxc/vpu/mxc_vpu.h	2009-06-24 10:53:05.000000000 +0200
 @@ -0,0 +1,22 @@
 +typedef struct vpu_mem_desc {
 +	u32 size;
