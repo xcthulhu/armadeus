@@ -40,22 +40,33 @@ test_serial_port()
 		cat $SERIAL_DEVICE > $TEMP_FILE & 
 		pid=$!
 		echo -n "."; sleep 1
-		echo "SERIAL PORT$1 IS WORKING !!" > $SERIAL_DEVICE
+		echo "Serial Port N°$1 is working !" > $SERIAL_DEVICE
 		echo -n "."; sleep 1; echo
-		grep WORKING $TEMP_FILE
+		kill $pid
+		grep "working" $TEMP_FILE
 		if [ "$?" == 0 ]; then
 			echo_test_ok
 		else
 			exit_failed
 		fi
-		kill $pid
 	else
 		echo "  serial port not found !"
 	fi
 }
 
+echo_apf9328_ports()
+{
+	echo "    Available one: [ 1 ]"
+}
+
+echo_apf27_ports()
+{
+        echo "    Available one: [ 2 ]"
+}
+
 if [ "$1" == "" ]; then
 	echo "Please give the port number to test !"
+	execute_for_target echo_apf9328_ports echo_apf27_ports
 	exit 1
 fi
 
