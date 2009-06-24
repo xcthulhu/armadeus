@@ -1,0 +1,176 @@
+
+Makes Freescale Framebuffer driver compatible with 8bpp depth.
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.29.4/drivers/video/mxc/mx2fb.c
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/mxc/mx2fb.c	2009-06-24 10:40:28.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mx2fb.c	2009-06-24 10:40:28.000000000 +0200
+@@ -179,7 +179,7 @@
+ 	.fb_set_par = mx2fb_set_par,
+ 	.fb_setcolreg = mx2fb_setcolreg,
+ 	.fb_blank = mx2fb_blank,
+-	.fb_pan_display = mx2fb_pan_display,
++	//.fb_pan_display = mx2fb_pan_display, double buffering not supported yet
+ 	.fb_fillrect = cfb_fillrect,
+ 	.fb_copyarea = cfb_copyarea,
+ 	.fb_imageblit = cfb_imageblit,
+@@ -208,10 +208,6 @@
+ 	if (var->yoffset + info->var.yres > info->var.yres_virtual)
+ 		var->yoffset = info->var.yres_virtual - info->var.yres;
+ 
+-	if ((var->bits_per_pixel != 32) && (var->bits_per_pixel != 24) &&
+-	    (var->bits_per_pixel != 16)) {
+-		var->bits_per_pixel = default_bpp;
+-	}
+ 
+ 	switch (var->bits_per_pixel) {
+ 	case 16:
+@@ -265,6 +261,23 @@
+ 		var->transp.offset = 24;
+ 		var->transp.msb_right = 0;
+ 		break;
++	default: /* 8bits */
++		var->red.length = 8;
++		var->red.offset = 0;
++		var->red.msb_right = 0;
++
++		var->green.length = 8;
++		var->green.offset = 0;
++		var->green.msb_right = 0;
++
++		var->blue.length = 8;
++		var->blue.offset = 0;
++		var->blue.msb_right = 0;
++
++		var->transp.length = 0;
++		var->transp.offset = 0;
++		var->transp.msb_right = 0;
++	break;
+ 	}
+ 
+ 	if (var->pixclock < 1000) {
+@@ -316,6 +329,28 @@
+ 	return 0;
+ }
+ 
++#define CNVT_TOHW(val,width) ((((val)<<(width))+0x7FFF-(val))>>16)
++
++static int mx2fb_setpalettereg(u_int regno, u_int red, u_int green, u_int blue,
++		u_int trans, struct fb_info *info)
++{
++	struct fb_var_screeninfo *var = &info->var;
++	u_int palette_size = var->bits_per_pixel == 8 ? 256 : 16;
++	u_int val, ret = 1;
++	unsigned int reg_size = 4;
++
++	if (regno < palette_size) {
++		reg_size = 6; /* MX2 and TFT */
++		val = (CNVT_TOHW(red, reg_size) << (reg_size * 2)) |
++		      (CNVT_TOHW(green, reg_size) << reg_size) |
++		      CNVT_TOHW(blue, reg_size);
++
++		__raw_writel(val, LCDC_REG(0x800 + (regno << 2)));
++		ret = 0;
++	}
++	return ret;
++}
++
+ /*
+  * Set a single color register. The values supplied have a 16 bit magnitude
+  * which needs to be scaled in this function for the hardware. Things to take
+@@ -325,8 +360,8 @@
+  * pseudo_palette in struct fb_info. For pseudocolor mode we have a limited
+  * color palette.
+  */
+-static int mx2fb_setcolreg(unsigned regno, unsigned red, unsigned green,
+-			   unsigned blue, unsigned transp, struct fb_info *info)
++static int mx2fb_setcolreg(u_int regno, u_int red, u_int green,
++			   u_int blue, u_int transp, struct fb_info *info)
+ {
+ 	int ret = 1;
+ 
+@@ -347,12 +382,10 @@
+ 			u32 *pal = info->pseudo_palette;
+ 			u32 v;
+ 
+-#define CNVT_TOHW(val,width) ((((val)<<(width))+0x7FFF-(val))>>16)
+ 			red = CNVT_TOHW(red, info->var.red.length);
+ 			green = CNVT_TOHW(green, info->var.green.length);
+ 			blue = CNVT_TOHW(blue, info->var.blue.length);
+ 			transp = CNVT_TOHW(transp, info->var.transp.length);
+-#undef CNVT_TOHW
+ 
+ 			v = (red << info->var.red.offset) |
+ 			    (green << info->var.green.offset) |
+@@ -365,6 +398,7 @@
+ 		break;
+ 	case FB_VISUAL_STATIC_PSEUDOCOLOR:
+ 	case FB_VISUAL_PSEUDOCOLOR:
++		ret = mx2fb_setpalettereg(regno, red, green, blue, transp, info);
+ 		break;
+ 	}
+ 
+@@ -583,9 +617,19 @@
+ 	fix->line_length = var->xres_virtual * var->bits_per_pixel / 8;
+ 	fix->type = FB_TYPE_PACKED_PIXELS;
+ 	fix->accel = FB_ACCEL_NONE;
+-	fix->visual = FB_VISUAL_TRUECOLOR;
+-	fix->xpanstep = 1;
+-	fix->ypanstep = 1;
++
++	if ((var->bits_per_pixel == 16)) {
++		fix->visual = FB_VISUAL_TRUECOLOR;
++	} else {
++		/*
++		 * Some people have weird ideas about wanting static
++		 * pseudocolor maps.  I suspect their user space
++		 * applications are broken.
++		 */
++		fix->visual = FB_VISUAL_PSEUDOCOLOR;
++	}
++	fix->xpanstep = 0;
++	fix->ypanstep = 0;
+ }
+ 
+ static int __init _init_fbinfo(struct fb_info *info,
+@@ -600,7 +644,7 @@
+ 	info->pseudo_palette = &mx2fbi->pseudo_palette;
+ 
+ 	/* Allocate colormap */
+-	fb_alloc_cmap(&info->cmap, 16, 0);
++	fb_alloc_cmap(&info->cmap, 1 << info->var.bits_per_pixel, 0);
+ 
+ 	return 0;
+ }
+@@ -911,7 +955,7 @@
+ 		     LCDC_REG(LCDC_LSR));
+ 
+ 	/* Virtual page width register */
+-	__raw_writel(info->var.xres_virtual >> 1, LCDC_REG(LCDC_LVPWR));
++	__raw_writel((var->xres * var->bits_per_pixel / 8 / 4), LCDC_REG(LCDC_LVPWR));
+ 
+ 	/* To setup LCDC pixel clock */
+ 	perclk3 = clk_round_rate(lcdc_clk, 134000000);
+@@ -935,7 +979,19 @@
+ 	pcr |= (var->sync & FB_SYNC_SHARP_MODE) ? 0x00000040 : 0;
+ 	pcr |= (var->sync & FB_SYNC_OE_ACT_HIGH) ? 0 : LPCR_INV_OE;
+ 	pcr |= (var->sync & FB_SYNC_CLK_IDLE_EN) ? 0x00080000 : 0;
+-	__raw_writel(pcr, LCDC_REG(LCDC_LPCR));
++
++	/* i.MX LCD controller can support 8bpp even if configured to output 16 bits (TFT) */
++	if ((var->bits_per_pixel == 8)) {
++#define PCR_BPIX_MASK	(7 << 25)
++#define PCR_BPIX_8	(3 << 25)
++#define PCR_END_BYTE_SWAP ( 1<< 17)
++		pr_debug("Switching imxfb to 8bpp\n");
++		__raw_writel((pcr & (~PCR_BPIX_MASK)) |
++			PCR_BPIX_8 |
++			PCR_END_BYTE_SWAP, LCDC_REG(LCDC_LPCR));
++	} else {
++		__raw_writel(pcr, LCDC_REG(LCDC_LPCR));
++	}
+ 
+ 	/* Horizontal and vertical configuration register */
+ 	__raw_writel(((var->hsync_len - 1) << 26)
