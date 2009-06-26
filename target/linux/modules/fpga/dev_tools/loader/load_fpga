@@ -1,0 +1,30 @@
+#!/bin/sh
+
+if [ "$1" == "" ] || [ ! -f "$1" ]; then
+	echo "Usage: `basename $0` <filename>"
+	echo "    filename: bitfile to load in FPGA"
+	exit 1
+fi
+
+if [ ! -c /dev/fpgaloader ]; then
+	modprobe fpgaloader
+	if [ "$?" != 0 ]; then
+		echo "Failed to modprobe FPGA loader driver. Please check your config !"
+		exit 1
+	fi
+fi
+
+timeout=0
+while [ ! -c /dev/fpgaloader ]; do
+	usleep 1000
+	let timeout=timeout+1
+	if [ $timeout -gt 100 ]; then
+		echo "Timeout while waiting for FPGA loader driver readiness !"
+		exit 1
+	fi
+done
+
+dd if=$1 of=/dev/fpgaloader
+
+exit 0
+
