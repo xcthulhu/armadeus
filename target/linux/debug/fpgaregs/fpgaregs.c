@@ -54,9 +54,9 @@
 void displayResult(char* text, unsigned int accesstype, unsigned int value, unsigned int address)
 {
 	if (accesstype == WORD_ACCESS)
-		printf("%s %04x at %08x\n", text, (unsigned short)value, address);
+		printf("%s 0x%04x at 0x%08x\n", text, (unsigned short)value, address);
 	else
-		printf("%s %08x at %08x\n", text, value, address);
+		printf("%s 0x%08x at 0x%08x\n", text, value, address);
 }
 
 
@@ -69,12 +69,17 @@ int main(int argc, char *argv[])
 
 	if ((argc < 3) || (argc > 4)) {
 		printf("invalid arguments number\n");
-		printf("fpgaregs for platform %s\n",PLATFORM);
-		printf("Usage:\n");
-		printf("fpgaregs [w,l] fpga_reg_add [value].\n");
-		printf("        w: word access\n");
-		printf("        l: long access\n");
-		printf("\n          Ex: fpgaregs w 0x10 0x1234, fpgaregs l 0x10 0x12345678\n");
+		printf("fpgaregs for %s platform\n\n", PLATFORM);
+		printf("Usage: fpgaregs [w,l] address [value]\n\n");
+		printf("Reads or writes a value at given FPGA's relative address.\n\n");
+		printf("Options:\n");
+		printf("        w        word (16 bits) access\n");
+		printf("        l        long (32 bits) access\n");
+		printf("        value    value to write\n\n");
+		printf("Examples:\n");
+		printf("        fpgaregs w 0x10 --> read @ 0x10\n");
+		printf("        fpgaregs w 0x10 0x1234 --> writes 0x1234 @ 0x10\n");
+		printf("        fpgaregs l 0x10 0x12345678 --> writes 0x12345678 @ 0x10\n");
 		return -1;
 	}
 
@@ -99,17 +104,17 @@ int main(int argc, char *argv[])
 			accesstype = WORD_ACCESS;
 		if (accesstype == WORD_ACCESS) {
 			if (address%2 != 0) {
-				printf("Can't read word in even address (%d)\n", address);
+				printf("Can't do word access at odd address (%d). Use a 16bits aligned one.\n", address);
 				return -1;
 			}
 		} else { /* LONG_ACCESS */
 			if (address%4 != 0) {
-				printf("Can't read long in no-4-multiple address (%d)\n", address);
+				printf("Can't do long access at non-32bits-aligned address (%d)\n", address);
 				return -1;
 			}
 		}
 
-		/* write value at address */
+		/* write value at given address */
 		if (argc == 4) {
 			value = strtoul(argv[3], (char **)NULL, 16);
 			if (accesstype == WORD_ACCESS)
@@ -118,8 +123,7 @@ int main(int argc, char *argv[])
 				*(unsigned int*)(ptr_fpga+(address)) = (unsigned int)value;
 
 			displayResult("Write", accesstype, value, address);
-
-			/* read address value */
+		/* read at given address */
 		} else if (argc == 3) {
 			if (accesstype == WORD_ACCESS)
 				value = *(unsigned short*)(ptr_fpga+(address));
@@ -132,3 +136,4 @@ int main(int argc, char *argv[])
 	close(ffpga);
 	return 0;
 }
+
