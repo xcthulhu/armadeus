@@ -8,6 +8,267 @@ Changes since last release
 
 ----
 
+Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 1098 to 1374)
+
+* Buildroot:
+  - Makes tslib compile before SDL; otherwise -> jerky touch
+  - Makes readline is installed for real on target rootfs (needed by lua)
+  - Adds a patch to correct badly generated libSDL.la
+  - Added patch to support ubifs on legacy host kernel (debian etch kernel 2.6.18)
+  - Add empty file and change kernel configurations to support git repository 
+  - UBISF prepared to support versioning   
+  - Buildroot doesn't like symlinks for Linux default configs :-(
+  - Makes libvorbis is installed correctly
+  - Makes Linux 2.6.29.4 the default kernel for coming (soon) release + updates default configurations
+  - UBISF preliminary support (requires host package uuid-dev "debian")
+  - Integrates fbtest in Buildroot instead of having it apart
+  - update test config to GDB 6.7.1
+  - Make GDB 6.7.1 the default version of GDB (fix GDB 6.6 issues)
+  - Update targets default configuration to support the newly supported kernel 2.6.29 and some ophan packages.
+  - add script to populate package menu with orphan packages. Thx Jibee
+  - Add test config for APF27
+  - Add choice of 2.6.29 kernel for APF27 (in default config)
+  - Install loadmax.sh by default + makes loadgpio.sh executable 
+  - Add a config to test releases on APF9328
+  - Makes 2.6.29 kernel selectable (for the hackers ;-) )
+  - Fixes php download site
+  - fpgaregs : check address conformity. ticket #44
+  - Add wirelesstools in default APF27 Buildroot config
+  - Little bug in fpgaregs Makefile
+  - cleaning fpgaregs header
+  - fpgaregs now work for apf27
+  - Temporary patch to avoid freeze when using gpio_set_value
+  - Add a package for Freescale BSP test tools
+  - Added directory to store custom configurations
+  - Xenomai is  dependent host-fakeroot
+  - xenomai : Using fakeroot for "make install"
+  - xenomai patch moved to the Makefile.advanced end
+  - Xenomai: Makefile correct and addition of a default configuration for the kernel
+  - Add Xenomai option (deactivated) in default buildroot configurations (for apf9328 & apf27)
+  - Add a (fake) package to buildroot in order to install scripts useful for our custom drivers (for the moment only loadgpio.sh/gpio is concerned)
+  - Xenomai integration
+* Linux:                                                                                                                                           
+  - Prevents crash in UDC core after a soft reboot (2.6.29)
+  - Add small helper script for loading FPGA in one go
+  - VPU driver wasn't compile for 2.6.29. Corrects that... 
+  - Divides patch for framebuffer committed in rev 1364 
+  - Update default configs: reactivate Freescale framebuffer, activate ad9889 & PWM by default 
+  - mx2fb.c freescale fb driver now compatible with SDL 8bits
+  - Makes LCD work again on APF9328 (2.6.29)
+  - Corrects bad GPIO setup for OV96xx (apf27)
+  - Makes the ad9889 driver compiles again (2.6.29) and compile it by default in test config 
+  - Makes fpgaloader compile again on APF27 (2.6.27 kernel)
+  - fpgaloader: avoid blocking when wb_irq_manager is already loaded. check INIT pin reservation
+  - Makes ocore_irq_mng driver a platform_driver + updates apf27.c & apf9328.c accordingly
+  - Adds a Linux config to say if APF9328 has a FPGA or not + remove an unneeded one
+  - Adds a Linux config option to say if the APF27 has an onboard FPGA or not
+  - fix ticket 54. Slow ftp transfer on apf27
+  - Corrects bad IRQ number for APF27 FPGA
+  - Improve jjfs2 perfs: disable jjfs2 on the fly compression
+  - enable ubifs support
+  - disable CFI flash support (apf27 does not feature any CFI NOR flash)
+  - Updates some 2.6.29 patches to prevent warnings when applying them
+  - Divides 030-armadeus-add_USB_registers.patch
+  - Makes inkernel (i.MXL) framebuffer driver the default one for APF27, starting from 2.6.29. Freescale one is kept as an option until inkernel one supports graphic window.
+  - Final corrections to have Doom working again (most important: color regs where bad on i.MX27 in mainline driver)
+  - Rename some framebuffer related patches 
+  - Add the possibility to choose between Freescale or Mainline framebuffer driver for APF27 
+  - Add clock support in imxfb (2.6.29)
+  - Renames/reorganizes some framebuffer related patches
+  - Add i.MX27 support to mainline framebuffer (part 1)
+  - Merge 014- & 327- patches (2.6.29)
+  - Put correct timings for LQ043 on APF27 with 2.6.29 kernel (fbtested)
+  - Makes gpio driver more quiet
+  - Updates apf27 patches for 2.6.29
+  - Merges latest 2.6.27 patches modifs with 2.6.29 ones
+  - Finaly makes framebuffer work again like expected on APF9328 with 2.6.29 + begin work for 2.6.30 
+  - add possibility to change the pin mode through the proc interface of the gpio driver
+  - Applies kernel coding style to apf9328ps2
+  - Makes i.MXL UDC works for 2.6.29
+  - Add some 2.6.20 UDC fixes on 2.6.29
+  - Updates APF9328 2.6.29 default config from 2.6.27 one
+  - make usb gadget compile again on apf9328
+  - Improves indentation in apf9328_lcd_config.h (2.6.27) to ease comparison (with 2.6.29 version)
+  - Updates APF27's 2.6.29 default configs (from 2.6.27 ones)
+  - Compiles GPIO driver by default (APF27/2.6.29)
+  - Makes alsa (tsc210x) work again on 2.6.29
+  - fix colormap bug at startup
+  - fix backlight flash effect at startup
+  - Corrects indentation in max1027 driver 
+  - merge ad9889 from 2.6.27 
+  - Corrects indentation in apf9328_lcd_config (2.6.29) 
+  - Add init/exit gpios to imxfb (2.6.29)
+  - Divide MX2 PWM patch (part 2)
+  - fix pwm input freq for 9328 
+  - Makes imx_udc compiles again on 2.6.29
+  - Removes unneeded patch for imx_udc (2.6.29)
+  - Cleanup apf9328 (2.6.27 & 2.6.29) + merge PWM
+  - Makes imxmmc driver compiles again on 2.6.29
+  - Makes apf9328 fpgaloader compiles on 2.6.29
+  - Displays Tuz instead of Tux as boot logo (2.6.29)
+  - Puts MTD physmap declaration in apf9328.c (seems to be the standard now in 2.6.29)
+  - Makes ISP1761 driver compiles on 2.6.29
+  - Cleanup lcd_config file + initializes GPIOs for 2.6.29. Now waiting Nico's black Magic... 
+  - fix bug in ad9889 OE_ACD pin management
+  - make apf27 audio playback working with the pwm
+  - Add WiFi layer + supported chips in default APF27 2.6.27 Linux config
+  - Add V4L2 + Camera + VPU in default APF27 2.6.27 Linux config
+  - Makes ppdevemu compile on 2.6.29
+  - Continues work on 2.6.29 integration. APF9328 still not compiling 
+  - fix pwm declaration and increase USB startup delay
+  - cleanup (platform ressources externaly declared)
+  - force ISR clear before enabling the interrupt 
+  - Handling of FPGA IRQ on APF27 (part 2)
+  - Better coding style in wb_irq_mngr driver
+  - Divides patch 321 in 2
+  - Separates content of patch 291
+  - Makes Wishbone examples drivers works with APF27
+  - PWM driver reworked (compatibility between imxL and imx27 added)
+  - add specific PWM platform data
+  - add pwm support to apf27
+  - fix some pengu files related to the pwm
+  - cleanup PWM driver before adding APF27 support
+  - fix ticket 7 for USB port 1
+  - fix ticket 7 for USB_OTG port (usb device may be not recognized at startup)
+  - Add preliminary driver for OV9653 (very first stage)
+  - Do some cleanup in apf27.c
+  - Add platform declaration for i.MX27 CSI and OV9653 sensor
+  - Updates i.MX27 Camera driver with latest available
+  - Add a patch to increase DMA size for MXC (APF27)
+  - Do some minor (indentation) changes in gpio driver
+  - add DVI/HDMI hot plug management
+  - Adding configuration gpio interrupt edges 
+  - first DVI image
+  - Rise fpga_reset when FPGA is configured
+  - [APF27] toggling fpga_reset pin to '1' when fpga is configured. Changing default firmware lenght in uboot variables
+  - Add 2.6.29 Linux patches (copies from 2.6.27)
+  - Corrects bug in I2C bus declaration in apf27.c
+  - Add driver for i.MX27 VPU (Video Processing Unit)
+  - Suppres DEBUG preproc                                                                                                                                                    
+  - gpio proc entries (portXirq, portXpullup) has not good types : corrects that
+  - Suppress useless fpgaaccess driver
+  - fpgaloader was not correctly built: corrects that 
+  - fpgaloader.sh script is no more needed
+  - Some fpga modules were not correctly installed on target rootfs (due to recent regression); so corrects that
+  - Change init method of source buffer in DMA test driver
+  - Add a driver to test DMA throughput
+  - Corrects commit 1153 + cleanup a little FPGA drivers configuration
+  - Add a kernel option to select APF27Dev LED/switch usage with Power Management + remove compilation warnings in apf27.c + better indentation
+  - fpgaloader: call post init function once download done
+  - Update config file for wishbone_example drivers 
+  - MCP2515 driver: fix startup delay to a long enough value
+  - fix TFT init bug (ticket 38)
+  - Makes gpio driver compatible with APF27 + some cleanup 
+  - fix ticket 36 (fpgaloader does not compile even if selected)
+  - Cleanup in gpio driver: kernel friendly indentation, removing of unused code
+  - fix ethernet autonegotiation bug
+  - Add watchdog driver (only usable on APF27 for the moment)
+  - Updating test programs for led and button in wishbone_example
+  - cleanup a little GPIO driver (makes some debug messages silents and removes unneeded loadfpga files)
+  - rename fpgaloader directory
+  - add kconfig and makefile for ad9889 
+  - add ad9889 to apf27.c
+  - remove tab from ad9889 commit
+  - working version of the linux apf27 fpga loader
+  - add ad9889 driver  
+  - Add fpgaloader as module by default in APF27 2.6.26 default config 
+  - Cleanup of fpgaloader
+  - Add APF27 support to fpgaloader
+  - Drivers for wishbone_example are ready
+  - Adding a drivers directory for wishbone example (firmware/wishbone_example)
+  - fix error in gpio.c (ticket #9)
+  - Add NLS_ISO8859_1 by default on APF9328
+* U-Boot:                                                                                                                                                                    
+   - Added ubifsboot command but requires more chqnges to support ubifs.
+   - Release FPGA_RESET at the end of configuration, wait for DONE to stop toggling clock and ignore firmware size
+   - change patch release to 2.1 and environment variable compatibility version
+   - fix reinitialization of network before each ping (ticket 40)
+   - Changing timing for fpga communication, strength for bus controls signals and CLK0 frequency (now the same frequency as weim bus -> 133MHz)
+   - add FPGA support (APF27)       
+   - fix bug FPGA autoload (ticket 34)
+   - fix ethernet autonegotiation bug
+   - allow env to start in the next good sector of the flash
+   - make "skipping bad block" messages quiet per default
+* Firmware:                                                                                                                                                                  
+   - Cleaning PS2 project
+   - cleaning BRAMTest 
+   - beautify wisbone_example VHDL code
+   - Updating all firmwares examples, with bitstream for apf27 and apf9328
+   - Adding bitstream for wishbone example apf27 and apf9328
+   - Updating wishbone example to be compatible with apf27
+   - Make button_led design synchrone, and add a reset
+   - Fill leds projects directories, with working files
+   - Adding sub-directory for leds blinking_led and button_led
+   - Modify led example to use led already soldered on devfull apf9328
+   - Adding 400k led example bitstream, rename 200k bitsream file, and do some modifications on VHDL to suppress warning
+   - Updating wishbone_example to be compatible with linux drivers in target/linux/module/fpga/wishbone_example/ directory
+   - Cleanup wishbone_example directory
+   - README file to describe projects
+* Demos:                                                                                                                                                                     
+   - Add info message to show_image (a mouse is required for SDL)
+   - Add SDL music player (thanks Rebouxan)
+   - Makes Qt demo sexier
+   - Makes backlight control tool works again 
+   - Add README + SDL_image example
+   - global real time improvement
+   - Xenomai examples : Makefile now uses relative path
+   - xenomai demos, work but need to change path in Makefile
+   - translations and typographic corrections
+   - Adding a complete set of xenomai usage examples
+* Debug:                                                                                                                                                                     
+   - Corrects/enhances some ouput messages of fpgaregs 
+   - fpgaregs for apf27 bug corrected, help/error message improved
+   - Cleanup fpgaregs and applies Coding Rules 
+   - Corrects some CSI and PrP register names in imxregs 
+   - Makes eMMA PreProcessor registers accessible from imxregs
+* Test:                                                                                                                                                                      
+   - Makes RS232 test user friendlier
+   - USB host: now driver is included in kernel on APF9328 + gives some more time to user to plug its key 
+   - Gives a chance to tester to see something in DAC test with connected vumeters
+   - Stop blinking cursor when doing framebuffer test 
+   - Add Linux 2.6.27 config for apf27_test
+   - Makes RS232 test more user friendly
+   - Gives some times to /dev/watchdog to be created 
+   - Add wishbone test and PWM drivers to APF27 Linux test config 
+   - Add interrupt test for FPGA
+   - data/fpga/ is no more a symbolic link
+   - Updates APF27 Linux build test config with latest filesystem changes (UBIFS, no CFI, JFFS2 comp.)
+   - Cleanup testbutton tool and makes it available for test config
+   - Gives correct name to Linux default configurations 
+   - Add OSS support in APF27's Linux (Doom needs it for sound)
+   - Add fbtest by default in test configs
+   - Updates USB test for APF27
+   - Improves Ethernet test robustness
+   - Add script to test framebuffer
+   - gpio test tool now compatible with gpio driver version 2.2 
+   - Updates USB device test (apf9328) 
+   - Updates FPGA & USB gadget scripts
+   - Don't install .svn/ with test suite
+   - updates madplay test script
+   - Updates ADC test for APF27 & fast mode
+   - Removes warnings when compiling testplaymode
+   - Updates some test scripts for APF9328
+   - Makes FPGA loading test run on APF9328 too
+   - add APF27Dev ADC/DAC auto test
+   - Add script (very basic) to test gpio driver
+   - Add test for watchdog
+   - Add test for FPGA download (400k)
+* Other:
+   - [BUILD] Add a ARMADEUS_BINARIES envt variable
+   - [SOFTWARE] change serial timing for uboot_recover for apf27
+   - [BUILD] prepare to support git SCM.
+   - [BUILD] Some global variables depend on PROJECT_NAME not BOARD_NAME
+   - [TOOLS] Freescale's VPU test tools can now compile and run on the APF27 (I said run, not work ;-) )
+   - [ARMADEUS] Add makefile target to automatize build of any armadeus target
+   - [BUILD] Makes quilt script stop when a patch won't apply
+   - [BUILD] Add ARMADEUS_STAGING_DIR & ARMADEUS_TOOLCHAIN_PATH envt variables
+   - [BUILD] Add a script to makes Armadeus Linux patches series usable with quilt
+   - [BUILD] Add envt variable to locate current Linux patches
+   - [ROOTFS] Adding of /lib/firmware/ in skeleton
+   - [TOOLS] Add a script to ease ChangeLog generation
+
+----
+
 Changes in release 3.0 (25 feb 2009 - SVN revisions 763 to 1097)
 
 * Buildroot:
