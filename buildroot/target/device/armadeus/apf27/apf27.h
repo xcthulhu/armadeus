@@ -806,7 +806,7 @@
 
 /* PCCR enable DMA FEC I2C1 IIM SDHC1 */
 #define CFG_PCCR0_VAL		0x05070400
-#define CFG_PCCR1_VAL		0xA04A0408
+#define CFG_PCCR1_VAL		0xA14A0408
 
 /* CONFIG_SKIP_LOWLEVEL_INIT bypass lowlevel init in bootstrap mode */
 #undef CONFIG_SKIP_LOWLEVEL_INIT
