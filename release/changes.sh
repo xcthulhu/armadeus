@@ -59,19 +59,19 @@ echo
 echo "Changes in release XXX ("`date`" - SVN revisions $1 to $2"
 echo
 echo "* Buildroot:"
-cat $CHANGES_BUILDROOT | grep -v "^$" | sed 's/\[[Bb][Uu][Ii][Ll][Dd][Rr][Oo][Oo][Tt]\]/  -/g'
+cat $CHANGES_BUILDROOT | grep -v "^$" | sed 's/\[[Bb][Uu][Ii][Ll][Dd][Rr][Oo][Oo][Tt]\]/    -/g'
 echo "* Linux:"
-cat $CHANGES_LINUX | grep -v "^$" | sed 's/\[[Ll][Ii][Nn][Uu][Xx]\]/  -/g'
+cat $CHANGES_LINUX | grep -v "^$" | sed 's/\[[Ll][Ii][Nn][Uu][Xx]\]/    -/g'
 echo "* U-Boot:"
-cat $CHANGES_UBOOT | grep -v "^$" | sed 's/\[[Uu][-]\{0,\}[Bb][Oo][Oo][Tt]\]/   -/g'
+cat $CHANGES_UBOOT | grep -v "^$" | sed 's/\[[Uu][-]\{0,\}[Bb][Oo][Oo][Tt]\]/    -/g'
 echo "* Firmware:"
-cat $CHANGES_FIRMWARE | grep -v "^$" | sed 's/\[[Ff][Ii][Rr][Mm][Ww][Aa][Rr][Ee]\]/   -/g'
+cat $CHANGES_FIRMWARE | grep -v "^$" | sed 's/\[[Ff][Ii][Rr][Mm][Ww][Aa][Rr][Ee]\]/    -/g'
 echo "* Demos:"
-cat $CHANGES_DEMOS | grep -v "^$" | sed 's/\[DEMOS\]/   -/g'
+cat $CHANGES_DEMOS | grep -v "^$" | sed 's/\[DEMOS\]/    -/g'
 echo "* Debug:"
-cat $CHANGES_DEBUG | grep -v "^$" | sed 's/\[DEBUG\]/   -/g'
+cat $CHANGES_DEBUG | grep -v "^$" | sed 's/\[DEBUG\]/    -/g'
 echo "* Test:"
-cat $CHANGES_TEST | grep -v "^$" | sed 's/\[[Tt][Ee][Ss][Tt]\]/   -/g'
+cat $CHANGES_TEST | grep -v "^$" | sed 's/\[[Tt][Ee][Ss][Tt]\]/    -/g'
 echo "* Other:"
 cat $CHANGES_OTHER | grep -v "^$"
 
