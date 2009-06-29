@@ -8,9 +8,11 @@ Changes since last release
 
 ----
 
-Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 1098 to 1374)
+Changes in release 3.1 (June 29th 2009, 10:00 (UTC+0200) - SVN revisions 1098 to 1381)
 
 * Buildroot:
+  Main changes: 2.6.29 as default kernel, GDB 6.7.1, adding of test configs, Xenomai (for 2.6.27)
+  List of all changes:
   - Makes tslib compile before SDL; otherwise -> jerky touch
   - Makes readline is installed for real on target rootfs (needed by lua)
   - Adds a patch to correct badly generated libSDL.la
@@ -47,7 +49,10 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
   - Add Xenomai option (deactivated) in default buildroot configurations (for apf9328 & apf27)
   - Add a (fake) package to buildroot in order to install scripts useful for our custom drivers (for the moment only loadgpio.sh/gpio is concerned)
   - Xenomai integration
-* Linux:                                                                                                                                           
+* Linux:
+  Main changes: 2.6.29, adding of AD9889 driver (HDMI/DVI), UBIFS support, Framebuffer fixes, fpgaloader on APF27
+  List of all changes:
+  - dma-mx1-mx2.h remove compilation warnings
   - Prevents crash in UDC core after a soft reboot (2.6.29)
   - Add small helper script for loading FPGA in one go
   - VPU driver wasn't compile for 2.6.29. Corrects that... 
@@ -69,7 +74,7 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
   - disable CFI flash support (apf27 does not feature any CFI NOR flash)
   - Updates some 2.6.29 patches to prevent warnings when applying them
   - Divides 030-armadeus-add_USB_registers.patch
-  - Makes inkernel (i.MXL) framebuffer driver the default one for APF27, starting from 2.6.29. Freescale one is kept as an option until inkernel one supports graphic window.
+  - Makes inkernel (i.MXL) framebuffer driver choosable for APF27, starting from 2.6.29. Freescale one is kept as an option until inkernel one supports graphic window.
   - Final corrections to have Doom working again (most important: color regs where bad on i.MX27 in mainline driver)
   - Rename some framebuffer related patches 
   - Add the possibility to choose between Freescale or Mainline framebuffer driver for APF27 
@@ -178,8 +183,11 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
   - Adding a drivers directory for wishbone example (firmware/wishbone_example)
   - fix error in gpio.c (ticket #9)
   - Add NLS_ISO8859_1 by default on APF9328
-* U-Boot:                                                                                                                                                                    
-   - Added ubifsboot command but requires more chqnges to support ubifs.
+* U-Boot:
+   Main changes: APF27 FPGA support
+   List of all changes:
+   - fix reset bug. watchdog must be enabled !
+   - Added ubifsboot command but requires more changes to support ubifs.
    - Release FPGA_RESET at the end of configuration, wait for DONE to stop toggling clock and ignore firmware size
    - change patch release to 2.1 and environment variable compatibility version
    - fix reinitialization of network before each ping (ticket 40)
@@ -189,7 +197,9 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
    - fix ethernet autonegotiation bug
    - allow env to start in the next good sector of the flash
    - make "skipping bad block" messages quiet per default
-* Firmware:                                                                                                                                                                  
+* Firmware:
+   Main changes: updating of Wishbone examples
+   List of all changes:
    - Cleaning PS2 project
    - cleaning BRAMTest 
    - beautify wisbone_example VHDL code
@@ -204,7 +214,9 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
    - Updating wishbone_example to be compatible with linux drivers in target/linux/module/fpga/wishbone_example/ directory
    - Cleanup wishbone_example directory
    - README file to describe projects
-* Demos:                                                                                                                                                                     
+* Demos:
+   Main changes: SDL music player, Xenomai examples
+   List of all changes:
    - Add info message to show_image (a mouse is required for SDL)
    - Add SDL music player (thanks Rebouxan)
    - Makes Qt demo sexier
@@ -215,13 +227,14 @@ Changes in release 3.1-rc2 (27 June 2009, 12:38:26 (UTC+0200) - SVN revisions 10
    - xenomai demos, work but need to change path in Makefile
    - translations and typographic corrections
    - Adding a complete set of xenomai usage examples
-* Debug:                                                                                                                                                                     
+* Debug:
    - Corrects/enhances some ouput messages of fpgaregs 
    - fpgaregs for apf27 bug corrected, help/error message improved
    - Cleanup fpgaregs and applies Coding Rules 
    - Corrects some CSI and PrP register names in imxregs 
    - Makes eMMA PreProcessor registers accessible from imxregs
-* Test:                                                                                                                                                                      
+* Test:
+   - Makes FPGA test automatically detect button IP's driver MAJOR
    - Makes RS232 test user friendlier
    - USB host: now driver is included in kernel on APF9328 + gives some more time to user to plug its key 
    - Gives a chance to tester to see something in DAC test with connected vumeters
