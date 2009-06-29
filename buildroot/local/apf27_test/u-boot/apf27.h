@@ -150,6 +150,8 @@
 		"root=/dev/nfs rw nfsroot=${serverip}:${rootpath}\0"    \
 	"addjffsargs=setenv bootargs ${bootargs} "			\
 		"root=/dev/mtdblock4 rootfstype=jffs2\0"   		\
+	"addubifsargs=setenv bootargs ${bootargs} "			\
+		"ubi.mtd=rootfs root=ubi0:rootfs rootfstype=ubifs\0"   		\
 	"addmmcargs=setenv bootargs ${bootargs} "			\
 		"root=${mmcroot} rootfstype=${mmcrootfstype}\0"   	\
 	"addipargs=setenv bootargs ${bootargs} "			\
@@ -159,6 +161,9 @@
 		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
 	"jffsboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addjffsargs addipargs; setenv autostart yes;"	\
+		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
+	"ubifsboot=setenv bootargs ${console} ${mtdparts};"		\
+		"run addubifsargs addipargs; setenv autostart yes;"	\
 		"nboot.jffs2 A0000000 0 ${kernel_offset}\0"		\
 	"mmcboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addmmcargs addipargs; setenv autostart yes;"	\
@@ -801,7 +806,7 @@
 
 /* PCCR enable DMA FEC I2C1 IIM SDHC1 */
 #define CFG_PCCR0_VAL		0x05070400
-#define CFG_PCCR1_VAL		0xA04A0408
+#define CFG_PCCR1_VAL		0xA14A0408
 
 /* CONFIG_SKIP_LOWLEVEL_INIT bypass lowlevel init in bootstrap mode */
 #undef CONFIG_SKIP_LOWLEVEL_INIT
@@ -919,15 +924,3 @@
 #define CONFIG_BOARD_NAME  apf27
 #endif /* __BR2_ADDED_CONFIG_H */
 
-/* Add a wrapper around the values Buildroot sets. */
-#ifndef __BR2_ADDED_CONFIG_H
-#define __BR2_ADDED_CONFIG_H
-#ifdef CONFIG_HOSTNAME
-#undef CONFIG_HOSTNAME
-#endif
-#define CONFIG_HOSTNAME  "apf27_test"
-#ifdef CONFIG_BOARD_NAME
-#undef CONFIG_BOARD_NAME
-#endif
-#define CONFIG_BOARD_NAME  apf27
-#endif /* __BR2_ADDED_CONFIG_H */

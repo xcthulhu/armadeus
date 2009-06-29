@@ -78,7 +78,8 @@ test_fpga_it()
                 echo "Some Modules failed to load"
                 exit_failed
         fi
-	mknod /dev/button0 c 251 0
+	DEVICE_NODE=`cat /proc/devices | grep BUTTON | cut -d " " -f 1`
+	mknod /dev/button0 c $DEVICE_NODE 0
 
 	/usr/bin/testsuite/testbutton /dev/button0 &
 	PID=$!
