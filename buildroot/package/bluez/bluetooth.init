@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Start/stop the Bluetooth daemons
+#
+
+set -e
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=bluetooth
+DESC="Bluetooth subsystem"
+
+HCIATTACH_NAME=hciattach
+DAEMON_NAME=hcid
+HID2HCI_NAME=hid2hci
+RFCOMM_NAME=rfcomm
+RFCOMM_GETTY_NAME=rfcomm-getty
+
+HCIATTACH_EXEC="`which $HCIATTACH_NAME || true`"
+DAEMON_EXEC="`which $DAEMON_NAME || true`"
+HID2HCI_EXEC="`which $HID2HCI_NAME || true`"
+RFCOMM_EXEC="`which $RFCOMM_NAME || true`"
+
+DAEMON_ENABLE=true
+HID2HCI_ENABLE=false
+RFCOMM_ENABLE=true
+
+DAEMON_CONFIG="/etc/bluetooth/hcid.conf"
+RFCOMM_CONFIG="/etc/bluetooth/rfcomm.conf"
+
+RFCOMM_GETTY=/etc/bluetooth/rfcomm/rfcomm-getty
+
+HCIATTACH_ENABLE=true
+HCIATTACH_TTY=ttyS1
+HCIATTACH_TYPE=gumstix
+HCIATTACH_START_SPEED=57600
+HCIATTACH_SPEED=921600
+HCIATTACH_HANDSHAKE=flow
+
+[ -e /etc/default/bluetooth ] && . /etc/default/bluetooth
+
+case "$1" in
+  start)
+
+	echo -n "Starting 32kHz clock..."
+	/usr/sbin/pxaregs OSCC_OON 1
+	while /usr/sbin/pxaregs OSCC_OOK | tail -n 1 | grep -q -v 1;do
+		echo -n '.'
+		sleep 1
+	done
+	echo "Settled"
+
+	/sbin/modprobe gumstix_bluetooth
+	/sbin/modprobe proc_gpio
+                                                                      
+	echo "AF1 in" >/proc/gpio/GPIO42
+	echo "AF2 out" >/proc/gpio/GPIO43
+	echo "AF1 in" >/proc/gpio/GPIO44
+	echo "AF2 out" >/proc/gpio/GPIO45
+
+	echo -n "Starting $DESC:"
+	if $HCIATTACH_ENABLE && [ -x "$HCIATTACH_EXEC" ] ; then
+		$HCIATTACH_EXEC -s $HCIATTACH_START_SPEED $HCIATTACH_TTY $HCIATTACH_TYPE $HCIATTACH_SPEED $HCIATTACH_HANDSHAKE
+		echo -n " $HCIATTACH_TTY"
+	fi
+	if $DAEMON_ENABLE && [ -x "$DAEMON_EXEC" ] && [ -f "$DAEMON_CONFIG" ] ; then
+		$DAEMON_EXEC -s -f $DAEMON_CONFIG
+		echo -n " $DAEMON_NAME"
+	fi
+	if $HID2HCI_ENABLE && [ -x "$HID2HCI_EXEC" ] ; then
+		$HID2HCI_EXEC --tohci > /dev/null 2>&1 || true
+		echo -n " $HID2HCI_NAME"
+	fi
+	if $RFCOMM_ENABLE && [ -x "$RFCOMM_EXEC" -a -f "$RFCOMM_CONFIG" ] ; then
+	sleep 1
+	/usr/bin/sdptool add --channel=1 SP > /dev/null
+	rfcomm -r watch 0 1 /sbin/getty -w -L rfcomm0 115200 vt100 &
+#		$RFCOMM_EXEC -r -f $RFCOMM_CONFIG watch all > /dev/null 2>&1 &
+#		$RFCOMM_GETTY > /dev/null 2>&1 &
+		echo -n " $RFCOMM_NAME"
+	fi
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC:"
+	killall $RFCOMM_NAME > /dev/null 2>&1 || true
+	echo -n " $RFCOMM_NAME"
+	killall $HID2HCI_NAME > /dev/null 2>&1 || true
+	echo -n " $HID2HCI_NAME"
+	killall $DAEMON_NAME > /dev/null 2>&1 || true
+	echo -n " $DAEMON_NAME"
+	killall $HCIATTACH_NAME > /dev/null 2>&1 || true
+	echo -n " $HCIATTACH_NAME"
+	echo "."
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

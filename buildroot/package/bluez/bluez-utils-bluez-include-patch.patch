@@ -1,0 +1,11 @@
+--- bluez-utils-3.13/common/Makefile.in.orig	2007-08-01 14:00:11.000000000 -0700
++++ bluez-utils-3.13/common/Makefile.in	2007-08-01 14:00:30.000000000 -0700
+@@ -226,7 +226,7 @@
+ 	hal.h $(hal_sources) notify.h $(notify_sources)
+ 
+ test_textfile_LDADD = libhelper.a
+-AM_CFLAGS = @DBUS_CFLAGS@ @GLIB_CFLAGS@
++AM_CFLAGS = @BLUEZ_CFLAGS@ @DBUS_CFLAGS@ @GLIB_CFLAGS@
+ EXTRA_DIST = ppoll.h uinput.h hal-dummy.c hal-libhal.c \
+ 		notify-dummy.c notify-inotify.c \
+ 		sdp-dummy.c sdp-expat.c sdp-glib.c

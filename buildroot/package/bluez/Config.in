@@ -1,0 +1,8 @@
+config BR2_PACKAGE_BLUEZ
+	bool "bluez"
+	default n
+	select BR2_PACKAGE_DBUS
+	select BR2_PACKAGE_PKGCONFIG
+	help
+	  Install the bluez package
+
