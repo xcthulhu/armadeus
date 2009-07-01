@@ -52,7 +52,9 @@ CLEANMOD := ${patsubst %, .%*, $(MODULES)}
 PWD      := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
 obj-m        := $(OBJ)
 
-CLEAN_MOD= modules.order *.ko *.mod.c *.mod.o *.symvers $(CLEANMOD) .tmp_versions
+CLEAN_MOD= modules.order *.ko *.mod.c *.mod.o *.symvers $(CLEANMOD)
+CLEAN_MOD+= .tmp_versions Module.markers
+
 $(EXEC): $(MODULES).c
 	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
 
@@ -60,8 +62,10 @@ $(EXEC): $(MODULES).c
 install: $(EXEC)
 	cp $(EXEC) $(DEST_DIR)/$(EXEC)
 endif
+
 .PHONY: all
 all: $(EXEC)
+
 .PHONY: clean 
 clean:
 	rm -rf $(OBJ) $(CLEAN_MOD)

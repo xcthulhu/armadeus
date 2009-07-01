@@ -28,6 +28,7 @@
 #include <linux/delay.h>
 #include <linux/timer.h>
 #include <asm/gpio.h>
+
 #include "../../../../common_kernel.h"
 
 MODULE_AUTHOR("Gwenhael GOAVEC MEROU");
@@ -38,27 +39,33 @@ MODULE_LICENSE("GPL");
 struct task_struct *th;
 
 /* thread fonction */
-int fct_thread_sleep(void *data) {
+int fct_thread_sleep(void *data)
+{
 	int iomask=1;
 	int timesleep = TIMESLEEP/1000;
+
   	do {
-    		imx_gpio_set_value(PULSE_OUTPUT_PORT, iomask); 
+    		gpio_set_value(PULSE_OUTPUT_GPIO, iomask); 
 		iomask^=1;            
     		msleep(timesleep);
-  	}while (!kthread_should_stop());
+  	} while (!kthread_should_stop());
+
   	return 0;
 }
 
 /* loading (insmod) */
-static int __init blink_init(void) {
-  	th = kthread_create(fct_thread_sleep,NULL,"pulse_linux_kernel_thread_sleep");
+static int __init blink_init(void)
+{
+  	th = kthread_create(fct_thread_sleep, NULL, "pulse_linux_kernel_thread_sleep");
 	wake_up_process(th);
+
 	return 0;
 }
 
 
 /* unloading (rmmod) */
-static void __exit blink_exit(void) {
+static void __exit blink_exit(void)
+{
 	printk(KERN_INFO "blink_exit\n");
 	kthread_stop(th);
 }
@@ -66,3 +73,4 @@ static void __exit blink_exit(void) {
 /* API Linux devices */
 module_init(blink_init);
 module_exit(blink_exit);
+

@@ -35,17 +35,19 @@ MODULE_LICENSE("GPL");
 RT_TASK blink_task;
 static int end = 0;
 
-void blink(void *arg){
+void blink(void *arg)
+{
 	int err, iomask;
+
 	printk(KERN_INFO "entering blink\n");
   
-	if (imx_gpio_request(PULSE_OUTPUT_PORT, "blink") < 0) {
-		gpio_free(PULSE_OUTPUT_PORT);
+	if (gpio_request(PULSE_OUTPUT_GPIO, "blink") < 0) {
+		gpio_free(PULSE_OUTPUT_GPIO);
 		return ;
 	}
-	imx_gpio_direction_output(PULSE_OUTPUT_PORT,1);
+	gpio_direction_output(PULSE_OUTPUT_GPIO, 1);
   
-	if ((err = rt_task_set_periodic(NULL, TM_NOW,rt_timer_ns2ticks(TIMESLEEP*1000)))){
+	if ((err = rt_task_set_periodic(NULL, TM_NOW, rt_timer_ns2ticks(TIMESLEEP*1000)))) {
 		printk("rt task set periodic failed \n");
 		return;
 	}
@@ -53,14 +55,15 @@ void blink(void *arg){
   
 	while(!end){
 		rt_task_wait_period(NULL);
-		imx_gpio_set_value(PULSE_OUTPUT_PORT, iomask);
+		gpio_set_value(PULSE_OUTPUT_GPIO, iomask);
 		iomask^=1;
 	}
 	printk("end\n");
 }
 
 /* loading (insmod) */
-static int __init blink_init(void) {
+static int __init blink_init(void)
+{
 	printk(KERN_INFO "blink_init\n");
 	if (rt_task_create(&blink_task, "blink", 0, 99, 0)) {
 		printk("task create error\n");
@@ -70,16 +73,18 @@ static int __init blink_init(void) {
 		printk("task start error\n"); 
 		return -EBUSY; 
 	}
+
 	return 0;
 }
 
 /* unloading (rmmod) */
-static void __exit blink_exit(void) {
+static void __exit blink_exit(void)
+{
 	end = 1;
 	printk(KERN_INFO "blink_exit\n");
 	rt_task_delete(&blink_task);
 	rt_timer_stop();
-	gpio_free(PULSE_OUTPUT_PORT);
+	gpio_free(PULSE_OUTPUT_GPIO);
 }
 
 /* API kernel driver */

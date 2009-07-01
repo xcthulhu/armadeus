@@ -1,5 +1,5 @@
 /*
-* linux kernel driver for generation signal with timer 
+* Linux kernel driver for generating a signal with timer (GPIO toggling)
 *
 * Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
 *                         Armadeus Project / Armadeus Systems
@@ -40,15 +40,17 @@ static int iomask = 0x00;
 static struct timer_list mt;
 #define TS HZ/100
 /* timer callback*/
-void fonctionTimer(unsigned long arg) {
-	imx_gpio_set_value(PULSE_OUTPUT_PORT, iomask);
+void fonctionTimer(unsigned long arg)
+{
+	gpio_set_value(PULSE_OUTPUT_GPIO, iomask);
 	iomask^=1;
 	mt.expires = jiffies+TS;
 	add_timer(&mt);
 }
 
 /* loading (insmod) */
-static int __init blink_init(void) {
+static int __init blink_init(void)
+{
 	current->state = TASK_INTERRUPTIBLE;
 	init_timer(&mt);
 	mt.expires = jiffies + TS;
@@ -61,7 +63,8 @@ static int __init blink_init(void) {
 }
 
 /* unloading (rmmod) */
-static void __exit blink_exit(void) {
+static void __exit blink_exit(void)
+{
 	printk(KERN_INFO "blink_exit\n");
 	del_timer(&mt);
 }

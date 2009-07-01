@@ -1,8 +1,9 @@
 /*
-* Small linux kernel driver for handling interrupt 
+* Small Linux driver for handling interrupt from a GPIO and toggling
+* an other one at each occurancy.
 *
-* Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
-*                         Armadeus Project / Armadeus Systems
+* Copyright (C) 2009 Armadeus Systems / Armadeus Project
+* Author: Gwenhael GOAVEC-MEROU <gwenhael.goavec-merou@armadeus.com>
 *
 *
 * This program is free software; you can redistribute it and/or modify
@@ -26,7 +27,9 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <asm/gpio.h>
+
 #include "../../../common_kernel.h"
+
 
 MODULE_AUTHOR("Gwenhael GOAVEC MEROU");
 MODULE_DESCRIPTION("irq kernel test");
@@ -38,8 +41,9 @@ static int iomask = 0x00;
 /* irq handler */
 static irqreturn_t test_interrupt_handler(int irqn, void *dev)
 {
-	imx_gpio_set_value(INTERRUPT_OUTPUT_PORT, iomask);
+	gpio_set_value(INTERRUPT_OUTPUT_GPIO, iomask);
 	iomask^=1;
+
 	return IRQ_HANDLED;
 }
 

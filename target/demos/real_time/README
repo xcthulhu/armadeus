@@ -1,0 +1,8 @@
+
+fractal/: Linux application to put the system under heavy load
+
+pulse/: example which generates a square signal on an i.MX GPIO with
+        different means (timer, sleep)
+
+interrupt:/ example which toggles an i.MX GPIO when it receives an interrupt
+            on an other GPIO

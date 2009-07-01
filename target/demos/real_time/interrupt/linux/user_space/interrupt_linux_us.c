@@ -1,8 +1,9 @@
 /*
-* linux userspace apps for handling interrupts
+* Linux userspace app for handling "interrupts" on a GPIO device descriptor
+* (with blocking read) and toggling an other GPIO at each occurancy.
 *
-* Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
-*                         Armadeus Project / Armadeus Systems
+* Copyright (C) 2009 Armadeus Systems / Armadeus Project
+* Author: <gwenhael.goavec-merou@armadeus.com>
 *
 *
 * This program is free software; you can redistribute it and/or modify
@@ -28,42 +29,46 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+
 #include "../../../common.h"
 
-int main (int argc, char **argv)
-{
-	int fd_input,fd_output, retval = 0, iomask=0x00;
 
-	// Open gpio file device for communication;
+int main(void)
+{
+	int fd_input, fd_output, retval = 0, iomask=0x00;
+	char c;
+
+	/* Open GPIO device for communication */
   	fd_input = open (INTERRUPT_INPUT_DEV, O_RDONLY);
   	if (fd_input < 0) {
-		printf ("Open Failed : %s\n",INTERRUPT_INPUT_DEV);
+		printf ("Open Failed : %s\n", INTERRUPT_INPUT_DEV);
 		exit (EXIT_FAILURE);
 	}
 	fd_output = open(INTERRUPT_OUTPUT_DEV, O_RDWR);
 	if (fd_output < 0) {
-		printf("Open Failed : %s\n",INTERRUPT_OUTPUT_DEV);
+		printf("Open Failed : %s\n", INTERRUPT_OUTPUT_DEV);
 		exit (EXIT_FAILURE);
 	}
 
-	// set this process as owner of device file
-	retval = fcntl (fd_input, F_SETOWN, getpid ());
+	/* Set this process as owner of device file */
+	retval = fcntl(fd_input, F_SETOWN, getpid());
   	if (retval < 0) {
-		printf ("F_SETOWN fails \n");
+		printf ("F_SETOWN fails for%s\n", INTERRUPT_INPUT_DEV);
 		return EXIT_FAILURE;
 	}
 	retval = fcntl(fd_output, F_SETOWN, getpid());
 	if (retval < 0) {
-		printf("F_SETOWN fails for %s\n",INTERRUPT_OUTPUT_DEV);
+		printf("F_SETOWN fails for %s\n", INTERRUPT_OUTPUT_DEV);
 		return EXIT_FAILURE;
 	}
-	char c;
-	while (1) {
+
+	while(1) {
 		read (fd_input, &c, 1);
-		write(fd_output, &iomask,sizeof(iomask));
-		iomask ^=1;// (iomask == 0x00)?0x01:0x00;
+		write(fd_output, &iomask, sizeof(iomask));
+		iomask ^=1;/* (iomask == 0x00)?0x01:0x00; */
 	}
-  	close (fd_input);
-	close (fd_output);
+  	close(fd_input);
+	close(fd_output);
+
   	exit (EXIT_SUCCESS);
 }

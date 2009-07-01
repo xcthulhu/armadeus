@@ -35,36 +35,41 @@ MODULE_LICENSE("GPL");
 static rtdm_task_t blink_task;
 static int volatile end = 0;
 
-void blink(void *arg){
+void blink(void *arg)
+{
 	int iomask; 
+
 	printk(KERN_INFO "entering blink\n");
 	iomask=0;
-	while(!end){
+	while(!end) {
 		rtdm_task_wait_period();
-		gpio_set_value(PULSE_OUTPUT_PORT, iomask);
+		gpio_set_value(PULSE_OUTPUT_GPIO, iomask);
 		iomask^=1;
 	}
 	printk("end\n");
 }
 
 /* module load (insmod) */
-static int __init blink_init(void) {
+static int __init blink_init(void)
+{
 	printk(KERN_INFO "blink_init\n");
-	if (gpio_request(PULSE_OUTPUT_PORT, "blink") < 0) {
-		gpio_free(PULSE_OUTPUT_PORT);
+	if (gpio_request(PULSE_OUTPUT_GPIO, "blink") < 0) {
+		gpio_free(PULSE_OUTPUT_GPIO);
 		return -EBUSY;
 	}
-	gpio_direction_output(PULSE_OUTPUT_PORT,1);
+	gpio_direction_output(PULSE_OUTPUT_GPIO, 1);
+
   	return rtdm_task_init(&blink_task, "blink", blink, NULL,
 			99, TIMESLEEP*1000);
 }
 
 /* module unload (rmmod) */
-static void __exit blink_exit(void) {
+static void __exit blink_exit(void)
+{
 	end = 1;
 	printk(KERN_INFO "blink_exit\n");
 	rtdm_task_join_nrt(&blink_task,1000);
-	gpio_free(PULSE_OUTPUT_PORT);
+	gpio_free(PULSE_OUTPUT_GPIO);
 }
 
 /* API kernel driver */

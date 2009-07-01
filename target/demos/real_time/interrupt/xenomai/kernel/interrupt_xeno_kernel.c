@@ -1,8 +1,9 @@
 /*
-* Small xenomai kernel driver for handling interrupt 
+* Small xenomai kernel driver for handling interrupt from a GPIO and toggling
+* an other GPIO at each occurancy
 *
-* Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
-*                         Armadeus Project / Armadeus Systems
+* Copyright (C) 2009 Armadeus Systems / Armadeus Project
+* Author: <gwenhael.goavec-merou@armadeus.com>
 *
 *
 * This program is free software; you can redistribute it and/or modify
@@ -37,24 +38,27 @@ static int iomask;
 
 static int irq_server (xnintr_t *intr) 
 {
-     	imx_gpio_set_value(INTERRUPT_OUTPUT_PORT, iomask);
+     	gpio_set_value(INTERRUPT_OUTPUT_GPIO, iomask);
        	iomask^=1;
+
 	return RT_INTR_HANDLED;
 }
 
-static int __init irq_init(void) 
+static int __init irq_init(void)
 {
 	int err;
+
   	iomask = 0x00;
 	/* Version With 6 param only on kernel space */
-	err = rt_intr_create(&intr_desc,"MyIrq", INTERRUPT_INPUT_NB, irq_server, NULL, 0);	 
-	if (err !=0){
+	err = rt_intr_create(&intr_desc, "MyIrq", INTERRUPT_INPUT_NB, irq_server, NULL, 0);
+	if (err != 0) {
 		printk("rt_intr_create : error\n");
 		return err;
 	}
-  	err = rt_intr_enable(&intr_desc); 
+  	err = rt_intr_enable(&intr_desc);
 	if (err == 0)
-		printk("rt_intr_create : ok\n");	 
+		printk("rt_intr_create : ok\n";
+
 	return err;
 }
 
