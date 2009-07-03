@@ -1,8 +1,10 @@
 config BR2_PACKAGE_BLUEZ
 	bool "bluez"
 	default n
-	select BR2_PACKAGE_DBUS
+	depends on BR2_PACKAGE_DBUS
 	select BR2_PACKAGE_PKGCONFIG
 	help
 	  Install the bluez package
 
+comment "bluez not available (need dbus)"
+        depends on !BR2_PACKAGE_DBUS
