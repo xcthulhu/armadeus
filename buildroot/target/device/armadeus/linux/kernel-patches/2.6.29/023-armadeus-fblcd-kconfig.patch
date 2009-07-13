@@ -10,7 +10,7 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -402,6 +403,42 @@
+@@ -402,6 +403,48 @@
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
@@ -48,6 +48,12 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
 +        help
 +          Motorola A910 screen, a 1.2" color QVGA, TFT panel.
 +          The native resolution is 240x320.
++
++config FB_IMX_CHIMEI_LW700AT9003_TFT
++        bool "LW700AT9003"
++        help
++          Chimei LW700AT9003, a 7" 18 bits, TFT panel.
++          The native resolution is 800x600.
 +endchoice
 +
  config FB_CYBER2000

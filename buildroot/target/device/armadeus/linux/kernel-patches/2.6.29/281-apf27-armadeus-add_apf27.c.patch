@@ -5,7 +5,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-22 15:19:21.000000000 +0200
-@@ -0,0 +1,1587 @@
+@@ -0,0 +1,1589 @@
 + /*
 + * apf27.c
 + *
@@ -315,7 +315,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +		.irq = 0
 +	},
 +#ifdef CONFIG_VIDEO_AD9889
-+	[1] = {
++	[1] = { 
 +		.type = "ad9889",
 +		.flags = 0,
 +		.addr = 0x39,
@@ -541,6 +541,8 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.mode = "Sharp-LQ043",
 +# elif CONFIG_FB_IMX_SHARP_LQ057_TFT
 +	.mode = "Sharp-LQ057",
++#elif CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT
++	.mode = "LW700AT9003",
 +# endif
 +	.init = apf27_fb_init,
 +	.exit = apf27_fb_exit,
