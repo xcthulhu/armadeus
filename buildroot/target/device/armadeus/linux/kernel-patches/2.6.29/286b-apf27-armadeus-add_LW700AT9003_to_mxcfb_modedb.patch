@@ -1,0 +1,24 @@
+Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
+===================================================================
+--- linux-2.6.29.orig/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:25.000000000 +0200
++++ linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:32.000000000 +0200
+@@ -101,6 +101,19 @@ const struct fb_videomode mxcfb_modedb[]
+ 		.vmode = FB_VMODE_NONINTERLACED, /* TO CHECK !! */
+ 		.flag = 0,
+ 	},
++        [7] = {
++		.name = "LW700AT9003",
++		.refresh = 60,
++		.xres = 800,
++		.yres = 480,
++		.pixclock = 30303, /* picoS */
++		.left_margin = 3, .right_margin = 2, /* at least 3 & 1 */
++		.upper_margin = 0x0f, .lower_margin = 0x0f,
++		.hsync_len = 64, .vsync_len = 16,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
++		.flag = 0,
++	},
+ };
+ 
+ int mxcfb_modedb_sz = ARRAY_SIZE(mxcfb_modedb);
