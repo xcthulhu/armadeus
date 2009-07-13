@@ -5,7 +5,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-22 15:19:21.000000000 +0200
-@@ -0,0 +1,1589 @@
+@@ -0,0 +1,1660 @@
 + /*
 + * apf27.c
 + *
@@ -113,6 +113,9 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
 +#endif
++
++//#define CONFIG_GPS
++//#define CONFIG_GSM
 +
 +#ifdef CONFIG_PWM
 +static int mxc_pwm0_pins[] = {
@@ -394,8 +397,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +static int mxc_uart0_pins[] = {
 +	PE12_PF_UART1_TXD,
 +	PE13_PF_UART1_RXD
-+	/*PE14_PF_UART1_CTS,
-+	PE15_PF_UART1_RTS*/
 +};
 +
 +static int uart_mxc_port0_init(struct platform_device *pdev)
@@ -410,14 +411,29 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	return 0;
 +}
 +
-+static int mxc_uart1_pins[] = { PE8_PF_UART3_TXD,
-+				PE9_PF_UART3_RXD,
-+				/*PE10_PF_UART3_CTS,
-+				PE11_PF_UART3_RTS*/ };
++static struct imxuart_platform_data uart0_pdata = {
++	.init = uart_mxc_port0_init,
++	.exit = uart_mxc_port0_exit,
++	.flags = 0,
++};
++
++#ifdef CONFIG_GSM
++#define GSM_POK_IN (GPIO_PORTE | 11)
++static int mxc_uart1_pins[] = {
++	PE3_PF_UART2_CTS,
++	PE4_PF_UART2_RTS,
++	PE6_PF_UART2_TXD,
++	PE7_PF_UART2_RXD,
++	(GSM_POK_IN | GPIO_OUT  | GPIO_GPIO ) /* GSM_PWR_ON_not */
++};
 +
 +static int uart_mxc_port1_init(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART1");
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART1");
++	gpio_set_value(GSM_POK_IN, 0); /* start GSM */
++	mdelay(5000);
++	gpio_set_value(GSM_POK_IN, 1); /* start GSM */
++	return res;
 +}
 +
 +static int uart_mxc_port1_exit(struct platform_device *pdev)
@@ -427,16 +443,66 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	return 0;
 +}
 +
-+static struct imxuart_platform_data uart_pdata[] = {
-+	{
-+		.init = uart_mxc_port0_init,
-+		.exit = uart_mxc_port0_exit,
-+		.flags = IMXUART_HAVE_RTSCTS,
-+	}, {
-+		.init = uart_mxc_port1_init,
-+		.exit = uart_mxc_port1_exit,
-+		.flags = IMXUART_HAVE_RTSCTS,
-+	},
++static struct imxuart_platform_data uart1_pdata = {
++	.init = uart_mxc_port1_init,
++	.exit = uart_mxc_port1_exit,
++	.flags = IMXUART_HAVE_RTSCTS,
++};
++#endif
++
++#ifdef CONFIG_GPS
++#define GPS_WAKEUP (GPIO_PORTB | 20)
++#define GPS_TIMEPULSE (GPIO_PORTB | 21)
++
++static int mxc_uart4_pins[] = {
++	PB19_AF_UART5_RXD,
++	PB18_AF_UART5_TXD,
++	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO ),
++	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO ) 
++};
++
++static int uart_mxc_port4_init(struct platform_device *pdev)
++{
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart4_pins, ARRAY_SIZE(mxc_uart4_pins), "UART4");
++	gpio_set_value(GPS_WAKEUP, 1); /* start GPS */
++
++	return res;
++}
++
++static int uart_mxc_port4_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart4_pins));
++
++	return 0;
++}
++
++static struct imxuart_platform_data uart4_pdata = {
++	.init = uart_mxc_port4_init,
++	.exit = uart_mxc_port4_exit,
++	.flags = 0,
++};
++#endif
++
++static int mxc_uart2_pins[] = { 
++	PE8_PF_UART3_TXD,
++	PE9_PF_UART3_RXD,};
++
++static int uart_mxc_port2_init(struct platform_device *pdev)
++{
++	return mxc_gpio_setup_multiple_pins(mxc_uart2_pins, ARRAY_SIZE(mxc_uart2_pins), "UART2");
++}
++
++static int uart_mxc_port2_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_uart2_pins, ARRAY_SIZE(mxc_uart2_pins));
++
++	return 0;
++}
++
++static struct imxuart_platform_data uart2_pdata = {
++	.init = uart_mxc_port2_init,
++	.exit = uart_mxc_port2_exit,
++	.flags = 0,
 +};
 +
 +static int mxc_fec_pins[] = {
@@ -1507,9 +1573,14 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +
 +	gpio_fec_active();
 +
-+	mxc_register_device(&mxc_uart_device0, &uart_pdata[0]);
-+	mxc_register_device(&mxc_uart_device2, &uart_pdata[1]);
-+	/*mxc_register_device(&mxc_uart_device2, &uart_pdata[2]);*/
++	mxc_register_device(&mxc_uart_device0, &uart0_pdata);
++#ifdef CONFIG_GSM
++	mxc_register_device(&mxc_uart_device1, &uart1_pdata);
++#endif
++	mxc_register_device(&mxc_uart_device2, &uart2_pdata);
++#ifdef CONFIG_GPS
++	mxc_register_device(&mxc_uart_device4, &uart4_pdata);
++#endif
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
