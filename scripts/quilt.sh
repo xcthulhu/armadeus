@@ -3,6 +3,7 @@
 make shell_env
 . armadeus_env.sh
 
+echo -e "\nThis script is going to rebuilt a quiltified Linux kernel in the current view..."
 
 if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $ARMADEUS_LINUX_DIR/patches/ to $ARMADEUS_LINUX_PATCH_DIR"
@@ -14,21 +15,26 @@ fi
 
 # else import patches:
 
-echo "Updating your SVN view"
-svn update
-
-echo "I will delete this directory: $ARMADEUS_LINUX_DIR"
-echo " Ok ? (y/n)"
-
+# Update repository
+echo "Update (pull) your local repository (y/n) ?"
 read response
-
-if [ "$response" != "y" ]; then
-	exit 1
+if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
+	git pull
 fi
 
-rm -rf $ARMADEUS_LINUX_DIR
-make linux26-unpacked
+# Move or delete current Linux dir
+echo "Rename or delete the Linux directory: $ARMADEUS_LINUX_DIR"
+echo " ?? (r/d)"
+read response
+EXT=`date +%Y_%M_%d_%H%m`
+if [ "$response" == "d" ]; then
+	rm -rf $ARMADEUS_LINUX_DIR
+else
+	mv $ARMADEUS_LINUX_DIR "$ARMADEUS_LINUX_DIR"."$EXT"
+fi
 
+# Get Linux sources
+make linux26-unpacked
 
 pushd $ARMADEUS_LINUX_DIR
 mkdir patches
@@ -62,3 +68,4 @@ echo -e "\n--- Your can now go to $ARMADEUS_LINUX_DIR\nHappy hacking ! ;-)\n"
 echo -e "__ Don't forget to do a \"$0 export\" after your modifications __\n"
 
 exit 0
+
