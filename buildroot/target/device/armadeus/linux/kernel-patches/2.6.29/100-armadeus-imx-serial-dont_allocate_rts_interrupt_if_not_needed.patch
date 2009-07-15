@@ -1,0 +1,43 @@
+
+On MX1 platform, if the UART doesn't require RTS/CTS handling (info given by 
+platform data), then don't try to allocate related interrupt.
+Without this patchi, MX1 serial port initialisation will fail if we say that
+we don't require RTS/CTS and don't provide a RTS IRQ number.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.4/drivers/serial/imx.c
+===================================================================
+--- linux-2.6.29.4.orig/drivers/serial/imx.c	2009-07-15 17:24:35.000000000 +0200
++++ linux-2.6.29.4/drivers/serial/imx.c	2009-07-15 17:30:00.000000000 +0200
+@@ -575,12 +575,14 @@
+ 		if (retval)
+ 			goto error_out2;
+ 
+-		retval = request_irq(sport->rtsirq, imx_rtsint,
+-			     (sport->rtsirq < MAX_INTERNAL_IRQ) ? 0 :
+-			       IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+-				DRIVER_NAME, sport);
+-		if (retval)
+-			goto error_out3;
++		if (sport->have_rtscts) {
++			retval = request_irq(sport->rtsirq, imx_rtsint,
++				  (sport->rtsirq < MAX_INTERNAL_IRQ) ? 0 :
++				  IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
++				  DRIVER_NAME, sport);
++			if (retval)
++				goto error_out3;
++		}
+ 	} else {
+ 		retval = request_irq(sport->port.irq, imx_int, 0,
+ 				DRIVER_NAME, sport);
+@@ -642,7 +644,8 @@
+ 	 * Free the interrupts
+ 	 */
+ 	if (sport->txirq > 0) {
+-		free_irq(sport->rtsirq, sport);
++		if (sport->have_rtscts)
++			free_irq(sport->rtsirq, sport);
+ 		free_irq(sport->txirq, sport);
+ 		free_irq(sport->rxirq, sport);
+ 	} else
