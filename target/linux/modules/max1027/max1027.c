@@ -76,6 +76,10 @@
 
 #define FIFO_SIZE 128
 
+//#undef pr_debug
+//#define pr_debug(fmt, ...) \
+//        (printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__))
+
 /* Global variables */
 struct max1027_operations *driver_ops;
 static int max1027_major = 0; /* Dynamic major allocation */
@@ -191,6 +195,7 @@ static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
 
 static void max1027_start_conv(struct max1027 *max1027)
 {
+    
 	/* if no convst pin  */
 	if (max1027->cnvst < 0) {
 		max1027_send_cmd(current_spi, max1027->conv_reg);
@@ -211,7 +216,8 @@ static void max1027_process_results(struct max1027 *max1027)
 
 	pr_debug("%s", __FUNCTION__);
 
-	mutex_lock(&max1027->update_lock);
+//	mutex_lock(&max1027->update_lock); // XXX
+
 	selected_channel = GET_SELECTED_CHANNEL(max1027->conv_reg);
 	if (selected_channel >= NB_CHANNELS)
 		selected_channel = NB_CHANNELS - 1;
@@ -226,7 +232,6 @@ static void max1027_process_results(struct max1027 *max1027)
 
 	if (max1027->conv_reg & MAX1027_CONV_TEMP)
 		values_to_read += 1;
-
 #ifdef DEBUG
 	for (i=0; i<values_to_read*2; i++) {
 		printk("%02x ", buffer[i]);
@@ -272,7 +277,7 @@ static void max1027_process_results(struct max1027 *max1027)
 	} else {
 		max1027->status = 0;
 	}
-	mutex_unlock(&max1027->update_lock);
+//	mutex_unlock(&max1027->update_lock); // XXX
 }
 
 static void max1027_reads_async( struct spi_device *spi, int num_values )
@@ -296,6 +301,7 @@ static void max1027_reads_async( struct spi_device *spi, int num_values )
 	if (ret)
 		printk(KERN_ERR "%s: error %i in SPI request\n",
 				__FUNCTION__, ret);
+
 }
 
 /*
@@ -348,6 +354,7 @@ static void read_conversion_results( unsigned long data )
 	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 	int size = 0;
 
+
 	/* Get conversion results from chip (depends on conversion mode) */
 	switch( GET_SCAN_MODE(max1027->conv_reg) )
 	{
@@ -384,9 +391,8 @@ static void read_conversion_results( unsigned long data )
 static irqreturn_t max1027_interrupt(int irq, void *dev_id)
 {
 	struct max1027 *max1027 = dev_id;
-
 	/* schedule task for reading results from chip outside of IRQ */
-	tasklet_schedule( &max1027->tasklet );
+	tasklet_hi_schedule( &max1027->tasklet );
 
 	return IRQ_HANDLED;
 }
