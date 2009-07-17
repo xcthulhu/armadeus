@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/apf9328.c	2009-06-08 19:07:17.000000000 +0200
-@@ -0,0 +1,849 @@
++++ linux-2.6.29.4/arch/arm/mach-imx/apf9328.c	2009-07-15 17:16:18.000000000 +0200
+@@ -0,0 +1,848 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -338,8 +338,8 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +
 +
 +/* --- SERIAL RESSOURCE --- */
-+static struct imxuart_platform_data uart_pdata = {
-+	.flags = IMXUART_HAVE_RTSCTS,
++static struct imxuart_platform_data uart1_pdata = {
++	.flags = 0,
 +};
 +
 +static struct resource imx_uart1_resources[] = {
@@ -358,11 +358,6 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +		.end    = (UART1_MINT_TX),
 +		.flags  = IORESOURCE_IRQ,
 +	},
-+	[3] = { /* Mandatory (even if RTS is not used), otherwise drivers/serial/imx.c fails to allocate IRQs */
-+		.start	= UART1_MINT_RTS,
-+		.end	= UART1_MINT_RTS,
-+		.flags	= IORESOURCE_IRQ,
-+	},
 +};
 +
 +static struct platform_device imx_uart1_device = {
@@ -371,8 +366,12 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +	.num_resources  = ARRAY_SIZE(imx_uart1_resources),
 +	.resource       = imx_uart1_resources,
 +	.dev            = {
-+		.platform_data = &uart_pdata,
++		.platform_data = &uart1_pdata,
 +	}
++};
++
++static struct imxuart_platform_data uart2_pdata = {
++        .flags = IMXUART_HAVE_RTSCTS,
 +};
 +
 +static struct resource imx_uart2_resources[] = {
@@ -391,7 +390,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +		.end    = (UART2_MINT_TX),
 +		.flags  = IORESOURCE_IRQ,
 +	},
-+	[3] = { /* Mandatory (even if RTS is not used), otherwise drivers/serial/imx.c fails to allocate IRQs */
++	[3] = {
 +		.start	= UART2_MINT_RTS,
 +		.end	= UART2_MINT_RTS,
 +		.flags	= IORESOURCE_IRQ,
@@ -404,7 +403,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +	.num_resources  = ARRAY_SIZE(imx_uart2_resources),
 +	.resource       = imx_uart2_resources,
 +	.dev            = {
-+		.platform_data = &uart_pdata,
++		.platform_data = &uart2_pdata,
 +	}
 +};
 +
@@ -858,7 +857,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h	2009-06-08 18:35:27.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h	2009-07-15 16:23:52.000000000 +0200
 @@ -0,0 +1,301 @@
 +/*
 + *
@@ -1164,7 +1163,7 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h
 Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h	2009-06-08 18:35:27.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h	2009-07-15 16:23:52.000000000 +0200
 @@ -0,0 +1,63 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
