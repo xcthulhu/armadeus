@@ -194,13 +194,11 @@ static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
 }
 
 static void max1027_start_conv(struct max1027 *max1027)
-{
-    
+{ 
 	/* if no convst pin  */
 	if (max1027->cnvst < 0) {
 		max1027_send_cmd(current_spi, max1027->conv_reg);
-	}
-	else {
+	} else {
 		gpio_set_value(max1027->cnvst, 0);
 		udelay(1);
 		gpio_set_value(max1027->cnvst, 1);
@@ -301,7 +299,6 @@ static void max1027_reads_async( struct spi_device *spi, int num_values )
 	if (ret)
 		printk(KERN_ERR "%s: error %i in SPI request\n",
 				__FUNCTION__, ret);
-
 }
 
 /*
@@ -350,10 +347,8 @@ out:
 static void read_conversion_results( unsigned long data )
 {
 	struct spi_device *spi = (struct spi_device *)data;
-
 	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 	int size = 0;
-
 
 	/* Get conversion results from chip (depends on conversion mode) */
 	switch( GET_SCAN_MODE(max1027->conv_reg) )
@@ -401,6 +396,7 @@ static irqreturn_t max1027_interrupt(int irq, void *dev_id)
 static void max1027_flush_all_channels(struct max1027 *p_max1027)
 {
 	int i;
+
 	for (i=0; i < NB_CHANNELS; i++) {
 		if( p_max1027->channels[i] != NULL )
 			fifo_flush(p_max1027->channels[i]);
