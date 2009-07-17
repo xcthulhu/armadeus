@@ -37,12 +37,19 @@ test_serial_port()
 		echo -n "Connect loopback jumper"
 		execute_for_target echo_jumper_help_apf9328 echo_jumper_help_apf27
 		ask_user "and then press <ENTER>"
+		# Configure port as raw
+		stty -F $SERIAL_DEVICE raw
+		stty -F $SERIAL_DEVICE -echo -echoe -echok
+		# Get incoming data
 		cat $SERIAL_DEVICE > $TEMP_FILE & 
 		pid=$!
 		echo -n "."; sleep 1
-		echo "Serial Port N°$1 is working !" > $SERIAL_DEVICE
+		# Send data
+		echo "Serial Port N°$1 ($SERIAL_DEVICE) is working !!!!!!!!!!" > $SERIAL_DEVICE
 		echo -n "."; sleep 1; echo
+		cat /proc/interrupts | grep uart
 		kill $pid
+		# Check if data were transmitted
 		grep "working" $TEMP_FILE
 		if [ "$?" == 0 ]; then
 			echo_test_ok
