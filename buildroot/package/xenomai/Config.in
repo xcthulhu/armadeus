@@ -1,6 +1,7 @@
 config BR2_PACKAGE_XENOMAI
         bool "Xenomai"
-        help
+	depends on BR2_LINUX_2_6_29 || BR2_LINUX_2_6_27 
+	help
 		Real-Time Framework for Linux
 
 		http://xenomai.org

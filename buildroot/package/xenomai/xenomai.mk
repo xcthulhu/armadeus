@@ -14,46 +14,40 @@
 #############################################################
 
 KERN_DIR:=$(PROJECT_BUILD_DIR)/linux-$(shell echo $(BR2_LINUX26_VERSION))
-XENOMAI_VERSION:=2.4.7
+XENOMAI_ARCH:=$(shell echo $(BR2_ARCH))
+
+XENOMAI_VERSION:=2.4.8
 XENOMAI_SOURCE:=xenomai-$(XENOMAI_VERSION).tar.bz2
 XENOMAI_SITE:=http://download.gna.org/xenomai/stable
 XENOMAI_DIR:=$(BUILD_DIR)/xenomai-$(XENOMAI_VERSION)
 XENOMAI_CAT:=bzcat
 XENOMAI_BINARY:=xeno-load
-XENOMAI_TARGET_BINARY:=usr/xenomai/bin/xeno-load
+XENOMAI_TARGET_BINARY:=usr/xenomai/bin/$(XENOMAI_BINARY)
 
-ADEOS_VERSION:=1.12-00
-ADEOS_SOURCE:=adeos-ipipe-$(shell echo $(BR2_KERNEL_THIS_VERSION))-arm-$(ADEOS_VERSION).patch
-ADEOS_SITE:=http://download.gna.org/adeos/patches/v2.6/arm/older/
-
+ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
+	CPU_TYPE:=mx2
+else
+ifeq ($(BR2_TARGET_ARMADEUS_APF9328),y)
+	CPU_TYPE:=imx
+endif
+endif 
 
 $(DL_DIR)/$(XENOMAI_SOURCE):
 	$(WGET) -P $(DL_DIR) $(XENOMAI_SITE)/$(XENOMAI_SOURCE)
 
-$(DL_DIR)/$(ADEOS_SOURCE):	
-	$(WGET) -P $(DL_DIR) $(ADEOS_SITE)$(ADEOS_SOURCE)
-
-xenomai-source: $(DL_DIR)/$(ADEOS_SOURCE)
-
-$(KERN_DIR)/.patched.adeos: $(DL_DIR)/$(ADEOS_SOURCE)
-	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		00-adeos-compatibility_with_armadeus.patch
-	toolchain/patch-kernel.sh $(LINUX26_DIR) $(DL_DIR) \
-		$(ADEOS_SOURCE)
-	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		01-adeos-$(ADEOS_VERSION)-imx_compatibility.patch
-	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		02-xenomai-imx_gpio_set_value_inline.patch
-	touch $@
+xenomai-source: $(DL_DIR)/$(XENOMAI_SOURCE)
 
 $(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
 	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $@
 
-$(KERN_DIR)/.patched.xenomai: $(KERN_DIR)/.patched.adeos $(XENOMAI_DIR)/.unpacked
+$(KERN_DIR)/.patched.xenomai: $(XENOMAI_DIR)/.unpacked
+	 toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
+		\*-adeos-\*.patch				
 	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
 		--linux=$(LINUX26_DIR) \
-		--arch=$(BR2_ARCH)
+		--arch=$(BR2_ARCH) \
+		--default
 	cat package/xenomai/xeno-kernel.config >> $(LINUX26_DIR)/.config
 	touch $@
 
@@ -64,9 +58,10 @@ $(XENOMAI_DIR)/.configured: $(KERN_DIR)/.patched.xenomai
                 $(TARGET_CONFIGURE_OPTS) \
 		                $(TARGET_CONFIGURE_ARGS) \
                 CCFLAGS_FOR_BUILD="$(HOST_CFLAGS)" \
-			./configure \
-			--enable-arm-mach=imx \
-			--host=arm-linux \
+			./configure                		\
+			--enable-$(XENOMAI_ARCH)-mach=$(CPU_TYPE) \
+			--enable-$(XENOMAI_ARCH)-eabi=$(if $(BR2_ARM_EABI),yes,no) \
+			--host=$(XENOMAI_ARCH)-linux \
 			--datarootdir=/xenodoc \
 	)
 	touch $@
