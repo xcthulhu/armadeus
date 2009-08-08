@@ -314,7 +314,7 @@ static void initialize_port(int port, int* init_params)
 	}
 }
 
-static void initialize_all_ports( void )
+static void initialize_all_ports(void)
 {
 	initialize_port(PORT_A, portA_init);
 	initialize_port(PORT_B, portB_init);
@@ -327,12 +327,12 @@ static void initialize_all_ports( void )
 }
 
 
-static void writeOnPort( unsigned int aPort, unsigned int aValue )
+static void writeOnPort(unsigned int aPort, unsigned int aValue)
 {
 	__raw_writel(aValue, VA_GPIO_BASE + MXC_DR(aPort));
 }
 
-static unsigned int readFromPort( unsigned int aPort )
+static unsigned int readFromPort(unsigned int aPort)
 {
 	unsigned int port_value = 0;
 
@@ -342,7 +342,7 @@ static unsigned int readFromPort( unsigned int aPort )
 	return port_value;
 }
 
-static void setPortMode ( unsigned int aPort, unsigned int aModeMask )
+static void setPortMode(unsigned int aPort, unsigned int aModeMask)
 {
 	int i;
 	int ocr1,ocr2;
@@ -366,18 +366,18 @@ static void setPortMode ( unsigned int aPort, unsigned int aModeMask )
 	__raw_writel(aModeMask & PORT_MASK[aPort], VA_GPIO_BASE + MXC_GIUS(aPort));
 }
 
-static void setPortPull ( unsigned int aPort, unsigned int aPullMask )
+static void setPortPull(unsigned int aPort, unsigned int aPullMask)
 {
 	__raw_writel(aPullMask & 0xffffffff, VA_GPIO_BASE + MXC_PUEN(aPort));
 }
 
 
-static void setPortDir( unsigned int aPort, unsigned int aDirMask )
+static void setPortDir(unsigned int aPort, unsigned int aDirMask)
 {
 	__raw_writel(aDirMask & 0xffffffff, VA_GPIO_BASE + MXC_DDIR(aPort));
 }
 
-static unsigned int getPortDir( unsigned int aPort )
+static unsigned int getPortDir(unsigned int aPort)
 {
 	unsigned int port_value = 0;
 
@@ -633,7 +633,7 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 	int value=0;
 	unsigned int minor;
 
-	printk(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
+	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
 
 	/* Extract the type and number bitfields, and don't decode wrong cmds:
 	   return ENOTTY (inappropriate ioctl) before access_ok() */
@@ -657,13 +657,13 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 	/* Extract and test minor */
 	minor = MINOR(inode->i_rdev);
 	if (minor < FULL_PORTD_MINOR) {
-		printk("Minor outside range: %d !\n", minor);
+		printk("IOCTLs are only available on minors representing full port access!\n");
 		return -EFAULT;
 	}
 
 	switch (cmd) {
 		case GPIORDDIRECTION:
-		value = getPortDir( minor );
+		value = getPortDir(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
 		break;
 	
@@ -671,19 +671,19 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 		ret = __get_user(value, (unsigned int *)arg);
 	
 		if (ret == 0) {
-			setPortDir(minor, value);
+			setPortDir(MAX_MINOR - minor, value);
 		}
 		break;
 	
 		case GPIORDDATA:
-		value = readFromPort(minor);
+		value = readFromPort(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
 		break;
 	
 		case GPIOWRDATA:
 		ret = __get_user(value, (unsigned int *)arg);
 		if (ret == 0) {
-			writeOnPort(minor, value);
+			writeOnPort(MAX_MINOR - minor, value);
 		}
 		break;
 	
@@ -965,35 +965,35 @@ static void remove_proc_entries(void)
 
 	/* Remove /proc entries */
 	if (init_map & GPIO_PROC_FILE) {
-		printk( DRIVER_NAME " removing /proc/.../portX\n" );
+		printk(DRIVER_NAME " removing /proc/.../portX\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%s", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
 	if (init_map & SETTINGS_MODE_PROC_FILE) {
-		printk( DRIVER_NAME " removing /proc/.../portXmode\n" );
+		printk(DRIVER_NAME " removing /proc/.../portXmode\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%smode", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
 	if (init_map & SETTINGS_PROC_FILE) {
-		printk( DRIVER_NAME " removing /proc/.../portXdir\n" );
+		printk(DRIVER_NAME " removing /proc/.../portXdir\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%sdir", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
 	if (init_map & SETTINGS_IRQ_PROC_FILE) {
-		printk( DRIVER_NAME " removing /proc/.../portXirq\n" );
+		printk(DRIVER_NAME " removing /proc/.../portXirq\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%sirq", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
 	if (init_map & SETTINGS_PULLUP_PROC_FILE) {
-		printk( DRIVER_NAME " removing /proc/.../portXpullup\n" );
+		printk(DRIVER_NAME " removing /proc/.../portXpullup\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%spullup", GPIO_PROC_DIRNAME, port_name[i]);
 			remove_proc_entry(proc_name, NULL);
@@ -1079,16 +1079,16 @@ static void __exit armadeus_gpio_cleanup(void)
 /*
  * API To be removed ???
  */
-void gpioWriteOnPort( unsigned int aPort, unsigned int aValue )
+void gpioWriteOnPort(unsigned int aPort, unsigned int aValue)
 {
 	if (aPort >= NB_PORTS) {
 		printk(DRIVER_NAME "port unknown !\n");
 		return;
 	}
-	writeOnPort( aPort, aValue );
+	writeOnPort(aPort, aValue);
 }
 
-unsigned int gpioReadFromPort( unsigned int aPort )
+unsigned int gpioReadFromPort(unsigned int aPort)
 {
 	if (aPort >= NB_PORTS) {
 		printk(DRIVER_NAME "port unknown !\n");
@@ -1098,12 +1098,12 @@ unsigned int gpioReadFromPort( unsigned int aPort )
 	}
 }
 
-void gpioSetPortDir( unsigned int aPort, unsigned int aDirMask )
+void gpioSetPortDir(unsigned int aPort, unsigned int aDirMask)
 {
-	setPortDir( aPort, aDirMask );
+	setPortDir(aPort, aDirMask);
 }
 
-unsigned int gpioGetPortDir( unsigned int aPort )
+unsigned int gpioGetPortDir(unsigned int aPort)
 {
 	return getPortDir(aPort);
 }
@@ -1119,3 +1119,4 @@ module_exit(armadeus_gpio_cleanup);
 MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain");
 MODULE_DESCRIPTION("Armadeus GPIOs driver");
 MODULE_LICENSE("GPL");
+
