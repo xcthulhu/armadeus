@@ -11,6 +11,20 @@
  MKFS_UBIFS_SOURCE:=mkfs.ubifs-$(MKFS_UBIFS_VERSION).tar.gz
  MKFS_UBIFS_DIR:= $(BUILD_DIR)/mkfs-ubifs-$(MKFS_UBIFS_VERSION)
  MKFS_UBIFS_CAT:=$(ZCAT)
+@@ -107,6 +107,13 @@ endif
+ 	chmod a+x $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	$(STAGING_DIR)/usr/bin/fakeroot -- $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	-@rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
++	cp target/device/armadeus/$(BR2_BOARD_NAME)/ubinize.cfg .
++	cp $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.ubifs .
++	ubinize -o system_ubi.img -m $(BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE) -p 128KiB -s 512 ubinize.cfg
++	cp -f system_ubi.img $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.ubifs
++	rm system_ubi.img
++	rm $(BR2_BOARD_NAME)-rootfs.arm.ubifs
++	rm ubinize.cfg
+ 
+ ifneq ($(UBIFS_ROOTFS_COMPRESSOR),)
+ $(UBIFS_BASE).$(UBIFS_ROOTFS_COMPRESSOR_EXT): $(UBIFS_ROOTFS_COMPRESSOR_PREREQ) $(UBIFS_BASE)
 --- buildrootref/target/ubifs/mkfs-ubifs-head.patch	1970-01-01 01:00:00.000000000 +0100
 +++ buildroot/target/ubifs/mkfs-ubifs-head.patch	2009-06-07 11:57:11.000000000 +0200
 @@ -0,0 +1,43 @@
