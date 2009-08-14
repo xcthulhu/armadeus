@@ -1,0 +1,44 @@
+#! /bin/sh
+ 
+[ -f /usr/sbin/inetd ] || exit 0
+ 
+RETVAL=0
+ 
+# See how we were called.
+case "$1" in
+        start)
+                echo -n "Starting INET services: "
+                inetd
+                RETVAL=$?
+                [ $RETVAL -eq 0 ] && touch /var/lock/subsys/inet && echo "done"
+                ;;
+        stop)
+                echo -n "Stopping INET services: "
+                killall inetd
+                RETVAL=$?
+                [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/inet && echo "done"
+                ;;
+        status)
+                echo -n "INET services are: "
+                if [ -f /var/lock/subsys/inet ]; then
+                        echo "running"
+                else
+                        echo "not running"
+                fi
+                ;;
+        restart)
+                $0 stop
+                $0 start
+                RETVAL=$?
+                ;;
+        reload)
+                killall -HUP inetd
+                RETVAL=$?
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|status|reload|restart}"
+                exit 1
+esac
+ 
+exit $RETVAL
+
