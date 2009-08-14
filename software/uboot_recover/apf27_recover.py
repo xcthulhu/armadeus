@@ -373,6 +373,9 @@ if __name__ == "__main__":
     apfBootloader.initSDRAM1("APF27")
     uboot.load()
     uboot.waitForPrompt()
+    eraseAll = raw_input('Would you like to erase the environment variables? y/n: ')
+    if eraseAll == 'y':
+        uboot.resetenv()
     uboot.flash()
     print "uBoot successfully recovered !"
 
