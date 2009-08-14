@@ -333,7 +333,7 @@
 #define CONFIG_SSI2_FREQ	66	/* 66.50 MHz SSI2*/
 #define CONFIG_MSHC_FREQ	66	/* 66.50 MHz MSHC*/
 #define CONFIG_H264_FREQ	66	/* 66.50 MHz H264*/
-#define CONFIG_CLK0_DIV      0  /* Divide CLK0 by 1  */
+#define CONFIG_CLK0_DIV      3  /* Divide CLK0 by 4 */
 #define CONFIG_CLK0_EN       1  /* CLK0 enabled */
 
 /* external bus frequency (have to be a CONFIG_HCLK_FREQ ratio) */
@@ -670,7 +670,7 @@
 #define CFG_CS4A_VAL	0
 
 /* FPGA 16 bit data bus */
-#define CFG_CS5U_VAL	0x00000500
+#define CFG_CS5U_VAL	0x00000600
 #define CFG_CS5L_VAL	0x00000D01
 #define CFG_CS5A_VAL	0
 
@@ -678,7 +678,7 @@
 
 /* FPGA specific settings */
 /* CLKO */
-#define CFG_CCSR_VAL 0x00000308
+#define CFG_CCSR_VAL 0x00000305
 /* drive strength CLKO set to 2*/
 #define CFG_DSCR10_VAL 0x00020000
 /* drive strength A1..A12 set to 2*/
@@ -910,3 +910,16 @@
 #define CFG_SDRAM_PRECHARGE_ALL_VAL (1<<10)
 
 #endif /* __CONFIG_H */
+
+/* Add a wrapper around the values Buildroot sets. */
+#ifndef __BR2_ADDED_CONFIG_H
+#define __BR2_ADDED_CONFIG_H
+#ifdef CONFIG_HOSTNAME
+#undef CONFIG_HOSTNAME
+#endif
+#define CONFIG_HOSTNAME  "apf27"
+#ifdef CONFIG_BOARD_NAME
+#undef CONFIG_BOARD_NAME
+#endif
+#define CONFIG_BOARD_NAME  apf27
+#endif /* __BR2_ADDED_CONFIG_H */
