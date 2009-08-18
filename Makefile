@@ -35,7 +35,8 @@ BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
-PATCH_DIR=patches
+PATCH_DIR = patches
+BUILDROOT_PATCH_DIR = patches/buildroot
 TAR_OPTIONS=--exclude=.svn --exclude=.git -xf 
 
 ARMADEUS_ENV_FILE=armadeus_env.sh
@@ -79,7 +80,7 @@ help:
 	@echo '  source-check           - check all packages for valid download URLs'
 	@echo
 	@echo 'See www.armadeus.org for further armadeus details'
-	@echo 'See /buildroot/docs/README and /buildroot/docs/buildroot.html'
+	@echo 'See ./buildroot/docs/README and ./buildroot/docs/buildroot.html'
 	@echo '  for further buildroot details'
 	@echo
 
@@ -91,12 +92,12 @@ $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE):
 	mkdir -p $(BUILDROOT_FILE_PATH)
 	wget --passive-ftp -P $(BUILDROOT_FILE_PATH)  $(BUILDROOT_SITE)/$(BUILDROOT_SOURCE)
 
-$(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(PATCH_DIR)/*.diff
+$(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(BUILDROOT_PATCH_DIR)/*.patch
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
 	tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
-	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(PATCH_DIR) \*.diff 
+	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(BUILDROOT_PATCH_DIR) \*.patch
 # Since patches may add/delete packages, we process extra packages after patching
-	perl $(PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
+	perl $(BUILDROOT_PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
 	touch $@
 
 $(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
