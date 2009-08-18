@@ -830,7 +830,7 @@ isp1761_probe (struct platform_device *pdev)
      */
 
 #if 1 // CUSTOM STUFF - 16-bit mode
-    isp1761_reg_write32(loc_dev, HC_HW_MODE_REG, 2);
+    isp1761_reg_write32(loc_dev, HC_HW_MODE_REG, 0x82);
 #endif
 
     loc_dev = &(isp1761_loc_dev[ISP1761_HC]);
