@@ -544,7 +544,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 			gpio->nb_pins = 32;
 			gpio->changed = 1;
 			gpio->port    = FULL_MINOR_TO_PORT(minor);
-			printk("Reserving full %s\n", port_name[gpio->port]);
+			pr_debug("Reserving full %s\n", port_name[gpio->port]);
 			goto success;
 		break;
 	}
