@@ -1,9 +1,9 @@
-Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
+Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:25.000000000 +0200
-+++ linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:32.000000000 +0200
-@@ -101,6 +101,19 @@ const struct fb_videomode mxcfb_modedb[]
- 		.vmode = FB_VMODE_NONINTERLACED, /* TO CHECK !! */
+--- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:17:54.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:27:52.000000000 +0200
+@@ -101,6 +101,19 @@
+ 		.vmode = FB_VMODE_NONINTERLACED,
  		.flag = 0,
  	},
 +        [7] = {

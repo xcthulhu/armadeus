@@ -1,7 +1,7 @@
-Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
+Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:25.000000000 +0200
-+++ linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c	2009-03-31 10:57:32.000000000 +0200
+--- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:02:28.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:17:54.000000000 +0200
 @@ -88,6 +88,19 @@
  		.vmode = FB_VMODE_NONINTERLACED,
  		.flag = 0,
@@ -11,12 +11,12 @@ Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
 +		.refresh = 60,
 +		.xres = 320,
 +		.yres = 240,
-+		.pixclock = 111111, /* picoS */
-+		.left_margin = 52, .right_margin = 28, /* at least 3 & 1 */
-+		.upper_margin = 2, .lower_margin = 3,
-+		.hsync_len = 0, .vsync_len = 7,
-+		.sync = FB_SYNC_CLK_IDLE_EN,
-+		.vmode = FB_VMODE_NONINTERLACED, /* TO CHECK !! */
++		.pixclock = 158730, /* picoS -> 6,3MHz */
++		.left_margin = 52, .right_margin = 28, /* at least 3 & 1 */ /* 320 + 52 + 28 = 400 */
++		.upper_margin = 3, .lower_margin = 3, /* 240 + 5 + 3 + 3 = 251 */
++		.hsync_len = 96, .vsync_len = 5,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
 +		.flag = 0,
 +	},
  };
