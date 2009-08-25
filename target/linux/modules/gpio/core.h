@@ -32,6 +32,8 @@
 #define GPIOWRDIRECTION _IOW(PP_IOCTL, 0xF1, int)
 #define GPIORDDATA      _IOR(PP_IOCTL, 0xF2, int)
 #define GPIOWRDATA      _IOW(PP_IOCTL, 0xF3, int)
+#define GPIORDMODE      _IOR(PP_IOCTL, 0xF4, int)
+#define GPIOWRMODE      _IOW(PP_IOCTL, 0xF5, int)
 
 /* Pretend we're PPDEV for IOCTL */
 #include <linux/ppdev.h>

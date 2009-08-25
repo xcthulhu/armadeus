@@ -381,7 +381,7 @@ static unsigned int getPortDir(unsigned int aPort)
 {
 	unsigned int port_value = 0;
 
-	/* Get the status of the gpio direction registers TBDNICO */
+	/* Get the status of the GPIO direction registers */
 	port_value = __raw_readl(VA_GPIO_BASE + MXC_DDIR(aPort));
 
 	return port_value;
@@ -626,11 +626,10 @@ static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 }
 
 /* Handling of IOCTL calls */
-int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
-	unsigned int cmd, unsigned long arg )
+int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
+	unsigned int cmd, unsigned long arg)
 {
-	int err = 0; int ret = 0;
-	int value=0;
+	int err = 0, ret = 0, value = 0;
 	unsigned int minor;
 
 	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
@@ -646,7 +645,7 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 	if (_IOC_DIR(cmd) & _IOC_READ)
 		err = !access_ok(VERIFY_WRITE, (void *)arg, _IOC_SIZE(cmd));
 	else if (_IOC_DIR(cmd) & _IOC_WRITE)
-		err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
+		err = !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
 
 	if (err)
 		return -EFAULT;
@@ -654,11 +653,13 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 	/* Obtain exclusive access */
 	if (down_interruptible(&gpio_sema))
 		return -ERESTARTSYS;
+
 	/* Extract and test minor */
 	minor = MINOR(inode->i_rdev);
 	if (minor < FULL_PORTD_MINOR) {
-		printk("IOCTLs are only available on minors representing full port access!\n");
-		return -EFAULT;
+		printk("IOCTLs are only available on 'full port' minors !\n");
+		ret = -EFAULT;
+		goto out;
 	}
 
 	switch (cmd) {
@@ -666,31 +667,44 @@ int armadeus_gpio_dev_ioctl( struct inode *inode, struct file *filp,
 		value = getPortDir(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
 		break;
-	
+
 		case GPIOWRDIRECTION:
 		ret = __get_user(value, (unsigned int *)arg);
-	
 		if (ret == 0) {
 			setPortDir(MAX_MINOR - minor, value);
 		}
 		break;
-	
+
 		case GPIORDDATA:
 		value = readFromPort(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
 		break;
-	
+
 		case GPIOWRDATA:
 		ret = __get_user(value, (unsigned int *)arg);
 		if (ret == 0) {
 			writeOnPort(MAX_MINOR - minor, value);
 		}
 		break;
-	
+
+		case GPIORDMODE:
+		value = __raw_readl(VA_GPIO_BASE + MXC_GIUS(MAX_MINOR - minor));
+		ret = __put_user(value, (unsigned int *)arg);
+		break;
+
+		case GPIOWRMODE:
+		ret = __get_user(value, (unsigned int *)arg);
+		if (ret == 0) {
+			setPortMode(MAX_MINOR - minor, value);
+		}
+		break;
+
 		default:
-		return -ENOTTY;
+		printk("IOCTL not supported\n");
+		ret = -ENOTTY;
 		break;
 	}
+out:
 	/* Release exclusive access */
 	up(&gpio_sema);
 
@@ -727,7 +741,6 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 		return -ERESTARTSYS;
 
 	switch (settings->type) {
-
 		case MODE:
 			port_status = __raw_readl(VA_GPIO_BASE + MXC_GIUS(port_ID));
 		break;
