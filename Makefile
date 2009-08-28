@@ -111,7 +111,7 @@ $(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
 # To be called only one time if one wants to make an automatic build
 buildauto: $(BUILDROOT_DIR)/.unpacked
 	# ! Be sure that /local/downloads exists if you want to use automated build !
-	sed -e -i 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig ;
+	sed -i -e 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig ;
 	echo "ey" | $(MAKE) -C $(BUILDROOT_DIR) menuconfig
 	$(MAKE) -C $(BUILDROOT_DIR)
 
