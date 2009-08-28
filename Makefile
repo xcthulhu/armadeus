@@ -100,6 +100,8 @@ $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(BUILDRO
 	perl $(BUILDROOT_PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
 	touch $@
 
+buildroot-patched-sources: $(BUILDROOT_DIR)/.unpacked
+
 $(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
 	@if [ ! -f $@ ]; then \
 		$(ECHO_CONFIGURATION_NOT_DEFINED) \
@@ -108,9 +110,8 @@ $(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
 
 # To be called only one time if one wants to make an automatic build
 buildauto: $(BUILDROOT_DIR)/.unpacked
-	# Be sure that /local/downloads exists if you want to use automated build
-	sed -e 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig > $(BUILDROOT_DIR)/.defconfig_new ; \
-		mv -f $(BUILDROOT_DIR)/.defconfig_new $(BUILDROOT_DIR)/.defconfig
+	# ! Be sure that /local/downloads exists if you want to use automated build !
+	sed -e -i 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig ;
 	echo "ey" | $(MAKE) -C $(BUILDROOT_DIR) menuconfig
 	$(MAKE) -C $(BUILDROOT_DIR)
 
