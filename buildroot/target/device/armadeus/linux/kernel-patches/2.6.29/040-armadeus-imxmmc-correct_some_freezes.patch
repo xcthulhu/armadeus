@@ -8,7 +8,7 @@ Index: linux-2.6.29/drivers/mmc/host/imxmmc.c
 ===================================================================
 --- linux-2.6.29.orig/drivers/mmc/host/imxmmc.c	2009-03-30 11:05:58.000000000 +0200
 +++ linux-2.6.29/drivers/mmc/host/imxmmc.c	2009-03-30 11:09:25.000000000 +0200
-@@ -216,7 +216,7 @@
+@@ -216,7 +216,7 @@ static int imxmci_busy_wait_for_status(s
  
  	/* The busy-wait is expected there for clock <8MHz due to SDHC hardware flaws */
  	if (!(stat_mask & STATUS_END_CMD_RESP) || (host->mmc->ios.clock >= 8000000))
@@ -17,7 +17,7 @@ Index: linux-2.6.29/drivers/mmc/host/imxmmc.c
  			 loops, where, *pstat, stat_mask);
  	return loops;
  }
-@@ -333,6 +333,12 @@
+@@ -333,6 +333,12 @@ static void imxmci_start_cmd(struct imxm
  	/* Ensure, that clock are stopped else command programming and start fails */
  	imxmci_stop_clock(host);
  
@@ -29,4 +29,25 @@ Index: linux-2.6.29/drivers/mmc/host/imxmmc.c
 +
  	if (cmd->flags & MMC_RSP_BUSY)
  		cmdat |= CMD_DAT_CONT_BUSY;
+ 
+@@ -558,7 +564,8 @@ static int imxmci_cpu_driven_data(struct
+ 	dev_dbg(mmc_dev(host->mmc), "imxmci_cpu_driven_data running STATUS = 0x%x\n",
+ 		stat);
+ 
+-	udelay(20);	/* required for clocks < 8MHz*/
++	if( host->mmc->ios.clock < 8000000 )
++		udelay(200);	
+ 
+ 	if (host->dma_dir == DMA_FROM_DEVICE) {
+ 		imxmci_busy_wait_for_status(host, &stat,
+@@ -570,7 +577,8 @@ static int imxmci_cpu_driven_data(struct
+ 		       !(stat & STATUS_TIME_OUT_READ) &&
+ 		       (host->data_cnt < 512)) {
+ 
+-			udelay(20);	/* required for clocks < 8MHz*/
++			if( host->mmc->ios.clock < 8000000 )
++				mdelay(5);	
+ 
+ 			for (i = burst_len; i >= 2 ; i -= 2) {
+ 				u16 data;
  
