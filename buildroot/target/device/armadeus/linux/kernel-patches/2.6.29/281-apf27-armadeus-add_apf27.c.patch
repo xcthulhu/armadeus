@@ -1718,7 +1718,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c
 +		.max_speed_hz		= 8000000,
 +		.bus_num		= 0, /* SPI1 */
 +		.irq			= IRQ_GPIOE(MAX1027_EOC_INT),
-+		.chip_select		= 0, /* SS0 */
++		.chip_select		= 0,
 +		.mode 			= 0,
 +		.platform_data		= &apf27_max1027_config,
 +	},
