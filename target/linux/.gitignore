@@ -1,0 +1,8 @@
+*.o
+*.ko
+*.ko.cmd
+*.o.cmd
+*.orig
+*.order
+*.mod.*
+*~
