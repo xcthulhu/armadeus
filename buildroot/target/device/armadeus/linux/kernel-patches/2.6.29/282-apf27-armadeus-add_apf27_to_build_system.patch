@@ -1,7 +1,7 @@
 Index: linux-2.6.29.4/arch/arm/mach-mx2/Kconfig
 ===================================================================
---- linux-2.6.29.4.orig/arch/arm/mach-mx2/Kconfig	2009-06-08 16:58:38.000000000 +0200
-+++ linux-2.6.29.4/arch/arm/mach-mx2/Kconfig	2009-06-08 17:20:05.000000000 +0200
+--- linux-2.6.29.4.orig/arch/arm/mach-mx2/Kconfig	2009-09-14 11:46:32.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/Kconfig	2009-09-14 14:56:54.000000000 +0200
 @@ -10,6 +10,20 @@
  comment "MX2 Platforms"
  	depends on ARCH_MX2
@@ -23,15 +23,44 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/Kconfig
  config MACH_MX27ADS
  	bool "MX27ADS platform"
  	depends on MACH_MX27
+@@ -26,15 +40,26 @@
+ 
+ choice
+ 	prompt "Baseboard"
+-	depends on MACH_PCM038
++	depends on MACH_PCM038 || MACH_APF27
+ 	default MACH_PCM970_BASEBOARD
+ 
+ config MACH_PCM970_BASEBOARD
+ 	prompt "PHYTEC PCM970 development board"
+ 	bool
++	depends on MACH_PCM038
+ 	select MXC_ULPI
+ 	help
+ 	  This adds board specific devices that can be found on Phytec's
+ 	  PCM970 evaluation board.
+ 
++config MACH_APF27_DEV
++	prompt "Armadeus Systems APF27Dev development board"
++	bool
++	depends on MACH_APF27
++	help
++	  This selects the APF27Dev as baseboard. You have to manually
++	  activates the devices you want to use if you have the "Full"
++	  version.
++
+ endchoice
++
 Index: linux-2.6.29.4/arch/arm/mach-mx2/Makefile
 ===================================================================
---- linux-2.6.29.4.orig/arch/arm/mach-mx2/Makefile	2009-06-08 16:58:37.000000000 +0200
-+++ linux-2.6.29.4/arch/arm/mach-mx2/Makefile	2009-06-08 17:16:03.000000000 +0200
-@@ -10,6 +10,7 @@
+--- linux-2.6.29.4.orig/arch/arm/mach-mx2/Makefile	2009-09-14 11:46:32.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/Makefile	2009-09-14 14:46:16.000000000 +0200
+@@ -10,6 +10,8 @@
  obj-$(CONFIG_MACH_MX27) += clock_imx27.o
  obj-$(CONFIG_CPU_FREQ_IMX27) +=  cpufreq_imx27.o
  
-+obj-$(CONFIG_MACH_APF27)	+= apf27.o
++obj-$(CONFIG_MACH_APF27) += apf27.o
++obj-$(CONFIG_MACH_APF27_DEV) += apf27-dev.o
  obj-$(CONFIG_MACH_MX27ADS) += mx27ads.o
  obj-$(CONFIG_MACH_PCM038) += pcm038.o
  obj-$(CONFIG_MACH_PCM970_BASEBOARD) += pcm970-baseboard.o

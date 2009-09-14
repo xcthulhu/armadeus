@@ -1,11 +1,16 @@
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
+
+Adds support for Armadeus Systems APF27 module (i.MX27 based) and 
+APF27Dev companion baseboard.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-06-22 15:19:21.000000000 +0200
-@@ -0,0 +1,1660 @@
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-14 15:49:14.000000000 +0200
+@@ -0,0 +1,1263 @@
 + /*
 + * apf27.c
 + *
@@ -89,20 +94,10 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#include "devices.h"
 +#include "crm_regs.h"
 +
-+#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
-+#define CONFIG_ARMADEUS_MAX1027 1
-+#endif
-+#ifdef CONFIG_SPI_TSC2102_MODULE
-+#define CONFIG_SPI_TSC2102 1
-+#endif
-+#ifdef CONFIG_CAN_MCP251X_MODULE
-+#define CONFIG_CAN_MCP251X 1
-+#endif
++extern void apf27_baseboard_init(void);
++
 +#ifdef CONFIG_IMX_BACKLIGHT_MODULE
 +#define CONFIG_IMX_BACKLIGHT
-+#endif
-+#ifdef CONFIG_VIDEO_AD9889_MODULE
-+#define CONFIG_VIDEO_AD9889 1
 +#endif
 +#ifdef CONFIG_VIDEO_MX27_MODULE
 +#define CONFIG_VIDEO_MX27 1
@@ -114,8 +109,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#define CONFIG_PWM
 +#endif
 +
-+//#define CONFIG_GPS
-+//#define CONFIG_GSM
 +
 +#ifdef CONFIG_PWM
 +static int mxc_pwm0_pins[] = {
@@ -194,121 +187,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.exit = apf27_i2c_1_exit,
 +};
 +
-+static struct i2c_board_info apf27_i2c_devices_bus0[] = {
-+	[0] = {
-+		.type = "ds1374",
-+		.flags = 0,  /* FIXME */
-+		.addr = 0x68,	/* E0=0, E1=1, E2=0 */
-+		.platform_data = NULL,
-+		.irq = 0
-+	},
-+#ifdef CONFIG_VIDEO_OV96xx
-+	[1] = {
-+		.type = "ov96xx",
-+		.flags = 0,  /* FIXME */
-+		.addr = 0x30,
-+		.platform_data = NULL,
-+		.irq = 0
-+	},
-+#endif
-+};
-+
-+#ifdef CONFIG_VIDEO_AD9889
-+#define AD9889_INT 15
-+
-+static int ad9889_pins[] = {
-+	(GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
-+};
-+
-+static int ad9889_init(void)
-+{
-+	return mxc_gpio_setup_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
-+}
-+
-+static int ad9889_exit(void)
-+{
-+	mxc_gpio_release_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins));
-+	return 0;
-+}
-+
-+struct ad9889_fb_data {
-+	struct fb_var_screeninfo var;
-+	int PA31_GIUS_old_state;
-+};
-+
-+static struct ad9889_fb_data apf27_ad9889_fb_data;
-+extern void acquire_console_sem(void);
-+extern void release_console_sem(void);
-+
-+static void ad9889_display_connected(void)
-+{
-+	struct fb_var_screeninfo temp_var;
-+	struct fb_info *info = registered_fb[0];
-+
-+	apf27_ad9889_fb_data.PA31_GIUS_old_state = 0;
-+	/* make sure the LCD OE_ACD pin is correctly configured */
-+	if (__raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80000000) {
-+		apf27_ad9889_fb_data.PA31_GIUS_old_state = 1;
-+		mxc_gpio_mode(PA31_PF_OE_ACD);
-+	}
-+
-+	/* save old FB params */
-+	memcpy(&apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
-+	memcpy(&temp_var, &info->var, sizeof(struct fb_var_screeninfo));
-+
-+	/* set new FB params */
-+	temp_var.xres = 640;
-+	temp_var.yres = 480;
-+	temp_var.pixclock = 37538;
-+	temp_var.left_margin = 47;
-+	temp_var.right_margin = 47; /* at least 3 & 1 */
-+	temp_var.upper_margin = 33;
-+	temp_var.lower_margin = 10;
-+	temp_var.hsync_len = 63;
-+	temp_var.vsync_len = 2;
-+#ifdef CONFIG_FB_MXC
-+	temp_var.sync = FB_SYNC_OE_ACT_HIGH; /* -> Will change PCR */
-+#endif
-+	temp_var.vmode = FB_VMODE_NONINTERLACED,
-+	temp_var.nonstd = 0;
-+
-+	acquire_console_sem();
-+	/* tel the FB client that params have been changed */
-+	info->flags |= FBINFO_MISC_USEREVENT;
-+	/* set new params */
-+	fb_set_var(info, &temp_var);
-+	info->flags &= ~FBINFO_MISC_USEREVENT;
-+	release_console_sem();
-+}
-+
-+static void ad9889_display_disconnected(void)
-+{
-+	struct fb_info *info = registered_fb[0];
-+
-+	/* restore LCD OE_ACD pin */
-+	if (apf27_ad9889_fb_data.PA31_GIUS_old_state)
-+		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO);
-+
-+	acquire_console_sem();
-+	/* inform the console that the FB params have been changed */
-+	info->flags |= FBINFO_MISC_USEREVENT;
-+	/* restore old FB params */
-+	fb_set_var(info, &apf27_ad9889_fb_data.var);
-+	info->flags &= ~FBINFO_MISC_USEREVENT;
-+	release_console_sem();
-+}
-+
-+static struct ad9889_config apf27_ad9889_config = {
-+	.init = ad9889_init,
-+	.exit = ad9889_exit,
-+	.display_connected = ad9889_display_connected,
-+	.display_disconnected = ad9889_display_disconnected,
-+	.data = &apf27_ad9889_fb_data,
-+	.EDID_I2C_addr = 0x3f
-+};
-+
-+#endif /* CONFIG_VIDEO_AD9889 */
-+
 +static struct i2c_board_info apf27_i2c_devices_bus1[] = {
 +	[0] = {
 +		.type = "24c02",
@@ -317,37 +195,22 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +		.platform_data = NULL,
 +		.irq = 0
 +	},
-+#ifdef CONFIG_VIDEO_AD9889
-+	[1] = { 
-+		.type = "ad9889",
-+		.flags = 0,
-+		.addr = 0x39,
-+		.platform_data = &apf27_ad9889_config,
-+		.irq = IRQ_GPIOC(AD9889_INT)
-+	},
-+#endif /* CONFIG_VIDEO_AD9889 */
 +};
 +#endif /* CONFIG_I2C */
 +
 +
 +#ifdef CONFIG_SPI
-+#define MAX1027_CS (GPIO_PORTD | 28)
 +static int mxc_cspi0_pins[] = {
-+	(MAX1027_CS | GPIO_OUT | GPIO_GPIO ),
-+	//PD28_PF_CSPI1_SS0, /* MAX1027 */
++	/* PD28_PF_CSPI1_SS0, Preferably use a GPIO for CS */
 +	PD29_PF_CSPI1_SCLK,
 +	PD30_PF_CSPI1_MISO,
 +	PD31_PF_CSPI1_MOSI
 +};
 +
-+#define TSC2101_CS (GPIO_PORTD|21)
-+#define MCP251X_CS (GPIO_PORTD|20)
 +static int mxc_cspi1_pins[] = {
-+	(TSC2101_CS | GPIO_OUT | GPIO_GPIO ), /* <- Only if TSC is selected too !! */
-+	(MCP251X_CS | GPIO_OUT | GPIO_GPIO ),
-+	//PD19_PF_CSPI2_SS2,
-+	//PD20_PF_CSPI2_SS1,  /* MCP2515 */
-+	//PD21_PF_CSPI2_SS0,  /*TSC2101 */
++	/*PD19_PF_CSPI2_SS2,
++	PD20_PF_CSPI2_SS1, Preferably use a GPIO for CS
++	PD21_PF_CSPI2_SS0,  */
 +	PD22_PF_CSPI2_SCLK,
 +	PD23_PF_CSPI2_MISO,
 +	PD24_PF_CSPI2_MOSI
@@ -355,7 +218,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +
 +static int gpio_spi0_active(struct platform_device *pdev)
 +{
-+	gpio_set_value(MAX1027_CS, 1);
 +	return mxc_gpio_setup_multiple_pins(mxc_cspi0_pins, ARRAY_SIZE(mxc_cspi0_pins), "CSPI0");
 +}
 +
@@ -367,8 +229,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +
 +static int gpio_spi1_active(struct platform_device *pdev)
 +{
-+	gpio_set_value(TSC2101_CS, 1);
-+	gpio_set_value(MCP251X_CS, 1);
 +	return mxc_gpio_setup_multiple_pins(mxc_cspi1_pins, ARRAY_SIZE(mxc_cspi1_pins), "CSPI1");
 +}
 +
@@ -417,73 +277,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.flags = 0,
 +};
 +
-+#ifdef CONFIG_GSM
-+#define GSM_POK_IN (GPIO_PORTE | 11)
-+static int mxc_uart1_pins[] = {
-+	PE3_PF_UART2_CTS,
-+	PE4_PF_UART2_RTS,
-+	PE6_PF_UART2_TXD,
-+	PE7_PF_UART2_RXD,
-+	(GSM_POK_IN | GPIO_OUT  | GPIO_GPIO ) /* GSM_PWR_ON_not */
-+};
-+
-+static int uart_mxc_port1_init(struct platform_device *pdev)
-+{
-+	int res = mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART1");
-+	gpio_set_value(GSM_POK_IN, 0); /* start GSM */
-+	mdelay(5000);
-+	gpio_set_value(GSM_POK_IN, 1); /* start GSM */
-+	return res;
-+}
-+
-+static int uart_mxc_port1_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins));
-+
-+	return 0;
-+}
-+
-+static struct imxuart_platform_data uart1_pdata = {
-+	.init = uart_mxc_port1_init,
-+	.exit = uart_mxc_port1_exit,
-+	.flags = IMXUART_HAVE_RTSCTS,
-+};
-+#endif
-+
-+#ifdef CONFIG_GPS
-+#define GPS_WAKEUP (GPIO_PORTB | 20)
-+#define GPS_TIMEPULSE (GPIO_PORTB | 21)
-+
-+static int mxc_uart4_pins[] = {
-+	PB19_AF_UART5_RXD,
-+	PB18_AF_UART5_TXD,
-+	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO ),
-+	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO ) 
-+};
-+
-+static int uart_mxc_port4_init(struct platform_device *pdev)
-+{
-+	int res = mxc_gpio_setup_multiple_pins(mxc_uart4_pins, ARRAY_SIZE(mxc_uart4_pins), "UART4");
-+	gpio_set_value(GPS_WAKEUP, 1); /* start GPS */
-+
-+	return res;
-+}
-+
-+static int uart_mxc_port4_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart4_pins));
-+
-+	return 0;
-+}
-+
-+static struct imxuart_platform_data uart4_pdata = {
-+	.init = uart_mxc_port4_init,
-+	.exit = uart_mxc_port4_exit,
-+	.flags = 0,
-+};
-+#endif
-+
-+static int mxc_uart2_pins[] = { 
++static int mxc_uart2_pins[] = {
 +	PE8_PF_UART3_TXD,
 +	PE9_PF_UART3_RXD,};
 +
@@ -733,152 +527,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +}
 +#endif /* CONFIG_MMC_MXC */
 +
-+#ifdef CONFIG_ARMADEUS_MAX1027
-+#define MAX1027_EOC_INT 15
-+#define MAX1027_CNVST 14
-+static int max1027_pins[] = {
-+	(GPIO_PORTE | GPIO_IN | GPIO_GPIO | MAX1027_EOC_INT),
-+	(GPIO_PORTE | GPIO_OUT | GPIO_GPIO | MAX1027_CNVST),
-+};
-+
-+static int max1027_init(struct spi_device *spi)
-+{
-+	return mxc_gpio_setup_multiple_pins(max1027_pins, ARRAY_SIZE(max1027_pins), "MAX1027");
-+}
-+
-+static int max1027_exit(struct spi_device *spi)
-+{
-+	mxc_gpio_release_multiple_pins(max1027_pins, ARRAY_SIZE(max1027_pins));
-+	return 0;
-+}
-+
-+static void max1027_cs(u32 command)
-+{
-+	if( command == SPI_CS_DEASSERT )
-+		gpio_set_value(MAX1027_CS, 1);
-+	else
-+		gpio_set_value(MAX1027_CS, 0);
-+}
-+
-+static struct spi_imx_chip max1027_hw = {
-+	.cs_control		= max1027_cs,
-+};
-+
-+static struct max1027_config apf27_max1027_config = {
-+	.conv = MAX1027_CONV_DEFAULT,
-+	.setup = MAX1027_SETUP_DEFAULT,
-+	.avg = MAX1027_AVG_DEFAULT,
-+	.cnvst_pin = (int)(MAX1027_CNVST|GPIO_PORTE),
-+	.init = max1027_init,
-+	.exit = max1027_exit
-+};
-+#endif /* CONFIG_ARMADEUS_MAX1027 */
-+
-+#ifdef CONFIG_SPI_TSC2102
-+#define TSC2101_INT 17
-+static int tsc2101_init_gpio(void)
-+{
-+	/* configure int pin as GPIO */
-+	mxc_gpio_mode( GPIO_PORTF | TSC2101_INT | GPIO_IN | GPIO_GPIO );
-+
-+	return 0;
-+}
-+
-+/* Chip select toggle for TSC2101 */
-+static void tsc2101_cs(u32 command)
-+{
-+	if( command == SPI_CS_DEASSERT )
-+		gpio_set_value(TSC2101_CS, 1);
-+	else
-+		gpio_set_value(TSC2101_CS, 0);
-+}
-+
-+static struct spi_imx_chip tsc2101_hw = {
-+	.cs_control = tsc2101_cs,
-+};
-+
-+static struct tsc210x_config apf27_tsc2101_config = {
-+	.mclk =		12288000, /* MCLK value in Master mode */
-+	.use_internal = 1, /* -> use internal voltage reference */
-+	.monitor = 	TSC_BAT1 | TSC_AUX | TSC_TEMP,
-+	.init = 	tsc2101_init_gpio,
-+/*    .apm_report = palmte_get_power_status,
-+    .alsa_config = &palmte_alsa_config,*/
-+};
-+
-+#endif /* CONFIG_SPI_TSC2102 */
-+
-+#ifdef CONFIG_CAN_MCP251X
-+#define CAN_MCP251X_INT 19
-+static void mcp251X_init_irq(void)
-+{
-+	/* configure int pin as GPIO */
-+	mxc_gpio_mode( GPIO_PORTD | CAN_MCP251X_INT | GPIO_IN | GPIO_GPIO);
-+	/* configure irq */
-+}
-+
-+// Chip select command for MCP251X
-+static void mcp251X_cs(u32 command)
-+{
-+	if( command == SPI_CS_DEASSERT )
-+		gpio_set_value(MCP251X_CS, 1);
-+	else
-+		gpio_set_value(MCP251X_CS, 0);
-+}
-+
-+static struct spi_imx_chip mcp251X_hw = {
-+	.cs_control		= mcp251X_cs,
-+};
-+
-+
-+static struct mcp251x_platform_data apf27_mcp251x_config = {
-+	.oscillator_frequency  = 16000000,
-+	.board_specific_setup  = mcp251X_init_irq,
-+	.device_reset          = NULL,
-+	.transceiver_enable    = NULL,
-+};
-+
-+#endif /* CONFIG_CAN_MCP251X */
-+
-+
-+static struct spi_board_info spi_board_info[] __initdata = {
-+#ifdef CONFIG_ARMADEUS_MAX1027
-+	{
-+		.modalias		= "max1027",
-+		.controller_data 	= &max1027_hw,
-+		.max_speed_hz		= 8000000,
-+		.bus_num		= 0, /* SPI1 */
-+		.irq			= IRQ_GPIOE(MAX1027_EOC_INT),
-+		.chip_select		= 0, /* SS0 */
-+		.mode 			= 0,
-+		.platform_data		= &apf27_max1027_config,
-+	},
-+#endif /* CONFIG_ARMADEUS_MAX1027 */
-+#ifdef CONFIG_SPI_TSC2102
-+	{
-+		.modalias		= "tsc210x",
-+		.controller_data 	= &tsc2101_hw,
-+		.max_speed_hz		= 8000000,
-+		.bus_num		= 1, /* SPI2 */
-+		.irq			= IRQ_GPIOF(TSC2101_INT),
-+		.chip_select		= 0,
-+		.mode 			= 0,
-+		.platform_data		= &apf27_tsc2101_config,
-+	},
-+#endif /* CONFIG_SPI_TSC2102 */
-+#ifdef CONFIG_CAN_MCP251X
-+	{
-+		.modalias          = "mcp251x",
-+		.controller_data 	= &mcp251X_hw,
-+		.max_speed_hz      = 8000000, /* 8MHz */
-+		.bus_num           = 1, /* SPI2 */
-+		.mode              = 0,
-+		.chip_select       = 1,
-+		.irq               = IRQ_GPIOD(CAN_MCP251X_INT),
-+		.platform_data     = &apf27_mcp251x_config,
-+	},
-+#endif /* CONFIG_CAN_MCP251X */
-+};
 +
 +#ifdef CONFIG_USB_EHCI_MXC
 +static int mxc_usbotg_pins[] = {
@@ -912,7 +560,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	}
 +
 +	if (on) {
-+
 +		/* force disconnection of the DM/DP signals. This
 +			avoid powering the connected device through these lines */
 +		ulpi_set(RESET, ISP1504_FCNCTL, view);
@@ -1090,33 +737,8 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +}
 +
 +late_initcall(apf27_late_init);
-+
-+#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
-+static struct imx_alsa_codec_config tsc2101_alsa_pdata;
-+
-+static struct resource ssi_resources[] = {
-+	[0] = {
-+		.start	= SSI1_BASE_ADDR,
-+		.end	= SSI1_BASE_ADDR + 0x6F,
-+		.flags	= IORESOURCE_MEM
-+	},
-+};
-+
-+static struct platform_device tsc2101_alsa_device = {
-+	.name           = "tsc210x-alsa", /* Should be the same as the driver name */
-+	.id             = 0,
-+	.num_resources  = ARRAY_SIZE(ssi_resources),
-+	.resource       = ssi_resources,
-+	.dev            = {
-+				.platform_data = &tsc2101_alsa_pdata,
-+			}
-+};
-+#  define ALSA_SOUND &tsc2101_alsa_device,
-+# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
-+
-+#else
-+# define ALSA_SOUND
 +#endif /* CONFIG_SND || CONFIG_SND_MODULE */
++
 +
 +#ifdef DEBUG
 +static void apf27_dump_clocks(void)
@@ -1258,7 +880,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_IMX_BACKLIGHT
 +	&imxbl_device,
 +#endif
-+	ALSA_SOUND
 +	CPU_FREQUENCY
 +#ifdef CONFIG_MXC_VPU
 +	&mxc_vpu_device,
@@ -1331,7 +952,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +
 +
 +/* APF27 power management stuff */
-+
 +
 +#define APF27DEV_USER_SWITCH	(GPIO_PORTF | 13)
 +#define APF27DEV_USER_SWITCH_IRQ (IRQ_GPIOF(13))
@@ -1562,7 +1182,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +};
 +#endif /* CONFIG_MACH_APF27_FPGA */
 +
-+
 +static void __init apf27_init(void)
 +{
 +	sysdev_class_register(&apf27_pm_sysclass);
@@ -1573,14 +1192,9 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +
 +	gpio_fec_active();
 +
-+	mxc_register_device(&mxc_uart_device0, &uart0_pdata);
-+#ifdef CONFIG_GSM
-+	mxc_register_device(&mxc_uart_device1, &uart1_pdata);
-+#endif
++	mxc_register_device(&mxc_uart_device0, &uart0_pdata); /* console */
 +	mxc_register_device(&mxc_uart_device2, &uart2_pdata);
-+#ifdef CONFIG_GPS
-+	mxc_register_device(&mxc_uart_device4, &uart4_pdata);
-+#endif
++
 +	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
@@ -1592,13 +1206,10 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_USB_EHCI_MXC
 +	mxc_register_device(&mxc_otg, &ehci0_pdata);
 +	mxc_register_device(&mxc_ehci1, &ehci1_pdata);
-+#endif /* CONFIG_USB_EHCI_MXC */
++#endif
 +#ifdef CONFIG_I2C
 +	mxc_register_device(&imx_i2c_device0, &apf27_i2c_0_data);
 +	mxc_register_device(&imx_i2c_device1, &apf27_i2c_1_data);
-+
-+	i2c_register_board_info(0, apf27_i2c_devices_bus0,
-+				ARRAY_SIZE(apf27_i2c_devices_bus0));
 +
 +	i2c_register_board_info(1, apf27_i2c_devices_bus1,
 +				ARRAY_SIZE(apf27_i2c_devices_bus1));
@@ -1608,11 +1219,6 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&mxc_spi_device1, &imx_spi1_master_info);
 +#endif
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
-+
-+#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
-+	spi_register_board_info(spi_board_info,
-+				ARRAY_SIZE(spi_board_info));
-+#endif
 +
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +	mxc_register_device(&mxc_fb_device, &apf27_fb_data);
@@ -1629,6 +1235,8 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +#endif
 +
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
++
++	apf27_baseboard_init();
 +}
 +
 +static void __init apf27_timer_init(void)
@@ -1666,3 +1274,584 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.init_machine   = apf27_init,
 +	.timer          = &apf27_timer,
 +MACHINE_END
+Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c	2009-09-14 15:05:12.000000000 +0200
+@@ -0,0 +1,576 @@
++ /*
++ * apf27-dev.c
++ * Support of AFP27 module's development baseboard
++ *
++ * Copyright (C) 2009 Armadeus Systems
++ * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
++ *          Nicolas Colombain <nicolas.colombain@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/platform_device.h>
++#include <linux/mtd/physmap.h>
++#include <asm/mach/flash.h>
++#include <linux/spi/spi.h>
++#include <linux/i2c.h>
++#include <linux/serial.h>
++#include <linux/delay.h>
++#include <linux/irq.h>
++#include <linux/cpufreq.h>
++#include <linux/clk.h>
++#include <linux/dma-mapping.h>
++#include <asm/io.h>
++#include <asm/mach/arch.h>
++#include <asm/mach-types.h>
++#include <asm/mach/time.h>
++// #include <asm/arch/clock.h>
++#include <mach/common.h>
++#include <mach/hardware.h>
++#include <mach/iomux-mx1-mx2.h>
++#include <mach/gpio.h>
++#include <mach/imx_i2c.h>
++//#include <mach/imx_spi.h>
++#include <../mach-imx/include/mach/spi_imx.h>
++#include <mach/imx-uart.h>
++#include <mach/mmc.h>
++#ifdef CONFIG_FB_MXC /* Freescale Framebuffer */
++#include <mach/imx_fb.h>
++#include <mach/imxfb.h>
++#endif
++#include <linux/fb.h>
++#include <mach/mxc_nand.h>
++#include <mach/mxc_ehci.h>
++#include <mach/ulpi.h>
++#include <linux/spi/max1027.h>
++#include <linux/spi/tsc2102.h>
++#include "../../../drivers/net/can/mcp251x.h"
++#include "../../../drivers/armadeus/pwm/pwm.h"
++#include <media/ad9889.h>
++#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
++#include <mach/imx_dam.h>
++#include <mach/imx_sound.h>
++#include <mach/imx_ssi.h>
++#include <mach/imx-alsa.h>
++#endif
++#if defined(CONFIG_VIDEO_MX27_MODULE) || defined(CONFIG_VIDEO_MX27)
++#include <mach/imx_cam.h>
++#endif
++#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
++#include "cpufreq_imx.h"
++#endif
++#include <mach/board-apf27.h>
++#include <asm/mach/map.h>
++#ifdef CONFIG_MACH_APF27_FPGA
++#include <mach/fpga.h>
++#endif
++#include "devices.h"
++#include "crm_regs.h"
++
++#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
++#define CONFIG_ARMADEUS_MAX1027 1
++#endif
++#ifdef CONFIG_SPI_TSC2102_MODULE
++#define CONFIG_SPI_TSC2102 1
++#endif
++#ifdef CONFIG_CAN_MCP251X_MODULE
++#define CONFIG_CAN_MCP251X 1
++#endif
++#ifdef CONFIG_IMX_BACKLIGHT_MODULE
++#define CONFIG_IMX_BACKLIGHT
++#endif
++#ifdef CONFIG_VIDEO_AD9889_MODULE
++#define CONFIG_VIDEO_AD9889 1
++#endif
++#ifdef CONFIG_VIDEO_MX27_MODULE
++#define CONFIG_VIDEO_MX27 1
++#endif
++#ifdef CONFIG_VIDEO_OV96xx_MODULE
++#define CONFIG_VIDEO_OV96xx 1
++#endif
++#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
++#define CONFIG_PWM
++#endif
++
++//#define CONFIG_GPS
++//#define CONFIG_GSM
++
++
++#ifdef CONFIG_I2C
++
++static struct i2c_board_info apf27dev_i2c_devices_bus0[] = {
++	[0] = {
++		.type = "ds1374",
++		.flags = 0,  /* FIXME */
++		.addr = 0x68,	/* E0=0, E1=1, E2=0 */
++		.platform_data = NULL,
++		.irq = 0
++	},
++# ifdef CONFIG_VIDEO_OV96xx
++	[1] = {
++		.type = "ov96xx",
++		.flags = 0,  /* FIXME */
++		.addr = 0x30,
++		.platform_data = NULL,
++		.irq = 0
++	},
++# endif
++};
++
++# ifdef CONFIG_VIDEO_AD9889
++#define AD9889_INT 15
++
++static int ad9889_pins[] = {
++	(GPIO_PORTC | GPIO_IN | GPIO_GPIO | AD9889_INT),
++};
++
++static int ad9889_init(void)
++{
++	return mxc_gpio_setup_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
++}
++
++static int ad9889_exit(void)
++{
++	mxc_gpio_release_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins));
++	return 0;
++}
++
++struct ad9889_fb_data {
++	struct fb_var_screeninfo var;
++	int PA31_GIUS_old_state;
++};
++
++static struct ad9889_fb_data apf27_ad9889_fb_data;
++extern void acquire_console_sem(void);
++extern void release_console_sem(void);
++
++static void ad9889_display_connected(void)
++{
++	struct fb_var_screeninfo temp_var;
++	struct fb_info *info = registered_fb[0];
++
++	apf27_ad9889_fb_data.PA31_GIUS_old_state = 0;
++	/* make sure the LCD OE_ACD pin is correctly configured */
++	if (__raw_readl(VA_GPIO_BASE + MXC_GIUS(0)) & 0x80000000) {
++		apf27_ad9889_fb_data.PA31_GIUS_old_state = 1;
++		mxc_gpio_mode(PA31_PF_OE_ACD);
++	}
++
++	/* save old FB params */
++	memcpy(&apf27_ad9889_fb_data.var, &info->var, sizeof(struct fb_var_screeninfo));
++	memcpy(&temp_var, &info->var, sizeof(struct fb_var_screeninfo));
++
++	/* set new FB params */
++	temp_var.xres = 640;
++	temp_var.yres = 480;
++	temp_var.pixclock = 37538;
++	temp_var.left_margin = 47;
++	temp_var.right_margin = 47; /* at least 3 & 1 */
++	temp_var.upper_margin = 33;
++	temp_var.lower_margin = 10;
++	temp_var.hsync_len = 63;
++	temp_var.vsync_len = 2;
++# ifdef CONFIG_FB_MXC
++	temp_var.sync = FB_SYNC_OE_ACT_HIGH; /* -> Will change PCR */
++# endif
++	temp_var.vmode = FB_VMODE_NONINTERLACED,
++	temp_var.nonstd = 0;
++
++	acquire_console_sem();
++	/* tel the FB client that params have been changed */
++	info->flags |= FBINFO_MISC_USEREVENT;
++	/* set new params */
++	fb_set_var(info, &temp_var);
++	info->flags &= ~FBINFO_MISC_USEREVENT;
++	release_console_sem();
++}
++
++static void ad9889_display_disconnected(void)
++{
++	struct fb_info *info = registered_fb[0];
++
++	/* restore LCD OE_ACD pin */
++	if (apf27_ad9889_fb_data.PA31_GIUS_old_state)
++		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO);
++
++	acquire_console_sem();
++	/* inform the console that the FB params have been changed */
++	info->flags |= FBINFO_MISC_USEREVENT;
++	/* restore old FB params */
++	fb_set_var(info, &apf27_ad9889_fb_data.var);
++	info->flags &= ~FBINFO_MISC_USEREVENT;
++	release_console_sem();
++}
++
++static struct ad9889_config apf27_ad9889_config = {
++	.init = ad9889_init,
++	.exit = ad9889_exit,
++	.display_connected = ad9889_display_connected,
++	.display_disconnected = ad9889_display_disconnected,
++	.data = &apf27_ad9889_fb_data,
++	.EDID_I2C_addr = 0x3f
++};
++
++# endif /* CONFIG_VIDEO_AD9889 */
++
++static struct i2c_board_info apf27dev_i2c_devices_bus1[] = {
++# ifdef CONFIG_VIDEO_AD9889
++	[0] = {
++		.type = "ad9889",
++		.flags = 0,
++		.addr = 0x39,
++		.platform_data = &apf27_ad9889_config,
++		.irq = IRQ_GPIOC(AD9889_INT)
++	},
++# endif /* CONFIG_VIDEO_AD9889 */
++};
++#endif /* CONFIG_I2C */
++
++
++#ifdef CONFIG_GSM
++#define GSM_POK_IN (GPIO_PORTE | 11)
++static int mxc_uart1_pins[] = {
++	PE3_PF_UART2_CTS,
++	PE4_PF_UART2_RTS,
++	PE6_PF_UART2_TXD,
++	PE7_PF_UART2_RXD,
++	(GSM_POK_IN | GPIO_OUT  | GPIO_GPIO ) /* GSM_PWR_ON_not */
++};
++
++static int uart_mxc_port1_init(struct platform_device *pdev)
++{
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART1");
++	gpio_set_value(GSM_POK_IN, 0); /* start GSM */
++	mdelay(5000);
++	gpio_set_value(GSM_POK_IN, 1); /* start GSM */
++	return res;
++}
++
++static int uart_mxc_port1_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins));
++
++	return 0;
++}
++
++static struct imxuart_platform_data uart1_pdata = {
++	.init = uart_mxc_port1_init,
++	.exit = uart_mxc_port1_exit,
++	.flags = IMXUART_HAVE_RTSCTS,
++};
++#endif /* CONFIG_GSM */
++
++#ifdef CONFIG_GPS
++#define GPS_WAKEUP (GPIO_PORTB | 20)
++#define GPS_TIMEPULSE (GPIO_PORTB | 21)
++
++static int mxc_uart4_pins[] = {
++	PB19_AF_UART5_RXD,
++	PB18_AF_UART5_TXD,
++	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO),
++	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO),
++};
++
++static int uart_mxc_port4_init(struct platform_device *pdev)
++{
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart4_pins, ARRAY_SIZE(mxc_uart4_pins), "UART4");
++	gpio_set_value(GPS_WAKEUP, 1); /* start GPS */
++
++	return res;
++}
++
++static int uart_mxc_port4_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart4_pins));
++
++	return 0;
++}
++
++static struct imxuart_platform_data uart4_pdata = {
++	.init = uart_mxc_port4_init,
++	.exit = uart_mxc_port4_exit,
++	.flags = 0,
++};
++#endif /* CONFIG_GPS */
++
++
++#ifdef CONFIG_ARMADEUS_MAX1027
++#define MAX1027_EOC_INT 15
++#define MAX1027_CNVST 14
++#define MAX1027_CS (GPIO_PORTD | 28)
++
++static int max1027_pins[] = {
++	(MAX1027_CS | GPIO_OUT | GPIO_GPIO),
++	(GPIO_PORTE | GPIO_IN | GPIO_GPIO | MAX1027_EOC_INT),
++	(GPIO_PORTE | GPIO_OUT | GPIO_GPIO | MAX1027_CNVST),
++};
++
++static int max1027_init(struct spi_device *spi)
++{
++	gpio_set_value(MAX1027_CS, 1);
++	return mxc_gpio_setup_multiple_pins(max1027_pins, ARRAY_SIZE(max1027_pins), "MAX1027");
++}
++
++static int max1027_exit(struct spi_device *spi)
++{
++	mxc_gpio_release_multiple_pins(max1027_pins, ARRAY_SIZE(max1027_pins));
++	return 0;
++}
++
++static void max1027_cs(u32 command)
++{
++	if( command == SPI_CS_DEASSERT )
++		gpio_set_value(MAX1027_CS, 1);
++	else
++		gpio_set_value(MAX1027_CS, 0);
++}
++
++static struct spi_imx_chip max1027_hw = {
++	.cs_control		= max1027_cs,
++};
++
++static struct max1027_config apf27_max1027_config = {
++	.conv = MAX1027_CONV_DEFAULT,
++	.setup = MAX1027_SETUP_DEFAULT,
++	.avg = MAX1027_AVG_DEFAULT,
++	.cnvst_pin = (int)(MAX1027_CNVST|GPIO_PORTE),
++	.init = max1027_init,
++	.exit = max1027_exit
++};
++#endif /* CONFIG_ARMADEUS_MAX1027 */
++
++#ifdef CONFIG_SPI_TSC2102
++#define TSC2101_INT 17
++#define TSC2101_CS (GPIO_PORTD | 21)
++
++static int tsc2101_pins[] = {
++        (TSC2101_CS | GPIO_OUT | GPIO_GPIO),
++	(GPIO_PORTF | TSC2101_INT | GPIO_IN | GPIO_GPIO), /* configure int pin as GPIO */
++};
++
++static int tsc2101_init_gpio(void)
++{
++	gpio_set_value(TSC2101_CS, 1);
++	return mxc_gpio_setup_multiple_pins(tsc2101_pins, ARRAY_SIZE(tsc2101_pins), "TSC2101");
++}
++
++/* Chip select toggle for TSC2101 */
++static void tsc2101_cs(u32 command)
++{
++	if (command == SPI_CS_DEASSERT)
++		gpio_set_value(TSC2101_CS, 1);
++	else
++		gpio_set_value(TSC2101_CS, 0);
++}
++
++static struct spi_imx_chip tsc2101_hw = {
++	.cs_control = tsc2101_cs,
++};
++
++static struct tsc210x_config apf27_tsc2101_config = {
++	.mclk =		12288000, /* MCLK value in Master mode */
++	.use_internal = 1, /* -> use internal voltage reference */
++	.monitor = 	TSC_BAT1 | TSC_AUX | TSC_TEMP,
++	.init = 	tsc2101_init_gpio,
++/*    .apm_report = palmte_get_power_status,
++    .alsa_config = &palmte_alsa_config,*/
++};
++#endif /* CONFIG_SPI_TSC2102 */
++
++
++#ifdef CONFIG_CAN_MCP251X
++
++#define CAN_MCP251X_INT 19
++#define MCP251X_CS (GPIO_PORTD | 20)
++
++static int mcp251x_pins[] = {
++	(GPIO_PORTD | CAN_MCP251X_INT | GPIO_IN | GPIO_GPIO), /* configure int pin as GPIO */
++	(MCP251X_CS | GPIO_OUT | GPIO_GPIO),
++};
++
++static void mcp251X_init_irq(void)
++{
++	gpio_set_value(MCP251X_CS, 1);
++	mxc_gpio_setup_multiple_pins(mcp251x_pins, ARRAY_SIZE(mcp251x_pins), "MCP251x");
++}
++
++// Chip select command for MCP251X
++static void mcp251X_cs(u32 command)
++{
++	if (command == SPI_CS_DEASSERT)
++		gpio_set_value(MCP251X_CS, 1);
++	else
++		gpio_set_value(MCP251X_CS, 0);
++}
++
++static struct spi_imx_chip mcp251X_hw = {
++	.cs_control		= mcp251X_cs,
++};
++
++
++static struct mcp251x_platform_data apf27_mcp251x_config = {
++	.oscillator_frequency  = 16000000,
++	.board_specific_setup  = mcp251X_init_irq,
++	.device_reset          = NULL,
++	.transceiver_enable    = NULL,
++};
++
++#endif /* CONFIG_CAN_MCP251X */
++
++
++static struct spi_board_info spi_board_info[] __initdata = {
++#ifdef CONFIG_ARMADEUS_MAX1027
++	{
++		.modalias		= "max1027",
++		.controller_data 	= &max1027_hw,
++		.max_speed_hz		= 8000000,
++		.bus_num		= 0, /* SPI1 */
++		.irq			= IRQ_GPIOE(MAX1027_EOC_INT),
++		.chip_select		= 0, /* SS0 */
++		.mode 			= 0,
++		.platform_data		= &apf27_max1027_config,
++	},
++#endif /* CONFIG_ARMADEUS_MAX1027 */
++#ifdef CONFIG_SPI_TSC2102
++	{
++		.modalias		= "tsc210x",
++		.controller_data 	= &tsc2101_hw,
++		.max_speed_hz		= 8000000,
++		.bus_num		= 1, /* SPI2 */
++		.irq			= IRQ_GPIOF(TSC2101_INT),
++		.chip_select		= 0,
++		.mode 			= 0,
++		.platform_data		= &apf27_tsc2101_config,
++	},
++#endif /* CONFIG_SPI_TSC2102 */
++#ifdef CONFIG_CAN_MCP251X
++	{
++		.modalias          = "mcp251x",
++		.controller_data 	= &mcp251X_hw,
++		.max_speed_hz      = 8000000, /* 8MHz */
++		.bus_num           = 1, /* SPI2 */
++		.mode              = 0,
++		.chip_select       = 1,
++		.irq               = IRQ_GPIOD(CAN_MCP251X_INT),
++		.platform_data     = &apf27_mcp251x_config,
++	},
++#endif /* CONFIG_CAN_MCP251X */
++};
++
++
++#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
++
++#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
++static struct imx_alsa_codec_config tsc2101_alsa_pdata;
++
++static struct resource ssi_resources[] = {
++	[0] = {
++		.start	= SSI1_BASE_ADDR,
++		.end	= SSI1_BASE_ADDR + 0x6F,
++		.flags	= IORESOURCE_MEM
++	},
++};
++
++static struct platform_device tsc2101_alsa_device = {
++	.name           = "tsc210x-alsa", /* Should be the same as the driver name */
++	.id             = 0,
++	.num_resources  = ARRAY_SIZE(ssi_resources),
++	.resource       = ssi_resources,
++	.dev            = {
++				.platform_data = &tsc2101_alsa_pdata,
++			}
++};
++#  define ALSA_SOUND &tsc2101_alsa_device,
++# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
++
++#else
++# define ALSA_SOUND
++#endif /* CONFIG_SND || CONFIG_SND_MODULE */
++
++
++static struct platform_device *platform_devices[] __initdata = {
++	ALSA_SOUND
++};
++
++
++/* Camera stuff: TO BE DONE*/
++
++# ifdef CONFIG_VIDEO_OV96xx
++#define OV9653_PWDN	(GPIO_PORTC | 30) /* SSI3_TX as POWERDOWN*/
++#define OV9653_RESET	(GPIO_PORTC | 31) /* SSI3_CLK as RESET */
++
++static int apf27dev_ov9653_ctl_pins[] = {
++	(OV9653_PWDN | GPIO_OUT | GPIO_GPIO),
++	(OV9653_RESET | GPIO_OUT | GPIO_GPIO),
++};
++
++static int apf27dev_camera_init(struct platform_device *pdev)
++{
++	/* To be put in ov96xx driver init part: */
++	gpio_set_value(OV9653_PWDN, 0);
++	gpio_set_value(OV9653_RESET, 0);
++
++	return mxc_gpio_setup_multiple_pins(apf27dev_ov9653_ctl_pins,
++		ARRAY_SIZE(apf27dev_ov9653_ctl_pins), "OV9653");
++}
++
++static int apf27dev_camera_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(apf27dev_ov9653_ctl_pins, ARRAY_SIZE(apf27dev_ov9653_ctl_pins));
++
++	return 0;
++}
++/*
++struct mx27_camera_platform_data apf27_camera = {
++	.init = apf27_camera_init,
++	.exit = apf27_camera_exit,
++	.clk  = 26600000,
++	.flags = MX27_CAMERA_HSYNC_HIGH | MX27_CAMERA_GATED_CLOCK |
++		MX27_CAMERA_PACK_DIR_MSB,
++};*/
++#endif /* CONFIG_VIDEO_OV96xx */
++
++
++void __init apf27_baseboard_init(void)
++{
++	printk("    Registering APF27_Dev ressources:");
++
++#ifdef CONFIG_GSM
++	mxc_register_device(&mxc_uart_device1, &uart1_pdata);
++#endif
++#ifdef CONFIG_GPS
++	mxc_register_device(&mxc_uart_device4, &uart4_pdata);
++#endif
++
++#ifdef CONFIG_I2C
++	i2c_register_board_info(0, apf27dev_i2c_devices_bus0,
++				ARRAY_SIZE(apf27dev_i2c_devices_bus0));
++
++	i2c_register_board_info(1, apf27dev_i2c_devices_bus1,
++				ARRAY_SIZE(apf27dev_i2c_devices_bus1));
++#endif
++	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
++
++#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++	spi_register_board_info(spi_board_info,
++				ARRAY_SIZE(spi_board_info));
++#endif
++/*
++#ifdef CONFIG_VIDEO_MX27
++	mxc_register_device(&mx27_camera_device, &apf27_camera);
++#endif
++*/
++	printk("done\n");
++}
++
