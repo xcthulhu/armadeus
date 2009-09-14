@@ -1,0 +1,7 @@
+config BR2_PACKAGE_QUAKE_PAK
+	bool "shareware Quake PAK/WAD file"
+	depends on BR2_PACKAGE_SDLQUAKE
+	help
+	  This will install the shareware pak/wad data file for the Quake game.
+
+	  The file will be placed in the /usr/share/games/quake/ directory.
