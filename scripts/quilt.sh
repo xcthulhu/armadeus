@@ -3,7 +3,7 @@
 make shell_env
 . armadeus_env.sh
 
-echo -e "\nThis script is going to rebuilt a quiltified Linux kernel in the current view..."
+echo -e "\nThis script is going to rebuilt a quiltified Linux kernel in the current view...\n"
 
 if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $ARMADEUS_LINUX_DIR/patches/ to $ARMADEUS_LINUX_PATCH_DIR"
@@ -16,20 +16,23 @@ fi
 # else import patches:
 
 # Update repository
-echo "Update (pull) your local repository (y/n) ?"
+echo "Update (pull) your local repository (y/N) ?"
 read response
 if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 	git pull
 fi
 
 # Move or delete current Linux dir
-echo "Rename or delete the Linux directory: $ARMADEUS_LINUX_DIR"
-echo " ?? (r/d)"
+echo "Rename or delete the current Linux directory: $ARMADEUS_LINUX_DIR"
+echo " ?? (R/d)"
 read response
 EXT=`date +%Y_%M_%d_%H%m`
 if [ "$response" == "d" ]; then
+	echo "Deleting current Linux dir"
 	rm -rf $ARMADEUS_LINUX_DIR
 else
+	echo "Renaming $ARMADEUS_LINUX_DIR"
+	echo "  to " "$ARMADEUS_LINUX_DIR"."$EXT"
 	mv $ARMADEUS_LINUX_DIR "$ARMADEUS_LINUX_DIR"."$EXT"
 fi
 
