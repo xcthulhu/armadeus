@@ -1,0 +1,30 @@
+
+Adds Optrex-T51638D084 support to Freescale's MX2 Framebuffer.
+Depends on some previously applied patches.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:28:22.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:29:26.000000000 +0200
+@@ -114,6 +114,19 @@
+ 		.vmode = FB_VMODE_NONINTERLACED,
+ 		.flag = 0,
+ 	},
++        [8] = {
++		.name = "Optrex-T51638D084",
++		.refresh = 60,
++		.xres = 640,
++		.yres = 480,
++		.pixclock = 40000, /* picoS */
++		.left_margin = 48, .right_margin = 144, /* at least 3 & 1 */
++		.upper_margin = 10, .lower_margin = 35,
++		.hsync_len = 64, .vsync_len = 2,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
++		.flag = 0,
++	},
+ };
+ 
+ int mxcfb_modedb_sz = ARRAY_SIZE(mxcfb_modedb);

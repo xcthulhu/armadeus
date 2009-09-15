@@ -1,7 +1,7 @@
 Index: linux-2.6.29.4/drivers/video/Kconfig
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/drivers/video/Kconfig	2009-06-04 10:03:43.000000000 +0200
+--- linux-2.6.29.4.orig/drivers/video/Kconfig	2009-09-14 18:39:16.000000000 +0200
++++ linux-2.6.29.4/drivers/video/Kconfig	2009-09-14 18:49:16.000000000 +0200
 @@ -395,6 +395,7 @@
  	  If you plan to use the LCD display with your SA-1100 system, say
  	  Y here.
@@ -10,7 +10,7 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -402,6 +403,48 @@
+@@ -402,6 +403,55 @@
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
@@ -50,10 +50,17 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
 +          The native resolution is 240x320.
 +
 +config FB_IMX_CHIMEI_LW700AT9003_TFT
-+        bool "LW700AT9003"
++        bool "Chimei LW700AT9003"
 +        help
 +          Chimei LW700AT9003, a 7" 18 bits, TFT panel.
 +          The native resolution is 800x600.
++
++config FB_IMX_OPTREX_T51638D084_TFT
++	bool "Optrex T51638D084"
++	help
++	  OPTREX_T51638D084, a 8.4" 18 bits, TFT panel.
++	  The native resolution is 640x480.
++
 +endchoice
 +
  config FB_CYBER2000

@@ -9,8 +9,8 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-14 15:49:14.000000000 +0200
-@@ -0,0 +1,1263 @@
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-14 18:57:53.000000000 +0200
+@@ -0,0 +1,1274 @@
 + /*
 + * apf27.c
 + *
@@ -353,18 +353,23 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	PA23_PF_LD17,
 +	PA24_PF_REV,
 +	PA25_PF_CLS,
++#ifdef CONFIG_FB_IMX_OPTREX_T51638D084_TFT
++	/* For Optrex T51638D084, PS is used as LCD Display ON/OFF */
++	(GPIO_PORTA | 26 | GPIO_OUT| GPIO_GPIO),
++#else
 +	PA26_PF_PS,
++#endif
 +	PA27_PF_SPL_SPR,
 +	PA28_PF_HSYNC,
 +	PA29_PF_VSYNC,
 +#ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
-+	/* for LQO57 CONTRAST is used as backlight's ON/OFF */
++	/* For Sharp LQO57, CONTRAST is used as backlight's ON/OFF */
 +	(GPIO_PORTA | 30 | GPIO_OUT| GPIO_GPIO),
 +#else
 +	PA30_PF_CONTRAST,
 +#endif
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+	/* For LQ043 OE_ACD is used as LCD Display ON/OFF */
++	/* For Sharp LQ043, OE_ACD is used as LCD Display ON/OFF */
 +	(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO)
 +#else
 +	PA31_PF_OE_ACD
@@ -374,12 +379,16 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +static int apf27_fb_init(struct platform_device *pdev)
 +{
 +#ifdef CONFIG_FB_MXC
++# ifdef CONFIG_FB_IMX_OPTREX_T51638D084_TFT
++	/* For Optrex T51638D084: activates LCD at startup */
++	gpio_set_value(GPIO_PORTA | 26, 1);
++# endif
 +# ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+	/* For LQ043 OE_ACD is used as LCD Display ON/OFF: activate LCD */
++	/* For Sharp LQ043: activates LCD at startup */
 +	gpio_set_value(GPIO_PORTA | 31, 1);
 +# endif
 +# ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
-+	/* For LQ057: activate backlight at startup */
++	/* For Sharp LQ057: activates backlight at startup */
 +	gpio_set_value(GPIO_PORTA | 30, 0);
 +# endif
 +#endif
@@ -401,8 +410,10 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.mode = "Sharp-LQ043",
 +# elif CONFIG_FB_IMX_SHARP_LQ057_TFT
 +	.mode = "Sharp-LQ057",
-+#elif CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT
-+	.mode = "LW700AT9003",
++# elif CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT
++	.mode = "Chimei-LW700AT9003",
++# elif CONFIG_FB_IMX_OPTREX_T51638D084_TFT
++	.mode = "Optrex-T51638D084",
 +# endif
 +	.init = apf27_fb_init,
 +	.exit = apf27_fb_exit,
@@ -1277,7 +1288,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c	2009-09-14 15:05:12.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c	2009-09-14 18:50:02.000000000 +0200
 @@ -0,0 +1,576 @@
 + /*
 + * apf27-dev.c
@@ -1718,7 +1729,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c
 +		.max_speed_hz		= 8000000,
 +		.bus_num		= 0, /* SPI1 */
 +		.irq			= IRQ_GPIOE(MAX1027_EOC_INT),
-+		.chip_select		= 0,
++		.chip_select		= 0, /* SS0 */
 +		.mode 			= 0,
 +		.platform_data		= &apf27_max1027_config,
 +	},

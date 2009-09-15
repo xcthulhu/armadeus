@@ -1,13 +1,13 @@
 Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:17:54.000000000 +0200
-+++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-08-24 12:27:52.000000000 +0200
+--- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:58:12.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:58:53.000000000 +0200
 @@ -101,6 +101,19 @@
  		.vmode = FB_VMODE_NONINTERLACED,
  		.flag = 0,
  	},
 +        [7] = {
-+		.name = "LW700AT9003",
++		.name = "Chimei-LW700AT9003",
 +		.refresh = 60,
 +		.xres = 800,
 +		.yres = 480,
