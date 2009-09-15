@@ -46,7 +46,7 @@
 
 
 #define DRIVER_NAME    "Armadeus GPIOs driver"
-#define DRIVER_VERSION "v2.2"
+#define DRIVER_VERSION "2.3"
 /* By default, we use dynamic allocation of major numbers -> MAJOR = 0 */
 #define GPIO_MAJOR 0
 #define GPIO_PROC_DIRNAME         "driver/gpio"
@@ -123,6 +123,7 @@ enum {
 	PULL_UP,
 	INTERRUPT,
 	MODE,
+	NB_SETTINGS, /* nb of settings in this enum -> should always be the last ! */
 };
 
 struct gpio_settings {
@@ -345,25 +346,48 @@ static unsigned int readFromPort(unsigned int aPort)
 static void setPortMode(unsigned int aPort, unsigned int aModeMask)
 {
 	int i;
-	int ocr1,ocr2;
+	int ocr1, ocr2, gius;
 	
-	ocr1 = ocr2 = 0;
-	for( i=0; i< number_of_pins[aPort]; i++ )
-	{	
-		if( i<16 )
-		{
-			if( (aModeMask>>i)&1 ) 			
+	ocr1 = __raw_readl(VA_GPIO_BASE + MXC_OCR1(aPort));
+	ocr2 = __raw_readl(VA_GPIO_BASE + MXC_OCR2(aPort));
+	gius = __raw_readl(VA_GPIO_BASE + MXC_GIUS(aPort));
+	aModeMask = aModeMask & PORT_MASK[aPort]; /* only sets the allowed pins */
+	for (i=0; i < number_of_pins[aPort]; i++) {	
+		if (i < 16) {
+			if ((aModeMask>>i) & 1) 			
 				ocr1 = ocr1 | (3<<(i*2));
-		}
-		else
-		{
-			if( (aModeMask>>i)&1 ) 			
+		} else {
+			if ((aModeMask>>i) & 1) 			
 				ocr2 = ocr2 | (3<<((i-16)*2));
 		}
 	}
 	__raw_writel(ocr1, VA_GPIO_BASE + MXC_OCR1(aPort));
 	__raw_writel(ocr2, VA_GPIO_BASE + MXC_OCR2(aPort));
-	__raw_writel(aModeMask & PORT_MASK[aPort], VA_GPIO_BASE + MXC_GIUS(aPort));
+	gius = gius | aModeMask;
+	__raw_writel(gius, VA_GPIO_BASE + MXC_GIUS(aPort));
+}
+
+static unsigned int getPortMode(unsigned int aPort)
+{
+	int i;
+	int ocr1, ocr2, gius, value = 0;
+
+        ocr1 = __raw_readl(VA_GPIO_BASE + MXC_OCR1(aPort));
+        ocr2 = __raw_readl(VA_GPIO_BASE + MXC_OCR2(aPort));
+	gius = __raw_readl(VA_GPIO_BASE + MXC_GIUS(aPort));
+	/* pin is a GPIO if OCR == 3 AND GIUS == 1 */
+	for (i=0; i < number_of_pins[aPort]; i++) {
+		if (i < 16) {
+                        if (((ocr1>>(i*2)) & 3) == 3)
+                                value = value | (1<<i);
+                } else {
+                        if (((ocr2>>((i-16)*2)) & 3) == 3)
+				value = value | (1<<i);
+                }
+	}
+	value = value & gius;
+
+	return value;
 }
 
 static void setPortPull(unsigned int aPort, unsigned int aPullMask)
@@ -393,7 +417,7 @@ char* port_name[NB_PORTS]  = { "portA", "portB", "portC", "portD",
 				"portE", "portF",
 #endif
 };
-char* port_setting_name[4] = { "Value", "Direction", "Pull-up", "Interrupt" };
+char* port_setting_name[NB_SETTINGS] = { "Value", "Direction", "Pull-up", "Interrupt" , "Mode" };
 
 
 /* Handles write() done on /dev/gpioxx */
@@ -692,7 +716,7 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		break;
 
 		case GPIORDMODE:
-		value = __raw_readl(VA_GPIO_BASE + MXC_GIUS(MAX_MINOR - minor));
+		value = getPortMode(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
 		break;
 
@@ -746,7 +770,7 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 
 	switch (settings->type) {
 		case MODE:
-			port_status = __raw_readl(VA_GPIO_BASE + MXC_GIUS(port_ID));
+			port_status = getPortMode(port_ID);
 		break;
 
 		case VALUE:
@@ -776,12 +800,13 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 	} else {
 		len = toString(port_status, buffer, number_of_pins[port_ID]/2, 2);
 		len += toString(port_status2, buffer+len-1, number_of_pins[port_ID]/2, 2);
+		len -= 1;
 	}
 
-	printk("0x%08x", port_status);
+	pr_debug("%s: 0x%08x", __func__, port_status);
 	if (settings->type == INTERRUPT)
-		printk("0x%08x", port_status2);
-	printk("\n");
+		pr_debug(" 0x%08x", port_status2);
+	pr_debug("\n");
 
 	*eof = 1;
 	up(&gpio_sema);
@@ -829,13 +854,13 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 	if (strlen(new_gpio_state) > 0) {
 		/* Convert it from String to Int */
 		if (settings->type != INTERRUPT) {
-			gpio_state = fromString( new_gpio_state, number_of_pins[port_ID], 1);
+			gpio_state = fromString(new_gpio_state, number_of_pins[port_ID], 1);
 		} else {
 			gpio_state =  fromString(new_gpio_state, number_of_pins[port_ID]/2, 2);
 			gpio_state2 = fromString(new_gpio_state+(number_of_pins[port_ID]/2), (number_of_pins[port_ID]/2), 2);
 		}
 
-		switch( settings->type )
+		switch (settings->type)
 		{
 			case MODE:
 				setPortMode(port_ID, gpio_state);
@@ -863,11 +888,12 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 			break;
 		}
 
-		if (settings->type != INTERRUPT)
-			printk("/proc wrote 0x%x", gpio_state);
-		else
-			printk("/proc wrote 0x%x 0x%x",gpio_state, gpio_state2);
-		printk(" on %s %s register\n", port_name[port_ID], 
+		if (settings->type != INTERRUPT) {
+			pr_debug("/proc wrote 0x%x", gpio_state);
+		} else {
+			pr_debug("/proc wrote 0x%x 0x%x", gpio_state, gpio_state2);
+		}
+		pr_debug(" on %s %s register\n", port_name[port_ID], 
 			port_setting_name[settings->type]);
 
 	}
@@ -1079,7 +1105,7 @@ static int __init armadeus_gpio_init(void)
 
 	/* Set GPIOs to initial state: iMX and parameters will do it */
 
-	printk( DRIVER_NAME " " DRIVER_VERSION " successfully loaded !\n");
+	printk(DRIVER_NAME " v" DRIVER_VERSION " successfully loaded !\n");
 	return 0;
 }
 
