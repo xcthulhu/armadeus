@@ -1,0 +1,10 @@
+config BR2_PACKAGE_SDLQUAKE
+	bool "sdlquake"
+	select BR2_PACKAGE_SDL
+	select BR2_PACKAGE_SDL_MIXER
+	select BR2_PACKAGE_SDL_NET
+	help
+	  sdlquake is a port of ID Software's popular Quake 3-D shooter game.
+	  (Not supported by ID Software)
+
+	  http://www.libsdl.org/projects/quake/
