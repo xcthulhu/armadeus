@@ -656,7 +656,11 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 
 	/* Extract and test minor */
 	minor = MINOR(inode->i_rdev);
+#ifndef CONFIG_ARCH_IMX
+	if (minor < FULL_PORTF_MINOR) {
+#else
 	if (minor < FULL_PORTD_MINOR) {
+#endif
 		printk("IOCTLs are only available on 'full port' minors !\n");
 		ret = -EFAULT;
 		goto out;
