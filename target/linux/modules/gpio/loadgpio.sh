@@ -18,8 +18,13 @@ GPIO_MAJOR=`cat /proc/devices | grep GPIO | cut -d " " -f 1`
 PPDEV_MAJOR=`cat /proc/devices | grep ppdev | cut -d " " -f 1`
 
 if [ "$GPIO_MAJOR" == "" ]; then
-	echo "GPIO module not loaded, exiting"
+	echo "GPIO module failed to load, exiting..."
 	exit 1
+fi
+
+if [ -d "$GPIO_DEV_DIR" ]; then
+	echo $GPIO_DEV_DIR"xxx devices already created, skipping..."
+	exit 0
 fi
 
 mkdir -p $GPIO_DEV_DIR
