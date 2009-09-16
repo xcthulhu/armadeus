@@ -17,7 +17,7 @@
  	-@rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
 +	cp target/device/armadeus/$(BR2_BOARD_NAME)/ubinize.cfg .
 +	cp $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.ubifs .
-+	ubinize -o system_ubi.img -m $(BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE) -p 128KiB -s 512 ubinize.cfg
++	$(UBINIZE) -o system_ubi.img -m $(BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE) -p 128KiB -s 512 ubinize.cfg
 +	cp -f system_ubi.img $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.ubifs
 +	rm system_ubi.img
 +	rm $(BR2_BOARD_NAME)-rootfs.arm.ubifs
