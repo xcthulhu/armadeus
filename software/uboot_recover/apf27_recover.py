@@ -1,5 +1,5 @@
 #
-#  APF27 bootloader
+#  APF27 bootloader recovering tool
 #
 #  Copyright (2008)  ARMADEUS
 #
@@ -115,7 +115,7 @@ class apf27Bootloader:
         else:
             print '\nread timeout' 
 
-    def __displayProgress( self, text ):
+    def __displayProgress(self, text):
         sys.stdout.write(chr(13))
         print text,
 
@@ -195,17 +195,18 @@ class apf27Bootloader:
         data = f.read(16)
         count = 16
         b = 0
+        print '\nTransfering:'
         while len(data):
             n = len(data)
-            b = 16-n  # ensure always 4 bytes 
+            b = 16-n  # ensure always 4 bytes
             #tr = unpack('B'*n,data)
             self.port.write(data)
 
             count = count + 16
-            if (count % 1024) == 0:
-                self.__displayProgress( "%d octets            " % count ) 
+            if (count % 512) == 0:
+                self.__displayProgress( "%d bytes            " % count )
             data = f.read(16)
-        self.__displayProgress( "%d octets" % count ) 
+        self.__displayProgress( "%d bytes transfered" % count )
         print ""
         f.close()
         self.getstatus()
@@ -222,7 +223,7 @@ class apf27Bootloader:
             datasize = "20"
             datatmp  = ('%c' % int(data[0:2],16)) + ('%c' % int(data[2:4],16)) + ('%c' % int(data[4:6],16))  + ('%c' % int(data[6:8],16))
         else:
-            print "errror invalid data size"
+            print "error invalid data size"
             return ""
 
         result = ('%c' % int(cmd[0:2],16)) + ('%c' % int(cmd[2:4],16)) + \
@@ -305,7 +306,7 @@ class UBoot:
         self.serial = serial
 
     def __getOutput(self,error_msg=None):
-        """ this function wait for uboot response and return response"""
+        """ This function waits for U-Boot response and return response"""
         #debugser = serial.Serial("/dev/tty0",115200,timeout=1)
         response = ""
         while not re.search(r'BIOS>',response):
@@ -354,10 +355,10 @@ if __name__ == "__main__":
 
     SPEED = 115200
 
-    print "APF27 Bootstrap Tool"
-    print "Do not forget to place the bootstrap jumper !!"
-    print "and be sure to have a u-boot.bin file in current dir"
-    port = raw_input('Enter serial port number or name to use (/dev/ttySx under Linux and COMx under Windows: ')
+    print "\nAPF27 Bootstrap Tool\n"
+    print "!!! Do not forget to put the bootstrap jumper and to reset your board !!!"
+    print "(be sure to have a u-boot.bin file in current dir too)\n"
+    port = raw_input('Enter serial port number or name to use (/dev/ttySx under Linux and COMx under Windows): ')
     try:
         ser = serial.Serial(port, SPEED, timeout=3) 
     except Exception, msg:
@@ -377,7 +378,7 @@ if __name__ == "__main__":
     if eraseAll == 'y':
         uboot.resetenv()
     uboot.flash()
-    print "uBoot successfully recovered !"
+    print "U-Boot successfully recovered !"
 
     del ser
 
