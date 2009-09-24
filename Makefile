@@ -92,32 +92,39 @@ $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE):
 	mkdir -p $(BUILDROOT_FILE_PATH)
 	wget --passive-ftp -P $(BUILDROOT_FILE_PATH)  $(BUILDROOT_SITE)/$(BUILDROOT_SOURCE)
 
+buildroot-sources: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE)
+
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(BUILDROOT_PATCH_DIR)/*.patch
 	$(BUILDROOT_PATCH_DIR)/cleanup_buildroot.sh
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
-	tar -C $(BUILDROOT_DIR)/.. $(TAR_OPTIONS) -
+	tar -C $(ARMADEUS_TOPDIR) $(TAR_OPTIONS) -
+	touch $@
+
+buildroot-unpacked: $(BUILDROOT_DIR)/.unpacked
+
+$(BUILDROOT_DIR)/.patched: $(BUILDROOT_DIR)/.unpacked
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(BUILDROOT_PATCH_DIR) \*.patch
 # Since patches may add/delete packages, we process extra packages after patching
 	perl $(BUILDROOT_PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
 	touch $@
 
-buildroot-patched-sources: $(BUILDROOT_DIR)/.unpacked
+buildroot-patched: $(BUILDROOT_DIR)/.patched
 
-$(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.unpacked
+$(BUILDROOT_DIR)/.configured: $(BUILDROOT_DIR)/.patched
 	@if [ ! -f $@ ]; then \
 		$(ECHO_CONFIGURATION_NOT_DEFINED) \
 		exit 1; \
 	fi
 
 # To be called only one time if one wants to make an automatic build
-buildauto: $(BUILDROOT_DIR)/.unpacked
+buildauto: $(BUILDROOT_DIR)/.patched
 	# ! Be sure that /local/downloads exists if you want to use automated build !
 	sed -i -e 's/BR2_DL_DIR/BR2_DL_DIR=\"\/local\/downloads\" #/g' $(BUILDROOT_DIR)/.defconfig ;
 	echo "ey" | $(MAKE) -C $(BUILDROOT_DIR) menuconfig
 	$(MAKE) -C $(BUILDROOT_DIR)
 
 linux-menuconfig:
-	@if [ -e "$(ARMADEUS_LINUX_DIR)/.unpacked" ] ; then \
+	@if [ -e "$(ARMADEUS_LINUX_DIR)/.patched" ] ; then \
 		$(MAKE) -C $(BUILDROOT_DIR) linux26-menuconfig ; \
 	fi;
 
@@ -128,7 +135,7 @@ linux26: $(BUILDROOT_DIR)/.configured
 linux26-clean: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
 
-%_defconfig: $(BUILDROOT_DIR)/.unpacked
+%_defconfig: $(BUILDROOT_DIR)/.patched
 	@if [ -e "$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_defconfig,%,$@)/$@" ]; then \
 		rm -f $(BUILDROOT_DIR)/.config ; \
 		$(MAKE) -C $(BUILDROOT_DIR) $@ ; \
@@ -138,7 +145,7 @@ linux26-clean: $(BUILDROOT_DIR)/.configured
 		echo -e "\033[1m\nThis configuration does not exist !!\n\033[0m" ; \
 	fi;
 
-%_autoconf: $(BUILDROOT_DIR)/.unpacked
+%_autoconf: $(BUILDROOT_DIR)/.patched
 	@if [ -e "$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_autoconf,%,$@)/$(patsubst %_autoconf,%,$@)_defconfig" ]; then \
 		rm -f $(BUILDROOT_DIR)/.config ; \
 		$(MAKE) -C $(BUILDROOT_DIR) $(patsubst %_autoconf,%,$@)_defconfig ; \
@@ -174,7 +181,8 @@ buildroot-dirclean:
 
 # Generate shell's most useful variables:
 shell_env:
-	@echo ARMADEUS_LINUX_DIR=$(ARMADEUS_LINUX_DIR)   >  $(ARMADEUS_ENV_FILE)
+	@echo ARMADEUS_BUILDROOT_DIR=$(BUILDROOT_DIR) > $(ARMADEUS_ENV_FILE)
+	@echo ARMADEUS_LINUX_DIR=$(ARMADEUS_LINUX_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_LINUX_PATCH_DIR=$(ARMADEUS_LINUX_PATCH_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_ROOTFS_DIR=$(ARMADEUS_ROOTFS_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_BINARIES=$(ARMADEUS_BINARIES) >> $(ARMADEUS_ENV_FILE)
@@ -184,6 +192,7 @@ shell_env:
 
 
 PHONY_TARGETS+=dummy all linux-menuconfig linux26 linux26-clean buildroot-clean buildroot-dirclean
-PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config shell_env
+PHONY_TARGETS+=menuconfig $(BUILDROOT_DIR)/.config shell_env buildroot-sources buildroot-unpacked
+PHONY_TARGETS+=buildroot-patched 
 .PHONY: $(PHONY_TARGETS)
 
