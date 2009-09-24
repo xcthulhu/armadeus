@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-16 19:28:56.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-24 15:15:53.000000000 +0200
 @@ -0,0 +1,1221 @@
 + /*
 + * apf27.c
@@ -510,7 +510,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	ret = request_irq(IRQ_GPIOC(14), detect_irq, 0, "imx-mmc-detect", data);
 +	if (ret)
 +		goto out_release_gpio;
-+	set_irq_type(IRQ_GPIOC(14), IRQF_TRIGGER_FALLING);
++	set_irq_type(IRQ_GPIOC(14), IRQ_TYPE_EDGE_BOTH);
 +
 +	return 0;
 +
@@ -1235,7 +1235,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c	2009-09-16 19:18:59.000000000 +0200
++++ linux-2.6.29.4/arch/arm/mach-mx2/apf27-dev.c	2009-09-23 14:23:52.000000000 +0200
 @@ -0,0 +1,642 @@
 + /*
 + * apf27-dev.c
