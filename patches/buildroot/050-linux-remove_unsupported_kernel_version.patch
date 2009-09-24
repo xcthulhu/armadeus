@@ -1,5 +1,7 @@
---- buildroot.org/target/linux/Config.in.advanced	2008-11-09 20:14:22.000000000 +0100
-+++ buildroot/target/linux/Config.in.advanced	2008-11-09 20:35:36.000000000 +0100
+Index: buildroot/target/linux/Config.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Config.in.advanced	2009-09-24 18:58:49.000000000 +0200
++++ buildroot/target/linux/Config.in.advanced	2009-09-24 22:08:05.000000000 +0200
 @@ -32,6 +32,7 @@
  # --- These 'constants' requires regular maintenance, so put them first
  config BR2_KERNEL_PATCH_LEVEL
@@ -66,7 +68,7 @@
  	select BR2_KERNEL_LATEST
  	select BR2_KERNEL_BASE
  	help
-@@ -185,39 +204,37 @@
+@@ -185,39 +204,38 @@
  
  config BR2_LINUX_2_6_21_7
  	bool "Linux 2.6.21.7"
@@ -106,6 +108,7 @@
 -	bool "Linux 2.6.28"
 +config BR2_LINUX_2_6_18
 +	bool "Linux 2.6.18"
++	depends on !BR2_TARGET_ARMADEUS
  	select BR2_KERNEL_BASE
  	help
 -	  Linux 2.6.28
