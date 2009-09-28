@@ -189,10 +189,11 @@ int main(void /*int argc, char **argv*/)
   for (pos = 0; pos < 1; pos++) {
     close(tabChildPipe[pos]);
   }
-  close(fbfd);
   for (pos = 0; pos < 1; pos++) {
     waitpid(pidChildPipe[pos], NULL, 0);
   }
+
+  close_lcd(fbfd);
 
   return EXIT_SUCCESS;
 }

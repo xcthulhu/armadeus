@@ -9,7 +9,7 @@
 #define IMIN -2.5
 
 int  init_lcd ();
-void close_LCD(int fbfd);
+void close_lcd(int fbfd);
 void print_pix(unsigned int x, unsigned int y, int r, int g, int b);
 
 #endif /* LCD_H */

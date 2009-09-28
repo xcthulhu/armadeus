@@ -91,7 +91,7 @@ int init_lcd()
   return fbfd;
 }
 
-void close_LCD(int fbfd)
+void close_lcd(int fbfd)
 {
   munmap(fbp, screensize);
   close(fbfd);
