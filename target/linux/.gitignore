@@ -6,3 +6,5 @@
 *.order
 *.mod.*
 *~
+.tmp_versions
+Module.symvers
