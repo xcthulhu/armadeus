@@ -1,6 +1,14 @@
+
 ** Distributed computing for overloading processor **
 
-Calculation and displays a fractal newton distributed.
-Master : creates processus with fork, distributes parts and displays the result.
+Calculates (distributed) and displays a Newton's fractal.
+Master : creates processus with fork, distributes parts and displays the result (framebuffer).
 10 slaves : computes parts of the picture.
-10 esclaves qui font le calcul d'une partie de l'image.
+
+
+Compilation:
+$ export PATH=$PATH:your_path_to_armadeus/buildroot/build_armxx/staging_dir/usr/bin
+$ make
+
+Usage:
+# clear > /dev/tty0 && ./newton

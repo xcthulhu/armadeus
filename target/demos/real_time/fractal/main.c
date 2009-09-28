@@ -1,5 +1,5 @@
 /*
-*  Calculation and displays a fractal newton distributed.
+*  Calculates (distributed) and displays a Newton's fractal.
 *
 * Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
 *                         Armadeus Project / Armadeus Systems
@@ -57,27 +57,27 @@ typedef struct elem_pict {
 
 
 /* used by children process */
-void workChildren(elemPict *ep) {
+void workChildren(elemPict *ep)
+{
   float ii,ri,r,i;
-  int yy = 0,y=0;
+  int y=0;
   int totaliter=0;
-  int x=0,maxiter=0, iter=0;//, yy = ep->y;
-  float fin = (RMAX-RMIN)/POINTSX;
+  int x=0, maxiter=0, iter=0;
+  /*float fin = (RMAX-RMIN)/POINTSX;*/
   float finY = (IMAX-IMIN)/POINTSY;
   float yDeb = IMIN+(finY*ep->y);
  
-
- for (ii=yDeb;ii<IMAX;ii+=(IMAX-IMIN)/POINTSY){   // terminal : 105x54
-    for (ri=RMIN;ri<RMAX;ri+=(RMAX-RMIN)/POINTSX) {
+  for (ii=yDeb; ii<IMAX; ii+=(IMAX-IMIN)/POINTSY) {   /* terminal : 105x54 */
+    for (ri=RMIN; ri<RMAX; ri+=(RMAX-RMIN)/POINTSX) {
       iter=0;
       r=ri; i=ii;
       do {
 	newton(&r,&i);
 	iter++; 
-      }while ((module(r,i)<0.999) || (module(r,i)>1.001));
+      } while ((module(r,i)<0.999) || (module(r,i)>1.001));
       if (iter>maxiter) 
-	maxiter=iter;
-      totaliter+=iter;
+	maxiter = iter;
+      totaliter += iter;
       if (y >= (ep->height)) return;
       ep->ligne[y][x].r = ep->ligne[y][x].g = ep->ligne[y][x].b = 0;
       if (r>0){
@@ -89,77 +89,82 @@ void workChildren(elemPict *ep) {
 	  ep->ligne[y][x].b = 255;
 	}
       }    
-       x++;
-     }
-    y++;x=0;
+      x++;
+    }
+    y++;
+    x=0;
   }
 }
 
-
 /* Used by the master */
-void workMaster(int *tabChildPipe, int global) {
+void workMaster(int *tabChildPipe, int global)
+{
   int nbChild = NB_CHILD;
   int i,lignDeb;
-  // Sending the command processing
   elemPict ep;
-  for (i=0,lignDeb=0;i<NB_CHILD;i++,lignDeb+=24) {
+
+  /* Sending the command processing */
+  for (i=0,lignDeb=0; i<NB_CHILD; i++,lignDeb+=24) {
     ep.x=0;
     ep.y=lignDeb;
     ep.height=24;
     ep.numFils=i;
-    write(tabChildPipe[i],&ep,sizeof(elemPict));
+    write(tabChildPipe[i], &ep, sizeof(elemPict));
   }
 
-  // Queuing of all the calculations
+  /* Queuing of all the calculations */
   do { 	
-    int size = read(global,&ep,sizeof(elemPict)+1);
-    printf("recu de %d debut %d fin %d\n",ep.numFils,ep.y,ep.height+ep.numFils);
+    int size = read(global, &ep, sizeof(elemPict)+1);
+    printf("received from %d start %d end %d\n", ep.numFils, ep.y, ep.height+ep.numFils);
     if (size != sizeof(elemPict)) {
-      printf("bizarre\n");
+      printf("strange\n");
       continue;
     }
-    nbChild --;
-    int yy,x,y;
-    for (yy=0,y=ep.y;yy<24;y++,yy++) {
-      for (x=0;x<POINTSX;x++){
-	print_pix(x,y,ep.ligne[yy][x].r,ep.ligne[yy][x].g,ep.ligne[yy][x].b);
+    nbChild--;
+    int yy, x, y;
+    for (yy=0,y=ep.y; yy<24; y++,yy++) {
+      for (x=0; x<POINTSX; x++) {
+	print_pix(x, y, ep.ligne[yy][x].r, ep.ligne[yy][x].g, ep.ligne[yy][x].b);
       }    
     }
   } while (nbChild >0);
 }
 
-void prepareChild(int *reception, int *versMaster) {
+void prepareChild(int *reception, int *versMaster)
+{
+  elemPict ep;
+
   close(versMaster[LECTURE]);
   close(reception[ECRITURE]);
-  elemPict ep;
   read(reception[LECTURE], &ep, sizeof(elemPict));
   workChildren(&ep);
-  write(versMaster[1],&ep,sizeof(elemPict));
+  write(versMaster[1], &ep, sizeof(elemPict));
   close(versMaster[ECRITURE]);
   close(reception[LECTURE]);
 }
 
-int main(int argc, char **argv) {
+int main(void /*int argc, char **argv*/)
+{
   int global[2];
   int tabChildPipe[NB_CHILD];
   int pidChildPipe[NB_CHILD];
   
   if (pipe(global) == -1) {
     perror("pipeToMaster");
-    return(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
   /* Children process creation */
   int pos;
   int receptionFils[2];
-  for (pos = 0; pos < NB_CHILD; pos ++ ) {
+  for (pos=0; pos < NB_CHILD; pos++) {
     if (pipe(receptionFils) == -1){
       perror("pipeToMaster");
-      return(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     int pid = fork();
     switch (pid) {
     case -1:
-      printf("ca merde\n");
+      printf("problem...\n");
       return -1;
       break;
     case 0: 
@@ -175,15 +180,20 @@ int main(int argc, char **argv) {
   }
   close(global[ECRITURE]);
   int fbfd = init_lcd();
-  workMaster(tabChildPipe,global[LECTURE]);
+  if (fbfd < 0)
+    return EXIT_FAILURE;
+
+  workMaster(tabChildPipe, global[LECTURE]);
   close(global[LECTURE]); 
   
   for (pos = 0; pos < 1; pos++) {
-    close (tabChildPipe[pos]);
+    close(tabChildPipe[pos]);
   }
   close(fbfd);
-  for (pos = 0; pos<1;pos ++) {
-    waitpid(pidChildPipe[pos],NULL,0);
+  for (pos = 0; pos < 1; pos++) {
+    waitpid(pidChildPipe[pos], NULL, 0);
   }
+
   return EXIT_SUCCESS;
 }
+
