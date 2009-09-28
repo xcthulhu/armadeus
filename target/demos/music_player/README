@@ -5,25 +5,25 @@
 
 Music Player for apf9328 (and apf27 ?)
 Requires SDL, SDL_ttf and SDL_mixer libs
-Audio format supported: WAV ...( + OGG on host computer) 
+Audio formats supported: WAV ...( + OGG on host computer) 
 Date: 24/05/09
 Version: 1.0
 Author: rebouxan
 
-*** Repertories ***
+*** Directories ***
 
- * data: contains the background, fonts and icones ...
+ * data/: contains the background, fonts and icons ...
 
- * music: here you have to drop the music you want the player to read.
+ * music/: here you have to drop the music you want the player to read.
 	  Files must have the same audio_rate which is (#)DEFINEd in player.c by AUDIO_RATE.
- /!\ You have to limit song files' carateres at 10 or a little more. exemple: musiciswav.wav
+ /!\ You have to limit song files' characters to 10 or a little more. Example: musiciswav.wav
 
  You can change the music directory and take for instance /mnt/mmc to play your SD card on your apf
  by changing MUSIC_DIR var in player.c before compilation or by executing the player with the repertory
  you want to read in arg: for instance, #./aplayer /mnt/mmc
- /!\ Try to limit pathnames' carateres.
+ /!\ Try to limit pathnames' characters.
 
-*** keyboard commands ***
+*** Keyboard commands ***
 You can see keyboard commands in player.c -> function 'handleKey()'
 The main commands are:
 	-"o": play/stop
@@ -57,13 +57,14 @@ The main commands are:
 *********************
 
 1/ Install all required libs
-   * Go to armadeus repertory
+   * Go to armadeus/ directory
    * $ make apf9328-menuconfig
    * select "package selection for the target"
    * select "SDL", "SDL_ttf" and "SDL_mixer"
    * $ make
 
 2/ Compile the code
+   * in this directory:
  	$ make TARGET=arm
 
 3/ If SDL libs were not installed, update your apf rootfs to have SDL libs on your board
@@ -72,7 +73,6 @@ The main commands are:
    Plug a usb keyboard on your devFull
 
 5/ Load the sound modules:
-	modprobe spi_imx
 	modprobe snd-imx-alsa-tsc2102
 	modprobe snd-pcm-oss
 	modprobe snd-mixer-oss
@@ -80,5 +80,4 @@ The main commands are:
 6/ Execute: #./aplayer
 
 7/ Cleaning: $ make TARGET=arm clean
-
 
