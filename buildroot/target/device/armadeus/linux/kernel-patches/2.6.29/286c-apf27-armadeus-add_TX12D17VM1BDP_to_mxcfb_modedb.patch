@@ -1,0 +1,24 @@
+Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
+===================================================================
+--- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:58:12.000000000 +0200
++++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:58:53.000000000 +0200
+@@ -114,6 +114,19 @@ const struct fb_videomode mxcfb_modedb[]
+ 		.vmode = FB_VMODE_NONINTERLACED,
+ 		.flag = 0,
+ 	},
++        [8] = {
++		.name = "Hitachi-TX12D17VM1BDP",
++		.refresh = 60,
++		.xres = 640,
++		.yres = 480,
++		.pixclock = 40000, /* picoS */
++		.left_margin = 80, .right_margin = 48, /* at least 3 & 1 */
++		.upper_margin = 10, .lower_margin = 35,
++		.hsync_len = 64, .vsync_len = 2,
++		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
++		.vmode = FB_VMODE_NONINTERLACED,
++		.flag = 0,
++	},
+ };
+ 
+ int mxcfb_modedb_sz = ARRAY_SIZE(mxcfb_modedb);

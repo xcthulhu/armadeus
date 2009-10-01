@@ -10,7 +10,7 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.4/arch/arm/mach-mx2/apf27.c	2009-09-24 15:15:53.000000000 +0200
-@@ -0,0 +1,1221 @@
+@@ -0,0 +1,1223 @@
 + /*
 + * apf27.c
 + *
@@ -420,6 +420,8 @@ Index: linux-2.6.29.4/arch/arm/mach-mx2/apf27.c
 +	.mode = "Chimei-LW700AT9003",
 +# elif CONFIG_FB_IMX_OPTREX_T51638D084_TFT
 +	.mode = "Optrex-T51638D084",
++# elif CONFIG_FB_IMX_HITACHI_TX12D17VM1BDP_TFT
++	.mode = "Hitachi-TX12D17VM1BDP",
 +# endif
 +	.init = apf27_fb_init,
 +	.exit = apf27_fb_exit,
