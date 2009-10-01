@@ -10,7 +10,7 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -402,6 +403,55 @@
+@@ -402,6 +403,61 @@
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
@@ -59,6 +59,12 @@ Index: linux-2.6.29.4/drivers/video/Kconfig
 +	bool "Optrex T51638D084"
 +	help
 +	  OPTREX_T51638D084, a 8.4" 18 bits, TFT panel.
++	  The native resolution is 640x480.
++
++config FB_IMX_HITACHI_TX12D17VM1BDP_TFT
++	bool "Hitachi TX12D17VM1BDP"
++	help
++	  HITACHI_TX12D17VM1BDP, a 5.7" 18 bits, TFT panel.
 +	  The native resolution is 640x480.
 +
 +endchoice
