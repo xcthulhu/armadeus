@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"3.5"
-#define CONFIG_IDENT_STRING	" apf9328 patch 3.8"
+#define CONFIG_ENV_VERSION 	"3.6"
+#define CONFIG_IDENT_STRING	" apf9328 patch 3.9"
 
 #define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
 #define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
@@ -118,7 +118,7 @@
 #define CONFIG_MTDMAP  "physmap-flash.0"
 #define MTDIDS_DEFAULT	"nor0=" CONFIG_MTDMAP
 #define MTDPARTS_DEFAULT "mtdparts=" CONFIG_MTDMAP ":256k(U-boot)ro,"	\
-			"128k(U-boot_env),256k(firmware),2048k(kernel),-(root)"
+			"128k(U-boot_env),256k(firmware),2048k(kernel),-(rootfs)"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"env_version="		CONFIG_ENV_VERSION		"\0"	\
@@ -146,6 +146,8 @@
 		"root=/dev/nfs rw nfsroot=${serverip}:${rootpath}\0"    \
 	"addjffsargs=setenv bootargs ${bootargs} "			\
 		"root=/dev/mtdblock4 rootfstype=jffs2\0"   		\
+	"addubifsargs=setenv bootargs ${bootargs} "			\
+		"ubi.mtd=rootfs root=ubi0:rootfs rootfstype=ubifs\0"    \
 	"addmmcargs=setenv bootargs ${bootargs} "			\
 		"root=${mmcroot} rootfstype=${mmcrootfstype}\0"   	\
 	"addipargs=setenv bootargs ${bootargs} "			\
@@ -154,6 +156,8 @@
 		"run addnfsargs addipargs; bootm ${kernel_addr}\0"	\
 	"jffsboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addjffsargs addipargs; bootm ${kernel_addr}\0"	\
+	"ubifsboot=setenv bootargs ${console} ${mtdparts};"		\
+		"run addubifsargs addipargs; bootm ${kernel_addr}\0"	\
 	"mmcboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addmmcargs addipargs; bootm ${kernel_addr}\0"	\
 	"firmware_autoload=0\0"					\
