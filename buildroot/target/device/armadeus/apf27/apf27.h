@@ -910,16 +910,3 @@
 #define CFG_SDRAM_PRECHARGE_ALL_VAL (1<<10)
 
 #endif /* __CONFIG_H */
-
-/* Add a wrapper around the values Buildroot sets. */
-#ifndef __BR2_ADDED_CONFIG_H
-#define __BR2_ADDED_CONFIG_H
-#ifdef CONFIG_HOSTNAME
-#undef CONFIG_HOSTNAME
-#endif
-#define CONFIG_HOSTNAME  "apf27"
-#ifdef CONFIG_BOARD_NAME
-#undef CONFIG_BOARD_NAME
-#endif
-#define CONFIG_BOARD_NAME  apf27
-#endif /* __BR2_ADDED_CONFIG_H */
