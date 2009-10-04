@@ -58,7 +58,7 @@
  	chmod a+x $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
  	$(STAGING_DIR)/usr/bin/fakeroot -- $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
  	-@rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
-+	cp target/device/armadeus/ubinize.cfg .
++	cp target/ubifs/ubinize.cfg .
 +	echo "image=$(UBIFS_BASE)" \
 +		>> ./ubinize.cfg
 +	$(UBINIZE) -o system_ubi.img $(UBIFS_UBINIZE_OPTS) ubinize.cfg
