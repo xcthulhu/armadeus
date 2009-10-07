@@ -267,6 +267,7 @@ int as_apf27_pwm_activate(int aPwmNumber, int aEnable)
 
 int as_apf27_pwm_getState(int aPwmNumber)
 {
+    //XXX: get real state in pwm driver instead global variable
     return mState[aPwmNumber];
 }
 
