@@ -27,7 +27,7 @@ C_INCLUDE=../c/
 C_LIB=../c/libas_devices.so.1
 
 ${LIBNAME}: ${OBJ}
-	${CXX} -shared -Wl,-soname,${LIBNAME} -o ${LIBNAME} ${OBJ} -lc ${C_LIB} 
+	${CXX} -shared -Wl,-soname,${LIBNAME} -o ${LIBNAME} ${OBJ} ${C_LIB} -lc 
 	ln -s ${LIBNAME} ${SONAME} 
 
 ${STAT_LIB}: ${OBJ} 

@@ -25,6 +25,7 @@
 #include <fcntl.h>  /* for open()   */
 #include <errno.h>  /* for perror() */
 #include <unistd.h> /* for write()  */
+#include <iostream>
 
 
 AsApf27Pwm * AsApf27Pwm::mPwm0 = NULL;
@@ -59,7 +60,12 @@ AsApf27Pwm::getInstance(int aPwmNumber)
 
 AsApf27Pwm::AsApf27Pwm(int aPwmNumber)
 {
-    as_apf27_pwm_init(aPwmNumber);
+    int ret;
+    ret = as_apf27_pwm_init(aPwmNumber);
+    if(ret < 0)
+    {
+        std::cout << "Pwm initialization error" << std::endl;
+    }
 }
 
 /*------------------------------------------------------------------------------*/

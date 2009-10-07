@@ -29,6 +29,7 @@
 void pressEnterToContinue(void)
 {
     printf("Press enter to continue\n");
+    getc(stdin);//XXX
     std::cin.ignore( std::numeric_limits <std::streamsize> ::max(), '\n' );
 }
 
@@ -39,11 +40,11 @@ void test_pwm(void)
     int value;
     AsApf27Pwm * apf27Pwm;
 
+    system("clear");
     apf27Pwm = AsApf27Pwm::getInstance(PWM_NUM);
 
     while(buffer[0] != 'q')
     {
-        system("clear");
         printf("*********************************\n");
         printf("*   Testing  pwm C++ lib menu   *\n");
         printf("*********************************\n");
@@ -116,6 +117,7 @@ void test_pwm(void)
                        break;
             default : break;
         }
+    system("clear");
     }
     delete apf27Pwm;
 }

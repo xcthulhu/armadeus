@@ -22,12 +22,9 @@
 #ifndef __ASAPF27PWM_H__
 #define __ASAPF27PWM_H__
 
-#define PWM_SYS_PATH   "/sys/class/pwm/pwm"
-#define FREQUENCY_PATH "frequency"
-#define PERIOD_PATH    "period"
-#define DUTY_PATH      "duty" 
-#define ACTIVE_PATH    "active"
-
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 /* number of pwm under system */
 #define NUMBER_OF_PWM 2
 
@@ -47,5 +44,8 @@ int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
 int as_apf27_pwm_getState(int aPwmNumber);
 
 int as_apf27_pwm_close(int aPwmNumber);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* __ASAPF27PWM_H__ */

@@ -27,6 +27,12 @@
 
 #include "as_apf27_pwm.h"
 
+#define PWM_SYS_PATH   "/sys/class/pwm/pwm"
+#define FREQUENCY_PATH "frequency"
+#define PERIOD_PATH    "period"
+#define DUTY_PATH      "duty" 
+#define ACTIVE_PATH    "active"
+
 
 /* global static variable */
 static int mFHandlerFrequency[NUMBER_OF_PWM];

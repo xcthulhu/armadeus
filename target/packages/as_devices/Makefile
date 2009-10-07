@@ -20,7 +20,7 @@ ${C_BINARY}: main.c test_c.h ${C_LIB}
 	${CC} ${CFLAGS} main.c ${C_LIB} -o ${C_BINARY} -I${C_INCLUDE}
 
 ${CPP_BINARY}: main.c test_cpp.h ${CPP_LIB} ${C_LIB}
-	${CXX} ${CFLAGS} main.c ${CPP_LIB} ${C_LIB} -I${C_INCLUDE} -I${CPP_INCLUDE} -o ${CPP_BINARY} 
+	${CXX} ${CFLAGS} main.c ${C_LIB} ${CPP_LIB} -I${C_INCLUDE} -I${CPP_INCLUDE} -o ${CPP_BINARY} 
 	#${CXX} ${CFLAGS} main.c -L${C_INCLUDE} -l${C_LIBNAME} -L${CPP_INCLUDE}-l${CPP_LIBNAME} -o ${CPP_BINARY} -I${C_INCLUDE} -I${CPP_INCLUDE}
 
 ${CPP_LIB}: ${C_LIB}
