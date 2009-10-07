@@ -1,10 +1,10 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
-Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
+Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/apf9328.c	2009-08-18 13:53:44.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328.c	2009-10-07 14:48:32.000000000 +0200
 @@ -0,0 +1,635 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -451,8 +451,8 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +#endif /* CONFIG_ARMADEUS_MAX1027 */
 +
 +
-+static struct spi_board_info spi_board_info[] __initdata = {
 +#ifdef CONFIG_ARMADEUS_MAX1027
++static struct spi_board_info spi_board_info[] __initdata = {
 +{
 +	.modalias	= "max1027",
 +	.controller_data= &max1027_hw,
@@ -463,8 +463,8 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +	.irq		= IRQ_GPIOA(MAX1027_EOC_INT),
 +	.platform_data	= &apf9328_max1027_config,
 +},
-+#endif
 +};
++#endif
 +
 +#ifdef CONFIG_IMX_BACKLIGHT
 +static struct imxbl_machinfo imx_bl_machinfo = {
@@ -641,10 +641,10 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328.c
 +	.timer        = &imx_timer,
 +	.init_machine = apf9328_init,
 +MACHINE_END
-Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h
+Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h	2009-08-17 11:04:40.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h	2009-10-02 08:54:08.000000000 +0200
 @@ -0,0 +1,301 @@
 +/*
 + *
@@ -947,10 +947,10 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328_lcd_config.h
 +#endif /* CONFIG_FB_IMX */
 +
 +#endif /* APF_LCD_CONFIG_H */
-Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h
+Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h	2009-08-18 13:55:07.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h	2009-10-02 08:54:08.000000000 +0200
 @@ -0,0 +1,68 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
@@ -1020,10 +1020,10 @@ Index: linux-2.6.29.4/arch/arm/mach-imx/include/mach/apf9328.h
 +#endif
 +
 +#endif /* __ASM_ARCH_APF9328_H */
-Index: linux-2.6.29.4/arch/arm/mach-imx/apf9328-dev.c
+Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/mach-imx/apf9328-dev.c	2009-08-18 13:56:55.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c	2009-10-02 08:54:08.000000000 +0200
 @@ -0,0 +1,281 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328-dev.c
