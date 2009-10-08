@@ -44,9 +44,6 @@ static int mPeriod[NUMBER_OF_PWM];
 static int mDuty[NUMBER_OF_PWM];         
 static int mState[NUMBER_OF_PWM];
 
-
-
-
 /*------------------------------------------------------------------------------*/
 
 /** Write a string value in file
@@ -91,25 +88,25 @@ as_apf27_pwm_init(int aPwmNumber)
     if((mFHandlerFrequency[aPwmNumber] = open(buffer,O_RDWR)) < 0)
     {
         perror("Can't open frequency files : ");
-        return mFHandlerPeriod[aPwmNumber];
+        return -1;
     }
     snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,PERIOD_PATH); 
     if((mFHandlerPeriod[aPwmNumber] = open(buffer,O_RDWR)) < 0)
     {
         perror("Can't open period files : ");
-        return mFHandlerPeriod[aPwmNumber];
+        return -1;
     }
     snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,DUTY_PATH); 
     if((mFHandlerDuty[aPwmNumber] = open(buffer,O_RDWR)) < 0)
     {
         perror("Can't open duty files : ");
-        return mFHandlerDuty[aPwmNumber];
+        return -1;
     }
     snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,ACTIVE_PATH); 
     if((mFHandlerActive[aPwmNumber] = open(buffer,O_RDWR)) < 0)
     {
         perror("Can't open active files : ");
-        return mFHandlerActive[aPwmNumber];
+        return -1;
     }
 
     return 0;
