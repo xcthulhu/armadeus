@@ -27,8 +27,8 @@ C_INCLUDE=../c/
 C_LIB=../c/libas_devices.so.1
 
 ${LIBNAME}: ${OBJ}
-	${CXX} -shared -Wl,-soname,${LIBNAME} -o ${LIBNAME} ${OBJ} ${C_LIB} -lc 
-	ln -s ${LIBNAME} ${SONAME} 
+	${CXX} -shared -Wl,-soname,${SONAME} -o ${SONAME} ${OBJ} ${C_LIB} -lc 
+	ln -s ${SONAME} ${LIBNAME} 
 
 ${STAT_LIB}: ${OBJ} 
 	${ARCHIVE_CMD} ${ARCHIVE_OPTS} ${STAT_LIB} ${OBJ}
@@ -39,3 +39,4 @@ ${STAT_LIB}: ${OBJ}
 clean:
 	-rm ${OBJ} ${BINARY}
 	-rm ${LIBNAME} ${SONAME}
+

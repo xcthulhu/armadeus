@@ -17,8 +17,8 @@ ARCHIVE_CMD=ar
 ARCHIVE_OPTS=-cvq
 
 ${LIBNAME}: ${OBJ}
-	${CC} -shared -Wl,-soname,${LIBNAME} -o ${LIBNAME} ${OBJ} -lc 
-	ln -s ${LIBNAME} ${SONAME} 
+	${CC} -shared -Wl,-soname,${SONAME} -o ${SONAME} ${OBJ} -lc 
+	ln -s ${SONAME} ${LIBNAME}
 
 ${STAT_LIB}: ${OBJ} 
 	${ARCHIVE_CMD} ${ARCHIVE_OPTS} ${STAT_LIB} ${OBJ}

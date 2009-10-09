@@ -30,6 +30,6 @@ ${C_LIB}:
 	cd c; make CC=${CC} 
 
 clean:
-	cd c; make clean ; cd ../cpp; make clean
+	cd c; make clean ; cd ../cpp; make clean; cd ../python; make clean
 	-rm ${C_BINARY} ${CPP_BINARY}
 
