@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-10-11 15:37:48.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-10-11 21:52:46.000000000 +0200
 @@ -0,0 +1,1090 @@
 + /*
 + * apf27.c
@@ -1104,7 +1104,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-10-11 15:38:14.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-10-11 21:52:46.000000000 +0200
 @@ -0,0 +1,650 @@
 + /*
 + * apf27-dev.c
@@ -1759,8 +1759,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-10-11 19:03:11.000000000 +0200
-@@ -0,0 +1,208 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-10-11 21:53:54.000000000 +0200
+@@ -0,0 +1,218 @@
 +/*
 + * apf27-lcd.c
 + *
@@ -1834,6 +1834,16 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 +
 +#ifdef CONFIG_FB_IMX_HITACHI_TX12D17VM1BDP_TFT
 +# define LCD_NAME	"Hitachi-TX12D17VM1BDP"
++#endif
++
++/* Please always let the custom LCD in this (last) position: */
++#ifdef CONFIG_FB_IMX_CUSTOM_LCD
++# define LCD_NAME	"Custom" /* Clone of LQ043 by default */
++/* OE_ACD is used as LCD Display ON/OFF */
++# define LCD_USES_OE_ACD_AS_GPIO
++/* activates LCD at startup */
++# define LCD_POWER_GPIO (GPIO_PORTA | 31)
++# define LCD_POWER_ON	(1)
 +#endif
 +
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)

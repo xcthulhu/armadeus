@@ -4,15 +4,15 @@ Depends on some previously applied patches.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
+Index: linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:28:22.000000000 +0200
-+++ linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c	2009-09-14 18:29:26.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 19:45:36.000000000 +0200
++++ linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 19:46:53.000000000 +0200
 @@ -114,6 +114,19 @@
  		.vmode = FB_VMODE_NONINTERLACED,
  		.flag = 0,
  	},
-+        [8] = {
++        {
 +		.name = "Optrex-T51638D084",
 +		.refresh = 60,
 +		.xres = 640,
