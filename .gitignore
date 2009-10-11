@@ -2,3 +2,4 @@
 *~
 /buildroot
 *.pyc
+armadeus_env.sh
