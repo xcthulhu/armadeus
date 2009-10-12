@@ -33,7 +33,6 @@
 #define DUTY_PATH      "duty" 
 #define ACTIVE_PATH    "active"
 
-
 /* global static variable */
 static int mFHandlerFrequency[NUMBER_OF_PWM];
 static int mFHandlerPeriod[NUMBER_OF_PWM];

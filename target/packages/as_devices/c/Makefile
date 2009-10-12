@@ -6,7 +6,8 @@
 CFLAGS=-Wall -g -O0
 LDFLAGS=
 
-OBJ=as_apf27_pwm.o 
+OBJ=as_apf27_pwm.o
+OBJ+= as_i2c.o
 
 LIBRARY=as_devices
 LIB_VERS=1
