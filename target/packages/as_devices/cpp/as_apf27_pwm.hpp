@@ -23,6 +23,41 @@
 #define __ASAPF27PWM_HPP__
 
 #include "as_apf27_pwm.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+#define PWM_NUMBER 2
+
+class AsApf27DynamicTable {
+    public:
+        AsApf27DynamicTable()
+        {
+            int i;
+            for(i=0; i< PWM_NUMBER; i++)
+            {
+                mInst[i] = NULL;
+            }
+        }
+
+        void * getInstance(int aInstanceNum)
+        {
+            return mInst[aInstanceNum];
+        }
+
+        void setInstance(void * aInstance, int aInstanceNum)
+        {
+            mInst[aInstanceNum] = aInstance;
+        }
+
+       
+        virtual ~AsApf27DynamicTable()
+        {
+        }
+
+    private:
+        void * mInst[PWM_NUMBER];
+};
+
 
 /** AsApf27Pwm description
  *
@@ -47,11 +82,9 @@ public:
 
 protected:
 
+    static AsApf27DynamicTable * mInstances;
+
     AsApf27Pwm(int aPwmNumber);
-
-    static AsApf27Pwm * mPwm0;
-    static AsApf27Pwm * mPwm1;
-
     int mPwmNumber;
 
 };

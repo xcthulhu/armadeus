@@ -20,40 +20,26 @@
 */
 #include "as_apf27_pwm.hpp"
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <fcntl.h>  /* for open()   */
 #include <errno.h>  /* for perror() */
 #include <unistd.h> /* for write()  */
 #include <iostream>
 
-
-AsApf27Pwm * AsApf27Pwm::mPwm0 = NULL;
-AsApf27Pwm * AsApf27Pwm::mPwm1 = NULL;
+AsApf27DynamicTable * AsApf27Pwm::mInstances = new AsApf27DynamicTable();
 
 /*------------------------------------------------------------------------------*/
 AsApf27Pwm * 
 AsApf27Pwm::getInstance(int aPwmNumber)
 {
-    switch(aPwmNumber)
-    {
-        case 0:
-            if(mPwm0 == NULL)
-            {
-                mPwm0 = new AsApf27Pwm(aPwmNumber);
-            }
-            return mPwm0;
-            break;
-        case 1:
-            if(mPwm1 == NULL)
-            {
-                mPwm1 = new AsApf27Pwm(aPwmNumber);
-            }
-            return mPwm1;
-            break;
-        default:
-            return NULL;
-    }
+        void * instance;
+
+        instance = mInstances->getInstance(aPwmNumber);
+        if(instance == NULL)
+        {
+            instance =(void *)(new AsApf27Pwm(aPwmNumber));
+            mInstances->setInstance(instance,aPwmNumber);
+        }
+        return (AsApf27Pwm *)instance;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -72,17 +58,7 @@ AsApf27Pwm::AsApf27Pwm(int aPwmNumber)
 
 AsApf27Pwm::~AsApf27Pwm()
 {
-    as_apf27_pwm_close(mPwmNumber);
-
-    switch(mPwmNumber)
-    {
-        case 0:
-            mPwm0 = NULL;
-            break;
-        case 1:
-            mPwm1 = NULL;
-            break;
-    }
+    mInstances->setInstance(NULL,mPwmNumber);
 }
 
 /*------------------------------------------------------------------------------*/

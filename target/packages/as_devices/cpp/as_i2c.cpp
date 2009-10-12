@@ -18,18 +18,10 @@
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **
-** TODO: manage force correctly
 */
 #include "as_i2c.hpp"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "as_i2c.h"
+#include <iostream>
 
 AsI2c * AsI2c::mI2c0 = NULL;
 AsI2c * AsI2c::mI2c1 = NULL;
@@ -63,16 +55,12 @@ AsI2c::getInstance(int aBusNumber)
 
 AsI2c::AsI2c(int aBusNumber)
 {
-    char buffer[40];
-    /* make path */
-    snprintf(buffer,39,"%s%d",I2C_DEV_PATH,aBusNumber);
-    /* open i2c /dev */
-    if((mFHandlerI2c = open(buffer,O_RDWR))<0)
+    int ret;
+    ret = as_i2c_init(aBusNumber);
+    if (ret < 0)
     {
-        perror("Open error : ");
-        exit(1);
+        cout << "AsI2C initialization error" << endl;
     }
-    mI2cBusNumber = aBusNumber;
 }
 /*------------------------------------------------------------------------------*/
 
@@ -80,6 +68,7 @@ AsI2c::~AsI2c()
 {
     if(mI2cBusNumber==0)
     {
+
         mI2c0 = NULL;
     }
     if(mI2cBusNumber==1)

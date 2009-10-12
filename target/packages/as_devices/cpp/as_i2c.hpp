@@ -22,8 +22,6 @@
 #ifndef __ASI2C_HPP__
 #define __ASI2C_HPP__
 
-#define I2C_DEV_PATH "/dev/i2c-"
-
 /** AsI2c description
  *
  */
@@ -57,8 +55,8 @@ protected:
     static AsI2c * mI2c0;
     static AsI2c * mI2c1;
 
-    /* File handler */
-    int mFHandlerI2c;
+    static AsI2c * test[30];
+
     int mI2cBusNumber;
 
 };
