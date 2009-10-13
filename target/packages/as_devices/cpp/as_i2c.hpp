@@ -22,6 +22,12 @@
 #ifndef __ASI2C_HPP__
 #define __ASI2C_HPP__
 
+#include "as_i2c.h"
+#define I2C_NUMBER NUMBER_OF_I2C
+#define DYNAMIC_TABLE_SIZE I2C_NUMBER
+
+#include "as_dynamic_table.hpp"
+
 /** AsI2c description
  *
  */
@@ -33,9 +39,11 @@ public:
     int readByteData(unsigned char aChipAddr, 
                      unsigned char aReg, 
                      unsigned char *aBuf );
+
     int writeByteData(unsigned char aChipAddr,
                       unsigned char aReg, 
                       unsigned char aValue);
+
     int writeByte(unsigned char aChipAddr,
                   unsigned char aValue);
 
@@ -51,11 +59,8 @@ public:
 protected:
     AsI2c(int aBusNumber);
 
-    /* singleton objects */
-    static AsI2c * mI2c0;
-    static AsI2c * mI2c1;
-
-    static AsI2c * test[30];
+    /* multiton objects */
+    static AsDynamicTable * mInstances;
 
     int mI2cBusNumber;
 

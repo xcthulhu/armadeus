@@ -19,48 +19,37 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27PWM_HPP__
-#define __ASAPF27PWM_HPP__
+#ifndef __ASDYNAMICTABLE_HPP_
+#define __ASDYNAMICTABLE_HPP_
 
-#include "as_apf27_pwm.h"
-#include <stdio.h>
-#include <stdlib.h>
+class AsDynamicTable {
+    public:
+        AsDynamicTable()
+        {
+            int i;
+            for(i=0; i< PWM_NUMBER; i++)
+            {
+                mInst[i] = NULL;
+            }
+        }
 
-#define PWM_NUMBER NUMBER_OF_PWM
-#define DYNAMIC_TABLE_SIZE PWM_NUMBER
+        void * getInstance(int aInstanceNum)
+        {
+            return mInst[aInstanceNum];
+        }
 
-#include "as_dynamic_table.hpp"
+        void setInstance(void * aInstance, int aInstanceNum)
+        {
+            mInst[aInstanceNum] = aInstance;
+        }
 
-/** AsApf27Pwm description
- *
- */
-class AsApf27Pwm {
-public:
-    static AsApf27Pwm * getInstance(int aPwmNumber);
+       
+        virtual ~AsDynamicTable()
+        {
+        }
 
-    void setFrequency(int aFrequency);
-    int  getFrequency(void);
-
-    void setPeriod(int aPeriod);
-    int  getPeriod(void);
-
-    void setDuty(int aDuty);
-    int  getDuty(void);
-
-    bool activate(bool aEnable);
-    bool getState(void);
-
-    virtual ~AsApf27Pwm();
-
-protected:
-
-    static AsDynamicTable * mInstances;
-
-    AsApf27Pwm(int aPwmNumber);
-    int mPwmNumber;
-
+    private:
+        void * mInst[DYNAMIC_TABLE_SIZE];
 };
 
-#endif /* __ASAPF27PWM_HPP__ */
-
-
+#endif // __ASDYNAMICTABLE_HPP_

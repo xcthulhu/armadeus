@@ -20,11 +20,9 @@
 **
 */
 #include "as_i2c.hpp"
-#include "as_i2c.h"
 #include <iostream>
 
-AsI2c * AsI2c::mI2c0 = NULL;
-AsI2c * AsI2c::mI2c1 = NULL;
+AsDynamicTable * AsI2c::mInstances = new AsDynamicTable();
 
 /** Singleton constructor
  * @param aBusNumber bus number
@@ -32,23 +30,14 @@ AsI2c * AsI2c::mI2c1 = NULL;
 AsI2c *
 AsI2c::getInstance(int aBusNumber)
 {
-    if(aBusNumber == 0)
+    AsI2c * instance;
+    instance = mInstances->getInstance(aBusNumber);
+    if(instance == NULL)
     {
-        if(mI2c0 == NULL)
-        {
-            mI2c0 = new AsI2c(aBusNumber);
-        }
-        return mI2c0;
+        instance = AsI2c(aBusNumber);
+        mInstances->setInstance(instance,aBusNumber);
     }
-    if(aBusNumber == 1)
-    {
-        if(mI2c1 == NULL)
-        {
-            mI2c1 = new AsI2c(aBusNumber);
-        }
-        return mI2c1;
-    }
-    return NULL;
+    return instance
 }
 
 /*------------------------------------------------------------------------------*/
@@ -56,6 +45,9 @@ AsI2c::getInstance(int aBusNumber)
 AsI2c::AsI2c(int aBusNumber)
 {
     int ret;
+
+    mI2cBusNumber = aBusNumber;
+
     ret = as_i2c_init(aBusNumber);
     if (ret < 0)
     {
@@ -66,15 +58,7 @@ AsI2c::AsI2c(int aBusNumber)
 
 AsI2c::~AsI2c()
 {
-    if(mI2cBusNumber==0)
-    {
-
-        mI2c0 = NULL;
-    }
-    if(mI2cBusNumber==1)
-    {
-        mI2c1 = NULL;
-    }
+    mInstances->setInstance(NULL,mI2cBusNumber);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -89,32 +73,7 @@ AsI2c::readByteData(unsigned char aChipAddr,
                        unsigned char aReg, 
                        unsigned char *aBuf )
 {
-  // create an I2C write message (only one byte: the address)
-    struct i2c_msg msg = { aChipAddr, 0, 1, aBuf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    aBuf[0] = aReg; // select aReg to read
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c, I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		exit (1);
- 	}
-
-    // write the desired aRegister address
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-    msg.flags = I2C_M_RD; // read
-
-    // read the result and write it in aBuf[0]
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Read error\n");
-		return -1;
-	}
-    return 0;
+    return as_read_byte_data(mI2cBusNumber, aChipAddr, aReg, aBuf);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -129,25 +88,7 @@ AsI2c::writeByteData(unsigned char aChipAddr,
                         unsigned char aReg, 
                         unsigned char aValue)
 {
-    unsigned char buf[2] = {aReg,aValue}; // initialise a data buffer with
-                                          // address and data
-
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, sizeof(buf), buf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c,I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror(">Ioctl error: ");
- 		exit (1);
- 	}
-
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-    return 0;
+    return as_write_byte_data(mI2cBusNumber, aChipAddr, aReg, aValue);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -160,26 +101,7 @@ int
 AsI2c::writeByte(unsigned char aChipAddr,
                  unsigned char aValue)
 {
-    unsigned char buf[1] = {aValue}; // initialise a data buffer with
-                                          // address and data
-
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, sizeof(buf), buf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c, I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		exit (1);
- 	}
-
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+    return as_write_byte(mI2cBusNumber, aChipAddr, aValue);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -194,24 +116,7 @@ AsI2c::writeMultipleBytes(unsigned char aChipAddr,
                           unsigned char *aBuff,
                           int aSize)
 {
-
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, aSize, aBuff };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c, I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		exit (1);
- 	}
-
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+    return as_write_multiple_bytes(mI2cBusNumber, aChipAddr, aBuff, aSize);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -226,27 +131,7 @@ AsI2c::readMultipleBytes(unsigned char aChipAddr,
                          unsigned char *aBuff,
                          int aSize)
 {
-
-    // create an I2C read message
-    struct i2c_msg msg = { aChipAddr, 
-                           I2C_M_RD, 
-                           aSize, 
-                           aBuff };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c, I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		exit (1);
- 	}
-
-	if ( ioctl( mFHandlerI2c, I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+    return as_read_multiple_bytes(mI2cBusNumber, aChipAddr, aBuff, aSize);
 }
 
 

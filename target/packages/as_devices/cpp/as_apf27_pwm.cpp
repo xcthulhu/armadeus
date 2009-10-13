@@ -25,7 +25,7 @@
 #include <unistd.h> /* for write()  */
 #include <iostream>
 
-AsApf27DynamicTable * AsApf27Pwm::mInstances = new AsApf27DynamicTable();
+AsDynamicTable * AsApf27Pwm::mInstances = new AsDynamicTable();
 
 /*------------------------------------------------------------------------------*/
 AsApf27Pwm * 
