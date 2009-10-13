@@ -19,34 +19,32 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27PWM_H__
-#define __ASAPF27PWM_H__
+#ifndef __ASAPF27GPIO_H__
+#define __ASAPF27GPIO_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-/* number of pwm under system */
-#define NUMBER_OF_PWM 2
+#define NUMBER_OF_PORTS 6
 
-int as_apf27_pwm_init(int aPwmNumber);
+int as_apf27_gpio_init(char aPortChar);
 
-int as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency);
-int as_apf27_pwm_getFrequency(int aPwmNumber);
+int as_apf27_gpio_set_pin_direction(char aPortChar,
+                                    int aPinNum,
+                                    int aDirection);
 
-int as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod);
-int  as_apf27_pwm_getPeriod(int aPwmNumber);
+int as_apf27_gpio_set_pin_value(char aPortChar,
+                                int aPinNum,
+                                int aValue);
 
-int as_apf27_pwm_setDuty(int aPwmNumber, int aDuty);
-int  as_apf27_pwm_getDuty(int aPwmNumber);
+int as_apf27_gpio_get_pin_value(char aPortChar,
+                                int aPinNum);
 
-int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
-int as_apf27_pwm_getState(int aPwmNumber);
-
-int as_apf27_pwm_close(int aPwmNumber);
+int as_apf27_gpio_close(char aPortChar);
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif /* __ASAPF27PWM_H__ */
+#endif // __ASAPF27GPIO_H__

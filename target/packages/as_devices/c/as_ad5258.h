@@ -19,34 +19,27 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27PWM_H__
-#define __ASAPF27PWM_H__
+#ifndef __ASAD5258_H__
+#define __ASAD5258_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-/* number of pwm under system */
-#define NUMBER_OF_PWM 2
+/* number of AD5258 under system */
+#define NUMBER_OF_AD5258 1
 
-int as_apf27_pwm_init(int aPwmNumber);
+int as_ad5258_init(int aAdNumber);
 
-int as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency);
-int as_apf27_pwm_getFrequency(int aPwmNumber);
-
-int as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod);
-int  as_apf27_pwm_getPeriod(int aPwmNumber);
-
-int as_apf27_pwm_setDuty(int aPwmNumber, int aDuty);
-int  as_apf27_pwm_getDuty(int aPwmNumber);
-
-int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
-int as_apf27_pwm_getState(int aPwmNumber);
-
-int as_apf27_pwm_close(int aPwmNumber);
+int as_ad5258_set_rdac(int aAdNumber, int aValue);
+int as_ad5258_get_rdac(int aAdNumber);
+int as_ad5258_set_eeprom(int aAdNumber, int aValue);
+int as_ad5258_get_eeprom(int aAdNumber);
+int as_ad5258_store(int aAdNumber);
+int as_ad5258_restore(int aAdNumber);
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif /* __ASAPF27PWM_H__ */
+#endif // __ASAD5258_H__

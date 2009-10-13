@@ -19,34 +19,9 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27PWM_H__
-#define __ASAPF27PWM_H__
+#include "as_ad5258.h"
+#include "as_i2c.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+static int mI2cAd5258Addr[NUMBER_OF_AD5258];
 
-/* number of pwm under system */
-#define NUMBER_OF_PWM 2
 
-int as_apf27_pwm_init(int aPwmNumber);
-
-int as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency);
-int as_apf27_pwm_getFrequency(int aPwmNumber);
-
-int as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod);
-int  as_apf27_pwm_getPeriod(int aPwmNumber);
-
-int as_apf27_pwm_setDuty(int aPwmNumber, int aDuty);
-int  as_apf27_pwm_getDuty(int aPwmNumber);
-
-int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
-int as_apf27_pwm_getState(int aPwmNumber);
-
-int as_apf27_pwm_close(int aPwmNumber);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif /* __ASAPF27PWM_H__ */
