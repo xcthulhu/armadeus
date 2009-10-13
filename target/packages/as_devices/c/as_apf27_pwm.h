@@ -28,7 +28,6 @@ extern "C" {
 /* number of pwm under system */
 #define NUMBER_OF_PWM 2
 
-
 int as_apf27_pwm_init(int aPwmNumber);
 
 int as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency);
@@ -44,6 +43,7 @@ int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
 int as_apf27_pwm_getState(int aPwmNumber);
 
 int as_apf27_pwm_close(int aPwmNumber);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

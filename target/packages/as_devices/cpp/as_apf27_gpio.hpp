@@ -22,14 +22,9 @@
 #ifndef __ASAPF27GPIO_HPP__
 #define __ASAPF27GPIO_HPP__
 
-#define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)
-#define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)
-#define GPIORDDATA	_IOR(PP_IOCTL, 0xF2, int)
-#define GPIOWRDATA	_IOW(PP_IOCTL, 0xF3, int) 
-#define GPIORDMODE	_IOR(PP_IOCTL, 0xF4, int)
-#define GPIOWRMODE	_IOW(PP_IOCTL, 0xF5, int) 
-
-#define GPIO_BASE_PORT ("/dev/gpio/port")
+#include "as_apf27_gpio.h"
+#define DYNAMIC_TABLE_SIZE NUMBER_OF_PORTS
+#include "as_dynamic_table.hpp"
 
 /** AsApf27Gpio description
  *
@@ -39,38 +34,20 @@ class AsApf27Gpio {
 public:
 
     static AsApf27Gpio * getInstance(char aPortLetter);
-
-    enum AsApf27GpioError
-    {
-        AS_APF27_GPIO_FILE_IOCTL_WRITE_MODE_ERROR = -7,
-        AS_APF27_GPIO_FILE_IOCTL_READ_MODE_ERROR = -6,
-        AS_APF27_GPIO_FILE_IOCTL_READ_DATA_ERROR = -5,
-        AS_APF27_GPIO_FILE_IOCTL_WRITE_DIRECTION_ERROR = -4,
-        AS_APF27_GPIO_FILE_IOCTL_READ_DIRECTION_ERROR = -3,
-        AS_APF27_GPIO_FILE_PATH_TOO_LONG = -2,
-        AS_APF27_GPIO_OPEN_FILE_ERROR = -1,
-        AS_APF27_GPIO_OK = 0
-    };
-
     virtual ~AsApf27Gpio();
 
-    AsApf27GpioError setPinDirection(int aPinNum,int aDirection);
-    AsApf27GpioError setPinValue(int aPinNum, int aValue);
+    int setPinDirection(int aPinNum,int aDirection);
+    int setPinValue(int aPinNum, int aValue);
     int getPinValue(int aPinNum);
 
 protected:
-    static AsApf27Gpio * mPortA;
-    static AsApf27Gpio * mPortB;
-    static AsApf27Gpio * mPortC;
-    static AsApf27Gpio * mPortD;
-    static AsApf27Gpio * mPortE;
-    static AsApf27Gpio * mPortF;
+    static AsDynamicTable * mInstances;
 
     AsApf27Gpio(char aPortLetter);
 
-    AsApf27GpioError init();
+    int init();
 
-    char mPortLetter;
+    char mPortLetter; /**> Port letter in upper case */
 
     int mFileHandlerGpioPort;
 };

@@ -8,11 +8,11 @@ LDFLAGS=
 
 OBJ=as_apf27_pwm.o
 OBJ+= as_i2c.o
+OBJ+= as_apf27_gpio.o 
 #OBJ+= as_max1027.o 
 #OBJ+= as_max5821.o 
 #OBJ+= as_adc.o 
 #OBJ+= as_dac.o 
-#OBJ+= as_apf27_gpio.o 
 #OBJ+= as_ad5258.o
 #OBJ+= as_ds1374.o
 

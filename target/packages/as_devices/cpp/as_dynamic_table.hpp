@@ -27,7 +27,7 @@ class AsDynamicTable {
         AsDynamicTable()
         {
             int i;
-            for(i=0; i< PWM_NUMBER; i++)
+            for(i=0; i< DYNAMIC_TABLE_SIZE; i++)
             {
                 mInst[i] = NULL;
             }
