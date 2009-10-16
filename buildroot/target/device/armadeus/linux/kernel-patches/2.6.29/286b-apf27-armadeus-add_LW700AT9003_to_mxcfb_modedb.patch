@@ -12,9 +12,9 @@ Index: linux-2.6.29.4/drivers/video/mxc/mxcfb_modedb.c
 +		.xres = 800,
 +		.yres = 480,
 +		.pixclock = 30303, /* picoS */
-+		.left_margin = 3, .right_margin = 2, /* at least 3 & 1 */
-+		.upper_margin = 0x0f, .lower_margin = 0x0f,
-+		.hsync_len = 64, .vsync_len = 16,
++		.left_margin = 96, .right_margin = 96, /* at least 3 & 1 */
++		.upper_margin = 0x14, .lower_margin = 0x15,
++		.hsync_len = 64, .vsync_len = 4,
 +		.sync = FB_SYNC_CLK_IDLE_EN | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
 +		.vmode = FB_VMODE_NONINTERLACED,
 +		.flag = 0,
