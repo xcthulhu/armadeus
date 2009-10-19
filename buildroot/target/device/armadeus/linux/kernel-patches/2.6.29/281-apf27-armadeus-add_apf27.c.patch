@@ -1759,8 +1759,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-10-11 21:53:54.000000000 +0200
-@@ -0,0 +1,218 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-10-11 22:37:33.000000000 +0200
+@@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
 + *
@@ -1845,6 +1845,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 +# define LCD_POWER_GPIO (GPIO_PORTA | 31)
 +# define LCD_POWER_ON	(1)
 +#endif
++/* Please let these 2 lines here
++*/
 +
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +static int mxc_lcd_pins[] = {

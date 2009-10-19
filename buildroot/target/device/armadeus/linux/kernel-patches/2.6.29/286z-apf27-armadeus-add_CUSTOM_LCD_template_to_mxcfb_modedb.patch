@@ -1,12 +1,12 @@
 Index: linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 20:03:09.000000000 +0200
-+++ linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 20:09:42.000000000 +0200
-@@ -140,6 +140,21 @@
+--- linux-2.6.29.6.orig/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 21:54:15.000000000 +0200
++++ linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 22:34:41.000000000 +0200
+@@ -140,6 +140,22 @@
  		.vmode = FB_VMODE_NONINTERLACED,
  		.flag = 0,
  	},
-+	/* Please let this LCD always in last position */
++	/* Please let this LCD always in last position: */
 +	{
 +		.name = "Custom", /* Custom LCD, freely usable (clone of LQ043 by default */
 +		.refresh = 60,
@@ -20,7 +20,8 @@ Index: linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c
 +		.vmode = FB_VMODE_NONINTERLACED,
 +		.flag = 0,
 +	},
-+	/* end of custom LCD */
++	/* Please let these 2 lines here
++	*/
  };
  
  int mxcfb_modedb_sz = ARRAY_SIZE(mxcfb_modedb);

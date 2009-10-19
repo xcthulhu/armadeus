@@ -1,7 +1,7 @@
 Index: linux-2.6.29.6/drivers/video/Kconfig
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/video/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/video/Kconfig	2009-10-11 21:52:20.000000000 +0200
++++ linux-2.6.29.6/drivers/video/Kconfig	2009-10-19 15:29:06.000000000 +0200
 @@ -395,6 +395,7 @@
  	  If you plan to use the LCD display with your SA-1100 system, say
  	  Y here.
@@ -10,7 +10,7 @@ Index: linux-2.6.29.6/drivers/video/Kconfig
  config FB_IMX
  	tristate "Motorola i.MX LCD support"
  	depends on FB && ARM && ARCH_IMX
-@@ -402,6 +403,77 @@
+@@ -402,6 +403,80 @@
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
  
@@ -82,6 +82,9 @@ Index: linux-2.6.29.6/drivers/video/Kconfig
 +	help
 +	  Freely hackable LCD. Modify its parameters directly in
 +	  drivers/video/mxc/mxcfb_modedb.c.
++
++# Please let these
++# two lines here
 +
 +endchoice
 +
