@@ -76,6 +76,9 @@ fi
 
 # Get XXX unpacked sources
 make $QUILT_MAKEFILE_TARGET
+if [ "$?" != 0 ]; then
+	echo "Failed to get sources, please check your view !!"
+fi
 
 # Import patches
 pushd $QUILT_TARGET_DIR
