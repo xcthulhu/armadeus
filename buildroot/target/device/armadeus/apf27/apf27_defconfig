@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Sat Oct  3 17:47:25 2009
+# Wed Oct 21 22:01:34 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -338,6 +338,7 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_GPM is not set
 # BR2_PACKAGE_DUMMY is not set
 # BR2_PACKAGE_SNES9X is not set
+# BR2_PACKAGE_AS_DEVICES is not set
 
 #
 # Other stuff
