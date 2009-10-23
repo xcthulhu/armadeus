@@ -1,0 +1,16 @@
+
+This patch won't be useful anymore after the upgrade to Buildroot 2009.11.
+
+Index: buildroot/package/jpeg/jpeg.mk
+===================================================================
+--- buildroot.orig/package/jpeg/jpeg.mk	2009-10-23 15:08:24.000000000 +0200
++++ buildroot/package/jpeg/jpeg.mk	2009-10-23 16:04:26.000000000 +0200
+@@ -27,7 +27,7 @@
+ JPEG_CAT:=$(ZCAT)
+ 
+ $(DL_DIR)/$(JPEG_SOURCE):
+-	 $(WGET) -P $(DL_DIR) $(JPEG_SITE)/$(JPEG_SOURCE)
++	$(call DOWNLOAD,$(JPEG_SITE),$(JPEG_SOURCE))
+ 
+ jpeg-source: $(DL_DIR)/$(JPEG_SOURCE)
+ 
