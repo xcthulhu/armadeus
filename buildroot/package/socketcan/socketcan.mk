@@ -49,8 +49,13 @@ SOCKETCAN socketcan: uclibc $(TARGET_DIR)/usr/bin/$(SOCKETCAN_EXE)
 socketcan-source: $(DL_DIR)/$(SOCKETCAN_SOURCE)
 
 socketcan-clean:
-	$(MAKE) INSTALL_DIR=$(STAGING_DIR)/usr/bin -C $(SOCKETCAN_DIR) uninstall
-	-$(MAKE) -C $(SOCKETCAN_DIR) clean
+	$(MAKE) -C $(SOCKETCAN_DIR)/can-utils clean
+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/can-utils uninstall
+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
+	$(MAKE) -C $(SOCKETCAN_DIR)/test distclean
+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/test clean
+endif
+	rm $(SOCKETCAN_DIR)/.compiled
 
 socketcan-dirclean:
 	rm -rf $(SOCKETCAN_DIR)
