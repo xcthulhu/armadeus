@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Sat Oct  3 19:11:57 2009
+# Fri Oct 23 09:20:54 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -331,9 +331,9 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_MESALIB is not set
 # BR2_PACKAGE_FBTEST is not set
 # BR2_PACKAGE_IMXSSI is not set
-# BR2_PACKAGE_GPM is not set
 # BR2_PACKAGE_DUMMY is not set
 # BR2_PACKAGE_SNES9X is not set
+# BR2_PACKAGE_AS_DEVICES is not set
 
 #
 # Other stuff
@@ -375,6 +375,10 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_SUDO is not set
 # BR2_PACKAGE_XENOMAI is not set
 # BR2_DATABASE_SUPPORT is not set
+BR2_TEXTEDIT_SUPPORT=y
+# BR2_PACKAGE_ED is not set
+BR2_PACKAGE_NANO=y
+# BR2_PACKAGE_UEMACS is not set
 BR2_NETWORK_SUPPORT=y
 
 #
@@ -483,6 +487,7 @@ BR2_PACKAGE_CH7024CTRL=y
 BR2_PACKAGE_FPGAREGS=y
 # BR2_PACKAGE_LIBFUSE is not set
 # BR2_PACKAGE_GADGETFS_TEST is not set
+# BR2_PACKAGE_GPM is not set
 # BR2_PACKAGE_HAL is not set
 # BR2_PACKAGE_HWDATA is not set
 # BR2_PACKAGE_I2C_TOOLS is not set
