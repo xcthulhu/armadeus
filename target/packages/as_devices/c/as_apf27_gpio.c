@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h> // for close()
+#include <unistd.h> /* for close() */
 
 #include <sys/ioctl.h>
 #include <linux/ppdev.h> 
@@ -43,7 +43,7 @@ static int mFileHandlerGpioPort[NUMBER_OF_PORTS];
 
 /*------------------------------------------------------------------------------*/
 
-/** Init Gpio
+/** Initialize port access
  * @param aPortChar character port in UPPER case
  * @return error if negative value 
  */
@@ -52,20 +52,20 @@ as_apf27_gpio_init(char aPortChar)
 {
     char gpio_file_path[50];
     int ret=0;
+
     /* make gpio port string path */
-    ret = snprintf(gpio_file_path,50,"%s%c",
-                            GPIO_BASE_PORT,aPortChar);
-    if(ret < 0)
-    {
+    ret = snprintf(gpio_file_path,50, "%s%c",
+                            GPIO_BASE_PORT, aPortChar);
+    if (ret < 0) {
         return ret;
     }
 
     /* opening gpio port */
-    mFileHandlerGpioPort[aPortChar-'A'] = open(gpio_file_path,O_RDWR);
-    if(mFileHandlerGpioPort[aPortChar-'A'] < 0)
-    {
+    mFileHandlerGpioPort[aPortChar-'A'] = open(gpio_file_path, O_RDWR);
+    if (mFileHandlerGpioPort[aPortChar-'A'] < 0) {
         return mFileHandlerGpioPort[aPortChar-'A'];
     }
+
     return 0;
 }
 
@@ -85,38 +85,33 @@ as_apf27_gpio_set_pin_direction(char aPortChar,
     int ret=0;
     int portval;
 
-	/* Set LED PIN as GPIO; read/modify/write */
-	ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDMODE, &portval);
-    if(ret < 0)
-    {
+    /* Set LED PIN as GPIO; read/modify/write */
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDMODE, &portval);
+    if (ret < 0) {
         return ret;
     }
 
-	portval |= (1 << aPinNum);
+    portval |= (1 << aPinNum);
 
-	ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRMODE, &portval);
-    if(ret < 0)
-    {
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRMODE, &portval);
+    if (ret < 0) {
         return ret;
     }
 
     /* set direction */
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDIRECTION,&portval);
-    if(ret < 0)
-    {
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDIRECTION, &portval);
+    if (ret < 0) {
         return ret;
     }
 
-    if(aDirection==0)
-    {
+    if (aDirection == 0) {
         portval &= ~(1 << aPinNum);
-    }else{
+    } else {
         portval |= (1 << aPinNum);
     }
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDIRECTION,&portval);
-    if(ret < 0)
-    {
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDIRECTION, &portval);
+    if (ret < 0) {
         return ret;
     }
     return 0;
@@ -137,21 +132,19 @@ as_apf27_gpio_set_pin_value(char aPortChar,
 {
     int ret=0;
     int portval;
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'],GPIORDDATA,&portval);
-    if(ret < 0)
-    {
+
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    if (ret < 0) {
         return ret;
     }
 
-    if(aValue == 0)
-    {
+    if (aValue == 0) {
         portval &= ~(1 << aPinNum);
-    }else{
+    } else {
         portval |= (1 << aPinNum);
     }
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'],GPIOWRDATA,&portval);
-    if(ret < 0)
-    {
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDATA, &portval);
+    if (ret < 0) {
         return ret;
     }
 
@@ -160,39 +153,38 @@ as_apf27_gpio_set_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin value
+/** Get pin value
  * @param aPortChar port character in upper case
  * @param aPinNum pin number
- * @return pin value  if positive or null, error if negative
+ * @return pin value if positive or null, error if negative
  */
 int as_apf27_gpio_get_pin_value(char aPortChar,
                                 int aPinNum)
 {
     int ret=0;
     int portval;
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'],GPIORDDATA,&portval);
-    if(ret < 0)
-    {
+
+    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    if (ret < 0) {
         return ret;
     }
 
-    if( (portval & (1<<aPinNum)) != 0)
-    {
+    if ((portval & (1<<aPinNum)) != 0) {
         return 1;
-    }else{
+    } else {
         return 0;
     }
 }
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin value
+/** Close port access
  * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @return pin value  if positive or null, error if negative
+ * @return pin value if positive or null, error if negative
  */
 int 
 as_apf27_gpio_close(char aPortChar)
 {
     return close(mFileHandlerGpioPort[aPortChar-'A']);
 }
+
