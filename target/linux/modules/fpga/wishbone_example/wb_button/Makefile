@@ -29,7 +29,8 @@ clean:
 	rm -f *.order \
 	rm -f .*.cmd \
 	rm -rf .tmp_versions \
-	rm -f Module.symvers
+	rm -f Module.symvers \
+	rm -f testbutton
 
 endif
 

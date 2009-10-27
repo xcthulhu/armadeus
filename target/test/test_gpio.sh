@@ -74,12 +74,30 @@ blink_led_apf9328()
 	done
 }
 
+check_button_apf27()
+{
+	setbit /proc/driver/gpio/portFmode 13 1
+	setbit /proc/driver/gpio/portFdir 13 0
+	setbit /proc/driver/gpio/portFirq 13 1
+	echo "Press 2 times on S1 button"
+	/usr/bin/testbutton /dev/gpio/PF13 3
+	if [ "$?" != 0 ]; then
+		exit_failed
+	fi
+}
+
+check_button_apf9328()
+{
+	# TBDL
+}
+
+
 test_led_gpio()
 {
 	show_test_banner "GPIO (LED)"
 
 	loadgpio.sh
-	if [ "$?" != 0 ] || [ ! -c "$GPIO_DEV_DIR/portA" ] ; then
+	if [ "$?" != 0 ] || [ ! -c "$GPIO_DEV_DIR/portA" ]; then
 		echo "Module failed to load"
 		exit_failed
 	fi
@@ -90,8 +108,12 @@ test_led_gpio()
 	if [ "$response" != "y" ]; then
 		exit_failed
 	fi
+
+	execute_for_target check_button_apf9328 check_button_apf27
+
 	echo_test_ok
 	exit 0
 }
 
 test_led_gpio
+
