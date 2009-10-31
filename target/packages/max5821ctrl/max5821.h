@@ -52,7 +52,7 @@
 #define POWER_CTRL_SELECTED			0x1
 #define POWER_CTRL_UNSELECTED			0x0
 
-#define	MAX5821M_MAX_DATA_VALUE			1024
+#define	MAX5821M_MAX_DATA_VALUE			1023
 
 /* transfered data structs */
 typedef	struct 
@@ -85,8 +85,8 @@ typedef	struct
 
 #define BUILD_DATA_COMMAND(InSruct, Buf) \
 { \
-	Buf[0] = (InSruct.command << 4) + (unsigned  char) (InSruct.data>>6);\
-	Buf[1] = (unsigned  char) (InSruct.data<<2);\
+	Buf[0] = (InSruct.command << 4) + (unsigned char) (InSruct.data >> 6);\
+	Buf[1] = (unsigned char) (InSruct.data << 2);\
 } 
 
 #define BUILD_EXTENDED_COMMAND(InSruct, Buf) \
