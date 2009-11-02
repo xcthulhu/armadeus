@@ -65,13 +65,14 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 	args.command = command;
 	args.size = size;
 	args.data = data;
-	return ioctl(file,I2C_SMBUS,&args);
+	return ioctl(file, I2C_SMBUS, &args);
 }
 
 /* Read a byte on the I2C bus
    This is done by writing the register address
    we want to access and then by reading this register
      @param fd: file descriptor of the device
+     @param dev: address of the device on I2C bus
      @param reg: register to access
      @param buf: buffer used to store the result
      @return : -1 in case of error otherwise 0
@@ -81,13 +82,13 @@ int read_byte(int fd, unsigned char dev, unsigned char reg, unsigned char *buf)
 	union i2c_smbus_data data;
 
 	/* configure I2C_SLAVE */
-	if ( ioctl(fd ,I2C_SLAVE, dev) < 0){
+	if (ioctl(fd, I2C_SLAVE, dev) < 0) {
 		perror("Ioctl error: ");
 		return -1;
 	}
 
-	if (i2c_smbus_access(fd,I2C_SMBUS_READ,reg,
-	                     I2C_SMBUS_BYTE_DATA,&data)) {
+	if (i2c_smbus_access(fd, I2C_SMBUS_READ, reg,
+	                     I2C_SMBUS_BYTE_DATA, &data)) {
 		printf("Read error\n");
 		return -1;
 	} else {
@@ -98,6 +99,7 @@ int read_byte(int fd, unsigned char dev, unsigned char reg, unsigned char *buf)
 
 /* Write a byte on the I2C bus
      @param fd: file descriptor of the device
+     @param dev: address of the device on I2C bus
      @param reg: register to access
      @param value: value to write
      @return : -1 in case of error otherwise 0   
@@ -153,7 +155,7 @@ void dump(int fd, FILE* destFile)
 		for (j = 0; j<4; j++) {
 			address = i*4+j;
 			if (!read_byte(fd, dev, address, buf)) {
-				sprintf( dumpString, " %02X:%02X:%02X\t",
+				sprintf(dumpString, " %02X:%02X:%02X\t",
 					AD9889_I2C_SLAVE_ADDR, address, buf[0] );
 				dump2Output(dumpString, destFile);
 			}
@@ -207,11 +209,11 @@ void dumpedid(int fd, FILE* destFile)
 		printf("Dev:Ad:Va\tDev:Ad:Va\tDev:Ad:Va\tDev:Ad:Va\n");
 
 	/* dumping EDID memory */
-	if (!read_byte( fd, AD9889_I2C_SLAVE_ADDR, 0x43, buf )) {
+	if (!read_byte(fd, AD9889_I2C_SLAVE_ADDR, 0x43, buf)) {
 		dev = buf[0]>>1;
 		for (address = 0; address<0x100; address++) {
-			if (!read_byte( fd, dev, address, buf )) {
-				sprintf( dumpString, " %02X:%02X:%02X\t",
+			if (!read_byte(fd, dev, address, buf)) {
+				sprintf(dumpString, " %02X:%02X:%02X\t",
 					dev, address, buf[0] );
 				dump2Output(dumpString, destFile);
 			}
@@ -253,21 +255,21 @@ void load(int fd, char* fileName)
 
     if (strlen(fileName) == 0) {
         printf("Enter file name: ");
-        fgets (tempFileName, sizeof(tempFileName), stdin);
+        fgets(tempFileName, sizeof(tempFileName), stdin);
         tempFileName[strlen(tempFileName)-1] = '\0'; /* suppress \n */
     }
     else {
-        strcpy(tempFileName,fileName);    
+        strcpy(tempFileName, fileName);
     }
  
-    if ((fd_conf = fopen(tempFileName,"r")) == NULL) {
+    if ((fd_conf = fopen(tempFileName, "r")) == NULL) {
         perror("Open error: ");
         exit (1);
     }
     while (fgets(line, MAX_DUMP_LINE, fd_conf) != NULL) {
         nb = sscanf(line,"%2X%*c%2X%*c%2X%2X%*c%2X%*c%2X%2X%*c%2X%*c%2X%2X%*c%2X%*c%2X",
-			&dev1,&addr1,&val1,&dev2,&addr2,&val2,
-			&dev3,&addr3,&val3,&dev4,&addr4,&val4 );
+			&dev1, &addr1, &val1, &dev2, &addr2, &val2,
+			&dev3, &addr3, &val3, &dev4, &addr4, &val4 );
         if (nb >= 3)
             write_byte (fd, dev1, addr1, val1);
         if (nb >= 6)
@@ -305,6 +307,7 @@ int ad9889_init(int fd)
 		printf("hpd not active, force powerup.\n");
 	}
 	write_byte(fd, AD9889_I2C_SLAVE_ADDR, 0x41, 0x10);
+
 	return 0;
 }
 
@@ -318,73 +321,73 @@ int main(int argc, char *argv[])
 	int regValue;
 	char* bus = "/dev/i2c-1";
 
-	if (argc >2 ) { /* too many args */
+	if (argc > 2) { /* too many args */
 		usage();
 		exit(1);
-	} else 	if (argc == 2) { /* i2c bus */
+	} else if (argc == 2) { /* i2c bus */
 		bus = argv[1];
 	}
 
 	/* open I2C /dev */
-	if ((fd = open(bus,O_RDWR)) < 0) {
+	if ((fd = open(bus, O_RDWR)) < 0) {
 		perror("Open error: ");
 		exit (1);
 	}
     
 	/* configure I2C_SLAVE */
-	if (ioctl(fd ,I2C_SLAVE, AD9889_I2C_SLAVE_ADDR) < 0) {
+	if (ioctl(fd, I2C_SLAVE, AD9889_I2C_SLAVE_ADDR) < 0) {
 		perror("Ioctl error: ");
 		exit (1);
 	}
 
 	/* check AD9889 presence */
-	if (!read_byte( fd, AD9889_I2C_SLAVE_ADDR, CHIP_REVISION, buf)) {
+	if (!read_byte(fd, AD9889_I2C_SLAVE_ADDR, CHIP_REVISION, buf)) {
 		if ((AD9889_MAX_REV < buf[0])) {
-        		printf("AD9889 not recognized. Exit\n");
+			printf("AD9889 revision not supported. Exiting\n");
 			exit(1);
 		}
 	} else {
-		printf("AD9889 not found. Exit\n");
+		printf("AD9889 not found. Exiting\n");
 		exit(1);
 	}
         
 	usage();
 	while(1) {
-		fgets(string,sizeof(string),stdin);
-		if(string[0] == 'q') {		/* Exit */
+		fgets(string, sizeof(string), stdin);
+		if (string[0] == 'q') {		/* Exit */
 			exit(0);
 		}
 		else if (string[0] == 'm') {	/* Modify registers */
 			int dev;
 			printf("chip addr (hex without 0x)(ex 39): ");
-			fgets(string,sizeof(string),stdin);
-			sscanf(string,"%2x", &dev);
+			fgets(string, sizeof(string), stdin);
+			sscanf(string, "%2x", &dev);
 			printf("reg addr (hex without 0x): ");
-			fgets(string,sizeof(string),stdin);
-			sscanf(string,"%2x", &regAddr);
+			fgets(string, sizeof(string), stdin);
+			sscanf(string, "%2x", &regAddr);
 			printf("reg value (hex without 0x): ");
-			fgets(string,sizeof(string),stdin);
-			sscanf(string,"%2x", &regValue);
-			write_byte (fd, dev, regAddr, regValue);
+			fgets(string, sizeof(string), stdin);
+			sscanf(string, "%2x", &regValue);
+			write_byte(fd, dev, regAddr, regValue);
 		}
 		else if (string[0] == 'd') {	/* Dump to screen */
-			dump(fd,fd_conf);
+			dump(fd, fd_conf);
 		}
 		else if (string[0] == 'e') {	/* Dump to screen */
-			dumpedid(fd,NULL);
+			dumpedid(fd, NULL);
 		}
 		else if (string[0] == 's') {	/* Save to file */
-			if ((fd_conf = fopen(CONF_FILE,"w")) < 0) {
+			if ((fd_conf = fopen(CONF_FILE, "w")) < 0) {
 				perror("Open error: ");
 				exit (1);
 			}
-			dump(fd,fd_conf);
+			dump(fd, fd_conf);
 			if (fd_conf != NULL) {
 				fclose(fd_conf);
 			}
 		}
 		else if (string[0] == 'l') {	/* load from file */
-			load(fd,"");
+			load(fd, "");
 		}
 		else if (string[0] == 'i') {	/* init ad9889 */
 			printf("initialize...\n");
