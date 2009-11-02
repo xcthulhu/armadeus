@@ -5,7 +5,7 @@ ifeq ($(TARGET),)
 	STAGING_DIR:=$(ARMADEUS_BUILD_DIR)/staging_dir/
         INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/bin/
 
-	CC:=$(STAGING_DIR)/usr/bin/arm-linux-gcc
+	CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 	DEFINES="-DAPF"
 	CFLAGS:=$(shell STAGING_DIR=$(STAGING_DIR) sh $(ARMADEUS_SDL_DIR)/sdl-config --cflags)
 	LIBS:=$(shell STAGING_DIR=$(STAGING_DIR) sh $(ARMADEUS_SDL_DIR)/sdl-config --libs)
