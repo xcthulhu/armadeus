@@ -1,13 +1,15 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/include/linux/spi/tsc2102.h	
-+++ linux-2.6.27.13.mod/include/linux/spi/tsc2102.h	
+Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2009-11-10 13:37:50.000000000 +0100
 @@ -0,0 +1,299 @@
 +/*
 + * include/linux/spi/tsc2102.h
 + *
-+ * TI TSC2102 Touchscreen, Audio and Battery control register definitions 
++ * TI TSC2102 Touchscreen, Audio and Battery control register definitions
 + *
 + * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org>
 + *
@@ -39,7 +41,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +				/* Report status to APM based on battery[] */
 +	void *alsa_config;	/* .platform_data for the ALSA device */
 +	int (*init)(void);	/* allocate GPIOs */
-+	void (*exit)(void); 
++	void (*exit)(void);
 +};
 +
 +#define TSC_BAT1	(1 << 0)
@@ -303,19 +305,18 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +};
 +
 +#endif	/* __LINUX_SPI_TSC2102_H */
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/drivers/spi/tsc2102.c	
-+++ linux-2.6.27.13.mod/drivers/spi/tsc2102.c	
-@@ -0,0 +1,1114 @@
+Index: linux-2.6.29.6/drivers/spi/tsc2102.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2009-11-10 13:41:13.000000000 +0100
+@@ -0,0 +1,1125 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
 + * TSC2102 interface driver.
 + * Copyright (C) 2008 Armadeus systems (nc)
 + * 			-> spi communication reworked to avoid deadlock
-+ * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org> 
++ * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org>
 + *
 + * This package is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -514,7 +515,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +u16 tsc210x_read_sync(int page, u8 address)
 +{
 +	u16 ret;
++
 +	tsc210x_reads_sync(page, address, &ret, 1);
++
 +	return ret;
 +}
 +
@@ -525,42 +528,41 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#define T1STAT (1<<2)
 +
 +	int status;
-+	
++
 + 	mutex_lock(&tsc.lock_sync);
 +
 +	/* state of SM has to be changed ? */
-+	if( test_and_clear_bit( WORK_CHANGE_MODE,&tsc.todo) ){
++	if (test_and_clear_bit(WORK_CHANGE_MODE, &tsc.todo)) {
 +		tsc210x_write_sync(TSC2102_TS_ADC_CTRL, TSC2102_ADC_ADST);
 +		/* change state of SM */
-+		if( tsc.state == SM_TEMP1 ){
++		if (tsc.state == SM_TEMP1) {
 +			tsc.state = SM_BAT_AUX;
-+			tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, 
-+				TSC2102_ADC_DAV); 
-+			tsc210x_write_sync(TSC2102_TS_ADC_CTRL, 
-+				TSC2102_ADC_SCAN_CONTROL); 
-+		}
-+		else{
++			tsc210x_write_sync(TSC2102_TS_STATUS_CTRL,
++				TSC2102_ADC_DAV);
++			tsc210x_write_sync(TSC2102_TS_ADC_CTRL,
++				TSC2102_ADC_SCAN_CONTROL);
++		} else {
 +			tsc.state = SM_TEMP1;
-+			tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, 
-+				TSC2102_ADC_DAV); 
-+			tsc210x_write_sync(TSC2102_TS_ADC_CTRL, 
-+				TSC2102_ADC_T1_CONTROL); 
++			tsc210x_write_sync(TSC2102_TS_STATUS_CTRL,
++				TSC2102_ADC_DAV);
++			tsc210x_write_sync(TSC2102_TS_ADC_CTRL,
++				TSC2102_ADC_T1_CONTROL);
 +		}
 +		/* restart mode timer */
 +		mod_timer(&tsc.mode_timer, jiffies +
 +				msecs_to_jiffies(tsc.mode_msecs));
 +	}
 +	status = tsc210x_read_sync(TSC2102_TS_STATUS_CTRL);
-+	
++
 +	if (status & Z2STAT) {
 +		/* get pendown status */
-+		int pendown = tsc210x_read_sync(TSC2102_TS_ADC_CTRL) & TSC2102_ADC_PSTCM; 
++		int pendown = tsc210x_read_sync(TSC2102_TS_ADC_CTRL) & TSC2102_ADC_PSTCM;
 +		/* postponed next interrupt to avoid processor overload */
 +		msleep(3);
-+		tsc210x_reads_sync( TSC2102_TS_X, tsc.adc_data, 4);
++		tsc210x_reads_sync(TSC2102_TS_X, tsc.adc_data, 4);
 +		/* avoid sending data if pen is up*/
-+		if (tsc.coords_cb && pendown){
-+			tsc.coords_cb(tsc.adc_data[0], tsc.adc_data[1], 
++		if (tsc.coords_cb && pendown) {
++			tsc.coords_cb(tsc.adc_data[0], tsc.adc_data[1],
 +					tsc.adc_data[2], tsc.adc_data[3]);
 +		}
 +	}
@@ -568,25 +570,25 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	if (status & AXSTAT) {
 +		tsc210x_reads_sync(TSC2102_TS_BAT1, tsc.adc_data, 4);
 +		if (tsc.ports_cb)
-+			tsc.ports_cb(tsc.adc_data[0], tsc.adc_data[1], 
++			tsc.ports_cb(tsc.adc_data[0], tsc.adc_data[1],
 +					tsc.adc_data[2]);
 +		tsc.bat[0] = tsc.adc_data[0];
 +		tsc.bat[1] = tsc.adc_data[1];
 +		tsc.aux[0] = tsc.adc_data[2];
 +		tsc.aux[1] = tsc.adc_data[3];
 +		/* switch to pintdav and TS control */
-+		tsc210x_write_sync(TSC2102_TS_ADC_CTRL, 
++		tsc210x_write_sync(TSC2102_TS_ADC_CTRL,
 +				TSC2102_ADC_TS_CONTROL);
-+		tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV); 
++		tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV);
 +	}
 +	else if (status & T1STAT) {
-+		tsc.temp = tsc210x_read_sync(TSC2102_TS_TEMP1);	
++		tsc.temp = tsc210x_read_sync(TSC2102_TS_TEMP1);
 +		if (tsc.temp1_cb)
 +			tsc.temp1_cb(tsc.temp);
 +		/* switch to pintdav and TS control */
-+		tsc210x_write_sync( TSC2102_TS_ADC_CTRL, 
++		tsc210x_write_sync( TSC2102_TS_ADC_CTRL,
 +				TSC2102_ADC_TS_CONTROL);
-+		tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV); 
++		tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV);
 +	}
 +
 +	mutex_unlock(&tsc.lock_sync);
@@ -655,6 +657,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static void tsc2102_mode(unsigned long data)
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) data;
++
 +//	if(!test_bit( PENDOWN,&dev->todo)){
 +		/* request change of SM state */
 +		set_bit(WORK_CHANGE_MODE, &dev->todo);
@@ -666,17 +669,20 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +static irqreturn_t tsc2102_handler(int irq, void *dev_id)
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) dev_id;
++
 +	/* restart pen up timer */
-+	mod_timer(&tsc.ts_timer, jiffies + 
++	mod_timer(&tsc.ts_timer, jiffies +
 +			msecs_to_jiffies(tsc.ts_msecs));
-+ 
++
 +	schedule_work(&dev->work);
++
 +	return IRQ_HANDLED;
 +}
 +
 +static void tsc2102_pressure(unsigned long data)
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) data;
++
 +	//printk("pen up\n");
 +	//clear_bit(PENDOWN, &dev->todo);
 +	if (dev->touch_cb)
@@ -837,7 +843,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	} else { /* 48000 */
 +	switch(mclk)
 +	{
-+		case 12288000: 
++		case 12288000:
 +			/*pll->pll1 = (PLL1_Q_VAL(2)) -> doesn't work without enabling PLL */
 +			pll->pll1 = (PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(1) | PLL1_J_VAL(8));
 +			pll->pll2 = (PLL2_D_VAL(0));
@@ -962,10 +968,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +EXPORT_SYMBOL(tsc210x_set_i2s_master);
 +#endif	/* CONFIG_SOUND || CONFIG_SOUND_MODULE */
 +
++static void tsc210x_reset(void)
++{
++	tsc210x_write_sync(TSC2102_TS_RESET_CTRL, TSC2102_RESET);
++}
++
 +static int tsc2102_configure(struct tsc210x_dev *dev)
 +{
 +	/* Reset the chip */
-+	tsc210x_write_sync(TSC2102_TS_RESET_CTRL, TSC2102_RESET);
++	tsc210x_reset();
 +
 +	/* Reference mode, 100 usec delay, 2.5V reference */
 +	if (dev->pdata->use_internal)
@@ -1009,7 +1020,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif /* CONFIG_SOUND || CONFIG_SOUND_MODULE */
 +
 +	/* Init mode state machine */
-+	dev->state = SM_BAT_AUX; 
++	dev->state = SM_BAT_AUX;
 +
 +	/* Start mode timer */
 +	mod_timer(&dev->mode_timer, jiffies +
@@ -1233,7 +1244,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		err = -EPERM;
 +		goto done;
 +	}
-+ 
++
 +	clk_enable(tsc.bclk_ck);
 +#else
 +	/* Retrieve Master Clock from platform data */
@@ -1244,7 +1255,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +#endif /* CONFIG_TSC_SLAVE */
 +
 +	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED | IRQF_SHARED | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
-+		printk(KERN_ERR "Could not allocate touchscreen IRQ (n %d)\n", spi->irq);
++		printk(KERN_ERR "Couldn't allocate touchscreen IRQ (%d)\n", spi->irq);
 +		err = -EINVAL;
 +		goto err_clk;
 +	}
@@ -1264,6 +1275,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		goto err_timer;
 +
 +	/* Now try to detect the chip, make first contact */
++	tsc210x_reset(); /* Seems like TSC can be messed up and needs a reset even to get revision */
 +	rev_id = tsc2102_get_revision();
 +	if (rev_id == 0x01) {
 +		printk("TSC2102 detected\n");
@@ -1368,7 +1380,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +	del_timer(&tsc.mode_timer);
 +	del_timer(&tsc.ts_timer);
-+	flush_scheduled_work();	
++	flush_scheduled_work();
 +
 +#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
 +	hwmon_device_unregister(dev->hwmondev);
