@@ -119,7 +119,7 @@ AsMax1027::init(int aSpiNumber)
     setSysPath(str_tmp);
     
     /* open setup */
-    mFSetup = open(string(getSysPath()+string(SETUP_NAME)).c_str(),O_RDWR);
+    mFSetup = open(string(getSysPath()+string(SETUP_NAME)).c_str(), O_RDWR);
     if (mFSetup < 0)
     {
         perror(string(
@@ -139,7 +139,7 @@ AsMax1027::init(int aSpiNumber)
     }
 
     /* open conversion */
-    mFConversion = open(string(getSysPath()+string(CONVERSION_NAME)).c_str(),O_WRONLY);
+    mFConversion = open(string(getSysPath()+string(CONVERSION_NAME)).c_str(), O_WRONLY);
     if (mFConversion < 0)
     {
         perror(string(
@@ -435,18 +435,19 @@ AsMax1027::readBuffer(int aFile_handler, string *aValueRead)
     ret = read(aFile_handler, valueRead, SIZEOFBUFF);
     if (ret < 0)
     {
-        perror("Read error ");
-        printf("error %d\n",ret);
+        perror("Read error");
+        printf("error %d\n", ret);
         return AS_ADC_READFILE;
     }
     valueRead[ret] = '\0';
     ret = lseek(aFile_handler, 0, SEEK_SET);
     if (ret < 0)
     {
-        perror("lseek error ");
+        perror("lseek error");
         return AS_ADC_LSEEK;
     }
     *aValueRead = string(valueRead);
+
     return AS_ADC_OK;
 }
 
@@ -462,17 +463,20 @@ AsAdc::AsAdc_errors
 AsMax1027::writeBuffer(int aFile_handler, string aValueWrite)
 {
     int ret;
+
     ret = write(aFile_handler, aValueWrite.c_str(), aValueWrite.length());
     if (ret < 0)
     {
-        perror("Can't write file ");
+        perror("Can't write file");
         return AS_ADC_WRITEFILE;
     }
-    ret = lseek(aFile_handler,0,SEEK_SET);
+    ret = lseek(aFile_handler, 0, SEEK_SET);
     if (ret < 0)
     {
-        perror("lseek error ");
+        perror("lseek error");
         return AS_ADC_LSEEK;
     }
+
     return AS_ADC_OK;
 }
+
