@@ -9,6 +9,4 @@ AC_CONFIG_FILES([
 	Makefile
         ])
 
-AC_SEARCH_LIBS(pow, m)
-
 AC_OUTPUT

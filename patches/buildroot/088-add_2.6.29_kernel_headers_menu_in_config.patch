@@ -1,0 +1,25 @@
+
+This patch won't be useful anymore after the upgrade to Buildroot 2009.11.
+
+Index: buildroot/toolchain/kernel-headers/Config.in
+===================================================================
+--- buildroot.orig/toolchain/kernel-headers/Config.in	2009-10-23 13:56:46.000000000 +0200
++++ buildroot/toolchain/kernel-headers/Config.in	2009-10-23 16:04:26.000000000 +0200
+@@ -68,6 +68,10 @@
+ 		depends on BR2_RECENT
+ 		bool "Linux 2.6.27.x kernel headers"
+ 
++	config BR2_KERNEL_HEADERS_2_6_29
++		depends on BR2_RECENT
++		bool "Linux 2.6.29.x kernel headers"
++
+ 	config BR2_KERNEL_HEADERS_SNAP
+ 		bool "Linux 2.6 snapshot"
+ 
+@@ -115,5 +119,6 @@
+ 	default "2.6.25.19"	if BR2_KERNEL_HEADERS_2_6_25
+ 	default "2.6.26.6"	if BR2_KERNEL_HEADERS_2_6_26
+ 	default "2.6.27.3"	if BR2_KERNEL_HEADERS_2_6_27
++	default "2.6.29.6"      if BR2_KERNEL_HEADERS_2_6_29
+ 	default "2.6"		if BR2_KERNEL_HEADERS_SNAP
+ 

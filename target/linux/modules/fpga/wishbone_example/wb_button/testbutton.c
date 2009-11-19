@@ -22,67 +22,72 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-/* file management */
 #include <sys/stat.h>
 #include <fcntl.h>
-
-/* as name said */
 #include <signal.h>
 
-/* sleep */
-#include <unistd.h>
 
-int fbutton;
+int fd_button;
 
-void quit(int pouet) {
-  close(fbutton);
-  exit(0);
+void quit(int signal)
+{
+    close(fd_button);
+    exit(0);
 }
 
-void usage(char *exe) {
-  if (exe) {
-    printf("\nUsage:\n");
-    printf("%s <button_device>\n", exe);
-  }
+void usage(char *prog_name)
+{
+    if (prog_name) {
+        printf("\nUsage:\n");
+        printf("%s <button_device> [count]\n", prog_name);
+    }
 }
 
 int main(int argc, char *argv[])
 {
-  unsigned short i, j=0;
+    unsigned short i, value=0;
+    int count=0, max_count=0;
 
-  /* quit when Ctrl-C pressed */
-  signal(SIGINT, quit);
+    /* quit when Ctrl-C is pressed */
+    signal(SIGINT, quit);
 
-  printf( "Testing button driver\n" );
-
-  if (argc < 2) {
-    printf("invalid arguments number\n");
-    usage(argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  fbutton = open(argv[1], O_RDWR);
-  if (fbutton < 0) {
-    perror("can't open file");
-    exit(EXIT_FAILURE);
-  }
-
-  while (1) {
-    /* read value */
-    if (read(fbutton, &j, 1) < 0) {
-      perror("read error");
-      exit(EXIT_FAILURE);
+    if (argc < 2) {
+        printf("invalid arguments number\n");
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
     }
-    printf("Read %d\n",j);
 
-    if (lseek(fbutton, 0, SEEK_SET) < 0) {
-      perror("lseek error\n");
-      exit(EXIT_FAILURE);
+    fd_button = open(argv[1], O_RDWR);
+    if (fd_button < 0) {
+        perror("can't open file");
+        exit(EXIT_FAILURE);
     }
-  }
 
-  close(fbutton);
-  exit(0);
+    if (argc == 3)
+        max_count = atoi(argv[2]);
+
+    printf("Press button\n");
+
+    while (1) {
+        /* read value (blocking) */
+        if (read(fd_button, &value, 1) < 0) {
+            perror("read error");
+            exit(EXIT_FAILURE);
+        }
+        printf("Read %d\n", value);
+        count++;
+        if (max_count && (count >= max_count))
+            break;
+
+/* needed ?
+        if (lseek(fd_button, 0, SEEK_SET) < 0) {
+            perror("lseek error");
+            exit(EXIT_FAILURE);
+        }
+*/
+    }
+
+    close(fd_button);
+    exit(0);
 }
 

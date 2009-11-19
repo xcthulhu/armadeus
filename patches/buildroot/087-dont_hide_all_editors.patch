@@ -1,0 +1,40 @@
+
+Don't hide all editors in config if BR2_PACKAGE_BUSYBOX_HIDE_OTHERS is selected.
+Indeed vi is the only editor already provided by busybox.
+
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2009-10-22 12:17:45.000000000 +0200
++++ buildroot/package/Config.in	2009-10-22 12:19:20.000000000 +0200
+@@ -134,14 +134,9 @@
+ 
+ source "package/database/Config.in"
+ 
+-if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
+-# busybox has an editor
+-
+ # text editors
+ source "package/editors/Config.in"
+ 
+-endif
+-
+ menuconfig BR2_NETWORK_SUPPORT
+ 	bool "Networking"
+ 	default y
+Index: buildroot/package/editors/Config.in
+===================================================================
+--- buildroot.orig/package/editors/Config.in	2009-10-22 12:17:58.000000000 +0200
++++ buildroot/package/editors/Config.in	2009-10-22 12:19:45.000000000 +0200
+@@ -8,5 +8,8 @@
+ source "package/editors/ed/Config.in"
+ source "package/editors/nano/Config.in"
+ source "package/editors/uemacs/Config.in"
++if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
++# busybox has vi
+ source "package/editors/vim/Config.in"
+ endif
++endif

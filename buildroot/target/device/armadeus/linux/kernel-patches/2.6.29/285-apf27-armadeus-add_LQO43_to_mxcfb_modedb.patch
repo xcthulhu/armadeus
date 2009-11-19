@@ -1,12 +1,12 @@
-Index: linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c
+Index: linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c
 ===================================================================
---- linux-2.6.29.orig/drivers/video/mxc/mxcfb_modedb.c	2009-05-25 14:40:19.000000000 +0200
-+++ linux-2.6.29/drivers/video/mxc/mxcfb_modedb.c	2009-05-25 16:54:57.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 15:50:49.000000000 +0200
++++ linux-2.6.29.6/drivers/video/mxc/mxcfb_modedb.c	2009-10-11 19:43:47.000000000 +0200
 @@ -74,6 +74,20 @@
  	       "TV-VGA", 60, 640, 480, 40574, 35, 45, 9, 1, 46, 5,
  	       0, FB_VMODE_NONINTERLACED, 0,
  	       },
-+	[5] = {
++	{
 +		/* PSP TFT */
 +		.name = "Sharp-LQ043",
 +		.refresh = 60,

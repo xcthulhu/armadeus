@@ -1,6 +1,6 @@
 #############################################################
 #
-# ad9889 tool
+# ad9889 control tool
 #
 #############################################################
 
@@ -12,12 +12,11 @@ AD9889CTRL_BINARY:=ad9889ctrl
 AD9889CTRL_TARGET_BINARY:=usr/bin/ad9889ctrl
 
 $(AD9889CTRL_DIR)/ad9889ctrl.c:
-	set
 	mkdir -p $(AD9889CTRL_DIR)/
 	cp $(AD9889CTRL_SOURCE)/* $(AD9889CTRL_DIR)/
 
 $(AD9889CTRL_DIR)/$(AD9889CTRL_BINARY): $(AD9889CTRL_DIR)/ad9889ctrl.c $(AD9889CTRL_DIR)/ad9889ctrl.h
-	$(TARGET_CONFIGURE_OPTS) $(MAKE) CC=$(TARGET_CC) -C $(AD9889CTRL_DIR)
+	$(MAKE) CC=$(TARGET_CC) -C $(AD9889CTRL_DIR)
 
 $(TARGET_DIR)/$(AD9889CTRL_TARGET_BINARY): $(AD9889CTRL_DIR)/$(AD9889CTRL_BINARY)
 	install -D $< $@
