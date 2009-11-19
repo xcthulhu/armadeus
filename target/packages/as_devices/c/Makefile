@@ -9,6 +9,7 @@ LDFLAGS=
 OBJ=as_apf27_pwm.o
 OBJ+= as_i2c.o
 OBJ+= as_apf27_gpio.o
+OBJ+= as_93lcxx.o
 
 LIBRARY=as_devices
 LIB_VERS=1

@@ -20,7 +20,7 @@
 */
 #include "as_apf27_gpio.hpp"
 
-static AsDynamicTable AsApf27Gpio::mInstances = new AsDynamicTable();
+AsDynamicTable * AsApf27Gpio::mInstances = new AsDynamicTable();
 
 /*------------------------------------------------------------------------------*/
 /** Singleton constructor
@@ -47,7 +47,7 @@ AsApf27Gpio::getInstance(char aPortLetter)
 AsApf27Gpio::AsApf27Gpio(char aPortLetter)
 {
     mPortLetter = aPortLetter;
-    as_apf27_gpio_init(aPortChar);
+    as_apf27_gpio_init(aPortLetter);
 }
 /*------------------------------------------------------------------------------*/
 
