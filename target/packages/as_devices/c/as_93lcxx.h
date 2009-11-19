@@ -40,13 +40,13 @@ extern "C" {
 /** 
  * Store eeprom parameters
  */
-typedef struct as_93lcxx_device {
+typedef struct  {
     unsigned char *spidev_filename; /**< filename of the spidev /dev file */
     uint8_t       type;   /**< type of the eeprom : 46, 56 or 66 (see DS) */
     uint32_t      speed;  /**< SCLK speed, in Hz */
     uint8_t       word_size; /**< word size for transaction, 8 or 16 */
     int           fd; /**< File handler for spidev bus */
-};
+} as_93lcxx_device;
 
 /** @brief open the device
  *
