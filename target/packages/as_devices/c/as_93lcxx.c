@@ -64,12 +64,12 @@ struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
                                          uint32_t aSpeed,
                                          uint8_t aWord_size)
 {
-    int ret=0;
+    int fd=-1;
     struct as_93lcxx_device *dev;
 
     /* open spidev bus */
-    ret = as_spi_open(aSpidev_filename);
-    if(ret < 0)
+    fd = as_spi_open(aSpidev_filename);
+    if(fd < 0)
         return NULL;
     
     /* verify datas */
@@ -87,6 +87,7 @@ struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
     dev->type = aType;
     dev->speed = aSpeed;
     dev->word_size = aWord_size;
+    dev->fd = fd;
     
     return dev;
 }
@@ -94,7 +95,6 @@ struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
 void as_93lcxx_close(struct as_93lcxx_device *aDev)
 {
     as_spi_close(aDev->fd);
-    free(aDev->spidev_filename);
     free(aDev);
 }
 
@@ -220,7 +220,7 @@ int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev,
                3 + add_length + aDev->word_size,
                aDev->speed);
 
-    /* TODO: mait for RDY/BSY_n */
+    /* TODO: wait for RDY/BSY_n */
 
     return 0;
 }

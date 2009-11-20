@@ -117,13 +117,15 @@ uint32_t as_spi_msg(int aFd,
                     uint32_t aSpeed)
 {
     uint32_t msg;
-    size_t len;
+    int len;
+
     struct spi_ioc_transfer	xfer[1];
 	unsigned char buf[32];
 	unsigned char buf_read[32];
 
 	int	status;
     int i;
+
     msg = aMsg;
     len = aLen;
 
@@ -131,7 +133,7 @@ uint32_t as_spi_msg(int aFd,
 	memset(buf, 0, sizeof buf);
 	memset(buf_read, 0, sizeof buf_read);
 
-	if (aLen > sizeof buf)
+	if (len > sizeof buf)
 		len = sizeof buf;
     for (i = len;i > 0;i--)
     {
