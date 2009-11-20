@@ -93,6 +93,7 @@ struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
 
 void as_93lcxx_close(struct as_93lcxx_device *aDev)
 {
+    as_spi_close(aDev->fd);
     free(aDev->spidev_filename);
     free(aDev);
 }
@@ -108,9 +109,9 @@ int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, uint16_t aAddress)
     msg = ((READ << (add_length+ (aDev->word_size)))
             | (aAddress << (aDev->word_size)));
 
-    data_out = as_spi_forge_msg(aDev->fd, msg,
-                                3 + add_length + aDev->word_size,
-                                aDev->speed);
+    data_out = as_spi_msg(aDev->fd, msg,
+                          3 + add_length + aDev->word_size,
+                          aDev->speed);
 
     if( aDev->word_size == 8)
         return data_out & 0xff;
@@ -130,9 +131,9 @@ int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev)
           |(EWEN_ADDR << (add_length-2))
             );
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length,
+               aDev->speed);
     return 0;
 }
 
@@ -147,9 +148,9 @@ int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, uint16_t aAddress)
     msg = ((ERASE << (add_length + aDev->word_size ))
             | (aAddress << (aDev->word_size)));
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length + aDev->word_size,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length + aDev->word_size,
+               aDev->speed);
     return 0;
 
 }
@@ -166,9 +167,9 @@ int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev)
           |(ERAL_ADDR << (add_length-2))
             );
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length + aDev->word_size,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length + aDev->word_size,
+               aDev->speed);
 
     /* TODO: wait for RDY/BSY_n */
 
@@ -192,9 +193,9 @@ int32_t as_93lcxx_write(struct as_93lcxx_device *aDev,
             | aValue
             );
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length + aDev->word_size,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length + aDev->word_size,
+               aDev->speed);
 
     /* TODO: mait for RDY/BSY_n */
 
@@ -215,9 +216,9 @@ int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev,
           |aValue
             );
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length + aDev->word_size,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length + aDev->word_size,
+               aDev->speed);
 
     /* TODO: mait for RDY/BSY_n */
 
@@ -236,9 +237,9 @@ int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev)
           |(EWDS_ADDR << (add_length-2))
             );
 
-    as_spi_forge_msg(aDev->fd, msg,
-                     3 + add_length,
-                     aDev->speed);
+    as_spi_msg(aDev->fd, msg,
+               3 + add_length,
+               aDev->speed);
     return 0;
 }
 

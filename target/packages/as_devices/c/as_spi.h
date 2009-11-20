@@ -85,6 +85,15 @@ int as_spi_get_mode(int fd);
  */
 int as_spi_get_lsb(int fd);
 
+/** @brief Get clock bus speed
+ *
+ * @param fd spidev file handler
+ *
+ * @return speed in Hz, negative value on error
+ */
+int as_spi_get_speed(int fd);
+
+
 /** @brief Get bits per word
  *
  * @param fd spidev file handler
@@ -93,7 +102,7 @@ int as_spi_get_lsb(int fd);
  */
 int as_spi_get_bits_per_word(int fd);
 
-/** @brief Forge arbitrary length message (32bits max)
+/** @brief Forge arbitrary length message (32bits max) and send it
  *
  * @param fd spidev file handler
  * @param msg right adjusted message
@@ -102,10 +111,10 @@ int as_spi_get_bits_per_word(int fd);
  *
  * @return message read
  */
-uint32_t as_spi_forge_msg(int fd, 
-                          uint32_t msg, 
-                          size_t len,
-                          uint32_t speed);
+uint32_t as_spi_msg(int fd, 
+                    uint32_t msg, 
+                    size_t len,
+                    uint32_t speed);
 
 /** @brief Close a SPI bus.
  *
