@@ -19,59 +19,227 @@
  */
 
 #include "as_93lcxx.h"
+#include "as_spi.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-struct as_93lcxx_device * as_93lcxx_open(unsigned char *spidev_filename,
-                                         uint8_t type,
-                                         uint32_t speed,
-                                         uint8_t word_size)
+/* define start bits + opcode */
+#define READ      (6)
+#define EWEN      (4)
+#define EWEN_ADDR (3) 
+#define ERASE     (7)
+#define ERAL      (6)
+#define ERAL_ADDR (2)
+#define WRITE     (5)
+#define WRAL      (4)
+#define WRAL_ADDR (1)
+#define EWDS      (4)
+#define EWDS_ADDR (0)
+
+/** @brief Private functions to ease making spi instructions
+ */
+
+uint8_t address_len(uint8_t aType, uint8_t aWord_size)
 {
-    /* TODO */
-    return NULL;
+    switch(aType)
+    {
+        case 46:
+            if( aWord_size == 16)
+                return 6;
+            else
+                return 7;
+        case 56:
+        case 66:
+            if( aWord_size == 16)
+                return 8;
+            else
+                return 9;
+        default:
+            return 0;
+    }
 }
 
-int as_93lcxx_read(struct as_93lcxx_device *dev, uint16_t address)
+struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
+                                         uint8_t aType,
+                                         uint32_t aSpeed,
+                                         uint8_t aWord_size)
 {
-    /* TODO */
-    return -1;
+    int ret=0;
+    struct as_93lcxx_device *dev;
+
+    /* open spidev bus */
+    ret = as_spi_open(aSpidev_filename);
+    if(ret < 0)
+        return NULL;
+    
+    /* verify datas */
+    if(!( (aType == 46) || (aType == 56) || (aType == 66)))
+        return NULL;
+    if( (aWord_size < 1) || (aWord_size > 16))
+        return NULL;
+
+    dev = (struct as_93lcxx_device *)malloc(sizeof(struct as_93lcxx_device));
+    if(dev == NULL)
+        return NULL;
+
+    /* fill in spidev structure */
+    dev->spidev_filename = aSpidev_filename;
+    dev->type = aType;
+    dev->speed = aSpeed;
+    dev->word_size = aWord_size;
+    
+    return dev;
 }
 
-int as_93lcxx_ewen(struct as_93lcxx_device *dev)
+void as_93lcxx_close(struct as_93lcxx_device *aDev)
 {
-    /* TODO */
-    return -1;
+    free(aDev->spidev_filename);
+    free(aDev);
 }
 
-int as_93lcxx_erase(struct as_93lcxx_device *dev, uint16_t address)
+int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, uint16_t aAddress)
 {
-    /* TODO */
-    return -1;
+    uint32_t data_out,msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((READ << (add_length+ (aDev->word_size)))
+            | (aAddress << (aDev->word_size)));
+
+    data_out = as_spi_forge_msg(aDev->fd, msg,
+                                3 + add_length + aDev->word_size,
+                                aDev->speed);
+
+    if( aDev->word_size == 8)
+        return data_out & 0xff;
+    else
+        return data_out & 0xffff;
 }
 
-int as_93lcxx_erase_all(struct as_93lcxx_device *dev)
+int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev)
 {
-    /* TODO */
-    return -1;
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((EWEN << add_length)
+          |(EWEN_ADDR << (add_length-2))
+            );
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length,
+                     aDev->speed);
+    return 0;
 }
 
-int as_93lcxx_write(struct as_93lcxx_device *dev, 
-                    uint16_t address, 
-                    uint16_t value)
+int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, uint16_t aAddress)
 {
-    /* TODO */
-    return -1;
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((ERASE << (add_length + aDev->word_size ))
+            | (aAddress << (aDev->word_size)));
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length + aDev->word_size,
+                     aDev->speed);
+    return 0;
+
 }
 
-int as_93lcxx_write_all(struct as_93lcxx_device *dev, 
-                        uint16_t value)
+int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev)
 {
-    /* TODO */
-    return -1;
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((ERAL << add_length)
+          |(ERAL_ADDR << (add_length-2))
+            );
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length + aDev->word_size,
+                     aDev->speed);
+
+    /* TODO: wait for RDY/BSY_n */
+
+    return 0;
+
+
 }
 
-int as_93lcxx_ewds(struct as_93lcxx_device *dev)
+int32_t as_93lcxx_write(struct as_93lcxx_device *aDev, 
+                    uint16_t aAddress, 
+                    uint16_t aValue)
 {
-    /* TODO */
-    return -1;
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((WRITE << (add_length+ (aDev->word_size)))
+            | (aAddress << (aDev->word_size))
+            | aValue
+            );
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length + aDev->word_size,
+                     aDev->speed);
+
+    /* TODO: mait for RDY/BSY_n */
+
+    return 0;
+}
+
+int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev, 
+                        uint16_t aValue)
+{
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((WRAL << (add_length+ (aDev->word_size)))
+          |(WRAL_ADDR << ((aDev->word_size) + (add_length-2)))
+          |aValue
+            );
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length + aDev->word_size,
+                     aDev->speed);
+
+    /* TODO: mait for RDY/BSY_n */
+
+    return 0;
+}
+
+int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev)
+{
+    uint32_t msg=0;
+    int add_length;
+
+    add_length = address_len(aDev->type,aDev->word_size);
+
+    /* forge message */
+    msg = ((EWDS << add_length)
+          |(EWDS_ADDR << (add_length-2))
+            );
+
+    as_spi_forge_msg(aDev->fd, msg,
+                     3 + add_length,
+                     aDev->speed);
+    return 0;
 }
 
 

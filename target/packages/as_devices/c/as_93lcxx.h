@@ -40,13 +40,13 @@ extern "C" {
 /** 
  * Store eeprom parameters
  */
-typedef struct  {
+struct  as_93lcxx_device {
     unsigned char *spidev_filename; /**< filename of the spidev /dev file */
     uint8_t       type;   /**< type of the eeprom : 46, 56 or 66 (see DS) */
     uint32_t      speed;  /**< SCLK speed, in Hz */
     uint8_t       word_size; /**< word size for transaction, 8 or 16 */
     int           fd; /**< File handler for spidev bus */
-} as_93lcxx_device;
+};
 
 /** @brief open the device
  *
@@ -57,17 +57,17 @@ typedef struct  {
  *
  * @return as_93lcxx_device struct pointer on success, NULL on error
  */
-struct as_93lcxx_device * as_93lcxx_open(unsigned char *spidev_filename,
-                                         uint8_t type,
-                                         uint32_t speed,
-                                         uint8_t word_size);
+struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
+                                         uint8_t aType,
+                                         uint32_t aSpeed,
+                                         uint8_t aWord_size);
 
 /** @brief close the device
  *
  * @param spidev_filename path to spidev
  *
  */
-void as_93lcxx_close(struct as_93lcxx_device *dev);
+void as_93lcxx_close(struct as_93lcxx_device *aDev);
 
 /** @brief read a value in address given
  *
@@ -76,7 +76,7 @@ void as_93lcxx_close(struct as_93lcxx_device *dev);
  *
  * @return positive register value on success, negative value on error.
  */
-int as_93lcxx_read(struct as_93lcxx_device *dev, uint16_t address);
+int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, uint16_t aAddress);
 
 /** @brief enable write on eeprom
  *
@@ -84,16 +84,16 @@ int as_93lcxx_read(struct as_93lcxx_device *dev, uint16_t address);
  *
  * @return positive value on success, negative value on error
  */
-int as_93lcxx_ewen(struct as_93lcxx_device *dev);
+int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev);
 
-/** @brief Force all data bits of the specified address to 1
+/** @brief Force all data bits of the specified iaddress to 1
  *
  * @param dev 93LCxx structure
  * @param address addresse of register to be erased
  *
  * @return positive register value on success, negative value on error.
  */
-int as_93lcxx_erase(struct as_93lcxx_device *dev, uint16_t address);
+int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, uint16_t aAddress);
 
 /** @brief Force all bits in eeprom to 1
  *
@@ -101,7 +101,7 @@ int as_93lcxx_erase(struct as_93lcxx_device *dev, uint16_t address);
  *
  * @return positive register value on success, negative value on error.
  */
-int as_93lcxx_erase_all(struct as_93lcxx_device *dev);
+int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev);
 
 /** @brief write a value in given address
  *
@@ -111,9 +111,9 @@ int as_93lcxx_erase_all(struct as_93lcxx_device *dev);
  *
  * @return positive register value on success, negative value on error.
  */
-int as_93lcxx_write(struct as_93lcxx_device *dev, 
-                    uint16_t address, 
-                    uint16_t value);
+int32_t as_93lcxx_write(struct as_93lcxx_device *aDev, 
+                    uint16_t aAddress, 
+                    uint16_t aValue);
 
 /** @brief write the entire memory array with value given
  *
@@ -122,8 +122,8 @@ int as_93lcxx_write(struct as_93lcxx_device *dev,
  *
  * @return positive register value on success, negative value on error.
  */
-int as_93lcxx_write_all(struct as_93lcxx_device *dev, 
-                    uint16_t value);
+int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev, 
+                        uint16_t aValue);
 
 /** @brief disable write on eeprom
  *
@@ -131,7 +131,7 @@ int as_93lcxx_write_all(struct as_93lcxx_device *dev,
  *
  * @return positive value on success, negative value on error
  */
-int as_93lcxx_ewds(struct as_93lcxx_device *dev);
+int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev);
 
 
 #ifdef __cplusplus
