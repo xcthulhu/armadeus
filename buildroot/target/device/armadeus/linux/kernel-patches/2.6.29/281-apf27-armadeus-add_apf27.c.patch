@@ -752,7 +752,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-11-15 19:50:35.000000000 +0100
-@@ -0,0 +1,976 @@
+@@ -0,0 +1,978 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -937,6 +937,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	/* set new FB params */
 +	temp_var.xres = 640;
 +	temp_var.yres = 480;
++	temp_var.xres_virtual = 640;
++	temp_var.yres_virtual = 480;
 +	temp_var.pixclock = 37538;
 +	temp_var.left_margin = 47;
 +	temp_var.right_margin = 47; /* at least 3 & 1 */
