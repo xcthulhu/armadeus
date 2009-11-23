@@ -1,257 +1,119 @@
 /*
-**    THE ARMadeus Systems
-** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
-** This library is free software; you can redistribute it and/or
-** modify it under the terms of the GNU Lesser General Public
-** License as published by the Free Software Foundation; either
-** version 2.1 of the License, or (at your option) any later version.
-** 
-** This library is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** Lesser General Public License for more details.
-** 
-** You should have received a copy of the GNU Lesser General Public
-** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**
-** TODO: manage force correctly
-*/
+ * This software is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of the
+ * License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * Copyright (C) 2009  Benoît Ryder <benoit@ryder.fr>
+ *
+ */
+
+
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
 
 #include "as_i2c.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 
-#define I2C_DEV_PATH "/dev/i2c-"
+/// Format of path to I2C devices
+#define AS_I2C_DEV_PATH_FMT "/dev/i2c-%u"
+#define _STR(x) #x
+#define AS_I2C_DEV_PATH_SIZE (sizeof(AS_I2C_DEV_PATH_FMT)-2+sizeof(_STR(AS_I2C_DEV_COUNT))-1)
 
-/* global static variable */
-static int mFHandlerI2c[NUMBER_OF_I2C];
 
-/*------------------------------------------------------------------------------*/
-
-/** Init i2c bus 
- *
- * @param aBusNumber i2c bus number
- * @return error code
- */
-int 
-as_i2c_init(int aBusNumber)
+int as_i2c_open(unsigned int i2c_id)
 {
-    char buffer[40];
-    /* make path */
-    snprintf(buffer,39,"%s%d",I2C_DEV_PATH,aBusNumber);
-    /* open i2c /dev */
-    if((mFHandlerI2c[aBusNumber] = open(buffer,O_RDWR))<0)
-    {
-        perror("Open error : ");
-        return -1;
-    }
-    return 0;
+  char buf[AS_I2C_DEV_PATH_SIZE];
+  snprintf(buf, sizeof(buf), AS_I2C_DEV_PATH_FMT, i2c_id);
+
+  return open(buf, O_RDWR);
 }
 
-/*------------------------------------------------------------------------------*/
-
-/** read byte on i2c bus
- * @param aBusNumber i2c bus number
- * @param aChipAddr chip address
- * @param aReg Register number
- * @param *aBuf char buffer
- * @return error code
- */
-int 
-as_read_byte_data(int aBusNumber,
-                  unsigned char aChipAddr,
-                  unsigned char aReg,
-                  unsigned char *aBuf)
+int as_i2c_close(int fd)
 {
-    // create an I2C write message (only one byte: the address)
-    struct i2c_msg msg = { aChipAddr, 0, 1, aBuf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    aBuf[0] = aReg; // select aReg to read
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c[aBusNumber], I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		return -1;
- 	}
-
-    // write the desired aRegister address
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-    msg.flags = I2C_M_RD; // read
-
-    // read the result and write it in aBuf[0]
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Read error\n");
-		return -1;
-	}
-    return 0;
-
+  return close(fd);
 }
 
-/*------------------------------------------------------------------------------*/
-
-/** write byte on i2c bus
- * @param aChipAddr chip address
- * @param aReg Register number
- * @param aBuf char value to write
- * @return error return
- */
-int 
-as_write_byte_data(int aBusNumber,
-                   unsigned char aChipAddr,
-                   unsigned char aReg,
-                   unsigned char aValue)
+int as_i2c_set_slave(int fd, uint8_t addr)
 {
-    unsigned char buf[2] = {aReg,aValue}; // initialise a data buffer with
-                                          // address and data
-
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, sizeof(buf), buf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c[aBusNumber],I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror(">Ioctl error: ");
- 		return -1;
- 	}
-
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-    return 0;
+  if( ioctl(fd, I2C_SLAVE_FORCE, addr) < 0 )
+    return -1;
+  return 0;
 }
 
-/*------------------------------------------------------------------------------*/
 
-/** write byte on i2c bus
- * @param aChipAddr chip address
- * @param aBuf char value to write
- * @return error return
- */
-int 
-as_write_byte(int aBusNumber,
-              unsigned char aChipAddr,
-              unsigned char aValue)
+int as_i2c_read(int fd, uint8_t addr, uint8_t *data, size_t n)
 {
-   unsigned char buf[1] = {aValue}; // initialise a data buffer with
-                                          // address and data
-
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, sizeof(buf), buf };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c[aBusNumber], I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		return -1;
- 	}
-
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+  struct i2c_msg msg = { addr, I2C_M_RD, n, data };
+  struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
+  if( ioctl(fd, I2C_RDWR, &rdwr) < 0 )
+    return -1;
+  return 0;
 }
 
-/*------------------------------------------------------------------------------*/
-/** Write several byte on I2C
- * @param aBusNumber i2c bus number
- * @param aChipAddr Chip address
- * @param aBuff message
- * @param aSize size of message
- * @return error code
- */
-int 
-as_write_multiple_bytes(int aBusNumber,
-                        unsigned char aChipAddr,
-                        unsigned char *aBuff,
-                        int aSize)
+int as_i2c_write(int fd, uint8_t addr, const uint8_t *data, size_t n)
 {
-    // create an I2C write message
-    struct i2c_msg msg = { aChipAddr, 0, aSize, aBuff };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c[aBusNumber], I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 		return -1;
- 	}
-
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+  struct i2c_msg msg = { addr, 0, n, (uint8_t *)data };
+  struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
+  if( ioctl(fd, I2C_RDWR, &rdwr) < 0 )
+    return -1;
+  return 0;
 }
 
-/*------------------------------------------------------------------------------*/
 
-/** read several bytes on I2C
- * @param aBusNumber i2c bus number
- * @param aChipAddr Chip address
- * @param aBuff message
- * @param aSize size of message
- * @return error code
- */
-int 
-as_read_multiple_bytes(int aBusNumber,
-                       unsigned char aChipAddr,
-                       unsigned char *aBuff,
-                       int aSize)
+int as_i2c_read_reg(int fd, uint8_t addr, uint8_t reg, uint8_t *data, size_t n)
 {
-    // create an I2C read message
-    struct i2c_msg msg = { aChipAddr, 
-                           I2C_M_RD, 
-                           aSize, 
-                           aBuff };
-    // create a I2C IOCTL request
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    /* configure I2C slave */
-    if ( ioctl(mFHandlerI2c[aBusNumber], I2C_SLAVE_FORCE, aChipAddr) < 0){
- 		perror("Ioctl error: ");
- 	    return -1;
- 	}
-
-	if ( ioctl( mFHandlerI2c[aBusNumber], I2C_RDWR, &rdwr ) < 0 ){
-		printf("Write error\n");
-		return -1;
-	}
-
-    return 0;
+  // write reg
+  struct i2c_msg msg = { addr, 0, 1, &reg };
+  struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
+  if( ioctl(fd, I2C_RDWR, &rdwr) < 0 )
+    return -1;
+  // read data
+  msg.flags = I2C_M_RD;
+  msg.len = n;
+  msg.buf = data;
+  if( ioctl(fd, I2C_RDWR, &rdwr) < 0 )
+    return -2;
+  return 0;
 }
 
-/*------------------------------------------------------------------------------*/
-
-/** Close i2c bus files
- * @param aBusNumber i2c bus number
- * @return error code
- */
-int 
-as_close(int aBusNumber)
+int as_i2c_write_reg(int fd, uint8_t addr, uint8_t reg, const uint8_t *data, size_t n)
 {
-    return close(mFHandlerI2c[aBusNumber]);
+  uint8_t buf[n+1];
+  buf[0] = reg;
+  memcpy(buf+1, data, n);
+  return as_i2c_write(fd, addr, buf, sizeof(buf));
 }
+
+
+int as_i2c_read_reg_byte(int fd, uint8_t addr, uint8_t reg)
+{
+  uint8_t val;
+  int ret = as_i2c_read_reg(fd, addr, reg, &val, 1);
+  if( ret < 0 )
+    return ret;
+  return val;
+}
+
+int as_i2c_write_reg_byte(int fd, uint8_t addr, uint8_t reg, uint8_t val)
+{
+  uint8_t buf[2] = { reg, val };
+  return as_i2c_write(fd, addr, buf, 2);
+}
+
 

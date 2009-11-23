@@ -1,5 +1,5 @@
 /*
- * Max1027 driver for kernel >= 2.6.23
+ * MAX1027 (ADC) driver for kernel >= 2.6.23
  *
  * Copyright (C) 2006-2008 Armadeus Project / Armadeus Systems
  * Authors: Nicolas Colombain / Julien Boibessot
@@ -20,7 +20,7 @@
  *
  */
 
-// #define DEBUG 1
+/*#define DEBUG 1*/
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
@@ -49,7 +49,7 @@
 
 
 #define DRIVER_NAME    "max1027"
-#define DRIVER_VERSION "0.5"
+#define DRIVER_VERSION "0.6"
 
 
 /* Internal registers prefixes */
@@ -61,24 +61,22 @@
 #define MAX1027_REG_BIPO    0x00
 
 /* register specifics */
-
+#define MAX1027_REG_CONV_SCAN1		(1 << 2)
+#define MAX1027_REG_SETUP_CKSEL1	(1 << 5)
 #define GET_SELECTED_CHANNEL(conv)	( (conv & 0x78) >> 3 )
-#define MAX1027_SETUP_DIFFSEL_MASK 	 0x03
-#define GET_NB_SCAN(avg)			( 4 * ((avg & 0x03)+1) )
-#define MAX1027_RESET_ALL 			(0x0|MAX1027_REG_RESET)
-#define MAX1027_RESET_FIFO 			(0x8|MAX1027_REG_RESET)
-#define MAX1027_UNI_UCH(x) 			((x&0x0f)<<4)
-#define MAX1027_BIPO_BCH(x) 		((x&0x0f)<<4)
+#define MAX1027_SETUP_DIFFSEL_MASK 	0x03
+#define GET_NB_SCAN(avg)		( 4 * ((avg & 0x03)+1) )
+#define MAX1027_RESET_ALL		(0x0|MAX1027_REG_RESET)
+#define MAX1027_RESET_FIFO		(0x8|MAX1027_REG_RESET)
+#define MAX1027_UNI_UCH(x)		((x&0x0f)<<4)
+#define MAX1027_BIPO_BCH(x)		((x&0x0f)<<4)
 
-#define NB_CHANNELS 				8
+#define NB_CHANNELS			8
 #define MAX_RESULTS_PER_CHANNEL		16   /* NSCAN = 11 */
-#define MAX_NB_RESULTS 				(MAX_RESULTS_PER_CHANNEL+1) /* + temp */
+#define MAX_NB_RESULTS			(MAX_RESULTS_PER_CHANNEL+1) /* + temp */
 
 #define FIFO_SIZE 128
 
-//#undef pr_debug
-//#define pr_debug(fmt, ...) \
-//        (printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__))
 
 /* Global variables */
 struct max1027_operations *driver_ops;
@@ -120,6 +118,9 @@ struct max1027 {
 	int cnvst; /* conversion start pin */
 
 	struct tasklet_struct tasklet;
+
+	wait_queue_head_t conv_wq;	/* stores waiters of end of conv */
+	int missed_eoc;			/* stores all missed EOC interrupts */
 };
 
 #define CS_CHANGE(val)			0  /* <-- what is it for ??? */
@@ -128,7 +129,9 @@ static struct spi_device *current_spi;
 
 struct spi_transfer transfer[MAX_NB_RESULTS];
 struct spi_message message;
-u8 buffer[MAX_NB_RESULTS*2]; // each result is sent with 16 bits
+u8 buffer[MAX_NB_RESULTS*2]; /* each result is sent with 16 bits */
+
+static void max1027_start_conv(struct max1027*, struct adc_channel*);
 
 static void fifo_flush(struct adc_channel* channel)
 {
@@ -142,20 +145,20 @@ static u16 fifo_inuse(struct adc_channel* channel)
 	return channel->head - channel->tail; 
 }
 
-static void fifo_put(u16  c, struct adc_channel* channel)
+static void fifo_put(u16 c, struct adc_channel* channel)
 {
 	if (fifo_inuse(channel) != FIFO_SIZE) {
 		channel->buffer[channel->head++%FIFO_SIZE] = c;
-		if(channel->nb_data_required)
+		if (channel->nb_data_required)
 			channel->nb_data_required--;
-	}
-	else {
+	} else {
 		pr_debug("put fifo full %d\n", channel->id);
+		printk("put fifo full %d\n", channel->id);
 	}
 
 	if (channel->nb_data_required <= 0) {
-		set_bit( DATA_AVAILABLE, &channel->status );
-		wake_up_interruptible( &(channel->change_wq) );
+		set_bit(DATA_AVAILABLE, &channel->status);
+		wake_up_interruptible(&(channel->change_wq));
 	}
 }
 
@@ -165,21 +168,35 @@ static u16 fifo_get(u16 * c, u16 count, struct adc_channel* channel)
 
 	channel->nb_data_required = 0;
 	j = fifo_inuse(channel);
-	for (i = 0; i < min( j, (int)count); i++) {
+	for (i = 0; i < min(j, (int)count); i++) {
 		c[i] = channel->buffer[channel->tail++%FIFO_SIZE];
 	}
-	channel->nb_data_required = min( count-i, FIFO_SIZE);
+	channel->nb_data_required = min(count-i, FIFO_SIZE);
 
 	return i;
 }
 
+static void inline max1027_wait_end_of_conv(struct max1027 *max1027)
+{
+	int delay;
+
+	delay = wait_event_timeout(max1027->conv_wq, max1027->status==0, msecs_to_jiffies(20));
+	if (delay == 0) {
+		printk("T%lu ", max1027->status);
+		if (test_bit(CONVERSION_RUNNING, &max1027->status)) {
+			max1027->missed_eoc++;
+			clear_bit(CONVERSION_RUNNING, &max1027->status);
+		}
+	}
+
+	/*printk("delay %lu\n", delay);*/
+}
+
 /* Must be used within mutex and outside of IRQ context !!! */
-static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
+static void max1027_send_cmd(struct spi_device *spi, u8 cmd)
 {
 	u8 buf = cmd;
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
-
-	spi_write_then_read(spi, &buf, 1, NULL, 0);
 
 	/* !! order is important here !! ;-) */
 	if (cmd & MAX1027_REG_CONV) {
@@ -191,20 +208,34 @@ static void max1027_send_cmd( struct spi_device *spi, u8 cmd )
 	else if (cmd & MAX1027_REG_AVG) {
 		p_max1027->avg_reg = cmd;
 	}
+
+	spi_write_then_read(spi, &buf, 1, NULL, 0);
 }
 
-static void max1027_start_conv(struct max1027 *max1027)
-{ 
-	/* if no convst pin  */
-	if (max1027->cnvst < 0) {
+static void max1027_start_conv(struct max1027 *max1027, struct adc_channel *channel)
+{
+	if (test_and_set_bit(CONVERSION_RUNNING, &max1027->status)) {
+		printk("conv already running\n");
+		return;
+	}
+
+	/* No conversion running: launch one */
+
+	if (channel)
+		clear_bit(DATA_AVAILABLE, &channel->status);
+	/* Conversion start depends on CNVST pin presence and clock mode */
+	if ((max1027->cnvst < 0) || (max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
+		/* Use SPI triggered conv. */
 		max1027_send_cmd(current_spi, max1027->conv_reg);
 	} else {
-		gpio_set_value(max1027->cnvst, 0);
+		/* Use CNVST triggered conv. */
+		gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
 		udelay(1);
 		gpio_set_value(max1027->cnvst, 1);
 	}
 } 
 
+/* Called when SPI got results from MAX1027 */
 static void max1027_process_results(struct max1027 *max1027)
 {
 	u8 msb, lsb;
@@ -212,9 +243,7 @@ static void max1027_process_results(struct max1027 *max1027)
 	int i=0, values_to_read=0, start=0, nb_data_required=0;
 	unsigned int scan_mode, selected_channel;
 
-	pr_debug("%s", __FUNCTION__);
-
-//	mutex_lock(&max1027->update_lock); // XXX
+	pr_debug("%s: ", __FUNCTION__);
 
 	selected_channel = GET_SELECTED_CHANNEL(max1027->conv_reg);
 	if (selected_channel >= NB_CHANNELS)
@@ -240,12 +269,12 @@ static void max1027_process_results(struct max1027 *max1027)
 	start = 0;
 	/* temp */
 	if (max1027->conv_reg & MAX1027_CONV_TEMP) {
-		start = 1;
 		msb = buffer[0] & 0x0f;
 		lsb = buffer[1];
 		value = ((msb << 8) | lsb);
 		max1027->temperature = (value * 1000) >> 3; /* 1 unit = 1/8 °C + save it in millidegree */
 		pr_debug("%d m°C ", max1027->temperature);
+		start = 1;
 	}
 	nb_data_required = 0;
 	for (i=start; i<values_to_read; i++) {
@@ -271,14 +300,16 @@ static void max1027_process_results(struct max1027 *max1027)
 	pr_debug("\n");
 
 	if (nb_data_required) {
-		max1027_start_conv(max1027);
+		max1027_start_conv(max1027, max1027->channels[selected_channel]);
 	} else {
-		max1027->status = 0;
+		clear_bit(CONVERSION_RUNNING, &max1027->status);
 	}
-//	mutex_unlock(&max1027->update_lock); // XXX
+
+	/* Somebody's waiting for the "global" End Of Conversion ? */
+	wake_up(&(max1027->conv_wq));
 }
 
-static void max1027_reads_async( struct spi_device *spi, int num_values )
+static void max1027_reads_async(struct spi_device *spi, int num_values)
 {
 	int ret, i;
 
@@ -302,7 +333,7 @@ static void max1027_reads_async( struct spi_device *spi, int num_values )
 }
 
 /*
- * Handles read() done on /dev/gpioxx
+ * Handles read() done on /dev/...
  */
 static ssize_t max1027_dev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
@@ -317,10 +348,8 @@ static ssize_t max1027_dev_read(struct file *file, char *buf, size_t count, loff
 	pr_debug("- %s %d byte(s) on minor %d -> channel %d\n", __FUNCTION__, count, minor, channel->id);
 
 	if (fifo_inuse(channel) == 0) {
-		if (! test_and_set_bit( CONVERSION_RUNNING,&max1027->status)) {
-			clear_bit( DATA_AVAILABLE, &channel->status );
-			max1027_start_conv(max1027);
- 		}
+		max1027_start_conv(max1027, channel);
+
 		if (file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
 
@@ -343,15 +372,16 @@ out:
 	return ret;
 }
 
-/* Tasklet to get results after EOC IRQ */
-static void read_conversion_results( unsigned long data )
+/* Tasklet to get results after EOC interrupt */
+static void read_conversion_results(unsigned long data)
 {
 	struct spi_device *spi = (struct spi_device *)data;
 	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 	int size = 0;
 
-	/* Get conversion results from chip (depends on conversion mode) */
-	switch( GET_SCAN_MODE(max1027->conv_reg) )
+	/* Calculate parameters to get conversion results from chip
+	   (depends on conversion mode) */
+	switch (GET_SCAN_MODE(max1027->conv_reg))
 	{
 		case SCAN_MODE_00:
 			size = GET_SELECTED_CHANNEL(max1027->conv_reg) + 1;
@@ -375,6 +405,7 @@ static void read_conversion_results( unsigned long data )
 		break;
 	}
 
+	/* Get the results */
 	if (max1027->conv_reg & MAX1027_CONV_TEMP) {
 		max1027_reads_async(spi, size+1);
 	} else {
@@ -386,8 +417,9 @@ static void read_conversion_results( unsigned long data )
 static irqreturn_t max1027_interrupt(int irq, void *dev_id)
 {
 	struct max1027 *max1027 = dev_id;
-	/* schedule task for reading results from chip outside of IRQ */
-	tasklet_hi_schedule( &max1027->tasklet );
+
+	/* schedules task for reading conversion results outside of IRQ */
+	tasklet_hi_schedule(&max1027->tasklet);
 
 	return IRQ_HANDLED;
 }
@@ -398,7 +430,7 @@ static void max1027_flush_all_channels(struct max1027 *p_max1027)
 	int i;
 
 	for (i=0; i < NB_CHANNELS; i++) {
-		if( p_max1027->channels[i] != NULL )
+		if (p_max1027->channels[i] != NULL)
 			fifo_flush(p_max1027->channels[i]);
 	}
 }
@@ -468,20 +500,42 @@ static struct file_operations max1027_fops = {
 
 /* sysfs hook functions */
 
+/* Given value will be put in MAX1027 conversion register.
+   Writing to this register will start an acquisition/conversion if
+   clock mode 1x is configured in setup register.
+*/
 static ssize_t max1027_set_conversion(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct spi_device *spi = to_spi_device(dev);
+	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 	int val;
-	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
-	
-	val = (simple_strtol(buf, NULL, 10)) & 0xff;
-	pr_debug("%s: 0x%02x\n", __FUNCTION__, val);
 
-	mutex_lock(&p_max1027->update_lock);
+	/* Only 1 conversion can be launched that way at a given time */
+	mutex_lock(&max1027->update_lock);
+
+	val = (simple_strtol(buf, NULL, 10)) & 0xff;
+	pr_debug("\n%s: 0x%02x\n", __FUNCTION__, val);
+	max1027_flush_all_channels(max1027);
+	/* Warn if a conversion is already launched and selected mode will
+	   trigger a new one */
+	if ((max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
+	        if (test_and_set_bit(CONVERSION_RUNNING, &max1027->status)) {
+			/* Should not occur !! */
+			printk("%s: conv already running!\n", __func__);
+		}
+	}
+	/* Send value to chip */
 	max1027_send_cmd(spi, MAX1027_REG_CONV | val);
-	max1027_flush_all_channels(p_max1027);
-	mutex_unlock(&p_max1027->update_lock);
+
+	/* Wait until current convertion is finished if corresponding clock
+	   mode is selected */
+	if ((max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
+		max1027_wait_end_of_conv(max1027);
+	}
+	pr_debug("%s end\n", __FUNCTION__);
+
+	mutex_unlock(&max1027->update_lock);
 
 	return count;
 }
@@ -490,36 +544,37 @@ static ssize_t max1027_get_conversion(struct device *dev, struct device_attribut
 {
 	ssize_t ret_size = 0;
 	struct spi_device *spi = to_spi_device(dev);
-	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
+	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 
-	ret_size = sprintf(buf,"0x%02x", p_max1027->conv_reg);
+	ret_size = sprintf(buf,"0x%02x", max1027->conv_reg);
 
 	return ret_size;
 }
 
-// buf value <256 -> max1027 config register
-// buf value >=256 -> max1027 Unipolar or Bipolar mode registers
+/* buf value <256 -> accesss to "config" register
+   buf value >=256 -> "Unipolar" or "Bipolar" mode registers */
 static ssize_t max1027_set_setup(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct spi_device *spi = to_spi_device(dev);
+	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 	int val;
-	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 
 	val = simple_strtol(buf, NULL, 10);
 	pr_debug("%s: 0x%02x", __FUNCTION__, val);
 
-	mutex_lock(&p_max1027->update_lock);
-	max1027_send_cmd( spi, MAX1027_REG_SETUP | (val&0xff) );
+	mutex_lock(&max1027->update_lock);
+	max1027_send_cmd(spi, MAX1027_REG_SETUP | (val&0xff));
 	/* check whether we need to configure the uni or bipolar mode IOs or not */
-	if( ((val&0xff) & MAX1027_SETUP_DIFFSEL_MASK) > MAX1027_SETUP_DIFFSEL(1) ) {
-		max1027_send_cmd( spi, val>>8 );
+	if (((val&0xff) & MAX1027_SETUP_DIFFSEL_MASK) > MAX1027_SETUP_DIFFSEL(1)) {
+		max1027_send_cmd(spi, val>>8);
 		pr_debug("+ 0x%02x", val);
 	}
-	max1027_flush_all_channels(p_max1027);
-	mutex_unlock(&p_max1027->update_lock);
+	max1027_flush_all_channels(max1027);
+	mutex_unlock(&max1027->update_lock);
 
 	pr_debug("\n");
+
 	return count;
 }
 
@@ -558,7 +613,7 @@ static ssize_t max1027_get_averaging(struct device *dev, struct device_attribute
 	struct spi_device *spi = to_spi_device(dev);
 	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
 
-	ret_size = sprintf(buf,"0x%02x", p_max1027->avg_reg);
+	ret_size = sprintf(buf, "0x%02x", p_max1027->avg_reg);
 
 	return ret_size;
 }
@@ -570,6 +625,33 @@ static DEVICE_ATTR(averaging,  S_IWUSR | S_IRUGO, max1027_get_averaging, max1027
 static DEVICE_ATTR(unipolar,   S_IWUSR, NULL, max1027_unipolar);
 static DEVICE_ATTR(bipolar,    S_IWUSR, NULL, max1027_bipolar);*/
 
+/* For debug: */
+static ssize_t max1027_get_statistics(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	ssize_t ret_size = 0;
+        struct spi_device *spi = to_spi_device(dev);
+        struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
+
+	ret_size = sprintf(buf, "%d", max1027->missed_eoc);
+
+	return ret_size;
+}
+
+static ssize_t max1027_set_statistics(struct device *dev,
+                struct device_attribute *attr, const char *buf, size_t count)
+{
+        struct spi_device *spi = to_spi_device(dev);
+        struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
+
+	/* Whatever was given, clear statistics */
+	max1027->missed_eoc = 0;
+
+        return count;
+}
+
+static DEVICE_ATTR(statistics, S_IWUSR | S_IRUGO, max1027_get_statistics, max1027_set_statistics);
+
+/* For channel values: */
 #define show_in(offset) \
 static ssize_t show_in##offset##_input(struct device *dev, \
 					struct device_attribute *attr, char *buf) \
@@ -577,9 +659,9 @@ static ssize_t show_in##offset##_input(struct device *dev, \
 	int result; \
 	ssize_t size; \
 	struct spi_device *spi = to_spi_device(dev); \
-	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev); \
-	\
-	result = p_max1027->ain[offset]; \
+	struct max1027 *max1027 = dev_get_drvdata(&spi->dev); \
+\
+	result = max1027->ain[offset]; \
 	size = sprintf(buf, "%d\n", (result*2500)>>10); /* millivolt with 2.5V ref */ \
 \
 	return size; \
@@ -603,17 +685,17 @@ static DEVICE_ATTR(in5_input, S_IRUGO, show_in5_input, NULL);
 static DEVICE_ATTR(in6_input, S_IRUGO, show_in6_input, NULL);
 static DEVICE_ATTR(in7_input, S_IRUGO, show_in7_input, NULL);
 
-
+/* On chip temperature: */
 static ssize_t max1027_get_temperature(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	int result;
 	ssize_t size;
 	struct spi_device *spi = to_spi_device(dev);
-	struct max1027 *p_max1027 = dev_get_drvdata(&spi->dev);
+	struct max1027 *max1027 = dev_get_drvdata(&spi->dev);
 
-	result = p_max1027->temperature;
-	size = sprintf(buf, "%d\n", result );
+	result = max1027->temperature;
+	size = sprintf(buf, "%d\n", result);
 
 	return size;
 }
@@ -648,6 +730,11 @@ static int max1027_create_sys_entries(struct spi_device *spi)
 		goto end;
 	}
 
+        if ((status = device_create_file(&spi->dev, &dev_attr_statistics))) {
+                printk(KERN_WARNING SYSFS_ERROR_STRING " missed EOC accessor\n");
+                goto end;
+        }
+
 	if ((status = device_create_file(&spi->dev, &dev_attr_temp1_input))){ 
 		printk(KERN_WARNING SYSFS_ERROR_STRING " temp1\n");
 		goto end;
@@ -671,6 +758,7 @@ static void max1027_remove_sys_entries(struct spi_device *spi)
 	device_remove_file(&spi->dev, &dev_attr_conversion);
 	device_remove_file(&spi->dev, &dev_attr_setup);
 	device_remove_file(&spi->dev, &dev_attr_averaging);
+	device_remove_file(&spi->dev, &dev_attr_statistics);
 	device_remove_file(&spi->dev, &dev_attr_temp1_input);
 	device_remove_file(&spi->dev, &dev_attr_in0_input);
 	device_remove_file(&spi->dev, &dev_attr_in1_input);
@@ -713,8 +801,6 @@ static int __devinit max1027_probe(struct spi_device *spi)
 	if (max1027_major == 0)
 		max1027_major = result; /* dynamic Major allocation */
 
-	//init_waitqueue_head(&max1027->conversion_wq);
-
 	/* Setup any GPIO active */
 	result = platform_info->init(spi);
 	if (result) {
@@ -743,26 +829,28 @@ static int __devinit max1027_probe(struct spi_device *spi)
 	if (result)
 		goto err_sys;
 
-	tasklet_init( &max1027->tasklet, read_conversion_results, (unsigned long)spi);
+	tasklet_init(&max1027->tasklet, read_conversion_results, (unsigned long)spi);
 	max1027->status = 0;
+	init_waitqueue_head(&max1027->conv_wq);
 
 	/* setup spi_device */
 	spi->bits_per_word = 8;
 	spi_setup(spi);
 
 	/* configure the MAX */
-	max1027_send_cmd( spi, MAX1027_RESET_ALL );
-	max1027_send_cmd( spi, platform_info->setup | MAX1027_REG_SETUP );
-	max1027_send_cmd( spi, platform_info->avg | MAX1027_REG_AVG );
-	max1027->conv_reg = (u8)(platform_info->conv|MAX1027_REG_CONV);
+	max1027_send_cmd(spi, MAX1027_RESET_ALL);
+	max1027_send_cmd(spi, platform_info->setup | MAX1027_REG_SETUP);
+	max1027_send_cmd(spi, platform_info->avg | MAX1027_REG_AVG);
+	max1027->conv_reg = (u8)(platform_info->conv | MAX1027_REG_CONV);
 
-	set_irq_type( spi->irq, IRQF_TRIGGER_FALLING );
-	/* Request interrupt for EOC */
-	result = request_irq( spi->irq, max1027_interrupt, 0, DRIVER_NAME, max1027 );
+	set_irq_type(spi->irq, IRQF_TRIGGER_FALLING); /* machine specific... */
+	/* Request interrupt for EOC */ /* Should be put before GPIO init no ? */
+	result = request_irq(spi->irq, max1027_interrupt, 0, DRIVER_NAME, max1027);
 	if (result)
 		goto err_irq;
 
-	printk( DRIVER_NAME " v" DRIVER_VERSION " successfully probed !\n");
+	printk(DRIVER_NAME " v" DRIVER_VERSION " successfully probed !\n");
+
 	return 0;
 
 err_sys:
@@ -791,25 +879,24 @@ static int __devexit max1027_remove(struct spi_device *spi)
 	hwmon_device_unregister(max1027->cdev);
 #endif
 
-	tasklet_kill( &max1027->tasklet );
+	tasklet_kill(&max1027->tasklet);
 
 	/* De-register from /dev interface */
 	unregister_chrdev(max1027_major, DRIVER_NAME);
 
 	free_irq(spi->irq, max1027);
-	/* free IOs*/
+	/* Free GPIOs*/
 	platform_info->exit(spi);
 
 	dev_set_drvdata(&spi->dev, NULL);
 
 	for (i=0; i < NB_CHANNELS; i++) {
-		kfree( max1027->channels[i] );
+		kfree(max1027->channels[i]);
 	}
 	kfree(max1027);
 
 	return 0;
 } 
-
 
 static struct spi_driver max1027_driver = {
 	.driver = {

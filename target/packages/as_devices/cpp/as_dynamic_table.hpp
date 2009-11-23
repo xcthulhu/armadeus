@@ -22,6 +22,8 @@
 #ifndef __ASDYNAMICTABLE_HPP_
 #define __ASDYNAMICTABLE_HPP_
 
+#include <stdio.h>
+
 class AsDynamicTable {
     public:
         AsDynamicTable()

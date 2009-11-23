@@ -31,13 +31,13 @@ AsI2c *
 AsI2c::getInstance(int aBusNumber)
 {
     AsI2c * instance;
-    instance = mInstances->getInstance(aBusNumber);
+    instance = (AsI2c *)mInstances->getInstance(aBusNumber);
     if(instance == NULL)
     {
-        instance = AsI2c(aBusNumber);
+        instance = new AsI2c(aBusNumber);
         mInstances->setInstance(instance,aBusNumber);
     }
-    return instance
+    return instance;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -51,7 +51,7 @@ AsI2c::AsI2c(int aBusNumber)
     ret = as_i2c_init(aBusNumber);
     if (ret < 0)
     {
-        cout << "AsI2C initialization error" << endl;
+        std::cout << "AsI2C initialization error" << std::endl;
     }
 }
 /*------------------------------------------------------------------------------*/
