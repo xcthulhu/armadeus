@@ -30,22 +30,14 @@
 #include <linux/config.h>
 #endif
 
-/* form module/drivers */
 #include <linux/init.h>
 #include <linux/module.h>
-
-/* for file  operations */
+/* for file operations */
 #include <linux/fs.h>
 #include <linux/cdev.h>
-
-/* copy_to_user function */
-#include <asm/uaccess.h>
-
-/* request_mem_region */
-#include <linux/ioport.h>
-
-/* readw() writew() */
-#include <asm/io.h>
+#include <asm/uaccess.h>	/* copy_to_user function */
+#include <linux/ioport.h>	/* request_mem_region */
+#include <asm/io.h>		/* readw() writew() */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 /* hardware addresses */
@@ -78,7 +70,7 @@
 #   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
 # endif
 #else
-# define PDEBUG(fmt,args...) /* no debbuging message */
+# define PDEBUG(fmt,args...) /* no debugging message */
 #endif
 
 #define BUTTON_NUMBER 1
@@ -88,12 +80,12 @@
 
 /* platform device */
 struct plat_button_port{
-    const char  *name;              /*instance name */
-    int          interrupt_number;   /* interrupt_number */
-    int          num;               /* instance number */
-    void * membase;           /* ioremap base address */
-    int          idnum;             /* identity number */
-    int          idoffset;          /* identity relative address */
-	struct button_dev *sdev;		/* struct for main device structure*/
+	const char *name;	/*instance name */
+	int interrupt_number;	/* interrupt_number */
+	int num;		/* instance number */
+	void *membase;		/* ioremap base address */
+	int idnum;		/* identity number */
+	int idoffset;		/* identity relative address */
+	struct button_dev *sdev;/* struct for main device structure*/
 };
 
