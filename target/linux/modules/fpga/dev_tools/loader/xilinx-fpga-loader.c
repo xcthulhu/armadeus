@@ -67,7 +67,7 @@ static int xilinx_dump_descriptor_info( struct fpga_desc *desc, char* buffer )
  *  program the FPGA (serial mode).
  *  return 0 if success, >0 while programming, <0 if error detected
  */
-static size_t spartan_serial_load (struct fpga_desc *desc, const char* buf, size_t bsize)
+static size_t spartan_serial_load(struct fpga_desc *desc, const char* buf, size_t bsize)
 {
 	Xilinx_Spartan_Slave_Serial_fns *fn = desc->iface_fns;
 
@@ -101,7 +101,7 @@ static size_t spartan_serial_load (struct fpga_desc *desc, const char* buf, size
 			} while (i > 0);
 		}
 
-		if(bytecount%4096 == 0)
+		if (bytecount % 4096 == 0)
 			printk(".");
 
 		return bsize;
@@ -110,17 +110,17 @@ static size_t spartan_serial_load (struct fpga_desc *desc, const char* buf, size
 }
 
 /**
- *  initialize the FPGA programming interface.
+ *  initialize the FPGA programming interface (serial).
  *  return 0 if success, <0 if error detected
  */
-static int spartan_serial_init (struct fpga_desc *desc)
+static int spartan_serial_init(struct fpga_desc *desc)
 {
 	Xilinx_Spartan_Slave_Serial_fns *fn = desc->iface_fns;
 	if (fn) {
 		unsigned long timestamp;
 
-		if(*fn->pre){
-			(*fn->pre)(); //Run the pre configuration function if there is one.
+		if (*fn->pre){
+			(*fn->pre)(); /* Run the pre configuration function if there is one. */
 		}
 
 		/* Establish the initial state */
@@ -186,10 +186,10 @@ static int spartan_serial_finish(struct fpga_desc *desc)
 
 
 /**
- *  initialize the FPGA programming interface.
+ *  initialize the FPGA programming interface (parallel).
  *  return 0 if success, <0 if error detected
  */
-static int spartan_parallel_init (struct fpga_desc *desc)
+static int spartan_parallel_init(struct fpga_desc *desc)
 {
 	int res = 0;
 	Xilinx_Spartan3_Slave_Parallel_fns *fn = desc->iface_fns;
@@ -244,7 +244,7 @@ static int spartan_parallel_init (struct fpga_desc *desc)
  *  program the FPGA (parallel mode).
  *  return 0 if success, >0 while programming, <0 if error detected
  */
-static size_t spartan_parallel_load (struct fpga_desc *desc, const char* buf, size_t bsize)
+static size_t spartan_parallel_load(struct fpga_desc *desc, const char* buf, size_t bsize)
 {
 	unsigned long flags;
 	Xilinx_Spartan3_Slave_Parallel_fns *fn = desc->iface_fns;
@@ -285,7 +285,7 @@ static int spartan_parallel_finish(struct fpga_desc *desc)
 			(*fn->clk) (1);	/* Assert the clock pin */
 
 			if (get_timer(timestamp) > CFG_FPGA_WAIT) {
-				printk("** Timeout waiting for DONE to clear. %d \n", bytecount);
+				printk("** Timeout waiting for DONE to clear. %d bytes\n", bytecount);
 				(*fn->abort) ();	/* abort the burn */
 				return -ETIMEDOUT;
 			}
@@ -296,10 +296,9 @@ static int spartan_parallel_finish(struct fpga_desc *desc)
 			(*fn->abort) ();	/* abort the burn */
 			return -ETIMEDOUT;
 		}
-
 		(*fn->cs) (0);	/* Deassert the chip select */
 		(*fn->wr) (0);	/* Deassert the write pin */
-		(*fn->post) (); /* post init */
+		(*fn->post) (); /* release resources */
 	}
 
 	return 0;
@@ -310,23 +309,31 @@ size_t fpga_load( struct fpga_desc *desc, const char *buf, size_t bsize )
 {
 	int ret = 0;
 
-	if( desc ) {
-		switch( desc->family ) /* check family */
+	if (desc) {
+		switch (desc->family) /* check family */
 		{
-		case Xilinx_Spartan:
-		{
-			switch( desc->iface ) /* check download hardware interface */
+			case Xilinx_Spartan:
 			{
-			case slave_serial: ret = spartan_serial_load( desc, buf, bsize ); break;
-			case slave_parallel: ret = spartan_parallel_load (desc, buf, bsize); break;
-			default: PRINTF("interface not supported!\n"); ret = -ENOSYS; break;
+				switch (desc->iface) /* check download hardware interface */
+				{
+					case slave_serial:
+						ret = spartan_serial_load(desc, buf, bsize);
+					break;
+					case slave_parallel:
+						ret = spartan_parallel_load (desc, buf, bsize);
+					break;
+					default:
+						PRINTF("interface not supported!\n");
+						ret = -ENOSYS;
+					break;
+				}
 			}
-		}
-		break;
-		default:
-			PRINTF("family not supported!\n"); 
-			ret = -ENOSYS; 
-		break;
+			break;
+
+			default:
+				PRINTF("family not supported!\n");
+				ret = -ENOSYS;
+			break;
 		}
 	}
 	else {
@@ -340,23 +347,30 @@ int fpga_init_load( struct fpga_desc *desc )
 {
 	int ret = 0;
 
-	if( desc ) {
-		switch( desc->family )
+	if (desc) {
+		switch (desc->family)
 		{
-		case Xilinx_Spartan:
-		{
-			switch( desc->iface ) /* check donwload hardware interface */
+			case Xilinx_Spartan:
 			{
-			case slave_serial: ret = spartan_serial_init( desc ); break;
-			case slave_parallel: ret = spartan_parallel_init( desc ); break;
-			default: pr_debug("interface not supported!\n"); ret = -ENOSYS; break;
+				switch (desc->iface) /* check donwload hardware interface */
+				{
+					case slave_serial:
+						ret = spartan_serial_init( desc );
+					break;
+					case slave_parallel:
+						ret = spartan_parallel_init( desc );
+					break;
+					default:
+						pr_debug("interface not supported!\n");
+						ret = -ENOSYS;
+					break;
+				}
 			}
-		}
-		break;
-		default: 
-			pr_debug("family not supported!\n");
-			ret = -ENOSYS; 
-		break;
+			break;
+			default:
+				pr_debug("family not supported!\n");
+				ret = -ENOSYS;
+			break;
 		}
 	}
 	else {
@@ -366,33 +380,33 @@ int fpga_init_load( struct fpga_desc *desc )
 	return ret;
 }
 
-int fpga_finish_load( struct fpga_desc *desc )
+int fpga_finish_load(struct fpga_desc *desc)
 {
 	int ret = 0;
 
-	if( desc ) {
-		switch( desc->family )
+	if (desc) {
+		switch (desc->family)
 		{
 		case Xilinx_Spartan:
 		{
-			switch( desc->iface ) /* check donwload hardware interface */
+			switch (desc->iface) /* check hardware download interface */
 			{
-			case slave_serial:
-				ret = spartan_serial_finish( desc );
-			break;
-			case slave_parallel: 
-				ret = spartan_parallel_finish( desc );
-			break;
-			default: 
-				pr_debug("interface not supported!\n");
-				ret = -ENOSYS; 
-			break;
+				case slave_serial:
+					ret = spartan_serial_finish(desc);
+				break;
+				case slave_parallel: 
+					ret = spartan_parallel_finish(desc);
+				break;
+				default:
+					pr_debug("interface not supported!\n");
+					ret = -ENOSYS;
+				break;
 			}
 		}
 		break;
-		default: 
-			pr_debug("family not supported!\n"); 
-			ret = -ENOSYS; 
+		default:
+			pr_debug("family not supported!\n");
+			ret = -ENOSYS;
 		break;
 		}
 	} else {
@@ -407,7 +421,7 @@ int fpga_get_infos( struct fpga_desc *desc, char* buffer )
 {
 	int len = 0;
 
-	if( desc ) {
+	if (desc) {
 		len  = xilinx_dump_descriptor_info( desc, buffer );
 	}
 

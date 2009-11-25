@@ -20,7 +20,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-// #define DEBUG
+/* #define DEBUG */
 
 #include <linux/version.h>
 #include <linux/module.h>
@@ -44,7 +44,7 @@ struct fpga_desc *g_current_desc = NULL;
 struct semaphore fpga_sema;
 
 static unsigned char fpga_descriptor = 0; /* use default target_fpga_desc */
-module_param( fpga_descriptor, byte, 0 );
+module_param(fpga_descriptor, byte, 0);
 
 #define FPGA_BUFFER_SIZE 4096
 static unsigned char g_buffer[FPGA_BUFFER_SIZE];
@@ -60,18 +60,18 @@ static ssize_t armadeus_fpga_write(struct file *file, const char* pData, size_t 
 	if (down_interruptible(&fpga_sema))
 		return -ERESTARTSYS;
 
-	if( count > FPGA_BUFFER_SIZE ) {
+	if (count > FPGA_BUFFER_SIZE) {
 		count = FPGA_BUFFER_SIZE;
 	}
 
 	/* Get value to write from user space */
-	ret = __copy_from_user( g_buffer, pData, count);
+	ret = __copy_from_user(g_buffer, pData, count);
 	if (ret != 0) {
 		ret = -EFAULT;
 		goto out;
 	}
 
-	ret = fpga_load( g_current_desc, g_buffer, count );
+	ret = fpga_load(g_current_desc, g_buffer, count);
 
 out:
 	/* Release exclusive access */
@@ -89,17 +89,20 @@ static int armadeus_fpga_open(struct inode *inode, struct file *file)
 		return -ERESTARTSYS;
 
 	/* Only one access at a time is permitted */
-	if( g_nb_users > 0 )
-		return -EBUSY;
+	if (g_nb_users > 0) {
+		ret = -EBUSY;
+		goto out;
+	}
 
-	ret = fpga_init_load( g_current_desc );
-	if(!ret) {
+	ret = fpga_init_load(g_current_desc);
+	if (!ret) {
 		printk("Starting FPGA download\n");
 		g_nb_users++;
 	}
 
-	pr_debug("Opening /dev/fpga/loader%d file, %d %d\n", MINOR(inode->i_rdev), fpga_descriptor, ret);
+	pr_debug("Opening /dev/fpga/loader, %d %d\n", fpga_descriptor, ret);
 
+out:
 	/* Release exclusive access */
 	up(&fpga_sema);
 
@@ -108,12 +111,12 @@ static int armadeus_fpga_open(struct inode *inode, struct file *file)
 
 static int armadeus_fpga_release(struct inode *inode, struct file *file)
 {
-	if( fpga_finish_load(g_current_desc) )
+	if (fpga_finish_load(g_current_desc))
 		printk("Failed to load FPGA !\n");
 
-	pr_debug("Closing access to /dev/fpga/loader%d\n", MINOR(inode->i_rdev));
+	pr_debug("Closing access to /dev/fpgaloader\n");
 
-	if( g_nb_users > 0 )
+	if (g_nb_users > 0)
 		g_nb_users--;
 
 	return 0;
@@ -121,7 +124,7 @@ static int armadeus_fpga_release(struct inode *inode, struct file *file)
 
 
 /* PROC file */
-static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void* data) 
+static int procfile_fpga_read(char *buffer, __attribute__ ((unused)) char **start, off_t offset, int buffer_length, int *eof, __attribute__ ((unused)) void* data) 
 {
 	int ret;
 
@@ -131,11 +134,11 @@ static int procfile_fpga_read( char *buffer, __attribute__ ((unused)) char **sta
 	   library would continue to issue the read system call until the
 	   the kernel replies that it has no more information, or until 
 	   its buffer is filled */
-	if( offset > 0 ) {
+	if (offset > 0) {
 		/* we have finished to read, return 0 */
 		ret  = 0;
 	} else {
-		ret = fpga_get_infos( g_current_desc, buffer );
+		ret = fpga_get_infos(g_current_desc, buffer);
 	}
 
 	return ret;
@@ -177,7 +180,7 @@ int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cm
 		return -EFAULT;
 	}*/
 
-	switch(cmd)
+	switch (cmd)
 	{
 		default:
 			return -ENOTTY;
@@ -198,8 +201,8 @@ static int create_proc_entries( void )
 	proc_mkdir(FPGA_PROC_DIRNAME, NULL);
 
 	/* Create proc file */
-	fpga_Proc_File = create_proc_entry( FPGA_PROC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL );
-	if( fpga_Proc_File == NULL ) {
+	fpga_Proc_File = create_proc_entry(FPGA_PROC_FILENAME, S_IWUSR |S_IRUSR | S_IRGRP | S_IROTH, NULL);
+	if (fpga_Proc_File == NULL) {
 		printk(DRIVER_NAME ": Could not register a" FPGA_PROC_FILENAME  ". Terminating\n");
 		goto error;
 	} else {
@@ -269,7 +272,7 @@ static int armadeus_fpga_probe(struct platform_device *pdev)
 			__func__, __LINE__, fpgaloader_misc.minor);
 
 	result = create_proc_entries();
-	if( result < 0 )
+	if (result < 0)
 		goto err_misc;
 
 	sema_init(&fpga_sema, 1);
@@ -277,6 +280,8 @@ static int armadeus_fpga_probe(struct platform_device *pdev)
 	/* initialize the current fpga descriptor with the one by default */
 	g_current_desc = platform_info;
 	
+	printk(DRIVER_NAME " v" DRIVER_VERSION " ready\n");
+
 	return 0;
 
 err_misc:
@@ -306,8 +311,6 @@ static struct platform_driver armadeus_fpga_driver = {
 
 static int __init armadeus_fpga_init(void)
 {
-	printk(DRIVER_NAME " v" DRIVER_VERSION "\n");
-
 	return platform_driver_register(&armadeus_fpga_driver);
 }
 
