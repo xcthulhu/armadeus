@@ -24,15 +24,5 @@ install:
 	echo "Installing Armadeus drivers..."
 	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
 
-clean:
-	rm -f *.*o \
-	rm -f *.mod.c \
-	rm -f *.cmd \
-	rm -f *.o.d \
-	rm -f *.order \
-	rm -f .*.cmd \
-	rm -rf .tmp_versions \
-	rm -f Module.symvers
-
 endif
 

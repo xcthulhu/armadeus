@@ -8,7 +8,6 @@ obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_BUTTON_DRIVER)	+= board_buttons.o gbutton
 
 else
 
-
 ARMADEUS_BASE_DIR=../../../../../..
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
@@ -22,15 +21,9 @@ test:
 	$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc testbutton.c -o testbutton
 
 clean:
-	rm -f *.*o \
-	rm -f *.mod.c \
-	rm -f *.cmd \
-	rm -f *.o.d \
-	rm -f *.order \
-	rm -f .*.cmd \
-	rm -rf .tmp_versions \
-	rm -f Module.symvers \
-	rm -f testbutton
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
+	rm -f Module.markers \
+	rm -f modules.order
 
 endif
 
