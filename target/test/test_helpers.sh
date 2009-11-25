@@ -68,9 +68,14 @@ echo_test_ok()
 	echo "Test OK !"
 }
 
-exit_failed()
+echo_test_failed()
 {
 	echo "Test FAILED !"
+}
+
+exit_failed()
+{
+	echo_test_failed
 	exit 1
 }
 
