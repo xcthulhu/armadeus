@@ -184,9 +184,7 @@ int apf27_fpga_abort(void)
 	return 1;
 }
 
-/* Note that these are pointers to code that is in Flash.  They will be
- * relocated at runtime.
- * Spartan2 code is used to download our Spartan 3 :) code is compatible.
+/* Spartan2 code is used to download our Spartan 3: code is compatible.
  * Just take care about the file size
  */
 Xilinx_Spartan3_Slave_Parallel_fns fpga_fns = {
