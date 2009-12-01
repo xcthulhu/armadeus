@@ -8,9 +8,13 @@ Changes since last release
 
 ----
 
-Changes in release 3.2 (November 30th 2009)
+Changes in release 3.2 (December 1rst 2009)
 
 * Buildroot:
+  Main changes: Bug correction, begin of AsDevices lib, UBIFS for APF27, pygame & quake packages
+                Xenomai for APF27
+  List of all changes:
+    - Add tcpdump in apf27_test default config
     - install using cp instead of install for zlib libraries
     - ldd wasn't installed anymore in rootfs, correct that (Buildroot upstream patch)
     - Use 2.6.29 kernel headers by default
@@ -22,7 +26,6 @@ Changes in release 3.2 (November 30th 2009)
     - Updates APF27 default Linux configs
     - adding makefile for AsDevices library
     - cleanup: makes ubifs patches generic
-    - update apf9328 default configuration
     - NOR flash does not support UBIFS sub-pages
     - use common JFFS2 and UBIFS mtd_utils. make UBIFS generic
     - Bump proftp version 1.3.1 -> 1.3.2
@@ -50,6 +53,8 @@ Changes in release 3.2 (November 30th 2009)
     - Revert commit d6300def6c2f271ef4140da342604cb88be0dc30 + add default as_devices option in APF27 Buildroot config files
     - update mtd-utils to support mkfs.ubifs and ubinize
 * Linux:
+  Main changes: Bugs correction, LCD reorg + new one added, APF27 reorg
+  List of all changes:
     - Cleanup fpgaloader, check indentation while we are at it...
     - Cleanup some wishbone_example Makefiles
     - AD9889: makes it possible to rmmod the driver when no chip was detected. Check indentation while we are at it...
@@ -103,6 +108,10 @@ Changes in release 3.2 (November 30th 2009)
 * Debug:
     - imxssi doesn't require libpow to compile
 * Test:
+    - Update Linux drivers test for 3.2
+    - Updates some packages tests for 3.2
+    - Updates the way armadeus testsuite is installed
+    - Add new package tests
     - Cleanup and factorize test_fpga
     - Improves testbutton & gpio test
     - Updates apf9328_test Linux config
