@@ -31,11 +31,11 @@ test_framebuffer()
 	echo 1 > /sys/class/graphics/fbcon/cursor_blink
 	# Ask user for feedbacks
 	if [ "$RES" == 0 ]; then
-		ask_user "Did all the tests show fine ? If OK say y"
-			if [ "$response" == "y" ]; then
-				echo_test_ok
-				exit 0
-			fi
+		ask_user "Did all the tests show fine ? (y/N)"
+		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
+			echo_test_ok
+			exit 0
+		fi
 	fi
 	exit_failed
 }

@@ -20,12 +20,14 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
+source ./test_helpers.sh
+
 # Script parameters
 MMC_MOUNT_DIR="/media/mmc"
 MMC_DEVICE="/dev/mmcblk0p1"
 TEMP_DIR="/tmp/perf_mmc/"
 TEMP_FILE="/tmp/data.bin"
-TEMP_FILE_SIZE=4096 # kbytes
+TEMP_FILE_SIZE=16384 # kbytes
 WRITE_BENCH="/tmp/test_mmc.sh"
 
 WTIME=0
@@ -34,9 +36,9 @@ RTIME=0
 
 debug()
 {
-    if [ "$DEBUG" == "True" ]; then
-        echo $1
-    fi
+	if [ "$DEBUG" == "True" ]; then
+		echo $1
+	fi
 }
 
 get_time_in_ms_from_file()
@@ -62,12 +64,10 @@ get_time_in_ms_from_file()
 
 test_speed()
 {
-    # Create temp bench file
-    echo "Creating temp bench file"
-    if [ ! -f "$TEMP_FILE" ]; then
-        dd if=/dev/urandom of=/tmp/data.bin bs=1024 count=$TEMP_FILE_SIZE
-    fi
-    # Create bench script
+	# Create temp bench file
+	create_random_file $TEMP_FILE $TEMP_FILE_SIZE
+
+    # Create write bench script
     echo "mv $TEMP_FILE $MMC_MOUNT_DIR" > $WRITE_BENCH
     echo "sync" >> $WRITE_BENCH
     echo "exit 0" >> $WRITE_BENCH
@@ -85,46 +85,79 @@ test_speed()
             WTOTIME=$WTIME
         else
             WTOTIME=`expr $WTIME + $WTOTIME`
-            WTOTIME=`expr $WTOTIME / 2`
         fi
-        debug "Mean write time: $WTOTIME ms"
+        debug "Total write time: $WTOTIME ms"
         # Update reading mean time
         get_time_in_ms_from_file /tmp/readtime
         if [ $it == "1" ]; then
             RTOTIME=$RTIME
         else
             RTOTIME=`expr $RTIME + $RTOTIME`
-            RTOTIME=`expr $RTOTIME / 2`
         fi
-        debug "Mean reading time: $RTOTIME ms"
+        debug "Total read time: $RTOTIME ms"
     done
-    WSPEED=`expr $TEMP_FILE_SIZE \* 1000 / $WTOTIME`
-    RSPEED=`expr $TEMP_FILE_SIZE \* 1000 / $RTOTIME`
-    echo "--- Test result (mean values): read -> $RSPEED kBytes/sec   write -> $WSPEED kBytes/sec"
+
+	WTOTIME=`expr $WTOTIME / $it`
+	RTOTIME=`expr $RTOTIME / $it`
+	WSPEED=`expr $TEMP_FILE_SIZE \* 1000 / $WTOTIME`
+	RSPEED=`expr $TEMP_FILE_SIZE \* 1000 / $RTOTIME`
+	echo "--- Test result (mean values): read -> $RSPEED kBytes/sec   write -> $WSPEED kBytes/sec"
 }
 
-# Check some prerequisites
+usage()
+{
+	echo -e "\n   Usage: $0 <speed|integrity> [device]\n"
+	echo "device: default to $MMC_DEVICE"
+	exit 1
+}
+
+#
+# Main
+#
+
+# Check some pre-requisites
 if [ ! -d $MMC_MOUNT_DIR ]; then
-    echo "Check that $MMC_MOUNT_DIR directory is existing"
-    exit 1
+	echo "Check that $MMC_MOUNT_DIR directory is existing"
+	exit 1
 fi
+# Process parameters
+if [ "$#" == 0 ]; then
+	usage
+elif [ "$1" != "speed" ] && [ "$1" != "integrity" ]; then
+	usage
+fi
+
+if [ "$2" != "" ]; then
+	MMC_DEVICE="$2"
+fi
+
+if [ ! -b $MMC_DEVICE ]; then
+	echo -n "Please insert your MMC/SD/microSD/USB key"
+	it=0
+	while [ ! -b $MMC_DEVICE ] && [ $it -le 20 ]; do
+		it=$((it+1))
+		sleep 2
+		echo -n "."
+	done
+fi
+
+# If not mounted, mount it:
 IS_MOUNTED=`mount | grep -c $MMC_MOUNT_DIR`
 if [ "$IS_MOUNTED" != "1" ]; then
-    echo "Check that your MMC is mounted on $MMC_MOUNT_DIR"
-    exit 1
+	mount $MMC_DEVICE $MMC_MOUNT_DIR
+	if [ "$?" != 0 ]; then
+		echo "Failed to mount device $MMC_DEVICE"
+		exit 1
+	fi
 fi
 
-# Process parameters
-if [ $# == 0 ]; then
-    echo -e "\n   Usage: $0 [speed|integrity] \n"
-    exit 1
-fi
-
+# Here we go:
 if [ "$1" == "speed" ]; then
-    test_speed
-    exit 0
+	test_speed
+	exit 0
 fi
 
+# or integrity test:
 
 SIZE=`df -hm | grep /media/mmc | awk '{$1=$1;print}' | cut -d " " -f 4`
 
@@ -141,7 +174,7 @@ md5sum $FILE > $MD5
 while [ $it -le $SIZE ]; do
 	FILEMMC=$MMC_MOUNT_DIR/test_$it.rnd
 #	MD5=$TEMP_DIR/test_$it.rnd.md5
-	echo -en "\r Creating: $FILEMMC"
+	echo -en "\r Copying: $FILEMMC"
 	it=$((it+1))
 	cp $FILE $FILEMMC
 	sync
@@ -166,7 +199,8 @@ for file in $FILES; do
 done
 echo
 date
-echo "MMC perf test successful !"
+echo "Integrity test successful !"
+
 rm -rf $TEMP_DIR
 rm $MMC_MOUNT_DIR/*.rnd
 

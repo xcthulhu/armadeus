@@ -25,6 +25,39 @@ load_usb_host_driver_apf9328()
         fi
 }
 
+wait_key_insertion()
+{
+	echo "Please insert a USB key in $1 USB Host connector (nothing will be erased)"
+	it=0
+	while [ ! -b /dev/sda1 ] && [ $it -le 20 ]; do
+		it=$((it+1))
+		sleep 2
+		echo -n "."
+	done
+}
+
+wait_key_removal()
+{
+        echo "Please remove your USB key"
+        it=0
+        while [ -b /dev/sda1 ] && [ $it -le 20 ]; do
+                it=$((it+1))
+                sleep 2
+                echo -n "."
+        done
+	[ ! -b /dev/sda1 ] && echo "USB key removed"
+}
+
+check_usb_key()
+{
+	mount `ls /dev/sd*1` /mnt/mmc && ls /mnt/mmc/
+	df -h
+	umount /mnt/mmc
+	if [ "$?" != 0 ]; then
+		exit_failed
+	fi
+}
+
 test_usb_host()
 {
 	show_test_banner "USB Host"
@@ -36,21 +69,17 @@ test_usb_host()
 		exit_failed
 	fi
 
-	echo "Please insert a USB key (nothing will be erased)"
-	it=0
-	false
-	while [ "$?" != 0 ] && [ $it -le 20 ]; do
-		it=$((it+1))
-		sleep 2
-		dmesg | tail | grep "Attached SCSI removable disk"
-	done
+	wait_key_insertion "upper"
+	check_usb_key
 
-	mount `ls /dev/sd*1` /mnt/mmc && ls /mnt/mmc/
-	if [ "$?" == 0 ]; then
-		df -h
-		echo_test_ok
-	fi
-	umount /mnt/mmc
+	wait_key_removal
+
+	wait_key_insertion "lower"
+	check_usb_key
+
+	wait_key_removal
+
+	echo_test_ok
 }
 
 test_usb_host

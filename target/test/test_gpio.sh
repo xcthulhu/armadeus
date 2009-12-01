@@ -80,7 +80,7 @@ check_button_apf27()
 	setbit /proc/driver/gpio/portFdir 13 0
 	setbit /proc/driver/gpio/portFirq 13 1
 	echo "Press 2 times on S1 button"
-	/usr/bin/testbutton /dev/gpio/PF13 3
+	/usr/bin/testsuite/testbutton /dev/gpio/PF13 3
 	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
@@ -88,7 +88,7 @@ check_button_apf27()
 
 check_button_apf9328()
 {
-	# TBDL
+	echo "TBDL"
 }
 
 
@@ -102,10 +102,11 @@ test_led_gpio()
 		exit_failed
 	fi
 
+	ask_user "I will now blink a LED on your board. Press ENTER to continue"
 	execute_for_target blink_led_apf9328 blink_led_apf27
 
-	ask_user "Did you see "$LED_NAME" LED blinking ? (y/n)"
-	if [ "$response" != "y" ]; then
+	ask_user "Did you see "$LED_NAME" LED blinking ? (y/N)"
+	if [ "$response" != "y" ] && [ "$response" != "yes" ]; then
 		exit_failed
 	fi
 

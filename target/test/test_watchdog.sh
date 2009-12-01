@@ -21,8 +21,8 @@ test_watchdog()
 {
 	show_test_banner "Watchdog"
 
-	ask_user "This test will reboot your board. Continue ? (y/n)"
-	if [ "$response" != "y" ]; then
+	ask_user "This test will reboot your board. Continue ? (y/N)"
+	if [ "$response" != "y" ] && [ "$response" != "yes" ]; then
 		exit_failed
 	fi
 

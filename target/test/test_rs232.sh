@@ -71,11 +71,13 @@ echo_apf27_ports()
         echo "    Available one: [ 2 ]"
 }
 
+PORT="$1"
 if [ "$1" == "" ]; then
 	echo "Please give the port number to test !"
 	execute_for_target echo_apf9328_ports echo_apf27_ports
-	exit 1
+	read PORT
+	[ "$PORT" == "" ] && exit_failed
 fi
 
-test_serial_port $1
+test_serial_port $PORT
 

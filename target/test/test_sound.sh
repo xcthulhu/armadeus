@@ -31,13 +31,15 @@ test_sound()
 		exit_failed
 	fi
 
+	ask_user "Please connect a earphone to the Audio Out connector (up on APF27). Then press ENTER."
 	aplay /usr/share/sounds/alsa/Side_Left.wav	
 	if [ "$?" == 0 ]; then
-		ask_user "Did you hear something ? (y/n)"
-		if [ "$response" == "y" ]; then
+		ask_user "Did you hear something ? (y/N)"
+		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
 		fi
 	fi
 }
 
 test_sound
+
