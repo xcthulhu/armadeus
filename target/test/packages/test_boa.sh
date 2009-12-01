@@ -61,7 +61,7 @@ test_boa()
 		echo "Now you can access to http://"$IP"/index.html from your web browser"
 		sleep 8
 		if [ "$?" == 0 ]; then
-			ask_user "Did you manage to show the web page ? If OK say y"
+			ask_user "Did you manage to show the web page ? (y/N)"
 			if [ "$response" == "y" ]; then
 				echo_test_ok
 				test_cleanup

@@ -30,19 +30,19 @@ test_sdlwater()
 
 	if [ "$?" == 0 ]; then
 		wake_up_lcd
-		# Launch it
+		# Launch it (needs touchscreen driver to be launched before)
 		export SDL_MOUSEDRV=TSLIB
 		export SDL_MOUSEDEV=$TSLIB_TSDEVICE
 		$EXEC_NAME /usr/share/images/water320.bmp 1>/dev/null &
-		echo "Touch the LCD screen please"
+		echo "Please touch the LCD screen"
 		sleep 5
-		ask_user "Did you manage to draw water circles ? If OK say y"
-		if [ "$response" == "y" ]; then
+		ask_user "Did you manage to draw water circles ? (y/N)"
+		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
 			test_cleanup
 			exit 0
 		fi
-	test_cleanup
+		test_cleanup
 	fi
 
 	exit_failed
