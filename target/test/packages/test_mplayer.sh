@@ -14,7 +14,7 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
-# Requires: Internet access
+# Requires: Framebuffer & Internet access
 # Validates: mplayer
 #DEBUG=True
 EXEC_NAME="mplayer"
@@ -45,11 +45,10 @@ test_mplayer()
 	fi
 
 	# Launch it
-	$EXEC_NAME -nosound -fs $VIDEO_FILE_NAME
+	$EXEC_NAME -vo fbdev -nosound -fs $VIDEO_FILE_NAME
 	RES=$?
 	# Make cursor blink again
 	echo 1 > /sys/class/graphics/fbcon/cursor_blink
-	rm -f "$VIDEO_FILE_NAME"
 
 	if [ "$RES" == 0 ]; then
 		ask_user "Was video correctly displayed ? (y/N)"

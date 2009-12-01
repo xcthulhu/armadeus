@@ -27,7 +27,7 @@ test_madplay()
 
 	is_package_installed $EXEC_NAME
 
-	if [ "$?" == 0 ]; then
+	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
 
