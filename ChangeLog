@@ -10,6 +10,10 @@ Changes since last release
 
 Changes in release 3.2 (December 1rst 2009)
 
+* Wiki dump available here: http://www.armadeus.com/assos_downloads/wiki/
+
+* Corrected Tickets: #71, #16, #43, #57, #64, #69, #73
+
 * Buildroot:
   Main changes: Bug correction, begin of AsDevices lib, UBIFS for APF27, pygame & quake packages
                 Xenomai for APF27
