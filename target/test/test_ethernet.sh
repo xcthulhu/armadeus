@@ -19,10 +19,19 @@ WTIME=0
 RTIME=0
 #DEBUG=True
 
+signal_handler()
+{
+	echo "Signal trapped !"
+	rm -f $TEMP_FILE
+	exit 1
+}
+
 # $1 = nb of test iterations
 test_ethernet()
 {
 	show_test_banner "Ethernet"
+
+	trap signal_handler INT
 
 	# Check if interface is up
 	ifconfig eth0
@@ -30,8 +39,6 @@ test_ethernet()
 		echo "No Ethernet interface found"
 		exit_failed
 	fi
-	# To autoconfigure Internet access
-	udhcpc -q -i eth0
 
 	# Check if Host is alive
 	ping -c 5 -W 2 $SERVER_IP

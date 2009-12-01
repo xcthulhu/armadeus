@@ -12,11 +12,16 @@ echo "Installing Test Suite in $TESTSUITE_TARGET_DIR (from $THIS_DIR)"
 
 mkdir -p $TESTSUITE_TARGET_DIR
 mkdir -p $TESTSUITE_TARGET_DIR/packages
+mkdir -p $TESTSUITE_TARGET_DIR/data/fpga
+mkdir -p $TESTSUITE_TARGET_DIR/data/images
+#
 install $THIS_DIR/test_*.sh $TESTSUITE_TARGET_DIR/
 install $THIS_DIR/dhcp.sh $TESTSUITE_TARGET_DIR/
 install $THIS_DIR/mmc/*.sh $TESTSUITE_TARGET_DIR/
 #       find $(ARMADEUS-TESTSUITE_DIR) -name "*.sh" -exec install -D {} $(ARMADEUS-TESTSUITE_TARGET_DIR) \;
-install $THIS_DIR/packages/*.sh $TESTSUITE_TARGET_DIR/packages
-cp -r $THIS_DIR/data $TESTSUITE_TARGET_DIR
+cp -d $THIS_DIR/packages/*.sh $TESTSUITE_TARGET_DIR/packages
+#
+cp $THIS_DIR/data/fpga/* $TESTSUITE_TARGET_DIR/data/fpga/
+cp $THIS_DIR/data/images/* $TESTSUITE_TARGET_DIR/data/images/
 
 exit 0
