@@ -1,0 +1,10 @@
+#
+#
+
+config ARMADEUS_MAX9768
+	tristate "MAX9768 Audio amplifier"
+	default n
+	depends on ARMADEUS_DRIVERS
+	---help---
+	  Custom Armadeus driver for MAX9768 Audio amplifier driver.
+	  (To wait until we are Asoc compatible)

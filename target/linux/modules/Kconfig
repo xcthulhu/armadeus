@@ -21,6 +21,8 @@ source "drivers/armadeus/imxlkeypad/Kconfig"
 
 source "drivers/armadeus/max1027/Kconfig"
 
+source "drivers/armadeus/max9768/Kconfig"
+
 comment "FPGA related"
 	depends on ARMADEUS_DRIVERS
 
