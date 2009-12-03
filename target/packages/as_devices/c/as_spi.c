@@ -119,45 +119,50 @@ uint32_t as_spi_msg(int aFd,
     uint32_t msg;
     int len;
 
-    struct spi_ioc_transfer	xfer[1];
-	unsigned char buf[32];
-	unsigned char buf_read[32];
+    struct spi_ioc_transfer    xfer[1];
+    unsigned char buf[32];
+    unsigned char buf_read[32];
 
-	int	status;
+    int status;
     int i;
 
     msg = aMsg;
     len = aLen;
 
-	memset(xfer, 0, sizeof xfer);
-	memset(buf, 0, sizeof buf);
-	memset(buf_read, 0, sizeof buf_read);
+    msg = msg<<1;/* XXX  Last bit is always read at 0 */
+    len = len+1; /* XXX */
 
-	if (len > sizeof buf)
-		len = sizeof buf;
+    memset(xfer, 0, sizeof xfer);
+    memset(buf, 0, sizeof buf);
+    memset(buf_read, 0, sizeof buf_read);
+
+    if (len >= sizeof buf)
+        len = (sizeof buf)-1;
     for (i = len;i > 0;i--)
     {
         buf[i-1] = msg & 0x01;
         msg = msg >> 1;
     }
 
-	xfer[0].tx_buf = (__u64) buf;
-	xfer[0].len = len;
-	xfer[0].rx_buf = (__u64) buf_read;
+    xfer[0].tx_buf = buf;
+    xfer[0].len = len;
+    xfer[0].rx_buf = buf_read;
     xfer[0].speed_hz = aSpeed;
     xfer[0].bits_per_word = 1;
 
-	status = ioctl(aFd, SPI_IOC_MESSAGE(1), xfer);
-	if (status < 0) {
-		perror("SPI_IOC_MESSAGE");
-		return 0;
-	}
-    for (i = 0;i < len;i++)
-    {
-        msg = msg | buf_read[i];
-        msg = msg << 1;
+    status = ioctl(aFd, SPI_IOC_MESSAGE(1), xfer);
+    if (status < 0) {
+        perror("SPI_IOC_MESSAGE");
+        return 0;
     }
-    return msg;
+
+    msg = msg | buf_read[0];
+    for (i = 1;i < len;i++)
+    {
+        msg = msg << 1;
+        msg = msg | buf_read[i];
+    }
+    return msg; 
 }
 
 void as_spi_close(int fd)

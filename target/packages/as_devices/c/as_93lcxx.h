@@ -58,9 +58,9 @@ struct  as_93lcxx_device {
  * @return as_93lcxx_device struct pointer on success, NULL on error
  */
 struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
-                                         uint8_t aType,
-                                         uint32_t aSpeed,
-                                         uint8_t aWord_size);
+                                          uint8_t aType,
+                                          uint32_t aSpeed,
+                                          uint8_t aWord_size);
 
 /** @brief close the device
  *
@@ -76,7 +76,8 @@ void as_93lcxx_close(struct as_93lcxx_device *aDev);
  *
  * @return positive register value on success, negative value on error.
  */
-int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, uint16_t aAddress);
+int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, 
+                       uint16_t aAddress);
 
 /** @brief enable write on eeprom
  *
@@ -93,7 +94,8 @@ int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev);
  *
  * @return positive register value on success, negative value on error.
  */
-int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, uint16_t aAddress);
+int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, 
+                        uint16_t aAddress);
 
 /** @brief Force all bits in eeprom to 1
  *
@@ -112,8 +114,8 @@ int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev);
  * @return positive register value on success, negative value on error.
  */
 int32_t as_93lcxx_write(struct as_93lcxx_device *aDev, 
-                    uint16_t aAddress, 
-                    uint16_t aValue);
+                        uint16_t aAddress, 
+                        uint16_t aValue);
 
 /** @brief write the entire memory array with value given
  *
@@ -123,7 +125,7 @@ int32_t as_93lcxx_write(struct as_93lcxx_device *aDev,
  * @return positive register value on success, negative value on error.
  */
 int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev, 
-                        uint16_t aValue);
+                            uint16_t aValue);
 
 /** @brief disable write on eeprom
  *
