@@ -102,7 +102,7 @@ int as_spi_get_speed(int fd);
  */
 int as_spi_get_bits_per_word(int fd);
 
-/** @brief Forge arbitrary length message (32bits max) and send it
+/** @brief Forge arbitrary length message (31bits max) and send it
  *
  * @param fd spidev file handler
  * @param msg right adjusted message
