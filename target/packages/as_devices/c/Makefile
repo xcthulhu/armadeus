@@ -22,7 +22,7 @@ ARCHIVE_OPTS=-cvq
 
 ${LIBNAME}: ${OBJ}
 	${CC} -shared -Wl,-soname,${SONAME} -o ${SONAME} ${OBJ} -lc 
-	ln -s ${SONAME} ${LIBNAME}
+	ln -sf ${SONAME} ${LIBNAME}
 
 ${STAT_LIB}: ${OBJ} 
 	${ARCHIVE_CMD} ${ARCHIVE_OPTS} ${STAT_LIB} ${OBJ}

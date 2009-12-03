@@ -138,6 +138,6 @@ int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
 
-#endif // AS_93LCXX_H_
+#endif /* AS_93LCXX_H_ */

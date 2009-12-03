@@ -18,11 +18,12 @@
  *
  */
 
-#include "as_93lcxx.h"
-#include "as_spi.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+
+#include "as_93lcxx.h"
+#include "as_spi.h"
 
 /* define start bits + opcode */
 #define READ      (6)
@@ -43,12 +44,12 @@
 #define TEC (6*MS)
 #define TWL (15*MS)
 
-/** @brief Private functions to ease making spi instructions
- */
 
-uint8_t address_len(uint8_t aType, uint8_t aWord_size)
+/** @brief private function to ease making spi instructions
+ */
+static uint8_t address_len(uint8_t aType, uint8_t aWord_size)
 {
-    switch(aType)
+    switch (aType)
     {
         case 46:
             if (aWord_size == 16)
@@ -66,6 +67,7 @@ uint8_t address_len(uint8_t aType, uint8_t aWord_size)
     }
 }
 
+
 struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
                                           uint8_t aType,
                                           uint32_t aSpeed,
@@ -76,13 +78,15 @@ struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
 
     /* open spidev bus */
     fd = as_spi_open(aSpidev_filename);
-    if (fd < 0)
+    if (fd < 0) {
+        perror("Can't open spi device");
         return NULL;
+    }
     
     /* verify datas */
     if (!( (aType == 46) || (aType == 56) || (aType == 66)))
         return NULL;
-    if ( (aWord_size < 1) || (aWord_size > 16))
+    if ((aWord_size < 1) || (aWord_size > 16))
         return NULL;
 
     dev = (struct as_93lcxx_device *)malloc(sizeof(struct as_93lcxx_device));
@@ -110,7 +114,7 @@ int32_t as_93lcxx_read(struct as_93lcxx_device *aDev, uint16_t aAddress)
     uint32_t data_out,msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((READ << (add_length+ (aDev->word_size)))
@@ -131,7 +135,7 @@ int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev)
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((EWEN << add_length)
@@ -149,7 +153,7 @@ int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev, uint16_t aAddress)
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((ERASE << (add_length + aDev->word_size))
@@ -169,7 +173,7 @@ int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev)
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((ERAL << add_length)
@@ -193,7 +197,7 @@ int32_t as_93lcxx_write(struct as_93lcxx_device *aDev,
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((WRITE << (add_length+ (aDev->word_size)))
@@ -217,7 +221,7 @@ int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev,
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((WRAL << (add_length+ (aDev->word_size)))
@@ -240,7 +244,7 @@ int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev)
     uint32_t msg=0;
     int add_length;
 
-    add_length = address_len(aDev->type,aDev->word_size);
+    add_length = address_len(aDev->type, aDev->word_size);
 
     /* forge message */
     msg = ((EWDS << add_length)
@@ -250,7 +254,7 @@ int32_t as_93lcxx_ewds(struct as_93lcxx_device *aDev)
     as_spi_msg(aDev->fd, msg,
                3 + add_length,
                aDev->speed);
+
     return 0;
 }
-
 

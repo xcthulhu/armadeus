@@ -18,7 +18,6 @@
  *
  */
 
-#include "as_spi.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -32,15 +31,19 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 
+#include "as_spi.h"
+
 
 int as_spi_open(const unsigned char *spidev_name)
 {
     int fd;
+
     fd = open((char *)spidev_name, O_RDWR);
     if (fd < 0) {
             perror("open");
             return -1;
     }
+
     return fd;
 }
 
@@ -76,6 +79,7 @@ int as_spi_get_mode(int fd)
             perror("SPI rd_mode");
             return -1;
     }
+
     return mode;
 }
 
@@ -94,20 +98,24 @@ int as_spi_get_lsb(int fd)
 int as_spi_get_bits_per_word(int fd)
 {
     uint8_t bits;
+
     if (ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
             perror("SPI bits_per_word");
-            return-1;
+            return -1;
     }
+
     return bits;
 }
 
 int as_spi_get_speed(int fd)
 {
     uint8_t speed;
+
     if (ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
             perror("SPI max_speed_hz");
             return -1;
     }
+
     return speed;
 }
 
@@ -119,7 +127,7 @@ uint32_t as_spi_msg(int aFd,
     uint32_t msg;
     int len;
 
-    struct spi_ioc_transfer    xfer[1];
+    struct spi_ioc_transfer xfer[1];
     unsigned char buf[32];
     unsigned char buf_read[32];
 
@@ -129,24 +137,26 @@ uint32_t as_spi_msg(int aFd,
     msg = aMsg;
     len = aLen;
 
-    msg = msg<<1;/* XXX  Last bit is always read at 0 */
-    len = len+1; /* XXX */
+    msg = msg << 1;/* XXX  Last bit is always read at 0 */
+    len = len + 1; /* XXX */
 
-    memset(xfer, 0, sizeof xfer);
-    memset(buf, 0, sizeof buf);
-    memset(buf_read, 0, sizeof buf_read);
+    memset(xfer, 0, sizeof(xfer));
+    memset(buf, 0, sizeof(buf));
+    memset(buf_read, 0, sizeof(buf_read));
 
-    if (len >= sizeof buf)
-        len = (sizeof buf)-1;
-    for (i = len;i > 0;i--)
+    if (len >= sizeof(buf)) {
+        len = sizeof(buf) - 1;
+    }
+
+    for (i=len; i>0; i--)
     {
         buf[i-1] = msg & 0x01;
         msg = msg >> 1;
     }
 
-    xfer[0].tx_buf = buf;
+    xfer[0].tx_buf = (uint32_t)buf;
     xfer[0].len = len;
-    xfer[0].rx_buf = buf_read;
+    xfer[0].rx_buf = (uint32_t)buf_read;
     xfer[0].speed_hz = aSpeed;
     xfer[0].bits_per_word = 1;
 
@@ -157,7 +167,7 @@ uint32_t as_spi_msg(int aFd,
     }
 
     msg = msg | buf_read[0];
-    for (i = 1;i < len;i++)
+    for (i=1; i<len; i++)
     {
         msg = msg << 1;
         msg = msg | buf_read[i];
@@ -170,6 +180,4 @@ void as_spi_close(int fd)
     close(fd);
     return;
 }
-
-
 
