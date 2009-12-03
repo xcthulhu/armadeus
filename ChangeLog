@@ -8,6 +8,165 @@ Changes since last release
 
 ----
 
+Changes in release 3.2 (December 1rst 2009)
+
+* Wiki dump available here: http://www.armadeus.com/assos_downloads/wiki/
+
+* Corrected Tickets: #71, #16, #43, #57, #64, #69, #73
+
+* Buildroot:
+  Main changes: Bug correction, begin of AsDevices lib, UBIFS for APF27, pygame & quake packages
+                Xenomai for APF27
+  List of all changes:
+    - Add tcpdump in apf27_test default config
+    - install using cp instead of install for zlib libraries
+    - ldd wasn't installed anymore in rootfs, correct that (Buildroot upstream patch)
+    - Use 2.6.29 kernel headers by default
+    - Makes libjpeg download works again
+    - Lets socketcan-clean target work
+    - Update APF9328 default configs
+    - Allows nano to be selectable again
+    - Adding as_devices in .config file
+    - Updates APF27 default Linux configs
+    - adding makefile for AsDevices library
+    - cleanup: makes ubifs patches generic
+    - NOR flash does not support UBIFS sub-pages
+    - use common JFFS2 and UBIFS mtd_utils. make UBIFS generic
+    - Bump proftp version 1.3.1 -> 1.3.2
+    - Add patch to have Tslib working with Pygame
+    - Move GPM into a patch that can be sent to buildroot team (when it will work ;-))
+    - removes 2.6.18 from possible kernels selection
+    - Bump default Armadeus Linux version from 2.6.29.4 to 2.6.29.6
+    - Corrects bad installation of python files
+    - Adds Pygame package
+    - Re-integrates Quake package as a patch
+    - Removes empty patches
+    - made ubinize generic at least for apf boards
+    - Uses Buildroot generated ubinize, not host installed one
+    - Updates APF27 default Linux configs (for Optrex TFT)
+    - Updates Linux 2.6.29 APF27 default configs
+    - BR2_TARGET_U_BOOT_CONFIG_BOARD was not correctly set
+    - Add Quake package (patch)
+    - make ubifs patch apply after update of git local view
+    - add ubinize script for apf27 in case of ubifs file system
+    - launch ubinize tool if ubifs selected
+    - xenomai:  Makefile cleaned, xenomai version upgraded, and apf27 support added
+    - Updates bluez (non)selection due to automatic package detection...
+    - Adds Boa to APF9328 test config + moves Linux/uClibc/busybox respective BR2_xx variables to according places in config file
+    - Add preliminary work to build bluez
+    - Revert commit d6300def6c2f271ef4140da342604cb88be0dc30 + add default as_devices option in APF27 Buildroot config files
+    - update mtd-utils to support mkfs.ubifs and ubinize
+* Linux:
+  Main changes: Bugs correction, LCD reorg + new one added, APF27 reorg
+  List of all changes:
+    - Cleanup fpgaloader, check indentation while we are at it...
+    - Cleanup some wishbone_example Makefiles
+    - AD9889: makes it possible to rmmod the driver when no chip was detected. Check indentation while we are at it...
+    - Makes /sys/ (slow) mode of the max1027 more reliable + addstatistics entry
+    - fix ad9889 video output format bug
+    - fix vertical alignment bug (T51638D084)
+    - Sometimes TSC210x may need a reset before asking revision number
+    - Continue to better separate apf27.c and apf27-dev.c platform files
+    - Enhances APF27 Custom LCD source code presentation
+    - Reorganizes LCDs for APF27 and add a custom hackable LCD entry
+    - Moves LCD config/handling outside of apf27.c
+    - Removes compilation warning in apf9328 when max1027 is not selected
+    - (Re)activates mouse/keyboard/joystick support for apf27 on 2.6.29. Hum... strange that it gone away...
+    - Removes (very) old kernel patches as they are no more supported (2.6.12, 2.6.17, 2.6.18.1)
+    - Corrects bug in microSD removal detection
+    - Updates minors creation for APF27 in loadgpio.sh
+    - USE_APF27DEV_IMX_LED_FOR_PM & USE_APF27DEV_IMX_SWITCH_FOR_PM options are only availableon the APF27DEV
+    - Separates module and baseboard power management parts
+    - Improves Mode setting in GPIO driver
+    - Correct small bug in gpio ioctl handling on APF27 (thanks Luca)
+    - Don't initialize i.MX27 FEC GPIOs if not configured
+    - Add Optrex T51638D084 TFT support (APF27 & Freescale framebuffer)
+    - Removes bad comment in apf27.c
+    - Separates APF27 and APF27Dev hardware declaration parts
+    - Adds new timing trick to improve i.MXL SDHC controller robustness
+    - gpio: correct deadlock bug + add an IOCTL for setting port Mode
+    - Makes LQ057 LCD works on APF27 (Freescale framebuffer)
+    - Converts a message into debug in GPIO driver
+    - APF9328: separates module (APF9328) and baseboards (DevFull/Light or others) hardware declaration/init parts
+    - ISP1761: Gives correct init value to HW_MODE_REG register
+    - Makes ioctls work again in gpio driver
+    - Updates APF27 default Linux configs according to new LCD support
+    - On APF9328 configure console port without RTS/CTS
+    - [MAX1027] Scheduling bug corrected (to be reviewed)
+    - On APF9328 makes it possible to have UART without RTS/CTS support + configure console port accordingly
+    - Updates APF9328 default Linux configs according to new LCD support
+    - add GPS/GSM uart declaration to apf27.c
+    - add hitachi TX12D17VM1BDP TFT
+    - add LW700AT9003
+* U-Boot:
+    - cleanup apf27 config file
+    - update apf9328 default configuration
+* Firmware:
+* Demos:
+    - Add preliminary work for a graphical (kind of) oscilloscope using AsDevices library
+    - Updates input_test Makefile
+    - Cleanup fractal demo
+    - Updates music player doc
+    - Adds a small C program to show how to use IOCTL with GPIO driver
+    - xenomai examples: cleanup + indent checking + allows non RT kernel examples to be compiled for APF27
+* Debug:
+    - imxssi doesn't require libpow to compile
+* Test:
+    - Update Linux drivers test for 3.2
+    - Updates some packages tests for 3.2
+    - Updates the way armadeus testsuite is installed
+    - Add new package tests
+    - Cleanup and factorize test_fpga
+    - Improves testbutton & gpio test
+    - Updates apf9328_test Linux config
+    - Simplify GPIO test
+    - Put serial port in raw mode during test
+* Tools:
+    - Simplify setDAC tool sources
+    - ad9889ctrl: Cleanup + indentation
+    - Cleanup setDAC
+    - Don't try to quiltify if current view doesn't compile
+    - Remove no more needed/obsolete Linux patch management tool
+    - Now quiltify tool can handle buildroot
+    - Corrects typos + windows format in boot recover tool
+    - Improve verbosity of quiltifying script
+    - fix tickets 43 and 64 concerning ubootrecover bugs
+* Other:
+    - Indentation... ;-)
+    - [as_devices] segfault fix on as_93lcxx_close()
+    - [as_devices] first version of as_spi compile
+    - [as_devices] as_93lcxx lib compile, not tested
+    - [as_devices] Adding spidev API
+    - [as_devices] Adding API for as_93lcxx memory functions
+    - [as_devices] python module in LGPL
+    - [AS_DEVICES] Indentation + bad comments
+    - [as_devices] AD5258 in progress
+    - [as_devices] gpio C++ wrapper compiling
+    - [as_devices] pwm and i2c C++ wrapper compiling ok
+    - [as_devices] changing multiton
+    - [as_devices] adding C libs for i2c (compile but not tested)
+    - [BUILD] Improves .gitignore
+    - [as_devices] begin buildroot integration of library
+    - [BUILD] Improve some .gitignore
+    - [AsDevices] python wrapper done for pwm
+    - [as_devices] Python wrapper added for pwm
+    - [as_devices] Little comment
+    - [as_device] Wrapper C++ validated for pwm (bis)
+    - [as_devices] as_apf27_pwm ok for c library, in dev for C++ wrapper
+    - [BUILD] Updates some .gitignore files
+    - [BUILD] Makes separate targets for buildroot sources loading, unpacking & patching
+    - [GIT] Adds top .gitignore file
+    - [GIT] Add some .gitignore files
+    - [ROOTFS] Add /etc/mtab (symlink to /proc/mounts)
+    - [BUILD] Add target to get BR patched sources only: buildroot-patched-sources + simplify buildauto
+    - [BUILD] Renames Buildroot patches and moves them to patches/buildroot/ (Part2)
+    - [BUILD] Renames Buildroot patches and moves them to patches/buildroot/
+    - [BUILD] Preliminary work before buildroot patches moving
+    - [TARGET] Add a directory (target/scripts/) to store useful system scripts that are not in the default rootfs skeleton
+    - [BUILD] Makes quilt script use git + some refinements
+
+----
+
 Changes in release 3.1 (June 29th 2009, 10:00 (UTC+0200) - SVN revisions 1098 to 1381)
 
 * Buildroot:

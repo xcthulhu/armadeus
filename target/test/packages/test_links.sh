@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Script to test Armadeus Software release
+# Script to test a Buildroot package for Armadeus Software release
 #
 #  Copyright (C) 2008 The Armadeus Project
 #
@@ -14,32 +14,34 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+EXEC_NAME="links"
+WEB_SITE="www.armadeus.org"
 
-test_sound()
+test_links()
 {
-	show_test_banner "Sound / ALSA"
+	show_test_banner "links (textual Web Browser)"
 
-	modprobe snd-imx-alsa-tsc2102
+	is_package_installed $EXEC_NAME
+
 	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
 
-	cat /proc/asound/version
-	cat /proc/asound/cards
-	aplay -lL
-	if [ "$?" != 0 ]; then
-		exit_failed
-	fi
+	ask_user "After having press ENTER, the Armadeus Project website will be opened in textual mode.\n Then, to quit press ESC and File->Exit"
 
-	ask_user "Please connect a earphone to the Audio Out connector (up on APF27). Then press ENTER."
-	aplay /usr/share/sounds/alsa/Side_Left.wav	
+	# Launch it
+	$EXEC_NAME $WEB_SITE
+
 	if [ "$?" == 0 ]; then
-		ask_user "Did you hear something ? (y/N)"
+		ask_user "Was website displayed ? (y/N)"
 		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
+			exit 0
 		fi
 	fi
+
+	exit_failed
 }
 
-test_sound
+test_links
 

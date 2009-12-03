@@ -33,6 +33,7 @@ test_rtc()
 {
 	show_test_banner "RTC"
 
+	echo "Trying to get current time with NTP"
 	ntpdate 217.147.208.1
 	date
 	if [ "$?" == 0 ]; then
@@ -46,6 +47,7 @@ test_rtc()
 		AFTER=`convert_in_secs $DATE`
 		DIFF=$(($AFTER - $BEFORE - $TEST_DURATION))
 
+		date
 		if [ "$DIFF" -gt "$TOLERANCE" ]; then
 			echo "$AFTER $BEFORE ($DIFF)"
 			exit_failed

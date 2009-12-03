@@ -20,28 +20,62 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-source ./test_env.sh
+THIS_DIR=`dirname $0`
+source $THIS_DIR/test_env.sh
+source $THIS_DIR/test_helpers.sh
 
 mkdir -p $TEMP_DIR
 date
 
-./test_ethernet.sh
+show_test_banner "All supported drivers/packages"
+echo "Your test environments variables are:"
+echo "    - temporary directory: $TEMP_DIR"
+echo "    - Host IP: $SERVER_IP"
+ask_user "Please confirm that these variables are correct (y/N)"
+if [ "$response" != "y" ] && [ "$response" != "yes" ]; then
+	echo "Please update $THIS_DIR/test_env.sh"
+	exit 1
+fi
+
+# Here we go ! (First start with Linux)
+$THIS_DIR/test_ethernet.sh
 echo
-./test_usb_host.sh
+$THIS_DIR/test_usb_host.sh
 echo
-./test_rs232.sh 1
+$THIS_DIR/test_rs232.sh
 echo
-./test_usb_device.sh
+$THIS_DIR/test_usb_device.sh
 echo
-./test_backlight.sh
+$THIS_DIR/test_backlight.sh
 echo
-./test_touchscreen.sh
+$THIS_DIR/test_framebuffer.sh
 echo
-./test_dac.sh
+$THIS_DIR/test_touchscreen.sh
 echo
-./test_imxregs.sh
+$THIS_DIR/test_dac.sh
 echo
-./test_sound.sh
+$THIS_DIR/test_adc.sh
 echo
+$THIS_DIR/test_sound.sh
+echo
+$THIS_DIR/test_fpga.sh
+echo
+$THIS_DIR/test_gpio.sh
+echo
+$THIS_DIR/mmc_perf.sh speed
+# Following tests needs Internet access:
+ask_user "I will now try to configure Internet access. Press ENTER when ready"
+$THIS_DIR/dhcp.sh
+echo
+$THIS_DIR/test_rtc.sh
+
+# Then check packages:
+PACKAGES_TESTS=`ls $THIS_DIR/packages/*.sh`
+for package_test in $PACKAGES_TESTS; do
+	if [ -x $package_test ] && [ ! -L $package_test ]; then
+		$package_test
+	fi
+done
 
 exit 0
+

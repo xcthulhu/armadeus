@@ -11,29 +11,32 @@ CHANGES_FIRMWARE=$TEMP_DIR/firmware.log
 CHANGES_TEST=$TEMP_DIR/test.log
 CHANGES_DEMOS=$TEMP_DIR/demos.log
 CHANGES_DEBUG=$TEMP_DIR/debug.log
+CHANGES_TOOLS=$TEMP_DIR/tools.log
 CHANGES_OTHER=$TEMP_DIR/other.log
 
+LATEST_RELEASE_DATE="Wed Jul 1"
 
 usage()
 {
 	echo
-	echo "$0 rev1 rev2: generates ChangeLog file for commit between rev1 and rev2 (included)"
+	echo "$0: generates ChangeLog file for commit since latest release"
 	echo
 }
 
-if [ "$#" != 2 ]; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	usage
 	exit 1
 fi
 
+# get log
 mkdir -p $TEMP_DIR 
-echo "Generating ChangeLog for revisions between $1 and $2 in" `pwd`
-
+echo "Generating ChangeLog for commit since $LATEST_RELEASE_DATE in" `pwd`
 if [ ! -f $SVN_LOG ]; then
-	svn log -r $2:$1 > $SVN_LOG
+	git log --since="$LATEST_RELEASE_DATE" --no-color --pretty=oneline > $SVN_LOG
 fi
-# remove unneeded lines:
-cat $SVN_LOG | grep -v -e "-\{5,\}" | grep -v -e "^r[0-9]\{2,\}" > $SVN_LOG_CLEAN
+
+# remove commit hash number:
+cat $SVN_LOG | cut -c 42- > $SVN_LOG_CLEAN
 
 # separate sections:
 cat $SVN_LOG_CLEAN | grep -i  "\[LINUX\]" > $CHANGES_LINUX
@@ -50,13 +53,16 @@ cat $LOG_CLEAN_TMP.5 | grep -i  "\[DEMOS\]" > $CHANGES_DEMOS
 cat $LOG_CLEAN_TMP.5 | grep -iv "\[DEMOS\]" > $LOG_CLEAN_TMP.6
 cat $LOG_CLEAN_TMP.6 | grep -i  "\[DEBUG\]" > $CHANGES_DEBUG
 cat $LOG_CLEAN_TMP.6 | grep -iv "\[DEBUG\]" > $LOG_CLEAN_TMP.7
+cat $LOG_CLEAN_TMP.7 | grep -i  "\[TOOLS\]" > $CHANGES_TOOLS
+cat $LOG_CLEAN_TMP.7 | grep -iv "\[TOOLS\]" > $LOG_CLEAN_TMP.8
 
-cat $LOG_CLEAN_TMP.7 > $CHANGES_OTHER
+cat $LOG_CLEAN_TMP.8 > $CHANGES_OTHER
 
-# compose changelog with sections without empty lines:
-
+# compose Changelog:
 echo
-echo "Changes in release XXX ("`date`" - SVN revisions $1 to $2"
+echo "----"
+echo
+echo "Changes in release XXX ("`date`")"
 echo
 echo "* Buildroot:"
 cat $CHANGES_BUILDROOT | grep -v "^$" | sed 's/\[[Bb][Uu][Ii][Ll][Dd][Rr][Oo][Oo][Tt]\]/    -/g'
@@ -72,9 +78,13 @@ echo "* Debug:"
 cat $CHANGES_DEBUG | grep -v "^$" | sed 's/\[DEBUG\]/    -/g'
 echo "* Test:"
 cat $CHANGES_TEST | grep -v "^$" | sed 's/\[[Tt][Ee][Ss][Tt]\]/    -/g'
+echo "* Tools:"
+cat $CHANGES_TOOLS | grep -v "^$" | sed 's/\[[Tt][Oo][Oo][Ll][Ss]\]/    -/g'
 echo "* Other:"
 cat $CHANGES_OTHER | grep -v "^$"
+echo
 
+# remove temp stuff
 rm -rf $TEMP_DIR
 
 exit 0

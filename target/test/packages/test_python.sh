@@ -23,8 +23,8 @@ generate_test_file()
 	cat << EOF > $PYTHON_FILE
 import sys
 
-	print "If you read this then Python is running"
-	sys.exit(0)
+print "If you read this then Python is running"
+sys.exit(0)
 EOF
 }
 

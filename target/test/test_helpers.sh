@@ -68,9 +68,14 @@ echo_test_ok()
 	echo "Test OK !"
 }
 
-exit_failed()
+echo_test_failed()
 {
 	echo "Test FAILED !"
+}
+
+exit_failed()
+{
+	echo_test_failed
 	exit 1
 }
 
@@ -103,3 +108,30 @@ execute_for_target()
                 $2
         fi
 }
+
+# $1: name of the file in $TEMP_DIR
+# $2: size of the file
+create_random_file()
+{
+	if [ "$1" == "" ] || [ "$2" == "" ]; then
+		echo "create_random_file(): missing parameter"
+		return 1
+	fi
+	RANDOM_FILE="$1"
+	FILE_SIZE="$2"
+	# Create temp bench file
+	echo -e "\nCreating a temporary bench file ($TEMP_FILE) of $TEMP_FILE_SIZE KBytes"
+	if [ ! -f "$RANDOM_FILE" ]; then
+		dd if=/dev/urandom of=$RANDOM_FILE bs=1024 count=$FILE_SIZE 2>/dev/null & pid=$!
+		# Show a kind of progress bar
+		echo -en "[                          ]\r["
+		while [ $? == 0 ]; do
+			echo -n "."
+			sleep 1
+			kill -USR1 $pid 2>/dev/null
+		done
+		echo
+	fi
+	echo " -> done"
+}
+

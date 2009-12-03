@@ -14,8 +14,11 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+# Validates: madplay
+# Requires: ALSA & Internet access
 #DEBUG=True
 EXEC_NAME="madplay"
+FILE_WEB_ADDRESS="http://www.armadeus.com//assos_downloads/misc/mozart.mp3"
 MUSIC_FILE_NAME="$TEMP_DIR/mozart.mp3"
 
 test_madplay()
@@ -24,25 +27,33 @@ test_madplay()
 
 	is_package_installed $EXEC_NAME
 
-	if [ "$?" == 0 ]; then
+	if [ "$?" != 0 ]; then
+		exit_failed
+	fi
+
+	if [ ! -f "$MUSIC_FILE_NAME" ]; then
 		# Get music
 		echo "Downloading file from Internet"
 		# Suppose that network was correctly set before
-		wget http://dl.free.fr/orrXngocU -O $MUSIC_FILE_NAME
-		# Launch it
-		$EXEC_NAME $MUSIC_FILE_NAME &
-		PID=$!
-		if [ "$?" == 0 ]; then
-			sleep 10
-			ask_user "Was music correctly played ? If OK say y"
-			if [ "$response" == "y" ]; then
-				echo_test_ok
-				exit 0
-			fi
-			kill $PID
+		wget $FILE_WEB_ADDRESS -O $MUSIC_FILE_NAME
+		if [ "$?" != 0 ]; then
+			exit_failed
 		fi
 	fi
-	rm -f "$MUSIC_FILE_NAME"
+
+	# Launch it
+	$EXEC_NAME $MUSIC_FILE_NAME &
+	PID=$!
+	if [ "$?" == 0 ]; then
+		sleep 10
+		ask_user "Was music correctly played ? (y/N)"
+		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
+			echo_test_ok
+			exit 0
+		fi
+		kill $PID
+	fi
+
 	exit_failed
 }
 

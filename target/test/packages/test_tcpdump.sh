@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Script to test Armadeus Software release
+# Script to test a Buildroot package for Armadeus Software release
 #
 #  Copyright (C) 2008 The Armadeus Project
 #
@@ -14,32 +14,35 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+# Validates: tcpdump & libpcap
+EXEC_NAME="tcpdump"
+EXEC_OPTIONS="-i eth0 -x -v -c 3"
 
-test_sound()
+test_tcpdump()
 {
-	show_test_banner "Sound / ALSA"
+	show_test_banner "tcpdump"
 
-	modprobe snd-imx-alsa-tsc2102
+	is_package_installed $EXEC_NAME
+
 	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
 
-	cat /proc/asound/version
-	cat /proc/asound/cards
-	aplay -lL
-	if [ "$?" != 0 ]; then
-		exit_failed
-	fi
+	ask_user "After having press ENTER, tcpdump will be launched."
 
-	ask_user "Please connect a earphone to the Audio Out connector (up on APF27). Then press ENTER."
-	aplay /usr/share/sounds/alsa/Side_Left.wav	
+	# Launch it
+	$EXEC_NAME $EXEC_OPTIONS
+
 	if [ "$?" == 0 ]; then
-		ask_user "Did you hear something ? (y/N)"
+		ask_user "Did you see the packets dump ? (y/N)"
 		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
+			exit 0
 		fi
 	fi
+
+	exit_failed
 }
 
-test_sound
+test_tcpdump
 

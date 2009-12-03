@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Script to test Armadeus Software release
+# Script to test a Buildroot package for Armadeus Software release
 #
 #  Copyright (C) 2008 The Armadeus Project
 #
@@ -14,32 +14,38 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+# Validates: nano and ncurses
+EXEC_NAME="nano"
+TEST_FILE=/tmp/nano.txt
 
-test_sound()
+test_nano()
 {
-	show_test_banner "Sound / ALSA"
+	show_test_banner "nano (Text Editor)"
 
-	modprobe snd-imx-alsa-tsc2102
+	is_package_installed $EXEC_NAME
+
 	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
 
-	cat /proc/asound/version
-	cat /proc/asound/cards
-	aplay -lL
-	if [ "$?" != 0 ]; then
-		exit_failed
-	fi
+	ask_user "After having press ENTER, nano will be launched.\n Write a small text in it, then press Ctrl+O to save and Ctrl+X to quit"
 
-	ask_user "Please connect a earphone to the Audio Out connector (up on APF27). Then press ENTER."
-	aplay /usr/share/sounds/alsa/Side_Left.wav	
+	# Launch it
+	$EXEC_NAME $TEST_FILE
+
 	if [ "$?" == 0 ]; then
-		ask_user "Did you hear something ? (y/N)"
+		clear
+		cat $TEST_FILE
+		echo
+		ask_user "Is it the text you typed ? (y/N)"
 		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
+			exit 0
 		fi
 	fi
+
+	exit_failed
 }
 
-test_sound
+test_nano
 
