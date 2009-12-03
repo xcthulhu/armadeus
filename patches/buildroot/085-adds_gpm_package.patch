@@ -1,7 +1,11 @@
+Add GPM (General Purpose Mouse server) to Buildroot.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
 Index: buildroot/package/gpm/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/Config.in	2009-09-25 14:03:49.000000000 +0200
++++ buildroot/package/gpm/Config.in	2009-12-03 12:15:44.000000000 +0100
 @@ -0,0 +1,7 @@
 +config BR2_PACKAGE_GPM
 +	bool "gpm mouse server"
@@ -9,12 +13,12 @@ Index: buildroot/package/gpm/Config.in
 +	  gpm means general purpose mouse and is the mouse support for Linux
 +	  in the console.
 +
-+	  http://unix.schottelius.org/gpm/
++	  http://www.nico.schottelius.org/software/gpm/
 Index: buildroot/package/gpm/gpm.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/gpm.mk	2009-09-25 14:03:49.000000000 +0200
-@@ -0,0 +1,11 @@
++++ buildroot/package/gpm/gpm.mk	2009-12-03 11:58:49.000000000 +0100
+@@ -0,0 +1,18 @@
 +#############################################################
 +#
 +# General Purpose Mouse server for Linux console.
@@ -24,17 +28,22 @@ Index: buildroot/package/gpm/gpm.mk
 +GPM_VERSION:=1.20.6
 +GPM_SOURCE:=gpm-$(GPM_VERSION).tar.bz2
 +GPM_SITE:=http://unix.schottelius.org/gpm/archives/
++GPM_INSTALL_STAGING:=YES
++GPM_INSTALL_TARGET:=YES
 +
 +$(eval $(call AUTOTARGETS,package,gpm))
++
++$(GPM_HOOK_POST_INSTALL): $(GPM_TARGET_INSTALL_TARGET)
++	$(STRIPCMD) $(STRIP_STRIP_ALL) $(TARGET_DIR)/usr/sbin/gpm
++	touch $@
++
 Index: buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch	2009-09-25 14:03:49.000000000 +0200
-@@ -0,0 +1,79 @@
++++ buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch	2009-12-03 11:33:41.000000000 +0100
+@@ -0,0 +1,77 @@
 +
-+Removes all "obsolete" functions (at least to compile for uClibc).
-+
-+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
++Replaces all "obsolete" functions (at least to compile for uClibc).
 +
 +diff -urN gpm-1.20.6/src/daemon/old_main.c gpm-1.20.6.mod/src/daemon/old_main.c
 +--- gpm-1.20.6/src/daemon/old_main.c	2009-02-09 10:58:53.000000000 +0100
@@ -112,9 +121,9 @@ Index: buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch
 + 		gpm_report (GPM_PR_WARN,"Flag value (%s) for parameter %s is invalid",
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2009-09-25 14:05:19.000000000 +0200
-+++ buildroot/package/Config.in	2009-09-25 14:06:07.000000000 +0200
-@@ -267,6 +267,7 @@
+--- buildroot.orig/package/Config.in	2009-12-03 11:19:50.000000000 +0100
++++ buildroot/package/Config.in	2009-12-03 11:22:53.000000000 +0100
+@@ -259,6 +259,7 @@
  source "package/fpgaregs/Config.in"
  source "package/fuse/Config.in"
  source "package/gadgetfs-test/Config.in"
@@ -122,3 +131,38 @@ Index: buildroot/package/Config.in
  source "package/hal/Config.in"
  if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
  source "package/hdparm/Config.in"
+Index: buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch	2009-12-03 11:33:54.000000000 +0100
+@@ -0,0 +1,30 @@
++GPM asks "install" to strip the executables while installing it.
++This doesn't seems cross-compiling friendly, so remove the option (-s) and let
++the strip be done elsewhere.
++
++Index: gpm-1.20.6/Makefile.include.in
++===================================================================
++--- gpm-1.20.6.orig/Makefile.include.in	2009-12-03 11:25:30.000000000 +0100
+++++ gpm-1.20.6/Makefile.include.in	2009-12-03 11:26:32.000000000 +0100
++@@ -54,7 +54,7 @@
++ DVIPS             = @DVIPS@
++ MAKEINFO          = @MAKEINFO@
++ TEXI2HTML         = texi2html
++-STRIP             = -s
+++STRIP             =
++ 
++ AR                = ar
++ ETAGS             = etags
++Index: gpm-1.20.6/src/Makefile.in
++===================================================================
++--- gpm-1.20.6.orig/src/Makefile.in	2009-12-03 11:26:01.000000000 +0100
+++++ gpm-1.20.6/src/Makefile.in	2009-12-03 11:26:42.000000000 +0100
++@@ -48,7 +48,7 @@
++ 
++ DEFS  = @DEFS@
++ 
++-STRIP = -s
+++STRIP =
++ 
++ ### BUILD PROCESS
++ 
