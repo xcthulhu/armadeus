@@ -2,7 +2,7 @@
  * This software is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of the
- * License, or ( at your option ) any later version.
+ * License, or  (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * Copyright ( C ) 2009 Fabien Marteau <fabien.marteau@armadeus.com> 
+ * Copyright  (C) 2009 Fabien Marteau <fabien.marteau@armadeus.com> 
  *
  */
 
@@ -33,88 +33,88 @@
 #include <linux/spi/spidev.h>
 
 
-int as_spi_open( const unsigned char *spidev_name )
+int as_spi_open (const unsigned char *spidev_name)
 {
     int fd;
-    fd = open( ( char * )spidev_name, O_RDWR );
-    if ( fd < 0 ) {
-            perror( "open" );
+    fd = open ( (char *)spidev_name, O_RDWR);
+    if  (fd < 0) {
+            perror ("open");
             return -1;
     }
     return fd;
 }
 
-int as_spi_set_mode( int fd, uint8_t mode )
+int as_spi_set_mode (int fd, uint8_t mode)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_lsb( int fd, uint8_t lsb )
+int as_spi_set_lsb (int fd, uint8_t lsb)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_bits_per_word( int fd, uint8_t bits )
+int as_spi_set_bits_per_word (int fd, uint8_t bits)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_speed( int fd )
+int as_spi_set_speed (int fd)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_get_mode( int fd )
+int as_spi_get_mode (int fd)
 {
     uint8_t mode;
 
-    if ( ioctl( fd, SPI_IOC_RD_MODE, &mode ) < 0 ) {
-            perror( "SPI rd_mode" );
+    if  (ioctl (fd, SPI_IOC_RD_MODE, &mode) < 0) {
+            perror ("SPI rd_mode");
             return -1;
     }
     return mode;
 }
 
-int as_spi_get_lsb( int fd )
+int as_spi_get_lsb (int fd)
 {
     uint8_t lsb;
 
-    if ( ioctl( fd, SPI_IOC_RD_LSB_FIRST, &lsb ) < 0 ) {
-            perror( "SPI rd_lsb_fist" );
+    if  (ioctl (fd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
+            perror ("SPI rd_lsb_fist");
             return -1;
     }
 
     return lsb;
 }
 
-int as_spi_get_bits_per_word( int fd )
+int as_spi_get_bits_per_word (int fd)
 {
     uint8_t bits;
-    if ( ioctl( fd, SPI_IOC_RD_BITS_PER_WORD, &bits ) < 0 ) {
-            perror( "SPI bits_per_word" );
+    if  (ioctl (fd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
+            perror ("SPI bits_per_word");
             return-1;
     }
     return bits;
 }
 
-int as_spi_get_speed( int fd )
+int as_spi_get_speed (int fd)
 {
     uint8_t speed;
-    if ( ioctl( fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed ) < 0 ) {
-            perror( "SPI max_speed_hz" );
+    if  (ioctl (fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
+            perror ("SPI max_speed_hz");
             return -1;
     }
     return speed;
 }
 
-uint32_t as_spi_msg( int aFd, 
+uint32_t as_spi_msg (int aFd, 
                     uint32_t aMsg, 
                     size_t aLen,
-                    uint32_t aSpeed )
+                    uint32_t aSpeed)
 {
     uint32_t msg;
     int len;
@@ -132,13 +132,13 @@ uint32_t as_spi_msg( int aFd,
     msg = msg<<1;/* XXX  Last bit is always read at 0 */
     len = len+1; /* XXX */
 
-    memset( xfer, 0, sizeof xfer );
-    memset( buf, 0, sizeof buf );
-    memset( buf_read, 0, sizeof buf_read );
+    memset (xfer, 0, sizeof xfer);
+    memset (buf, 0, sizeof buf);
+    memset (buf_read, 0, sizeof buf_read);
 
-    if ( len >= sizeof buf )
-        len = (sizeof buf)-1;
-    for ( i = len;i > 0;i-- )
+    if  (len >= sizeof buf)
+        len =  (sizeof buf)-1;
+    for  (i = len;i > 0;i--)
     {
         buf[i-1] = msg & 0x01;
         msg = msg >> 1;
@@ -150,14 +150,14 @@ uint32_t as_spi_msg( int aFd,
     xfer[0].speed_hz = aSpeed;
     xfer[0].bits_per_word = 1;
 
-    status = ioctl( aFd, SPI_IOC_MESSAGE( 1 ), xfer );
-    if ( status < 0 ) {
-        perror( "SPI_IOC_MESSAGE" );
+    status = ioctl (aFd, SPI_IOC_MESSAGE (1), xfer);
+    if  (status < 0) {
+        perror ("SPI_IOC_MESSAGE");
         return 0;
     }
 
     msg = msg | buf_read[0];
-    for ( i = 1;i < len;i++ )
+    for  (i = 1;i < len;i++)
     {
         msg = msg << 1;
         msg = msg | buf_read[i];
@@ -165,9 +165,9 @@ uint32_t as_spi_msg( int aFd,
     return msg; 
 }
 
-void as_spi_close( int fd )
+void as_spi_close (int fd)
 {
-    close( fd );
+    close (fd);
     return;
 }
 
