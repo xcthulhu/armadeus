@@ -1,3 +1,5 @@
+Correct some bugs in spidev devices, and adjust number of chipselect for  apf27Dev spi1
+
 Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Signed-off-by: Gwenhaël Goavec-Merou <gwen@trabucayre.com>
 ---
