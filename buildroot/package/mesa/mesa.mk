@@ -46,12 +46,16 @@ $(MESALIB_DIR)/.compiled: $(MESALIB_DIR)/.configured
 #arm-linux-osmesa
 	touch $@
 
-MESA mesa: uclibc gpm $(MESALIB_DIR)/.compiled
+$(TARGET_DIR)/usr/lib/libGL.so.7.1.0: $(MESALIB_DIR)/.compiled
+	mkdir -p $(TARGET_DIR)/usr/lib/
+	cp -a $(MESALIB_DIR)/lib/* $(TARGET_DIR)/usr/lib/
+	touch $@
+
+
+MESA mesa: gpm $(TARGET_DIR)/usr/lib/libGL.so.7.1.0
 
 mesa-clean:
-	(cd $(MESALIB_DIR); \
-        $(MAKE) CC=$(TARGET_CC) clean \
-    );
+	$(MAKE) CC=$(TARGET_CC) clean -C $(MESALIB_DIR)
 
 mesa-dirclean:
 	rm -rf $(MESALIB_DIR)

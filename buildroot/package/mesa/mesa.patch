@@ -172,7 +172,7 @@ diff -bruN Mesa-7.0.orig/src/mesa/Makefile Mesa-7.0/src/mesa/Makefile
  CONFIG_NAME = linux-fbdev
  
 -CFLAGS = -O3 -ffast-math -ansi -pedantic -fPIC -D_POSIX_C_SOURCE=199309L -D_SVID_SOURCE -D_BSD_SOURCE -DPTHREADS -DUSE_GLFBDEV_DRIVER
-+CFLAGS = -O3 -ffast-math -ansi -pedantic -fPIC -D_POSIX_C_SOURCE=199309L -D_SVID_SOURCE -D_BSD_SOURCE -DPTHREADS -DUSE_GLFBDEV_DRIVER -I$(TOP)/../staging_dir/usr/include -I$(TOP)/../staging_dir/include -Wl,-rpath-link,$(TOP)/../staging_dir/usr/lib
++CFLAGS = -O3 -ffast-math -ansi -pedantic -fPIC -D_POSIX_C_SOURCE=199309L -D_SVID_SOURCE -D_BSD_SOURCE -DPTHREADS -DUSE_GLFBDEV_DRIVER -I$(TOP)/../staging_dir/usr/include -I$(TOP)/../staging_dir/include
  
  SRC_DIRS = mesa glu glut/fbdev
  DRIVER_DIRS = fbdev osmesa
@@ -184,5 +184,5 @@ diff -bruN Mesa-7.0.orig/src/mesa/Makefile Mesa-7.0/src/mesa/Makefile
 -GLUT_LIB_DEPS = -L$(TOP)/$(LIB_DIR) -l$(GLU_LIB) -l$(GL_LIB) $(EXTRA_LIB_PATH) -lgpm -lm
 +OSMESA_LIB_DEPS = -lm -lpthread -L$(TOP)/../staging_dir/usr/lib
 +GLUT_LIB_DEPS = -L$(TOP)/$(LIB_DIR) -L$(TOP)/../staging_dir/usr/lib -l$(GLU_LIB) -l$(GL_LIB) $(EXTRA_LIB_PATH) -lgpm -lm
-+APP_LIB_DEPS  = -L$(TOP)/$(LIB_DIR) -L$(TOP)/../staging_dir/usr/lib -l$(GLU_LIB) -l$(GL_LIB) -l$(GLUT_LIB) $(EXTRA_LIB_PATH) -lgpm -lm
++APP_LIB_DEPS  = -L$(TOP)/$(LIB_DIR) -L$(TOP)/../staging_dir/usr/lib -l$(GLU_LIB) -l$(GL_LIB) -l$(GLUT_LIB) $(EXTRA_LIB_PATH) -lgpm -lm -lstdc++
  
