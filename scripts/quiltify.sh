@@ -45,13 +45,14 @@ else
 fi
 
 if [ "$1" != "export" ]; then
-	echo -e "\nThis script is going to rebuilt a quiltified "$QUILT_TARGET_NAME" in the current view..."
+	echo -e "\nThis script is going to rebuild a quiltified "$QUILT_TARGET_NAME" in the current view..."
 fi
 
 if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $QUILT_TARGET_DIR/patches/ to $QUILT_TARGET_PATCH_DIR"
 	cp -f $QUILT_TARGET_DIR/patches/*.patch $QUILT_TARGET_PATCH_DIR
-	echo -e "\n--- You can now check your work before commiting --> $QUILT_TARGET_PATCH_DIR/ \n"
+	echo -e "\n--- You can now check your work before commiting --> \n"
+	git status
 	exit 0
 fi
 
