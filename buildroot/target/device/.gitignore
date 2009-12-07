@@ -1,0 +1,15 @@
+AMD/
+ARM/
+ARMLTD/
+Atmel/
+Config.*
+Hitachi/
+jp/
+KwikByte/
+Makefile.*
+mips/
+Sharp/
+Soekris/
+valka/
+Via/
+x86/
