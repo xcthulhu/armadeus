@@ -50,29 +50,29 @@ struct  as_93lcxx_device {
 
 /** @brief open the device
  *
- * @param spidev_filename path to spidev
- * @type  type of the eeprom
- * @speed clock speed in Hz
- * @word_size word size for transaction
+ * @param aSpidev_filename path to spidev
+ * @param aType of the eeprom
+ * @param aSpeed clock speed in Hz
+ * @param aWord_size word size for transaction
  *
  * @return as_93lcxx_device struct pointer on success, NULL on error
  */
 struct as_93lcxx_device * as_93lcxx_open(unsigned char *aSpidev_filename,
-                                          uint8_t aType,
-                                          uint32_t aSpeed,
-                                          uint8_t aWord_size);
+                                         uint8_t aType,
+                                         uint32_t aSpeed,
+                                         uint8_t aWord_size);
 
 /** @brief close the device
  *
- * @param spidev_filename path to spidev
+ * @param aDev spidev structure
  *
  */
 void as_93lcxx_close(struct as_93lcxx_device *aDev);
 
 /** @brief read a value in address given
  *
- * @param dev 93LCxx structure
- * @param address addresse of register to be read
+ * @param aDev 93LCxx structure
+ * @param aAddress addresse of register to be read
  *
  * @return positive register value on success, negative value on error.
  */
@@ -81,7 +81,7 @@ int32_t as_93lcxx_read(struct as_93lcxx_device *aDev,
 
 /** @brief enable write on eeprom
  *
- * @param dev 93LCxx structure
+ * @param aDev 93LCxx structure
  *
  * @return positive value on success, negative value on error
  */
@@ -89,8 +89,8 @@ int32_t as_93lcxx_ewen(struct as_93lcxx_device *aDev);
 
 /** @brief Force all data bits of the specified iaddress to 1
  *
- * @param dev 93LCxx structure
- * @param address addresse of register to be erased
+ * @param aDev 93LCxx structure
+ * @param aAddress addresse of register to be erased
  *
  * @return positive register value on success, negative value on error.
  */
@@ -99,7 +99,7 @@ int32_t as_93lcxx_erase(struct as_93lcxx_device *aDev,
 
 /** @brief Force all bits in eeprom to 1
  *
- * @param dev 93LCxx structure
+ * @param aDev 93LCxx structure
  *
  * @return positive register value on success, negative value on error.
  */
@@ -107,9 +107,9 @@ int32_t as_93lcxx_erase_all(struct as_93lcxx_device *aDev);
 
 /** @brief write a value in given address
  *
- * @param dev 93LCxx structure
- * @param address addresse of register to be read
- * @param value value to be wrote
+ * @param aDev 93LCxx structure
+ * @param aAddress addresse of register to be read
+ * @param aValue value to be wrote
  *
  * @return positive register value on success, negative value on error.
  */
@@ -119,8 +119,8 @@ int32_t as_93lcxx_write(struct as_93lcxx_device *aDev,
 
 /** @brief write the entire memory array with value given
  *
- * @param dev 93LCxx structure
- * @param value value to be wrote
+ * @param aDev 93LCxx structure
+ * @param aValue value to be wrote
  *
  * @return positive register value on success, negative value on error.
  */
@@ -129,7 +129,7 @@ int32_t as_93lcxx_write_all(struct as_93lcxx_device *aDev,
 
 /** @brief disable write on eeprom
  *
- * @param dev 93LCxx structure
+ * @param aDev 93LCxx structure
  *
  * @return positive value on success, negative value on error
  */

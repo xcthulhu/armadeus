@@ -34,11 +34,11 @@
 #include "as_spi.h"
 
 
-int as_spi_open(const unsigned char *spidev_name)
+int as_spi_open(const unsigned char *aSpidev_name)
 {
     int fd;
 
-    fd = open((char *)spidev_name, O_RDWR);
+    fd = open((char *)aSpidev_name, O_RDWR);
     if (fd < 0) {
             perror("open");
             return -1;
@@ -47,35 +47,35 @@ int as_spi_open(const unsigned char *spidev_name)
     return fd;
 }
 
-int as_spi_set_mode(int fd, uint8_t mode)
+int as_spi_set_mode(int aFd, uint8_t aMode)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_lsb(int fd, uint8_t lsb)
+int as_spi_set_lsb(int aFd, uint8_t aLsb)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_bits_per_word(int fd, uint8_t bits)
+int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_set_speed(int fd)
+int as_spi_set_speed(int aFd)
 {
     /* TODO */
     return -1;
 }
 
-int as_spi_get_mode(int fd)
+int as_spi_get_mode(int aFd)
 {
     uint8_t mode;
 
-    if (ioctl(fd, SPI_IOC_RD_MODE, &mode) < 0) {
+    if (ioctl(aFd, SPI_IOC_RD_MODE, &mode) < 0) {
             perror("SPI rd_mode");
             return -1;
     }
@@ -83,11 +83,11 @@ int as_spi_get_mode(int fd)
     return mode;
 }
 
-int as_spi_get_lsb(int fd)
+int as_spi_get_lsb(int aFd)
 {
     uint8_t lsb;
 
-    if (ioctl(fd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
+    if (ioctl(aFd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
             perror("SPI rd_lsb_fist");
             return -1;
     }
@@ -95,11 +95,11 @@ int as_spi_get_lsb(int fd)
     return lsb;
 }
 
-int as_spi_get_bits_per_word(int fd)
+int as_spi_get_bits_per_word(int aFd)
 {
     uint8_t bits;
 
-    if (ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
+    if (ioctl(aFd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
             perror("SPI bits_per_word");
             return -1;
     }
@@ -107,11 +107,11 @@ int as_spi_get_bits_per_word(int fd)
     return bits;
 }
 
-int as_spi_get_speed(int fd)
+int as_spi_get_speed(int aFd)
 {
     uint8_t speed;
 
-    if (ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
+    if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
             perror("SPI max_speed_hz");
             return -1;
     }
@@ -175,9 +175,9 @@ uint32_t as_spi_msg(int aFd,
     return msg; 
 }
 
-void as_spi_close(int fd)
+void as_spi_close(int aFd)
 {
-    close(fd);
+    close(aFd);
     return;
 }
 

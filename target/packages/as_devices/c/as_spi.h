@@ -29,102 +29,108 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 #include <inttypes.h>
 #include <sys/types.h>
 
 /** @brief Open a SPI bus.
  *
+ * @param aSpidev_name path name  
+ *
  * @return the file descriptor of the opened device, -1 on error
  */
-int as_spi_open(const unsigned char *spidev_name);
+int as_spi_open(const unsigned char *aSpidev_name);
 
 /** @brief Set spi bus mode
  *
- * @param fd spidev file handler
- * @param  mode
+ * @param aFd spidev file handler
+ * @param aMode
  *
  * @return mode if positive value, negative value on error
- *
+ * TODO
  */
-int as_spi_set_mode(int fd, uint8_t mode);
+int as_spi_set_mode(int aFd, uint8_t aMode);
 
 /** @brief Set bits order
  *
- * @param fd spidev file handler
- * @param lsb if 1 lsb first, else msb first
+ * @param aFd spidev file handler
+ * @param aLsb if 1 lsb first, else msb first
  *
  * @return lsb first if positive, msb first if 0, negative value on error
+ * TODO
  */
-int as_spi_set_lsb(int fd, uint8_t lsb);
+int as_spi_set_lsb(int aFd, uint8_t aLsb);
 
 /** @brief Set bits per word
  *
- * @param fd spidev file handler
- * @param bits number of bits per word
+ * @param aFd spidev file handler
+ * @param aBits number of bits per word
  *
  * @return bit per word if positive value, negative value on error
+ * TODO
  */
-int as_spi_set_bits_per_word(int fd, uint8_t bits);
+int as_spi_set_bits_per_word(int aFd, uint8_t aBits);
 
 /** @brief Get spi bus mode
  *
- * @param fd spidev file handler
+ * @param aFd spidev file handler
  *
  * @return mode if positive value, negative value on error
- *
+ * TODO 
  */
-int as_spi_get_mode(int fd);
+int as_spi_get_mode(int aFd);
 
 /** @brief Get bits order
  *
- * @param fd spidev file handler
+ * @param aFd spidev file handler
  *
  * @return lsb first if positive, msb first if 0, negative value on error
+ * 
  */
-int as_spi_get_lsb(int fd);
+int as_spi_get_lsb(int aFd);
 
 /** @brief Get clock bus speed
  *
- * @param fd spidev file handler
+ * @param aFd spidev file handler
  *
  * @return speed in Hz, negative value on error
  */
-int as_spi_get_speed(int fd);
+int as_spi_get_speed(int aFd);
 
 
 /** @brief Get bits per word
  *
- * @param fd spidev file handler
+ * @param aFd spidev file handler
  *
  * @return bit per word if positive value, negative value on error
  */
-int as_spi_get_bits_per_word(int fd);
+int as_spi_get_bits_per_word(int aFd);
 
 /** @brief Forge arbitrary length message (31bits max) and send it
  *
- * @param fd spidev file handler
- * @param msg right adjusted message
- * @param len lenght of the message
- * @param speed clock speed in Hz
+ * @param aFd spidev file handler
+ * @param aMsg right adjusted message
+ * @param aLen lenght of the message
+ * @param aSpeed clock speed in Hz
  *
  * @return message read
  */
-uint32_t as_spi_msg(int fd, 
-                    uint32_t msg, 
-                    size_t len,
-                    uint32_t speed);
+uint32_t as_spi_msg(int aFd, 
+                    uint32_t aMsg, 
+                    size_t aLen,
+                    uint32_t aSpeed);
 
 /** @brief Close a SPI bus.
  *
+ * @param aFd file descriptor of SPI bus used
+ *
  */
-void as_spi_close(int fd);
-
+void as_spi_close(int aFd);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
 
-#endif // AS_SPI_H_
+#endif /* AS_SPI_H_ */
 

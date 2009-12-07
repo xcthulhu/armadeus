@@ -39,13 +39,14 @@
 #define EWDS_ADDR (0)
 
 /* Define timings */
-#define MS  (1000) 
+#define MS  (1000)
+
 #define TWC (6*MS)
 #define TEC (6*MS)
 #define TWL (15*MS)
 
-
-/** @brief private function to ease making spi instructions
+/** @brief Private functions to ease making spi instructions
+ *
  */
 static uint8_t address_len(uint8_t aType, uint8_t aWord_size)
 {

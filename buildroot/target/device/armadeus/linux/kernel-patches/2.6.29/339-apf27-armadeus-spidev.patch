@@ -1,0 +1,145 @@
+Correct some bugs in spidev devices, and adjust number of chipselect for  apf27Dev spi1
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+Signed-off-by: Gwenhaël Goavec-Merou <gwen@trabucayre.com>
+---
+
+Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-04 11:50:37.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-04 11:58:32.000000000 +0100
+@@ -24,6 +24,7 @@
+ #include <linux/mtd/physmap.h>
+ #include <asm/mach/flash.h>
+ #include <linux/spi/spi.h>
++#include <linux/spi/spidev.h>
+ #include <linux/i2c.h>
+ #include <linux/serial.h>
+ #include <linux/delay.h>
+@@ -91,6 +92,9 @@
+ #ifdef CONFIG_CAN_MCP251X_MODULE
+ #define CONFIG_CAN_MCP251X 1
+ #endif
++#ifdef CONFIG_SPI_SPIDEV_MODULE
++#define CONFIG_SPI_SPIDEV 1
++#endif
+ #ifdef CONFIG_IMX_BACKLIGHT_MODULE
+ #define CONFIG_IMX_BACKLIGHT
+ #endif
+@@ -368,7 +372,7 @@
+ };
+ 
+ static struct spi_imx_master imx_spi1_master_info = {
+-	.num_chipselect	= 2,
++	.num_chipselect	= 3,
+ 	.enable_dma     = 0,
+ 	.init = gpio_spi1_active,
+ 	.exit = gpio_spi1_inactive,
+@@ -512,6 +516,38 @@
+ };
+ #endif /* CONFIG_CAN_MCP251X */
+ 
++#ifdef CONFIG_SPI_SPIDEV
++
++#define SPIDEV_CS (GPIO_PORTB | 17)
++
++static int spidev_pins[] = {
++	(SPIDEV_CS | GPIO_OUT | GPIO_GPIO),
++};
++
++static int spidev_init_gpio(void)
++{
++	gpio_set_value(SPIDEV_CS, 1);
++	return mxc_gpio_setup_multiple_pins(spidev_pins, ARRAY_SIZE(spidev_pins), "spidev");
++}
++
++/* Chip select command for spidev */
++static void spidev_cs(u32 command)
++{
++	if (command == SPI_CS_DEASSERT)
++		gpio_set_value(SPIDEV_CS, 1);
++	else
++		gpio_set_value(SPIDEV_CS, 0);
++}
++
++static struct spi_imx_chip spidev_hw = {
++	.cs_control     = spidev_cs,
++};
++
++static struct spidev_platform_data apf27_spidev_config = {
++	.init = spidev_init_gpio,
++};
++
++#endif /* CONFIG_SPI_SPIDEV */
+ 
+ static struct spi_board_info spi_board_info[] __initdata = {
+ #ifdef CONFIG_ARMADEUS_MAX1027
+@@ -550,6 +586,18 @@
+ 		.platform_data		= &apf27_mcp251x_config,
+ 	},
+ #endif /* CONFIG_CAN_MCP251X */
++#ifdef CONFIG_SPI_SPIDEV
++	{
++		.modalias          = "spidev",
++		.controller_data    = &spidev_hw,
++		.max_speed_hz      = 8000000, /* 8MHz */
++		.bus_num           = 1, /* SPI2 */
++		.mode              = SPI_MODE_1,
++		.chip_select       = 2, 
++		.platform_data     = &apf27_spidev_config,
++	},
++#endif /* CONFIG_SPI_SPIDEV */
++
+ };
+ 
+ 
+@@ -962,7 +1010,7 @@
+ 	/* Reserve "fixed" GPIOs */
+ 	tsc2101_init_fixed_gpio();
+ #endif
+-#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X) || defined(CONFIG_SPI_SPIDEV)
+ 	spi_register_board_info(spi_board_info,
+ 				ARRAY_SIZE(spi_board_info));
+ #endif
+Index: linux-2.6.29.6/drivers/spi/spidev.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/spi/spidev.c	2009-12-04 12:03:08.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spidev.c	2009-12-04 12:04:43.000000000 +0100
+@@ -558,8 +558,9 @@
+ 
+ static int spidev_probe(struct spi_device *spi)
+ {
++    struct spidev_platform_data *pdata = spi->dev.platform_data;
+ 	struct spidev_data	*spidev;
+-	int			status;
++	int         status;
+ 	unsigned long		minor;
+ 
+ 	/* Allocate driver data */
+@@ -595,6 +596,10 @@
+ 		set_bit(minor, minors);
+ 		list_add(&spidev->device_entry, &device_list);
+ 	}
++	/* allocate GPIO / IRQ if necessary */
++	if (pdata->init)
++		pdata->init();
++
+ 	mutex_unlock(&device_list_lock);
+ 
+ 	if (status == 0)
+Index: linux-2.6.29.6/include/linux/spi/spidev.h
+===================================================================
+--- linux-2.6.29.6.orig/include/linux/spi/spidev.h	2009-12-04 12:07:09.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/spidev.h	2009-12-04 12:07:34.000000000 +0100
+@@ -101,6 +101,10 @@
+ 	 */
+ };
+ 
++struct spidev_platform_data {
++	int (*init)(void);
++};
++
+ /* not all platforms use <asm-generic/ioctl.h> or _IOC_TYPECHECK() ... */
+ #define SPI_MSGSIZE(N) \
+ 	((((N)*(sizeof (struct spi_ioc_transfer))) < (1 << _IOC_SIZEBITS)) \

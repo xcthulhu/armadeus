@@ -25,11 +25,17 @@ ask_user()
 make shell_env
 . armadeus_env.sh
 
-ask_user "What do you want to quiltify today ? ;-)" "Linux (default)" "Buildroot"
+if [ "$1" != "export" ]; then
+    ask_user "What do you want to quiltify today ? ;-)" "Linux (default)" "Buildroot"
+fi
+if [ "$1" == "export" ]; then
+    ask_user "What kind of quilt patches do you want to export ?" "Linux (default)" "Buildroot"
+fi
+
 if [ "$answer" == "2" ]; then
-	QUILT_TARGET_NAME="Buildroot"
+    QUILT_TARGET_NAME="Buildroot"
 	QUILT_MAKEFILE_TARGET="buildroot-unpacked"
-	QUILT_TARGET_DIR=$ARMADEUS_BUILDROOT_DIR
+    QUILT_TARGET_DIR=$ARMADEUS_BUILDROOT_DIR
 	QUILT_TARGET_PATCH_DIR=$ARMADEUS_BUILDROOT_DIR/../patches/buildroot
 else
 	QUILT_TARGET_NAME="Linux kernel"
@@ -38,8 +44,9 @@ else
 	QUILT_TARGET_PATCH_DIR=$ARMADEUS_LINUX_PATCH_DIR
 fi
 
-echo -e "\nThis script is going to rebuilt a quiltified "$QUILT_TARGET_NAME" in the current view..."
-
+if [ "$1" != "export" ]; then
+    echo -e "\nThis script is going to rebuilt a quiltified "$QUILT_TARGET_NAME" in the current view..."
+fi
 
 if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $QUILT_TARGET_DIR/patches/ to $QUILT_TARGET_PATCH_DIR"
