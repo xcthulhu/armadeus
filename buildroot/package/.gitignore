@@ -10,6 +10,7 @@
 # except:
 !/ad9889ctrl/
 !/allegro/
+!/armadeus/
 !/armadeus-drivers-helpers/
 !/armadeus-testsuite/
 !/as_devices/
