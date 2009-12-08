@@ -244,8 +244,12 @@ int main(int argc, char * argv[])
     /* Sprite's image loading */
     tmp = SDL_LoadBMP("sdl.bmp");
     if (!tmp) {
-        printf("Unable to load image for test\n");
-        exit(1);
+        /* 2nd chance: */
+        tmp = SDL_LoadBMP("/usr/share/images/sdl.bmp");
+        if (!tmp) {
+            printf("Unable to load image for test\n");
+            exit(1);
+        }
     }
     sprite = SDL_DisplayFormat(tmp);
     SDL_FreeSurface(tmp);
@@ -282,3 +286,4 @@ int main(int argc, char * argv[])
     printf("\nBye !\n");
     return 0;
 }
+
