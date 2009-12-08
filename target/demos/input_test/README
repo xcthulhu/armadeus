@@ -2,5 +2,5 @@
 * ARM compiling:
  $ make clean; make install
 * x86 compiling (SDL devt package should be installed on your system)
- $ make TARGET=x86 clean; make TARGET=x86
+ $ make clean; make TARGET=x86
 

@@ -1,23 +1,23 @@
 ARMADEUS_BASE_DIR=../../..
-include $(ARMADEUS_BASE_DIR)/Makefile.in
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-ifeq ($(TARGET),)
-	ROOT_DIR:=$(ARMADEUS_ROOTFS_DIR)
-	CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
-	DEFINES="-DTARGET"
-	CFLAGS:=$(shell STAGING_DIR=$(ARMADEUS_STAGING_DIR) sh $(ARMADEUS_SDL_DIR)/sdl-config --cflags)
-	LIBS:=$(shell STAGING_DIR=$(ARMADEUS_STAGING_DIR) sh $(ARMADEUS_SDL_DIR)/sdl-config --libs) -lSDL_image
-else
-	ROOT_DIR:="/"
-	CFLAGS=`/usr/bin/sdl-config --cflags`
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-sstrip
+STAGING_DIR:=$(ARMADEUS_STAGING_DIR)
+INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/local/bin/
+SDL_DIR:=$(ARMADEUS_SDL_DIR)
+
+DEFINES=-DTARGET
+CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags) -g
+LDFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --libs) -lSDL_image
+
+ifeq ($(TARGET),x86)
+	INSTALL_DIR:=/usr/local/bin/
+	CFLAGS=`/usr/bin/sdl-config --cflags` -g
 	LIBS=`/usr/bin/sdl-config --libs` -lSDL_Image
 	CC=gcc
-	DEFINES="-DHOST"
-endif
-
-INSTALL_DIR:=$(ROOT_DIR)/usr/bin/
-ifneq ($(DEBUG),)
-CFLAGS+="-g"
+	STRIP=strip
+	DEFINES=-DHOST
 endif
 
 
@@ -27,21 +27,23 @@ default: $(EXEC_NAME)
 
 all: $(EXEC_NAME)
 
-
 image.o: image.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(EXEC_NAME): image.o
-	$(CC)  $(LIBS) -o $@ $^
-
+	$(CC) $(LDFLAGS) -o $@ $^
 
 install: $(EXEC_NAME)
 	mkdir -p $(INSTALL_DIR)
-	cp $^  $(INSTALL_DIR)
+	cp $^ $(INSTALL_DIR)
+	$(STRIP) $(INSTALL_DIR)/$^
 
-clean: 
+clean:
 	rm -rf $(EXEC_NAME)
 	rm -rf *.o
 
-.PHONY: clean install
+uninstall:
+	rm -f $(INSTALL_DIR)/$(EXEC_NAME)
+
+.PHONY: clean install uninstall
 

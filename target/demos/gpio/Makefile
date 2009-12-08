@@ -1,13 +1,12 @@
-
-ifneq ($(CC),)
-# Locally compiled:
+# Default values for local compiling:
 ARMADEUS_BASE_DIR:=$(shell pwd)/../../..
-include $(ARMADEUS_BASE_DIR)/Makefile.in
-STAGING_DIR:=$(ARMADEUS_BUILD_DIR)/staging_dir/
-INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/bin/
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
+
+INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/local/bin/
 CC=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 DEFINES=-D$(ARMADEUS_BOARD_NAME)
-endif
+
 
 EXEC_NAME = blink_led
 
@@ -22,8 +21,9 @@ clean:
 	rm -rf $(EXEC_NAME)
 	rm -rf *.o
 
-install:
+install: $(EXEC_NAME)
 	cp $(EXEC_NAME) $(INSTALL_DIR)/
+	$(STRIP) $(INSTALL_DIR)/$(EXEC_NAME)
 
 uninstall:
 	rm -f $(INSTALL_DIR)/$(EXEC_NAME)
