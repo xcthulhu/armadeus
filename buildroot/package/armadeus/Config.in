@@ -1,0 +1,5 @@
+menu "Armadeus specific tools/utilities"
+
+source package/armadeus/demos/Config.in
+
+endmenu

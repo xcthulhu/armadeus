@@ -1,0 +1,56 @@
+
+config BR2_PACKAGE_ARMADEUS_DEMOS
+	bool "Armadeus misc demos"
+	default n
+	help
+	  Install Armadeus miscallenous demos.
+
+menu "Choose the demos to install"
+	depends on BR2_PACKAGE_ARMADEUS_DEMOS
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_ARMANOID
+	bool "Armanoid"
+	select BR2_PACKAGE_SDL
+	help
+	  Small game to show SDL usage.
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_BACKLIGHT
+	bool "Backlight control"
+	select BR2_PACKAGE_SDL
+	help
+	  SDL tool to graphically adjust LCD backlight.
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_GPIO
+	bool "GPIO test"
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_GPS
+	bool "GPS frame decoding"
+	help
+	  Small tool to show how to read and decode NMEA frames
+	  coming from a serial GPS.
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_INPUT
+	bool "Input test"
+	select BR2_PACKAGE_SDL
+	help
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_MUSIC_PLAYER
+	bool "Music player"
+	select BR2_PACKAGE_SDL
+	select CONFIG_BR2_PACKAGE_SDL_TTF
+	select CONFIG_BR2_PACKAGE_SDL_MIXER
+	help
+	  SDL based music player.
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_OSCILLO
+	bool "Oscilloscope"
+	help
+	  MAX1027 data viewer "à la" oscilloscope. (Work in progress).
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_SHOW_IMAGE
+	bool "Image viewer"
+	select CONFIG_BR2_PACKAGE_SDL_IMAGE
+	help
+	  SDL based image viewer.
+
+endmenu

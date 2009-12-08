@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Oct 23 18:15:23 2009
+# Tue Dec  8 17:26:00 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -339,6 +339,11 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_DUMMY is not set
 # BR2_PACKAGE_SNES9X is not set
 # BR2_PACKAGE_AS_DEVICES is not set
+
+#
+# Armadeus specific tools/utilities
+#
+# BR2_PACKAGE_ARMADEUS_DEMOS is not set
 
 #
 # Other stuff
