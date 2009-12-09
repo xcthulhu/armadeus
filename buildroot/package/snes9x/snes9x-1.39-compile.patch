@@ -273,3 +273,23 @@
      }
  	
      return (SUCCESS);
+--- snes9x-sdl-1.39/globals.cpp	2003-10-27 09:42:22.000000000 +0100
++++ snes9x-sdl-1.39.mod/globals.cpp	2009-12-09 10:33:53.000000000 +0100
+@@ -54,6 +54,8 @@
+ #include "sa1.h"
+ //#include "netplay.h"
+ 
++struct SDSP1 DSP1;
++
+ START_EXTERN_C
+ char String[513];
+ 
+@@ -73,8 +75,6 @@
+ 
+ struct SSettings Settings;
+ 
+-struct SDSP1 DSP1;
+-
+ struct SRegisters SA1Registers;
+ //struct SSA1Registers SA1Registers;
+ 

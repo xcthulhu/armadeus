@@ -9,6 +9,7 @@ SNES9X_SITE:=http://www.vanille.de/mirror/
 # roms: http://rtgamer.free.fr/index.php?pg=2&rub=sn
 SNES9X_CAT:=bzcat
 SNES9X_DIR:=$(BUILD_DIR)/snes9x-sdl-$(SNES9X_VERSION)
+SNES9X_TARGET_BIN:=/usr/local/bin/snes9x
 
 #SNES9X_VERSION:=1.43
 #SNES9X_SOURCE:=snes9x-$(SNES9X_VERSION)-src.tar.gz
@@ -51,20 +52,16 @@ $(SNES9X_DIR)/.configured: $(SNES9X_DIR)/.patched
 $(SNES9X_DIR)/snes9x: $(SNES9X_DIR)/.configured
 #	$(MAKE) -C $(SNES9X_DIR)/snes9x
 	$(MAKE) -C $(SNES9X_DIR) \
-	CC="$(STAGING_DIR)/bin/arm-linux-gcc" CCC="$(STAGING_DIR)/bin/arm-linux-c++ -fno-rtti -fno-exceptions" \
+	CC=$(TARGET_CC) CCC="$(TARGET_CXX) -fno-rtti -fno-exceptions" \
 	INCLUDES="-I$(STAGING_DIR)/usr/lib/include `$(STAGING_DIR)/usr/bin/sdl-config --cflags`" \
 	LDLIBS="`$(STAGING_DIR)/usr/bin/sdl-config --libs`"
 	touch $@
 
-# $(STAGING_DIR)/usr/lib/libSDL.so: $(SNES9X_DIR)/.compiled
-# 	$(MAKE) -C $(SNES9X_DIR) install
-# 	touch -c $(STAGING_DIR)/usr/lib/libSDL.so
-# 
-# $(TARGET_DIR)/usr/lib/libSDL.so: $(STAGING_DIR)/usr/lib/libSDL.so
-# 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL*.so* $(TARGET_DIR)/usr/lib/
-# 	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libSDL.so
+$(TARGET_DIR)/$(SNES9X_TARGET_BIN): $(SNES9X_DIR)/snes9x
+	cp -f $(SNES9X_DIR)/snes9x $(TARGET_DIR)/$(SNES9X_TARGET_BIN)
+	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/$(SNES9X_TARGET_BIN)
 
-SNES9X snes9x: sdl $(SNES9X_DIR)/snes9x
+SNES9X snes9x: sdl $(TARGET_DIR)/$(SNES9X_TARGET_BIN)
 
 snes9x-clean:
 #	$(MAKE) DESTDIR=$(TARGET_DIR) CC=$(TARGET_CC) -C $(SNES9X_DIR) uninstall
