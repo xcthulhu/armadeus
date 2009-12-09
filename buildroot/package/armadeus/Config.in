@@ -1,5 +1,6 @@
 menu "Armadeus specific tools/utilities"
 
+source package/armadeus/as_devices/Config.in
 source package/armadeus/demos/Config.in
 source package/armadeus/imxssi/Config.in
 source package/armadeus/testsuite/Config.in
