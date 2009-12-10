@@ -52,7 +52,13 @@ if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $QUILT_TARGET_DIR/patches/ to $QUILT_TARGET_PATCH_DIR"
 	cp -f $QUILT_TARGET_DIR/patches/*.patch $QUILT_TARGET_PATCH_DIR
 	echo -e "\n--- You can now check your work before commiting --> \n"
-	git status
+	if [ -d ".git" ]; then
+		git status
+	elif [ -d ".svn" ]; then
+		svn status -q
+	else
+		echo "No VCS found"
+	fi
 	exit 0
 fi
 
