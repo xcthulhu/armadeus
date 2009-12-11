@@ -1,0 +1,17 @@
+SDL_ttf needs freetype to be built and installed first.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/package/sdl_ttf/sdl_ttf.mk
+===================================================================
+--- buildroot.orig/package/sdl_ttf/sdl_ttf.mk	2009-12-11 10:14:53.000000000 +0100
++++ buildroot/package/sdl_ttf/sdl_ttf.mk	2009-12-11 10:15:09.000000000 +0100
+@@ -60,7 +60,7 @@
+ 	cp -dpf $(STAGING_DIR)/usr/lib/libSDL_ttf*.so* $(TARGET_DIR)/usr/lib/
+ 	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/libSDL_ttf.so
+ 
+-sdl_ttf: uclibc sdl $(TARGET_DIR)/usr/lib/libSDL_ttf.so
++sdl_ttf: uclibc sdl freetype $(TARGET_DIR)/usr/lib/libSDL_ttf.so
+ 
+ sdl_ttf-clean:
+ 	$(MAKE) DESTDIR=$(TARGET_DIR) CC=$(TARGET_CC) -C $(SDL_TTF_DIR) uninstall
