@@ -18,7 +18,6 @@
  *
  */
 
-
 #ifndef AS_I2C_H_
 #define AS_I2C_H_
 
@@ -37,15 +36,13 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 #include <inttypes.h>
 #include <sys/types.h>
 
-
-/// Number of I2C busses on system
+/* Number of I2C busses on system */
 #define AS_I2C_DEV_COUNT 2
-
 
 /** @brief Open an I2C bus.
  *
