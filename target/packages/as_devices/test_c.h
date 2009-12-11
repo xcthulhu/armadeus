@@ -1,33 +1,36 @@
 /*
-**    THE ARMadeus Systems
-** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
-** This library is free software; you can redistribute it and/or
-** modify it under the terms of the GNU Lesser General Public
-** License as published by the Free Software Foundation; either
-** version 2.1 of the License, or (at your option) any later version.
-** 
-** This library is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** Lesser General Public License for more details.
-** 
-** You should have received a copy of the GNU Lesser General Public
-** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+ **    THE ARMadeus Systems
+ ** 
+ **    Copyright (C) 2009  The armadeus systems team 
+ **    Fabien Marteau <fabien.marteau@armadeus.com>
+ ** 
+ ** This library is free software; you can redistribute it and/or
+ ** modify it under the terms of the GNU Lesser General Public
+ ** License as published by the Free Software Foundation; either
+ ** version 2.1 of the License, or (at your option) any later version.
+ ** 
+ ** This library is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ ** Lesser General Public License for more details.
+ ** 
+ ** You should have received a copy of the GNU Lesser General Public
+ ** License along with this library; if not, write to the Free Software
+ ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 #include "as_apf27_pwm.h"
+#include "as_93lcxx.h"
 
 #define PWM_NUM 0
 
 void pressEnterToContinue(void)
 {
-    printf("Press enter to continue\n");
+    printf("\nPress enter to continue\n");
     getc(stdin);//XXX 
     while( getc(stdin) != '\n') ; 
 }
@@ -61,7 +64,7 @@ void test_pwm(void)
         printf(" 8) get state\n");
         printf("> ");
         scanf("%s",buffer);
-        
+
         switch(buffer[0])
         {
             case '1' : printf("Give frequency :");
@@ -70,7 +73,7 @@ void test_pwm(void)
                        pressEnterToContinue();
                        break;
             case '2' : printf("Current pwm frequency is %d\n",
-                             as_apf27_pwm_getFrequency(PWM_NUM));
+                              as_apf27_pwm_getFrequency(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '3' : printf("Give period :");
@@ -127,4 +130,247 @@ void test_pwm(void)
     }
 }
 
+void test_i2c(void)
+{
+    char buffer[20];
 
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("*********************************\n");
+        printf("*   Testing i2c menu           *\n");
+        printf("*********************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) read mac address \n");
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' : printf("TODO\n");
+                       pressEnterToContinue();
+                       break;
+            default : break;
+        }
+    }
+
+}
+
+void test_spi(void)
+{
+    printf("TODO\n");
+    pressEnterToContinue();
+}
+
+
+/* 93LCxx eepromm test */
+
+int address_size(int aType, int aWordSize)
+{
+    return (((aType-46)/10) + 6 + 2 - (aWordSize/8));
+}
+
+int max_address(int aType, int aWordSize)
+{
+    return (pow(2,address_size(aType, aWordSize))-1);
+}
+
+void test_93LC()
+{
+    char buffer[50];
+    int i;
+
+    int type = 46;
+    char spidevpath[50];
+    struct as_93lcxx_device *dev;
+    /* defaults values */
+    int frequency = 1000000;
+    uint8_t word_size = 8;
+    int value, value2;
+    int initialized=0;
+    snprintf(spidevpath, 50, "%s", "/dev/spidev2.0");
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("*********************************\n");
+        printf("*   Testing 93LCxx menu         *\n");
+        printf("*********************************\n");
+        printf("Choose ('q' to quit):\n");
+        if (initialized == 0)
+        {
+            printf(" 1) Change word size (%d)\n", word_size);
+            printf(" 2) Change bus frequency (%d)\n", frequency);
+            printf(" 3) Change eeprom type (%d)\n", type);
+            printf(" 4) Change spidev path (%s)\n", spidevpath);
+            printf(" 5) Initialize eeprom\n");
+        } else {
+            printf(" 1) Close eeprom\n");
+            printf(" 2) Read specific address\n");
+            printf(" 3) Erase specific address\n");
+            printf(" 4) Write specific address\n");
+            printf(" 5) Write all\n");
+            printf(" 6) Read all\n");
+            printf(" 7) Erase all\n");
+            printf(" 8) Unlock write\n");
+            printf(" 9) lock write\n");
+        }
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        if (initialized == 0)
+        {
+            switch(buffer[0])
+            {
+                case '1' :  printf("Give new word size (8 or 16) : ");
+                            scanf("%d", &value);
+                            if ( (value != 8) && (value != 16) )
+                            {
+                                printf("Wrong value\n");
+                                pressEnterToContinue();
+                            } else {
+                                word_size = value;
+                            }
+                            break;
+                case '2' :  printf("Give bus frequency : ");
+                            scanf("%d", &value);
+                            frequency = value;
+                            printf("Frequency changed to %dHz\n",frequency);
+                            break;
+                case '3' :  printf("Give new type of eeprom (46, 56 or 66) : ");
+                            scanf("%d", &value);
+                            if ( (value != 46) && (value != 56) && (value != 66) )
+                            {
+                                printf("Wrong value\n");
+                                pressEnterToContinue();
+                            } else {
+                                type = value;
+                            }
+                            break;
+                case '4' :  printf("Give new path for spidev : \n");
+                            scanf("%s", spidevpath);
+                            printf("New path is %s\n",spidevpath);
+                            break;
+                case '5' :  dev = as_93lcxx_open((unsigned char *)spidevpath, 
+                                                 type, 
+                                                 frequency, 
+                                                 word_size);
+                            if (dev == NULL)
+                            {
+                                printf("Error, can't initialize eeprom. Have you modprobed spidev ?\n");
+                            } else {
+                                initialized = 1;
+                            }
+                            pressEnterToContinue();
+                            break;
+                default : break;
+            }
+        } else {
+            switch(buffer[0])
+            {
+                case '1' :  as_93lcxx_close(dev); 
+                            printf("eeprom closed\n");
+                            initialized = 0;
+                            pressEnterToContinue();
+                            break;
+                case '2' :  printf(" Read specific address\n");
+                            printf("Give address in hexadecimal (max 0x%03X):",
+                                   max_address(type, word_size));
+                            scanf("%x",&value);
+                            if (value > max_address(type, word_size))
+                            {
+                                printf(" Error, address wrong\n");
+                            } else {
+                                value2 = as_93lcxx_read(dev, value);
+                                if (value2 < 0)
+                                {
+                                    printf("Error, can't read value\n");
+                                } else {
+                                    printf(" Read %02x at %02X", value2, value );
+                                }
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '3' :  printf("Erase specific address\n");
+                            printf("Give address in hexadecimal (max 0x%03X):",
+                                   max_address(type, word_size));
+                            scanf("%x",&value);
+                            if (value > max_address(type, word_size))
+                            {
+                                printf(" Error, address wrong\n");
+                            } else {
+                                value2 = as_93lcxx_erase(dev, value);
+                                if (value2 < 0)
+                                {
+                                    printf("Error, can't erase value\n");
+                                } else {
+                                    printf("Value erased\n");
+                                }
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '4' :  printf("Write specific address\n");
+                            printf("Give address in hexadecimal (max 0x%03X):",
+                                   max_address(type, word_size));
+                            scanf("%x",&value);
+                            if (value > max_address(type, word_size))
+                            {
+                                printf(" Error, address wrong\n");
+                                pressEnterToContinue();
+                                break;
+                            }
+                            printf("Give value in hexadecimal :");
+                            scanf("%x",&value2);
+                            value2 = as_93lcxx_write(dev, value, value2);
+                            if (value2 < 0)
+                            {
+                                printf("Error, can't write value\n");
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '5' :  printf(" Write all\n");
+                            printf("Give value in hexadecimal:");
+                            scanf("%x",&value);
+                            value2 = as_93lcxx_write_all(dev, value);
+                            if (value2 < 0)
+                            {
+                                printf("Error, can't write value\n");
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '6' :  printf(" Read all\n");
+                            for(i = 0; i <= max_address(type, word_size); i++)
+                            {
+                                if (word_size == 8)
+                                {
+                                    printf("%03X -> %02X\n",
+                                           i,as_93lcxx_read(dev, i));
+                                } else{ 
+                                    printf("%03X -> %04X\n",
+                                           i,as_93lcxx_read(dev, i));
+                                }
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '7' :  printf(" Erase all\n");
+                            value = as_93lcxx_erase_all(dev);
+                            if (value < 0)
+                                printf(" Error in erasing eeprom\n");
+                            pressEnterToContinue();
+                            break;
+                case '8' :  printf("Unlock write\n");
+                            if (as_93lcxx_ewen(dev) < 0)
+                                printf("Error can't unlock write\n");
+                            pressEnterToContinue();
+                            break;
+                case '9' :  printf("lock write\n");
+                            if (as_93lcxx_ewds(dev) < 0)
+                                printf("Error can't lock write\n");
+                            pressEnterToContinue();
+                            break;
+                default : break;
+            }
+        }
+    }
+}
