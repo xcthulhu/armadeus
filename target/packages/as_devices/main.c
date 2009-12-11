@@ -38,6 +38,9 @@ int main(int argc, char ** argv)
         printf("*******************************************************\n");
         printf("Choose a test ('q' to quit):\n");
         printf(" 1) Testing pwm\n");
+        printf(" 2) Testing i2c\n");
+        printf(" 3) Testing spi\n");
+        printf(" 4) Testing 93LCxx eprom\n");
         printf("> ");
         scanf("%s",buffer);
         
@@ -45,6 +48,13 @@ int main(int argc, char ** argv)
         {
             case '1' : test_pwm();
                        break;
+            case '2' : test_i2c();
+                       break;
+            case '3' : test_spi();
+                       break;
+            case '4' : test_93LC();
+                       break;
+
             default : break;
         }
     }
