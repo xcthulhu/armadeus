@@ -82,6 +82,7 @@ void
 AsAd5258::store(void)
 {
     mI2c->writeByte(mI2cAd5258Addr,0xc0);
+    /* wait for 26ms */
 }
 
 /*------------------------------------------------------------------------------*/
@@ -91,6 +92,7 @@ void
 AsAd5258::restore(void)
 {
     mI2c->writeByte(mI2cAd5258Addr,0xa0);
+    /* wait for 300µs */
 }
 
 
