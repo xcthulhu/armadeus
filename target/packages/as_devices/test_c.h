@@ -25,6 +25,7 @@
 
 #include "as_apf27_pwm.h"
 #include "as_93lcxx.h"
+#include "as_i2c.h"
 
 #define PWM_NUM 0
 
@@ -35,6 +36,7 @@ void pressEnterToContinue(void)
     while( getc(stdin) != '\n') ; 
 }
 
+/* pwm test */
 void test_pwm(void)
 {
     int ret;
@@ -130,32 +132,80 @@ void test_pwm(void)
     }
 }
 
+/* i2c bus test */
 void test_i2c(void)
 {
     char buffer[20];
+    int value;
+    int initialized = 0;
+
+    int i2c_id = 0;
+    int i2c_bus = -1;
 
     while(buffer[0] != 'q')
     {
         system("clear");
         printf("*********************************\n");
-        printf("*   Testing i2c menu           *\n");
+        printf("*   Testing i2c menu            *\n");
         printf("*********************************\n");
         printf("Choose ('q' to quit):\n");
-        printf(" 1) read mac address \n");
+        if (initialized == 0)
+        {
+            printf(" 1) Open i2c bus \n");
+            printf(" 2) Change bus number (%d)\n",i2c_id);
+        } else {
+            printf(" 1) Close i2c bus \n");
+        }
         printf("> ");
         scanf("%s",buffer);
 
-        switch(buffer[0])
+        if (initialized == 0)
         {
-            case '1' : printf("TODO\n");
-                       pressEnterToContinue();
-                       break;
-            default : break;
+            switch(buffer[0])
+            {
+                case '1' :  printf("Open i2c bus\n");
+                            i2c_bus = as_i2c_open( i2c_id);
+                            if (i2c_bus < 0)
+                            {
+                                printf("Error can't open i2c bus\n");
+                            } else {
+                                printf("Bus %d opened\n", i2c_id);
+                                initialized = 1;
+                            }
+                            pressEnterToContinue();
+                            break;
+                case '2' :  printf("Give bus number (max %d): ", AS_I2C_DEV_COUNT-1);
+                            scanf("%d",&value);
+                            if ((value >= AS_I2C_DEV_COUNT) || (value < 0))
+                            {
+                                printf(" Wrong value\n");
+                            } else {
+                                i2c_id = value;
+                            }
+                            pressEnterToContinue();
+                default : break;
+            }
+        } else {
+            switch(buffer[0])
+            {
+                case '1' :  printf("Close i2c bus\n");
+                            value = as_i2c_close(i2c_bus);
+                            if (value < 0)
+                            {
+                                printf(" Error, can't close i2c bus num %d\n", i2c_id);
+                            } else {
+                                initialized = 0;
+                            }
+                            pressEnterToContinue();
+                            printf("plop\n");
+                            break;
+                default : break;
+            }
         }
     }
-
 }
 
+/* spi bus test */
 void test_spi(void)
 {
     printf("TODO\n");
@@ -164,7 +214,6 @@ void test_spi(void)
 
 
 /* 93LCxx eepromm test */
-
 int address_size(int aType, int aWordSize)
 {
     return (((aType-46)/10) + 6 + 2 - (aWordSize/8));

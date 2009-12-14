@@ -60,7 +60,7 @@ AsAd5258::getRdac(void)
 void 
 AsAd5258::setEeprom(int aValue)
 {
-    mI2c->writeByteData(mI2cAd5258Addr,0x02,aValue);
+    mI2c->writeByteData(mI2cAd5258Addr,0x20,aValue);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -71,7 +71,7 @@ int
 AsAd5258::getEeprom(void)
 {
     unsigned char value;
-    mI2c->readByteData(mI2cAd5258Addr,0x02,&value);
+    mI2c->readByteData(mI2cAd5258Addr,0x20,&value);
     return value;
 }
 
@@ -81,7 +81,8 @@ AsAd5258::getEeprom(void)
 void 
 AsAd5258::store(void)
 {
-    mI2c->writeByte(mI2cAd5258Addr,0x0c);
+    mI2c->writeByte(mI2cAd5258Addr,0xc0);
+    /* wait for 26ms */
 }
 
 /*------------------------------------------------------------------------------*/
@@ -90,7 +91,8 @@ AsAd5258::store(void)
 void 
 AsAd5258::restore(void)
 {
-    mI2c->writeByte(mI2cAd5258Addr,0x0a);
+    mI2c->writeByte(mI2cAd5258Addr,0xa0);
+    /* wait for 300µs */
 }
 
 
