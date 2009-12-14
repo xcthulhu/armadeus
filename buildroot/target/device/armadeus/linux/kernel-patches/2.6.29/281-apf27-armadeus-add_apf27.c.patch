@@ -1,6 +1,6 @@
 
-Adds support for Armadeus Systems APF27 module (i.MX27 based) and 
-APF27Dev companion baseboard.
+Adds support for Armadeus Systems APF27 module (i.MX27 based), APF27Dev
+companion baseboard and APW extension board.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-11-13 23:22:19.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-14 10:35:40.000000000 +0100
 @@ -0,0 +1,737 @@
 + /*
 + * apf27.c
@@ -751,8 +751,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-11-15 19:50:35.000000000 +0100
-@@ -0,0 +1,978 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-14 16:29:06.000000000 +0100
+@@ -0,0 +1,970 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -836,6 +836,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_FB_MXC
 +extern void apf27_lcd_init(void);
 +#endif
++#ifdef CONFIG_MACH_APF27_DEV_EXT
++extern void apf27dev_extension_init(void);
++#endif
 +
 +#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
 +#define CONFIG_ARMADEUS_MAX1027 1
@@ -861,9 +864,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
 +#endif
-+
-+//#define CONFIG_GPS
-+//#define CONFIG_GSM
 +
 +
 +#ifdef CONFIG_I2C
@@ -1004,23 +1004,19 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif /* CONFIG_I2C */
 +
 +
-+/* An optional GSM module can be added to APF27Dev (wireless extension board) */
-+#ifdef CONFIG_GSM
-+#define GSM_POK_IN (GPIO_PORTE | 11)
++/* UART2 signals are available on J8 connector (multiplexed with Keypad) */
++#ifdef CONFIG_SERIAL_IMX_UART2
 +static int mxc_uart1_pins[] = {
 +	PE3_PF_UART2_CTS,
 +	PE4_PF_UART2_RTS,
 +	PE6_PF_UART2_TXD,
 +	PE7_PF_UART2_RXD,
-+	(GSM_POK_IN | GPIO_OUT | GPIO_GPIO) /* GSM_PWR_ON_not */
 +};
 +
 +static int uart_mxc_port1_init(struct platform_device *pdev)
 +{
-+	int res = mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART1");
-+	gpio_set_value(GSM_POK_IN, 0); /* start GSM */
-+	mdelay(5000);
-+	gpio_set_value(GSM_POK_IN, 1); /* start GSM */
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart1_pins,
++			ARRAY_SIZE(mxc_uart1_pins), "UART2");
 +
 +	return res;
 +}
@@ -1037,25 +1033,21 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	.exit = uart_mxc_port1_exit,
 +	.flags = IMXUART_HAVE_RTSCTS,
 +};
-+#endif /* CONFIG_GSM */
++#endif /* CONFIG_SERIAL_IMX_UART2 */
 +
 +
-+/* An optionnal GPS module can be added to APF27Dev (wireless extension board) */
-+#ifdef CONFIG_GPS
-+#define GPS_WAKEUP (GPIO_PORTB | 20)
-+#define GPS_TIMEPULSE (GPIO_PORTB | 21)
++/* UART5 signals are available on J9 connector (multiplexed with CSI) */
++#ifdef CONFIG_SERIAL_IMX_UART5
 +
 +static int mxc_uart4_pins[] = {
 +	PB19_AF_UART5_RXD,
 +	PB18_AF_UART5_TXD,
-+	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO),
-+	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO),
 +};
 +
 +static int uart_mxc_port4_init(struct platform_device *pdev)
 +{
-+	int res = mxc_gpio_setup_multiple_pins(mxc_uart4_pins, ARRAY_SIZE(mxc_uart4_pins), "UART4");
-+	gpio_set_value(GPS_WAKEUP, 1); /* start GPS */
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart4_pins,
++			ARRAY_SIZE(mxc_uart4_pins), "UART5");
 +
 +	return res;
 +}
@@ -1072,7 +1064,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	.exit = uart_mxc_port4_exit,
 +	.flags = 0,
 +};
-+#endif /* CONFIG_GPS */
++#endif /* CONFIG_SERIAL_IMX_UART5 */
 +
 +
 +/* Both APF27 SPI ports are used on APF27Dev */
@@ -1095,7 +1087,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static int gpio_spi0_active(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_cspi0_pins, ARRAY_SIZE(mxc_cspi0_pins), "CSPI0");
++	return mxc_gpio_setup_multiple_pins(mxc_cspi0_pins,
++			ARRAY_SIZE(mxc_cspi0_pins), "CSPI0");
 +}
 +
 +static int gpio_spi0_inactive(struct platform_device *pdev)
@@ -1106,7 +1099,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static int gpio_spi1_active(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_cspi1_pins, ARRAY_SIZE(mxc_cspi1_pins), "CSPI1");
++	return mxc_gpio_setup_multiple_pins(mxc_cspi1_pins,
++			ARRAY_SIZE(mxc_cspi1_pins), "CSPI1");
 +}
 +
 +static int gpio_spi1_inactive(struct platform_device *pdev)
@@ -1371,8 +1365,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif /* CONFIG_USB_EHCI_MXC */
 +
 +
-+#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
-+
 +#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
 +static struct imx_alsa_codec_config tsc2101_alsa_pdata;
 +
@@ -1393,13 +1385,10 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +				.platform_data = &tsc2101_alsa_pdata,
 +			}
 +};
-+#  define ALSA_SOUND &tsc2101_alsa_device,
-+# endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
-+
++# define ALSA_SOUND &tsc2101_alsa_device,
 +#else
 +# define ALSA_SOUND
-+#endif /* CONFIG_SND || CONFIG_SND_MODULE */
-+
++#endif /* CONFIG_SND_IMX_TSC2102 || CONFIG_SND_IMX_TSC2102_MODULE */
 +
 +static struct platform_device *platform_devices[] __initdata = {
 +	ALSA_SOUND
@@ -1687,10 +1676,10 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +	apf27dev_pwr_ctrl_gpio_active();
 +
-+#ifdef CONFIG_GSM
++#ifdef CONFIG_SERIAL_IMX_UART2
 +	mxc_register_device(&mxc_uart_device1, &uart1_pdata);
 +#endif
-+#ifdef CONFIG_GPS
++#ifdef CONFIG_SERIAL_IMX_UART5
 +	mxc_register_device(&mxc_uart_device4, &uart4_pdata);
 +#endif
 +#ifdef CONFIG_USB_EHCI_MXC
@@ -1727,6 +1716,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_VIDEO_MX27
 +	mxc_register_device(&mx27_camera_device, &apf27_camera);
 +#endif
++#ifdef CONFIG_MACH_APF27_DEV_EXT
++	apf27dev_extension_init();
++#endif
 +
 +	printk("done\n");
 +}
@@ -1734,7 +1726,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-11-10 15:35:23.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-14 10:35:40.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -1954,5 +1946,109 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +	mxc_register_device(&mxc_fb_device, &apf27_fb_data);
 +#endif
++}
++
+Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-14 16:34:11.000000000 +0100
+@@ -0,0 +1,99 @@
++ /*
++ * apf27-dev-ext-apw.c
++ * Support for AFP27Dev's wireless extension board.
++ *
++ * Copyright (C) 2009 Armadeus Systems
++ * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
++ *          Nicolas Colombain <nicolas.colombain@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <mach/iomux-mx1-mx2.h>
++#include <mach/gpio.h>
++
++
++/* An optional GSM module can be added to wireless extension board */
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM
++#define GSM_POK_IN (GPIO_PORTE | 11)
++static int apw_gsm_pins[] = {
++	(GSM_POK_IN | GPIO_OUT | GPIO_GPIO) /* GSM_PWR_ON_not */
++};
++
++static int apw_gsm_init(void)
++{
++	int res = mxc_gpio_setup_multiple_pins(apw_gsm_pins,
++			ARRAY_SIZE(apw_gsm_pins), "GSM");
++	gpio_set_value(GSM_POK_IN, 0); /* start GSM */
++	mdelay(5000);
++	gpio_set_value(GSM_POK_IN, 1); /* start GSM */
++
++	return res;
++}
++#if 0
++static int apw_gsm_exit(void)
++{
++	mxc_gpio_release_multiple_pins(apw_gsm_pins, ARRAY_SIZE(apw_gsm_pins));
++
++	return 0;
++}
++#endif
++#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM */
++
++
++/* An optionnal GPS module can be added to wireless extension board */
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
++#define GPS_WAKEUP (GPIO_PORTB | 20)
++#define GPS_TIMEPULSE (GPIO_PORTB | 21)
++
++static int apw_gps_pins[] = {
++	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO),
++	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO),
++};
++
++static int apw_gps_init(void)
++{
++	int res = mxc_gpio_setup_multiple_pins(apw_gps_pins,
++			ARRAY_SIZE(apw_gps_pins), "GPS");
++	gpio_set_value(GPS_WAKEUP, 1); /* start GPS */
++
++	return res;
++}
++#if 0
++static int apw_gps_exit(void)
++{
++	mxc_gpio_release_multiple_pins(apw_gps_pins, ARRAY_SIZE(apw_gps_pins));
++
++	return 0;
++}
++#endif
++#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS */
++
++
++void __init apf27dev_extension_init(void)
++{
++	printk("    Registering APW ressources:");
++
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM
++	apw_gsm_init();
++#endif
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
++	apw_gps_init();
++#endif
++
++	printk("done\n");
 +}
 +

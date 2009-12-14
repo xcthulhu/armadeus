@@ -1,8 +1,8 @@
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2009-10-11 15:50:49.000000000 +0200
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2009-10-11 19:03:44.000000000 +0200
-@@ -10,6 +10,20 @@
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2009-12-14 16:45:52.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2009-12-14 16:57:35.000000000 +0100
+@@ -10,6 +10,21 @@
  comment "MX2 Platforms"
  	depends on ARCH_MX2
  
@@ -10,6 +10,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +	bool "Armadeus Systems APF27"
 +	depends on MACH_MX27
 +	select MXC_ULPI
++	select SERIAL_IMX_UART1
 +	help
 +	  Include support for APF27 platform. This includes specific
 +	  configurations for the module and its peripherals.
@@ -23,7 +24,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
  config MACH_MX27ADS
  	bool "MX27ADS platform"
  	depends on MACH_MX27
-@@ -26,15 +40,26 @@
+@@ -26,15 +41,73 @@
  
  choice
  	prompt "Baseboard"
@@ -44,24 +45,72 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +	prompt "Armadeus Systems APF27Dev development board"
 +	bool
 +	depends on MACH_APF27
++	select SERIAL_IMX_UART3
 +	help
 +	  This selects the APF27Dev as baseboard. You have to manually
 +	  activates the devices you want to use if you have the "Full"
 +	  version.
 +
++endchoice
++
++config MACH_APF27_DEV_EXT
++	bool
++
++choice
++	prompt "Extension board"
++	depends on MACH_APF27_DEV
++	default MACH_APF27_DEV_EXT_NONE
++
++config MACH_APF27_DEV_EXT_NONE
++	prompt "No extension"
++	bool
++	help
++	  No extension board connected to APF27Dev baseboard.
++
++config MACH_APF27_DEV_EXT_WIRELESS
++	prompt "Wireless (APW)"
++	bool
++	select MACH_APF27_DEV_EXT
++	help
++	  Wireless extension board connected to APF27Dev baseboard.
++
  endchoice
++
++config MACH_APF27_DEV_EXT_WIRELESS_GSM
++	bool "GSM/GPRS Modem"
++	depends on MACH_APF27_DEV_EXT_WIRELESS
++	select SERIAL_IMX_UART2
++	default y
++	help
++	  Activates support for the GSM modem on the APW extension board.
++
++config MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++	bool "Bluetooth & WiFi module"
++	depends on MACH_APF27_DEV_EXT_WIRELESS
++	select SERIAL_IMX_UART5
++	help
++	  Activates support for the Bluetooth+WiFi module on the APW extension
++	  board.
++
++config MACH_APF27_DEV_EXT_WIRELESS_GPS
++	bool "GPS module"
++	depends on MACH_APF27_DEV_EXT_WIRELESS
++	select SERIAL_IMX_UART6
++	help
++	  Activates support for the GPS module on the APW extension board.
 +
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2009-10-11 15:50:49.000000000 +0200
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2009-10-11 19:04:39.000000000 +0200
-@@ -10,6 +10,9 @@
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2009-12-14 16:45:51.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2009-12-14 16:54:50.000000000 +0100
+@@ -10,6 +10,10 @@
  obj-$(CONFIG_MACH_MX27) += clock_imx27.o
  obj-$(CONFIG_CPU_FREQ_IMX27) +=  cpufreq_imx27.o
  
 +obj-$(CONFIG_MACH_APF27) += apf27.o
 +obj-$(CONFIG_MACH_APF27_DEV) += apf27-dev.o
 +obj-$(CONFIG_MACH_APF27_DEV) += apf27-lcd.o
++obj-$(CONFIG_MACH_APF27_DEV_EXT_WIRELESS) += apf27-dev-ext-apw.o
  obj-$(CONFIG_MACH_MX27ADS) += mx27ads.o
  obj-$(CONFIG_MACH_PCM038) += pcm038.o
  obj-$(CONFIG_MACH_PCM970_BASEBOARD) += pcm970-baseboard.o

@@ -6,8 +6,8 @@ Signed-off-by: Gwenhaël Goavec-Merou <gwen@trabucayre.com>
 
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-04 11:50:37.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-04 11:58:32.000000000 +0100
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-14 16:08:03.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-14 16:08:25.000000000 +0100
 @@ -24,6 +24,7 @@
  #include <linux/mtd/physmap.h>
  #include <asm/mach/flash.h>
@@ -16,7 +16,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  #include <linux/i2c.h>
  #include <linux/serial.h>
  #include <linux/delay.h>
-@@ -91,6 +92,9 @@
+@@ -94,6 +95,9 @@
  #ifdef CONFIG_CAN_MCP251X_MODULE
  #define CONFIG_CAN_MCP251X 1
  #endif
@@ -26,7 +26,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  #ifdef CONFIG_IMX_BACKLIGHT_MODULE
  #define CONFIG_IMX_BACKLIGHT
  #endif
-@@ -368,7 +372,7 @@
+@@ -362,7 +366,7 @@
  };
  
  static struct spi_imx_master imx_spi1_master_info = {
@@ -35,7 +35,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  	.enable_dma     = 0,
  	.init = gpio_spi1_active,
  	.exit = gpio_spi1_inactive,
-@@ -512,6 +516,38 @@
+@@ -506,6 +510,38 @@
  };
  #endif /* CONFIG_CAN_MCP251X */
  
@@ -74,7 +74,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  
  static struct spi_board_info spi_board_info[] __initdata = {
  #ifdef CONFIG_ARMADEUS_MAX1027
-@@ -550,6 +586,18 @@
+@@ -544,6 +580,18 @@
  		.platform_data		= &apf27_mcp251x_config,
  	},
  #endif /* CONFIG_CAN_MCP251X */
@@ -85,7 +85,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +		.max_speed_hz      = 8000000, /* 8MHz */
 +		.bus_num           = 1, /* SPI2 */
 +		.mode              = SPI_MODE_1,
-+		.chip_select       = 2, 
++		.chip_select       = 2,
 +		.platform_data     = &apf27_spidev_config,
 +	},
 +#endif /* CONFIG_SPI_SPIDEV */
@@ -93,7 +93,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  };
  
  
-@@ -962,7 +1010,7 @@
+@@ -951,7 +999,7 @@
  	/* Reserve "fixed" GPIOs */
  	tsc2101_init_fixed_gpio();
  #endif
@@ -104,8 +104,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  #endif
 Index: linux-2.6.29.6/drivers/spi/spidev.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/spi/spidev.c	2009-12-04 12:03:08.000000000 +0100
-+++ linux-2.6.29.6/drivers/spi/spidev.c	2009-12-04 12:04:43.000000000 +0100
+--- linux-2.6.29.6.orig/drivers/spi/spidev.c	2009-12-14 16:06:13.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spidev.c	2009-12-14 16:08:25.000000000 +0100
 @@ -558,8 +558,9 @@
  
  static int spidev_probe(struct spi_device *spi)
@@ -130,8 +130,8 @@ Index: linux-2.6.29.6/drivers/spi/spidev.c
  	if (status == 0)
 Index: linux-2.6.29.6/include/linux/spi/spidev.h
 ===================================================================
---- linux-2.6.29.6.orig/include/linux/spi/spidev.h	2009-12-04 12:07:09.000000000 +0100
-+++ linux-2.6.29.6/include/linux/spi/spidev.h	2009-12-04 12:07:34.000000000 +0100
+--- linux-2.6.29.6.orig/include/linux/spi/spidev.h	2009-12-14 16:06:13.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/spidev.h	2009-12-14 16:08:25.000000000 +0100
 @@ -101,6 +101,10 @@
  	 */
  };

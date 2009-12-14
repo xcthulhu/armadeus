@@ -1,0 +1,13 @@
+Index: linux-2.6.29.6/drivers/serial/Kconfig
+===================================================================
+--- linux-2.6.29.6.orig/drivers/serial/Kconfig	2009-12-14 17:32:56.000000000 +0100
++++ linux-2.6.29.6/drivers/serial/Kconfig	2009-12-14 17:34:13.000000000 +0100
+@@ -852,7 +852,7 @@
+ 
+ config SERIAL_IMX_UART4
+ 	bool "UART4"
+-	depends on SERIAL_IMX && (MACH_MX21 || MACH_MX25 || MACH_MX27 || MACH_MX31)
++	depends on SERIAL_IMX && (MACH_MX21 || MACH_MX25 || MACH_MX27 || MACH_MX31) && (!MACH_APF27_DEV)
+ 	help
+ 	  /dev/ttySMX3
+ 
