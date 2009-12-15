@@ -37,8 +37,8 @@ config BR2_PACKAGE_ARMADEUS_DEMOS_INPUT
 config BR2_PACKAGE_ARMADEUS_DEMOS_MUSIC_PLAYER
 	bool "Music player"
 	select BR2_PACKAGE_SDL
-	select CONFIG_BR2_PACKAGE_SDL_TTF
-	select CONFIG_BR2_PACKAGE_SDL_MIXER
+	select BR2_PACKAGE_SDL_TTF
+	select BR2_PACKAGE_SDL_MIXER
 	help
 	  SDL based music player.
 
@@ -49,13 +49,13 @@ config BR2_PACKAGE_ARMADEUS_DEMOS_OSCILLO
 
 config BR2_PACKAGE_ARMADEUS_DEMOS_SHOW_IMAGE
 	bool "Image viewer"
-	select CONFIG_BR2_PACKAGE_SDL_IMAGE
+	select BR2_PACKAGE_SDL_IMAGE
 	help
 	  SDL based image viewer.
 
 config BR2_PACKAGE_ARMADEUS_DEMOS_TEST_LCD
 	bool "LCD test"
-	select CONFIG_BR2_PACKAGE_SDL
+	select BR2_PACKAGE_SDL
 	help
 	  Test for LCD dead pixels. Needs SDL.
 
