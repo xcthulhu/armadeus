@@ -84,8 +84,10 @@ if [ "$QUILT_TARGET_NAME" != "Buildroot" ]; then
 		mv $QUILT_TARGET_DIR "$QUILT_TARGET_DIR"."$EXT"
 	fi
 else # For Buildroot
-	rm $QUILT_TARGET_DIR/.patched
-	rm $QUILT_TARGET_DIR/.unpacked
+	rm -f $QUILT_TARGET_DIR/.patched
+	rm -f $QUILT_TARGET_DIR/.unpacked
+	rm -rf $QUILT_TARGET_DIR/patches
+	rm -rf $QUILT_TARGET_DIR/.pc
 fi
 
 # Get XXX unpacked sources
