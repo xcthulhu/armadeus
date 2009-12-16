@@ -1,0 +1,880 @@
+Index: linux-2.6.29.6/include/video/hx5116.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/include/video/hx5116.h	2009-12-15 14:59:12.000000000 +0100
+@@ -0,0 +1,132 @@
++/*
++ *
++ * HX5116 160CH Single Chip Driver for LPTS AMOLED
++ *
++ * Copyright 2009 ARMadeus Systems
++ *  Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ *  http://www.armadeus.com/
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#define HX5116_REG(x)	(x)
++
++/***********************/
++/* Standards registers */
++/***********************/
++#define HX5116_INDEX			HX5116_REG(0x00)
++
++#define HX5116_CHIP_ID0x		HX5116_REG(0x01)
++#define HX5116_OTP_ENABLE		HX5116_REG(0x02)
++
++#define HX5116_DISPLAY_MODE1		HX5116_REG(0x03)
++#define HX5116_DISPLAY_MODE2		HX5116_REG(0x04)
++#define HX5116_DISPLAY_MODE3		HX5116_REG(0x05)
++
++#define HX5116_DRIVER_CAPABILITY	HX5116_REG(0x07)
++
++#define HX5116_POWER_CTRL1		HX5116_REG(0x06)
++#define HX5116_POWER_CTRL2		HX5116_REG(0x08)
++#define HX5116_POWER_CTRL3		HX5116_REG(0x09)
++#define HX5116_POWER_CTRL4		HX5116_REG(0x0a)
++#define HX5116_POWER_CTRL5		HX5116_REG(0x0b)
++#define HX5116_POWER_CTRL6		HX5116_REG(0x0c)
++
++#define HX5116_POWER_SEQ1		HX5116_REG(0x0d)
++#define HX5116_POWER_SEQ2		HX5116_REG(0x0e)
++
++#define HX5116_R_SLOPE			HX5116_REG(0x10)
++#define HX5116_G_SLOPE			HX5116_REG(0x11)
++#define HX5116_B_SLOPE			HX5116_REG(0x12)
++
++#define HX5116_R_GAMMA0			HX5116_REG(0x13)
++#define HX5116_R_GAMMA10		HX5116_REG(0x14)
++#define HX5116_R_GAMMA36		HX5116_REG(0x15)
++#define HX5116_R_GAMMA80		HX5116_REG(0x16)
++#define HX5116_R_GAMMA124		HX5116_REG(0x17)
++#define HX5116_R_GAMMA168		HX5116_REG(0x18)
++#define HX5116_R_GAMMA212		HX5116_REG(0x19)
++#define HX5116_R_GAMMA255		HX5116_REG(0x1a)
++#define HX5116_G_GAMMA0			HX5116_REG(0x1b)
++#define HX5116_G_GAMMA10		HX5116_REG(0x1c)
++#define HX5116_G_GAMMA36		HX5116_REG(0x1d)
++#define HX5116_G_GAMMA80		HX5116_REG(0x1e)
++#define HX5116_G_GAMMA124		HX5116_REG(0x1f)
++#define HX5116_G_GAMMA168		HX5116_REG(0x20)
++#define HX5116_G_GAMMA212		HX5116_REG(0x21)
++#define HX5116_G_GAMMA255		HX5116_REG(0x22)
++#define HX5116_B_GAMMA0			HX5116_REG(0x23)
++#define HX5116_B_GAMMA10		HX5116_REG(0x24)
++#define HX5116_B_GAMMA36		HX5116_REG(0x25)
++#define HX5116_B_GAMMA80		HX5116_REG(0x26)
++#define HX5116_B_GAMMA124		HX5116_REG(0x27)
++#define HX5116_B_GAMMA168		HX5116_REG(0x28)
++#define HX5116_B_GAMMA212		HX5116_REG(0x29)
++#define HX5116_B_GAMMA255		HX5116_REG(0x2a)
++
++#define HX5116_T3			HX5116_REG(0x34)
++#define HX5116_T4			HX5116_REG(0x35)
++#define HX5116_TF			HX5116_REG(0x36)
++#define HX5116_TB			HX5116_REG(0x37)
++
++#define HX5116_VSTS			HX5116_REG(0x38)
++#define HX5116_HSTS			HX5116_REG(0x39)
++
++#define HX5116_RGB_CONTRAST		HX5116_REG(0x3a)
++#define HX5116_R_CONTRAST		HX5116_REG(0x3b)
++#define HX5116_G_CONTRAST		HX5116_REG(0x3c)
++#define HX5116_B_CONTRAST		HX5116_REG(0x3d)
++
++#define HX5116_BRIGHT_OFFSET		HX5116_REG(0x3e)
++
++/*****************/
++/* OTP registers */
++/*****************/
++#define HX5116_OTP_R_SLOPE		HX5116_REG(0x00)
++#define HX5116_OTP_G_SLOPE		HX5116_REG(0x01)
++#define HX5116_OTP_B_SLOPE		HX5116_REG(0x02)
++
++#define HX5116_OTP_VGAM1_LEVEL		HX5116_REG(0x03)
++
++/*****************************/
++/* SPI interface definitions */
++/*****************************/
++#define HX5116_SPI_IDCODE		(0x70)
++#define HX5116_SPI_ID(x)		((x) << 2)
++#define HX5116_SPI_READ			(0x01)
++#define HX5116_SPI_WRITE		(0x00)
++#define HX5116_SPI_DATA			(0x02)
++#define HX5116_SPI_INDEX		(0x00)
++
++/* platform data to pass configuration from lcd */
++
++enum hx5116_suspend {
++	HX5116_SUSPEND_OFF,
++	HX5116_SUSPEND_DEEP,
++};
++
++struct hx5116_platdata {
++	unsigned short	hsize;
++	unsigned short	vsize;
++
++	enum hx5116_suspend suspend;
++
++	/* set the reset line, 0 = reset asserted, 1 = normal */
++	void		(*reset)(unsigned int val);
++
++	unsigned short	entry_mode;
++	unsigned short	display2;
++	unsigned short	display3;
++	unsigned short	display4;
++	unsigned short	rgb_if1;
++	unsigned short	rgb_if2;
++	unsigned short	interface2;
++	unsigned short	interface3;
++	unsigned short	interface4;
++	unsigned short	interface5;
++	unsigned short	interface6;
++};
++
+Index: linux-2.6.29.6/drivers/video/backlight/Kconfig
+===================================================================
+--- linux-2.6.29.6.orig/drivers/video/backlight/Kconfig	2009-12-15 14:58:38.000000000 +0100
++++ linux-2.6.29.6/drivers/video/backlight/Kconfig	2009-12-16 09:58:08.000000000 +0100
+@@ -51,6 +51,14 @@
+ 	  If you have a panel based on the ILI9320 controller chip
+ 	  then say y to include a power driver for it.
+ 
++config LCD_HX5116
++	tristate "HX5116 Chip AMOLED Driver (Not functional)"
++	depends on LCD_CLASS_DEVICE && BACKLIGHT_LCD_SUPPORT
++	default n
++	help
++	  If you have a panel based on the HX5116 controller chip
++	  then say y to include a power driver for it.
++
+ config LCD_TDO24M
+ 	tristate "Toppoly TDO24M  and TDO35S LCD Panels support"
+ 	depends on LCD_CLASS_DEVICE && SPI_MASTER
+@@ -68,6 +76,15 @@
+ 	  If you have a VGG2432A4 panel based on the ILI9320 controller chip
+ 	  then say y to include a power driver for it.
+ 
++config LCD_P0340WQL
++	tristate "P0340 AMOLED device support (Not functional)"
++	depends on BACKLIGHT_LCD_SUPPORT && LCD_CLASS_DEVICE && SPI_MASTER
++	select LCD_HX5116
++	default n
++	help
++	  If you have a P0340WQL panel based on the HX5116 controller chip
++	  then say y to include a power driver for it.
++
+ config LCD_PLATFORM
+ 	tristate "Platform LCD controls"
+ 	depends on LCD_CLASS_DEVICE
+Index: linux-2.6.29.6/drivers/video/backlight/Makefile
+===================================================================
+--- linux-2.6.29.6.orig/drivers/video/backlight/Makefile	2009-12-15 14:58:39.000000000 +0100
++++ linux-2.6.29.6/drivers/video/backlight/Makefile	2009-12-15 15:22:45.000000000 +0100
+@@ -4,8 +4,10 @@
+ obj-$(CONFIG_LCD_CORGI)		   += corgi_lcd.o
+ obj-$(CONFIG_LCD_LTV350QV)	   += ltv350qv.o
+ obj-$(CONFIG_LCD_ILI9320)	   += ili9320.o
++obj-$(CONFIG_LCD_HX5116)	   += hx5116.o
+ obj-$(CONFIG_LCD_PLATFORM)	   += platform_lcd.o
+ obj-$(CONFIG_LCD_VGG2432A4)	   += vgg2432a4.o
++obj-$(CONFIG_LCD_P0340WQL)	   += p0340wql.o
+ obj-$(CONFIG_LCD_TDO24M)	   += tdo24m.o
+ obj-$(CONFIG_LCD_TOSA)		   += tosa_lcd.o
+ 
+Index: linux-2.6.29.6/drivers/video/backlight/hx5116.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/drivers/video/backlight/hx5116.c	2009-12-15 18:00:51.000000000 +0100
+@@ -0,0 +1,311 @@
++/* drivers/video/backlight/hx5116.c
++ *
++ * hx5116 160CH Single Chip Driver core for LPTS AMOLED
++ *
++ * Copyright 2009 ARMadeus Systems
++ *  http://www.armadeus.com/
++ *  Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++*/
++
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/fb.h>
++#include <linux/init.h>
++#include <linux/lcd.h>
++#include <linux/module.h>
++
++#include <linux/spi/spi.h>
++
++#include <video/hx5116.h>
++
++#include "hx5116.h"
++
++
++static inline int hx5116_write_spi(	struct hx5116 *ili,
++					unsigned int reg,
++					unsigned int value)
++{
++	struct hx5116_spi *spi = &ili->access.spi;
++	unsigned char *data = spi->buffer;
++
++	data[0] = (reg << 1) | HX5116_SPI_WRITE;
++	data[1] = value;
++
++	return spi_sync(spi->dev, &spi->message);
++}
++
++int hx5116_write(struct hx5116 *ili, unsigned int reg, unsigned int value)
++{
++	dev_dbg(ili->dev, "write: reg=%02x, val=%04x\n", reg, value);
++	return ili->write(ili, reg, value);
++}
++
++EXPORT_SYMBOL_GPL(hx5116_write);
++
++int hx5116_write_regs(	struct hx5116 *ili,
++			struct hx5116_reg *values,
++			int nr_values)
++{
++	int index;
++	int ret;
++
++	for (index = 0; index < nr_values; index++, values++) {
++		ret = hx5116_write(ili, values->address, values->value);
++		if (ret != 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++EXPORT_SYMBOL_GPL(hx5116_write_regs);
++
++static void hx5116_reset(struct hx5116 *lcd)
++{
++	struct hx5116_platdata *cfg = lcd->platdata;
++
++	cfg->reset(1);
++	mdelay(50);
++
++	cfg->reset(0);
++	mdelay(50);
++
++	cfg->reset(1);
++	mdelay(100);
++}
++
++static inline int hx5116_init_chip(struct hx5116 *lcd)
++{
++	int ret;
++
++	hx5116_reset(lcd);
++
++	ret = lcd->client->init(lcd, lcd->platdata);
++	if (ret != 0) {
++		dev_err(lcd->dev, "failed to initialise display\n");
++		return ret;
++	}
++
++	lcd->initialised = 1;
++	return 0;
++}
++
++static inline int hx5116_power_on(struct hx5116 *lcd)
++{
++	if (!lcd->initialised)
++		hx5116_init_chip(lcd);
++
++//	lcd->display1 |= (HX5116_DISPLAY1_D(3) | HX5116_DISPLAY1_BASEE);
++//	hx5116_write(lcd, HX5116_DISPLAY1, lcd->display1);
++
++	return 0;
++}
++
++static inline int hx5116_power_off(struct hx5116 *lcd)
++{
++//	lcd->display1 &= ~(HX5116_DISPLAY1_D(3) | HX5116_DISPLAY1_BASEE);
++//	HX5116_write(lcd, HX5116_DISPLAY1, lcd->display1);
++
++	return 0;
++}
++
++#define POWER_IS_ON(pwr)	((pwr) <= FB_BLANK_NORMAL)
++
++static int hx5116_power(struct hx5116 *lcd, int power)
++{
++	int ret = 0;
++
++	dev_dbg(lcd->dev, "power %d => %d\n", lcd->power, power);
++
++	if (POWER_IS_ON(power) && !POWER_IS_ON(lcd->power))
++		ret = hx5116_power_on(lcd);
++	else if (!POWER_IS_ON(power) && POWER_IS_ON(lcd->power))
++		ret = hx5116_power_off(lcd);
++
++	if (ret == 0)
++		lcd->power = power;
++	else
++		dev_warn(lcd->dev, "failed to set power mode %d\n", power);
++
++	return ret;
++}
++
++static inline struct hx5116 *to_our_lcd(struct lcd_device *lcd)
++{
++	return lcd_get_data(lcd);
++}
++
++static int hx5116_set_power(struct lcd_device *ld, int power)
++{
++	struct hx5116 *lcd = to_our_lcd(ld);
++
++	return hx5116_power(lcd, power);
++}
++
++static int hx5116_get_power(struct lcd_device *ld)
++{
++	struct hx5116 *lcd = to_our_lcd(ld);
++
++	return lcd->power;
++}
++
++static struct lcd_ops hx5116_ops = {
++	.get_power	= hx5116_get_power,
++	.set_power	= hx5116_set_power,
++};
++
++static void __devinit hx5116_setup_spi(struct hx5116 *ili,
++					struct spi_device *dev)
++{
++	struct hx5116_spi *spi = &ili->access.spi;
++
++	ili->write = hx5116_write_spi;
++	spi->dev = dev;
++
++	spi->xfer[0].tx_buf = spi->buffer;
++	spi->xfer[0].len = 2;
++	spi->xfer[0].bits_per_word = 8;
++	spi->xfer[0].cs_change = 1;
++
++	spi_message_init(&spi->message);
++	spi_message_add_tail(&spi->xfer[0], &spi->message);
++}
++
++int __devinit hx5116_probe_spi(struct spi_device *spi,
++				struct hx5116_client *client)
++{
++	struct hx5116_platdata *cfg = spi->dev.platform_data;
++	struct device *dev = &spi->dev;
++	struct hx5116 *ili;
++	struct lcd_device *lcd;
++	int ret = 0;
++
++	printk("DEBUG: probe hx5116 spi\n");
++
++	/* verify we where given some information */
++
++	if (cfg == NULL) {
++		dev_err(dev, "no platform data supplied\n");
++		return -EINVAL;
++	}
++
++	if (cfg->hsize <= 0 || cfg->vsize <= 0 || cfg->reset == NULL) {
++		dev_err(dev, "invalid platform data supplied\n");
++		return -EINVAL;
++	}
++
++	/* allocate and initialse our state */
++
++	ili = kzalloc(sizeof(struct hx5116), GFP_KERNEL);
++	if (ili == NULL) {
++		dev_err(dev, "no memory for device\n");
++		return -ENOMEM;
++	}
++
++//	ili->access.spi.id = HX5116_SPI_IDCODE | HX5116_SPI_ID(1);
++
++	ili->dev = dev;
++	ili->client = client;
++	ili->power = FB_BLANK_POWERDOWN;
++	ili->platdata = cfg;
++
++	dev_set_drvdata(&spi->dev, ili);
++
++	hx5116_setup_spi(ili, spi);
++
++	lcd = lcd_device_register("hx5116", dev, ili, &hx5116_ops);
++	if (IS_ERR(lcd)) {
++		dev_err(dev, "failed to register lcd device\n");
++		ret = PTR_ERR(lcd);
++		goto err_free;
++	}
++
++	ili->lcd = lcd;
++
++	dev_info(dev, "initialising %s\n", client->name);
++
++	ret = hx5116_power(ili, FB_BLANK_UNBLANK);
++	if (ret != 0) {
++		dev_err(dev, "failed to set lcd power state\n");
++		goto err_unregister;
++	}
++
++	return 0;
++
++ err_unregister:
++	lcd_device_unregister(lcd);
++
++ err_free:
++	kfree(ili);
++
++	return ret;
++}
++
++EXPORT_SYMBOL_GPL(hx5116_probe_spi);
++
++int __devexit hx5116_remove(struct hx5116 *ili)
++{
++	hx5116_power(ili, FB_BLANK_POWERDOWN);
++
++	lcd_device_unregister(ili->lcd);
++	kfree(ili);
++
++	return 0;
++}
++
++EXPORT_SYMBOL_GPL(hx5116_remove);
++
++#ifdef CONFIG_PM
++int hx5116_suspend(struct hx5116 *lcd, pm_message_t state)
++{
++	int ret;
++
++	dev_dbg(lcd->dev, "%s: event %d\n", __func__, state.event);
++
++	if (state.event == PM_EVENT_SUSPEND) {
++		ret = hx5116_power(lcd, FB_BLANK_POWERDOWN);
++
++//		if (lcd->platdata->suspend == HX5116_SUSPEND_DEEP) {
++//			hx5116_write(lcd, HX5116_POWER1, lcd->power1 |
++//				HX5116_POWER1_SLP |
++//				HX5116_POWER1_DSTB);
++//			lcd->initialised = 0;
++//		}
++
++		return ret;
++	}
++
++	return 0;
++}
++
++EXPORT_SYMBOL_GPL(hx5116_suspend);
++
++int hx5116_resume(struct hx5116 *lcd)
++{
++	dev_info(lcd->dev, "resuming from power state %d\n", lcd->power);
++
++//	if (lcd->platdata->suspend == HX5116_SUSPEND_DEEP) {
++//		hx5116_write(lcd, HX5116_POWER1, 0x00);
++//	}
++
++	return hx5116_power(lcd, FB_BLANK_UNBLANK);
++}
++
++EXPORT_SYMBOL_GPL(hx5116_resume);
++#endif
++
++/* Power down all displays on reboot, poweroff or halt */
++void hx5116_shutdown(struct hx5116 *lcd)
++{
++	hx5116_power(lcd, FB_BLANK_POWERDOWN);
++}
++
++EXPORT_SYMBOL_GPL(hx5116_shutdown);
++
++MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
++MODULE_DESCRIPTION("hx5116 Amoled Driver");
++MODULE_LICENSE("GPL v2");
+Index: linux-2.6.29.6/drivers/video/backlight/hx5116.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/drivers/video/backlight/hx5116.h	2009-12-15 14:59:12.000000000 +0100
+@@ -0,0 +1,78 @@
++/* drivers/video/backlight/hx5116.h
++ *
++ * hx5116 160CH Single Chip Driver core for LTPS AMOLED
++ *
++ * Copyright 2009 ARMadeus Systems
++ *  http://www.armadeus.com/
++ *  Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++*/
++
++/* Holder for register and value pairs. */
++struct hx5116_reg {
++	unsigned short		address;
++	unsigned short		value;
++};
++
++struct hx5116;
++
++struct hx5116_client {
++	const char	*name;
++	int	(*init)(struct hx5116 *ili, struct hx5116_platdata *cfg);
++
++};
++/* Device attached via an SPI bus. */
++struct  hx5116_spi {
++	struct spi_device	*dev;
++	struct spi_message	message;
++	struct spi_transfer	xfer[1];
++
++	unsigned char		id;
++	unsigned char		buffer[2];
++};
++
++/* hx5116 device state. */
++struct hx5116 {
++	union {
++		struct hx5116_spi	spi;	/* SPI attachged device. */
++	} access;				/* Register access method. */
++
++	struct device			*dev;
++	struct lcd_device		*lcd;	/* LCD device we created. */
++	struct hx5116_client		*client;
++	struct hx5116_platdata		*platdata;
++
++	int				 power; /* current power state. */
++	int				 initialised;
++
++	unsigned short			 display1;
++	unsigned short			 power1;
++
++	int (*write)(struct hx5116 *ili, unsigned int reg, unsigned int val);
++};
++
++
++/* hx5116 register access routines */
++
++extern int hx5116_write(struct hx5116 *ili,
++			 unsigned int reg, unsigned int value);
++
++extern int hx5116_write_regs(struct hx5116 *ili,
++			      struct hx5116_reg *values,
++			      int nr_values);
++
++/* Device probe */
++
++extern int hx5116_probe_spi(struct spi_device *spi,
++			     struct hx5116_client *cli);
++
++extern int hx5116_remove(struct hx5116 *lcd);
++extern void hx5116_shutdown(struct hx5116 *lcd);
++
++/* PM */
++
++extern int hx5116_suspend(struct hx5116 *lcd, pm_message_t state);
++extern int hx5116_resume(struct hx5116 *lcd);
+Index: linux-2.6.29.6/drivers/video/backlight/p0340wql.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/drivers/video/backlight/p0340wql.c	2009-12-15 15:35:03.000000000 +0100
+@@ -0,0 +1,289 @@
++/* drivers/video/backlight/p0340wql.c
++ *
++ * p0340wql (HX5116) AMOLED controller driver.
++ *
++ * Copyright 2009 ARMadeus Systems
++ *  http://www.armadeus.com/
++ *  Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++*/
++
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/fb.h>
++#include <linux/init.h>
++#include <linux/lcd.h>
++#include <linux/module.h>
++
++#include <linux/spi/spi.h>
++
++#include <video/hx5116.h>
++
++#include "hx5116.h"
++
++/* Device initialisation sequences */
++
++static struct hx5116_reg vgg_init1[] = {
++//	{
++//		.address = HX5116_POWER1,
++//		.value	 = HX5116_POWER1_AP(0) | HX5116_POWER1_BT(0),
++//	}, {
++//		.address = HX5116_POWER2,
++//		.value	 = (HX5116_POWER2_VC(7) |
++//			    HX5116_POWER2_DC0(0) | HX5116_POWER2_DC1(0)),
++//	}, {
++//		.address = HX5116_POWER3,
++//		.value	 = HX5116_POWER3_VRH(0),
++//	}, {
++//		.address = HX5116_POWER4,
++//		.value	 = HX5116_POWER4_VREOUT(0),
++//	},
++};
++
++static struct hx5116_reg vgg_init2[] = {
++//	{
++//		.address = HX5116_POWER1,
++//		.value   = (HX5116_POWER1_AP(3) | HX5116_POWER1_APE |
++//			    HX5116_POWER1_BT(7) | HX5116_POWER1_SAP),
++//	}, {
++//		.address = HX5116_POWER2,
++//		.value   = HX5116_POWER2_VC(7) | HX5116_POWER2_DC0(3),
++//	}
++};
++
++static struct hx5116_reg vgg_gamma[] = {
++//	{
++//		.address = HX5116_GAMMA1,
++//		.value	 = 0x0000,
++//	}, {
++//		.address = HX5116_GAMMA2,
++//		.value   = 0x0505,
++//	}, {
++//		.address = HX5116_GAMMA3,
++//		.value	 = 0x0004,
++//	}, {
++//		.address = HX5116_GAMMA4,
++//		.value	 = 0x0006,
++//	}, {
++//		.address = HX5116_GAMMA5,
++//		.value	 = 0x0707,
++//	}, {
++//		.address = HX5116_GAMMA6,
++//		.value	 = 0x0105,
++//	}, {
++//		.address = HX5116_GAMMA7,
++//		.value	 = 0x0002,
++//	}, {
++//		.address = HX5116_GAMMA8,
++//		.value	 = 0x0707,
++//	}, {
++//		.address = HX5116_GAMMA9,
++//		.value	 = 0x0704,
++//	}, {
++//		.address = HX5116_GAMMA10,
++//		.value	 = 0x807,
++//	}
++//
++};
++
++static struct hx5116_reg vgg_init0[] = {
++//	[0]	= {
++//		/* set direction and scan mode gate */
++//		.address = HX5116_DRIVER,
++//		.value	 = HX5116_DRIVER_SS,
++//	}, {
++//		.address = HX5116_DRIVEWAVE,
++//		.value	 = (HX5116_DRIVEWAVE_MUSTSET |
++//			    HX5116_DRIVEWAVE_EOR | HX5116_DRIVEWAVE_BC),
++//	}, {
++//		.address = HX5116_ENTRYMODE,
++//		.value	 = HX5116_ENTRYMODE_ID(3) | HX5116_ENTRYMODE_BGR,
++//	}, {
++//		.address = HX5116_RESIZING,
++//		.value	 = 0x0,
++//	},
++};
++
++
++static int p0340wql_lcd_init(struct hx5116 *lcd,
++			      struct hx5116_platdata *cfg)
++{
++	unsigned int addr;
++	int ret;
++	printk("DEBUG: p0340wql_lcd_init\n");
++	/* Set VCore before anything else (VGG243237-6UFLWA) */
++	ret = hx5116_write(lcd, 0x00e5, 0x8000);
++	if (ret)
++		goto err_initial;
++
++	/* Start the oscillator up before we can do anything else. */
++//	ret = hx5116_write(lcd, HX5116_OSCILATION, HX5116_OSCILATION_OSC);
++	if (ret)
++		goto err_initial;
++
++	/* must wait at-lesat 10ms after starting */
++	mdelay(15);
++
++//	ret = hx5116_write_regs(lcd, vgg_init0, ARRAY_SIZE(vgg_init0));
++	if (ret != 0)
++		goto err_initial;
++
++//	hx5116_write(lcd, HX5116_DISPLAY2, cfg->display2);
++//	hx5116_write(lcd, HX5116_DISPLAY3, cfg->display3);
++//	hx5116_write(lcd, HX5116_DISPLAY4, cfg->display4);
++//
++//	hx5116_write(lcd, HX5116_RGB_IF1, cfg->rgb_if1);
++//	hx5116_write(lcd, HX5116_FRAMEMAKER, 0x0);
++//	hx5116_write(lcd, HX5116_RGB_IF2, cfg->rgb_if2);
++//
++//	ret = hx5116_write_regs(lcd, vgg_init1, ARRAY_SIZE(vgg_init1));
++//	if (ret != 0)
++//		goto err_vgg;
++//
++//	mdelay(300);
++//
++//	ret = hx5116_write_regs(lcd, vgg_init2, ARRAY_SIZE(vgg_init2));
++//	if (ret != 0)
++//		goto err_vgg2;
++//
++//	mdelay(100);
++//
++//	hx5116_write(lcd, HX5116_POWER3, 0x13c);
++//
++//	mdelay(100);
++//
++//	hx5116_write(lcd, HX5116_POWER4, 0x1c00);
++//	hx5116_write(lcd, HX5116_POWER7, 0x000e);
++//
++//	mdelay(100);
++//
++//	hx5116_write(lcd, HX5116_GRAM_HORIZ_ADDR, 0x00);
++//	hx5116_write(lcd, HX5116_GRAM_VERT_ADD, 0x00);
++//
++//	ret = hx5116_write_regs(lcd, vgg_gamma, ARRAY_SIZE(vgg_gamma));
++//	if (ret != 0)
++//		goto err_vgg3;
++//
++//	hx5116_write(lcd, HX5116_HORIZ_START, 0x0);
++//	hx5116_write(lcd, HX5116_HORIZ_END, cfg->hsize - 1);
++//	hx5116_write(lcd, HX5116_VERT_START, 0x0);
++//	hx5116_write(lcd, HX5116_VERT_END, cfg->vsize - 1);
++//
++//	hx5116_write(lcd, HX5116_DRIVER2,
++//		      HX5116_DRIVER2_NL(((cfg->vsize - 240) / 8) + 0x1D));
++//
++//	hx5116_write(lcd, HX5116_BASE_IMAGE, 0x1);
++//	hx5116_write(lcd, HX5116_VERT_SCROLL, 0x00);
++//
++//	for (addr = HX5116_PARTIAL1_POSITION; addr <= HX5116_PARTIAL2_END;
++//	     addr++) {
++//		hx5116_write(lcd, addr, 0x0);
++//	}
++//
++//	hx5116_write(lcd, HX5116_INTERFACE1, 0x10);
++//	hx5116_write(lcd, HX5116_INTERFACE2, cfg->interface2);
++//	hx5116_write(lcd, HX5116_INTERFACE3, cfg->interface3);
++//	hx5116_write(lcd, HX5116_INTERFACE4, cfg->interface4);
++//	hx5116_write(lcd, HX5116_INTERFACE5, cfg->interface5);
++//	hx5116_write(lcd, HX5116_INTERFACE6, cfg->interface6);
++//
++//	lcd->display1 = (HX5116_DISPLAY1_D(3) | HX5116_DISPLAY1_DTE |
++//			 HX5116_DISPLAY1_GON | HX5116_DISPLAY1_BASEE |
++//			 0x40);
++//
++//	hx5116_write(lcd, HX5116_DISPLAY1, lcd->display1);
++
++	return 0;
++
++ err_vgg3:
++ err_vgg2:
++ err_vgg:
++ err_initial:
++	return ret;
++}
++
++#ifdef CONFIG_PM
++static int p0340wql_suspend(struct spi_device *spi, pm_message_t state)
++{
++	printk("DEBUG: p0340wql_suspend\n");
++	return hx5116_suspend(dev_get_drvdata(&spi->dev), state);
++}
++
++static int p0340wql_resume(struct spi_device *spi)
++{
++	printk("DEBUG: p0340wql_resume\n");
++	return hx5116_resume(dev_get_drvdata(&spi->dev));
++}
++#else
++#define p0340wql_suspend	NULL
++#define p0340wql_resume 	NULL
++#endif
++
++static struct hx5116_client p0340wql_client = {
++	.name	= "p0340wql",
++	.init	= p0340wql_lcd_init,
++};
++
++/* Device probe */
++
++static int __devinit p0340wql_probe(struct spi_device *spi)
++{
++	int ret;
++
++	printk("DEBUG: probe p0340wql\n");
++
++	ret = hx5116_probe_spi(spi, &p0340wql_client);
++	if (ret != 0) {
++		dev_err(&spi->dev, "failed to initialise hx5116\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++static int __devexit p0340wql_remove(struct spi_device *spi)
++{
++	return hx5116_remove(dev_get_drvdata(&spi->dev));
++}
++
++static void p0340wql_shutdown(struct spi_device *spi)
++{
++	hx5116_shutdown(dev_get_drvdata(&spi->dev));
++}
++
++static struct spi_driver p0340wql_driver = {
++	.driver = {
++		.name		= "p0340wql",
++		.owner		= THIS_MODULE,
++	},
++	.probe		= p0340wql_probe,
++	.remove		= __devexit_p(p0340wql_remove),
++	.shutdown	= p0340wql_shutdown,
++	.suspend	= p0340wql_suspend,
++	.resume		= p0340wql_resume,
++};
++
++/* Device driver initialisation */
++
++static int __init p0340wql_init(void)
++{
++	printk("DEBUG: register p0340wql_driver\n");
++	return spi_register_driver(&p0340wql_driver);
++}
++
++static void __exit p0340wql_exit(void)
++{
++	spi_unregister_driver(&p0340wql_driver);
++}
++
++module_init(p0340wql_init);
++module_exit(p0340wql_exit);
++
++MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
++MODULE_DESCRIPTION("P0340WQL AMOLED Driver");
++MODULE_LICENSE("GPL v2");
++
++
