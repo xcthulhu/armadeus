@@ -9,8 +9,8 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-14 10:35:40.000000000 +0100
-@@ -0,0 +1,737 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-16 11:43:30.000000000 +0100
+@@ -0,0 +1,745 @@
 + /*
 + * apf27.c
 + *
@@ -191,7 +191,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +
 +static int uart_mxc_port0_init(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins), "UART0");
++	return mxc_gpio_setup_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins), "UART1");
 +}
 +
 +static int uart_mxc_port0_exit(struct platform_device *pdev)
@@ -210,11 +210,15 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +static int mxc_uart2_pins[] = {
 +	PE8_PF_UART3_TXD,
 +	PE9_PF_UART3_RXD,
++#ifdef CONFIG_SERIAL_IMX_UART3_USE_RTSCTS
++	PE10_PF_UART3_CTS,
++	PE11_PF_UART3_RTS,
++#endif
 +};
 +
 +static int uart_mxc_port2_init(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_uart2_pins, ARRAY_SIZE(mxc_uart2_pins), "UART2");
++	return mxc_gpio_setup_multiple_pins(mxc_uart2_pins, ARRAY_SIZE(mxc_uart2_pins), "UART3");
 +}
 +
 +static int uart_mxc_port2_exit(struct platform_device *pdev)
@@ -227,7 +231,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +static struct imxuart_platform_data uart2_pdata = {
 +	.init = uart_mxc_port2_init,
 +	.exit = uart_mxc_port2_exit,
++#ifdef CONFIG_SERIAL_IMX_UART3_USE_RTSCTS
++	.flags = IMXUART_HAVE_RTSCTS,
++#else
 +	.flags = 0,
++#endif
 +};
 +
 +/* APF27 has an onboard Ethernet PHY */
@@ -751,8 +759,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-14 16:29:06.000000000 +0100
-@@ -0,0 +1,970 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-16 12:07:58.000000000 +0100
+@@ -0,0 +1,1034 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -838,6 +846,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif
 +#ifdef CONFIG_MACH_APF27_DEV_EXT
 +extern void apf27dev_extension_init(void);
++extern void apf27dev_extension_resume(void);
++extern void apf27dev_extension_suspend(void);
 +#endif
 +
 +#ifdef CONFIG_ARMADEUS_MAX1027_MODULE
@@ -1006,9 +1016,12 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +/* UART2 signals are available on J8 connector (multiplexed with Keypad) */
 +#ifdef CONFIG_SERIAL_IMX_UART2
++
 +static int mxc_uart1_pins[] = {
++#ifdef CONFIG_SERIAL_IMX_UART2_USE_RTSCTS
 +	PE3_PF_UART2_CTS,
 +	PE4_PF_UART2_RTS,
++#endif
 +	PE6_PF_UART2_TXD,
 +	PE7_PF_UART2_RXD,
 +};
@@ -1031,7 +1044,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +static struct imxuart_platform_data uart1_pdata = {
 +	.init = uart_mxc_port1_init,
 +	.exit = uart_mxc_port1_exit,
++#ifdef CONFIG_SERIAL_IMX_UART2_USE_RTSCTS
 +	.flags = IMXUART_HAVE_RTSCTS,
++#else
++	.flags = 0,
++#endif
 +};
 +#endif /* CONFIG_SERIAL_IMX_UART2 */
 +
@@ -1042,6 +1059,10 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +static int mxc_uart4_pins[] = {
 +	PB19_AF_UART5_RXD,
 +	PB18_AF_UART5_TXD,
++#ifdef CONFIG_SERIAL_IMX_UART5_USE_RTSCTS
++	PB20_AF_UART5_CTS,
++	PB21_AF_UART5_RTS,
++#endif
 +};
 +
 +static int uart_mxc_port4_init(struct platform_device *pdev)
@@ -1062,9 +1083,51 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +static struct imxuart_platform_data uart4_pdata = {
 +	.init = uart_mxc_port4_init,
 +	.exit = uart_mxc_port4_exit,
++#ifdef CONFIG_SERIAL_IMX_UART5_USE_RTSCTS
++	.flags = IMXUART_HAVE_RTSCTS,
++#else
 +	.flags = 0,
++#endif
 +};
 +#endif /* CONFIG_SERIAL_IMX_UART5 */
++
++/* UART6 signals are available on J9 connector (multiplexed with CSI) */
++#ifdef CONFIG_SERIAL_IMX_UART6
++
++static int mxc_uart5_pins[] = {
++	PB10_AF_UART6_TXD,
++	PB11_AF_UART6_RXD,
++#ifdef CONFIG_SERIAL_IMX_UART6_USE_RTSCTS
++	PB12_AF_UART6_CTS,
++	PB13_AF_UART6_RTS,
++#endif
++};
++
++static int uart_mxc_port5_init(struct platform_device *pdev)
++{
++	int res = mxc_gpio_setup_multiple_pins(mxc_uart5_pins,
++			ARRAY_SIZE(mxc_uart5_pins), "UART6");
++
++	return res;
++}
++
++static int uart_mxc_port5_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_uart5_pins, ARRAY_SIZE(mxc_uart5_pins));
++
++	return 0;
++}
++
++static struct imxuart_platform_data uart5_pdata = {
++	.init = uart_mxc_port5_init,
++	.exit = uart_mxc_port5_exit,
++#ifdef CONFIG_SERIAL_IMX_UART6_USE_RTSCTS
++	.flags = IMXUART_HAVE_RTSCTS,
++#else
++	.flags = 0,
++#endif
++};
++#endif /* CONFIG_SERIAL_IMX_UART6 */
 +
 +
 +/* Both APF27 SPI ports are used on APF27Dev */
@@ -1224,7 +1287,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +};
 +
 +
-+/* APF27Dev has a optional CAN Bus controller */
++/* APF27Dev has an optional CAN Bus controller */
 +#ifdef CONFIG_CAN_MCP251X
 +
 +#define CAN_MCP251X_INT 19
@@ -1620,6 +1683,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +void apf27_baseboard_resume(void)
 +{
++#ifdef CONFIG_MACH_APF27_DEV_EXT
++	apf27dev_extension_resume();
++#endif
 +	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 1);
 +#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 0);
@@ -1628,6 +1694,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +void apf27_baseboard_suspend(void)
 +{
++#ifdef CONFIG_MACH_APF27_DEV_EXT
++	apf27dev_extension_suspend();
++#endif
 +	gpio_set_value(APF27DEV_POWER_DOWN_NOT, 0);
 +#ifdef CONFIG_USE_APF27DEV_IMX_LED_FOR_PM
 +	gpio_set_value(GPIO_PORTF | 14, 1);
@@ -1682,6 +1751,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_SERIAL_IMX_UART5
 +	mxc_register_device(&mxc_uart_device4, &uart4_pdata);
 +#endif
++#ifdef CONFIG_SERIAL_IMX_UART6
++	mxc_register_device(&mxc_uart_device5, &uart5_pdata);
++#endif
 +#ifdef CONFIG_USB_EHCI_MXC
 +	mxc_register_device(&mxc_ehci1, &ehci1_pdata);
 +#endif
@@ -1726,7 +1798,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-14 10:35:40.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-15 09:32:01.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -1951,8 +2023,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-14 16:34:11.000000000 +0100
-@@ -0,0 +1,99 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-16 12:07:45.000000000 +0100
+@@ -0,0 +1,159 @@
 + /*
 + * apf27-dev-ext-apw.c
 + * Support for AFP27Dev's wireless extension board.
@@ -1983,7 +2055,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +
 +/* An optional GSM module can be added to wireless extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM
-+#define GSM_POK_IN (GPIO_PORTE | 11)
++
++#define GSM_POK_IN	(GPIO_PORTE | 11)	/* UART3_RTS */
++
 +static int apw_gsm_pins[] = {
 +	(GSM_POK_IN | GPIO_OUT | GPIO_GPIO) /* GSM_PWR_ON_not */
 +};
@@ -2011,12 +2085,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +
 +/* An optionnal GPS module can be added to wireless extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
-+#define GPS_WAKEUP (GPIO_PORTB | 20)
-+#define GPS_TIMEPULSE (GPIO_PORTB | 21)
++
++#define GPS_WAKEUP	(GPIO_PORTB | 20)	/* CSI_VSYNC_UART5_CTS */
++#define GPS_TIMEPULSE	(GPIO_PORTB | 21)	/* CSI_HSYNC_UART5_RTS */
 +
 +static int apw_gps_pins[] = {
-+	(GPS_WAKEUP | GPIO_OUT  | GPIO_GPIO),
-+	(GPS_TIMEPULSE | GPIO_IN  | GPIO_GPIO),
++	(GPS_WAKEUP | GPIO_OUT | GPIO_GPIO),
++	(GPS_TIMEPULSE | GPIO_IN | GPIO_GPIO),
 +};
 +
 +static int apw_gps_init(void)
@@ -2038,6 +2113,60 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS */
 +
 +
++/* An optionnal Bluetooth + WiFi module can be added to wireless extension board */
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++
++#define BT_RESET	(GPIO_PORTB | 14)	/* CSI_D4 */
++#define WIFI_PWRDNn	(GPIO_PORTE | 10)	/* UART3_CTS */
++
++static int apw_bt_wifi_pins[] = {
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
++	(BT_RESET | GPIO_OUT | GPIO_GPIO),	/* Shared with CSI */
++#endif
++	(WIFI_PWRDNn | GPIO_OUT | GPIO_GPIO),
++};
++
++static int apw_bt_wifi_init(void)
++{
++	int res = mxc_gpio_setup_multiple_pins(apw_bt_wifi_pins,
++			ARRAY_SIZE(apw_bt_wifi_pins), "BT_WIFI");
++
++	return res;
++}
++#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI */
++
++
++void apf27dev_extension_resume(void)
++{
++#ifdef CONFIG_PM
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
++	gpio_set_value(BT_RESET, 0);
++# endif
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_WIFI
++	gpio_set_value(WIFI_PWRDNn, 1);
++# endif
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
++	gpio_set_value(GPS_WAKEUP, 1);
++# endif
++#endif
++}
++
++void apf27dev_extension_suspend(void)
++{
++#ifdef CONFIG_PM
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
++	gpio_set_value(BT_RESET, 1);
++# endif
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_WIFI
++	gpio_set_value(WIFI_PWRDNn, 0);
++# endif
++# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
++	gpio_set_value(GPS_WAKEUP, 0);
++# endif
++#endif
++}
++
++
 +void __init apf27dev_extension_init(void)
 +{
 +	printk("    Registering APW ressources:");
@@ -2047,6 +2176,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +#endif
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
 +	apw_gps_init();
++#endif
++#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++	apw_bt_wifi_init();
 +#endif
 +
 +	printk("done\n");

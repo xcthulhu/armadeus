@@ -1,7 +1,7 @@
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2009-12-14 16:45:52.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2009-12-14 16:57:35.000000000 +0100
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2009-12-15 19:54:59.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2009-12-16 10:34:20.000000000 +0100
 @@ -10,6 +10,21 @@
  comment "MX2 Platforms"
  	depends on ARCH_MX2
@@ -24,7 +24,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
  config MACH_MX27ADS
  	bool "MX27ADS platform"
  	depends on MACH_MX27
-@@ -26,15 +41,73 @@
+@@ -26,15 +41,98 @@
  
  choice
  	prompt "Baseboard"
@@ -51,7 +51,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +	  activates the devices you want to use if you have the "Full"
 +	  version.
 +
-+endchoice
+ endchoice
 +
 +config MACH_APF27_DEV_EXT
 +	bool
@@ -74,12 +74,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +	help
 +	  Wireless extension board connected to APF27Dev baseboard.
 +
- endchoice
++endchoice
 +
 +config MACH_APF27_DEV_EXT_WIRELESS_GSM
 +	bool "GSM/GPRS Modem"
 +	depends on MACH_APF27_DEV_EXT_WIRELESS
 +	select SERIAL_IMX_UART2
++	select SERIAL_IMX_UART2_USE_RTSCTS
 +	default y
 +	help
 +	  Activates support for the GSM modem on the APW extension board.
@@ -87,22 +88,46 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +config MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
 +	bool "Bluetooth & WiFi module"
 +	depends on MACH_APF27_DEV_EXT_WIRELESS
-+	select SERIAL_IMX_UART5
 +	help
 +	  Activates support for the Bluetooth+WiFi module on the APW extension
 +	  board.
 +
++config MACH_APF27_DEV_EXT_WIRELESS_WIFI
++	bool "WiFi"
++	depends on MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++	default y
++	help
++	  Only activates WiFi part of the module.
++
++config MACH_APF27_DEV_EXT_WIRELESS_BT
++	bool "Bluetooth"
++	depends on MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++	select SERIAL_IMX_UART6
++	select SERIAL_IMX_UART6_USE_RTSCTS
++	help
++	  Only activates Bluetooth part of the module
++
++config MACH_APF27_DEV_EXT_WIRELESS_CAMERA
++	bool "CSI (Camera) pass-through"
++	depends on (MACH_APF27_DEV_EXT_WIRELESS) && (!MACH_APF27_DEV_EXT_WIRELESS_GPS) && (!MACH_APF27_DEV_EXT_WIRELESS_BT)
++
++comment "Please check that J3 is unplugged"
++	depends on MACH_APF27_DEV_EXT_WIRELESS_CAMERA
++
 +config MACH_APF27_DEV_EXT_WIRELESS_GPS
 +	bool "GPS module"
 +	depends on MACH_APF27_DEV_EXT_WIRELESS
-+	select SERIAL_IMX_UART6
++	select SERIAL_IMX_UART5
 +	help
 +	  Activates support for the GPS module on the APW extension board.
 +
++comment "Please check that J3 is plugged in"
++	depends on MACH_APF27_DEV_EXT_WIRELESS_GPS
++
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2009-12-14 16:45:51.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2009-12-14 16:54:50.000000000 +0100
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2009-12-15 19:54:59.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2009-12-16 10:19:31.000000000 +0100
 @@ -10,6 +10,10 @@
  obj-$(CONFIG_MACH_MX27) += clock_imx27.o
  obj-$(CONFIG_CPU_FREQ_IMX27) +=  cpufreq_imx27.o
