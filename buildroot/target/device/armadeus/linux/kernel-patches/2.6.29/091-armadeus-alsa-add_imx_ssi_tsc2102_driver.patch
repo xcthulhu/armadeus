@@ -1,9 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/sound/arm/imx-alsa.c	
-+++ linux-2.6.27.13.mod/sound/arm/imx-alsa.c	
-@@ -0,0 +1,668 @@
+Index: linux-2.6.29.6/sound/arm/imx-alsa.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-17 14:47:35.000000000 +0100
+@@ -0,0 +1,671 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
@@ -209,7 +211,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	struct snd_card_imx_codec *chip = snd_pcm_substream_chip(substream);
 +	int stream_id = substream->pstr->stream;
 +	struct audio_stream *s = &chip->s[stream_id];
-+	
++
 +	pr_debug("%s called\n", __func__);
 +
 +	/* note: local interrupts are already disabled in the midlevel code */
@@ -231,7 +233,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +			break;
 +	}
 +	spin_unlock(&s->dma_lock);
-+	
++
 +	/* SSI activation done here */
 +	return imx_ssi_trigger(substream, cmd, /*channel_info->ssi*/0);
 +}
@@ -291,7 +293,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +	struct snd_card_imx_codec *chip = snd_pcm_substream_chip(substream);
 +
-+	ADEBUG();	
++	ADEBUG();
 +	return audio_get_dma_pos(&chip->s[substream->pstr->stream]);
 +}
 +
@@ -303,9 +305,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	int err, dma_req;
 +	char *type;
 +	unsigned int burstlen;
-+	
++
 +	type = (stream_id == SNDRV_PCM_STREAM_PLAYBACK ? "Playback" : "Capture");
-+	printk ("%s %s stream @: 0x%x\n", __func__, type, (unsigned int)substream);
++	printk("%s %s stream @: 0x%x\n", __func__, type, (unsigned int)substream);
 +
 +	chip->s[stream_id].stream = substream;
 +	alsa_codec_config->codec_clock_on();
@@ -327,7 +329,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	if ((err = snd_pcm_hw_constraint_integer(runtime,
 +					   SNDRV_PCM_HW_PARAM_PERIODS)) < 0)
 +		return err;
-+	
++
 +	printk("playback supported\n");
 +	if ((err = snd_pcm_hw_constraint_list(runtime,
 +					0,
@@ -342,15 +344,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +	/* configure i.MX DMA control register for given channel */
 +	if (stream_id == SNDRV_PCM_STREAM_PLAYBACK) {
-+	err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
-+					IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
-+					IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
-+					dma_req, 1);
++		err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
++				IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
++				IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
++				dma_req, 1);
 +	} else {
-+	err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
-+					IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
-+					IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
-+					dma_req, 1);
++		err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
++				IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
++				IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
++				dma_req, 1);
 +	}
 +	if (err < 0) {
 +		printk("Cannot configure DMA for %s channel\n", type);
@@ -385,7 +387,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		kfree(channel_info->sg_list);
 +
 +	chip->s[substream->pstr->stream].stream = NULL;
-+	
++
 +	return 0;
 +}
 +
@@ -507,12 +509,12 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +	struct snd_pcm *pcm;
 +	int err;
-+	
++
 +	ADEBUG();
 +	err = snd_pcm_new(imx_alsa->card,
 +			  CHIP_NAME,
 +			  device,
-+			  1,	/* one playback strean */
++			  1,	/* one playback stream */
 +			  1,	/* one capture stream */
 +			  &pcm);
 +
@@ -541,14 +543,11 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +
 +#ifdef CONFIG_PM
-+/*
-+ * Driver suspend/resume - calls alsa functions. Some hints from aaci.c
-+ */
 +int snd_imx_alsa_suspend(struct platform_device *pdev, pm_message_t state)
 +{
 +	struct snd_card_imx_codec *chip;
 +	struct snd_card *card = platform_get_drvdata(pdev);
-+	
++
 +	if (card->power_state != SNDRV_CTL_POWER_D3hot) {
 +		chip = card->private_data;
 +		if (chip->card->power_state != SNDRV_CTL_POWER_D3hot) {
@@ -559,6 +558,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +			snd_tsc210x_suspend_mixer();
 +		}
 +	}
++
 +	return 0;
 +}
 +
@@ -575,9 +575,9 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +			snd_tsc210x_resume_mixer();
 +		}
 +	}
++
 +	return 0;
 +}
-+
 +#endif	/* CONFIG_PM */
 +
 +/* module init & exit */
@@ -602,10 +602,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	}
 +
 +	alsa_codec_config = config;
++	if (alsa_codec_config == NULL) {
++		pr_err("No config data available. Giving up\n");
++		err = -ENODEV;
++		goto nodev1;
++	}
 +	alsa_codec_config->codec_clock_setup();
 +	alsa_codec_config->codec_clock_on();
 +
-+	if (alsa_codec_config && alsa_codec_config->codec_configure_dev)
++	if (alsa_codec_config->codec_configure_dev)
 +		alsa_codec_config->codec_configure_dev();
 +
 +	alsa_codec_config->codec_clock_off();
@@ -651,7 +656,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +	return 0;
 +
-+nodev2:	
++nodev2:
 +	snd_card_free(card);
 +nodev1:
 +	return err;
@@ -661,36 +666,31 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +	struct snd_card *card = platform_get_drvdata(pdev);
 +	struct snd_card_imx_codec *chip = card->private_data;
-+	
++
 +	snd_card_free(card);
 +
 +	alsa_codec = NULL;
 +	card->private_data = NULL;
 +	kfree(chip);
-+	
++
 +	platform_set_drvdata(pdev, NULL);
 +
 +	return 0;
 +}
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/sound/arm/imx-alsa-dma.h	
-+++ linux-2.6.27.13.mod/sound/arm/imx-alsa-dma.h	
-@@ -0,0 +1,50 @@
-+/*  
+Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-17 14:44:44.000000000 +0100
+@@ -0,0 +1,46 @@
++/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
 + *
 + * Common audio DMA handling for the iMX processors
 + *
 + * Copyright (C) 2008 Nicolas Colombain <nicolas.colombain@armadeus.com>
-+ * 
 + * Copyright (C) 2006 Mika Laitio <lamikr@cc.jyu.fi>
-+ *
 + * Copyright (C) 2005 Instituto Nokia de Tecnologia - INdT - Manaus Brazil
-+ * 
 + * Copyright (C) 2004 Texas Instruments, Inc.
-+ *
 + * Copyright (C) 2000, 2001 Nicolas Pitre <nico@cam.org>
 + *
 + * This package is free software; you can redistribute it and/or modify
@@ -728,15 +728,14 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#endif
 +
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/sound/arm/imx-alsa-tsc2102.c	
-+++ linux-2.6.27.13.mod/sound/arm/imx-alsa-tsc2102.c	
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-17 14:48:14.000000000 +0100
 @@ -0,0 +1,393 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
-+ * 
++ *
 + * Alsa codec driver for TSC210x chip for i.MX platforms.
 + *
 + * Copyright (c) 2008 Jorasse  <jorasse@armadeus.com>
@@ -941,7 +940,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#else
 +	/* Set the sample rate on the i.MXL SSI */
-+	printk("erreur 1");	
++	printk("erreur 1");
 +	imx_get_perclk3();
 +	clkgdv = CODEC_CLOCK / (sample_rate * (DEFAULT_BITPERSAMPLE * 2 - 1));
 +	if (clkgdv)
@@ -988,7 +987,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +no clock management*/
 +
 +#ifdef TSC_MASTER
-+	
++
 +#endif
 +
 +/*	if (clk_get_usecount(tsc2102_bclk) > 0 &&
@@ -1127,15 +1126,14 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +module_init(imx_alsa_tsc210x_init);
 +module_exit(imx_alsa_tsc210x_exit);
 +
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/sound/arm/imx-alsa-tsc2102.h	
-+++ linux-2.6.27.13.mod/sound/arm/imx-alsa-tsc2102.h	
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-17 14:43:53.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
-+ * 
++ *
 + * Alsa codec driver for TSC2102 chip for IMX1 platforms.
 + *
 + * Copyright (c) 2008 Jorasse  <jorasse@armadeus.com>
@@ -1179,12 +1177,11 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +
 +#endif	/* IMX_ALSA_TSC2102_H_ */
 +
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
---- linux-2.6.27.13.original/sound/arm/imx-alsa-tsc2102-mixer.c	
-+++ linux-2.6.27.13.mod/sound/arm/imx-alsa-tsc2102-mixer.c	
-@@ -0,0 +1,295 @@
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-17 14:43:36.000000000 +0100
+@@ -0,0 +1,305 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
 + *
@@ -1242,21 +1239,23 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +{
 +	int lch, rch;
 +
-+	if (left_ch > 100)
++	if (left_ch > 100) {
 +		vol[0] = 100;
-+	else if (left_ch < 0)
++	} else if (left_ch < 0) {
 +		vol[0] = 0;
-+	else
++	} else {
 +		vol[0] = left_ch;
++	}
 +	lch = OUTPUT_VOLUME_MIN - vol[0] *
 +		(OUTPUT_VOLUME_MIN - OUTPUT_VOLUME_MAX) / 100;
 +
-+	if (right_ch > 100)
++	if (right_ch > 100) {
 +		vol[1] = 100;
-+	else if (right_ch < 0)
++	} else if (right_ch < 0) {
 +		vol[1] = 0;
-+	else
++	} else {
 +		vol[1] = right_ch;
++	}
 +	rch = OUTPUT_VOLUME_MIN - vol[1] *
 +		(OUTPUT_VOLUME_MIN - OUTPUT_VOLUME_MAX) / 100;
 +
@@ -1293,6 +1292,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	uinfo->count			= 2;
 +	uinfo->value.integer.min	= 0;
 +	uinfo->value.integer.max	= 100;
++
 +	return 0;
 +}
 +
@@ -1311,6 +1311,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	set_dac_gain_stereo(
 +			ucontrol->value.integer.value[0],	/* L */
 +			ucontrol->value.integer.value[1]);	/* R */
++
 +	return 1;
 +}
 +
@@ -1321,6 +1322,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	uinfo->count			= 2;
 +	uinfo->value.integer.min	= 0;
 +	uinfo->value.integer.max	= 1;
++
 +	return 0;
 +}
 +
@@ -1334,12 +1336,13 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +}
 +
 +static int __pcm_playback_switch_put(
-+		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol) 
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	mute[0] = (ucontrol->value.integer.value[0] == 0);	/* L */
 +	mute[1] = (ucontrol->value.integer.value[1] == 0);	/* R */
 +
 +	tsc210x_set_dac_mute(mute[0], mute[1]);
++
 +	return 1;
 +}
 +
@@ -1350,6 +1353,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	uinfo->count			= 1;
 +	uinfo->value.integer.min	= 0;
 +	uinfo->value.integer.max	= 1;
++
 +	return 0;
 +}
 +
@@ -1357,15 +1361,16 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	ucontrol->value.integer.value[0] = filter[0];
++
 +	return 0;
 +}
 +
 +static int __pcm_playback_deemphasis_put(
-+		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol) 
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	filter[0] = (ucontrol->value.integer.value[0] > 0);
-+
 +	tsc210x_set_deemphasis(filter[0]);
++
 +	return 1;
 +}
 +
@@ -1376,6 +1381,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +	uinfo->count			= 1;
 +	uinfo->value.integer.min	= 0;
 +	uinfo->value.integer.max	= 1;
++
 +	return 0;
 +}
 +
@@ -1383,15 +1389,16 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 +		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	ucontrol->value.integer.value[0] = filter[1];
++
 +	return 0;
 +}
 +
 +static int __pcm_playback_bassboost_put(
-+		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol) 
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	filter[1] = (ucontrol->value.integer.value[0] > 0);
-+
 +	tsc210x_set_bassboost(filter[1]);
++
 +	return 1;
 +}
 +
