@@ -4,12 +4,14 @@
 #
 #############################################################
 MTD_VERSION:=a8ce7c2668ef0781326f629eef02cef6c3962b8a
+# gitweb >= 1.6.6-rc1 uses first 7 chars of git SHA1 as dir suffix
+MTD_SHORT_VERSION=$(shell echo $(MTD_VERSION)|cut -c -7)
 MTD_SOURCE:=mtd-utils-$(MTD_VERSION).tar.gz
 MTD_URL:=http://git.infradead.org/mtd-utils.git?a=snapshot;h=$(MTD_VERSION);sf=tgz
 MTD_HOST_DIR:= $(TOOL_BUILD_DIR)/mtd-utils-$(MTD_VERSION)
 MTD_DIR:=$(BUILD_DIR)/mtd-utils-$(MTD_VERSION)
 MTD_CAT:=$(ZCAT)
-MTD_NAME:=mtd-utils
+MTD_NAME:=mtd-utils-$(MTD_SHORT_VERSION)
 
 #############################################################
 #
