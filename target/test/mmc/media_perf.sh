@@ -81,7 +81,6 @@ test_speed()
 		echo "--- Test iteration n°$it ---"
 		echo "  Writing"
 		time sh $WRITE_BENCH 2>/tmp/writetime
-		sync
 		umount $MOUNT_DIR && mount $REM_DEVICE $MOUNT_DIR
 		echo "  Reading"
 		time mv $MOUNT_DIR/data.bin /tmp/ 2>/tmp/readtime
