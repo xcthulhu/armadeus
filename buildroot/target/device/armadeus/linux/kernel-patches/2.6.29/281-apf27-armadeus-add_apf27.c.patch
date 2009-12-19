@@ -9,8 +9,8 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-16 11:43:30.000000000 +0100
-@@ -0,0 +1,745 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-18 17:40:22.000000000 +0100
+@@ -0,0 +1,712 @@
 + /*
 + * apf27.c
 + *
@@ -83,12 +83,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +extern void apf27_lcd_startup(void);
 +#endif
 +
-+#ifdef CONFIG_VIDEO_MX27_MODULE
-+#define CONFIG_VIDEO_MX27 1
-+#endif
-+#ifdef CONFIG_VIDEO_OV96xx_MODULE
-+#define CONFIG_VIDEO_OV96xx 1
-+#endif
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
 +#endif
@@ -117,38 +111,15 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#endif
 +
 +
-+/*
-+ * APF27 has a Micron 128MiB 1,8V NAND flash, 16 bits width
-+ */
++/* APF27 has a Micron 128MiB 1,8V NAND flash, 16 bits width */
 +static struct mxc_nand_platform_data apf27_nand_board_info = {
 +	.width = 2,
 +	.hw_ecc = 1,
 +};
 +
 +
++/* APF27 has an I2C EEPROM on I2C2 Bus */
 +#ifdef CONFIG_I2C
-+static int mxc_i2c0_pins[] = {
-+	PD17_PF_I2C_DATA,
-+	PD18_PF_I2C_CLK
-+};
-+
-+static int apf27_i2c_0_init(struct platform_device *pdev)
-+{
-+	return mxc_gpio_setup_multiple_pins(mxc_i2c0_pins, ARRAY_SIZE(mxc_i2c0_pins), "I2C0");
-+}
-+
-+static int apf27_i2c_0_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_i2c0_pins, ARRAY_SIZE(mxc_i2c0_pins));
-+	return 0;
-+}
-+
-+static struct imx_i2c_platform_data apf27_i2c_0_data = {
-+	.max_clk = 400000,
-+	.init = apf27_i2c_0_init,
-+	.exit = apf27_i2c_0_exit,
-+};
-+
 +static int mxc_i2c1_pins[] = {
 +	PC5_PF_I2C2_SDA,
 +	PC6_PF_I2C2_SCL
@@ -156,7 +127,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +
 +static int apf27_i2c_1_init(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_i2c1_pins, ARRAY_SIZE(mxc_i2c1_pins), "I2C1");
++	return mxc_gpio_setup_multiple_pins(mxc_i2c1_pins, ARRAY_SIZE(mxc_i2c1_pins),
++						"I2C2");
 +}
 +
 +static int apf27_i2c_1_exit(struct platform_device *pdev)
@@ -171,12 +143,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	.exit = apf27_i2c_1_exit,
 +};
 +
-+/* APF27 has an I2C EEPROM */
 +static struct i2c_board_info apf27_i2c_devices_bus1[] = {
 +	[0] = {
 +		.type = "24c02",
-+		.flags = 0,  /* FIXME */
-+		.addr = 0x50,	/* E0=0, E1=1, E2=0 */
++		.flags = 0,
++		.addr = 0x50,
 +		.platform_data = NULL,
 +		.irq = 0
 +	},
@@ -184,6 +155,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#endif /* CONFIG_I2C */
 +
 +
++/* APF27 has an RS232 debug port/console on UART1 with "on module" transceiver */
 +static int mxc_uart0_pins[] = {
 +	PE12_PF_UART1_TXD,
 +	PE13_PF_UART1_RXD
@@ -207,6 +179,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	.flags = 0,
 +};
 +
++/* APF27 has an "on module" transceiver for UART3 */
 +static int mxc_uart2_pins[] = {
 +	PE8_PF_UART3_TXD,
 +	PE9_PF_UART3_RXD,
@@ -238,6 +211,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#endif
 +};
 +
++
 +/* APF27 has an onboard Ethernet PHY */
 +#ifdef CONFIG_FEC_OLD
 +static int mxc_fec_pins[] = {
@@ -265,11 +239,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +{
 +	mxc_gpio_setup_multiple_pins(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins), "FEC");
 +}
-+
-+/* static void gpio_fec_inactive(void)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins));
-+} */
 +#endif /* CONFIG_FEC_OLD */
 +
 +
@@ -688,7 +657,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_FEC_OLD
 +	gpio_fec_active();
 +#endif
-+	/* UART1 and UART3 have "on module" tranceivers */
++	/* UART1 and UART3 have "on module" transceivers */
 +	mxc_register_device(&mxc_uart_device0, &uart0_pdata); /* console */
 +	mxc_register_device(&mxc_uart_device2, &uart2_pdata);
 +
@@ -704,9 +673,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	mxc_register_device(&mxc_otg, &ehci0_pdata);
 +#endif
 +#ifdef CONFIG_I2C
-+	mxc_register_device(&imx_i2c_device0, &apf27_i2c_0_data);
 +	mxc_register_device(&imx_i2c_device1, &apf27_i2c_1_data);
-+
 +	i2c_register_board_info(1, apf27_i2c_devices_bus1,
 +				ARRAY_SIZE(apf27_i2c_devices_bus1));
 +#endif
@@ -759,8 +726,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-16 12:07:58.000000000 +0100
-@@ -0,0 +1,1034 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-18 19:29:16.000000000 +0100
+@@ -0,0 +1,1063 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -878,7 +845,32 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +#ifdef CONFIG_I2C
 +
-+/* I2C1 devices */
++/* APF27Dev makes I2C1 bus available */
++static int mxc_i2c0_pins[] = {
++	PD17_PF_I2C_DATA,
++	PD18_PF_I2C_CLK
++};
++
++static int apf27_i2c_0_init(struct platform_device *pdev)
++{
++	return mxc_gpio_setup_multiple_pins(mxc_i2c0_pins, ARRAY_SIZE(mxc_i2c0_pins),
++						"I2C1");
++}
++
++static int apf27_i2c_0_exit(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_i2c0_pins, ARRAY_SIZE(mxc_i2c0_pins));
++
++	return 0;
++}
++
++static struct imx_i2c_platform_data apf27_i2c_0_data = {
++	.max_clk = 400000,
++	.init = apf27_i2c_0_init,
++	.exit = apf27_i2c_0_exit,
++};
++
++/* I2C1 devices: RTC & Optionnal Camera */
 +static struct i2c_board_info apf27dev_i2c_devices_bus0[] = {
 +	[0] = {
 +		/* APF27Dev has an RTC */
@@ -900,7 +892,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +};
 +
 +
-+/* APF27Dev contains an optionnal HDMI video output (I2C controlled) */
++/* APF27Dev has an optionnal HDMI video output (controlled with I2C2) */
 +# ifdef CONFIG_VIDEO_AD9889
 +#define AD9889_INT 15
 +
@@ -910,12 +902,14 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static int ad9889_init(void)
 +{
-+	return mxc_gpio_setup_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins), "AD9889");
++	return mxc_gpio_setup_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins),
++						"AD9889");
 +}
 +
 +static int ad9889_exit(void)
 +{
 +	mxc_gpio_release_multiple_pins(ad9889_pins, ARRAY_SIZE(ad9889_pins));
++
 +	return 0;
 +}
 +
@@ -997,7 +991,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	.EDID_I2C_addr = 0x3f
 +};
 +# endif /* CONFIG_VIDEO_AD9889 */
-+
 +
 +/* I2C2 devices */
 +static struct i2c_board_info apf27dev_i2c_devices_bus1[] = {
@@ -1188,7 +1181,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif /* CONFIG_SPI */
 +
 +
-+/* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI) */
++/* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI1) */
 +#ifdef CONFIG_ARMADEUS_MAX1027
 +#define MAX1027_EOC_INT 15
 +#define MAX1027_CNVST 14
@@ -1253,12 +1246,14 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	/* Initialize CS high */
 +	gpio_set_value(TSC2101_CS, 1);
 +
-+	return mxc_gpio_setup_multiple_pins(tsc2101_pins, ARRAY_SIZE(tsc2101_pins), "TSC2101");
++	return mxc_gpio_setup_multiple_pins(tsc2101_pins, ARRAY_SIZE(tsc2101_pins),
++						"TSC2101");
 +}
 +
 +static int tsc2101_init_fixed_gpio(void)
 +{
-+        return mxc_gpio_setup_multiple_pins(tsc2101_fixed_pins, ARRAY_SIZE(tsc2101_fixed_pins), "TSC2101");
++        return mxc_gpio_setup_multiple_pins(tsc2101_fixed_pins,
++					ARRAY_SIZE(tsc2101_fixed_pins), "TSC2101");
 +}
 +
 +static void tsc2101_release_gpio(void)
@@ -1294,7 +1289,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#define MCP251X_CS (GPIO_PORTD | 20)
 +
 +static int mcp251x_pins[] = {
-+	(GPIO_PORTD | CAN_MCP251X_INT | GPIO_IN | GPIO_GPIO), /* configure int pin as GPIO */
++	(GPIO_PORTD | CAN_MCP251X_INT | GPIO_IN | GPIO_GPIO), /* IRQ pin as GPIO */
 +	(MCP251X_CS | GPIO_OUT | GPIO_GPIO),
 +};
 +
@@ -1666,10 +1661,10 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +/* APF27Dev power management stuff */
 +
-+#define APF27DEV_USER_SWITCH	(GPIO_PORTF | 13)
-+#define APF27DEV_USER_SWITCH_IRQ (IRQ_GPIOF(13))
-+#define APF27DEV_USER_LED	(GPIO_PORTF | 14)
-+#define APF27DEV_POWER_DOWN_NOT (GPIO_PORTF | 16)
++#define APF27DEV_USER_SWITCH		(GPIO_PORTF | 13)
++#define APF27DEV_USER_SWITCH_IRQ	(IRQ_GPIOF(13))
++#define APF27DEV_USER_LED		(GPIO_PORTF | 14)
++#define APF27DEV_POWER_DOWN_NOT		(GPIO_PORTF | 16)
 +
 +static int apf27dev_pwr_ctl_pins[] = {
 +	(APF27DEV_POWER_DOWN_NOT | GPIO_OUT | GPIO_GPIO),
@@ -1758,6 +1753,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	mxc_register_device(&mxc_ehci1, &ehci1_pdata);
 +#endif
 +#ifdef CONFIG_I2C
++	mxc_register_device(&imx_i2c_device0, &apf27_i2c_0_data);
 +	i2c_register_board_info(0, apf27dev_i2c_devices_bus0,
 +				ARRAY_SIZE(apf27dev_i2c_devices_bus0));
 +	i2c_register_board_info(1, apf27dev_i2c_devices_bus1,
@@ -1798,7 +1794,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-15 09:32:01.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-18 16:55:09.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2023,7 +2019,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-16 12:07:45.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-18 16:55:09.000000000 +0100
 @@ -0,0 +1,159 @@
 + /*
 + * apf27-dev-ext-apw.c
