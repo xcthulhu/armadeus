@@ -1,5 +1,5 @@
 /*
- * Max9768 audio amplifier driver
+ * MAX9768 audio amplifier driver
  *
  * Copyright (C) 2009 Armadeus Project / Armadeus Systems
  * Author: Nicolas Colombain
@@ -63,24 +63,28 @@ static void max9768_mute(struct max9768 *max9768, int mute)
 	max9768->mute_state = mute;
 }
 
-static void max9768_send( struct i2c_client *client, int value )
+static int max9768_send(struct i2c_client *client, int value)
 {
 	char msg = value & 0xff;
 
-	i2c_master_send(client, &msg, 1);
+	return i2c_master_send(client, &msg, 1);
 }
 
-/* sysfs hook functions */
 
+/* sysfs hook functions */
 static ssize_t max9768_set_volume(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct i2c_client *client = to_i2c_client(dev);
 	char msg;
+	int err;
 	
 	msg = (simple_strtol(buf, NULL, 10)) & MAX9768_VOLUME_MASK;
 	pr_debug("%s: 0x%02x\n", __FUNCTION__, msg);
-	max9768_send( client, msg);
+	err = max9768_send(client, msg);
+	if (err) {
+		dev_err(dev, "couldn't set volume\n");
+	}
 
 	return count;
 }
@@ -122,15 +126,15 @@ static int max9768_create_sys_entries(struct i2c_client *client)
 	int status = 0;
 
 	if ((status = device_create_file(&client->dev, &dev_attr_volume))) {
-		printk(KERN_WARNING "Unable to create sysfs attribute for max9768 volume register\n");
+		dev_warn(&client->dev, "Unable to create sysfs attribute for volume register\n");
 		goto exit;
 	}
 	if ((status = device_create_file(&client->dev, &dev_attr_mute))) {
-		printk(KERN_WARNING "Unable to create sysfs attribute for max9768 mute register\n");
+		dev_warn(&client->dev, "Unable to create sysfs attribute for mute register\n");
 		goto exit;
 	}
 	if ((status = device_create_file(&client->dev, &dev_attr_shutdown))) {
-		printk(KERN_WARNING "Unable to create sysfs attribute for max9768 shutdown register\n");
+		dev_warn(&client->dev, "Unable to create sysfs attribute for shutdown register\n");
 		goto exit;
 	}
 
@@ -169,7 +173,7 @@ static int max9768_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, max9768);
 	dev_set_drvdata(&client->dev, max9768);
 
-	/* Create /sys entries */
+	/* create /sys entries */
 	result = max9768_create_sys_entries(client);
 	if (result)
 		goto out_free;
@@ -177,24 +181,31 @@ static int max9768_probe(struct i2c_client *client,
 	if (platform_data->init) {
 		result = platform_data->init();
 		if (result) {
-			printk(KERN_WARNING DRIVER_NAME ": can't reserve gpios\n");
+			dev_err(&client->dev, "can't reserve gpios\n");
 			goto out_sys;
 		}
 	}
 	max9768->mute_pin = platform_data->mute_pin;
 	max9768->shdn_pin = platform_data->shdn_pin;
 		
-	/* shutdown amplifier and activate mute  */
+	/* set filter mode */
+	result = max9768_send(client, platform_data->filter_mode);
+	if (result) {
+		dev_err(&client->dev, "can't communicate with chip\n");
+		goto out_gpio;
+	}
+
+	/* shutdown amplifier and activate mute */
 	max9768_shutdown(max9768, 1);
 	max9768_mute(max9768, 1);
 
-	/* set filter mode */
-	max9768_send(client, platform_data->filter_mode);
-
-	printk(DRIVER_NAME " v" DRIVER_VERSION " successfully probed !\n");
+	dev_notice(&client->dev, "successfully probed !\n");
 
 	return 0;
 
+out_gpio:
+	if (platform_data->exit)
+		platform_data->exit();
 out_sys:
 	max9768_remove_sys_entries(client);
 out_free:
@@ -268,9 +279,10 @@ static int __init max9768_init(void)
 {
 	int ret;
 
+	printk(DRIVER_NAME " v" DRIVER_VERSION "\n");
 	ret = i2c_add_driver(&max9768_driver);
 	if (ret)
-		printk(KERN_ERR "Unable to register max9768 driver\n");
+		printk(KERN_ERR "unable to register to I2C bus !\n");
 
 	return ret;
 }
