@@ -28,8 +28,8 @@
 
 struct max9768_platform_data {
 	u8 filter_mode;
-	int mute_pin; /*gpio for mute ctrl */   
-	int shdn_pin; /*gpio for shutdown ctrl */   
+	int mute_pin;	/* gpio for mute ctrl */
+	int shdn_pin;	/* gpio for shutdown ctrl */
 	int (*init)(void);
 	int (*exit)(void);
 };
