@@ -4,14 +4,15 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2009-11-10 13:37:50.000000000 +0100
-@@ -0,0 +1,299 @@
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2009-12-23 10:01:01.000000000 +0100
+@@ -0,0 +1,302 @@
 +/*
 + * include/linux/spi/tsc2102.h
 + *
-+ * TI TSC2102 Touchscreen, Audio and Battery control register definitions
++ * TI TSC210(1/2) Touchscreen, Audio and Battery control register definitions
 + *
 + * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org>
++ * Copyright (c) 2008 Armadeus Systems  <julien.boibessot@armadeus.com>
 + *
 + * This package is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -46,15 +47,12 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +
 +#define TSC_BAT1	(1 << 0)
 +#define TSC_BAT2	(1 << 1)
-+#define TSC_AUX	(1 << 2)
++#define TSC_AUX		(1 << 2)
 +#define TSC_AUX1	(1 << 2) /* TSC2101 has 2 Aux inputs */
 +#define TSC_AUX2	(1 << 3)
 +#define TSC_TEMP	(1 << 4)
 +
-+extern u16  tsc210x_read_sync(int page, u8 address);
-+extern void tsc210x_reads_sync(int page, u8 startaddress, u16 *data,
-+		int numregs);
-+extern void tsc210x_write_sync(int page, u8 address, u16 data);
++extern u16 tsc210x_read_reg(int page, u8 address);
 +
 +typedef void (*tsc210x_touch_t)(int touching);
 +typedef void (*tsc210x_coords_t)(int x, int y, int z1, int z2);
@@ -65,6 +63,9 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +extern int tsc210x_ports_cb(tsc210x_ports_t handler);
 +extern int tsc210x_temp1_cb(tsc210x_temp_t handler);
 +
++extern int tsc210x_is_tsc2101(void);
++extern int tsc210x_is_tsc2102(void);
++
 +#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)
 +extern void tsc210x_set_dac_volume(uint8_t left_ch, uint8_t right_ch);
 +extern void tsc210x_set_dac_mute(int left_ch, int right_ch);
@@ -74,7 +75,9 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +extern void tsc210x_set_i2s_master(int state);
 +extern void tsc210x_set_deemphasis(int enable);
 +extern void tsc210x_set_bassboost(int enable);
-+#endif // CONFIG_SOUND || CONFIG_SOUND_MODULE
++extern void tsc2101_handset_mute(int enable);
++extern void tsc2101_set_handset_gain(uint8_t gain);
++#endif
 +
 +extern void tsc210x_keyclick(int amplitude, int freq, int length);
 +
@@ -308,12 +311,12 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/spi/tsc2102.c	2009-11-10 13:41:13.000000000 +0100
-@@ -0,0 +1,1125 @@
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2009-12-23 10:06:02.000000000 +0100
+@@ -0,0 +1,1186 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
-+ * TSC2102 interface driver.
++ * TSC2101/2 interface driver.
 + * Copyright (C) 2008 Armadeus systems (nc)
 + * 			-> spi communication reworked to avoid deadlock
 + * Copyright (c) 2005 Andrzej Zaborowski  <balrog@zabor.org>
@@ -442,6 +445,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +module_param_named(sensor_scan_msecs, tsc.mode_msecs, uint, 0);
 +MODULE_PARM_DESC(sensor_scan_msecs, "Temperature & battery scan interval");
 +
++
 +void tsc210x_write_sync(int page, u8 address, u16 data)
 +{
 +	static struct tsc210x_spi_req req;
@@ -474,7 +478,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +				__FUNCTION__, ret);
 +}
 +
-+void tsc210x_reads_sync(int page, u8 startaddress, u16 *data, int numregs)
++static void tsc210x_reads_sync(int page, u8 startaddress, u16 *data, int numregs)
 +{
 +	static struct tsc210x_spi_req req;
 +	static struct spi_transfer transfer[6];
@@ -512,7 +516,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +				__FUNCTION__, ret);
 +}
 +
-+u16 tsc210x_read_sync(int page, u8 address)
++static u16 tsc210x_read_sync(int page, u8 address)
 +{
 +	u16 ret;
 +
@@ -521,6 +525,19 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	return ret;
 +}
 +
++u16 tsc210x_read_reg(int page, u8 address)
++{
++	u16 ret;
++
++	mutex_lock(&tsc.lock_sync);
++	ret = tsc210x_read_sync(page, address);
++	mutex_unlock(&tsc.lock_sync);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(tsc210x_read_reg);
++
++/* Workqueue for TSC internal state machine */
 +static void tsc_work(struct work_struct *work)
 +{
 +#define Z2STAT (1<<7)
@@ -586,7 +603,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		if (tsc.temp1_cb)
 +			tsc.temp1_cb(tsc.temp);
 +		/* switch to pintdav and TS control */
-+		tsc210x_write_sync( TSC2102_TS_ADC_CTRL,
++		tsc210x_write_sync(TSC2102_TS_ADC_CTRL,
 +				TSC2102_ADC_TS_CONTROL);
 +		tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV);
 +	}
@@ -693,14 +710,15 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +/*
 + * Volume level values should be in the range [0, 127].
-+ * Higher values mean lower volume.
++ * Higher values mean lower volume:
++ *     0 -> 0dB attenuation, 127 -> -63,5 dB attenuation (steps of -0,5dB)
 + */
 +void tsc210x_set_dac_volume(uint8_t left_ch, uint8_t right_ch)
 +{
 +	u16 val;
 +
 +	if (tsc.kind == tsc2102) {
-+		/* On TSC2102, 127 means 0dB and 0 -63,5 dB */
++		/* On TSC2102, 127 means 0dB and 0 means -63,5 dB */
 +		if (left_ch == 0x00 || left_ch == 0x7f)
 +			left_ch ^= 0x7f;
 +		if (right_ch == 0x00 || right_ch == 0x7f)
@@ -721,6 +739,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +void tsc210x_set_dac_mute(int left_ch, int right_ch)
 +{
 +	u16 val;
++
 +	mutex_lock(&tsc.lock_sync);
 +
 +	val = tsc210x_read_sync(TSC210X_DAC_GAIN_CTRL);
@@ -741,10 +760,9 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +void tsc210x_get_dac_mute(int *left_ch, int *right_ch)
 +{
 +	u16 val;
++
 +	mutex_lock(&tsc.lock_sync);
-+
 +	val = tsc210x_read_sync(TSC210X_DAC_GAIN_CTRL);
-+
 +	mutex_unlock(&tsc.lock_sync);
 +
 +	*left_ch  = !!(val & DGC_DALMU);
@@ -755,6 +773,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +void tsc210x_set_deemphasis(int enable)
 +{
 +	u16 val;
++
 +	mutex_lock(&tsc.lock_sync);
 +	val = tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL);
 +
@@ -784,6 +803,36 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	mutex_unlock(&tsc.lock_sync);
 +}
 +EXPORT_SYMBOL(tsc210x_set_bassboost);
++
++void tsc2101_handset_mute(int enable)
++{
++	u16 val;
++
++	mutex_lock(&tsc.lock_sync);
++	val = tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL);
++	if (enable)
++		val |= HIGC_ADMUT_HND;
++	else
++		val &= ~HIGC_ADMUT_HND;
++	tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, val);
++	mutex_unlock(&tsc.lock_sync);
++}
++EXPORT_SYMBOL_GPL(tsc2101_handset_mute);
++
++/* 0 -> 0dB, 127 -> 59,5dB (0.5dB stepping) */
++void tsc2101_set_handset_gain(uint8_t gain)
++{
++	u16 val;
++
++	mutex_lock(&tsc.lock_sync);
++	val = tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL);
++	val &= ~HIGC_ADPGA_HND(0xff); /* clear current gain */
++	val |= HIGC_ADPGA_HND(gain);
++	tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, val);
++	mutex_unlock(&tsc.lock_sync);
++}
++EXPORT_SYMBOL_GPL(tsc2101_set_handset_gain);
++
 +
 +/* {rate, divisor (for AC1), fsref} */
 +static const struct tsc210x_rate_info_s tsc210x_rates[] = {
@@ -899,7 +948,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	val &= ~AC1_DACFS(0xff) & ~AC1_ADCFS(0xff);
 +	val |= AC1_DACFS(rates[i].divisor);
 +	val |= AC1_ADCFS(rates[i].divisor);
-+	tsc210x_write_sync(TSC2102_AUDIO1_CTRL, val );
++	tsc210x_write_sync(TSC2102_AUDIO1_CTRL, val);
 +
 +	val = tsc210x_read_sync(TSC2102_AUDIO3_CTRL);
 +
@@ -912,6 +961,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	}
 +
 +	mutex_unlock(&tsc.lock_sync);
++
 +	return 0;
 +}
 +EXPORT_SYMBOL(tsc210x_set_rate);
@@ -925,7 +975,8 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +	if (state) {
 +		/* 16-bit words, I2S mode, sample at Fsref */
-+		tsc210x_write_sync(TSC2102_AUDIO1_CTRL, AC1_WLEN(0) | AC1_DATFM(0) | AC1_DACFS(0) );
++		tsc210x_write_sync(TSC2102_AUDIO1_CTRL,
++				AC1_WLEN(0) | AC1_DATFM(0) | AC1_DACFS(0));
 +		/* Keyclicks off, soft-stepping at normal rate */
 +		tsc210x_write_sync(TSC2102_AUDIO2_CTRL, TSC210X_KEYCLICK_OFF);
 +		/* 44.1 kHz Fsref, continuous transfer mode, master DAC */
@@ -992,7 +1043,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +#if defined(CONFIG_SOUND) || defined(CONFIG_SOUND_MODULE)
 +	/* 16-bit words, I2S mode, sample at Fsref */
-+	tsc210x_write_sync(TSC2102_AUDIO1_CTRL, TSC210x_AUDIO1_INIT_VAL );
++	tsc210x_write_sync(TSC2102_AUDIO1_CTRL, TSC210x_AUDIO1_INIT_VAL);
 +	/* Keyclicks off, soft-stepping at normal rate */
 +	tsc210x_write_sync(TSC2102_AUDIO2_CTRL, TSC210X_KEYCLICK_OFF);
 +	/* 48 kHz Fsref, continuous transfer mode, master DAC */
@@ -1009,9 +1060,9 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, 0x0000);
 +// 		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, 0x00fc);
 +		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, 0xe2fc);
-+	}
-+	else
++	} else {
 +		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, TSC2102_DAC_ON);
++	}
 +	/* Un-mute + volume max */
 +	if (tsc.kind == tsc2101)
 +		tsc210x_write_sync(TSC210X_DAC_GAIN_CTRL, 0x0000);
@@ -1025,16 +1076,29 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	/* Start mode timer */
 +	mod_timer(&dev->mode_timer, jiffies +
 +			msecs_to_jiffies(dev->mode_msecs));
++
 +	return 0;
 +}
 +
 +/*
 + * Retrieves chip revision.  Should be 1 for TSC2102 and 4 for TSC2101
 + */
-+int tsc2102_get_revision(void)
++static int tsc210x_get_revision(void)
 +{
 +	return AC3_REVID(tsc210x_read_sync(TSC2102_AUDIO3_CTRL));
 +}
++
++int tsc210x_is_tsc2101(void)
++{
++	return tsc.kind == tsc2101;
++}
++EXPORT_SYMBOL(tsc210x_is_tsc2101);
++
++int tsc210x_is_tsc2102(void)
++{
++	return tsc.kind == tsc2102;
++}
++EXPORT_SYMBOL(tsc210x_is_tsc2102);
 +
 +/*
 + * Emit a short keyclick typically in order to give feedback to
@@ -1058,13 +1122,15 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +	/* Set amplitude */
 +	switch (amplitude) {
-+	case 1:
-+		val |= AC2_KCLAC(4);
++		case 1:
++			val |= AC2_KCLAC(4);
 +		break;
-+	case 2:
-+		val |= AC2_KCLAC(7);
++
++		case 2:
++			val |= AC2_KCLAC(7);
 +		break;
-+	default:
++
++		default:
 +		break;
 +	}
 +
@@ -1125,6 +1191,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +}
 +#endif
 +
++
 +#ifdef CONFIG_PM
 +/*
 + * Suspend the chip.
@@ -1167,12 +1234,10 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		return 0;
 +
 +	mutex_lock(&dev->lock_sync);
-+
 +	dev->spi->dev.power.power_state = PMSG_ON;
-+
 +	err = tsc2102_configure(dev);
-+
 +	mutex_unlock(&dev->lock_sync);
++
 +	return err;
 +}
 +#else
@@ -1276,7 +1341,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +	/* Now try to detect the chip, make first contact */
 +	tsc210x_reset(); /* Seems like TSC can be messed up and needs a reset even to get revision */
-+	rev_id = tsc2102_get_revision();
++	rev_id = tsc210x_get_revision();
 +	if (rev_id == 0x01) {
 +		printk("TSC2102 detected\n");
 +		tsc.kind = tsc2102;
@@ -1292,7 +1357,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	if (err)
 +		goto err_timer;
 +
-+	/* Register devices controlled by TSC2101 / TSC2102 */
++	/* Register devices controlled by TSC2101/TSC2102 */
 +	tsc210x_ts_device.dev.platform_data = pdata;
 +	tsc210x_ts_device.dev.parent = &spi->dev;
 +	err = platform_device_register(&tsc210x_ts_device);
@@ -1336,7 +1401,6 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	if (pdata->apm_report)
 +		apm_get_power_status = tsc2102_get_power_status;
 +#endif
-+
 +	if (!err)
 +		goto done;
 +
@@ -1412,8 +1476,8 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +static int __init tsc210x_init(void)
 +{
 +	int err;
-+	printk(banner);
 +
++	printk(banner);
 +	err = spi_register_driver(&tsc210x_driver);
 +
 +	return err;

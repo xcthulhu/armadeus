@@ -4,12 +4,12 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-17 14:47:35.000000000 +0100
-@@ -0,0 +1,671 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-23 10:40:25.000000000 +0100
+@@ -0,0 +1,670 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
-+ * Alsa Driver for i.MXL / SSI
++ * Alsa Driver for i.MX1/i.MX2 SSI
 + *
 + * Copyright (C) 2008 Armadeus Systems <nicolas.colombain@armadeus.com>
 + *                                     <julien.boibessot@armadeus.com>
@@ -212,23 +212,23 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	int stream_id = substream->pstr->stream;
 +	struct audio_stream *s = &chip->s[stream_id];
 +
-+	pr_debug("%s called\n", __func__);
++	pr_debug("%s called: ", __func__);
 +
 +	/* note: local interrupts are already disabled in the midlevel code */
 +	spin_lock(&s->dma_lock);
 +	switch (cmd) {
 +		case SNDRV_PCM_TRIGGER_START:
-+			/* requested stream startup */
++			pr_debug("START\n");
 +			imx_dma_enable(s->dma_dev);
 +			break;
 +
 +		case SNDRV_PCM_TRIGGER_STOP:
-+			/* requested stream shutdown */
++			pr_debug("STOP\n");
 +			imx_dma_disable(s->dma_dev);
 +			break;
 +
 +		default:
-+			printk("Not supported (yet?) ALSA trigger: 0x%x\n", cmd);
++			printk("ALSA trigger 0x%x not supported (yet?)\n", cmd);
 +			return -EINVAL;
 +			break;
 +	}
@@ -261,7 +261,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	imx_ssi_setup_unit_to_iis_slave(0);
 +#else
 +	imx_ssi_setup_unit_to_iis_master(0);
-+#endif /* TSC_MASTER */
++#endif
 +
 +	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 +		fifo_io = imx_ssi_get_dma_tx_address(/*channel_info->ssi*/0, 0);
@@ -307,7 +307,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	unsigned int burstlen;
 +
 +	type = (stream_id == SNDRV_PCM_STREAM_PLAYBACK ? "Playback" : "Capture");
-+	printk("%s %s stream @: 0x%x\n", __func__, type, (unsigned int)substream);
++	pr_debug("%s %s stream @: 0x%x\n", __func__, type, (unsigned int)substream);
 +
 +	chip->s[stream_id].stream = substream;
 +	alsa_codec_config->codec_clock_on();
@@ -315,14 +315,14 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +		runtime->hw = *(alsa_codec_config->snd_imx_alsa_playback);
 +		burstlen = DMA_TXFIFO_BURST * 2;
 +		dma_req = imx_ssi_get_dma_tx_channel(0, 0);
-+		printk("imx_ssi_get_dma_tx_channel = %d\n", dma_req);
++		pr_debug("imx_ssi_get_dma_tx_channel = %d\n", dma_req);
 +		if (dma_req < 0)
 +			return dma_req;
 +	} else {
 +		runtime->hw = *(alsa_codec_config->snd_imx_alsa_capture);
 +		burstlen = DMA_RXFIFO_BURST * 2;
-+		printk("capture not supported\n");
 +		dma_req = imx_ssi_get_dma_rx_channel(0, 0);
++		pr_debug("imx_ssi_get_dma_rx_channel = %d\n", dma_req);
 +		if (dma_req < 0)
 +			return dma_req;
 +	}
@@ -330,7 +330,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +					   SNDRV_PCM_HW_PARAM_PERIODS)) < 0)
 +		return err;
 +
-+	printk("playback supported\n");
 +	if ((err = snd_pcm_hw_constraint_list(runtime,
 +					0,
 +					SNDRV_PCM_HW_PARAM_RATE,
@@ -404,10 +403,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	pr_debug("%s called\n", __func__);
 +
 +	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-+		err = devdma_hw_alloc(chip[0].card->dev, substream,
++		err = devdma_hw_alloc(chip->card->dev, substream,
 +					params_buffer_bytes(hw_params));
 +	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-+		err = devdma_hw_alloc(chip[1].card->dev, substream,
++		err = devdma_hw_alloc(chip->card->dev, substream,
 +					params_buffer_bytes(hw_params));
 +	if (err < 0)
 +		return err;
@@ -479,9 +478,9 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	}
 +
 +	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-+		devdma_hw_free(chip[0].card->dev, substream);
++		devdma_hw_free(chip->card->dev, substream);
 +	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-+		devdma_hw_free(chip[1].card->dev, substream);
++		devdma_hw_free(chip->card->dev, substream);
 +
 +	return snd_pcm_lib_free_pages(substream);
 +}
@@ -680,7 +679,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-17 14:44:44.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-23 10:40:25.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -731,8 +730,8 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-17 14:48:14.000000000 +0100
-@@ -0,0 +1,393 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-23 10:40:25.000000000 +0100
+@@ -0,0 +1,444 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
 + *
@@ -755,9 +754,13 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +#include <linux/clk.h>
 +#include <linux/slab.h>
 +#ifdef CONFIG_PM
-+#include <linux/pm.h>
++# include <linux/pm.h>
 +#endif
 +#include <linux/spi/tsc2102.h>
++#ifdef CONFIG_DEBUG_FS
++# include <linux/debugfs.h>
++# include <linux/seq_file.h>
++#endif
 +
 +#include <mach/hardware.h>
 +#include <mach/imx-alsa.h>
@@ -788,7 +791,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +		SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 | \
 +		SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_KNOT)
 +
-+static struct snd_pcm_hardware tsc2102_snd_imx_alsa_playback = {
++static struct snd_pcm_hardware tsc210x_snd_imx_alsa_playback = {
 +	.info			= SNDRV_PCM_INFO_INTERLEAVED |
 +					SNDRV_PCM_INFO_BLOCK_TRANSFER | SNDRV_PCM_INFO_MMAP |
 +					SNDRV_PCM_INFO_MMAP_VALID,
@@ -800,109 +803,30 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +	.channels_max		= 2,
 +	.buffer_bytes_max	= 32 * 1024,
 +	.period_bytes_min	= 64,
-+	.period_bytes_max	= 8 * 1024,  //test
++	.period_bytes_max	= 8 * 1024,  /* test */
 +	.periods_min		= 2,
 +	.periods_max		= 255,
 +	.fifo_size		= 0,
 +};
 +
-+// #define DUMP_TSC2102_AUDIO_REGISTERS 1
-+#ifdef DUMP_TSC2102_AUDIO_REGISTERS
-+static void dump_tsc2102_audio_regs(int show_coef)
-+{
-+	printk("TSC2102_AUDIO1_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_AUDIO1_CTRL));
-+	printk("TSC210X_DAC_GAIN_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC210X_DAC_GAIN_CTRL));
-+// #ifdef CONFIG_TSC2101
-+	printk("TSC2101_HEADSET_GAIN_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_HEADSET_GAIN_CTRL));
-+	printk("TSC2101_MIXER_PGA_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_MIXER_PGA_CTRL));
-+// #endif
-+	printk("TSC2102_AUDIO2_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_AUDIO2_CTRL));
-+	printk("TSC210X_CODEC_POWER_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL));
-+	printk("TSC2102_AUDIO3_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_AUDIO3_CTRL));
-+	if (show_coef) {
-+	printk("TSC2102_LCH_BASS_BOOST_N0 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N0));
-+	printk("TSC2102_LCH_BASS_BOOST_N1 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N1));
-+	printk("TSC2102_LCH_BASS_BOOST_N2 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N2));
-+	printk("TSC2102_LCH_BASS_BOOST_N3 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N3));
-+	printk("TSC2102_LCH_BASS_BOOST_N4 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N4));
-+	printk("TSC2102_LCH_BASS_BOOST_N5 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_N5));
-+	printk("TSC2102_LCH_BASS_BOOST_D1 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_D1));
-+	printk("TSC2102_LCH_BASS_BOOST_D2 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_D2));
-+	printk("TSC2102_LCH_BASS_BOOST_D4 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_D4));
-+	printk("TSC2102_LCH_BASS_BOOST_D5 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_LCH_BASS_BOOST_D5));
-+	printk("TSC2102_RCH_BASS_BOOST_N0 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N0));
-+	printk("TSC2102_RCH_BASS_BOOST_N1 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N1));
-+	printk("TSC2102_RCH_BASS_BOOST_N2 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N2));
-+	printk("TSC2102_RCH_BASS_BOOST_N3 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N3));
-+	printk("TSC2102_RCH_BASS_BOOST_N4 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N4));
-+	printk("TSC2102_RCH_BASS_BOOST_N5 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_N5));
-+	printk("TSC2102_RCH_BASS_BOOST_D1 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_D1));
-+	printk("TSC2102_RCH_BASS_BOOST_D2 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_D2));
-+	printk("TSC2102_RCH_BASS_BOOST_D4 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_D4));
-+	printk("TSC2102_RCH_BASS_BOOST_D5 = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_RCH_BASS_BOOST_D5));
-+	}
-+	printk("TSC210X_PLL1_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC210X_PLL1_CTRL));
-+	printk("TSC210X_PLL2_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC210X_PLL2_CTRL));
-+	printk("TSC2102_AUDIO4_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2102_AUDIO4_CTRL));
-+// #ifdef CONFIG_TSC2101
-+	printk("TSC2101_HANDSET_PGA_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL));
-+	printk("TSC2101_CELL_BUZZER_PGA_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_CELL_BUZZER_PGA_CTRL));
-+	printk("TSC2101_AUDIO5_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_AUDIO5_CTRL));
-+	printk("TSC2101_AUDIO6_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_AUDIO6_CTRL));
-+	printk("TSC2101_AUDIO7_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_AUDIO7_CTRL));
-+	printk("TSC2101_GPIO_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_GPIO_CTRL));
-+	printk("TSC2101_AGP_CP_IN_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_AGP_CPIN_CTRL));
-+	printk("TSC2101_POWERDOWN_STATUS = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_POWERDOWN_STATUS));
-+	printk("TSC2101_MIC_AGC_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_MIC_AGC_CTRL));
-+	printk("TSC2101_CELL_PHONE_AGC_CTRL = 0x%04x\n",
-+			tsc210x_read_sync(TSC2101_CELL_PHONE_AGC_CTRL));
-+// #endif /* CONFIG_TSC2101 */
-+}
-+#else
-+static void dump_tsc2102_audio_regs(int show_coef)
-+{
-+	return;
-+}
-+#endif /* DUMP_TSC2102_AUDIO_REGISTERS */
++/* Only TSC2101 has audio in capability */
++static struct snd_pcm_hardware tsc2101_snd_imx_alsa_capture = {
++	.info			= SNDRV_PCM_INFO_INTERLEAVED |
++					SNDRV_PCM_INFO_BLOCK_TRANSFER | SNDRV_PCM_INFO_MMAP |
++					SNDRV_PCM_INFO_MMAP_VALID,
++	.formats		= SNDRV_PCM_FMTBIT_S16_LE,
++	.rates			= IMX_SSI_RATES,
++	.rate_min		= 8000,
++	.rate_max		= 48000,
++	.channels_min		= 1,
++	.channels_max		= 1,
++	.buffer_bytes_max	= 32 * 1024,
++	.period_bytes_min	= 64,
++	.period_bytes_max	= 8 * 1024,  /* test */
++	.periods_min		= 2,
++	.periods_max		= 255,
++	.fifo_size		= 0,
++};
 +
 +/*
 + * ALSA operations according to board file
@@ -915,7 +839,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 + */
 +static void tsc2102_set_samplerate(long sample_rate)
 +{
-+	pr_debug("%s %d\n", __func__, sample_rate);
++	pr_debug("%s %li\n", __func__, sample_rate);
 +
 +#ifndef TSC_MASTER
 +	int clkgdv = 0;
@@ -953,7 +877,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +#endif
 +
 +	current_rate = sample_rate;
-+	dump_tsc2102_audio_regs(0);
 +}
 +
 +static void tsc2102_configure(void)
@@ -1033,9 +956,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +	return DEFAULT_SAMPLE_RATE;
 +}
 +
++
 +#ifdef CONFIG_PM
-+static int snd_imx_alsa_tsc2102_suspend(
-+		struct platform_device *pdev, pm_message_t state)
++static int snd_imx_alsa_tsc2102_suspend(struct platform_device *pdev,
++			pm_message_t state)
 +{
 +	tsc210x_dac_power(0);
 +	current_rate = 0;
@@ -1057,6 +981,126 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +}
 +#endif /* CONFIG_PM */
 +
++
++#ifdef CONFIG_DEBUG_FS
++static int tsc210x_debug_show(struct seq_file *s, void *unused)
++{
++	seq_printf(s, "TSC210x registers content:\n");
++
++	seq_printf(s, "TSC2102_AUDIO1_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_AUDIO1_CTRL));
++	seq_printf(s, "TSC210X_DAC_GAIN_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC210X_DAC_GAIN_CTRL));
++
++	if (tsc210x_is_tsc2101()) {
++		seq_printf(s, "TSC2101_HEADSET_GAIN_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_HEADSET_GAIN_CTRL));
++		seq_printf(s, "TSC2101_MIXER_PGA_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_MIXER_PGA_CTRL));
++	}
++	seq_printf(s, "TSC2102_AUDIO2_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_AUDIO2_CTRL));
++	seq_printf(s, "TSC210X_CODEC_POWER_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC210X_CODEC_POWER_CTRL));
++	seq_printf(s, "TSC2102_AUDIO3_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_AUDIO3_CTRL));
++
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N0 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N0));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N1 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N1));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N2 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N2));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N3 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N3));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N4 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N4));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_N5 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_N5));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_D1 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_D1));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_D2 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_D2));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_D4 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_D4));
++	seq_printf(s, "TSC2102_LCH_BASS_BOOST_D5 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_LCH_BASS_BOOST_D5));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N0 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N0));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N1 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N1));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N2 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N2));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N3 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N3));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N4 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N4));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_N5 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_N5));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_D1 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_D1));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_D2 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_D2));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_D4 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_D4));
++	seq_printf(s, "TSC2102_RCH_BASS_BOOST_D5 = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_RCH_BASS_BOOST_D5));
++
++	seq_printf(s, "TSC210X_PLL1_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC210X_PLL1_CTRL));
++	seq_printf(s, "TSC210X_PLL2_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC210X_PLL2_CTRL));
++	seq_printf(s, "TSC2102_AUDIO4_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2102_AUDIO4_CTRL));
++	if (tsc210x_is_tsc2101()) {
++		seq_printf(s, "TSC2101_HANDSET_PGA_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_HANDSET_PGA_CTRL));
++		seq_printf(s, "TSC2101_CELL_BUZZER_PGA_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_CELL_BUZZER_PGA_CTRL));
++		seq_printf(s, "TSC2101_AUDIO5_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_AUDIO5_CTRL));
++		seq_printf(s, "TSC2101_AUDIO6_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_AUDIO6_CTRL));
++		seq_printf(s, "TSC2101_AUDIO7_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_AUDIO7_CTRL));
++		seq_printf(s, "TSC2101_GPIO_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_GPIO_CTRL));
++		seq_printf(s, "TSC2101_AGP_CP_IN_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_AGP_CPIN_CTRL));
++		seq_printf(s, "TSC2101_POWERDOWN_STATUS = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_POWERDOWN_STATUS));
++		seq_printf(s, "TSC2101_MIC_AGC_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_MIC_AGC_CTRL));
++		seq_printf(s, "TSC2101_CELL_PHONE_AGC_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_CELL_PHONE_AGC_CTRL));
++	}
++
++	return 0;
++}
++
++static int tsc210x_debug_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, tsc210x_debug_show, NULL);
++}
++
++static const struct file_operations tsc210x_debug_operations = {
++	.open		= tsc210x_debug_open,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= single_release,
++};
++
++static int tsc210x_debugfs_init(void)
++{
++	/* /sys/kernel/debug/tsc210x */
++	(void) debugfs_create_file("tsc210x", S_IFREG | S_IRUGO, NULL, NULL,
++			&tsc210x_debug_operations);
++
++	return 0;
++}
++#endif /* CONFIG_DEBUG_FS */
++
++
 +static int __init snd_imx_alsa_tsc210x_probe(struct platform_device *pdev)
 +{
 +	int ret;
@@ -1071,7 +1115,9 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +		codec_cfg->hw_constraints_rates   =
 +				&tsc2102_hw_constraints_rates;
 +		codec_cfg->snd_imx_alsa_playback  =
-+				&tsc2102_snd_imx_alsa_playback;
++				&tsc210x_snd_imx_alsa_playback;
++		codec_cfg->snd_imx_alsa_capture =
++				&tsc2101_snd_imx_alsa_capture;
 +		codec_cfg->codec_configure_dev    = tsc2102_configure;
 +		codec_cfg->codec_set_samplerate   = tsc2102_set_samplerate;
 +		codec_cfg->codec_clock_setup      = tsc2102_clock_setup;
@@ -1081,10 +1127,14 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +				tsc2102_get_default_samplerate;
 +		/* forward codec config to PCM layer */
 +		ret = snd_imx_alsa_post_probe(pdev, codec_cfg);
-+	} else
++	} else {
 +		ret = -ENODEV;
++	}
 +
-+	dump_tsc2102_audio_regs(0);
++#ifdef CONFIG_DEBUG_FS
++	tsc210x_debugfs_init();
++#endif
++
 +	return ret;
 +}
 +
@@ -1101,7 +1151,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +#ifdef CONFIG_PM
 +	.suspend	= snd_imx_alsa_tsc2102_suspend,
 +	.resume		= snd_imx_alsa_tsc2102_resume,
-+#endif /* CONFIG_PM */
++#endif
 +	.driver		= {
 +		.name	= "tsc210x-alsa",
 +	},
@@ -1129,8 +1179,8 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-17 14:43:53.000000000 +0100
-@@ -0,0 +1,46 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-23 10:40:25.000000000 +0100
+@@ -0,0 +1,48 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
 + *
@@ -1172,16 +1222,18 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 +#define OUTPUT_VOLUME_MIN		0x7f	/* 1111111 = -63.5 dB */
 +#define OUTPUT_VOLUME_MAX		0x00	/* 0000000 */
 +#define OUTPUT_VOLUME_RANGE		(OUTPUT_VOLUME_MIN - OUTPUT_VOLUME_MAX)
-+
 +#define DEFAULT_OUTPUT_VOLUME		90	/* Default output volume */
++
++#define INPUT_HND_VOLUME_RANGE		(0x7f)
++#define DEFAULT_INPUT_HND_VOLUME	50
 +
 +#endif	/* IMX_ALSA_TSC2102_H_ */
 +
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-17 14:43:36.000000000 +0100
-@@ -0,0 +1,305 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-23 10:57:31.000000000 +0100
+@@ -0,0 +1,425 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
 + *
@@ -1223,7 +1275,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +
 +#include "imx-alsa-tsc2102.h"
 +
++/* Audio Out: */
 +static int vol[2], mute[2], filter[2];
++/* Audio In: */
++static int hnd_vol, hnd_mute;
 +
 +/*
 + * Converts the Alsa mixer volume (0 - 100) to actual Digital
@@ -1262,21 +1317,45 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +	tsc210x_set_dac_volume(lch, rch);
 +}
 +
++/* Audio In is amplified, not attenuated like Audio Out */
++static void set_handset_volume(int volume)
++{
++	uint8_t gain;
++
++	if (volume > 100) {
++		hnd_vol = 100;
++	} else if (volume < 0) {
++		hnd_vol = 0;
++	} else {
++		hnd_vol = volume;
++	}
++	gain = (hnd_vol * INPUT_HND_VOLUME_RANGE) / 100;
++
++	tsc2101_set_handset_gain(gain);
++}
++
 +void init_playback_targets(void)
 +{
 +	set_dac_gain_stereo(DEFAULT_OUTPUT_VOLUME, DEFAULT_OUTPUT_VOLUME);
++	if (tsc210x_is_tsc2101())
++		set_handset_volume(DEFAULT_INPUT_HND_VOLUME);
 +
-+	/* Unmute */
++	/* unmute Audio Out */
 +	tsc210x_set_dac_mute(0, 0);
-+
 +	mute[0] = mute[1] = 0;
++	/* mute Audio In */
++	if (tsc210x_is_tsc2101()) {
++		tsc2101_handset_mute(1);
++		hnd_mute = 1;
++	}
++
 +	filter[0] = filter[1] = 0;
 +}
 +
 +/*
 + * Initializes TSC210x and playback target.
 + */
-+void snd_imx_init_mixer(void)
++static void snd_tsc210x_init_mixer(void)
 +{
 +	FN_IN;
 +
@@ -1402,7 +1481,66 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +	return 1;
 +}
 +
-+static struct snd_kcontrol_new tsc2102_control[] __devinitdata = {
++/* Capture controls (only available on TSC2101) */
++
++static int __handset_capture_volume_info(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type			= SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count			= 1;	/* Mono */
++	uinfo->value.integer.min	= 0;
++	uinfo->value.integer.max	= 100;
++
++	return 0;
++}
++
++static int __handset_capture_volume_get(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.integer.value[0] = hnd_vol;
++
++	return 0;
++}
++
++static int __handset_capture_volume_put(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	set_handset_volume(ucontrol->value.integer.value[0]); /* hnd_vol mod. here */
++
++	return 1;
++}
++
++static int __handset_capture_switch_info(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type			= SNDRV_CTL_ELEM_TYPE_BOOLEAN;
++	uinfo->count			= 1;
++	uinfo->value.integer.min	= 0;
++	uinfo->value.integer.max	= 1;
++
++	return 0;
++}
++
++static int __handset_capture_switch_get(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.integer.value[0] = !hnd_mute;
++
++	return 0;
++}
++
++static int __handset_capture_switch_put(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	hnd_mute = (ucontrol->value.integer.value[0] == 0);
++
++	tsc2101_handset_mute(hnd_mute);
++
++	return 1;
++}
++
++
++static struct snd_kcontrol_new tsc210x_control[] __devinitdata = {
 +	{
 +		.name	= "Master Playback Volume",
 +		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -1441,6 +1579,28 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +	},
 +};
 +
++static struct snd_kcontrol_new tsc2101_control[] __devinitdata = {
++	{
++		.name	= "Handset Capture Volume",
++		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
++		.index	= 0,
++		.access	= SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.info	= __handset_capture_volume_info,
++		.get	= __handset_capture_volume_get,
++		.put	= __handset_capture_volume_put,
++	},
++	{
++		.name	= "Handset Capture Switch",
++		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
++		.index	= 0,
++		.access	= SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.info	= __handset_capture_switch_info,
++		.get	= __handset_capture_switch_get,
++		.put	= __handset_capture_switch_put,
++	},
++};
++
++
 +#ifdef CONFIG_PM
 +void snd_tsc210x_suspend_mixer(void)
 +{
@@ -1451,12 +1611,18 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +{
 +	/* The chip was reset, restore the last used values */
 +	set_dac_gain_stereo(vol[0], vol[1]);
++	if (tsc210x_is_tsc2101())
++		set_handset_volume(hnd_vol);
 +
 +	tsc210x_set_dac_mute(mute[0], mute[1]);
++	if (tsc210x_is_tsc2101())
++		tsc2101_handset_mute(hnd_mute);
++
 +	tsc210x_set_deemphasis(filter[0]);
 +	tsc210x_set_bassboost(filter[1]);
 +}
 +#endif
++
 +
 +/* To be called by upper layer to add a tsc210x mixer to a given soundcard */
 +int snd_imx_mixer(struct snd_card_imx_codec *tsc210x)
@@ -1467,19 +1633,25 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +		return -EINVAL;
 +
 +	/* TSC2102/TSC2101 common part */
-+	for (i = 0; i < ARRAY_SIZE(tsc2102_control); i ++) {
++	for (i = 0; i < ARRAY_SIZE(tsc210x_control); i ++) {
 +		err = snd_ctl_add(tsc210x->card,
-+				  snd_ctl_new1(&tsc2102_control[i],
++				  snd_ctl_new1(&tsc210x_control[i],
 +				  tsc210x->card));
-+
 +		if (err < 0)
 +			return err;
 +	}
 +
 +	/* TSC2101 specific part */
-+	/* TBDL */
-+
-+	snd_imx_init_mixer();
++	if (tsc210x_is_tsc2101()) {
++		for (i = 0; i < ARRAY_SIZE(tsc2101_control); i ++) {
++			err = snd_ctl_add(tsc210x->card,
++					  snd_ctl_new1(&tsc2101_control[i],
++					  tsc210x->card));
++			if (err < 0)
++				return err;
++		}
++	}
++	snd_tsc210x_init_mixer();
 +
 +	return 0;
 +}
