@@ -30,10 +30,11 @@
 
 #include "max9768.h"
 
-#define DRIVER_VERSION		"0.1"
+#define DRIVER_VERSION		"0.2"
 #define DRIVER_NAME		"max9768"
 #define MAX9768_VOLUME_MASK	0x3F
-
+#define MAX9768_VOLUME_MAX	63
+#define MAX9768_VOLUME_MIN	0
 
 struct max9768 {
 	struct i2c_client *client;
@@ -72,21 +73,47 @@ static int max9768_send(struct i2c_client *client, int value)
 
 
 /* sysfs hook functions */
+
+static ssize_t max9768_get_volume(struct device *dev, struct device_attribute *attr,
+			char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct max9768 *max9768 = i2c_get_clientdata(client);
+
+	return sprintf(buf, "%d", max9768->current_volume);
+}
+
 static ssize_t max9768_set_volume(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct i2c_client *client = to_i2c_client(dev);
+	struct max9768 *max9768 = i2c_get_clientdata(client);
 	char msg;
 	int err;
 	
-	msg = (simple_strtol(buf, NULL, 10)) & MAX9768_VOLUME_MASK;
+	max9768->current_volume = simple_strtol(buf, NULL, 10);
+	if (max9768->current_volume > MAX9768_VOLUME_MAX)
+		max9768->current_volume = MAX9768_VOLUME_MAX;
+	else if (max9768->current_volume < MAX9768_VOLUME_MIN)
+		max9768->current_volume = MAX9768_VOLUME_MIN;
+
+	msg = max9768->current_volume & MAX9768_VOLUME_MASK;
 	pr_debug("%s: 0x%02x\n", __FUNCTION__, msg);
 	err = max9768_send(client, msg);
-	if (err) {
+	if (err < 0) {
 		dev_err(dev, "couldn't set volume\n");
 	}
 
 	return count;
+}
+
+static ssize_t max9768_get_mute(struct device *dev, struct device_attribute *attr,
+			char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct max9768 *max9768 = i2c_get_clientdata(client);
+
+	return sprintf(buf, "%d", max9768->mute_state);
 }
 
 static ssize_t max9768_set_mute(struct device *dev,
@@ -103,8 +130,17 @@ static ssize_t max9768_set_mute(struct device *dev,
 	return count;
 }
 
+static ssize_t max9768_get_shutdown(struct device *dev, struct device_attribute *attr,
+			char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct max9768 *max9768 = i2c_get_clientdata(client);
+
+	return sprintf(buf, "%d", max9768->shdn_state);
+}
+
 static ssize_t max9768_set_shutdown(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+			struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct i2c_client *client = to_i2c_client(dev);
 	struct max9768 *max9768 = i2c_get_clientdata(client);
@@ -117,9 +153,9 @@ static ssize_t max9768_set_shutdown(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(shutdown, S_IWUSR, NULL, max9768_set_shutdown);
-static DEVICE_ATTR(mute, S_IWUSR, NULL, max9768_set_mute);
-static DEVICE_ATTR(volume, S_IWUSR, NULL, max9768_set_volume);
+static DEVICE_ATTR(shutdown, S_IWUSR | S_IRUGO, max9768_get_shutdown, max9768_set_shutdown);
+static DEVICE_ATTR(mute, S_IWUSR | S_IRUGO, max9768_get_mute, max9768_set_mute);
+static DEVICE_ATTR(volume, S_IWUSR | S_IRUGO, max9768_get_volume, max9768_set_volume);
 
 static int max9768_create_sys_entries(struct i2c_client *client)
 {
@@ -190,7 +226,7 @@ static int max9768_probe(struct i2c_client *client,
 		
 	/* set filter mode */
 	result = max9768_send(client, platform_data->filter_mode);
-	if (result) {
+	if (result < 0) {
 		dev_err(&client->dev, "can't communicate with chip\n");
 		goto out_gpio;
 	}
