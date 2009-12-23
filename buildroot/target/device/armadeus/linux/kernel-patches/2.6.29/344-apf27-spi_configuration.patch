@@ -1,8 +1,8 @@
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-18 19:33:56.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-18 19:33:57.000000000 +0100
-@@ -397,15 +397,17 @@
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-17 19:43:17.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-17 19:43:17.000000000 +0100
+@@ -371,15 +371,17 @@
  #endif /* CONFIG_SERIAL_IMX_UART6 */
  
  
@@ -22,7 +22,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  static int mxc_cspi1_pins[] = {
  	/* PD19_PF_CSPI2_SS2,
  	PD20_PF_CSPI2_SS1, Preferably use CS pin as GPIO
-@@ -414,11 +416,25 @@
+@@ -388,11 +390,25 @@
  	PD23_PF_CSPI2_MISO,
  	PD24_PF_CSPI2_MOSI
  };
@@ -49,7 +49,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  }
  
  static int gpio_spi0_inactive(struct platform_device *pdev)
-@@ -426,11 +442,13 @@
+@@ -400,11 +416,13 @@
  	mxc_gpio_release_multiple_pins(mxc_cspi0_pins, ARRAY_SIZE(mxc_cspi0_pins));
  	return 0;
  }
@@ -64,7 +64,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  }
  
  static int gpio_spi1_inactive(struct platform_device *pdev)
-@@ -438,21 +456,48 @@
+@@ -412,21 +430,48 @@
  	mxc_gpio_release_multiple_pins(mxc_cspi1_pins, ARRAY_SIZE(mxc_cspi1_pins));
  	return 0;
  }
@@ -113,8 +113,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
  
  
- /* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI1) */
-@@ -501,7 +546,6 @@
+ /* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI) */
+@@ -475,7 +520,6 @@
  };
  #endif /* CONFIG_ARMADEUS_MAX1027 */
  
@@ -122,7 +122,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  /* APF27Dev has a SPI Touchscreen controller */
  #define TSC2101_INT 17
  #define TSC2101_CS (GPIO_PORTD | 21)	/* SPI2_SS0 used as GPIO */
-@@ -1077,10 +1121,17 @@
+@@ -1048,10 +1092,17 @@
  	i2c_register_board_info(1, apf27dev_i2c_devices_bus1,
  				ARRAY_SIZE(apf27dev_i2c_devices_bus1));
  #endif
