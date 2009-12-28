@@ -1,0 +1,37 @@
+From bcd218be5aebed94951a750b1d477aea86fb68ea Mon Sep 17 00:00:00 2001
+From: Steve Glendinning <steve.glendinning@smsc.com>
+Date: Tue, 28 Jul 2009 02:37:58 +0000
+Subject: [PATCH] smsc95xx: remove EEPROM loaded check
+
+The eeprom read & write commands currently check the E2P_CMD_LOADED_ bit is
+set before allowing any operations.  This prevents any reading or writing
+unless a correctly programmed EEPROM is installed.
+
+This patch removes the check, so it is possible to program blank EEPROMS
+via ethtool.
+
+Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/smsc95xx.c |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/usb/smsc95xx.c b/drivers/net/usb/smsc95xx.c
+index fe04589..09bd635 100644
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -220,11 +220,6 @@ static int smsc95xx_eeprom_confirm_not_busy(struct usbnet *dev)
+ 	do {
+ 		smsc95xx_read_reg(dev, E2P_CMD, &val);
+ 
+-		if (!(val & E2P_CMD_LOADED_)) {
+-			devwarn(dev, "No EEPROM present");
+-			return -EIO;
+-		}
+-
+ 		if (!(val & E2P_CMD_BUSY_))
+ 			return 0;
+ 
+-- 
+1.6.6
+
