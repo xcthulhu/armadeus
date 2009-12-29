@@ -74,7 +74,7 @@ fi
 # Move or delete current XXX dir
 if [ "$QUILT_TARGET_NAME" != "Buildroot" ]; then
 	ask_user "Rename or delete the current $QUILT_TARGET_NAME directory: $QUILT_TARGET_DIR \n?? (R/d)"
-	EXT=`date +%Y_%M_%d_%H%m`
+	EXT=`date +%Y_%m_%d_%Hh%M`
 	if [ "$answer" == "d" ]; then
 		echo "Deleting current $QUILT_TARGET_NAME dir"
 		rm -rf $QUILT_TARGET_DIR
