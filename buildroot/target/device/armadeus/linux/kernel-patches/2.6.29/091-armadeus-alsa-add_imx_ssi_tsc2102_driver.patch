@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-23 10:40:25.000000000 +0100
-@@ -0,0 +1,670 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-29 17:24:47.000000000 +0100
+@@ -0,0 +1,664 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
@@ -36,6 +36,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 + * 675 Mass Ave, Cambridge, MA 02139, USA.
 + *
 + */
++
 +#define DEBUG
 +
 +#include <linux/platform_device.h>
@@ -51,25 +52,22 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +#ifdef CONFIG_ARCH_MX2
 +#include <mach/dma-mx1-mx2.h>
-+#include "imx2-ssi.h"
 +#include <mach/imx_sound.h>
 +#include "imx2-dam.h"
 +#else
 +#include <mach/imx-dma.h>
-+#include "imx-ssi.h"
 +#endif
++#include "imx-ssi.h"
 +
 +#include "devdma.h"
 +
 +#define DRIVER_NAME "imx-alsa"
 +#define TSC_MASTER
 +
-+#define SSI_DMA_BLR_TRANSMIT 16		/* (3*2) DMA Burst Length (in bytes) */
-+#define SSI_DMA_BLR 8
 +
 +MODULE_AUTHOR("Nicolas Colombain / Julien Boibessot - Armadeus Systems");
 +MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION("i.MX1/L PCM driver for ALSA");
++MODULE_DESCRIPTION("i.MX1/L/2 PCM driver for ALSA");
 +MODULE_ALIAS("iMX_alsa_ssi");
 +
 +static struct snd_card_imx_codec 	*alsa_codec		= NULL;
@@ -91,13 +89,12 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +					(unsigned long)channel_info->base;*/
 +		s->periods++;
 +		s->periods %= runtime->periods;
-+
 +		snd_pcm_period_elapsed(substream);
 +	}
 +}
 +
-+/* called when the DMA unit has finished the buffer.
-+ * it should not happen, but whith a playback or capturing
++/* Called when the DMA unit has finished the buffer.
++ * It should not happen, but whith a playback or capturing
 + * size of 2^32 bytes it will happen!
 + */
 +static void snd_imx_dma_callback(int channel, void *data)
@@ -114,7 +111,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +/* Called by the DMA framework when an error has occured */
 +static void snd_imx_dma_err_handler(int channel, void *data, int err)
 +{
-+	printk("%s %d %d\n", __func__, channel, err);
++	pr_debug("%s %d %d\n", __func__, channel, err);
 +
 +	printk("DMA timeout on channel %d -%s%s%s%s%s\n",
 +		 channel,
@@ -131,7 +128,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +static int snd_imx_dma_request(struct audio_stream *s)
 +{
 +	int err=0, chan=0;
-+	ADEBUG();
 +
 +	chan = imx_dma_request_by_prio(DRIVER_NAME, DMA_PRIO_HIGH);
 +	if (chan < 0) {
@@ -160,6 +156,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +	pr_debug("snd_imx_dma_request done (%d)\n", s->dma_dev);
 +	imx_dma_disable(s->dma_dev);
++
 +	return 0;
 +
 +on_error_2:
@@ -179,7 +176,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	struct snd_pcm_runtime *runtime = substream->runtime;
 +	unsigned int offset;
 +	unsigned long flags;
-+	ADEBUG();
 +
 +	/* this must be called w/ interrupts locked as requested in dma.c */
 +	spin_lock_irqsave(&s->dma_lock, flags);
@@ -189,7 +185,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +	/* Now, the position related to the end of that period */
 +// 	offset = bytes_to_frames(runtime, s->offset) + (runtime->period_size >> 1); //bytes_to_frames(runtime, count);
-+	if( s->dma_in_progress ) {
++	if (s->dma_in_progress) {
 +		offset = (runtime->period_size * (s->periods)) + (runtime->period_size >> 1);
 +		if (offset >= runtime->buffer_size)
 +			offset = runtime->period_size >> 1;
@@ -198,7 +194,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +		if (offset >= runtime->buffer_size)
 +			offset = 0;
 +	}
-+// 	printk("audio_get_dma_pos: %d (%d)\n", offset, bytes_to_frames(runtime, s->offset));
++/*	pr_debug("%s: Period=%d/%d Off=%d psize=%d bsize=%d (%d)\n", __func__,
++		s->periods, runtime->periods, offset, runtime->period_size,
++		runtime->buffer_size, bytes_to_frames(runtime, s->offset)); */
++
 +	return offset;
 +}
 +
@@ -293,7 +292,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +{
 +	struct snd_card_imx_codec *chip = snd_pcm_substream_chip(substream);
 +
-+	ADEBUG();
 +	return audio_get_dma_pos(&chip->s[substream->pstr->stream]);
 +}
 +
@@ -313,14 +311,14 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	alsa_codec_config->codec_clock_on();
 +	if (stream_id == SNDRV_PCM_STREAM_PLAYBACK) {
 +		runtime->hw = *(alsa_codec_config->snd_imx_alsa_playback);
-+		burstlen = DMA_TXFIFO_BURST * 2;
++		burstlen = SSI_TXFIFO_WM * 2; /* TODO: what if samples != 16 bits ? */
 +		dma_req = imx_ssi_get_dma_tx_channel(0, 0);
 +		pr_debug("imx_ssi_get_dma_tx_channel = %d\n", dma_req);
 +		if (dma_req < 0)
 +			return dma_req;
 +	} else {
 +		runtime->hw = *(alsa_codec_config->snd_imx_alsa_capture);
-+		burstlen = DMA_RXFIFO_BURST * 2;
++		burstlen = SSI_RXFIFO_WM * 2; /* TODO: what if samples != 16 bits ? */
 +		dma_req = imx_ssi_get_dma_rx_channel(0, 0);
 +		pr_debug("imx_ssi_get_dma_rx_channel = %d\n", dma_req);
 +		if (dma_req < 0)
@@ -342,17 +340,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +		return err;
 +
 +	/* configure i.MX DMA control register for given channel */
-+	if (stream_id == SNDRV_PCM_STREAM_PLAYBACK) {
-+		err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
++	err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
 +				IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
 +				IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
 +				dma_req, 1);
-+	} else {
-+		err = imx_dma_config_channel(chip->s[stream_id].dma_dev,
-+				IMX_DMA_MEMSIZE_32 | IMX_DMA_TYPE_LINEAR,
-+				IMX_DMA_MEMSIZE_16 | IMX_DMA_TYPE_FIFO,
-+				dma_req, 1);
-+	}
 +	if (err < 0) {
 +		printk("Cannot configure DMA for %s channel\n", type);
 +	}
@@ -414,11 +405,18 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	pr_debug("DMA area: 0x%p, addr: 0x%p, size: %u\n",
 +		runtime->dma_area, (void*)runtime->dma_addr, runtime->dma_bytes);
 +
-+// 	channel_info->base = (void*)runtime->dma_addr; ?? why isn't it already done ??
-+	channel_info->base = (void*)dma_map_single(NULL,
++	/* channel_info->base = (void*)runtime->dma_addr; ?? why isn't it already done ?? */
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		channel_info->base = (void*)dma_map_single(NULL,
 +						(void*)runtime->dma_area,
 +						runtime->dma_bytes,
 +						DMA_TO_DEVICE);
++	} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
++		channel_info->base = (void*)dma_map_single(NULL,
++						(void*)runtime->dma_area,
++						runtime->dma_bytes,
++						DMA_FROM_DEVICE);
++	}
 +	pr_debug("DMA phys: 0x%p\n", channel_info->base);
 +	channel_info->adr = runtime->dma_area ;
 +	channel_info->offset = 0;
@@ -509,7 +507,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +	struct snd_pcm *pcm;
 +	int err;
 +
-+	ADEBUG();
 +	err = snd_pcm_new(imx_alsa->card,
 +			  CHIP_NAME,
 +			  device,
@@ -522,15 +519,13 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +	/* sets up initial buffer with continuous allocation */
 +	snd_pcm_lib_preallocate_pages_for_all(pcm,
-+					      SNDRV_DMA_TYPE_CONTINUOUS,
-+					      snd_dma_continuous_data
-+					      (GFP_KERNEL),
-+					      8 * 1024, 8 * 1024);
++				SNDRV_DMA_TYPE_CONTINUOUS,
++				snd_dma_continuous_data(GFP_KERNEL),
++				8 * 1024,
++				8 * 1024);
 +
-+	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK,
-+					&snd_card_imx_ops);
-+	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_CAPTURE,
-+					&snd_card_imx_ops);
++	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, &snd_card_imx_ops);
++	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_CAPTURE, &snd_card_imx_ops);
 +	pcm->private_data = imx_alsa;
 +	pcm->info_flags = 0;
 +	strcpy(pcm->name, CHIP_NAME);
@@ -579,7 +574,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +}
 +#endif	/* CONFIG_PM */
 +
-+/* module init & exit */
 +
 +/*
 + * Inits alsa soundcard structure.
@@ -639,7 +633,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +	snd_card_set_dev(card, &pdev->dev);
 +
-+	/* Register the created soundcard */
++	/* register the created soundcard */
 +	err = snd_card_register(card);
 +	if (err < 0) {
 +		pr_err("Cannot register sound card. Giving up\n");
@@ -679,7 +673,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-23 10:40:25.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-23 14:47:50.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -730,12 +724,12 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-23 10:40:25.000000000 +0100
-@@ -0,0 +1,444 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-29 16:19:46.000000000 +0100
+@@ -0,0 +1,441 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
 + *
-+ * Alsa codec driver for TSC210x chip for i.MX platforms.
++ * Alsa codec driver for TSC210x chip on i.MX platforms.
 + *
 + * Copyright (c) 2008 Jorasse  <jorasse@armadeus.com>
 + * Code based on the TSC2101 ALSA driver for omap platforms.
@@ -809,7 +803,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +	.fifo_size		= 0,
 +};
 +
-+/* Only TSC2101 has audio in capability */
++/* Only TSC2101 has (mono) audio in capability */
 +static struct snd_pcm_hardware tsc2101_snd_imx_alsa_capture = {
 +	.info			= SNDRV_PCM_INFO_INTERLEAVED |
 +					SNDRV_PCM_INFO_BLOCK_TRANSFER | SNDRV_PCM_INFO_MMAP |
@@ -863,7 +857,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +#ifdef TSC_MASTER
 +
 +#else
-+	/* Set the sample rate on the i.MXL SSI */
++	/* Set the sample rate on the i.MX SSI */
 +	printk("erreur 1");
 +	imx_get_perclk3();
 +	clkgdv = CODEC_CLOCK / (sample_rate * (DEFAULT_BITPERSAMPLE * 2 - 1));
@@ -1105,7 +1099,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +{
 +	int ret;
 +	struct imx_alsa_codec_config *codec_cfg;
-+// 	pdev->dev.platform_data;
 +
 +	printk("*** %s\n", __func__);
 +
@@ -1161,7 +1154,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +{
 +	int err;
 +
-+	ADEBUG();
 +	err = platform_driver_register(&imx_alsa_driver);
 +
 +	return err;
@@ -1169,7 +1161,6 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +
 +static void __exit imx_alsa_tsc210x_exit(void)
 +{
-+	ADEBUG();
 +	platform_driver_unregister(&imx_alsa_driver);
 +}
 +
@@ -1179,7 +1170,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-23 10:40:25.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-23 14:47:50.000000000 +0100
 @@ -0,0 +1,48 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
@@ -1232,7 +1223,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-23 10:57:31.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-23 14:47:50.000000000 +0100
 @@ -0,0 +1,425 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c

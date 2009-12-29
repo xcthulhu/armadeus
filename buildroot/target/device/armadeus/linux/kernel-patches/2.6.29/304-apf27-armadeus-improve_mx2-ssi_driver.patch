@@ -1,5 +1,7 @@
---- linux-2.6.27.2.org/sound/arm/imx2-ssi.h	2009-01-16 13:49:56.000000000 +0100
-+++ linux-2.6.27.2/sound/arm/imx2-ssi.h	2009-01-14 18:39:45.000000000 +0100
+Index: linux-2.6.29.6/sound/arm/imx2-ssi.h
+===================================================================
+--- linux-2.6.29.6.orig/sound/arm/imx2-ssi.h	2009-12-29 17:17:05.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx2-ssi.h	2009-12-29 17:17:06.000000000 +0100
 @@ -23,11 +23,11 @@
  void imx_ssi_shutdown(struct snd_pcm_substream *substream, int ssi_id);
  int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd, int ssi_id);
@@ -17,17 +19,20 @@
  
  /* to handle it like a module */
  extern int mx2_ssi_init(void);
---- linux-2.6.27.2.org/sound/arm/imx2-ssi.c	2009-01-16 13:49:56.000000000 +0100
-+++ linux-2.6.27.2/sound/arm/imx2-ssi.c	2009-01-16 15:02:43.000000000 +0100
-@@ -28,6 +28,7 @@
+Index: linux-2.6.29.6/sound/arm/imx2-ssi.c
+===================================================================
+--- linux-2.6.29.6.orig/sound/arm/imx2-ssi.c	2009-12-29 17:17:05.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx2-ssi.c	2009-12-29 17:21:10.000000000 +0100
+@@ -28,6 +28,8 @@
  #include <sound/pcm.h>
  #include <mach/imx_ssi.h>
  #include "imx2-ssi.h"
 +#include "imx2-dam.h"
++
  
  #define DRV_NAME "mxc-ssi"
  
-@@ -102,7 +103,7 @@
+@@ -102,7 +104,7 @@
   *      --|    rigth     ||   left       |--------------------------------
   *
   */
@@ -36,16 +41,17 @@
  {
  	u32 scr;
  
-@@ -110,7 +111,7 @@
+@@ -110,22 +112,23 @@
  
  	pr_debug("%s called for unit %d\n", __func__, id);
  
 -	scr = SSI_SCR_SYN | SSI_SCR_NET;
+-
+-	/* disable this unit */
++	/* set config + disable this unit */
 +	scr = SSI_SCR_SYN | SSI_SCR_I2S_MODE_SLAVE; /* SSI_SCR_NET; */
- 
- 	/* disable this unit */
  	set_reg(scr, SSI_SCR, id);
-@@ -118,14 +119,16 @@
+ 
  	set_reg(SSI_STCR_TFEN0 |	/* FIFO 0 enabled */
  		SSI_STCR_TXBIT0 |	/* MSB first, data bits 0...15 are valid */
  		SSI_STCR_TSCKP |	/* send @falling edge */
@@ -137,7 +143,7 @@
  {
  	struct resource *res;
  	void __iomem *adr;
-@@ -247,6 +254,7 @@
+@@ -247,19 +254,22 @@
  
  	return adr;
  }
@@ -145,7 +151,17 @@
  
  int imx_ssi_prepare(struct snd_pcm_substream *substream,
                              int ssi_id)
-@@ -260,6 +268,7 @@
+ {
+ 	set_reg_bits(SSI_SCR_SSIEN, SSI_SCR_SSIEN, SSI_SCR, ssi_id);
+ 
+-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ 		set_reg_bits(SSI_SIER_TDMAE, SSI_SIER_TDMAE, SSI_SIER, ssi_id);
+-	else
+-		set_reg_bits(SSI_SIER_RDMAE, SSI_SIER_RDMAE, SSI_SIER, ssi_id);
++	} else {
++		set_reg_bits(SSI_SIER_RDMAE | SSI_SIER_RFF0_EN, SSI_SIER_RDMAE | SSI_SIER_RFF0_EN, SSI_SIER, ssi_id);
++	}
  
  	return 0;
  }
@@ -153,7 +169,7 @@
  
  void imx_ssi_shutdown(struct snd_pcm_substream *substream,
                               int ssi_id)
-@@ -272,6 +281,8 @@
+@@ -272,6 +282,8 @@
  {
  	u32 scr = get_reg(SSI_SCR, ssi_id);
  
@@ -162,15 +178,62 @@
  	switch (cmd) {
  	case SNDRV_PCM_TRIGGER_START:
  	case SNDRV_PCM_TRIGGER_RESUME:
-@@ -297,6 +308,7 @@
+@@ -297,8 +309,9 @@
  
  	return 0;
  }
 +EXPORT_SYMBOL(imx_ssi_trigger);
  
- static int __devinit mx2_iss_probe(struct platform_device *pdev)
+-static int __devinit mx2_iss_probe(struct platform_device *pdev)
++static int __devinit mx2_ssi_probe(struct platform_device *pdev)
  {
-@@ -405,10 +417,24 @@
+ 	struct imx_ssi_platform_data *pdata;
+ 	struct resource *res;
+@@ -307,7 +320,7 @@
+ 	pdata = pdev->dev.platform_data;
+ 
+ 	id = pdev->id;
+-	pr_info("Probing i.MX SSI unit %d\n", id);
++	pr_info("Probing i.MX2 SSI unit %d\n", id);
+ 
+ 	if (unit[id].io != NULL)
+ 		return -EBUSY;
+@@ -334,7 +347,7 @@
+ 		goto err2;
+ 	}
+ 
+-	/* external clock (if used) should never greater than 1/4 ipg_clk! */
++	/* external clock (if used) should never be greater than 1/4 ipg_clk! */
+ 	pr_debug("Main clock for SSI is: %luHz\n", clk_get_rate(unit[id].clk));
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -370,7 +383,7 @@
+ 	return ret;
+ }
+ 
+-static int __devexit mx2_iss_remove(struct platform_device *pdev)
++static int __devexit mx2_ssi_remove(struct platform_device *pdev)
+ {
+ 	struct imx_ssi_platform_data *pdata = pdev->dev.platform_data;
+ 	struct resource *res;
+@@ -390,13 +403,13 @@
+ 	return 0;
+ }
+ 
+-static struct platform_driver mx2_iss_driver = {
++static struct platform_driver mx2_ssi_driver = {
+ 	.driver = {
+ 		.name		= DRV_NAME,
+ 		.owner		= THIS_MODULE,
+ 	},
+-	.probe		= mx2_iss_probe,
+-	.remove		= __devexit_p(mx2_iss_remove),
++	.probe		= mx2_ssi_probe,
++	.remove		= __devexit_p(mx2_ssi_remove),
+ #ifdef CONFIG_PM
+ 	.suspend	= NULL, /* TODO mx2_ssi_suspend */
+ 	.resume		= NULL	/* TODO mx2_ssi_resume */
+@@ -405,10 +418,25 @@
  
  int __init mx2_ssi_init(void)
  {
@@ -181,13 +244,14 @@
 +	if (err != 0)
 +		return err;
 +	else
-+		return platform_driver_register(&mx2_iss_driver);
++		return platform_driver_register(&mx2_ssi_driver);
  }
  
  void __exit mx2_ssi_exit(void)
  {
+-	platform_driver_unregister(&mx2_iss_driver);
 +	mx2_dam_exit();
- 	platform_driver_unregister(&mx2_iss_driver);
++	platform_driver_unregister(&mx2_ssi_driver);
  }
 +
 +module_init(mx2_ssi_init);
@@ -196,3 +260,4 @@
 +MODULE_AUTHOR("Pengutronix");
 +MODULE_DESCRIPTION("i.MX2 SSI Driver");
 +MODULE_LICENSE("GPL");
++

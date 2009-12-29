@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/sound/arm/imx-ssi.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-ssi.c	2009-12-17 17:02:50.000000000 +0100
-@@ -0,0 +1,511 @@
++++ linux-2.6.29.6/sound/arm/imx-ssi.c	2009-12-29 16:22:16.000000000 +0100
+@@ -0,0 +1,517 @@
 +/*
 + * Copyright 2004-2007 Freescale Semiconductor, Inc. All Rights Reserved.
 + * Copyright 2008 Juergen Beisert, kernel@pengutronix.de
@@ -137,12 +137,9 @@ Index: linux-2.6.29.6/sound/arm/imx-ssi.c
 +	pr_debug("%s called for unit %d\n", __func__, id);
 +	BUG_ON(unit[id].io == NULL); /* (only one on i.MXL/1) */
 +
-+	/* choose mode */
++	/* choose mode + disable this unit */
 +	scsr = SSI_SCSR_I2S_MODE_SLAVE | SSI_SCSR_SYN;
-+
-+	/* disable this unit */
 +	set_reg(scsr, SSI_SCSR, id);
-+// 	SSI_SCSR &= ~SSI_SCSR_EN;
 +
 +	/* Transmit config */
 +	set_reg(SSI_MAE |	/* Activate DMA */
@@ -158,6 +155,15 @@ Index: linux-2.6.29.6/sound/arm/imx-ssi.c
 +// 		SSI_STCR_TFSL |		/* one-bit-long-frame */
 +// 		SSI_STCR_TEFS,		/* shift */
 +// 		SSI_STCR, id);
++
++	/* Receive config */
++	set_reg(SSI_MAE |	/* Activate DMA */
++		SSI_FEN |	/* FIFO enabled */
++		SSI_SCKP |	/* receive @falling edge ?? */
++		SSI_FSI |	/* Frame sync active low */
++		SSI_EFS,	/* one bit shift */
++		SSI_SRCR, id);
++
 +//
 +// 	set_reg(SSI_SRCR_RFEN0 |	/* FIFO 0 enabled */
 +// 		SSI_SRCR_RXBIT0 |
@@ -520,7 +526,7 @@ Index: linux-2.6.29.6/sound/arm/imx-ssi.c
 Index: linux-2.6.29.6/sound/arm/imx-ssi.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-ssi.h	2009-12-17 14:48:27.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-ssi.h	2009-12-29 17:02:59.000000000 +0100
 @@ -0,0 +1,40 @@
 +/*
 + * Copyright 2004-2007 Freescale Semiconductor, Inc. All Rights Reserved.
@@ -557,15 +563,15 @@ Index: linux-2.6.29.6/sound/arm/imx-ssi.h
 +extern int  imx_ssi_init(void);
 +extern void imx_ssi_exit(void);
 +
-+/* possible DMA bursts in FIFO entries */
-+#define DMA_TXFIFO_BURST	0x6
-+#define DMA_RXFIFO_BURST	0x4
++/* Levels to wait in FIFOs before asking DMA bursts */
++#define SSI_TXFIFO_WM	0x6
++#define SSI_RXFIFO_WM	0x4
 +
 +#endif /* __SOUND_ARM_IMX_SSI_H */
 Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/imx_ssi.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/imx_ssi.h	2009-12-17 14:48:27.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/imx_ssi.h	2009-12-29 16:22:16.000000000 +0100
 @@ -0,0 +1,104 @@
 +/*
 + * Copyright 2004-2007 Freescale Semiconductor, Inc. All Rights Reserved.
