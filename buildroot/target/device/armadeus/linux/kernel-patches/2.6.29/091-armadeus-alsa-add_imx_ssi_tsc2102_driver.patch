@@ -1,11 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
-Index: linux-2.6.29.6/sound/arm/imx-alsa.c
+Index: linux-2.6.29.6.mod/sound/arm/imx-alsa.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa.c	2009-12-29 18:38:46.000000000 +0100
-@@ -0,0 +1,664 @@
++++ linux-2.6.29.6.mod/sound/arm/imx-alsa.c	2009-12-30 12:01:39.000000000 +0100
+@@ -0,0 +1,665 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
@@ -61,14 +61,15 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +#include "devdma.h"
 +
-+#define DRIVER_NAME "imx-alsa"
++#define DRIVER_NAME	"imx-pcm"
++#define DRIVER_VERSION	"0.4"
 +#define TSC_MASTER
 +
 +
 +MODULE_AUTHOR("Nicolas Colombain / Julien Boibessot - Armadeus Systems");
-+MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("i.MX1/L/2 PCM driver for ALSA");
-+MODULE_ALIAS("iMX_alsa_ssi");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:imx-pcm");
 +
 +static struct snd_card_imx_codec 	*alsa_codec		= NULL;
 +static struct imx_alsa_codec_config	*alsa_codec_config	= NULL;
@@ -640,7 +641,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +		goto nodev2;
 +	}
 +
-+	pr_info("audio support initialized\n");
++	pr_info("i.MX1/L/2 audio support v" DRIVER_VERSION " initialized\n");
 +	platform_set_drvdata(pdev, card);
 +
 +	/* activate the external SSI pins (should be done in imx-ssi !?) */
@@ -670,10 +671,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 +
 +	return 0;
 +}
-Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
+Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-dma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6.mod/sound/arm/imx-alsa-dma.h	2009-12-29 18:38:46.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -721,10 +722,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 +
 +#endif
 +
-Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
+Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2009-12-29 23:12:27.000000000 +0100
++++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c	2009-12-29 23:12:27.000000000 +0100
 @@ -0,0 +1,441 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
@@ -1167,10 +1168,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +module_init(imx_alsa_tsc210x_init);
 +module_exit(imx_alsa_tsc210x_exit);
 +
-Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
+Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.h	2009-12-29 18:38:46.000000000 +0100
 @@ -0,0 +1,48 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
@@ -1220,10 +1221,10 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 +
 +#endif	/* IMX_ALSA_TSC2102_H_ */
 +
-Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
+Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102-mixer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-29 18:38:46.000000000 +0100
 @@ -0,0 +1,425 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
