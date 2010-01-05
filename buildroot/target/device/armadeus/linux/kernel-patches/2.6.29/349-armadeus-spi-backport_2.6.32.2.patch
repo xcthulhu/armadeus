@@ -1,8 +1,3 @@
-Backport spi driver from 2.6.32.2 to use half duplex capabilities.
-
-Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
----
-
 Index: linux-2.6.29.6/drivers/spi/spi_bitbang.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/spi/spi_bitbang.c	2010-01-05 15:43:18.000000000 +0100
