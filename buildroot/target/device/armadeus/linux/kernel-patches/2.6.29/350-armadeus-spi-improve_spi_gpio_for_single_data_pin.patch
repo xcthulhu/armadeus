@@ -1,3 +1,10 @@
+spi_gpio: Modifying spi_gpio capabilities to permit single data pin (MISO or
+MOSI) spi. 
+
+Patch inspired from Marek Szyprowski <m.szyprowski@samsung.com> patch
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+---
+
 Index: linux-2.6.29.6/drivers/spi/spi_bitbang.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/spi/spi_bitbang.c	2010-01-05 16:09:08.000000000 +0100
