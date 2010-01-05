@@ -1,0 +1,162 @@
+Index: linux-2.6.29.6/drivers/spi/spi_bitbang.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/spi/spi_bitbang.c	2010-01-05 16:09:08.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spi_bitbang.c	2010-01-05 16:09:28.000000000 +0100
+@@ -396,6 +396,22 @@
+ 	unsigned long		flags;
+ 	int			status = 0;
+ 
++	if (spi->master->flags & SPI_MASTER_NO_RX) {
++		struct spi_transfer *xfer;
++		list_for_each_entry(xfer, &m->transfers, transfer_list) {
++			if (xfer->rx_buf)
++				return -EINVAL;
++		}
++	}
++
++	if (spi->master->flags & SPI_MASTER_NO_TX) {
++		struct spi_transfer *xfer;
++		list_for_each_entry(xfer, &m->transfers, transfer_list) {
++			if (xfer->tx_buf)
++				return -EINVAL;
++		}
++	}
++
+ 	m->actual_length = 0;
+ 	m->status = -EINPROGRESS;
+ 
+Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/spi/spi_gpio.c	2010-01-05 16:12:12.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spi_gpio.c	2010-01-05 16:13:51.000000000 +0100
+@@ -109,12 +109,19 @@
+ 
+ static inline void setmosi(const struct spi_device *spi, int is_on)
+ {
+-	gpio_set_value(SPI_MOSI_GPIO, is_on);
++	if (SPI_MOSI_GPIO != SPI_GPIO_NO_MOSI)
++	{
++		gpio_set_value(SPI_MOSI_GPIO, is_on);
++	}
++
+ }
+ 
+ static inline int getmiso(const struct spi_device *spi)
+ {
+-	return !!gpio_get_value(SPI_MISO_GPIO);
++	if (SPI_MISO_GPIO != SPI_GPIO_NO_MISO)
++		return !!gpio_get_value(SPI_MISO_GPIO);
++	else
++		return 0;
+ }
+ 
+ #undef pdata
+@@ -233,20 +240,31 @@
+ }
+ 
+ static int __init
+-spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label)
++spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label,
++		 u16 *res_flags)
+ {
+ 	int value;
+ 
+ 	/* NOTE:  SPI_*_GPIO symbols may reference "pdata" */
++	if (SPI_MOSI_GPIO != SPI_GPIO_NO_MOSI) {
++		value = spi_gpio_alloc(SPI_MOSI_GPIO, label, false);
++		if (value)
++			goto done;
++	} else {
++		/* HW configuration without MOSI pin */
++		*res_flags |= SPI_MASTER_NO_TX;
++	}
+ 
+-	value = spi_gpio_alloc(SPI_MOSI_GPIO, label, false);
+-	if (value)
+-		goto done;
+-
+-	value = spi_gpio_alloc(SPI_MISO_GPIO, label, true);
+-	if (value)
+-		goto free_mosi;
++	if (SPI_MISO_GPIO != SPI_GPIO_NO_MISO) {
++		value = spi_gpio_alloc(SPI_MISO_GPIO, label, true);
++		if (value)
++			goto free_mosi;
++	} else {
++		/* HW configuration without MISO pin */
++		*res_flags |= SPI_MASTER_NO_RX;
++	}
+ 
++	printk("alloc SCK\n");
+ 	value = spi_gpio_alloc(SPI_SCK_GPIO, label, false);
+ 	if (value)
+ 		goto free_miso;
+@@ -254,9 +272,11 @@
+ 	goto done;
+ 
+ free_miso:
+-	gpio_free(SPI_MISO_GPIO);
++	if (SPI_MISO_GPIO != SPI_GPIO_NO_MISO)
++		gpio_free(SPI_MISO_GPIO);
+ free_mosi:
+-	gpio_free(SPI_MOSI_GPIO);
++	if (SPI_MOSI_GPIO != SPI_GPIO_NO_MOSI)
++		gpio_free(SPI_MOSI_GPIO);
+ done:
+ 	return value;
+ }
+@@ -267,17 +287,16 @@
+ 	struct spi_master		*master;
+ 	struct spi_gpio			*spi_gpio;
+ 	struct spi_gpio_platform_data	*pdata;
+-
++	u16 master_flags = 0;
++	printk("init spi_gpio_probe\n");
+ 	pdata = pdev->dev.platform_data;
+ #ifdef GENERIC_BITBANG
+ 	if (!pdata || !pdata->num_chipselect)
+ 		return -ENODEV;
+ #endif
+-
+-	status = spi_gpio_request(pdata, dev_name(&pdev->dev));
++	status = spi_gpio_request(pdata, dev_name(&pdev->dev),&master_flags);
+ 	if (status < 0)
+ 		return status;
+-
+ 	master = spi_alloc_master(&pdev->dev, sizeof *spi_gpio);
+ 	if (!master) {
+ 		status = -ENOMEM;
+@@ -290,6 +309,7 @@
+ 	if (pdata)
+ 		spi_gpio->pdata = *pdata;
+ 
++	master->flags = master_flags;
+ 	master->bus_num = pdev->id;
+ 	master->num_chipselect = SPI_N_CHIPSEL;
+ 	master->setup = spi_gpio_setup;
+@@ -308,8 +328,10 @@
+ 	if (status < 0) {
+ 		spi_master_put(spi_gpio->bitbang.master);
+ gpio_free:
+-		gpio_free(SPI_MISO_GPIO);
+-		gpio_free(SPI_MOSI_GPIO);
++		if (SPI_MISO_GPIO != SPI_GPIO_NO_MISO)
++			gpio_free(SPI_MISO_GPIO);
++		if (SPI_MOSI_GPIO != SPI_GPIO_NO_MOSI)
++			gpio_free(SPI_MOSI_GPIO);
+ 		gpio_free(SPI_SCK_GPIO);
+ 		spi_master_put(master);
+ 	}
+@@ -332,8 +354,10 @@
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
+-	gpio_free(SPI_MISO_GPIO);
+-	gpio_free(SPI_MOSI_GPIO);
++	if (SPI_MISO_GPIO != SPI_GPIO_NO_MISO)
++		gpio_free(SPI_MISO_GPIO);
++	if (SPI_MOSI_GPIO != SPI_GPIO_NO_MOSI)
++		gpio_free(SPI_MOSI_GPIO);
+ 	gpio_free(SPI_SCK_GPIO);
+ 
+ 	return status;
