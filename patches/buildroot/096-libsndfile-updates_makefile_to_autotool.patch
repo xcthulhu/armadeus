@@ -1,14 +1,15 @@
 Moves libsndfile to autotools infrastructure and bump version to 1.0.21.
 
-Will be removed when updating to Buildroot 2010.02
+Will be removed or merged when updating to Buildroot 2010.02 (send 1.0.21
+modifications upstream; remove STRIP hack before)
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/audio/libsndfile/libsndfile.mk
 ===================================================================
 --- buildroot.orig/package/audio/libsndfile/libsndfile.mk	2010-01-05 21:53:11.000000000 +0100
-+++ buildroot/package/audio/libsndfile/libsndfile.mk	2010-01-05 22:12:10.000000000 +0100
-@@ -3,63 +3,10 @@
++++ buildroot/package/audio/libsndfile/libsndfile.mk	2010-01-06 11:56:42.000000000 +0100
+@@ -3,63 +3,19 @@
  # libsndfile
  #
  #############################################################
@@ -19,10 +20,7 @@ Index: buildroot/package/audio/libsndfile/libsndfile.mk
 -LIBSNDFILE_DIR:=$(BUILD_DIR)/libsndfile-$(LIBSNDFILE_VERSION)
 -LIBSNDFILE_BINARY:=src/.libs/libsndfile.so
 -LIBSNDFILE_TARGET_BINARY:=usr/lib/libsndfile.so
-+LIBSNDFILE_SITE:=http://www.mega-nerd.com/libsndfile/files
-+LIBSNDFILE_LIBTOOL_PATCH:=NO
-+LIBSNDFILE_INSTALL_STAGING:=YES
- 
+-
 -$(DL_DIR)/$(LIBSNDFILE_SOURCE):
 -	$(WGET) -P $(DL_DIR) $(LIBSNDFILE_SITE)/$(LIBSNDFILE_SOURCE)
 -
@@ -75,20 +73,25 @@ Index: buildroot/package/audio/libsndfile/libsndfile.mk
 -#############################################################
 -ifeq ($(strip $(BR2_PACKAGE_LIBSNDFILE)),y)
 -TARGETS+=libsndfile
--endif
++LIBSNDFILE_SITE:=http://www.mega-nerd.com/libsndfile/files
++LIBSNDFILE_LIBTOOL_PATCH:=NO
++LIBSNDFILE_INSTALL_STAGING:=YES
++
 +$(eval $(call AUTOTARGETS,package/audio,libsndfile))
-Index: buildroot/package/audio/libsndfile/libsndfile-srconly.patch
++
++$(LIBSNDFILE_HOOK_POST_INSTALL): $(LIBSNDFILE_TARGET_INSTALL_TARGET)
++	rm -f $(TARGET_DIR)/usr/lib/libsndfile.a
++	rm -f $(TARGET_DIR)/usr/lib/libsndfile.la
++ifeq ($(BR2_ENABLE_DEBUG),)
++# libsndfile install-strip target do not work properly on our Buildroot version
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/libsndfile.so
+ endif
++	touch $@
+Index: buildroot/package/audio/libsndfile/libsndfile-1.0.21-srconly.patch
 ===================================================================
---- buildroot.orig/package/audio/libsndfile/libsndfile-srconly.patch	2010-01-05 22:13:11.000000000 +0100
-+++ buildroot/package/audio/libsndfile/libsndfile-srconly.patch	2010-01-05 22:22:36.000000000 +0100
-@@ -1,11 +1,13 @@
----- libsndfile-1.0.17/Makefile.in.orig	2006-12-06 17:26:46.000000000 +0100
--+++ libsndfile-1.0.17/Makefile.in	2006-12-06 17:31:11.000000000 +0100
--@@ -209,7 +209,7 @@
-- target_cpu = @target_cpu@
-- target_os = @target_os@
-- target_vendor = @target_vendor@
---SUBDIRS = man doc Win32 Octave src examples regtest tests
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/audio/libsndfile/libsndfile-1.0.21-srconly.patch	2010-01-06 11:11:51.000000000 +0100
+@@ -0,0 +1,13 @@
 +Index: libsndfile-1.0.21/Makefile.in
 +===================================================================
 +--- libsndfile-1.0.21.orig/Makefile.in	2010-01-05 22:21:21.000000000 +0100
@@ -98,10 +101,61 @@ Index: buildroot/package/audio/libsndfile/libsndfile-srconly.patch
 + DISTCHECK_CONFIGURE_FLAGS = --enable-gcc-werror
 + @BUILD_OCTAVE_MOD_TRUE@octave_dir = Octave
 +-SUBDIRS = M4 man doc Win32 src $(octave_dir) examples regtest tests programs
- +SUBDIRS = src
+++SUBDIRS = src
++ DIST_SUBDIRS = M4 man doc Win32 src Octave examples regtest tests programs
++ EXTRA_DIST = libsndfile.spec.in sndfile.pc.in
++ pkgconfigdir = $(libdir)/pkgconfig
+Index: buildroot/package/audio/libsndfile/libsndfile-1.0.17-srconly.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/audio/libsndfile/libsndfile-1.0.17-srconly.patch	2010-01-06 11:17:12.000000000 +0100
+@@ -0,0 +1,11 @@
++--- libsndfile-1.0.17/Makefile.in.orig	2006-12-06 17:26:46.000000000 +0100
+++++ libsndfile-1.0.17/Makefile.in	2006-12-06 17:31:11.000000000 +0100
++@@ -209,7 +209,7 @@
++ target_cpu = @target_cpu@
++ target_os = @target_os@
++ target_vendor = @target_vendor@
++-SUBDIRS = man doc Win32 Octave src examples regtest tests
+++SUBDIRS = src
++ DIST_SUBDIRS = $(SUBDIRS)
++ EXTRA_DIST = reconfigure.mk acinclude.m4 libsndfile.spec.in \
++ 			sndfile.pc.in Mingw-make-dist.sh
+Index: buildroot/package/audio/libsndfile/libsndfile-srconly.patch
+===================================================================
+--- buildroot.orig/package/audio/libsndfile/libsndfile-srconly.patch	2010-01-06 11:32:18.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+@@ -1,11 +0,0 @@
+---- libsndfile-1.0.17/Makefile.in.orig	2006-12-06 17:26:46.000000000 +0100
+-+++ libsndfile-1.0.17/Makefile.in	2006-12-06 17:31:11.000000000 +0100
+-@@ -209,7 +209,7 @@
+- target_cpu = @target_cpu@
+- target_os = @target_os@
+- target_vendor = @target_vendor@
+--SUBDIRS = man doc Win32 Octave src examples regtest tests
+-+SUBDIRS = src
 - DIST_SUBDIRS = $(SUBDIRS)
 - EXTRA_DIST = reconfigure.mk acinclude.m4 libsndfile.spec.in \
 - 			sndfile.pc.in Mingw-make-dist.sh
+Index: buildroot/package/audio/libsndfile/libsndfile-1.0.18-srconly.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/audio/libsndfile/libsndfile-1.0.18-srconly.patch	2010-01-06 11:40:38.000000000 +0100
+@@ -0,0 +1,17 @@
++---
++ Makefile.in |    2 +-
++ 1 file changed, 1 insertion(+), 1 deletion(-)
++
++Index: libsndfile-1.0.18/Makefile.in
++===================================================================
++--- libsndfile-1.0.18.orig/Makefile.in
+++++ libsndfile-1.0.18/Makefile.in
++@@ -260,7 +260,7 @@
++ top_srcdir = @top_srcdir@
++ DISTCHECK_CONFIGURE_FLAGS = --enable-gcc-werror
++ @BUILD_OCTAVE_MOD_TRUE@octave_dir = Octave
++-SUBDIRS = M4 man doc Win32 src $(octave_dir) examples regtest tests programs
+++SUBDIRS = src
 + DIST_SUBDIRS = M4 man doc Win32 src Octave examples regtest tests programs
-+ EXTRA_DIST = libsndfile.spec.in sndfile.pc.in
++ EXTRA_DIST = libsndfile.spec.in sndfile.pc.in Mingw-make-dist.sh
 + pkgconfigdir = $(libdir)/pkgconfig
