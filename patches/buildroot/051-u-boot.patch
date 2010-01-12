@@ -1,5 +1,7 @@
---- buildroot/target/u-boot.ref/Config.in	2008-11-03 09:15:09.000000000 +0100
-+++ buildroot/target/u-boot/Config.in	2008-11-13 22:01:30.000000000 +0100
+Index: buildroot/target/u-boot/Config.in
+===================================================================
+--- buildroot.orig/target/u-boot/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2010-01-06 22:23:02.000000000 +0100
 @@ -7,11 +7,18 @@
  config BR2_TARGET_UBOOT_BOARDNAME
  	string "board name"
@@ -31,9 +33,11 @@
 +	default ""
 +	help
 +	  Copies the resulting image to a secondary location.
---- buildroot/target/u-boot/Makefile.in.ref	2008-11-03 09:15:09.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2008-11-20 23:52:02.000000000 +0100
-@@ -9,7 +9,14 @@ U_BOOT_SITE:=ftp://ftp.denx.de/pub/u-boo
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-01-12 11:53:17.000000000 +0100
+@@ -9,7 +9,14 @@
  U_BOOT_DIR:=$(PROJECT_BUILD_DIR)/u-boot-$(U_BOOT_VERSION)
  U_BOOT_PATCH_DIR:=$(PROJECT_BUILD_DIR)/u-boot-patches
  U_BOOT_CAT:=$(BZCAT)
@@ -48,7 +52,7 @@
  U_BOOT_TOOLS_BIN:=mkimage
  # u-boot still uses arch=ppc for powerpc
  U_BOOT_ARCH=$(KERNEL_ARCH:powerpc=ppc)
-@@ -28,7 +35,6 @@ ifeq ($(strip $(BR2_TARGET_UBOOT_TOOL_EN
+@@ -28,7 +35,6 @@
  U_BOOT_TARGET_TOOLS+=$(TARGET_DIR)/usr/sbin/fw_printenv
  endif
  
@@ -56,7 +60,16 @@
  # Define a helper function
  define insert_define
  @echo "#ifdef $(strip $(1))" >> $(U_BOOT_INC_CONF_FILE)
-@@ -80,6 +86,9 @@ $(U_BOOT_DIR)/.header_modified: $(U_BOOT
+@@ -45,6 +51,8 @@
+ 		| tar -C $(PROJECT_BUILD_DIR) $(TAR_OPTIONS) -
+ 	touch $@
+ 
++u-boot-unpacked: $(U_BOOT_DIR)/.unpacked
++
+ $(U_BOOT_DIR)/.patched: $(U_BOOT_DIR)/.unpacked
+ 	toolchain/patch-kernel.sh $(U_BOOT_DIR) target/u-boot/ \
+ 		u-boot-$(U_BOOT_VERSION)-\*.patch \
+@@ -80,6 +88,9 @@
  ifneq ($(strip $(BR2_PROJECT)),"")
  	$(call insert_define, CONFIG_HOSTNAME, $(BR2_PROJECT))
  endif
@@ -66,7 +79,7 @@
  ifneq ($(strip $(BR2_TARGET_UBOOT_SERVERIP)),"")
  	$(call insert_define, CONFIG_SERVERIP, $(BR2_TARGET_UBOOT_SERVERIP))
  endif
-@@ -110,27 +119,35 @@ ifeq ($(strip $(BR2_TARGET_UBOOT_SILENT)
+@@ -110,27 +121,35 @@
  	$(call insert_define, CONFIG_SILENT_CONSOLE,)
  endif
  	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
@@ -107,7 +120,7 @@
  	mkdir -p $(@D)
  	$(TARGET_CC) -I$(U_BOOT_DIR)/include -I$(LINUX_HEADERS_DIR)/include \
  		-DUSE_HOSTCC -o $@ \
-@@ -138,11 +155,22 @@ $(TARGET_DIR)/usr/sbin/fw_printenv: $(U_
+@@ -138,11 +157,22 @@
  	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
  	ln -sf fw_printenv $(TARGET_DIR)/usr/sbin/fw_setenv
  
@@ -131,7 +144,7 @@
  
  u-boot-dirclean:
  	rm -rf $(U_BOOT_DIR)
-@@ -173,5 +201,7 @@ u-boot-status:
+@@ -173,5 +203,7 @@
  	@echo BR2_TARGET_UBOOT_BOOTARGS = $(BR2_TARGET_UBOOT_BOOTARGS)
  	@echo BR2_TARGET_UBOOT_BOOTCMD = $(BR2_TARGET_UBOOT_BOOTCMD)
  	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
