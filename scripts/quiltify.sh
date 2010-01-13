@@ -5,11 +5,16 @@
 
 answer=""
 
-# $1: thing to ask, $* possibilities. Will fill answer variable.
-ask_user()
+ask_user_banner()
 {
         echo
         echo -e "--- "$1
+}
+
+# $1: thing to ask, $* possibilities. Will fill in "answer" variable.
+ask_user()
+{
+        ask_user_banner "$1"
         shift
         n=1
         while [ "$1" != "" ]; do
@@ -20,23 +25,45 @@ ask_user()
         read -p "> " answer
 }
 
+ask_user_choice()
+{
+        ask_user_banner "$1"
+        shift
+	export PS3="> "
+	select answer in $1; do
+#		echo "($answer) ($REPLY)"
+		if [ "$answer" == "" ]; then
+			echo "Bad choice: $REPLY"
+		else
+			break
+		fi
+	done
+}
+
 
 # Get useful envt variables
 make shell_env
 . armadeus_env.sh
 
 if [ "$1" != "export" ]; then
-	ask_user "What do you want to quiltify today ? ;-)" "Linux (default)" "Buildroot"
+	ask_user_choice "What do you want to quiltify today ? ;-)" "Linux_(default) Buildroot U-Boot"
 fi
 if [ "$1" == "export" ]; then
-	ask_user "What kind of quilt patches do you want to export ?" "Linux (default)" "Buildroot"
+	ask_user_choice "What kind of quilt patches do you want to export ?" "Linux_(default) Buildroot U-Boot"
 fi
 
-if [ "$answer" == "2" ]; then
+if [ "$answer" == "Buildroot" ]; then
 	QUILT_TARGET_NAME="Buildroot"
 	QUILT_MAKEFILE_TARGET="buildroot-unpacked"
 	QUILT_TARGET_DIR=$ARMADEUS_BUILDROOT_DIR
 	QUILT_TARGET_PATCH_DIR=$ARMADEUS_BUILDROOT_DIR/../patches/buildroot
+elif [ "$answer" == "U-Boot" ]; then
+	QUILT_TARGET_NAME="U-Boot"
+	QUILT_MAKEFILE_TARGET="u-boot-unpacked"
+	QUILT_MAKEFILE_TARGET_TOUCH=".unpacked .patched"
+	QUILT_PATCH_FILTER="$ARMADEUS_U_BOOT_VERSION"
+	QUILT_TARGET_DIR=$ARMADEUS_U_BOOT_DIR
+	QUILT_TARGET_PATCH_DIR=$ARMADEUS_BUILDROOT_DIR/../patches/u-boot
 else
 	QUILT_TARGET_NAME="Linux kernel"
 	QUILT_MAKEFILE_TARGET="linux26-patched"
@@ -44,9 +71,8 @@ else
 	QUILT_TARGET_PATCH_DIR=$ARMADEUS_LINUX_PATCH_DIR
 fi
 
-if [ "$1" != "export" ]; then
-	echo -e "\nThis script is going to rebuild a quiltified "$QUILT_TARGET_NAME" in the current view..."
-fi
+
+## Copy patches from working dir to version dir:
 
 if [ "$1" == "export" ]; then
 	echo "Exporting your work (patches) from $QUILT_TARGET_DIR/patches/ to $QUILT_TARGET_PATCH_DIR"
@@ -62,8 +88,9 @@ if [ "$1" == "export" ]; then
 	exit 0
 fi
 
+## else import patches in working dir:
 
-# else import patches:
+echo -e "\nThis script is going to rebuild a quiltified "$QUILT_TARGET_NAME" in the current view..."
 
 # Update repository
 ask_user "Update (pull) your local GIT repository (y/N) ?"
@@ -99,7 +126,11 @@ fi
 # Import patches
 pushd $QUILT_TARGET_DIR
 mkdir patches
-PATCHES=`ls -ar $QUILT_TARGET_PATCH_DIR/*.patch`
+if [ "$QUILT_PATCH_FILTER" != "" ]; then
+	PATCHES=`ls -ar $QUILT_TARGET_PATCH_DIR/*.patch | grep $QUILT_PATCH_FILTER`
+else
+	PATCHES=`ls -ar $QUILT_TARGET_PATCH_DIR/*.patch`
+fi
 for patch in $PATCHES; do
 	quilt import $patch
 done
@@ -109,13 +140,14 @@ if [ "$?" != 0 ]; then
 	exit 1
 fi
 quilt series >> .applied_patches_list
-
-touch .unpacked
-touch .patched
-touch .patched.arch
-touch .patched.board
+if [ "$QUILT_MAKEFILE_TARGET_TOUCH" != "" ]; then
+	touch $QUILT_MAKEFILE_TARGET_TOUCH
+else
+	touch .unpacked .patched .patched.arch .patched.board
+fi
 popd
 
+# Build it
 echo -e "\n--- Your "$QUILT_TARGET_NAME" is \"quiltified\" ! I will now compile it...\n"
 sleep 2
 make
