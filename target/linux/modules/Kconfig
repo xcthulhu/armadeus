@@ -35,8 +35,6 @@ source "drivers/armadeus/pwm/Kconfig"
 
 source "drivers/armadeus/backlight/Kconfig"
 
-source "drivers/armadeus/display/Kconfig"
-
 comment "Communication bus related"
 	depends on ARMADEUS_DRIVERS
 
