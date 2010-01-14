@@ -5,10 +5,16 @@ Patch inspired from Marek Szyprowski <m.szyprowski@samsung.com> patch
 Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 ---
 
+---
+ drivers/spi/spi_bitbang.c    |   16 +++++++++++
+ drivers/spi/spi_gpio.c       |   62 +++++++++++++++++++++++++++++--------------
+ include/linux/spi/spi_gpio.h |    7 ++++
+ 3 files changed, 65 insertions(+), 20 deletions(-)
+
 Index: linux-2.6.29.6/drivers/spi/spi_bitbang.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/spi/spi_bitbang.c	2010-01-06 10:50:36.000000000 +0100
-+++ linux-2.6.29.6/drivers/spi/spi_bitbang.c	2010-01-06 10:50:57.000000000 +0100
+--- linux-2.6.29.6.orig/drivers/spi/spi_bitbang.c	2010-01-14 14:21:00.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spi_bitbang.c	2010-01-14 14:21:00.000000000 +0100
 @@ -396,6 +396,22 @@
  	unsigned long		flags;
  	int			status = 0;
@@ -34,8 +40,8 @@ Index: linux-2.6.29.6/drivers/spi/spi_bitbang.c
  
 Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/spi/spi_gpio.c	2010-01-06 10:50:36.000000000 +0100
-+++ linux-2.6.29.6/drivers/spi/spi_gpio.c	2010-01-06 10:50:57.000000000 +0100
+--- linux-2.6.29.6.orig/drivers/spi/spi_gpio.c	2010-01-14 14:21:00.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spi_gpio.c	2010-01-14 16:10:52.000000000 +0100
 @@ -109,12 +109,19 @@
  
  static inline void setmosi(const struct spi_device *spi, int is_on)
@@ -58,7 +64,7 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  }
  
  #undef pdata
-@@ -233,20 +240,31 @@
+@@ -233,19 +240,29 @@
  }
  
  static int __init
@@ -94,11 +100,9 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
 +		*res_flags |= SPI_MASTER_NO_RX;
 +	}
  
-+	printk("alloc SCK\n");
  	value = spi_gpio_alloc(SPI_SCK_GPIO, label, false);
  	if (value)
- 		goto free_miso;
-@@ -254,9 +272,11 @@
+@@ -254,9 +271,11 @@
  	goto done;
  
  free_miso:
@@ -112,13 +116,12 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  done:
  	return value;
  }
-@@ -267,17 +287,16 @@
+@@ -267,17 +286,15 @@
  	struct spi_master		*master;
  	struct spi_gpio			*spi_gpio;
  	struct spi_gpio_platform_data	*pdata;
 -
 +	u16 master_flags = 0;
-+	printk("init spi_gpio_probe\n");
  	pdata = pdev->dev.platform_data;
  #ifdef GENERIC_BITBANG
  	if (!pdata || !pdata->num_chipselect)
@@ -133,7 +136,7 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  	master = spi_alloc_master(&pdev->dev, sizeof *spi_gpio);
  	if (!master) {
  		status = -ENOMEM;
-@@ -290,6 +309,7 @@
+@@ -290,6 +307,7 @@
  	if (pdata)
  		spi_gpio->pdata = *pdata;
  
@@ -141,7 +144,7 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  	master->bus_num = pdev->id;
  	master->num_chipselect = SPI_N_CHIPSEL;
  	master->setup = spi_gpio_setup;
-@@ -308,8 +328,10 @@
+@@ -308,8 +326,10 @@
  	if (status < 0) {
  		spi_master_put(spi_gpio->bitbang.master);
  gpio_free:
@@ -154,7 +157,7 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  		gpio_free(SPI_SCK_GPIO);
  		spi_master_put(master);
  	}
-@@ -332,8 +354,10 @@
+@@ -332,8 +352,10 @@
  
  	platform_set_drvdata(pdev, NULL);
  
@@ -169,8 +172,8 @@ Index: linux-2.6.29.6/drivers/spi/spi_gpio.c
  	return status;
 Index: linux-2.6.29.6/include/linux/spi/spi_gpio.h
 ===================================================================
---- linux-2.6.29.6.orig/include/linux/spi/spi_gpio.h	2010-01-06 10:51:04.000000000 +0100
-+++ linux-2.6.29.6/include/linux/spi/spi_gpio.h	2010-01-06 10:52:21.000000000 +0100
+--- linux-2.6.29.6.orig/include/linux/spi/spi_gpio.h	2010-01-14 14:21:00.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/spi_gpio.h	2010-01-14 14:21:00.000000000 +0100
 @@ -29,11 +29,18 @@
   * SPI_GPIO_NO_CHIPSELECT to the controller_data:
   *		.controller_data = (void *) SPI_GPIO_NO_CHIPSELECT;

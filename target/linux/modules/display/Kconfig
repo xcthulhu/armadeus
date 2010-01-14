@@ -1,0 +1,12 @@
+#
+#
+
+config HX5116_DISPLAY
+        tristate "HX5116 AMOLED display driver"
+        default n
+        depends on ARMADEUS_DRIVERS
+        select DISPLAY_SUPPORT
+        ---help---
+        This driver allows you to control the contrast of 
+        HX5116 based AMOLED screen.
+
