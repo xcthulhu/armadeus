@@ -15,6 +15,7 @@
 #include <linux/platform_device.h>
 #include <linux/mutex.h>
 #include <linux/fb.h>
+#include <linux/delay.h>
 
 #include <linux/display.h>
 #include <linux/spi/spi.h>
@@ -154,6 +155,8 @@ static void hx5116_init_sequence(struct hx5116_display *hx5116_dev)
 	hx5116_write (hx5116_dev, 0x29, 0x04); /*set B_212*/
 	hx5116_write (hx5116_dev, 0x2A, 0x07); /*set B_255*/
 	hx5116_write (hx5116_dev, 0x06, 0x03); /*set display on*/
+
+	msleep(31); /* Wait for 15 Vsync to power on screen */
 
 	hx5116_dev->power_on(1); /* switch on AMOLED power */
 }
