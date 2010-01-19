@@ -1,11 +1,11 @@
 PATCH AUTOMATICALLY GENERATED
 DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
-Index: linux-2.6.29.6.mod/sound/arm/imx-alsa.c
+Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6.mod/sound/arm/imx-alsa.c	2009-12-30 12:01:39.000000000 +0100
-@@ -0,0 +1,665 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa.c	2010-01-19 10:32:20.000000000 +0100
+@@ -0,0 +1,666 @@
 +/*
 + * sound/arm/imx-alsa.c
 + *
@@ -85,6 +85,7 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa.c
 +
 +	runtime = substream->runtime;
 +
++	pr_debug("DMA ");
 +	if (sg) {
 +/*		channel_info->offset = (unsigned long)sg->dma_address -
 +					(unsigned long)channel_info->base;*/
@@ -522,8 +523,8 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa.c
 +	snd_pcm_lib_preallocate_pages_for_all(pcm,
 +				SNDRV_DMA_TYPE_CONTINUOUS,
 +				snd_dma_continuous_data(GFP_KERNEL),
-+				8 * 1024,
-+				8 * 1024);
++				32 * 1024,
++				32 * 1024);
 +
 +	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, &snd_card_imx_ops);
 +	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_CAPTURE, &snd_card_imx_ops);
@@ -671,10 +672,10 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa.c
 +
 +	return 0;
 +}
-Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-dma.h
+Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6.mod/sound/arm/imx-alsa-dma.h	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2010-01-19 10:25:41.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -722,10 +723,10 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-dma.h
 +
 +#endif
 +
-Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c	2009-12-29 23:12:27.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2010-01-19 10:30:18.000000000 +0100
 @@ -0,0 +1,441 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
@@ -798,7 +799,7 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c
 +	.channels_max		= 2,
 +	.buffer_bytes_max	= 32 * 1024,
 +	.period_bytes_min	= 64,
-+	.period_bytes_max	= 8 * 1024,  /* test */
++	.period_bytes_max	= 8 * 1024,
 +	.periods_min		= 2,
 +	.periods_max		= 255,
 +	.fifo_size		= 0,
@@ -817,7 +818,7 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c
 +	.channels_max		= 2,
 +	.buffer_bytes_max	= 32 * 1024,
 +	.period_bytes_min	= 64,
-+	.period_bytes_max	= 8 * 1024,  /* test */
++	.period_bytes_max	= 8 * 1024,
 +	.periods_min		= 2,
 +	.periods_max		= 255,
 +	.fifo_size		= 0,
@@ -1168,10 +1169,10 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.c
 +module_init(imx_alsa_tsc210x_init);
 +module_exit(imx_alsa_tsc210x_exit);
 +
-Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.h
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.h	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2010-01-19 10:25:41.000000000 +0100
 @@ -0,0 +1,48 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
@@ -1221,10 +1222,10 @@ Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102.h
 +
 +#endif	/* IMX_ALSA_TSC2102_H_ */
 +
-Index: linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102-mixer.c
+Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6.mod/sound/arm/imx-alsa-tsc2102-mixer.c	2009-12-29 18:38:46.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2010-01-19 10:25:41.000000000 +0100
 @@ -0,0 +1,425 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
