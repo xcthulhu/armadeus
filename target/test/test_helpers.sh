@@ -54,7 +54,7 @@ ask_user()
 	MESSAGE="$1"
 	AWAITEN="$2"
 
-	echo -e "  >>>> $MESSAGE <<<<"
+	echo -e "\n  >>>> $MESSAGE <<<<"
 	read response
 }
 
