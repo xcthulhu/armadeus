@@ -56,7 +56,7 @@ $THIS_DIR/test_dac.sh
 echo
 $THIS_DIR/test_adc.sh
 echo
-$THIS_DIR/test_sound.sh
+$THIS_DIR/test_audio.sh
 echo
 $THIS_DIR/test_fpga.sh
 echo
