@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2009-12-23 10:01:01.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-01-19 10:25:41.000000000 +0100
 @@ -0,0 +1,302 @@
 +/*
 + * include/linux/spi/tsc2102.h
@@ -311,8 +311,8 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/spi/tsc2102.c	2009-12-23 10:06:02.000000000 +0100
-@@ -0,0 +1,1186 @@
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-01-19 11:19:57.000000000 +0100
+@@ -0,0 +1,1188 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
@@ -1319,7 +1319,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		tsc.mclk = 16000000; /* 16 MHz by default */
 +#endif /* CONFIG_TSC_SLAVE */
 +
-+	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED | IRQF_SHARED | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
++	if (request_irq(spi->irq, tsc2102_handler, IRQF_DISABLED /*| IRQF_SHARED*/ | IRQF_TRIGGER_FALLING, "tsc2102", &tsc)) {
 +		printk(KERN_ERR "Couldn't allocate touchscreen IRQ (%d)\n", spi->irq);
 +		err = -EINVAL;
 +		goto err_clk;
@@ -1336,8 +1336,10 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	spi->mode = SPI_MODE_1;
 +	spi->bits_per_word = 16;
 +	err = spi_setup(spi);
-+	if (err)
++	if (err) {
++		dev_err(&spi->dev, "unable to setup SPI\n");
 +		goto err_timer;
++	}
 +
 +	/* Now try to detect the chip, make first contact */
 +	tsc210x_reset(); /* Seems like TSC can be messed up and needs a reset even to get revision */
