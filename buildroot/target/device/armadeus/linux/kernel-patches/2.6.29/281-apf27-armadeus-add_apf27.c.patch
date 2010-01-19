@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-01-19 16:36:42.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-01-19 17:08:44.000000000 +0100
 @@ -0,0 +1,712 @@
 + /*
 + * apf27.c
@@ -726,8 +726,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-01-19 16:44:16.000000000 +0100
-@@ -0,0 +1,1063 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-01-19 17:21:40.000000000 +0100
+@@ -0,0 +1,1018 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -1360,7 +1360,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +};
 +
 +
-+/* APF27Dev adds an USB PHY on i.MX27 port 2 */
++/* APF27Dev adds an USB PHY on i.MX27 USB_HOST port 2 */
 +#ifdef CONFIG_USB_EHCI_MXC
 +static int mxc_usbh1_pins[] = {
 +	PB22_PF_USBH1_SUSP,
@@ -1498,43 +1498,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +/* APF27Dev has a microSD connector */
 +#ifdef CONFIG_MMC_MXC
-+# ifdef CONFIG_APF27_DEVTEST
-+static int mxc_sdhc1_pins[] = {
-+	PE18_PF_SDHC1_D0,
-+	PE19_PF_SDHC1_D1,
-+	PE20_PF_SDHC1_D2,
-+	PE21_PF_SDHC1_D3,
-+	PE22_PF_SDHC1_CMD,
-+	PE22_PF_SDHC1_CLK,
-+};
-+
-+static void apf27_sdhc1_init(struct device *dev)
-+{
-+	u16 data;
-+
-+	printk("apf27: configuring SDHC1 GPIOs\n");
-+	mxc_gpio_setup_multiple_pins(mxc_sdhc1_pins, ARRAY_SIZE(mxc_sdhc1_pins), "SDHC1");
-+	/* set 100k pull-down on sdhc1 dat3 pin (for card insertion/removal detection) */
-+	data = __raw_readw(IO_ADDRESS(SYSCTRL_BASE_ADDR + 0x54)); /* -> PSCR register */
-+	data &= ~(0x0c);
-+	__raw_writew(data, IO_ADDRESS(SYSCTRL_BASE_ADDR + 0x54));
-+	/* ?? enable clock ?? */
-+}
-+
-+static void apf27_sdhc1_exit(struct device *pdev)
-+{
-+	printk("apf27: unconfiguring SDHC1 GPIOs\n");
-+	mxc_gpio_release_multiple_pins(mxc_sdhc1_pins, ARRAY_SIZE(mxc_sdhc1_pins));
-+}
-+
-+static struct imxmmc_platform_data apf27_sdhc1_pdata = {
-+// 	.card_present = apf27_mmc_card_present,
-+	.clk = "sdhc_clk",
-+	.init = apf27_sdhc1_init,
-+	.exit = apf27_sdhc1_exit,
-+};
-+# endif /* CONFIG_APF27_DEVTEST */
-+
 +static int mxc_sdhc2_pins[] = {
 +	PB4_PF_SDHC2_D0,
 +	PB5_PF_SDHC2_D1,
@@ -1548,7 +1511,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +{
 +	int ret;
 +
-+	printk("apf27: configuring SDHC2 GPIOs\n");
 +	mxc_gpio_setup_multiple_pins(mxc_sdhc2_pins, ARRAY_SIZE(mxc_sdhc2_pins), "SDHC2");
 +
 +	ret = request_irq(IRQ_GPIOC(14), detect_irq, 0, "imx-mmc-detect", data);
@@ -1566,24 +1528,17 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static void apf27_sdhc2_exit(struct device *dev, void *data)
 +{
-+	printk("apf27: unconfiguring SDHC2 GPIOs\n");
-+
 +	free_irq(IRQ_GPIOC(14), data);
 +	mxc_gpio_release_multiple_pins(mxc_sdhc2_pins, ARRAY_SIZE(mxc_sdhc2_pins));
 +}
 +
 +static struct imxmmc_platform_data apf27_sdhc2_pdata = {
-+/* 	.card_present = apf27_mmc_card_present,
-+	.clk = "sdhc_clk", */
 +	.init = apf27_sdhc2_init,
 +	.exit = apf27_sdhc2_exit,
 +};
 +
 +static inline void apf27dev_init_mmc(void)
 +{
-+# ifdef CONFIG_APF27_DEVTEST
-+	mxc_register_device(&mxc_sdhc_device0, &apf27_sdhc1_pdata);
-+# endif
 +	mxc_register_device(&mxc_sdhc_device1, &apf27_sdhc2_pdata);
 +}
 +#endif /* CONFIG_MMC_MXC */
@@ -1794,7 +1749,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-01-19 16:36:42.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-01-19 17:08:44.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2019,7 +1974,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-01-19 16:50:21.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-01-19 17:08:44.000000000 +0100
 @@ -0,0 +1,199 @@
 + /*
 + * apf27-dev-ext-apw.c
