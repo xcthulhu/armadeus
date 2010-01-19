@@ -27,7 +27,7 @@ continue_for_apf27()
 	true
 }
 
-test_sound()
+test_audio()
 {
 	show_test_banner "Sound / ALSA"
 
@@ -74,5 +74,5 @@ test_sound()
 	exit 0
 }
 
-test_sound
+test_audio
 
