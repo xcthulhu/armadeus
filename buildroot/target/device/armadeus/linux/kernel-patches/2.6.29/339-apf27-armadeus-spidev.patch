@@ -6,8 +6,8 @@ Signed-off-by: Gwenhaël Goavec-Merou <gwen@trabucayre.com>
 
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2009-12-15 09:41:42.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-15 17:06:13.000000000 +0100
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/apf27-dev.c	2010-01-19 10:25:42.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-01-19 13:55:00.000000000 +0100
 @@ -24,6 +24,7 @@
  #include <linux/mtd/physmap.h>
  #include <asm/mach/flash.h>
@@ -26,7 +26,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  #ifdef CONFIG_IMX_BACKLIGHT_MODULE
  #define CONFIG_IMX_BACKLIGHT
  #endif
-@@ -417,7 +421,7 @@
+@@ -443,7 +447,7 @@
  };
  
  static struct spi_imx_master imx_spi1_master_info = {
@@ -35,7 +35,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  	.enable_dma     = 0,
  	.init = gpio_spi1_active,
  	.exit = gpio_spi1_inactive,
-@@ -561,6 +565,38 @@
+@@ -589,6 +593,38 @@
  };
  #endif /* CONFIG_CAN_MCP251X */
  
@@ -74,7 +74,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  
  static struct spi_board_info spi_board_info[] __initdata = {
  #ifdef CONFIG_ARMADEUS_MAX1027
-@@ -599,6 +635,18 @@
+@@ -627,6 +663,18 @@
  		.platform_data		= &apf27_mcp251x_config,
  	},
  #endif /* CONFIG_CAN_MCP251X */
@@ -93,7 +93,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  };
  
  
-@@ -1015,7 +1063,7 @@
+@@ -1044,7 +1092,7 @@
  	/* Reserve "fixed" GPIOs */
  	tsc2101_init_fixed_gpio();
  #endif
@@ -104,19 +104,16 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
  #endif
 Index: linux-2.6.29.6/drivers/spi/spidev.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/spi/spidev.c	2009-12-15 09:20:35.000000000 +0100
-+++ linux-2.6.29.6/drivers/spi/spidev.c	2009-12-15 17:06:13.000000000 +0100
-@@ -558,8 +558,9 @@
+--- linux-2.6.29.6.orig/drivers/spi/spidev.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/spi/spidev.c	2010-01-19 12:58:06.000000000 +0100
+@@ -558,6 +558,7 @@
  
  static int spidev_probe(struct spi_device *spi)
  {
-+    struct spidev_platform_data *pdata = spi->dev.platform_data;
++	struct spidev_platform_data *pdata = spi->dev.platform_data;
  	struct spidev_data	*spidev;
--	int			status;
-+	int         status;
+ 	int			status;
  	unsigned long		minor;
- 
- 	/* Allocate driver data */
 @@ -595,6 +596,10 @@
  		set_bit(minor, minors);
  		list_add(&spidev->device_entry, &device_list);
@@ -130,8 +127,8 @@ Index: linux-2.6.29.6/drivers/spi/spidev.c
  	if (status == 0)
 Index: linux-2.6.29.6/include/linux/spi/spidev.h
 ===================================================================
---- linux-2.6.29.6.orig/include/linux/spi/spidev.h	2009-12-15 09:20:35.000000000 +0100
-+++ linux-2.6.29.6/include/linux/spi/spidev.h	2009-12-15 17:06:13.000000000 +0100
+--- linux-2.6.29.6.orig/include/linux/spi/spidev.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/spidev.h	2010-01-19 10:25:43.000000000 +0100
 @@ -101,6 +101,10 @@
  	 */
  };
