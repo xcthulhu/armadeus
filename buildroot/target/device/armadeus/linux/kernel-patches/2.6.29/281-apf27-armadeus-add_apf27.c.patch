@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2009-12-18 17:40:22.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-01-19 16:36:42.000000000 +0100
 @@ -0,0 +1,712 @@
 + /*
 + * apf27.c
@@ -726,7 +726,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2009-12-18 19:29:16.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-01-19 16:44:16.000000000 +0100
 @@ -0,0 +1,1063 @@
 + /*
 + * apf27-dev.c
@@ -1794,7 +1794,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2009-12-18 16:55:09.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-01-19 16:36:42.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2019,8 +2019,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2009-12-18 16:55:09.000000000 +0100
-@@ -0,0 +1,159 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-01-19 16:50:21.000000000 +0100
+@@ -0,0 +1,199 @@
 + /*
 + * apf27-dev-ext-apw.c
 + * Support for AFP27Dev's wireless extension board.
@@ -2045,8 +2045,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +
 +#include <linux/platform_device.h>
 +#include <linux/delay.h>
++#include <mach/common.h>
 +#include <mach/iomux-mx1-mx2.h>
 +#include <mach/gpio.h>
++#include <mach/mmc.h>
++#include "devices.h"
 +
 +
 +/* An optional GSM module can be added to wireless extension board */
@@ -2079,7 +2082,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM */
 +
 +
-+/* An optionnal GPS module can be added to wireless extension board */
++/* An optionnal GPS module can be mounted on wireless extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS
 +
 +#define GPS_WAKEUP	(GPIO_PORTB | 20)	/* CSI_VSYNC_UART5_CTS */
@@ -2109,7 +2112,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS */
 +
 +
-+/* An optionnal Bluetooth + WiFi module can be added to wireless extension board */
++/* An optionnal Bluetooth + WiFi (Wi2Wi) module can be mounted on wireless
++   extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
 +
 +#define BT_RESET	(GPIO_PORTB | 14)	/* CSI_D4 */
@@ -2122,10 +2126,46 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +	(WIFI_PWRDNn | GPIO_OUT | GPIO_GPIO),
 +};
 +
++/* SDHC1 is used for WiFi */
++static int mxc_sdhc1_pins[] = {
++	PE18_PF_SDHC1_D0,
++	PE19_PF_SDHC1_D1,
++	PE20_PF_SDHC1_D2,
++	PE21_PF_SDHC1_D3,
++	PE22_PF_SDHC1_CMD,
++	PE22_PF_SDHC1_CLK,
++};
++
++static int apw_sdhc1_init(struct device *dev, irq_handler_t handler, void *data)
++{
++	return mxc_gpio_setup_multiple_pins(mxc_sdhc1_pins,
++				ARRAY_SIZE(mxc_sdhc1_pins),
++				"SDHC1");
++}
++
++static void apw_sdhc1_exit(struct device *pdev, void *data)
++{
++	mxc_gpio_release_multiple_pins(mxc_sdhc1_pins, ARRAY_SIZE(mxc_sdhc1_pins));
++}
++
++static struct imxmmc_platform_data apw_sdhc1_pdata = {
++	.init = apw_sdhc1_init,
++	.exit = apw_sdhc1_exit,
++};
++
++/* UART6 is used for Bluetooth (init done in apf27-dev.c depending on
++   Linux config) */
++
 +static int apw_bt_wifi_init(void)
 +{
-+	int res = mxc_gpio_setup_multiple_pins(apw_bt_wifi_pins,
++	int res;
++
++	gpio_set_value(WIFI_PWRDNn, 1);	/* WiFi on */
++
++	res = mxc_gpio_setup_multiple_pins(apw_bt_wifi_pins,
 +			ARRAY_SIZE(apw_bt_wifi_pins), "BT_WIFI");
++	if (!res)
++		mxc_register_device(&mxc_sdhc_device0, &apw_sdhc1_pdata);
 +
 +	return res;
 +}
