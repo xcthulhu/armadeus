@@ -1,0 +1,208 @@
+Add better support for SDIO cards to MX2/MX3 SDHC driver:
+* correct a bug (?) in DMA for SDIO CMD53 Multi-Blocks transfers
+* add SDIO interrupt handling
+* correct a bad initialisation, line 687
+
+To check: protect readl/writel register accesses with spin lock ?
+
+To do: split in 3 and rebase with 2.6.33 before sending upstream.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.6/drivers/mmc/host/mxcmmc.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/mmc/host/mxcmmc.c	2010-01-19 18:18:20.000000000 +0100
++++ linux-2.6.29.6/drivers/mmc/host/mxcmmc.c	2010-01-21 10:56:09.000000000 +0100
+@@ -129,6 +129,7 @@
+ 	unsigned int		dma_nents;
+ 	unsigned int		datasize;
+ 	unsigned int		dma_dir;
++	unsigned int		blen;
+ 
+ 	u16			rev_no;
+ 	unsigned int		cmdat;
+@@ -168,6 +169,7 @@
+ #ifdef HAS_DMA
+ 	struct scatterlist *sg;
+ 	int i;
++	unsigned int blen;
+ #endif
+ 	if (data->flags & MMC_DATA_STREAM)
+ 		nob = 0xffff;
+@@ -179,6 +181,9 @@
+ 	writew(blksz, host->base + MMC_REG_BLK_LEN);
+ 	host->datasize = datasize;
+ 
++	/*printk(KERN_DEBUG "transfer data(%s): size=%d (%dx%d)\n",
++			data->flags & MMC_DATA_READ ? "read" : "write",
++			datasize, nob, blksz);*/
+ #ifdef HAS_DMA
+ 	for_each_sg(data->sg, sg, data->sg_len, i) {
+ 		if (sg->offset & 3 || sg->length & 3) {
+@@ -187,6 +192,26 @@
+ 		}
+ 	}
+ 
++	/*
++	 * When block size is smaller than buffer size (for example during
++	 * Multi-Block transfers with CMD53 on some SDIO cards), SDHC seems
++	 * to wipe some data out if DMA burst length == buffer size.
++	 * So adapt burst length dynamically.
++	 */
++	if (host->cmdat & CMD_DAT_CONT_BUS_WIDTH_4) { /* 4 bits mode */
++		blen = min(blksz, (unsigned int)64);
++		if (blen==64)
++			blen = 0; /* (64 bytes --> reg value  0) */
++	} else { /* 1 bit mode */
++		blen = min(blksz, (unsigned int)16);
++	}
++	if (blen != host->blen) {
++		imx_dma_config_burstlen(host->dma, blen);
++		host->blen = blen;
++		dev_dbg(mmc_dev(host->mmc), "changing DMA burst len to %d\n",
++				blen);
++	}
++
+ 	if (data->flags & MMC_DATA_READ) {
+ 		host->dma_dir = DMA_FROM_DEVICE;
+ 		host->dma_nents = dma_map_sg(mmc_dev(host->mmc), data->sg,
+@@ -214,6 +239,7 @@
+ static int mxcmci_start_cmd(struct mxcmci_host *host, struct mmc_command *cmd,
+ 		unsigned int cmdat)
+ {
++	u32 reg;
+ 	WARN_ON(host->cmd != NULL);
+ 	host->cmd = cmd;
+ 
+@@ -237,12 +263,15 @@
+ 		return -EINVAL;
+ 	}
+ 
+-	if (mxcmci_use_dma(host))
+-		writel(INT_READ_OP_EN | INT_WRITE_OP_DONE_EN |
+-				INT_END_CMD_RES_EN,
+-				host->base + MMC_REG_INT_CNTR);
+-	else
+-		writel(INT_END_CMD_RES_EN, host->base + MMC_REG_INT_CNTR);
++	reg = readl(host->base + MMC_REG_INT_CNTR);
++	reg &= ~(INT_READ_OP_EN | INT_WRITE_OP_DONE_EN | INT_END_CMD_RES_EN);
++	if (mxcmci_use_dma(host)) {
++		reg |= (INT_READ_OP_EN | INT_WRITE_OP_DONE_EN |
++				INT_END_CMD_RES_EN);
++	} else {
++		reg |= INT_END_CMD_RES_EN;
++	}
++	writel(reg, host->base + MMC_REG_INT_CNTR);
+ 
+ 	writew(cmd->opcode, host->base + MMC_REG_CMD);
+ 	writel(cmd->arg, host->base + MMC_REG_ARG);
+@@ -254,7 +283,11 @@
+ static void mxcmci_finish_request(struct mxcmci_host *host,
+ 		struct mmc_request *req)
+ {
+-	writel(0, host->base + MMC_REG_INT_CNTR);
++	u32 reg;
++
++	reg = readl(host->base + MMC_REG_INT_CNTR);
++	reg &= ~(INT_READ_OP_EN | INT_WRITE_OP_DONE_EN | INT_END_CMD_RES_EN);
++	writel(reg, host->base + MMC_REG_INT_CNTR);
+ 
+ 	host->req = NULL;
+ 	host->cmd = NULL;
+@@ -510,7 +543,7 @@
+ static irqreturn_t mxcmci_irq(int irq, void *devid)
+ {
+ 	struct mxcmci_host *host = devid;
+-	u32 stat;
++	u32 stat, reg;
+ 
+ 	stat = readl(host->base + MMC_REG_STATUS);
+ 	writel(stat, host->base + MMC_REG_STATUS);
+@@ -524,6 +557,14 @@
+ 		  (stat & (STATUS_DATA_TRANS_DONE | STATUS_WRITE_OP_DONE)))
+ 		mxcmci_data_done(host, stat);
+ #endif
++
++	if (stat & STATUS_SDIO_INT_ACTIVE) {
++		reg = readl(host->base + MMC_REG_INT_CNTR);
++		if (reg & INT_SDIO_IRQ_EN) {
++			mmc_signal_sdio_irq(host->mmc);
++		}
++	}
++
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -588,6 +629,7 @@
+ static void mxcmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct mxcmci_host *host = mmc_priv(mmc);
++	u32 reg;
+ #ifdef HAS_DMA
+ 	unsigned int blen;
+ 	/*
+@@ -600,11 +642,17 @@
+ 		blen = 16;
+ 
+ 	imx_dma_config_burstlen(host->dma, blen);
++	host->blen = blen;
+ #endif
+-	if (ios->bus_width == MMC_BUS_WIDTH_4)
++	reg = readl(host->base + MMC_REG_INT_CNTR);
++	if (ios->bus_width == MMC_BUS_WIDTH_4) {
+ 		host->cmdat |= CMD_DAT_CONT_BUS_WIDTH_4;
+-	else
++		reg |= INT_DAT0_EN;
++	} else {
+ 		host->cmdat &= ~CMD_DAT_CONT_BUS_WIDTH_4;
++		reg &= ~INT_DAT0_EN;
++	}
++	writel(reg, host->base + MMC_REG_INT_CNTR);
+ 
+ 	if (host->power_mode != ios->power_mode) {
+ 		if (host->pdata && host->pdata->setpower)
+@@ -647,11 +695,26 @@
+ 	return -ENOSYS;
+ }
+ 
++static void mxcmci_enable_sdio_irq(struct mmc_host *mmc, int enable)
++{
++	struct mxcmci_host *host = mmc_priv(mmc);
++	u32 reg;
++
++	/* protect with spin lock ? */
++	reg = readl(host->base + MMC_REG_INT_CNTR);
++	if (enable)
++		reg |= INT_SDIO_IRQ_EN;
++	else
++		reg &= ~INT_SDIO_IRQ_EN;
++	writel(reg, host->base + MMC_REG_INT_CNTR);
++
++}
+ 
+ static const struct mmc_host_ops mxcmci_ops = {
+ 	.request	= mxcmci_request,
+ 	.set_ios	= mxcmci_set_ios,
+ 	.get_ro		= mxcmci_get_ro,
++	.enable_sdio_irq= mxcmci_enable_sdio_irq,
+ };
+ 
+ static int mxcmci_probe(struct platform_device *pdev)
+@@ -679,7 +742,7 @@
+ 	}
+ 
+ 	mmc->ops = &mxcmci_ops;
+-	mmc->caps = MMC_CAP_4_BIT_DATA;
++	mmc->caps = MMC_CAP_4_BIT_DATA | MMC_CAP_SDIO_IRQ;
+ 
+ 	/* MMC core transfer sizes tunable parameters */
+ 	mmc->max_hw_segs = 64;
+@@ -687,7 +750,7 @@
+ 	mmc->max_blk_size = 2048;
+ 	mmc->max_blk_count = 65535;
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+-	mmc->max_seg_size = mmc->max_seg_size;
++	mmc->max_seg_size = mmc->max_req_size;
+ 
+ 	host = mmc_priv(mmc);
+ 	host->base = ioremap(r->start, resource_size(r));
