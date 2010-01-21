@@ -1,9 +1,9 @@
 #!/bin/sh
 
 #
-# Script to test Armadeus Software release
+#  Helpers for Armadeus Software release's test scripts
 #
-#  Copyright (C) 2008 The Armadeus Project
+#  Copyright (C) 2008-2010 The Armadeus Project
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,46 @@ ask_user()
 
 	echo -e "\n  >>>> $MESSAGE <<<<"
 	read response
+}
+
+ask_user_banner()
+{
+        echo
+        echo -e "--- "$1
+}
+
+answer=""
+# $1: thing to ask, $* possibilities. Will fill in "answer" variable.
+ask_user_choice()
+{
+	ask_user_banner "$1"
+	shift
+	n=1
+	while [ "$1" != "" ]; do
+		echo -n "  $n) "$1
+
+		if [ "$n" == 1 ]; then
+			echo " (default)"
+		else
+			echo ""
+		fi
+		eval tempvar$n=\"$1\"
+		shift
+		let n=n+1
+	done
+	read -p "> " answer
+
+	# If user didn't enter a correct value, use default (first)
+	for i in `seq $n`; do
+		if [ $i == "$answer" ]; then
+			break
+		fi
+	done
+	if [ $i -lt $n ]; then
+		eval answer="\$tempvar$answer"
+	else
+		eval answer="\$tempvar1"
+	fi
 }
 
 show_test_banner()

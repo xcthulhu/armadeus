@@ -43,7 +43,7 @@ test_audio()
 		exit_failed
 	fi
 
-	ask_user "Please connect a earphone to the Audio Out connector (top on APF27). Then press ENTER."
+	ask_user "Please connect an earphone to the Audio Out connector (top on APF27). Then press ENTER."
 	aplay /usr/share/sounds/alsa/Side_Left.wav	
 	if [ "$?" == 0 ]; then
 		ask_user "Did you hear something ? (y/N)"
