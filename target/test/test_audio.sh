@@ -55,6 +55,8 @@ test_audio()
 	execute_for_target end_of_test_for_apf9328 continue_for_apf27
 
 	ask_user "Please connect a microphone to the Audio In connector (bottom on APF27). Then press ENTER."
+	amixer cset numid=6 on
+	amixer cset numid=5 30
 	ask_user "You will now have to speak in the MIC. The sampled sound will then be played back. Press ENTER when ready to speak."
 	# Stereo 16bits @ 16KHz
 	arecord -r 16000 -f S16_LE -c 2 $TEMP_FILE & pid=$!
