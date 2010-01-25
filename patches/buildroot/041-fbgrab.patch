@@ -1,7 +1,9 @@
---- buildroot/package/Config.org	2008-05-15 16:01:44.000000000 +0200
-+++ buildroot/package/Config.in	2008-05-15 16:02:59.000000000 +0200
-@@ -316,6 +316,7 @@ comment "busybox graphic applications" 
- comment "--> (May be broken in busybox)"
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:04:25.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:05:15.000000000 +0100
+@@ -338,6 +338,7 @@
+ comment "--> May be broken in busybox"
  source "package/fbv/Config.in"
  source "package/fbset/Config.in"
 +source "package/fbgrab/Config.in"

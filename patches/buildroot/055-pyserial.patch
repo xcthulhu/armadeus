@@ -1,6 +1,8 @@
---- buildroot/package/Config.org	2008-12-03 10:26:11.000000000 +0100
-+++ buildroot/package/Config.in	2008-12-02 16:33:32.000000000 +0100
-@@ -466,6 +466,7 @@ if BR2_SCRIPTING_SUPPORT
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:05:22.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:06:55.000000000 +0100
+@@ -462,6 +462,7 @@
  source "package/lua/Config.in"
  source "package/microperl/Config.in"
  source "package/python/Config.in"

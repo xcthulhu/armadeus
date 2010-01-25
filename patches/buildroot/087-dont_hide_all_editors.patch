@@ -8,9 +8,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2009-10-22 12:17:45.000000000 +0200
-+++ buildroot/package/Config.in	2009-10-22 12:19:20.000000000 +0200
-@@ -134,14 +134,9 @@
+--- buildroot.orig/package/Config.in	2010-01-25 10:09:17.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:09:29.000000000 +0100
+@@ -125,14 +125,9 @@
  
  source "package/database/Config.in"
  
@@ -27,8 +27,8 @@ Index: buildroot/package/Config.in
  	default y
 Index: buildroot/package/editors/Config.in
 ===================================================================
---- buildroot.orig/package/editors/Config.in	2009-10-22 12:17:58.000000000 +0200
-+++ buildroot/package/editors/Config.in	2009-10-22 12:19:45.000000000 +0200
+--- buildroot.orig/package/editors/Config.in	2010-01-25 10:02:52.000000000 +0100
++++ buildroot/package/editors/Config.in	2010-01-25 10:09:29.000000000 +0100
 @@ -8,5 +8,8 @@
  source "package/editors/ed/Config.in"
  source "package/editors/nano/Config.in"

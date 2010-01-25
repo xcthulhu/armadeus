@@ -6,9 +6,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/target/linux/Makefile.in.advanced
 ===================================================================
---- buildroot/target/linux/Makefile.in.advanced	(revision 24036)
-+++ buildroot/target/linux/Makefile.in.advanced	(copie de travail)
-@@ -397,10 +397,10 @@
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-01-25 10:06:08.000000000 +0100
++++ buildroot/target/linux/Makefile.in.advanced	2010-01-25 10:06:22.000000000 +0100
+@@ -404,10 +404,10 @@
  	# Make Linux depend on modules only if enabled in the .config.
  	@if [ $(shell grep -c "CONFIG_MODULES=y" $(LINUX26_DIR)/.config) != 0 ] ; then	\
  		echo "*** Installing Linux kernel modules" ;				\

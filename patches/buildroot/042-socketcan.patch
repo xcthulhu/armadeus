@@ -1,6 +1,8 @@
---- buildroot/package/Config.in.org	2008-07-16 11:53:26.000000000 +0200
-+++ buildroot/package/Config.in	2008-07-16 11:53:59.000000000 +0200
-@@ -188,6 +188,7 @@
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:05:15.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:05:22.000000000 +0100
+@@ -207,6 +207,7 @@
  source "package/rsync/Config.in"
  source "package/samba/Config.in"
  source "package/socat/Config.in"

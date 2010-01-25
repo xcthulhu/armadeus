@@ -1,7 +1,8 @@
-diff -purN -x .svn -x '*~' buildrootref/target/jffs2/jffs2root.mk buildroot/target/jffs2/jffs2root.mk
---- buildrootref/target/jffs2/jffs2root.mk	2007-10-15 22:41:05.000000000 +0200
-+++ buildroot/target/jffs2/jffs2root.mk	2007-10-15 21:06:03.000000000 +0200
-@@ -57,7 +57,10 @@ endif
+Index: buildroot/target/jffs2/jffs2root.mk
+===================================================================
+--- buildroot.orig/target/jffs2/jffs2root.mk	2010-01-25 10:03:35.000000000 +0100
++++ buildroot/target/jffs2/jffs2root.mk	2010-01-25 10:04:15.000000000 +0100
+@@ -58,7 +58,10 @@
  ifneq ($(BR2_HAVE_INFOPAGES),y)
  	@rm -rf $(TARGET_DIR)/usr/info
  endif

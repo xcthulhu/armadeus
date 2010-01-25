@@ -6,9 +6,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/target/linux/Makefile.in.advanced
 ===================================================================
---- buildroot/target/linux/Makefile.in.advanced	(revision 24024)
-+++ buildroot/target/linux/Makefile.in.advanced	(copie de travail)
-@@ -203,9 +203,11 @@
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-01-25 10:04:56.000000000 +0100
++++ buildroot/target/linux/Makefile.in.advanced	2010-01-25 10:06:08.000000000 +0100
+@@ -205,9 +205,11 @@
  ifneq ($(strip $(LINUX26_PATCH_SOURCE)),)
  $(DL_DIR)/$(LINUX26_PATCH_SOURCE):
  	 $(WGET) -P $(DL_DIR) $(LINUX26_PATCH_SITE)/$(LINUX26_PATCH_SOURCE)
@@ -21,7 +21,7 @@ Index: buildroot/target/linux/Makefile.in.advanced
  	rm -rf $(LINUX26_DIR)
  	@echo "*** Unpacking kernel source"
  	$(LINUX26_BZCAT) $(DL_DIR)/$(LINUX26_SOURCE) | tar -C $(PROJECT_BUILD_DIR) $(TAR_OPTIONS) -
-@@ -451,7 +453,7 @@
+@@ -456,7 +458,7 @@
  
  linux26-modules: cross-depmod26 $(PROJECT_BUILD_DIR)/autotools-stamps/linux_modules_target_installed
  

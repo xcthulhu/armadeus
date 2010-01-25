@@ -1,6 +1,8 @@
---- buildroot.org/package/mplayer/mplayer.mk	2008-04-01 17:17:27.000000000 +0200
-+++ buildroot/package/mplayer/mplayer.mk	2008-04-13 21:29:14.000000000 +0200
-@@ -45,6 +45,7 @@
+Index: buildroot/package/mplayer/mplayer.mk
+===================================================================
+--- buildroot.orig/package/mplayer/mplayer.mk	2010-01-25 10:03:35.000000000 +0100
++++ buildroot/package/mplayer/mplayer.mk	2010-01-25 10:05:07.000000000 +0100
+@@ -46,6 +46,7 @@
  		$(MPLAYER_ENDIAN) \
  		--disable-mpdvdkit \
  		--disable-tv \

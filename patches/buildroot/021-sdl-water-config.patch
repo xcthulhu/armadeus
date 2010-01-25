@@ -1,11 +1,13 @@
---- buildroot/package/Config.in.ref     2008-11-03 16:19:23.000000000 +0100
-+++ buildroot/package/Config.in 2008-11-03 16:20:11.000000000 +0100
-@@ -332,6 +332,8 @@ source "package/sdl_mixer/Config.in"
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:04:02.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:04:10.000000000 +0100
+@@ -330,6 +330,8 @@
  source "package/sdl_net/Config.in"
  source "package/sdl_ttf/Config.in"
  source "package/tiff/Config.in"
 +comment "Demos"
 +source "package/sdlwater/Config.in"
-
+ 
  comment "busybox graphic applications"
  comment "--> May be broken in busybox"
