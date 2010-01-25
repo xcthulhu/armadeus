@@ -8,25 +8,14 @@
 /buildroot-libtool.patch
 
 # except:
-!/ad9889ctrl/
 !/allegro/
 !/armadeus/
-!/armadeus-drivers-helpers/
-!/armadeus-testsuite/
-!/as_devices/
 !/audio/
 !/bluez/
-!/ch7024ctrl/
 !/fbgrab/
 !/fbtest/
-!/fpgaregs/
-!/freescale-tools/
-!/imxregs/
-!/imxssi/
 !/lcd4linux/
-!/libcurl/
 !/lmbench/
-!/max5821ctrl/
 !/mesa/
 !/mplayer/
 !/mtd/
