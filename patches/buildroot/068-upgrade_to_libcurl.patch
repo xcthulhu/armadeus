@@ -1,5 +1,13 @@
---- buildroot/package/Config.in.ref	2009-01-05 22:57:30.000000000 +0100
-+++ buildroot/package/Config.in	2009-01-06 00:11:31.000000000 +0100
+Upgrades from package/curl/ @ 7.17.1 to package/libcurl/ @ 7.19.2
+
+Will be removed when updating to latest Builroot.
+
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 11:36:59.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 11:47:38.000000000 +0100
 @@ -145,7 +145,6 @@
  source "package/boa/Config.in"
  source "package/bind/Config.in"
@@ -16,9 +24,10 @@
  source "package/libeXosip2/Config.in"
  source "package/libosip2/Config.in"
  source "package/libpcap/Config.in"
-diff -urN buildroot/package/curl.ori/Config.in buildroot/package/curl/Config.in
---- buildroot/package/curl.ori/Config.in	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/Config.in	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/Config.in
+===================================================================
+--- buildroot.orig/package/curl/Config.in	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,15 +0,0 @@
 -config BR2_PACKAGE_CURL
 -	bool "curl"
@@ -35,9 +44,10 @@ diff -urN buildroot/package/curl.ori/Config.in buildroot/package/curl/Config.in
 -	  and Dict servers, using any of the supported protocols.
 -
 -	  http://curl.haxx.nu/
-diff -urN buildroot/package/curl.ori/curl-7.10.4-path.patch buildroot/package/curl/curl-7.10.4-path.patch
---- buildroot/package/curl.ori/curl-7.10.4-path.patch	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl-7.10.4-path.patch	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl-7.10.4-path.patch
+===================================================================
+--- buildroot.orig/package/curl/curl-7.10.4-path.patch	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,13 +0,0 @@
 ---- curl-7.10.4/lib/Makefile.am
 -+++ curl-7.10.4/lib/Makefile.am
@@ -52,9 +62,10 @@ diff -urN buildroot/package/curl.ori/curl-7.10.4-path.patch buildroot/package/cu
 -         fi
 - 
 - # this hook is mainly for non-unix systems to build even if configure
-diff -urN buildroot/package/curl.ori/curl-7.12.0-nousr.patch buildroot/package/curl/curl-7.12.0-nousr.patch
---- buildroot/package/curl.ori/curl-7.12.0-nousr.patch	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl-7.12.0-nousr.patch	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl-7.12.0-nousr.patch
+===================================================================
+--- buildroot.orig/package/curl/curl-7.12.0-nousr.patch	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,16 +0,0 @@
 ---- curl-7.12.0/configure.ac.orig	2004-05-25 23:43:39.000000000 +0200
 -+++ curl-7.12.0/configure.ac		2004-07-26 15:12:03.029071072 +0200
@@ -72,9 +83,10 @@ diff -urN buildroot/package/curl.ori/curl-7.12.0-nousr.patch buildroot/package/c
 -+     LDFLAGS="$CLEANLDFLAGS"
 -      CPPFLAGS="$CLEANCPPFLAGS -I$EXTRA_SSL/include/openssl -I$EXTRA_SSL/include"
 -      AC_CHECK_LIB(crypto, CRYPTO_add_lock,[
-diff -urN buildroot/package/curl.ori/curl-7.13.1-2005-3185.patch buildroot/package/curl/curl-7.13.1-2005-3185.patch
---- buildroot/package/curl.ori/curl-7.13.1-2005-3185.patch	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl-7.13.1-2005-3185.patch	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl-7.13.1-2005-3185.patch
+===================================================================
+--- buildroot.orig/package/curl/curl-7.13.1-2005-3185.patch	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,16 +0,0 @@
 ---- curl-7.13.1/lib/http_ntlm.c.2005-3185	2005-02-22 13:10:30.000000000 +0100
 -+++ curl-7.13.1/lib/http_ntlm.c	2005-10-19 15:18:42.165859528 +0200
@@ -92,9 +104,10 @@ diff -urN buildroot/package/curl.ori/curl-7.13.1-2005-3185.patch buildroot/packa
 -     memcpy(&ntlmbuf[size], domain, domlen);
 -     size += domlen;
 - 
-diff -urN buildroot/package/curl.ori/curl-7.13.1-auth.patch buildroot/package/curl/curl-7.13.1-auth.patch
---- buildroot/package/curl.ori/curl-7.13.1-auth.patch	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl-7.13.1-auth.patch	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl-7.13.1-auth.patch
+===================================================================
+--- buildroot.orig/package/curl/curl-7.13.1-auth.patch	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,48 +0,0 @@
 ---- curl-7.13.1/lib/http.c.pom	2005-02-19 00:53:07.000000000 +0100
 -+++ curl-7.13.1/lib/http.c	2005-04-27 11:48:40.000000000 +0200
@@ -144,9 +157,10 @@ diff -urN buildroot/package/curl.ori/curl-7.13.1-auth.patch buildroot/package/cu
 - };
 - 
 - struct hostname {
-diff -urN buildroot/package/curl.ori/curl-7.13.1-cve-2005-4077.patch buildroot/package/curl/curl-7.13.1-cve-2005-4077.patch
---- buildroot/package/curl.ori/curl-7.13.1-cve-2005-4077.patch	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl-7.13.1-cve-2005-4077.patch	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl-7.13.1-cve-2005-4077.patch
+===================================================================
+--- buildroot.orig/package/curl/curl-7.13.1-cve-2005-4077.patch	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,23 +0,0 @@
 ---- curl-7.13.1/lib/url.c.cve-2005-4077	2005-12-08 13:08:03.000000000 +0100
 -+++ curl-7.13.1/lib/url.c	2005-12-08 13:15:56.565790336 +0100
@@ -171,9 +185,10 @@ diff -urN buildroot/package/curl.ori/curl-7.13.1-cve-2005-4077.patch buildroot/p
 -   if(NULL == conn->host.rawalloc)
 -     return CURLE_OUT_OF_MEMORY;
 -   conn->host.name = conn->host.rawalloc;
-diff -urN buildroot/package/curl.ori/curl.mk buildroot/package/curl/curl.mk
---- buildroot/package/curl.ori/curl.mk	2008-11-03 09:15:13.000000000 +0100
-+++ buildroot/package/curl/curl.mk	1970-01-01 01:00:00.000000000 +0100
+Index: buildroot/package/curl/curl.mk
+===================================================================
+--- buildroot.orig/package/curl/curl.mk	2008-11-03 09:15:13.000000000 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,97 +0,0 @@
 -#############################################################
 -#
@@ -272,4 +287,85 @@ diff -urN buildroot/package/curl.ori/curl.mk buildroot/package/curl/curl.mk
 -ifeq ($(strip $(BR2_PACKAGE_LIBCURL)),y)
 -TARGETS+=libcurl
 -endif
-
+Index: buildroot/package/libcurl/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/libcurl/Config.in	2010-01-25 11:48:40.000000000 +0100
+@@ -0,0 +1,13 @@
++config BR2_PACKAGE_LIBCURL
++	bool "libcurl"
++	help
++	  cURL is a tool for getting files from FTP, HTTP, Gopher, Telnet,
++	  and Dict servers, using any of the supported protocols.
++
++	  http://curl.haxx.nu/
++
++config BR2_PACKAGE_CURL
++	bool "curl binary"
++	depends on BR2_PACKAGE_LIBCURL
++	help
++	  Install curl binary as well
+Index: buildroot/package/libcurl/libcurl-7.19.2-fix-ssl-no-verbose.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/libcurl/libcurl-7.19.2-fix-ssl-no-verbose.patch	2010-01-25 11:48:40.000000000 +0100
+@@ -0,0 +1,25 @@
++ssluse.c: fix build breakage with --with-ssl --disable-verbose
++
++Revision 1.206 of ssluse.c removed the prefix argument to asn1_output,
++but it is still referenced in the CURL_DISABLE_VERBOSE_STRINGS case.
++
++Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
++---
++ lib/ssluse.c |    4 ----
++ 1 file changed, 4 deletions(-)
++
++Index: curl-7.19.2/lib/ssluse.c
++===================================================================
++--- curl-7.19.2.orig/lib/ssluse.c
+++++ curl-7.19.2/lib/ssluse.c
++@@ -923,10 +923,6 @@
++   int i;
++   int year=0,month=0,day=0,hour=0,minute=0,second=0;
++ 
++-#ifdef CURL_DISABLE_VERBOSE_STRINGS
++-  (void)prefix;
++-#endif
++-
++   i=tm->length;
++   asn1_string=(const char *)tm->data;
++ 
+Index: buildroot/package/libcurl/libcurl.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/libcurl/libcurl.mk	2010-01-25 11:48:40.000000000 +0100
+@@ -0,0 +1,29 @@
++#############################################################
++#
++# libcurl
++#
++#############################################################
++LIBCURL_VERSION = 7.19.2
++LIBCURL_SOURCE = curl-$(LIBCURL_VERSION).tar.bz2
++LIBCURL_SITE = http://curl.haxx.se/download/
++LIBCURL_INSTALL_STAGING = YES
++LIBCURL_CONF_OPT = --disable-verbose --disable-manual --enable-hidden-symbols \
++		   $(DISABLE_NLS) $(DISABLE_LARGEFILE) $(DISABLE_IPV6)
++
++ifeq ($(BR2_PACKAGE_OPENSSL),y)
++LIBCURL_DEPENDENCIES += openssl
++LIBCURL_CONF_ENV += ac_cv_lib_crypto_CRYPTO_lock=yes
++LIBCURL_CONF_OPT += --with-ssl=$(STAGING_DIR)/usr --with-random=/dev/urandom
++endif
++
++$(eval $(call AUTOTARGETS,package,libcurl))
++
++$(LIBCURL_HOOK_POST_INSTALL):
++	rm -rf $(TARGET_DIR)/usr/bin/curl-config \
++	       $(if $(BR2_PACKAGE_CURL),,$(TARGET_DIR)/usr/bin/curl)
++	touch $@
++
++curl: libcurl
++curl-clean: libcurl-clean
++curl-dirclean: libcurl-dirclean
++curl-source: libcurl-source

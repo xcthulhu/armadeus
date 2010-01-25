@@ -12,3 +12,5 @@ rm -f  buildroot/package/proftpd/proftpd-1.3.2-fix-kernel-header-capability-vers
 rm -rf buildroot/package/uucp/
 rm -f  buildroot/package/audio/libsndfile/libsndfile-1.0.*-srconly.patch
 rm -rf buildroot/package/audio/flite/
+rm -rf buildroot/package/libcurl/
+
