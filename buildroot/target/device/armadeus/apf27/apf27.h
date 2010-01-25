@@ -111,6 +111,7 @@
  * Boot options. Setting delay to -1 stops autostart count down.
  */
 #define CONFIG_BOOTDELAY	20
+#define CONFIG_ZERO_BOOTDELAY_CHECK
 
 #define CONFIG_BOOTARGS \
 	CONFIG_CONSOLE " root=/dev/mtdblock4 rootfstype=jffs2 " MTDPARTS_DEFAULT
