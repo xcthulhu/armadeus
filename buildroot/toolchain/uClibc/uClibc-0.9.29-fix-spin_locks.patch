@@ -1,3 +1,7 @@
+Spinlocks are still not yet implemented in uClibc for ARM targets.
+However, Xenomai-2.4.3 use this flags to enable or not spinlocking.
+If _POSIX_SPIN_LOCKS is set, Xenomai will fail to compile. So comment it.
+
 diff -purN uClibc-0.9.29.ori/libc/sysdeps/linux/common/bits/posix_opt.h uClibc-0.9.29/libc/sysdeps/linux/common/bits/posix_opt.h
 --- uClibc-0.9.29.ori/libc/sysdeps/linux/common/bits/posix_opt.h	2008-04-26 15:25:03.000000000 +0200
 +++ uClibc-0.9.29/libc/sysdeps/linux/common/bits/posix_opt.h	2008-04-26 15:39:38.000000000 +0200
@@ -5,9 +9,9 @@ diff -purN uClibc-0.9.29.ori/libc/sysdeps/linux/common/bits/posix_opt.h uClibc-0
  /* We support the Timeouts option.  */
  #define _POSIX_TIMEOUTS	200112L
  
-+/* Armadeus Patch: Spinlock is still not yet implemented in UcLibc for Arm    */
-+/* targets. However, Xenomai-2.4.3 use this flags to enable or not            */
-+/* spinlocking. If this define is set, Xenomai will fail to compile           */
++/* Armadeus patch for Xenomai-2.4.3: Spinlocks are still not yet implemented
++ * in uClibc for ARM targets.
++ */
  /* We support spinlocks.  */
 -#define _POSIX_SPIN_LOCKS	200112L
 +/* #define _POSIX_SPIN_LOCKS	200112L */

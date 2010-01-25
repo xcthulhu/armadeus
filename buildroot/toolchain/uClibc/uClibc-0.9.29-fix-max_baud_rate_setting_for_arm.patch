@@ -1,3 +1,8 @@
+uClibc 0.9.29 limits terminal baud rate to 115200 by default. Removes this
+limitation.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
 Index: uClibc-0.9.29/libc/sysdeps/linux/common/bits/termios.h
 ===================================================================
 --- uClibc-0.9.29/libc/sysdeps/linux/common/bits/termios.h	2009-12-10 15:05:16.000000000 +0100
