@@ -1,6 +1,6 @@
 Stops Linux building when modules compilation fails.
 
-Sent to Buildroot guys.
+Sent to Buildroot guys. Not integrated.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 

@@ -3,6 +3,10 @@ Deals with following points:
 * pb when compiled with EABI
 * pb when compiled with -D_FILE_OFFSET_BITS=64 flag
 
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Needs to be merged with latest BR modifications.
+
 --- buildroot/package/audio/alsa-lib/alsa-lib.mk.org	2008-12-11 14:35:36.000000000 +0100
 +++ buildroot/package/audio/alsa-lib/alsa-lib.mk	2008-12-11 14:43:07.000000000 +0100
 @@ -11,14 +11,16 @@

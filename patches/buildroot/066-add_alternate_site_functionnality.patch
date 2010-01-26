@@ -1,3 +1,5 @@
+Integrated in latest BR.
+
 --- buildroot/package/Makefile.autotools.in.ori	2008-11-03 09:15:31.000000000 +0100
 +++ buildroot/package/Makefile.autotools.in	2009-01-03 20:17:03.000000000 +0100
 @@ -135,16 +135,20 @@

@@ -1,3 +1,5 @@
+Probably no more needed with latest BR.
+
 diff -urN buildroot/package.ori/libpcap/libpcap.mk buildroot/package/libpcap/libpcap.mk
 --- buildroot/package.ori/libpcap/libpcap.mk	2008-11-03 09:15:26.000000000 +0100
 +++ buildroot/package/libpcap/libpcap.mk	2009-01-05 22:42:26.000000000 +0100

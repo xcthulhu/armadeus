@@ -1,3 +1,5 @@
+Latest BR downgrades to 0.1.12-10 from snapshot.debian.net
+
 --- buildroot/package/libusb/libusb.mk~	2008-11-21 09:15:25.000000000 +0100
 +++ buildroot/package/libusb/libusb.mk	2008-11-22 18:12:18.000000000 +0100
 @@ -4,7 +4,7 @@

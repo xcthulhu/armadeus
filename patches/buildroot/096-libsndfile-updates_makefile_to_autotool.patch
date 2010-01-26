@@ -1,6 +1,6 @@
 Moves libsndfile to autotools infrastructure and bump version to 1.0.21.
 
-Will be removed or merged when updating to Buildroot 2010.02 (send 1.0.21
+Will have to be merged when updating to Buildroot 2010.02 (send 1.0.21
 modifications upstream; remove STRIP hack before)
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>

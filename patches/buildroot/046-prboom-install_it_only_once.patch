@@ -2,6 +2,8 @@ Install PrBoom only once.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
+Integrated in latest BR.
+
 Index: buildroot/package/games/prboom/prboom.mk
 ===================================================================
 --- buildroot/package/games/prboom/prboom.mk	(revision 23937)

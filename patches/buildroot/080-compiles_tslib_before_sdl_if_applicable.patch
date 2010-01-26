@@ -4,6 +4,8 @@ touchscreen's support in SDL is crappy.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
+Integrated by BR for 2010.02.
+
 Index: buildroot/package/sdl/sdl.mk
 ===================================================================
 --- buildroot.orig/package/sdl/sdl.mk	2009-06-23 18:44:22.000000000 +0200

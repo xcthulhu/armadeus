@@ -1,3 +1,11 @@
+Some systems might only want to install ntpdate without installing
+(and launching at each startup ntpd daemon). So makes the installation of
+ntpd selectable.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Would BR be interested ?
+
 --- buildroot/package/ntp/Config.in	2008-11-03 09:15:26.000000000 +0100
 +++ buildroot/package/ntp/Config.in	2008-11-26 12:11:59.000000000 +0100
 @@ -6,6 +6,12 @@
