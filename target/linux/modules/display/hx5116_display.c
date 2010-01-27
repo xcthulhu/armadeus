@@ -88,13 +88,11 @@ static int  hx5116_display_remove(struct display_device *dev)
 static void hx5116_display_suspend(struct display_device *dev, pm_message_t state)
 {
 	struct hx5116_display *hx5116_dev = dev->priv_data;
-	hx5116_dev->power_on(0); /* switch off AMOLED power */
 }
 
 static void hx5116_display_resume(struct display_device *dev)
 {
 	struct hx5116_display *hx5116_dev = dev->priv_data;
-	hx5116_dev->power_on(1); /* switch on AMOLED power */
 }
 #else
 #define hx5116_display_suspend	NULL
@@ -156,9 +154,6 @@ static void hx5116_init_sequence(struct hx5116_display *hx5116_dev)
 	hx5116_write (hx5116_dev, 0x2A, 0x07); /*set B_255*/
 	hx5116_write (hx5116_dev, 0x06, 0x03); /*set display on*/
 
-	msleep(31); /* Wait for 15 Vsync to power on screen */
-
-	hx5116_dev->power_on(1); /* switch on AMOLED power */
 }
 
 
@@ -204,7 +199,6 @@ static int hx5116_spi_remove(struct spi_device *pdev)
 {
 	struct hx5116_display *hx5116_dev = pdev->dev.platform_data;
 
-	hx5116_dev->power_on(0); /* switch off AMOLED power */
 	hx5116_dev->reset_on(1); /* let hx5116 in reset */
 	display_device_unregister(hx5116_dev->display_dev);
 	return 0;
