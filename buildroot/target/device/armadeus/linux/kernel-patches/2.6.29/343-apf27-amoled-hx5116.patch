@@ -1,8 +1,8 @@
 Index: linux-2.6.29.6/include/video/hx5116.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/video/hx5116.h	2010-01-14 14:19:29.000000000 +0100
-@@ -0,0 +1,113 @@
++++ linux-2.6.29.6/include/video/hx5116.h	2010-01-27 17:47:15.000000000 +0100
+@@ -0,0 +1,112 @@
 +/*
 + *
 + * HX5116 160CH Single Chip Driver for LPTS AMOLED
@@ -110,7 +110,6 @@ Index: linux-2.6.29.6/include/video/hx5116.h
 +struct hx5116_display {
 +	struct  display_device *display_dev;
 +	struct  spi_device *spi;  /* spi bus */
-+	void	(*power_on)(int); /* function that power on screen */
 +	void	(*reset_on)(int); /* function that let hx5116 on reset */
 +	int	gcontrast_value;  /* current contrast value */
 +};
