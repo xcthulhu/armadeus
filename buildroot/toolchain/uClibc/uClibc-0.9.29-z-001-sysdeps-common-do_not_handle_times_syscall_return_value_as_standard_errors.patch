@@ -1,0 +1,52 @@
+Implements "times" syscall like on glibc: only EFAULT is considered as a valid
+error code from Linux kernel.
+To handle architectures that can't distinguish the error from a return value,
+make the application segfault in case of error (== bad struct tms parameter).
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: uClibc-0.9.29/libc/sysdeps/linux/common/times.c
+===================================================================
+--- uClibc-0.9.29.orig/libc/sysdeps/linux/common/times.c	2010-01-27 10:15:38.000000000 +0100
++++ uClibc-0.9.29/libc/sysdeps/linux/common/times.c	2010-01-27 10:49:37.000000000 +0100
+@@ -12,5 +12,39 @@
+ 
+ libc_hidden_proto(times)
+ 
+-_syscall1(clock_t, times, struct tms *, buf);
++clock_t times(struct tms *buf)
++{
++  INTERNAL_SYSCALL_DECL (err);
++  clock_t ret = INTERNAL_SYSCALL (times, err, 1, buf);
++  if (INTERNAL_SYSCALL_ERROR_P (ret, err)
++      && __builtin_expect (INTERNAL_SYSCALL_ERRNO (ret, err) == EFAULT, 0))
++    {
++      /* This might be an error or not.  For architectures which have
++         no separate return value and error indicators we cannot
++         distinguish a return value of -1 from an error.  Do it the
++         hard way.  We crash applications which pass in an invalid BUF
++         pointer.  */
++#define touch(v) \
++      do {                                                                    \
++        clock_t temp = v;                                                     \
++        asm volatile ("" : "+r" (temp));                                      \
++        v = temp;                                                             \
++      } while (0)
++      touch (buf->tms_utime);
++      touch (buf->tms_stime);
++      touch (buf->tms_cutime);
++      touch (buf->tms_cstime);
++
++      /* If we come here the tms struct is valid and the kernel did not
++         return an EFAULT error.  Return the value given by the kernel.  */
++    }
++
++  /* Return value (clock_t) -1 signals an error to userspace, but if there
++     wasn't any, return 0 instead. */
++  if (ret == (clock_t) -1)
++    return (clock_t) 0;
++
++  return ret;
++}
++
+ libc_hidden_def(times)
