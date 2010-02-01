@@ -182,7 +182,9 @@ static void inline max1027_wait_end_of_conv(struct max1027 *max1027)
 
 	delay = wait_event_timeout(max1027->conv_wq, max1027->status==0, msecs_to_jiffies(20));
 	if (delay == 0) {
+#ifdef DEBUG
 		printk("T%lu ", max1027->status);
+#endif
 		if (test_bit(CONVERSION_RUNNING, &max1027->status)) {
 			max1027->missed_eoc++;
 			clear_bit(CONVERSION_RUNNING, &max1027->status);
