@@ -49,7 +49,7 @@
 
 
 #define DRIVER_NAME    "max1027"
-#define DRIVER_VERSION "0.6"
+#define DRIVER_VERSION "0.7"
 
 
 /* Internal registers prefixes */
@@ -182,9 +182,7 @@ static void inline max1027_wait_end_of_conv(struct max1027 *max1027)
 
 	delay = wait_event_timeout(max1027->conv_wq, max1027->status==0, msecs_to_jiffies(20));
 	if (delay == 0) {
-#ifdef DEBUG
-		printk("T%lu ", max1027->status);
-#endif
+		printk(KERN_WARNING "error: missed conversion %lu ", max1027->status);
 		if (test_bit(CONVERSION_RUNNING, &max1027->status)) {
 			max1027->missed_eoc++;
 			clear_bit(CONVERSION_RUNNING, &max1027->status);
@@ -225,16 +223,10 @@ static void max1027_start_conv(struct max1027 *max1027, struct adc_channel *chan
 
 	if (channel)
 		clear_bit(DATA_AVAILABLE, &channel->status);
-	/* Conversion start depends on CNVST pin presence and clock mode */
-	if ((max1027->cnvst < 0) || (max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
-		/* Use SPI triggered conv. */
-		max1027_send_cmd(current_spi, max1027->conv_reg);
-	} else {
-		/* Use CNVST triggered conv. */
-		gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
-		udelay(1);
-		gpio_set_value(max1027->cnvst, 1);
-	}
+	/* Use CNVST triggered conv. */
+	gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
+	udelay(1);
+	gpio_set_value(max1027->cnvst, 1);
 } 
 
 /* Called when SPI got results from MAX1027 */
@@ -521,20 +513,23 @@ static ssize_t max1027_set_conversion(struct device *dev,
 	max1027_flush_all_channels(max1027);
 	/* Warn if a conversion is already launched and selected mode will
 	   trigger a new one */
-	if ((max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
-	        if (test_and_set_bit(CONVERSION_RUNNING, &max1027->status)) {
-			/* Should not occur !! */
-			printk("%s: conv already running!\n", __func__);
-		}
+        if (test_and_set_bit(CONVERSION_RUNNING, &max1027->status)) {
+		/* Should not occur !! */
+		printk("%s: conv already running!\n", __func__);
 	}
 	/* Send value to chip */
 	max1027_send_cmd(spi, MAX1027_REG_CONV | val);
+	if (!(max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
+		mdelay(1); 
+		/* Use CNVST triggered conv. */
+		gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
+		udelay(1);
+		gpio_set_value(max1027->cnvst, 1);
+	}
 
 	/* Wait until current convertion is finished if corresponding clock
 	   mode is selected */
-	if ((max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
-		max1027_wait_end_of_conv(max1027);
-	}
+	max1027_wait_end_of_conv(max1027);
 	pr_debug("%s end\n", __FUNCTION__);
 
 	mutex_unlock(&max1027->update_lock);
