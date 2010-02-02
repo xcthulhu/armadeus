@@ -1,0 +1,12 @@
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:05:22.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:06:55.000000000 +0100
+@@ -462,6 +462,7 @@
+ source "package/lua/Config.in"
+ source "package/microperl/Config.in"
+ source "package/python/Config.in"
++source "package/pyserial/Config.in"
+ source "package/ruby/Config.in"
+ source "package/tcl/Config.in"
+ source "package/php/Config.in"

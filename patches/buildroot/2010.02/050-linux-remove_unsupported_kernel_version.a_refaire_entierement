@@ -1,0 +1,118 @@
+Index: buildroot/target/linux/Config.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Config.in.advanced	2009-09-24 18:58:49.000000000 +0200
++++ buildroot/target/linux/Config.in.advanced	2009-09-24 22:08:05.000000000 +0200
+@@ -32,6 +32,7 @@
+ # --- These 'constants' requires regular maintenance, so put them first
+ config BR2_KERNEL_PATCH_LEVEL
+ 	string
++	default "2" if BR2_LINUX_2_6_27 && BR2_KERNEL_ADD_LATEST_MINORPATCH
+ 	default "3" if BR2_LINUX_2_6_26 && BR2_KERNEL_ADD_LATEST_MINORPATCH
+ 	default "9" if BR2_LINUX_2_6_25 && BR2_KERNEL_ADD_LATEST_MINORPATCH
+ 	default "7" if BR2_LINUX_2_6_24 && BR2_KERNEL_ADD_LATEST_MINORPATCH
+@@ -140,20 +141,35 @@
+ 	help
+ 	  Linux 2.6.26.3
+ 
++config BR2_LINUX_2_6_28
++	bool "Linux 2.6.28"
++	select BR2_KERNEL_BASE
++	help
++	  Linux 2.6.28
++
++config BR2_LINUX_2_6_27
++	bool "Linux 2.6.27"
++	select BR2_KERNEL_BASE
++	help
++	  Linux 2.6.27
++
+ config BR2_LINUX_2_6_26
+ 	bool "Linux 2.6.26"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.26
+ 
+ config BR2_LINUX_2_6_25
+ 	bool "Linux 2.6.25"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.25
+ 
+ config BR2_LINUX_2_6_24
+ 	bool "Linux 2.6.24"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.24
+@@ -166,18 +182,21 @@
+ 
+ config BR2_LINUX_2_6_22_10
+ 	bool "Linux 2.6.22.10"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_PREPATCHED
+ 	help
+ 	  Linux 2.6.22.10
+ 
+ config BR2_LINUX_2_6_22_1
+ 	bool "Linux 2.6.22.1"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_PREPATCHED
+ 	help
+ 	  Linux 2.6.22.1
+ 
+ config BR2_LINUX_2_6_22
+ 	bool "Linux 2.6.22"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_LATEST
+ 	select BR2_KERNEL_BASE
+ 	help
+@@ -185,39 +204,38 @@
+ 
+ config BR2_LINUX_2_6_21_7
+ 	bool "Linux 2.6.21.7"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_PREPATCHED
+ 	help
+ 	  Linux 2.6.21.1
+ 
+ config BR2_LINUX_2_6_21_5
+ 	bool "Linux 2.6.21.5"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_PREPATCHED
+ 	help
+ 	  Linux 2.6.21.5
+ 
+ config BR2_LINUX_2_6_21
+ 	bool "Linux 2.6.21"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.21
+ 
+ config BR2_LINUX_2_6_20
+ 	bool "Linux 2.6.20"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+ 	  Linux 2.6.20
+ 
+-config BR2_LINUX_2_6_27
+-	bool "Linux 2.6.27"
+-	select BR2_KERNEL_BASE
+-	help
+-	  Linux 2.6.27
+-
+-config BR2_LINUX_2_6_28
+-	bool "Linux 2.6.28"
++config BR2_LINUX_2_6_18
++	bool "Linux 2.6.18"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 	help
+-	  Linux 2.6.28
++	  Linux 2.6.18
+ 
+ config BR2_LINUX26_CUSTOM
+ 	bool "Linux <custom> version"

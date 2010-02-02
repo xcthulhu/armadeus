@@ -1,0 +1,13 @@
+Check if ts_test is installed now tslib has moved to autotools infrastructure.
+
+--- buildrootref/package/tslib/tslib.mk	2007-11-18 19:02:43.000000000 +0100
++++ buildroot/package/tslib/tslib.mk	2007-11-18 19:04:18.000000000 +0100
+@@ -77,6 +77,8 @@
+ 	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/ts_calibrate
+ 	cp -dpf $(STAGING_DIR)/usr/bin/ts_finddev $(TARGET_DIR)/usr/bin/
+ 	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/ts_finddev
++	cp -dpf $(STAGING_DIR)/usr/bin/ts_test $(TARGET_DIR)/usr/bin/
++	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/ts_test
+ 	cp -dpf $(STAGING_DIR)/usr/bin/inputattach $(TARGET_DIR)/usr/bin/
+ 	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/inputattach
+ 	cp -dpf package/tslib/ts.conf $(TARGET_DIR)/etc/

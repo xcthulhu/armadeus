@@ -1,0 +1,25 @@
+diff -ruN buildroot/package/Config.in buildroot.new/package/Config.in
+--- buildroot/package/Config.in	2009-03-09 16:57:56.000000000 +0100
++++ buildroot.new/package/Config.in	2009-02-24 11:33:56.000000000 +0100
+@@ -113,6 +113,8 @@
+ source "package/which/Config.in"
+ endif
+ 
++source "package/xenomai/Config.in"
++
+ source "package/database/Config.in"
+ 
+ # text editors
+diff -urN buildroot/target/linux/Makefile.in.advanced buildroot.new/target/linux/Makefile.in.advanced
+--- buildroot/target/linux/Makefile.in.advanced	2009-02-24 11:42:16.000000000 +0100
++++ buildroot.new/target/linux/Makefile.in.advanced	2009-02-24 11:40:07.000000000 +0100
+@@ -369,6 +369,9 @@
+ 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
+ 	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
+ endif
++ifeq ($(BR2_PACKAGE_XENOMAI),y)
++		make -C ../buildroot xenomai-patch-kernel
++endif
+ 	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) oldconfig
+ 	touch $@
+

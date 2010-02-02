@@ -1,0 +1,151 @@
+Never send to BR.
+
+Index: buildroot/target/u-boot/Config.in
+===================================================================
+--- buildroot.orig/target/u-boot/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2010-01-06 22:23:02.000000000 +0100
+@@ -6,11 +6,18 @@
+ if BR2_TARGET_UBOOT
+ config BR2_TARGET_UBOOT_BOARDNAME
+ 	string "board name"
+-	default "$(BOARD_NAME)"
++	default "$(BR2_BOARD_NAME)"
+ 	help
+ 	  One of U-Boot supported boards to be built.
+ 	  This will be suffixed with _config to meet U-Boot standard naming.
+ 
++config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
++	string "U-Boot header file"
++	depends on BR2_TARGET_UBOOT
++	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
++	help
++	  U-Boot config Header file to use to build U-Boot for your target.
++
+ choice
+ 	prompt "U-Boot Version"
+ 	default BR2_TARGET_UBOOT_2009_11
+@@ -132,6 +139,13 @@
+ 	bool "fw_printenv tool in target"
+ 	help
+ 	  Install fw_printenv / fw_setenv tools in target.
++
++config BR2_TARGET_UBOOT_COPYTO
++	string "also copy the image to..."
++	depends on BR2_TARGET_UBOOT
++	default ""
++	help
++	  Copies the resulting image to a secondary location.
+ 
+ menuconfig BR2_TARGET_UBOOT_DEFAULT_ENV
+ 	bool "Generate a default environment"
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-01-12 11:53:17.000000000 +0100
+@@ -11,7 +11,14 @@
+ U_BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U_BOOT_VERSION)
+ U_BOOT_PATCH_DIR:=$(BUILD_DIR)/u-boot-patches
+ U_BOOT_CAT:=$(BZCAT)
++
++ifndef U_BOOT_BIN
+ U_BOOT_BIN:=u-boot.bin
++endif
++ifndef U_BOOT_BINLOC
++U_BOOT_BINLOC:=u-boot.bin
++endif
++
+ U_BOOT_TARGET_BIN:=u-boot-$(U_BOOT_VERSION)-$(DATE).bin
+ 
+ U_BOOT_TOOLS:=$(HOST_DIR)/usr/bin/mkimage
+@@ -45,6 +52,8 @@
+ 		| tar -C $(PROJECT_BUILD_DIR) $(TAR_OPTIONS) -
+ 	touch $@
+ 
++u-boot-unpacked: $(U_BOOT_DIR)/.unpacked
++
+ $(U_BOOT_DIR)/.patched: $(U_BOOT_DIR)/.unpacked
+ 	toolchain/patch-kernel.sh $(U_BOOT_DIR) target/u-boot/ \
+ 		u-boot-$(U_BOOT_VERSION)-\*.patch \
+@@ -80,6 +89,9 @@
+ ifneq ($(strip $(BR2_PROJECT)),"")
+ 	$(call insert_define, CONFIG_HOSTNAME, $(BR2_PROJECT))
+ endif
++ifneq ($(strip $(BOARD_NAME)),"")
++	$(call insert_define, CONFIG_BOARD_NAME, $(BOARD_NAME))
++endif
+ ifneq ($(strip $(BR2_TARGET_UBOOT_SERVERIP)),"")
+ 	$(call insert_define, CONFIG_SERVERIP, $(BR2_TARGET_UBOOT_SERVERIP))
+ endif
+@@ -110,27 +122,35 @@
+ endif
+ 	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
+ endif # BR2_TARGET_UBOOT_DEFAULT_ENV
++ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
++	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
++ifneq ($(BR2_TARGET_ARMADEUS_NR_SDRAM),)
++	$(SED) "s,^#define CONFIG_NR_DRAM_BANKS.*,#define CONFIG_NR_DRAM_BANKS $(BR2_TARGET_ARMADEUS_NR_SDRAM),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
+ 	touch $@
+ 
+-$(U_BOOT_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/.header_modified
++$(U_BOOT_DIR)/$(U_BOOT_BINLOC): $(U_BOOT_DIR)/.header_modified
+ 	$(TARGET_CONFIGURE_OPTS) \
+ 		CFLAGS="$(TARGET_CFLAGS)" \
+ 		LDFLAGS="$(TARGET_LDFLAGS)" \
+ 		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
+ 		 -C $(U_BOOT_DIR)
+ 
+-$(BINARIES_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
+-	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)
++$(BINARIES_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
++	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BINLOC) $(BINARIES_DIR)/$(U_BOOT_BIN)
+ 	cp -dpf $(U_BOOT_DIR)/tools/$(U_BOOT_TOOLS_BIN) $(STAGING_DIR)/usr/bin/
+ 
+-$(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BIN)
++$(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 	mkdir -p $(@D)
+ 	$(TARGET_CC) -I$(U_BOOT_DIR)/include -DUSE_HOSTCC -o $@ \
+ 		$(U_BOOT_DIR)/tools/mkimage.c \
+ 		$(addprefix $(U_BOOT_DIR)/tools/,crc32.c image.c md5.c sha1.c fdt*.c)
+ 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
+ 
+-$(TARGET_DIR)/usr/sbin/fw_printenv: $(U_BOOT_DIR)/$(U_BOOT_BIN)
++$(TARGET_DIR)/usr/sbin/fw_printenv: $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 	mkdir -p $(@D)
+ 	$(TARGET_CC) -I$(U_BOOT_DIR)/include -I$(LINUX_HEADERS_DIR)/include \
+ 		-DUSE_HOSTCC -o $@ \
+@@ -138,11 +158,22 @@
+ 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
+ 	ln -sf fw_printenv $(TARGET_DIR)/usr/sbin/fw_setenv
+ 
++U_BOOT_COPYTO := $(strip $(subst ",,$(BR2_TARGET_UBOOT_COPYTO)))
++#"))
++
+ u-boot: $(BINARIES_DIR)/$(U_BOOT_BIN) $(U_BOOT_TARGET_TOOLS)
++ifneq ($(U_BOOT_COPYTO),)
++	@cp -f $(BINARIES_DIR)/$(U_BOOT_BIN) $(U_BOOT_COPYTO)
++endif
+ 
+ u-boot-clean:
+-	-$(MAKE) -C $(U_BOOT_DIR) clean
++	$(TARGET_CONFIGURE_OPTS) \
++		CFLAGS="$(TARGET_CFLAGS)" \
++		LDFLAGS="$(TARGET_LDFLAGS)" \
++		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
++		 -C $(U_BOOT_DIR) clean
+ 	rm -f $(STAGING_DIR)/usr/bin/$(U_BOOT_TOOLS_BIN) $(U_BOOT_TARGET_TOOLS)
++	rm -f $(U_BOOT_DIR)/$(U_BOOT_BINLOC)
+ 
+ u-boot-dirclean:
+ 	rm -rf $(U_BOOT_DIR)
+@@ -173,5 +204,7 @@
+ 	@echo BR2_TARGET_UBOOT_BOOTARGS = $(BR2_TARGET_UBOOT_BOOTARGS)
+ 	@echo BR2_TARGET_UBOOT_BOOTCMD = $(BR2_TARGET_UBOOT_BOOTCMD)
+ 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
++	@echo BR2_TARGET_ARMADEUS_SDRAM_SIZE = $(BR2_TARGET_ARMADEUS_SDRAM_SIZE)
++	@echo BR2_TARGET_ARMADEUS_NR_SDRAM = $(BR2_TARGET_ARMADEUS_NR_SDRAM)
+ 	@echo
+ 	@exit 0

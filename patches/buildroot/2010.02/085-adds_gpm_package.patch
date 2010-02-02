@@ -1,0 +1,168 @@
+Add GPM (General Purpose Mouse server) to Buildroot.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/package/gpm/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/gpm/Config.in	2010-01-25 10:00:14.000000000 +0100
+@@ -0,0 +1,7 @@
++config BR2_PACKAGE_GPM
++	bool "gpm mouse server"
++	help
++	  gpm means general purpose mouse and is the mouse support for Linux
++	  in the console.
++
++	  http://www.nico.schottelius.org/software/gpm/
+Index: buildroot/package/gpm/gpm.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/gpm/gpm.mk	2010-01-25 10:00:14.000000000 +0100
+@@ -0,0 +1,18 @@
++#############################################################
++#
++# General Purpose Mouse server for Linux console.
++#
++#############################################################
++
++GPM_VERSION:=1.20.6
++GPM_SOURCE:=gpm-$(GPM_VERSION).tar.bz2
++GPM_SITE:=http://unix.schottelius.org/gpm/archives/
++GPM_INSTALL_STAGING:=YES
++GPM_INSTALL_TARGET:=YES
++
++$(eval $(call AUTOTARGETS,package,gpm))
++
++$(GPM_HOOK_POST_INSTALL): $(GPM_TARGET_INSTALL_TARGET)
++	$(STRIPCMD) $(STRIP_STRIP_ALL) $(TARGET_DIR)/usr/sbin/gpm
++	touch $@
++
+Index: buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch	2010-01-25 10:00:14.000000000 +0100
+@@ -0,0 +1,77 @@
++
++Replaces all "obsolete" functions (at least to compile for uClibc).
++
++diff -urN gpm-1.20.6/src/daemon/old_main.c gpm-1.20.6.mod/src/daemon/old_main.c
++--- gpm-1.20.6/src/daemon/old_main.c	2009-02-09 10:58:53.000000000 +0100
+++++ gpm-1.20.6.mod/src/daemon/old_main.c	2009-09-25 10:27:54.000000000 +0200
++@@ -85,7 +85,7 @@
++    /* control node */
++ 
++    if((ctlfd=socket(AF_UNIX,SOCK_STREAM,0))==-1) gpm_report(GPM_PR_OOPS,GPM_MESS_SOCKET_PROB);
++-   bzero((char *)&ctladdr,sizeof(ctladdr));
+++   memset((char *)&ctladdr, 0, sizeof(ctladdr));
++    ctladdr.sun_family=AF_UNIX;
++    strcpy(ctladdr.sun_path,GPM_NODE_CTL);
++    unlink(GPM_NODE_CTL);
++diff -urN gpm-1.20.6/src/daemon/open_console.c gpm-1.20.6.mod/src/daemon/open_console.c
++--- gpm-1.20.6/src/daemon/open_console.c	2009-02-09 10:58:53.000000000 +0100
+++++ gpm-1.20.6.mod/src/daemon/open_console.c	2009-09-25 10:33:02.000000000 +0200
++@@ -21,7 +21,9 @@
++ 
++ #include <fcntl.h>                  /* open and co.      */
++ #include <sys/stat.h>               /* stat()            */
++-#include <stropts.h>                /* ioctl             */
+++#if !(defined(__linux__))
+++# include <stropts.h>                /* ioctl             */
+++#endif
++ 
++ /* Linux specific (to be outsourced in gpm2 */
++ #include <linux/serial.h>           /* for serial console check */
++diff -urN gpm-1.20.6/src/daemon/processconn.c gpm-1.20.6.mod/src/daemon/processconn.c
++--- gpm-1.20.6/src/daemon/processconn.c	2009-02-09 10:58:53.000000000 +0100
+++++ gpm-1.20.6.mod/src/daemon/processconn.c	2009-09-25 10:27:26.000000000 +0200
++@@ -45,7 +45,7 @@
++ 
++ /*....................................... Accept */
++ 
++-   bzero((char *) &addr, sizeof(addr));
+++   memset((char *) &addr, 0, sizeof(addr));
++    addr.sun_family = AF_UNIX;
++ 
++    len = sizeof(addr);
++diff -urN gpm-1.20.6/src/lib/liblow.c gpm-1.20.6.mod/src/lib/liblow.c
++--- gpm-1.20.6/src/lib/liblow.c	2009-02-09 10:58:53.000000000 +0100
+++++ gpm-1.20.6.mod/src/lib/liblow.c	2009-09-25 10:28:28.000000000 +0200
++@@ -290,7 +290,7 @@
++       }
++ 
++ #ifndef SO_PEERCRED
++-      bzero((char *)&addr,sizeof(addr));
+++      memset((char *)&addr, 0, sizeof(addr));
++       addr.sun_family=AF_UNIX;
++       if (!(sock_name = tempnam (0, "gpm"))) {
++          gpm_report(GPM_PR_ERR,GPM_MESS_TEMPNAM,strerror(errno));
++@@ -304,7 +304,7 @@
++       }
++ #endif
++ 
++-      bzero((char *)&addr,sizeof(addr));
+++      memset((char *)&addr, 0, sizeof(addr));
++       addr.sun_family=AF_UNIX;
++       strcpy(addr.sun_path, GPM_NODE_CTL);
++       i=sizeof(addr.sun_family)+strlen(GPM_NODE_CTL);
++diff -urN gpm-1.20.6/src/synaptics.c gpm-1.20.6.mod/src/synaptics.c
++--- gpm-1.20.6/src/synaptics.c	2009-02-09 10:58:53.000000000 +0100
+++++ gpm-1.20.6.mod/src/synaptics.c	2009-09-25 10:36:01.000000000 +0200
++@@ -2134,9 +2134,9 @@
++ 	      break;
++ 
++ 	    case Flag_Param:
++-	      if (index ("YyTt1", token [0])) {
+++	      if (strchr ("YyTt1", token [0])) {
++ 		*(param_data [param].addr.flag_p) = 1;
++-	      } else if (index ("NnFf0", token [0])) {
+++	      } else if (strchr ("NnFf0", token [0])) {
++ 		*(param_data [param].addr.flag_p) = 0;
++ 	      } else {
++ 		gpm_report (GPM_PR_WARN,"Flag value (%s) for parameter %s is invalid",
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:00:14.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:02:52.000000000 +0100
+@@ -243,6 +243,7 @@
+ source "package/fis/Config.in"
+ source "package/fuse/Config.in"
+ source "package/gadgetfs-test/Config.in"
++source "package/gpm/Config.in"
+ source "package/gvfs/Config.in"
+ source "package/hal/Config.in"
+ if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
+Index: buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch	2010-01-25 10:00:14.000000000 +0100
+@@ -0,0 +1,30 @@
++GPM asks "install" to strip the executables while installing it.
++This doesn't seems cross-compiling friendly, so remove the option (-s) and let
++the strip be done elsewhere.
++
++Index: gpm-1.20.6/Makefile.include.in
++===================================================================
++--- gpm-1.20.6.orig/Makefile.include.in	2009-12-03 11:25:30.000000000 +0100
+++++ gpm-1.20.6/Makefile.include.in	2009-12-03 11:26:32.000000000 +0100
++@@ -54,7 +54,7 @@
++ DVIPS             = @DVIPS@
++ MAKEINFO          = @MAKEINFO@
++ TEXI2HTML         = texi2html
++-STRIP             = -s
+++STRIP             =
++ 
++ AR                = ar
++ ETAGS             = etags
++Index: gpm-1.20.6/src/Makefile.in
++===================================================================
++--- gpm-1.20.6.orig/src/Makefile.in	2009-12-03 11:26:01.000000000 +0100
+++++ gpm-1.20.6/src/Makefile.in	2009-12-03 11:26:42.000000000 +0100
++@@ -48,7 +48,7 @@
++ 
++ DEFS  = @DEFS@
++ 
++-STRIP = -s
+++STRIP =
++ 
++ ### BUILD PROCESS
++ 

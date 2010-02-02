@@ -1,0 +1,30 @@
+--- buildroot/Config.in.ori	2009-01-03 16:55:05.000000000 +0100
++++ buildroot/Config.in	2009-01-03 16:50:34.000000000 +0100
+@@ -24,6 +24,15 @@
+ 	  default if the file is not found.
+ 	  NOTE: This only works for packages using the Makefile.autotools.in
+ 
++config BR2_ALTERNATE_SITE
++	string "Alternate download site"
++	default "ftp://ftp2.armadeus.com/armadeusw/download"
++	help
++	  Alternate site to download from. If this option is set then buildroot
++	  will try to download package source from this site if the file is not
++	  found on the default server.
++	  NOTE: This only works for packages using the Makefile.autotools.in
++
+ config BR2_WGET
+ 	string "Wget command"
+ 	default "wget --passive-ftp -nd"
+--- buildroot/project/Makefile.in.ori	2009-01-01 17:19:33.000000000 +0100
++++ buildroot/project/Makefile.in	2009-01-03 19:51:41.000000000 +0100
+@@ -55,6 +55,9 @@
+ TOPDIR_SUFFIX:=
+ endif
+ 
++ALTERNATE_SITE=$(strip $(subst ",, $(BR2_ALTERNATE_SITE)))
++#"))
++
+ DL_DIR=$(strip $(subst ",, $(BR2_DL_DIR)))
+ #"))
+ ifeq ($(DL_DIR),)

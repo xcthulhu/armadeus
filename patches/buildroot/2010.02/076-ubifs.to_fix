@@ -1,0 +1,70 @@
+--- buildrootref/target/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/ubifs/Config.in	2009-10-03 17:07:32.000000000 +0200
+@@ -1,9 +1,15 @@
+ config BR2_TARGET_ROOTFS_UBIFS
+ 	bool "ubifs root filesystem"
+ 	select BR2_HOST_FAKEROOT
++	select BR2_PACKAGE_MTD
+ 	help
+ 	  Build a ubifs root filesystem
+ 
++config BR2_TARGET_ROOTFS_UBIFS_PEBSIZE
++	hex "UBI physical erase block size"
++	depends on BR2_TARGET_ROOTFS_UBIFS
++	default 0x20000
++
+ config BR2_TARGET_ROOTFS_UBIFS_LEBSIZE
+ 	hex "UBI logical erase block size"
+ 	depends on BR2_TARGET_ROOTFS_UBIFS
+@@ -16,6 +22,13 @@ config BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE
+ 	help
+ 	  Some comment required here
+ 
++config BR2_TARGET_ROOTFS_UBIFS_SUBSIZE
++	int "UBI sub-page size"
++	depends on BR2_TARGET_ROOTFS_UBIFS
++	default 512
++	help
++	  Some comment required here
++
+ config BR2_TARGET_ROOTFS_UBIFS_MAXLEBCNT
+ 	int "Maximum LEB count"
+ 	depends on BR2_TARGET_ROOTFS_UBIFS
+--- buildrootref/target/ubifs/ubifsroot.mk	2009-10-03 17:55:26.000000000 +0200
++++ buildroot/target/ubifs/ubifsroot.mk	2009-10-03 17:18:09.000000000 +0200
+@@ -76,7 +76,14 @@ else
+ UBIFS_TARGET := $(UBIFS_BASE)
+ endif
+ 
+-$(UBIFS_BASE): host-fakeroot makedevs mkfs.ubifs
++UBIFS_UBINIZE_OPTS := -m $(BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE) -p $(BR2_TARGET_ROOTFS_UBIFS_PEBSIZE)
++
++ifneq ($(BR2_TARGET_ROOTFS_UBIFS_SUBSIZE),0)
++UBIFS_UBINIZE_OPTS += -s $(BR2_TARGET_ROOTFS_UBIFS_SUBSIZE)
++endif
++
++
++$(UBIFS_BASE): host-fakeroot makedevs
+ 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIPCMD) 2>/dev/null || true
+ ifneq ($(BR2_HAVE_MANPAGES),y)
+ 	@rm -rf $(TARGET_DIR)/usr/man
+@@ -102,11 +109,18 @@ ifneq ($(TARGET_DEVICE_TABLE),)
+ 		>> $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ endif
+ 	# Use fakeroot so mkfs.ubifs believes the previous fakery
+-	echo "$(MKFS_UBIFS_DIR)/mkfs.ubifs -d $(TARGET_DIR) " \
++	echo "$(MKFS_UBIFS) -d $(TARGET_DIR) " \
+ 		"$(UBIFS_OPTS) -o $(UBIFS_BASE)" >> $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	chmod a+x $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	$(STAGING_DIR)/usr/bin/fakeroot -- $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	-@rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
++	cp target/ubifs/ubinize.cfg .
++	echo "image=$(UBIFS_BASE)" \
++		>> ./ubinize.cfg
++	$(UBINIZE) -o system_ubi.img $(UBIFS_UBINIZE_OPTS) ubinize.cfg
++	cp -f system_ubi.img $(UBIFS_BASE)
++	rm system_ubi.img
++	rm ubinize.cfg
+ 
+ ifneq ($(UBIFS_ROOTFS_COMPRESSOR),)
+ $(UBIFS_BASE).$(UBIFS_ROOTFS_COMPRESSOR_EXT): $(UBIFS_ROOTFS_COMPRESSOR_PREREQ) $(UBIFS_BASE)

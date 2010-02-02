@@ -1,0 +1,32 @@
+Download Kernel.org minor patches at the same time as full sources.
+
+Sent to Buildroot guys. Integrated, then removed. Not clean ?
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/target/linux/Makefile.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-01-25 10:04:56.000000000 +0100
++++ buildroot/target/linux/Makefile.in.advanced	2010-01-25 10:06:08.000000000 +0100
+@@ -197,9 +197,11 @@
+ ifneq ($(strip $(LINUX26_PATCH_SOURCE)),)
+ $(DL_DIR)/$(LINUX26_PATCH_SOURCE):
+ 	 $(call DOWNLOAD,$(LINUX26_PATCH_SITE),$(LINUX26_PATCH_SOURCE))
++
++LINUX26_PATCH_SOURCE_FILE:=$(DL_DIR)/$(LINUX26_PATCH_SOURCE)
+ endif
+ 
+-$(LINUX26_DIR)/.unpacked: $(DL_DIR)/$(LINUX26_SOURCE)
++$(LINUX26_DIR)/.unpacked: $(DL_DIR)/$(LINUX26_SOURCE) $(LINUX26_PATCH_SOURCE_FILE)
+ 	rm -rf $(LINUX26_DIR)
+ 	@echo "*** Unpacking kernel source"
+ 	$(LINUX26_BZCAT) $(DL_DIR)/$(LINUX26_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+@@ -465,7 +467,7 @@
+ 
+ linux26-modules: cross-depmod26 $(STAMP_DIR)/linux_modules_target_installed
+ 
+-linux26-source: $(DL_DIR)/$(LINUX26_SOURCE)
++linux26-source: $(DL_DIR)/$(LINUX26_SOURCE) $(LINUX26_PATCH_SOURCE_FILE)
+ 
+ linux26-unpacked: $(LINUX26_DIR)/.patched
+ 

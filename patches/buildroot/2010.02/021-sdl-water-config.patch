@@ -1,0 +1,13 @@
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-01-25 10:04:02.000000000 +0100
++++ buildroot/package/Config.in	2010-01-25 10:04:10.000000000 +0100
+@@ -317,6 +317,8 @@
+ source "package/sdl_ttf/Config.in"
+ source "package/sdl_gfx/Config.in"
+ source "package/tiff/Config.in"
++comment "Demos"
++source "package/sdlwater/Config.in"
+ 
+ comment "busybox graphic applications"
+ comment "--> May be broken in busybox"

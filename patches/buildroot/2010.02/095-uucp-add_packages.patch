@@ -1,0 +1,45 @@
+Add uucp package to Buildroot. Only cu, which is part of uucp, was tested.
+
+Inspired by OpenWrt and Debian packages.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+
+Index: buildroot/package/uucp/uucp.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/uucp/uucp.mk	2009-12-28 11:06:42.000000000 +0100
+@@ -0,0 +1,17 @@
++#############################################################
++#
++# uucp (cu, ...??)
++#
++#############################################################
++
++UUCP_VERSION:=1.07
++UUCP_SOURCE:=uucp_$(UUCP_VERSION).orig.tar.gz
++UUCP_SITE:=http://ftp.debian.org/debian/pool/main/u/uucp/
++#UUCP_AUTORECONF:=no
++UUCP_INSTALL_STAGING:=YES
++UUCP_INSTALL_TARGET:=YES
++ifeq ($(BR2_ENABLE_DEBUG),)
++UUCP_INSTALL_TARGET_OPT:=DESTDIR=$(TARGET_DIR) STRIPPROG='$(STRIPCMD)' install-strip
++endif
++
++$(eval $(call AUTOTARGETS,package,uucp))
+Index: buildroot/package/uucp/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/uucp/Config.in	2009-12-28 10:44:17.000000000 +0100
+@@ -0,0 +1,11 @@
++config BR2_PACKAGE_UUCP
++	bool "uucp"
++	help
++	  Unix to Unix Copy Program.
++	  UUCP will copy files to or from another (usually *nix) system, which also
++	  runs uucp. UUCP is used to transfer mail, news and random files between
++	  systems which are not connected by more modern networks. The communication
++	  can be made via modems, direct (hard-wired) serial connections or via an
++	  IP connection.
++
++	  http://packages.debian.org/lenny/uucp
