@@ -10,7 +10,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-01-21 11:06:41.000000000 +0100
-@@ -0,0 +1,712 @@
+@@ -0,0 +1,727 @@
 + /*
 + * apf27.c
 + *
@@ -306,6 +306,18 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	ulpi_clear(SUSPENDM, ISP1504_FCNCTL, view);
 +}
 +
++static void isp1504_resume(void __iomem *view)
++{
++	/* uggly but the STP line must be set to 1 before the first PHY access 
++	   in order to wake up the ULPI clock of the PHY. */
++	gpio_set_value(GPIO_PORTE | 1, 1);
++	/* deassert STP (gpio mode) */
++	mxc_gpio_mode(GPIO_PORTE | 1  | GPIO_OUT | GPIO_GPIO);
++	mdelay(1);
++	/* STP now managed by the USB host ctrl */	
++	mxc_gpio_mode(PE1_PF_USBOTG_STP);
++}
++
 +static int apf27_usbotg_init(struct platform_device *pdev)
 +{
 +	int ret;
@@ -590,6 +602,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +{
 +	printk("___ %s\n", __func__);
 +
++#ifdef CONFIG_USB_EHCI_MXC
++	isp1504_resume((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
++#endif
 +	apf27_baseboard_resume();
 +
 +	return 0;
