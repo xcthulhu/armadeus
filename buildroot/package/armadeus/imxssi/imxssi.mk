@@ -5,7 +5,7 @@
 #############################################################
 
 IMXSSI_VER:=1.0
-IMXSSI_SOURCE:=$(BUILD_DIR)/../../target/linux/debug/imxssi/
+IMXSSI_SOURCE:=$(TOPDIR)/../target/linux/debug/imxssi/
 IMXSSI_DIR:=$(BUILD_DIR)/imxssi-$(IMXSSI_VER)
 IMXSSI_CAT:=zcat
 IMXSSI_BINARY:=imxssi

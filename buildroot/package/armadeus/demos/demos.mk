@@ -5,7 +5,7 @@
 #############################################################
 
 ARMADEUS-DEMOS_VER:=1.0
-ARMADEUS-DEMOS_SOURCE:=$(BUILD_DIR)/../../target/demos
+ARMADEUS-DEMOS_SOURCE:=$(TOPDIR)/../target/demos
 ARMADEUS-DEMOS_DIR:=$(BUILD_DIR)/armadeus-demos-$(ARMADEUS-DEMOS_VER)
 ARMADEUS-DEMOS_TARGET_DIR:=$(TARGET_DIR)/usr/local/bin
 ARMADEUS-DEMOS_TARGET_DATA_DIR:=$(TARGET_DIR)/usr/share

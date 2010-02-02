@@ -5,7 +5,7 @@
 #############################################################
 
 IMXREGS_VER:=1.0
-IMXREGS_SOURCE:=$(BUILD_DIR)/../../target/linux/debug/imxregs/
+IMXREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/imxregs/
 IMXREGS_DIR:=$(BUILD_DIR)/imxregs-$(IMXREGS_VER)
 IMXREGS_CAT:=zcat
 ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
@@ -26,7 +26,7 @@ $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY): $(IMXREGS_DIR)/$(IMXREGS_BINARY)
 	install -D $< $@
 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
 
-imxregs: uclibc $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
+imxregs: $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)
 
 imxregs-clean:
 	rm -f $(TARGET_DIR)/$(IMXREGS_TARGET_BINARY)

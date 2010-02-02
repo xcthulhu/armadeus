@@ -5,13 +5,13 @@
 #############################################################
 
 ARMADEUS-TESTSUITE_VER:=1.0
-ARMADEUS-TESTSUITE_SOURCE:=$(BUILD_DIR)/../../target/test/
+ARMADEUS-TESTSUITE_SOURCE:=$(TOPDIR)/../target/test/
 ARMADEUS-TESTSUITE_DIR:=$(BUILD_DIR)/armadeus-testsuite-$(ARMADEUS-TESTSUITE_VER)
 ARMADEUS-TESTSUITE_CAT:=zcat
 ARMADEUS-TESTSUITE_BINARY:=test_env.sh
 ARMADEUS-TESTSUITE_TARGET_DIR:=$(TARGET_DIR)/usr/bin/testsuite
 ARMADEUS-TESTSUITE_TARGET_BINARY:=$(ARMADEUS-TESTSUITE_TARGET_DIR)/$(ARMADEUS-TESTSUITE_BINARY)
-ARMADEUS-TESTSUITE_WISHBONE_BUTTON_DIR:=$(BUILD_DIR)/../../target/linux/modules/fpga/wishbone_example/wb_button/
+ARMADEUS-TESTSUITE_WISHBONE_BUTTON_DIR:=$(TOPDIR)/../target/linux/modules/fpga/wishbone_example/wb_button/
 
 $(ARMADEUS-TESTSUITE_DIR)/.unpacked:
 	mkdir -p $(ARMADEUS-TESTSUITE_DIR)/

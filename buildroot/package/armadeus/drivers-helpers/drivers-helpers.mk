@@ -4,7 +4,7 @@
 #
 #############################################################
 
-ARMADEUS-DRIVERS_SOURCE_DIR:=$(BUILD_DIR)/../../target/linux/modules
+ARMADEUS-DRIVERS_SOURCE_DIR:=$(TOPDIR)/../target/linux/modules
 ARMADEUS-DRIVERS-HELPERS_TARGET_DIR:=$(TARGET_DIR)/usr/bin
 
 

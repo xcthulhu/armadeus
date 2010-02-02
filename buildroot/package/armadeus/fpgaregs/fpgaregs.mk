@@ -5,7 +5,7 @@
 #############################################################
 
 FPGAREGS_VER:=1.0
-FPGAREGS_SOURCE:=$(BUILD_DIR)/../../target/linux/debug/fpgaregs/
+FPGAREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/fpgaregs/
 FPGAREGS_DIR:=$(BUILD_DIR)/fpgaregs-$(FPGAREGS_VER)
 FPGAREGS_CAT:=zcat
 ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
@@ -26,7 +26,7 @@ $(TARGET_DIR)/$(FPGAREGS_TARGET_BINARY): $(FPGAREGS_DIR)/$(FPGAREGS_BINARY)
 	install -D $< $@
 	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/$(FPGAREGS_TARGET_BINARY)
 
-fpgaregs: uclibc $(TARGET_DIR)/$(FPGAREGS_TARGET_BINARY)
+fpgaregs: $(TARGET_DIR)/$(FPGAREGS_TARGET_BINARY)
 
 fpgaregs-clean:
 	rm -f $(TARGET_DIR)/$(FPGAREGS_TARGET_BINARY)

@@ -7,7 +7,7 @@
 PYTHON:=python2.4
 
 AS_DEVICES_VER:=1.0
-AS_DEVICES_SOURCE:=$(BUILD_DIR)/../../target/packages/as_devices
+AS_DEVICES_SOURCE:=$(TOPDIR)/../target/packages/as_devices
 AS_DEVICES_DIR:=$(BUILD_DIR)/as_devices-$(AS_DEVICES_VER)
 AS_DEVICES_CAT:=zcat
 
@@ -69,7 +69,7 @@ $(AS_DEVICES_DIR)/python/AsDevices/wrappers/$(AS_DEVICES_PYTHON_BINARY): $(AS_DE
 
 endif
 
-as_devices: uclibc $(AS_DEVICES_BINARIES) 
+as_devices: $(AS_DEVICES_BINARIES) 
 
 as_devices-clean:
 	rm -f $(TARGET_DIR)/$(AS_DEVICES_TARGET_BINARY)
