@@ -1,6 +1,6 @@
 "Calculate" BR2_LINUX26_VERSION when BR2_KERNEL_ADD_LATEST_MINORPATCH is used.
 
-Sent to Buildroot guys. Not integrated.
+Sent to Buildroot guys. Integrated in another way.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
