@@ -22,21 +22,25 @@
 # You shouldn't need to mess with anything beyond this point...
 #--------------------------------------------------------------
 
-BUILDROOT_DIR = buildroot
 include ./Makefile.in
 
-BUILDROOT_NAME=buildroot
-BUILDROOT_FILE_PATH:=downloads
+#--- User configurable stuff:
 #BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
+#BUILDROOT_VERSION:=20100129
+#BUILDROOT_PATCH_DIR = patches/buildroot/2010.02
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
-BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
+BUILDROOT_PATCH_DIR = patches/buildroot
+#--- End of user conf (don't touch anything below unless you know what you're doing !! ;-) )
+
 
 ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
+BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
+BUILDROOT_DIR = buildroot
 PATCH_DIR = patches
-BUILDROOT_PATCH_DIR = patches/buildroot
+BUILDROOT_FILE_PATH:=downloads
 TAR_OPTIONS=--exclude=.svn --exclude=.git -xf 
 
 ARMADEUS_ENV_FILE=armadeus_env.sh
