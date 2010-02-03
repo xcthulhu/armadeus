@@ -131,6 +131,14 @@ struct spi_transfer transfer[MAX_NB_RESULTS];
 struct spi_message message;
 u8 buffer[MAX_NB_RESULTS*2]; /* each result is sent with 16 bits */
 
+
+static inline void trig_cnvst(struct max1027* max1027)
+{	
+	gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
+	udelay(1);
+	gpio_set_value(max1027->cnvst, 1);
+}
+
 static void max1027_start_conv(struct max1027*, struct adc_channel*);
 
 static void fifo_flush(struct adc_channel* channel)
@@ -224,9 +232,7 @@ static void max1027_start_conv(struct max1027 *max1027, struct adc_channel *chan
 	if (channel)
 		clear_bit(DATA_AVAILABLE, &channel->status);
 	/* Use CNVST triggered conv. */
-	gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
-	udelay(1);
-	gpio_set_value(max1027->cnvst, 1);
+	trig_cnvst(max1027);
 } 
 
 /* Called when SPI got results from MAX1027 */
@@ -520,11 +526,13 @@ static ssize_t max1027_set_conversion(struct device *dev,
 	/* Send value to chip */
 	max1027_send_cmd(spi, MAX1027_REG_CONV | val);
 	if (!(max1027->setup_reg & MAX1027_REG_SETUP_CKSEL1)) {
+		if (max1027->cnvst == 0){
+			printk(KERN_WARNING DRIVER_NAME "CNVST pin not defined!\n");
+			return 0;
+		}
 		mdelay(1); 
 		/* Use CNVST triggered conv. */
-		gpio_set_value(max1027->cnvst, 0); /* Platform specific no ? */
-		udelay(1);
-		gpio_set_value(max1027->cnvst, 1);
+		trig_cnvst(max1027);
 	}
 
 	/* Wait until current convertion is finished if corresponding clock
@@ -805,7 +813,7 @@ static int __devinit max1027_probe(struct spi_device *spi)
 		goto err_irq;
 	}
 	max1027->cnvst = platform_info->cnvst_pin;
-	if (max1027->cnvst >= 0)
+	if (max1027->cnvst > 0)
 		gpio_set_value(max1027->cnvst, 1);
 
 	/* Create /sys entries */
