@@ -1,0 +1,30 @@
+--- a/kernel/time/timekeeping.c	2009-03-24 00:12:14.000000000 +0100
++++ b/kernel/time/timekeeping.c	2010-02-03 13:25:00.000000000 +0100
+@@ -322,7 +322,8 @@ static int timekeeping_resume(struct sys
+ 
+ 	clocksource_resume();
+ 
+-	write_seqlock_irqsave(&xtime_lock, flags);
++	local_irq_save(flags);
++	write_seqlock(&xtime_lock);
+ 
+ 	if (now && (now > timekeeping_suspend_time)) {
+ 		unsigned long sleep_length = now - timekeeping_suspend_time;
+@@ -337,7 +338,8 @@ static int timekeeping_resume(struct sys
+ 	clock->cycle_last = clocksource_read(clock);
+ 	clock->error = 0;
+ 	timekeeping_suspended = 0;
+-	write_sequnlock_irqrestore(&xtime_lock, flags);
++	write_sequnlock(&xtime_lock);
++
+ 
+ 	touch_softlockup_watchdog();
+ 
+@@ -345,6 +347,7 @@ static int timekeeping_resume(struct sys
+ 
+ 	/* Resume hrtimers */
+ 	hres_timers_resume();
++	local_irq_restore(flags);
+ 
+ 	return 0;
+ }
