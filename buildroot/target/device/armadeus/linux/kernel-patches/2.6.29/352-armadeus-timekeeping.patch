@@ -1,3 +1,9 @@
+Fix timekeeping resume: http://patchwork.kernel.org/patch/50306/
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.29/kernel/time/timekeeping.c
+===================================================================
 --- a/kernel/time/timekeeping.c	2009-03-24 00:12:14.000000000 +0100
 +++ b/kernel/time/timekeeping.c	2010-02-03 13:25:00.000000000 +0100
 @@ -322,7 +322,8 @@ static int timekeeping_resume(struct sys
