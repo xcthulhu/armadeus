@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Tue Feb  2 13:25:59 2010
+# Wed Feb  3 13:49:16 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.02-git"
@@ -99,7 +99,7 @@ BR2_COPYTO=""
 # Mirrors and Download locations
 #
 BR2_PRIMARY_SITE=""
-BR2_BACKUP_SITE="http://buildroot.net/downloads/sources/"
+BR2_BACKUP_SITE="ftp://ftp2.armadeus.com/armadeusw/download"
 BR2_SOURCEFORGE_MIRROR="easynews"
 BR2_KERNEL_MIRROR="http://www.kernel.org/pub/"
 BR2_GNU_MIRROR="http://ftp.gnu.org/pub/gnu"
