@@ -1,0 +1,49 @@
+Remove kernel versions not supported by Armadeus boards from user choice.
+
+Index: buildroot/target/linux/Config.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Config.in.advanced	2010-02-03 13:21:18.000000000 +0100
++++ buildroot/target/linux/Config.in.advanced	2010-02-03 13:27:11.000000000 +0100
+@@ -122,9 +122,11 @@
+ 
+ config BR2_LINUX_2_6_STABLE
+ 	bool "The latest stable Linux kernel (2.6.30.2)"
++	depends on !BR2_TARGET_ARMADEUS
+ 
+ config BR2_LINUX_2_6_30
+ 	bool "Linux 2.6.30"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX_2_6_29
+@@ -133,6 +135,7 @@
+ 	
+ config BR2_LINUX_2_6_28
+ 	bool "Linux 2.6.28"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX_2_6_27
+@@ -141,18 +144,22 @@
+ 
+ config BR2_LINUX_2_6_26
+ 	bool "Linux 2.6.26"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX_2_6_25
+ 	bool "Linux 2.6.25"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX_2_6_24
+ 	bool "Linux 2.6.24"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX_2_6_31
+ 	bool "Linux 2.6.31"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
+ 
+ config BR2_LINUX26_CUSTOM
