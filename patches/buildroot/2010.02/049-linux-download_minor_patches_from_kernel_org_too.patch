@@ -1,4 +1,6 @@
-Download Kernel.org minor patches at the same time as full sources.
+"linux26-source" target only downloads bare kernel sources.
+This patch makes the (eventually needed) kernel.org minor patches are
+also downloaded.
 
 Sent to Buildroot guys. Integrated, then removed. Not clean ?
 
