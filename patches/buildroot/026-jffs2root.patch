@@ -1,3 +1,5 @@
+No more needed with latest BR version.
+
 Index: buildroot/target/jffs2/jffs2root.mk
 ===================================================================
 --- buildroot.orig/target/jffs2/jffs2root.mk	2010-01-25 10:03:35.000000000 +0100
