@@ -103,8 +103,9 @@ if [ "$QUILT_TARGET_NAME" != "Buildroot" ]; then
 	ask_user "Rename or delete the current $QUILT_TARGET_NAME directory: $QUILT_TARGET_DIR \n?? (R/d)"
 	EXT=`date +%Y_%m_%d_%Hh%M`
 	if [ "$answer" == "d" ]; then
-		echo "Deleting current $QUILT_TARGET_NAME dir"
+		echo -n "Deleting current $QUILT_TARGET_NAME dir..."
 		rm -rf $QUILT_TARGET_DIR
+		echo "done"
 	else
 		echo "Renaming $QUILT_TARGET_DIR"
 		echo "  to " "$QUILT_TARGET_DIR"."$EXT"
@@ -118,6 +119,7 @@ else # For Buildroot
 fi
 
 # Get XXX unpacked sources
+echo "Getting sources... (make $QUILT_MAKEFILE_TARGET)"
 make $QUILT_MAKEFILE_TARGET
 if [ "$?" != 0 ]; then
 	echo "Failed to get sources, please check your view !!"
