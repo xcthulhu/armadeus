@@ -6,7 +6,8 @@ Config.*
 Hitachi/
 jp/
 KwikByte/
-Makefile.*
+Makefile.in.linux
+/Makefile.in
 mips/
 Sharp/
 Soekris/

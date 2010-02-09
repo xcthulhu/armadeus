@@ -11,7 +11,7 @@
 /jffs2/
 /linux/
 /makedevs
-Makefile.in
+/Makefile.in
 /powerpc/
 /romfs/
 /squashfs/
