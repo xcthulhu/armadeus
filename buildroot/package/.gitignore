@@ -4,6 +4,7 @@
 /Config.in
 /Config.in.bak
 /Makefile.autotools.in
+/Makefile.package.in
 /Makefile.in
 /buildroot-libtool.patch
 

@@ -1,0 +1,30 @@
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2010-02-08 11:34:47.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-02-08 11:34:52.000000000 +0100
+@@ -162,6 +162,17 @@
+ endif
+ 	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
+ endif # BR2_TARGET_UBOOT_DEFAULT_ENV
++ifneq ($(strip $(BOARD_NAME)),"")
++	$(call insert_define, CONFIG_BOARD_NAME, $(BOARD_NAME))
++endif
++ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
++	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
++ifneq ($(BR2_TARGET_ARMADEUS_NR_SDRAM),)
++	$(SED) "s,^#define CONFIG_NR_DRAM_BANKS.*,#define CONFIG_NR_DRAM_BANKS $(BR2_TARGET_ARMADEUS_NR_SDRAM),g;"\
++		$(U_BOOT_INC_CONF_FILE)
++endif
+ 	touch $@
+ 
+ $(U_BOOT_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/.header_modified
+@@ -314,5 +325,7 @@
+ 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
+ 	@echo UBOOT_BOARD_NAME=$(UBOOT_BOARD_NAME)
+ 	@echo U_BOOT_COPYTO = $(U_BOOT_COPYTO)
++	@echo BR2_TARGET_ARMADEUS_SDRAM_SIZE = $(BR2_TARGET_ARMADEUS_SDRAM_SIZE)
++	@echo BR2_TARGET_ARMADEUS_NR_SDRAM = $(BR2_TARGET_ARMADEUS_NR_SDRAM)
+ 	@exit 0
+ 

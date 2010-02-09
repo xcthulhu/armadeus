@@ -1,0 +1,53 @@
+
+BR maintainer removes this change (and others) with this commit:
+http://git.buildroot.net/buildroot/commit/?id=3bab463be4a42de790b745ab2e873e1c1ce42f2d
+
+We need it because U-Boot's mainline doesn't have (yet?) our boards configs.
+So this patch reverts the removing + refines it.
+
+Index: buildroot/target/u-boot/Config.in
+===================================================================
+--- buildroot.orig/target/u-boot/Config.in	2010-02-08 11:34:35.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2010-02-08 11:34:38.000000000 +0100
+@@ -11,6 +11,14 @@
+ 	  One of U-Boot supported boards to be built.
+ 	  This will be suffixed with _config to meet U-Boot standard naming.
+ 
++config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
++	string "U-Boot header file"
++	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
++	help
++	  U-Boot config header file to use to build U-Boot for your target.
++	  Mainly for people using boards not (yet) integrated in U-Boot's
++	  mainline or wanting to test a config different from the default one.
++
+ choice
+ 	prompt "U-Boot Version"
+ 	default BR2_TARGET_UBOOT_2009_11
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2010-02-08 11:34:36.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-02-08 11:34:38.000000000 +0100
+@@ -88,7 +88,13 @@
+ endif
+ 	touch $@
+ 
+-$(U_BOOT_DIR)/.configured: $(U_BOOT_DIR)/.patched
++$(U_BOOT_DIR)/.config_header_copied: $(U_BOOT_DIR)/.patched
++ifneq ($(strip $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE)),)
++	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/
++endif
++	touch $@
++
++$(U_BOOT_DIR)/.configured: $(U_BOOT_DIR)/.config_header_copied
+ 	$(TARGET_CONFIGURE_OPTS)		\
+ 		CFLAGS="$(TARGET_CFLAGS)"	\
+ 		LDFLAGS="$(TARGET_LDFLAGS)"	\
+@@ -292,6 +298,7 @@
+ u-boot-status:
+ 	@echo
+ 	@echo U_BOOT_INC_CONF_FILE = $(U_BOOT_INC_CONF_FILE)
++	@echo BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE = $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE)
+ 	@echo BR2_UBOOT_VERSION = $(BR2_UBOOT_VERSION)
+ 	@echo BR2_TARGET_UBOOT_SERVERIP = $(BR2_TARGET_UBOOT_SERVERIP)
+ 	@echo BR2_TARGET_UBOOT_IPADDR = $(BR2_TARGET_UBOOT_IPADDR)

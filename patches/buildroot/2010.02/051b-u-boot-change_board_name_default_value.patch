@@ -1,0 +1,15 @@
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+
+Index: buildroot/target/u-boot/Config.in
+===================================================================
+--- buildroot.orig/target/u-boot/Config.in	2010-02-05 15:28:46.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2010-02-05 15:29:06.000000000 +0100
+@@ -6,7 +6,7 @@
+ if BR2_TARGET_UBOOT
+ config BR2_TARGET_UBOOT_BOARDNAME
+ 	string "board name"
+-	default "$(BOARD_NAME)"
++	default "$(BR2_BOARD_NAME)"
+ 	help
+ 	  One of U-Boot supported boards to be built.
+ 	  This will be suffixed with _config to meet U-Boot standard naming.

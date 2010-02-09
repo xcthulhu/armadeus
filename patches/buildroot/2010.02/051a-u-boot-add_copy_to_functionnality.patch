@@ -1,0 +1,57 @@
+Implements (quite) the same as BR2_LINUX_COPYTO for U-Boot.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/target/u-boot/Config.in
+===================================================================
+--- buildroot.orig/target/u-boot/Config.in	2010-02-05 13:31:08.000000000 +0100
++++ buildroot/target/u-boot/Config.in	2010-02-05 14:38:40.000000000 +0100
+@@ -126,6 +126,12 @@
+ 	help
+ 	  Install fw_printenv / fw_setenv tools in target.
+ 
++config BR2_TARGET_UBOOT_COPYTO
++	string "Copy binary image to <dir>..."
++	default ""
++	help
++	  Copy U-Boot binary image to secondary location.
++
+ menuconfig BR2_TARGET_UBOOT_DEFAULT_ENV
+ 	bool "Generate a default environment"
+ 	help
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2010-02-05 14:05:30.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-02-05 14:08:52.000000000 +0100
+@@ -46,6 +46,11 @@
+ U_BOOT_TARGETS+=$(TARGET_DIR)/usr/sbin/fw_printenv
+ endif
+ 
++ifneq ($(call qstrip,$(BR2_TARGET_UBOOT_COPYTO)),)
++U_BOOT_COPYTO:=$(call qstrip,$(BR2_TARGET_UBOOT_COPYTO))
++U_BOOT_TARGETS+=$(U_BOOT_COPYTO)/$(U_BOOT_BIN)
++endif
++
+ U_BOOT_CONFIGURE_OPTS :=
+ 
+ ifneq ($(BR2_TARGET_UBOOT_1_2_0_ATMEL),)
+@@ -167,6 +172,12 @@
+ 	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)/$(U_BOOT_TARGET_BIN)
+ 	(cd $(BINARIES_DIR); ln -s $(U_BOOT_TARGET_BIN) $(U_BOOT_BIN))
+ 
++ifneq ($(U_BOOT_COPYTO),)
++$(U_BOOT_COPYTO)/$(U_BOOT_BIN): $(BINARIES_DIR)/$(U_BOOT_BIN)
++	mkdir -p $(U_BOOT_COPYTO)
++	cp -dpf $< $@
++endif
++
+ $(U_BOOT_TOOLS): $(U_BOOT_DIR)/$(U_BOOT_BIN)
+ 	mkdir -p $(@D)
+ 	cp -dpf $(U_BOOT_DIR)/tools/mkimage $@
+@@ -289,5 +300,6 @@
+ 	@echo BR2_TARGET_UBOOT_ETH1ADDR = $(BR2_TARGET_UBOOT_ETH1ADDR)
+ 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
+ 	@echo UBOOT_BOARD_NAME=$(UBOOT_BOARD_NAME)
++	@echo U_BOOT_COPYTO = $(U_BOOT_COPYTO)
+ 	@exit 0
+ 

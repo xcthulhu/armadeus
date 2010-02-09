@@ -1,0 +1,59 @@
+From: Ron Lee <ron@debian.org>
+Date: Wed, 5 Aug 2009 18:14:01 +0000 (+0200)
+Subject: ARM Don't inline weak symbols
+X-Git-Tag: v2009.11-rc2~59^2
+X-Git-Url: http://git.denx.de/?p=u-boot.git;a=commitdiff_plain;h=f865fcbbb35851e75fee9c3a3fa8e0f71d9e6463
+
+ARM Don't inline weak symbols
+
+------------------------------------------------------------------------
+
+GCC 4.4 complains about this now.
+
+Signed-off-by: Ron Lee <ron@debian.org>
+---
+
+Index: u-boot-1.3.4/lib_arm/board.c
+===================================================================
+--- u-boot-1.3.4.orig/lib_arm/board.c	2010-02-05 16:48:16.000000000 +0100
++++ u-boot-1.3.4/lib_arm/board.c	2010-02-05 16:48:20.000000000 +0100
+@@ -135,19 +135,19 @@
+  * May be supplied by boards if desired
+  */
+ void inline __coloured_LED_init (void) {}
+-void inline coloured_LED_init (void) __attribute__((weak, alias("__coloured_LED_init")));
++void coloured_LED_init (void) __attribute__((weak, alias("__coloured_LED_init")));
+ void inline __red_LED_on (void) {}
+-void inline red_LED_on (void) __attribute__((weak, alias("__red_LED_on")));
++void red_LED_on (void) __attribute__((weak, alias("__red_LED_on")));
+ void inline __red_LED_off(void) {}
+-void inline red_LED_off(void)	     __attribute__((weak, alias("__red_LED_off")));
++void red_LED_off(void)	     __attribute__((weak, alias("__red_LED_off")));
+ void inline __green_LED_on(void) {}
+-void inline green_LED_on(void) __attribute__((weak, alias("__green_LED_on")));
++void green_LED_on(void) __attribute__((weak, alias("__green_LED_on")));
+ void inline __green_LED_off(void) {}
+-void inline green_LED_off(void)__attribute__((weak, alias("__green_LED_off")));
++void green_LED_off(void)__attribute__((weak, alias("__green_LED_off")));
+ void inline __yellow_LED_on(void) {}
+-void inline yellow_LED_on(void)__attribute__((weak, alias("__yellow_LED_on")));
++void yellow_LED_on(void)__attribute__((weak, alias("__yellow_LED_on")));
+ void inline __yellow_LED_off(void) {}
+-void inline yellow_LED_off(void)__attribute__((weak, alias("__yellow_LED_off")));
++void yellow_LED_off(void)__attribute__((weak, alias("__yellow_LED_off")));
+ 
+ /************************************************************************
+  * Init Utilities							*
+Index: u-boot-1.3.4/common/main.c
+===================================================================
+--- u-boot-1.3.4.orig/common/main.c	2010-02-05 16:50:51.000000000 +0100
++++ u-boot-1.3.4/common/main.c	2010-02-05 16:51:14.000000000 +0100
+@@ -48,7 +48,7 @@
+  * Board-specific Platform code can reimplement show_boot_progress () if needed
+  */
+ void inline __show_boot_progress (int val) {}
+-void inline show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
++void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
+ 
+ #if defined(CONFIG_BOOT_RETRY_TIME) && defined(CONFIG_RESET_TO_RETRY)
+ extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);		/* for do_reset() prototype */
