@@ -66,7 +66,7 @@ Index: buildroot/target/u-boot/Makefile.in
  		| tar -C $(PROJECT_BUILD_DIR) $(TAR_OPTIONS) -
  	touch $@
  
-+u-boot-unpacked: $(U_BOOT_DIR)/.unpacked
++u-boot-src-unpacked: $(U_BOOT_DIR)/.unpacked
 +
  $(U_BOOT_DIR)/.patched: $(U_BOOT_DIR)/.unpacked
  	toolchain/patch-kernel.sh $(U_BOOT_DIR) target/u-boot/ \
