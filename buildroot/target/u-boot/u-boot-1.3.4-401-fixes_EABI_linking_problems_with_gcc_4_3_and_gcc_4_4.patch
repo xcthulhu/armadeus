@@ -1,0 +1,59 @@
+Don't know if it's the right way to do (marked as HACK in Openmoko). But
+without this patch, U-Boot (1.3.4) fails to link when gcc 4.3 or 4.4 is used.
+
+Errors are:
+
+xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivsi3.o): In function `__aeabi_uidiv':
+xxx/buildroot/output/toolchain/gcc-4.3.4/libgcc/../gcc/config/arm/lib1funcs.asm:810: multiple definition of `__udivsi3'                                                             lib_arm/libarm.a(_udivsi3.o):xxx/buildroot/output/build/u-boot-1.3.4/lib_arm/_udivsi3.S:17: first defined here
+...
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: error: Source object xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o) has EABI version 4, but target u-boot has EABI version 0
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: failed to merge target specific data of file /home/julien/workspace/Armadeus_SF/armadeus-git-new-buildroot-build/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o)
+...
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: failed to merge target specific data of file xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_clz.o)
+xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o):(.ARM.exidx+0x0): undefined reference to `__aeabi_unwind_cpp_pr0'
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+--- u-boot-1.3.4.org/board/armadeus/apf27/apf27.c	2010-02-08 11:48:29.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf27/apf27.c	2010-02-05 23:01:33.000000000 +0100
+@@ -179,3 +179,7 @@
+ 	printf("Armadeus APF2\n");
+ 	return 0;
+ }
++
++void raise() {}
++void abort() {}
++
+--- u-boot-1.3.4.org/board/armadeus/apf27/u-boot-nand.lds	2010-02-08 11:48:29.000000000 +0100
++++ u-boot-1.3.4/board/armadeus/apf27/u-boot-nand.lds	2010-02-05 22:55:57.000000000 +0100
+@@ -37,6 +37,10 @@
+ 
+ 	. = ALIGN(4);
+ 	.rodata : { *(.rodata) }
++	.ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) }
++	__exidx_start = .;
++	.ARM.exidx   : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) }
++	__exidx_end = .;
+ 
+ 	. = ALIGN(4);
+ 	.data : { *(.data) }
+--- u-boot-1.3.4.org/cpu/arm926ejs/config.mk	2010-02-08 11:48:29.000000000 +0100
++++ u-boot-1.3.4/cpu/arm926ejs/config.mk	2010-02-05 23:03:48.000000000 +0100
+@@ -30,5 +30,5 @@
+ # Supply options according to compiler version
+ #
+ # =========================================================================
+-PLATFORM_CPPFLAGS +=$(call cc-option,-mapcs-32,-mabi=apcs-gnu)
++PLATFORM_CPPFLAGS +=$(call cc-option)
+ PLATFORM_RELFLAGS +=$(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,))
+--- u-boot-1.3.4.org/Makefile	2010-02-08 11:48:29.000000000 +0100
++++ u-boot-1.3.4/Makefile	2010-02-05 22:58:40.000000000 +0100
+@@ -253,7 +253,7 @@
+ LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
+ 
+ # Add GCC lib
+-PLATFORM_LIBS += -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
++PLATFORM_LIBS += -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc -lgcc_eh
+ 
+ # The "tools" are needed early, so put this first
+ # Don't include stuff already done in $(LIBS)
