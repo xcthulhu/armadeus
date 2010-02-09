@@ -1,0 +1,44 @@
+Allow board custom Makefiles to choose the name of the U-Boot's resulting binary
+and the name it should take when copied to $(BINARIES_DIR).
+
+Specific for Armadeus.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/target/u-boot/Makefile.in
+===================================================================
+--- buildroot.orig/target/u-boot/Makefile.in	2010-02-09 16:25:54.000000000 +0100
++++ buildroot/target/u-boot/Makefile.in	2010-02-09 16:48:44.000000000 +0100
+@@ -11,14 +11,18 @@
+ U_BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U_BOOT_VERSION)
+ U_BOOT_PATCH_DIR:=$(BUILD_DIR)/u-boot-$(U_BOOT_VERSION)-patches
+ U_BOOT_CAT:=$(BZCAT)
++ifeq ($(U_BOOT_BIN),)
+ U_BOOT_BIN:=u-boot.bin
++endif
++ifeq ($(U_BOOT_TARGET_BIN),)
+ U_BOOT_TARGET_BIN:=u-boot-$(U_BOOT_VERSION)-$(DATE).bin
++endif
+ 
+ U_BOOT_TOOLS:=$(HOST_DIR)/usr/bin/mkimage
+ MKIMAGE:=$(U_BOOT_TOOLS)
+ U_BOOT_AUTOSCRIPT=$(BINARIES_DIR)/autoscript
+ 
+-U_BOOT_TARGETS:=$(BINARIES_DIR)/$(U_BOOT_BIN) $(U_BOOT_TOOLS)
++U_BOOT_TARGETS:=$(BINARIES_DIR)/$(U_BOOT_TARGET_BIN) $(U_BOOT_TOOLS)
+ 
+ ifeq ($(call qstrip,$(BR2_TARGET_UBOOT_DEFAULT_ENV)),y)
+ U_BOOT_TARGETS += u-boot-autoscript
+@@ -185,11 +189,10 @@
+ 		$(MAKE) CROSS_COMPILE="$(TARGET_CROSS)" ARCH=$(U_BOOT_ARCH) \
+ 		 -C $(U_BOOT_DIR)
+ 
+-$(BINARIES_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
++$(BINARIES_DIR)/$(U_BOOT_TARGET_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
+ 	rm -f $(BINARIES_DIR)/$(U_BOOT_BIN)
+ 	rm -f $(BINARIES_DIR)/$(U_BOOT_TARGET_BIN)
+ 	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)/$(U_BOOT_TARGET_BIN)
+-	(cd $(BINARIES_DIR); ln -s $(U_BOOT_TARGET_BIN) $(U_BOOT_BIN))
+ 
+ ifneq ($(U_BOOT_COPYTO),)
+ $(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)

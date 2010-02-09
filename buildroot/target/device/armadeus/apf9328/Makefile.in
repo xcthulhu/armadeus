@@ -1,1 +1,4 @@
 TARGETS+=u-boot-brec
+ifneq ($(BR2_VERSION),"0.10.0-svn")
+U_BOOT_TARGET_BIN:=$(BOARD_NAME)-u-boot.bin
+endif

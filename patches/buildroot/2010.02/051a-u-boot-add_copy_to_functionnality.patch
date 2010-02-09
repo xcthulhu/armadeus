@@ -29,7 +29,7 @@ Index: buildroot/target/u-boot/Makefile.in
  
 +ifneq ($(call qstrip,$(BR2_TARGET_UBOOT_COPYTO)),)
 +U_BOOT_COPYTO:=$(call qstrip,$(BR2_TARGET_UBOOT_COPYTO))
-+U_BOOT_TARGETS+=$(U_BOOT_COPYTO)/$(U_BOOT_BIN)
++U_BOOT_TARGETS+=$(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN)
 +endif
 +
  U_BOOT_CONFIGURE_OPTS :=
@@ -40,7 +40,7 @@ Index: buildroot/target/u-boot/Makefile.in
  	(cd $(BINARIES_DIR); ln -s $(U_BOOT_TARGET_BIN) $(U_BOOT_BIN))
  
 +ifneq ($(U_BOOT_COPYTO),)
-+$(U_BOOT_COPYTO)/$(U_BOOT_BIN): $(BINARIES_DIR)/$(U_BOOT_BIN)
++$(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
 +	mkdir -p $(U_BOOT_COPYTO)
 +	cp -dpf $< $@
 +endif
