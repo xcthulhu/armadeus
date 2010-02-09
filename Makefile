@@ -41,7 +41,7 @@ BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 BUILDROOT_DIR = buildroot
 PATCH_DIR = patches
 BUILDROOT_FILE_PATH:=downloads
-TAR_OPTIONS=--exclude=.svn --exclude=.git -xf 
+TAR_OPTIONS=--exclude=.svn --exclude=.git --exclude=.gitignore -xf
 
 ARMADEUS_ENV_FILE=armadeus_env.sh
 
