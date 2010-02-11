@@ -56,7 +56,7 @@ if [ "$answer" == "Buildroot" ]; then
 	QUILT_TARGET_NAME="Buildroot"
 	QUILT_MAKEFILE_TARGET="buildroot-unpacked"
 	QUILT_TARGET_DIR=$ARMADEUS_BUILDROOT_DIR
-	QUILT_TARGET_PATCH_DIR=$ARMADEUS_BUILDROOT_DIR/../patches/buildroot
+	QUILT_TARGET_PATCH_DIR=$ARMADEUS_BUILDROOT_PATCH_DIR
 elif [ "$answer" == "U-Boot" ]; then
 	QUILT_TARGET_NAME="U-Boot"
 	QUILT_MAKEFILE_TARGET="u-boot-src-unpacked"

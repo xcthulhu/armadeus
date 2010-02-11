@@ -23,27 +23,25 @@
 #--------------------------------------------------------------
 
 include ./Makefile.in
+ARMADEUS_TOPDIR:=$(shell pwd)
+export ARMADEUS_TOPDIR
 
 #--- User configurable stuff:
 #BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
 #BUILDROOT_VERSION:=20100211
-#BUILDROOT_PATCH_DIR = patches/buildroot/2010.02
+#BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/2010.02
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
-BUILDROOT_PATCH_DIR = patches/buildroot
+BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot
 #--- End of user conf (don't touch anything below unless you know what you're doing !! ;-) )
 
-
-ARMADEUS_TOPDIR:=$(shell pwd)
-export ARMADEUS_TOPDIR
-
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
-BUILDROOT_DIR = buildroot
+#BUILDROOT_DIR is defined in ./Makefile.in
 PATCH_DIR = patches
 BUILDROOT_FILE_PATH:=downloads
 TAR_OPTIONS=--exclude=.svn --exclude=.git --exclude=.gitignore -xf
 
-ARMADEUS_ENV_FILE=armadeus_env.sh
+ARMADEUS_ENV_FILE:=$(ARMADEUS_TOPDIR)/armadeus_env.sh
 
 
 ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
@@ -186,6 +184,7 @@ buildroot-dirclean:
 # Generate shell's most useful variables:
 shell_env:
 	@echo ARMADEUS_BUILDROOT_DIR=$(BUILDROOT_DIR) > $(ARMADEUS_ENV_FILE)
+	@echo ARMADEUS_BUILDROOT_PATCH_DIR=$(BUILDROOT_PATCH_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_LINUX_DIR=$(ARMADEUS_LINUX_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_LINUX_PATCH_DIR=$(ARMADEUS_LINUX_PATCH_DIR) >> $(ARMADEUS_ENV_FILE)
 	@echo ARMADEUS_U_BOOT_DIR=$(ARMADEUS_U_BOOT_DIR) >> $(ARMADEUS_ENV_FILE)
