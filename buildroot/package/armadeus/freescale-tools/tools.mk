@@ -29,7 +29,7 @@ $(FREESCALE_TOOLS_DIR)/.unpacked: $(DL_DIR)/$(FREESCALE_TOOLS_SOURCE) $(DL_DIR)/
 	$(FREESCALE_TOOLS_CAT) $(DL_DIR)/$(FREESCALE_TOOLS_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	mv $(BUILD_DIR)/misc $(FREESCALE_TOOLS_DIR)
 	toolchain/patch-kernel.sh $(FREESCALE_TOOLS_DIR) $(DL_DIR) misc-\*.patch
-	toolchain/patch-kernel.sh $(FREESCALE_TOOLS_DIR) package/freescale-tools \*misc-$(FREESCALE_TOOLS_VERSION)\*.patch
+	toolchain/patch-kernel.sh $(FREESCALE_TOOLS_DIR) package/armadeus/freescale-tools \*misc-$(FREESCALE_TOOLS_VERSION)\*.patch
 	touch $@
 
 $(FREESCALE_TOOLS_DIR)/.configured: $(FREESCALE_TOOLS_DIR)/.unpacked
