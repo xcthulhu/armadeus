@@ -13,4 +13,4 @@ rm -rf buildroot/package/uucp/
 rm -f  buildroot/package/audio/libsndfile/libsndfile-1.0.*-srconly.patch
 rm -rf buildroot/package/audio/flite/
 rm -rf buildroot/package/libcurl/
-
+rm -f  buildroot/package/audio/madplay/madplay-audio-alsa.patch
