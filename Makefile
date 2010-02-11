@@ -26,7 +26,7 @@ include ./Makefile.in
 
 #--- User configurable stuff:
 #BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
-#BUILDROOT_VERSION:=20100129
+#BUILDROOT_VERSION:=20100211
 #BUILDROOT_PATCH_DIR = patches/buildroot/2010.02
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
@@ -83,9 +83,9 @@ help:
 	@echo '  source                 - download all sources needed for offline-build'
 	@echo '  source-check           - check all packages for valid download URLs'
 	@echo
-	@echo 'See www.armadeus.org for further armadeus details'
+	@echo 'See http://www.armadeus.org for further Armadeus details'
 	@echo 'See ./buildroot/docs/README and ./buildroot/docs/buildroot.html'
-	@echo '  for further buildroot details'
+	@echo '  for further Buildroot details'
 	@echo
 
 
