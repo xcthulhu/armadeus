@@ -1,0 +1,32 @@
+From 0296eef9774b080a5ddd960f9bc7694c4b590f7b Mon Sep 17 00:00:00 2001
+From: Julien Boibessot <julien.boibessot@armadeus.com>
+Date: Thu, 11 Feb 2010 13:40:40 +0100
+Subject: [PATCH] Updates rsync source repository
+
+rsync source repository has moved (?).
+Bump version while we are at it.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+ package/rsync/rsync.mk |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/package/rsync/rsync.mk b/package/rsync/rsync.mk
+index 1ed6812..e1bb28e 100644
+--- a/package/rsync/rsync.mk
++++ b/package/rsync/rsync.mk
+@@ -4,9 +4,9 @@
+ #
+ #############################################################
+ 
+-RSYNC_VERSION:=3.0.6
++RSYNC_VERSION:=3.0.7
+ RSYNC_SOURCE:=rsync-$(RSYNC_VERSION).tar.gz
+-RSYNC_SITE:=http://rsync.samba.org/ftp/rsync
++RSYNC_SITE:=http://rsync.samba.org/ftp/rsync/src
+ RSYNC_INSTALL_STAGING:=NO
+ RSYNC_INSTALL_TARGET:=YES
+ RSYNC_CONF_OPT=$(if $(BR2_ENABLE_DEBUG),--enable-debug,--disable-debug)
+-- 
+1.6.0.4
+

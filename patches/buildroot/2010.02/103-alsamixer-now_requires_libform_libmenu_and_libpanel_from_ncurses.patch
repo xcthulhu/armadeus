@@ -1,0 +1,36 @@
+From 4ad3a1b57fb94d8fd8cf5a6e215afbcc16f50c23 Mon Sep 17 00:00:00 2001
+From: Julien Boibessot <julien.boibessot@armadeus.com>
+Date: Thu, 11 Feb 2010 17:27:06 +0100
+Subject: [PATCH] alsamixer now seems to need libform, libmenu & libpanel (from ncurses)
+
+Without this patch alsamixer complains about missing libs and
+ldd says:
+        libform.so.5 => not found
+        libmenu.so.5 => not found
+        libpanel.so.5 => not found
+        libncurses.so.5 => /usr/lib/libncurses.so.5 (0x4000e000)
+        libasound.so.2 => /usr/lib/libasound.so.2 (0x40056000)
+        ... <cut>
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+---
+ package/multimedia/alsa-utils/Config.in |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/package/multimedia/alsa-utils/Config.in b/package/multimedia/alsa-utils/Config.in
+index 54ab3f9..04057f4 100644
+--- a/package/multimedia/alsa-utils/Config.in
++++ b/package/multimedia/alsa-utils/Config.in
+@@ -24,6 +24,9 @@ config BR2_PACKAGE_ALSA_UTILS_ALSACTL
+ config BR2_PACKAGE_ALSA_UTILS_ALSAMIXER
+ 	bool "alsamixer"
+ 	select BR2_PACKAGE_NCURSES
++	select BR2_PACKAGE_NCURSES_TARGET_PANEL
++	select BR2_PACKAGE_NCURSES_TARGET_FORM
++	select BR2_PACKAGE_NCURSES_TARGET_MENU
+ 	default y
+ 
+ config BR2_PACKAGE_ALSA_UTILS_AMIDI
+-- 
+1.6.0.4
+
