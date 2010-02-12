@@ -92,7 +92,7 @@ BR2_GIT="git clone"
 BR2_ZCAT="gzip -d -c"
 BR2_BZCAT="bzcat"
 BR2_TAR_OPTIONS=""
-BR2_DL_DIR="/local/downloads"
+BR2_DL_DIR="$(BASE_DIR)/../downloads"
 BR2_COPYTO=""
 
 #
