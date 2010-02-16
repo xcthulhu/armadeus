@@ -1,0 +1,34 @@
+From: Wolfgang Denk <wd@denx.de>
+Date: Tue, 2 Sep 2008 19:17:36 +0000 (+0200)
+Subject: fw_env.c: fix build problems with MTD_VERSION=old
+X-Git-Tag: v2008.10-rc1~62
+X-Git-Url: http://git.denx.de/?p=u-boot.git;a=commitdiff_plain;h=1711f3bd16d1c5e9d17b4c0198b426d86999781b
+
+fw_env.c: fix build problems with MTD_VERSION=old
+
+(as needed to support old 2.4 Linux kernel based releases)
+
+Signed-off-by: Wolfgang Denk <wd@denx.de>
+---
+
+diff --git a/tools/env/fw_env.c b/tools/env/fw_env.c
+index b8bca91..e4fc02d 100644
+--- a/tools/env/fw_env.c
++++ b/tools/env/fw_env.c
+@@ -33,6 +33,7 @@
+ #include <unistd.h>
+ 
+ #ifdef MTD_OLD
++# include <stdint.h>
+ # include <linux/mtd/mtd.h>
+ #else
+ # define  __user	/* nothing */
+@@ -397,7 +398,7 @@ int fw_setenv (int argc, char *argv[])
+ static int flash_io (int mode)
+ {
+ 	int fd, fdr, rc, otherdev, len, resid;
+-	erase_info_t erase;
++	struct erase_info_user erase;
+ 	char *data = NULL;
+ 
+ 	if ((fd = open (DEVNAME (curdev), mode)) < 0) {
