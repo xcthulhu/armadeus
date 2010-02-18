@@ -1,0 +1,23 @@
+Corrects Freeze problem with MX2 when Adeos is active and 
+application/driver uses interruption on GPIO
+
+Signed-off-by: Gwenhael GOAVEC-MEROU <gwe@trabucayre.com>
+
+Index: kernel/arch/arm/plat-mxc/gpio.c
+===================================================================
+--- a/arch/arm/plat-mxc/gpio.c	2009-12-17 22:09:56.000000000 +0100
++++ b/arch/arm/plat-mxc/gpio.c	2009-12-17 15:45:17.000000000 +0100
+@@ -241,11 +241,11 @@
+ 	int i;
+ 
+ 	for (i = 0; i < gpio_table_size; i++) {
+-		irq_msk = __raw_readl(port->base + GPIO_IMR);
++		irq_msk = __raw_readl(port[i].base + GPIO_IMR);
+ 		if (!irq_msk)
+ 			continue;
+ 
+-		irq_stat = __raw_readl(port->base + GPIO_ISR) & irq_msk;
++		irq_stat = __raw_readl(port[i].base + GPIO_ISR) & irq_msk;
+ 
+ 		gpio_irq_no = port[i].virtual_irq_start;
+ 

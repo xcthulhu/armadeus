@@ -43,12 +43,14 @@ $(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
 
 $(KERN_DIR)/.patched.xenomai: $(XENOMAI_DIR)/.unpacked
 	 toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
-		\*-adeos-\*.patch				
+		\*-before-adeos-\*.patch				
 	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
 		--linux=$(LINUX26_DIR) \
 		--arch=$(BR2_ARCH) \
 		--default
 	cat package/xenomai/xeno-kernel.config >> $(LINUX26_DIR)/.config
+	 toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
+		\*-after-adeos-\*.patch				
 	touch $@
 
 xenomai-patch-kernel: $(KERN_DIR)/.patched.xenomai

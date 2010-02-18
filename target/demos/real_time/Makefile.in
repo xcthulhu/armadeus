@@ -2,15 +2,14 @@
 DEST_DIR=/tftpboot/local/bin
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-
-CC= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
-LD= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ld
-CXX= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
-AS= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-as
-NM= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-nm
-AR= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ar
-SIZE= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-size
-OBJCOPY= $(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-objcopy
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+LD:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ld
+CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
+AS:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-as
+NM:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-nm
+AR:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-ar
+SIZE:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-size
+OBJCOPY:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-objcopy
 
 EXEC=$(APPLICATIONS)
 
@@ -28,9 +27,10 @@ endif
 
 $(EXEC) : $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
+
 $(OBJ): $(SRC)
 	$(CC) $(CFLAGS) -o $@ -c $<
-.PHONY: install
+
 ifeq ($(XENOMAI),y)
 install: $(EXEC)
 	mkdir -p $(DEST_DIR)/$(EXEC)
@@ -58,21 +58,19 @@ CLEAN_MOD+= .tmp_versions Module.markers
 $(EXEC): $(MODULES).c
 	$(MAKE) -C $(KSRC) SUBDIRS=$(PWD) modules
 
-.PHONY: install
 install: $(EXEC)
 	cp $(EXEC) $(DEST_DIR)/$(EXEC)
 endif
 
-.PHONY: all
 all: $(EXEC)
 
-.PHONY: clean 
 clean:
 	rm -rf $(OBJ) $(CLEAN_MOD)
 	rm -f $(EXEC)
 	rm -f *.c~ *.h~ Makefile~
 
-.PHONY: mrproper
 mrproper: clean
 	rm -rf $(DEST_DIR)/$(EXEC)
+
+.PHONY: all install clean mrproper
 
