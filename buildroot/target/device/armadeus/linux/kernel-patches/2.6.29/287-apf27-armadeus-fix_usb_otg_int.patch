@@ -1,5 +1,7 @@
 Interrupt number of USB OTG module is not correct on MX2.
 
+Integrated in latest kernels.
+
 Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 
 Index: linux-2.6.29/arch/arm/mach-mx2/devices.c

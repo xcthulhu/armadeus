@@ -1,0 +1,67 @@
+Adds the possibility to have a platform custom init to fsl_udc_core driver.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.6/drivers/usb/gadget/fsl_udc_core.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/usb/gadget/fsl_udc_core.c	2010-02-16 19:18:12.000000000 +0100
++++ linux-2.6.29.6/drivers/usb/gadget/fsl_udc_core.c	2010-02-19 16:03:35.000000000 +0100
+@@ -1924,7 +1924,7 @@
+ 
+ 	tmp_reg = fsl_readl(&dr_regs->usbintr);
+ 	t = scnprintf(next, size,
+-			"USB Intrrupt Enable Reg:\n"
++			"USB Interrupt Enable Reg:\n"
+ 			"Sleep Enable: %d SOF Received Enable: %d "
+ 			"Reset Enable: %d\n"
+ 			"System Error Enable: %d "
+@@ -2245,6 +2245,7 @@
+ 	int ret = -ENODEV;
+ 	unsigned int i;
+ 	u32 dccparams;
++	struct fsl_usb2_platform_data *pdata;
+ 
+ 	if (strcmp(pdev->name, driver_name)) {
+ 		VDBG("Wrong device");
+@@ -2327,6 +2328,21 @@
+ 
+ 	fsl_udc_clk_finalize(pdev);
+ 
++	pdata = pdev->dev.platform_data;
++	if (!pdata) {
++		dev_err(&pdev->dev,
++			"No platform data for %s.\n", pdev->dev.bus_id);
++		ret = -ENODEV;
++		goto err_free_irq;
++	}
++	if (pdata->init) {
++		ret = pdata->init(pdev);
++		if (ret) {
++			dev_err(&pdev->dev, "platform init failed\n");
++			/* goto ????; */
++		}
++	}
++
+ 	/* Setup gadget structure */
+ 	udc_controller->gadget.ops = &fsl_gadget_ops;
+ 	udc_controller->gadget.is_dualspeed = 1;
+Index: linux-2.6.29.6/include/linux/fsl_devices.h
+===================================================================
+--- linux-2.6.29.6.orig/include/linux/fsl_devices.h	2010-02-18 18:52:18.000000000 +0100
++++ linux-2.6.29.6/include/linux/fsl_devices.h	2010-02-18 19:10:27.000000000 +0100
+@@ -19,6 +19,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/phy.h>
++#include <linux/platform_device.h>
+ 
+ /*
+  * Some conventions on how we handle peripherals on Freescale chips
+@@ -89,6 +90,7 @@
+ 	enum fsl_usb2_operating_modes	operating_mode;
+ 	enum fsl_usb2_phy_modes		phy_mode;
+ 	unsigned int			port_enables;
++	int (*init)(struct platform_device *pdev);
+ };
+ 
+ /* Flags in fsl_usb2_mph_platform_data */
