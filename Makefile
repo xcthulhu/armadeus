@@ -28,7 +28,7 @@ export ARMADEUS_TOPDIR
 
 #--- User configurable stuff:
 #BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
-#BUILDROOT_VERSION:=20100211
+#BUILDROOT_VERSION:=20100221
 #BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/2010.02
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
