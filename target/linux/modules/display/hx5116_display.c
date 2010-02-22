@@ -34,13 +34,13 @@ void hx5116_write(struct hx5116_display *hx5116_dev, u8 address, u16 data)
 {
 	u8 command[2];
 	int ret;
+
 	/* Address */
 	command[0] = (address << 1) | HX5116_SPI_WRITE;
 	command[1] = data;
 	ret = spi_write(hx5116_dev->spi, command, 2);
 	if (ret < 0)
 		printk("ERROR: can't write on hx5116\n");
-
 }
 
 /* XXX: not functionnal, need half duplex capability under spi_gpio driver */
@@ -54,22 +54,26 @@ u8 hx5116_read(struct hx5116_display *hx5116_dev, u8 address)
 	ret = spi_w8r8(hx5116_dev->spi, command);
 	if (ret < 0)
 		printk("ERROR: can't read on hx5116\n");
+
 	return (u8)ret;
 }
 
 static int hx5116_display_get_contrast(struct display_device *dev)
 {
 	struct hx5116_display *hx5116_dev = dev->priv_data;
+
 	/* TODO: read register value with spi_w8r8 */
+
 	return hx5116_dev->gcontrast_value;
 }
 
-static int hx5116_display_set_contrast(struct display_device *dev,  unsigned int value)
+static int hx5116_display_set_contrast(struct display_device *dev, unsigned int value)
 {
 	struct hx5116_display *hx5116_dev = dev->priv_data;
 	
 	hx5116_write(hx5116_dev, HX5116_RGB_CONTRAST, value);
 	hx5116_dev->gcontrast_value = value;
+
 	return value;
 }
 
@@ -80,7 +84,6 @@ static int hx5116_display_probe(struct display_device *dev, void *data)
 
 static int  hx5116_display_remove(struct display_device *dev)
 {
-
 	return 0;
 }
 
@@ -153,16 +156,14 @@ static void hx5116_init_sequence(struct hx5116_display *hx5116_dev)
 	hx5116_write (hx5116_dev, 0x29, 0x04); /*set B_212*/
 	hx5116_write (hx5116_dev, 0x2A, 0x07); /*set B_255*/
 	hx5116_write (hx5116_dev, 0x06, 0x03); /*set display on*/
-
 }
-
-
 
 static int hx5116_spi_probe(struct spi_device *pdev)
 {
 	int err = -EINVAL;
 	struct display_device *disp_dev;
 	struct hx5116_display *hx5116_dev = pdev->dev.platform_data;
+
 	/* fill hx5116 display structure */
 	disp_dev = display_device_register(&hx5116_ops,
 					&pdev->dev,
@@ -178,8 +179,7 @@ static int hx5116_spi_probe(struct spi_device *pdev)
 	hx5116_dev->spi->bits_per_word = 8;
 	hx5116_dev->spi->dev.power.power_state = PMSG_ON;
 	err = spi_setup(hx5116_dev->spi);
-	if (err < 0)
-	{
+	if (err < 0) {
 		goto spi_error;
 	}
 
@@ -201,6 +201,7 @@ static int hx5116_spi_remove(struct spi_device *pdev)
 
 	hx5116_dev->reset_on(1); /* let hx5116 in reset */
 	display_device_unregister(hx5116_dev->display_dev);
+
 	return 0;
 }
 
