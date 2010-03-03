@@ -20,8 +20,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  **********************************************************************
  */
-
-
 #ifndef __LED_H__
 #define __LED_H__
 
@@ -54,11 +52,8 @@
 #	include <mach/hardware.h>
 #endif
 
-
 /* for platform device */
 #include <linux/platform_device.h>
-
-#endif
 
 /* for debugging messages*/
 #define LED_DEBUG
@@ -86,13 +81,14 @@
 #define LED_ID_OFFSET  (0x02)
 
 /* platform device */
-struct plat_led_port{
-	const char  *name;		/* instance name  */
-	int			num;		/* instance number */
-	void		*membase;	/* virtual base address */
-	int			idnum;		/* identity number */
-	int			idoffset;	/* identity relative address */
+struct plat_led_port {
+	const char *name;	/* instance name  */
+	int num;		/* instance number */
+	void *membase;		/* virtual base address */
+	int idnum;		/* identity number */
+	int idoffset;		/* identity relative address */
 	struct led_dev *sdev;	/* struct for main device structure*/
 };
 
+#endif /* __LED_H__ */
 

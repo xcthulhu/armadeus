@@ -109,25 +109,27 @@ struct file_operations led_fops = {
  * characters file /dev operations
  * *********************************/
 ssize_t led_read(struct file *fildes, char __user *buff,
-				 size_t count, loff_t *offp){
+				 size_t count, loff_t *offp)
+{
 	struct led_dev *sdev = fildes->private_data;
 	u16 data=0;
+
 	PDEBUG("Read value\n");
-	if(*offp != 0 ){ /* offset must be 0 */
-		PDEBUG("offset %d\n",(int)*offp);
+	if (*offp != 0) { /* offset must be 0 */
+		PDEBUG("offset %d\n", (int)*offp);
 		return 0;
 	}
 
 	PDEBUG("count %d\n",count);
-	if(count > 2){ /* 16bits max*/
+	if (count > 2) { /* 16bits max*/
 		count = 2; 
 	}
 
 	data = ioread16(sdev->membase+LED_REG_OFFSET);
-	PDEBUG("Read %d at %x\n",data,(int)(sdev->membase+LED_REG_OFFSET));
+	PDEBUG("Read %d at %x\n", data, (int)(sdev->membase+LED_REG_OFFSET));
 
 	/* return data for user */
-	if(copy_to_user(buff,&data,count)){
+	if (copy_to_user(buff, &data, count)) {
 		printk(KERN_WARNING "read : copy to user data error\n");
 		return -EFAULT;
 	}
@@ -135,21 +137,22 @@ ssize_t led_read(struct file *fildes, char __user *buff,
 }
 
 ssize_t led_write(struct file *fildes, const char __user *
-				  buff,size_t count, loff_t *offp){
+				  buff,size_t count, loff_t *offp)
+{
 	struct led_dev *sdev = fildes->private_data;
-	u16 data=0;
+	u16 data = 0;
 
-	if(*offp != 0){ /* offset must be 0 */
-		PDEBUG("offset %d\n",(int)*offp);
+	if (*offp != 0) { /* offset must be 0 */
+		PDEBUG("offset %d\n", (int)*offp);
 		return 0;
 	}
 
-	PDEBUG("count %d\n",count);
-	if(count > 2){ /* 16 bits max)*/
+	PDEBUG("count %d\n", count);
+	if (count > 2) { /* 16 bits max)*/
 		count = 2;
 	}
 
-	if(copy_from_user(&data,buff,count)){
+	if (copy_from_user(&data, buff, count)) {
 		printk(KERN_WARNING "write : copy from user error\n");
 		return -EFAULT;
 	}
@@ -157,15 +160,16 @@ ssize_t led_write(struct file *fildes, const char __user *
 	PDEBUG("Write %d at %x\n",
 		   data,
 		   (int)(sdev->membase+LED_REG_OFFSET));
-	iowrite16(data,sdev->membase+LED_REG_OFFSET);
+	iowrite16(data, sdev->membase+LED_REG_OFFSET);
 
 	return count;
 }
 
-int led_open(struct inode *inode, struct file *filp){
+int led_open(struct inode *inode, struct file *filp)
+{
 	/* Allocate and fill any data structure to be put in filp->private_data */
-	filp->private_data = container_of(inode->i_cdev,struct led_dev, cdev);
-	PDEBUG( "Led opened\n");
+	filp->private_data = container_of(inode->i_cdev, struct led_dev, cdev);
+	PDEBUG("Led opened\n");
 	return 0;
 }
 
@@ -176,8 +180,8 @@ int led_release(struct inode *inode, struct file *filp)
 {
 	struct led_dev *dev;
 
-	dev = container_of(inode->i_cdev,struct led_dev,cdev);
-	PDEBUG( "%s: released\n",dev->name);
+	dev = container_of(inode->i_cdev, struct led_dev, cdev);
+	PDEBUG("%s: released\n", dev->name);
 	filp->private_data=NULL;
 
 	return 0;
@@ -189,32 +193,31 @@ int led_release(struct inode *inode, struct file *filp)
 static int led_probe(struct platform_device *pdev)
 {
 	struct plat_led_port *dev = pdev->dev.platform_data;
-
 	int result = 0;				 /* error return */
-	int led_major,led_minor;
+	int led_major, led_minor;
 	u16 data;
 	struct led_dev *sdev;
 
 	PDEBUG("Led probing\n");
-	PDEBUG("Register %s num %d\n",dev->name,dev->num);
+	PDEBUG("Register %s num %d\n", dev->name, dev->num);
 
 	/**************************/
 	/* check if ID is correct */
 	/**************************/
 	data = ioread16(dev->membase+dev->idoffset);
-	if(data != dev->idnum){
+	if (data != dev->idnum) {
 		result = -1;
 		printk(KERN_WARNING "For %s id:%d doesn't match with "
 			   "id read %d,\n is device present ?\n",
-			   dev->name,dev->idnum,data);
+			   dev->name, dev->idnum, data);
 		goto error_id;
 	}
 
 	/********************************************/
 	/*	allocate memory for sdev structure	*/
 	/********************************************/
-	sdev = kmalloc(sizeof(struct led_dev),GFP_KERNEL);
-	if(!sdev){
+	sdev = kmalloc(sizeof(struct led_dev), GFP_KERNEL);
+	if (!sdev) {
 		result = -ENOMEM;
 		goto error_sdev_alloc;
 	}
@@ -226,7 +229,7 @@ static int led_probe(struct platform_device *pdev)
 		printk("Kmalloc name space error\n");
 		goto error_name_alloc;
 	}
-	if (strncpy(sdev->name,dev->name,1+strlen(dev->name)) < 0) {
+	if (strncpy(sdev->name, dev->name, 1+strlen(dev->name)) < 0) {
 		printk("copy error");
 		goto error_name_copy;
 	}
@@ -239,9 +242,9 @@ static int led_probe(struct platform_device *pdev)
 	led_minor = dev->num ;/* num come from plat_led_port data structure */
 
 	sdev->devno = MKDEV(led_major, led_minor);
-	result = alloc_chrdev_region(&(sdev->devno),led_minor, 1,dev->name);
+	result = alloc_chrdev_region(&(sdev->devno), led_minor, 1, dev->name);
 	if (result < 0) {
-		printk(KERN_WARNING "%s: can't get major %d\n",dev->name,led_major);
+		printk(KERN_WARNING "%s: can't get major %d\n", dev->name, led_major);
 		goto error_devno;
 	}
 	printk(KERN_INFO "%s: MAJOR: %d MINOR: %d\n",
@@ -267,9 +270,9 @@ static int led_probe(struct platform_device *pdev)
 	}
 
 	/* initialize led value */
-	data=1;
-	iowrite16(data,sdev->membase);
-	PDEBUG("Wrote %x at %x\n", data,(int)( sdev->membase+LED_REG_OFFSET));
+	data = 1;
+	iowrite16(data, sdev->membase);
+	PDEBUG("Wrote %x at %x\n", data, (int)(sdev->membase+LED_REG_OFFSET));
 
 	/* OK module inserted ! */
 	printk(KERN_INFO "Led module %s insered\n", dev->name);
@@ -280,11 +283,11 @@ static int led_probe(struct platform_device *pdev)
 	/*********************/
 	/* delete the cdev structure */
 	cdev_del(&sdev->cdev);
-	PDEBUG("%s:cdev deleted\n",dev->name);
+	PDEBUG("%s:cdev deleted\n", dev->name);
 error_cdev_add:
 	/* free major and minor number */
-	unregister_chrdev_region(sdev->devno,1);
-	printk(KERN_INFO "%s: Led deleted\n",dev->name);
+	unregister_chrdev_region(sdev->devno, 1);
+	printk(KERN_INFO "%s: Led deleted\n", dev->name);
 error_devno:
 error_name_copy:
 	kfree(sdev->name);
@@ -300,14 +303,15 @@ static int __devexit led_remove(struct platform_device *pdev)
 {
 	struct plat_led_port *dev = pdev->dev.platform_data;
 	struct led_dev *sdev = (*dev).sdev;
-	PDEBUG("Unregister %s, number %d\n",dev->name,dev->num);
+
+	PDEBUG("Unregister %s, number %d\n", dev->name, dev->num);
 	/* delete the cdev structure */
-	PDEBUG("cdev name : %s\n",sdev->name);
+	PDEBUG("cdev name : %s\n", sdev->name);
 	cdev_del(&sdev->cdev);
-	PDEBUG("%s:cdev deleted\n",dev->name);
+	PDEBUG("%s:cdev deleted\n", dev->name);
 	/*error_cdev_add:*/
 	/* free major and minor number */
-	unregister_chrdev_region(sdev->devno,1);
+	unregister_chrdev_region(sdev->devno, 1);
 	/*error_devno:*/
 	/*error_name_copy:*/
 	kfree(sdev->name);
