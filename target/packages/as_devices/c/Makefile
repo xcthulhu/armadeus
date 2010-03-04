@@ -1,14 +1,15 @@
-# to compile for arm : 
-# make CC=../../bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc
-# make CC=~/Projects/HMSDemo/software/bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc
-# make CC=~/Projects/virgin_HMS/software/bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc
-# 
+# Default values for local compiling:
+ARMADEUS_BASE_DIR=../../../../
+include $(ARMADEUS_BASE_DIR)/Makefile.in
+
 CFLAGS=-Wall -g -O0
 LDFLAGS=
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 OBJ=as_apf27_pwm.o
 OBJ+= as_i2c.o
-OBJ+= as_apf27_gpio.o
+OBJ+= as_gpio.o
 OBJ+= as_93lcxx.o
 OBJ+= as_spi.o
 

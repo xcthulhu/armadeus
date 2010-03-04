@@ -1,10 +1,12 @@
-# to compile c tests
-# make CC=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc test_cdevices
-# to compile cpp tests
-# make CC=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc CXX=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++ test_cppdevices
-# 
+# Default values for local compiling:
+ARMADEUS_BASE_DIR=../../../../
+include $(ARMADEUS_BASE_DIR)/Makefile.in
+
 CFLAGS=-Wall -g -O0
 LDFLAGS=
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 C_BINARY=test_cdevices
 C_LIBNAME=as_devices

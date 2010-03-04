@@ -22,26 +22,64 @@
 #ifndef __ASAPF27GPIO_H__
 #define __ASAPF27GPIO_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 #define NUMBER_OF_PORTS 6
 
-int as_apf27_gpio_init(char aPortChar);
+/** @brief Initialize port access
+ *
+ * @param aPortChar character port in UPPER case
+ *
+ * @return error if negative value 
+ */
+int32_t as_gpio_init(char aPortChar);
 
-int as_apf27_gpio_set_pin_direction(char aPortChar,
+/** @brief  Set pin direction
+ *
+ * @param aPortChar port character in upper case
+ * @param aPinNum pin number
+ * @param aDirection direction 0:input 1:output
+ *
+ * @return error if negative value 
+ */
+int32_t as_gpio_set_pin_direction(char aPortChar,
                                     int aPinNum,
                                     int aDirection);
 
-int as_apf27_gpio_set_pin_value(char aPortChar,
+/** @brief Set pin value 
+ *
+ * @param aPortChar port character in upper case
+ * @param aPinNum pin number
+ * @param aValue value of pin (1 or 0)
+ *
+ * @return error if negative 
+ */
+int32_t as_gpio_set_pin_value(char aPortChar,
                                 int aPinNum,
                                 int aValue);
 
-int as_apf27_gpio_get_pin_value(char aPortChar,
+/** @brief Get pin value
+ *
+ * @param aPortChar port character in upper case
+ * @param aPinNum pin number
+ *
+ * @return pin value if positive or null, error if negative
+ */
+int32_t as_gpio_get_pin_value(char aPortChar,
                                 int aPinNum);
 
-int as_apf27_gpio_close(char aPortChar);
+/** @brief Close port access
+ *
+ * @param aPortChar port character in upper case
+ *
+ * @return pin value if positive or null, error if negative
+ */
+
+int32_t as_gpio_close(char aPortChar);
 
 #ifdef __cplusplus
 }

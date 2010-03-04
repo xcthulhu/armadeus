@@ -19,7 +19,7 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "as_apf27_gpio.h"
+#include "as_gpio.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,12 +43,8 @@ static int mFileHandlerGpioPort[NUMBER_OF_PORTS];
 
 /*------------------------------------------------------------------------------*/
 
-/** Initialize port access
- * @param aPortChar character port in UPPER case
- * @return error if negative value 
- */
-int 
-as_apf27_gpio_init(char aPortChar)
+int32_t 
+as_gpio_init(char aPortChar)
 {
     char gpio_file_path[50];
     int ret=0;
@@ -71,14 +67,8 @@ as_apf27_gpio_init(char aPortChar)
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin direction
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @param aDirection direction 0:input 1:output
- * @return error if negative value 
- */
-int
-as_apf27_gpio_set_pin_direction(char aPortChar,
+int32_t
+as_gpio_set_pin_direction(char aPortChar,
                                 int aPinNum,
                                 int aDirection)
 {
@@ -119,14 +109,8 @@ as_apf27_gpio_set_pin_direction(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin value 
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @param aValue value of pin (1 or 0)
- * @return error if negative 
- */
-int 
-as_apf27_gpio_set_pin_value(char aPortChar,
+int32_t 
+as_gpio_set_pin_value(char aPortChar,
                             int aPinNum,
                             int aValue)
 {
@@ -153,12 +137,7 @@ as_apf27_gpio_set_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Get pin value
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @return pin value if positive or null, error if negative
- */
-int as_apf27_gpio_get_pin_value(char aPortChar,
+int32_t as_gpio_get_pin_value(char aPortChar,
                                 int aPinNum)
 {
     int ret=0;
@@ -178,12 +157,8 @@ int as_apf27_gpio_get_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Close port access
- * @param aPortChar port character in upper case
- * @return pin value if positive or null, error if negative
- */
-int 
-as_apf27_gpio_close(char aPortChar)
+int32_t 
+as_gpio_close(char aPortChar)
 {
     return close(mFileHandlerGpioPort[aPortChar-'A']);
 }
