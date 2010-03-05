@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "as_apf27_pwm.h"
+#include "as_pwm.h"
 #include "as_93lcxx.h"
 #include "as_i2c.h"
 #include "as_gpio.h"
@@ -45,7 +45,7 @@ void test_pwm(void)
     char buffer2[20];
     int value;
 
-    ret = as_apf27_pwm_init(PWM_NUM);
+    ret = as_pwm_init(PWM_NUM);
     if(ret < 0){
         printf("can't init pwm0\n");
         return;
@@ -72,41 +72,41 @@ void test_pwm(void)
         {
             case '1' : printf("Give frequency :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setFrequency(PWM_NUM,value);
+                       as_pwm_setFrequency(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '2' : printf("Current pwm frequency is %d\n",
-                              as_apf27_pwm_getFrequency(PWM_NUM));
+                              as_pwm_getFrequency(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '3' : printf("Give period :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setPeriod(PWM_NUM,value);
+                       as_pwm_setPeriod(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '4' : printf("Current period is %d\n",
-                              as_apf27_pwm_getPeriod(PWM_NUM));
+                              as_pwm_getPeriod(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '5' : printf("Give Duty :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setDuty(PWM_NUM,value);
+                       as_pwm_setDuty(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '6' : printf("Current Duty is %d\n",
-                              as_apf27_pwm_getDuty(PWM_NUM));
+                              as_pwm_getDuty(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '7' : printf("Activate 'a' or Desactivate 'd' ?");
                        scanf("%s",buffer2);
                        if(buffer2[0] == 'a')
                        {
-                           as_apf27_pwm_activate(PWM_NUM,1);
+                           as_pwm_activate(PWM_NUM,1);
                            printf("Pwm activated\n");
                            pressEnterToContinue();
                        }else if(buffer2[0] == 'd')
                        {
-                           as_apf27_pwm_activate(PWM_NUM,0);
+                           as_pwm_activate(PWM_NUM,0);
                            printf("Pwm desactivated\n");
                            pressEnterToContinue();
                        }else{
@@ -114,7 +114,7 @@ void test_pwm(void)
                            pressEnterToContinue();
                        }
                        break;
-            case '8' : if(as_apf27_pwm_getState(PWM_NUM))
+            case '8' : if(as_pwm_getState(PWM_NUM))
                        {
                            printf("pwm is active\n");
                            pressEnterToContinue();
@@ -126,7 +126,7 @@ void test_pwm(void)
             default : break;
         }
     }
-    ret = as_apf27_pwm_close(PWM_NUM);
+    ret = as_pwm_close(PWM_NUM);
     if(ret < 0){
         printf("can't close pwm0\n");
         return;
