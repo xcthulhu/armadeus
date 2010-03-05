@@ -9,8 +9,8 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-01-21 11:06:41.000000000 +0100
-@@ -0,0 +1,727 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-02-22 14:38:52.000000000 +0100
+@@ -0,0 +1,789 @@
 + /*
 + * apf27.c
 + *
@@ -62,6 +62,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
++#include <linux/fsl_devices.h> /* USB device */
 +#include "../../../drivers/armadeus/pwm/pwm.h"
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
 +#include "cpufreq_imx.h"
@@ -242,8 +243,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#endif /* CONFIG_FEC_OLD */
 +
 +
-+/* APF27 has an onboard PHY for OTG USB port */
-+#ifdef CONFIG_USB_EHCI_MXC
++/* APF27 has an onboard PHY (ISP1504) on OTG USB port */
 +static int mxc_usbotg_pins[] = {
 +	PE0_PF_USBOTG_NXT,
 +	PE1_PF_USBOTG_STP,
@@ -259,9 +259,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	PC13_PF_USBOTG_DATA3,
 +};
 +
-+static int isp1504_set_vbus_power(void __iomem *view, int on)
++static int isp1504_check_presence(void __iomem *view)
 +{
-+	int vid, pid, ret = 0;
++	int vid, pid;
 +
 +	vid = (ulpi_read(ISP1504_VID_HIGH, view) << 8) |
 +		 ulpi_read(ISP1504_VID_LOW, view);
@@ -273,6 +273,17 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +		pr_err("No ISP1504 found\n");
 +		return -1;
 +	}
++
++	return 0;
++}
++
++static int isp1504_set_vbus_power(void __iomem *view, int on)
++{
++	int ret = 0;
++
++	ret = isp1504_check_presence(view);
++	if (ret)
++		return ret;
 +
 +	if (on) {
 +		/* force disconnection of the DM/DP signals. This
@@ -300,6 +311,19 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	return ret;
 +}
 +
++static int isp1504_set_device(void __iomem *view)
++{
++	int ret = 0;
++
++	ret = isp1504_check_presence(view);
++	if (ret)
++		return ret;
++
++	ret = ulpi_clear(0x06, ISP1504_OTGCTL, view);
++
++	return ret;
++}
++
 +static void isp1504_suspend(void __iomem *view)
 +{
 +	/* isp1504_set_vbus_power(view, 0); needed ? */
@@ -308,15 +332,50 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +
 +static void isp1504_resume(void __iomem *view)
 +{
-+	/* uggly but the STP line must be set to 1 before the first PHY access 
++	/* uggly but the STP line must be set to 1 before the first PHY access
 +	   in order to wake up the ULPI clock of the PHY. */
 +	gpio_set_value(GPIO_PORTE | 1, 1);
 +	/* deassert STP (gpio mode) */
 +	mxc_gpio_mode(GPIO_PORTE | 1  | GPIO_OUT | GPIO_GPIO);
 +	mdelay(1);
-+	/* STP now managed by the USB host ctrl */	
++	/* STP now managed by the USB host ctrl */
 +	mxc_gpio_mode(PE1_PF_USBOTG_STP);
 +}
++
++#define UOG_USBCMD	0x140
++#define UOG_ULPIVIEW	0x170
++#define UOG_PORTSC1	0x184
++#define USB_CTRL	0x600
++#define PORTSC_PTS_MASK	(3 << 30)
++#define PORTSC_PTS_ULPI (2 << 30)
++
++static void apf27_usbotg_reset(void)
++{
++	uint32_t temp;
++
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + UOG_USBCMD);
++	temp |= 0x02;
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + UOG_USBCMD);
++	pr_debug("reset controller: 0x%08x\n", temp);
++	mdelay(50);
++}
++
++static int otg_mode_host = 1;
++
++static int __init apf27_otg_mode(char *options)
++{
++	if (!strcmp(options, "host"))
++		otg_mode_host = 1;
++	else if (!strcmp(options, "device"))
++		otg_mode_host = 0;
++	else {
++		pr_info("otg_mode neither \"host\" nor \"device\". "
++			"Defaulting to host\n");
++	}
++
++	return 0;
++}
++__setup("otg_mode=", apf27_otg_mode);
 +
 +static int apf27_usbotg_init(struct platform_device *pdev)
 +{
@@ -324,37 +383,33 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	uint32_t temp;
 +
 +	ret = mxc_gpio_setup_multiple_pins(mxc_usbotg_pins,
-+			ARRAY_SIZE(mxc_usbotg_pins), "usbotg");
++			ARRAY_SIZE(mxc_usbotg_pins), "USB OTG");
 +	if (ret)
 +		return ret;
 +
-+	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x600);
-+	pr_debug("USB_CTRL before: 0x%08x\n", temp);
++	/* Tweak power/wake up handling */
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + USB_CTRL);
 +	temp &= ~( (3 << 29) | 1 );
 +	temp |= (1 << 24) | (1 << 27) | (1 << 28);
-+	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x600);
-+	pr_debug("USB_CTRL after: 0x%08x\n", temp);
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + USB_CTRL);
 +
-+	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x184);
-+	pr_debug("PORTSC1 before: 0x%08x\n", temp);
-+	temp &= ~(3 << 30);
-+	temp |= 2 << 30;
-+	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x184);
-+	pr_debug("PORTSC1 after: 0x%08x\n", temp);
-+
++	/* Select ULPI PHY */
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + UOG_PORTSC1);
++	temp = (temp & ~PORTSC_PTS_MASK) | PORTSC_PTS_ULPI;
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + UOG_PORTSC1);
 +	mdelay(10);
 +
-+	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x140);
-+	temp |= 0x02; /* reset controller */
-+	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x140);
-+	pr_debug("reset controller: 0x%08x\n", temp);
-+	mdelay(50);
++	apf27_usbotg_reset();
++
++	if (otg_mode_host) {
++		ret = isp1504_set_vbus_power((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + UOG_ULPIVIEW)), 1);
++	} else {
++		ret = isp1504_set_device((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + UOG_ULPIVIEW)));
++	}
 +
 +	if (ret)
 +		mxc_gpio_release_multiple_pins(mxc_usbotg_pins,
 +			ARRAY_SIZE(mxc_usbotg_pins));
-+
-+	ret = isp1504_set_vbus_power((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)), 1);
 +
 +	return ret;
 +}
@@ -362,7 +417,12 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +struct mxc_usb2_platform_data ehci0_pdata = {
 +	.init = apf27_usbotg_init,
 +};
-+#endif /* CONFIG_USB_EHCI_MXC */
++
++static struct fsl_usb2_platform_data otg_device_pdata = {
++	.init = apf27_usbotg_init,
++	.operating_mode = FSL_USB2_DR_DEVICE,
++	.phy_mode = FSL_USB2_PHY_ULPI,
++};
 +
 +
 +/* APF27 frequency scaling stuff */
@@ -684,9 +744,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
 +#endif
-+#ifdef CONFIG_USB_EHCI_MXC
-+	mxc_register_device(&mxc_otg, &ehci0_pdata);
-+#endif
++	if (otg_mode_host) {
++		mxc_register_device(&mxc_otg_host, &ehci0_pdata);
++	} else {
++		mxc_register_device(&mxc_otg_udc_device, &otg_device_pdata);
++	}
 +#ifdef CONFIG_I2C
 +	mxc_register_device(&imx_i2c_device1, &apf27_i2c_1_data);
 +	i2c_register_board_info(1, apf27_i2c_devices_bus1,
@@ -741,7 +803,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-01-26 22:31:08.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-02-22 14:38:13.000000000 +0100
 @@ -0,0 +1,1019 @@
 + /*
 + * apf27-dev.c
@@ -1765,7 +1827,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-01-21 11:06:41.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-02-16 13:17:29.000000000 +0100
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -1990,7 +2052,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-01-26 19:01:12.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-02-16 13:17:29.000000000 +0100
 @@ -0,0 +1,201 @@
 + /*
 + * apf27-dev-ext-apw.c

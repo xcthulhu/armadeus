@@ -1,3 +1,8 @@
+Add USB Host 1 ressources + correct ID of USB Host 2
+
+Integrated in latest kernels with different names for platform devices.
+Ex: mxc_ehci1 -> mxc_usbh1
+
 Index: linux-2.6.29.4/arch/arm/mach-mx2/devices.c
 ===================================================================
 --- linux-2.6.29.4.orig/arch/arm/mach-mx2/devices.c	2009-06-04 11:30:50.000000000 +0200

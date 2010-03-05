@@ -1,0 +1,84 @@
+Adds USB device description for i.MX27 OTG controller + patch fsl_udc_core for
+current MX27 clock support.
+(Patch will be removed when using 2.6.34 kernel)
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.6/arch/arm/mach-mx2/devices.c
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/devices.c	2010-02-16 14:08:57.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/devices.c	2010-02-16 18:27:06.000000000 +0100
+@@ -599,7 +599,20 @@
+ 	},
+ };
+ 
+-struct platform_device mxc_otg = {
++/* OTG gadget device */
++struct platform_device mxc_otg_udc_device = {
++	.name = "fsl-usb2-udc",
++	.id = -1,
++	.dev = {
++		.dma_mask = &otg_dmamask,
++		.coherent_dma_mask = 0xffffffffUL,
++	},
++	.resource = mxc_otg_resources,
++	.num_resources = ARRAY_SIZE(mxc_otg_resources),
++};
++
++/* OTG host */
++struct platform_device mxc_otg_host = {
+ 	.name = "mxc-ehci",
+ 	.id = 0,
+ 	.dev = {
+@@ -610,6 +623,7 @@
+ 	.num_resources = ARRAY_SIZE(mxc_otg_resources),
+ };
+ 
++/* USB host 1 */
+ static struct resource mxc_ehci1_resources[] = {
+ 	{
+ 		.start = OTG_BASE_ADDR + 0x200,
+@@ -634,6 +648,7 @@
+ 	.resource = mxc_ehci1_resources,
+ };
+ 
++/* USB host 2 */
+ static struct resource mxc_ehci2_resources[] = {
+ 	{
+ 		.start = OTG_BASE_ADDR + 0x400,
+Index: linux-2.6.29.6/arch/arm/mach-mx2/devices.h
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/devices.h	2010-02-16 14:09:00.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/devices.h	2010-02-16 14:16:14.000000000 +0100
+@@ -27,7 +27,8 @@
+ extern struct platform_device imx_ssi_device0;
+ extern struct platform_device imx_ssi_device1;
+ extern struct platform_device mxc_dam_device;
+-extern struct platform_device mxc_otg;
++extern struct platform_device mxc_otg_udc_device;
++extern struct platform_device mxc_otg_host;
+ extern struct platform_device mxc_ehci1;
+ extern struct platform_device mxc_ehci2;
+ extern struct platform_device mxc_pwm_device0;
+Index: linux-2.6.29.6/drivers/usb/gadget/fsl_mx3_udc.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/usb/gadget/fsl_mx3_udc.c	2010-02-16 19:12:38.000000000 +0100
++++ linux-2.6.29.6/drivers/usb/gadget/fsl_mx3_udc.c	2010-02-16 19:20:42.000000000 +0100
+@@ -28,7 +28,7 @@
+ 
+ 	pdata = pdev->dev.platform_data;
+ 
+-	mxc_ahb_clk = clk_get(&pdev->dev, "usb_ahb");
++	mxc_ahb_clk = clk_get(&pdev->dev, "usb_ahb_clk");
+ 	if (IS_ERR(mxc_ahb_clk))
+ 		return PTR_ERR(mxc_ahb_clk);
+ 
+@@ -39,7 +39,7 @@
+ 	}
+ 
+ 	/* make sure USB_CLK is running at 60 MHz +/- 1000 Hz */
+-	mxc_usb_clk = clk_get(&pdev->dev, "usb");
++	mxc_usb_clk = clk_get(&pdev->dev, "usb_clk");
+ 	if (IS_ERR(mxc_usb_clk)) {
+ 		dev_err(&pdev->dev, "clk_get(\"usb\") failed\n");
+ 		ret = PTR_ERR(mxc_usb_clk);

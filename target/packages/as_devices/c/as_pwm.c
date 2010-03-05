@@ -25,7 +25,7 @@
 #include <errno.h>  /* for perror() */
 #include <unistd.h> /* for write()  */
 
-#include "as_apf27_pwm.h"
+#include "as_pwm.h"
 
 #define PWM_SYS_PATH   "/sys/class/pwm/pwm"
 #define FREQUENCY_PATH "frequency"
@@ -76,7 +76,7 @@ writeBuffer(int aFile_handler, char *aValueWrite)
  * @return error code
  */
 int
-as_apf27_pwm_init(int aPwmNumber)
+as_pwm_init(int aPwmNumber)
 {
     char buffer[50];
 
@@ -118,7 +118,7 @@ as_apf27_pwm_init(int aPwmNumber)
  * @return no error if positive value
  */
 int
-as_apf27_pwm_close(int aPwmNumber)
+as_pwm_close(int aPwmNumber)
 {
     int ret = 0;
 
@@ -161,7 +161,7 @@ as_apf27_pwm_close(int aPwmNumber)
  * @return no error if positive value
  */
 int
-as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency)
+as_pwm_setFrequency(int aPwmNumber, int aFrequency)
 {
     char buffer[50];
 
@@ -176,7 +176,7 @@ as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency)
  * @return int frequency in Hz
  */
 int 
-as_apf27_pwm_getFrequency(int aPwmNumber)
+as_pwm_getFrequency(int aPwmNumber)
 {
     return mFrequency[aPwmNumber];
 }
@@ -189,7 +189,7 @@ as_apf27_pwm_getFrequency(int aPwmNumber)
  * @return positive value if no error
  */
 int
-as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod)
+as_pwm_setPeriod(int aPwmNumber, int aPeriod)
 {
     char buffer[50];
     mPeriod[aPwmNumber] = aPeriod;
@@ -203,7 +203,7 @@ as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod)
  * @return period int in us
  */
 int  
-as_apf27_pwm_getPeriod(int aPwmNumber)
+as_pwm_getPeriod(int aPwmNumber)
 {
     return mPeriod[aPwmNumber];
 }
@@ -215,7 +215,7 @@ as_apf27_pwm_getPeriod(int aPwmNumber)
  * @return positive value if no error
  */
 int 
-as_apf27_pwm_setDuty(int aPwmNumber, int aDuty)
+as_pwm_setDuty(int aPwmNumber, int aDuty)
 {
     char buffer[50];
     mDuty[aPwmNumber] = aDuty;
@@ -230,7 +230,7 @@ as_apf27_pwm_setDuty(int aPwmNumber, int aDuty)
  * @return duty
  */
 int  
-as_apf27_pwm_getDuty(int aPwmNumber)
+as_pwm_getDuty(int aPwmNumber)
 {
     return mDuty[aPwmNumber];
 }
@@ -240,7 +240,7 @@ as_apf27_pwm_getDuty(int aPwmNumber)
  * @param aPwmNumber pwm number used
  * @param aEnable
  */
-int as_apf27_pwm_activate(int aPwmNumber, int aEnable)
+int as_pwm_activate(int aPwmNumber, int aEnable)
 {
     char one[] = "1";
     char zero[] = "0";
@@ -261,7 +261,7 @@ int as_apf27_pwm_activate(int aPwmNumber, int aEnable)
 
 }
 
-int as_apf27_pwm_getState(int aPwmNumber)
+int as_pwm_getState(int aPwmNumber)
 {
     //XXX: get real state in pwm driver instead global variable
     return mState[aPwmNumber];
