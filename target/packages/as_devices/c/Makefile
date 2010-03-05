@@ -8,11 +8,12 @@ LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
-OBJ=as_apf27_pwm.o
+OBJ=as_pwm.o
 OBJ+= as_i2c.o
 OBJ+= as_gpio.o
 OBJ+= as_93lcxx.o
 OBJ+= as_spi.o
+OBJ+= as_max1027.o
 
 LIBRARY=as_devices
 LIB_VERS=1
