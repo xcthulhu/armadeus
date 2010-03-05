@@ -19,8 +19,8 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27GPIO_H__
-#define __ASAPF27GPIO_H__
+#ifndef __ASGPIO_H__
+#define __ASGPIO_H__
 
 #include <stdint.h>
 
@@ -30,13 +30,21 @@ extern "C" {
 
 #define NUMBER_OF_PORTS 6
 
+/**
+ * Store gpio parameters
+ */
+struct as_gpio_device {
+    unsigned char port_letter;
+    int fdev;
+};
+
 /** @brief Initialize port access
  *
  * @param aPortChar character port in UPPER case
  *
  * @return error if negative value 
  */
-int32_t as_gpio_init(char aPortChar);
+struct as_gpio_device *as_gpio_open(char aPortChar);
 
 /** @brief  Set pin direction
  *
@@ -46,7 +54,7 @@ int32_t as_gpio_init(char aPortChar);
  *
  * @return error if negative value 
  */
-int32_t as_gpio_set_pin_direction(char aPortChar,
+int32_t as_gpio_set_pin_direction(  struct as_gpio_device *dev,
                                     int aPinNum,
                                     int aDirection);
 
@@ -58,7 +66,7 @@ int32_t as_gpio_set_pin_direction(char aPortChar,
  *
  * @return error if negative 
  */
-int32_t as_gpio_set_pin_value(char aPortChar,
+int32_t as_gpio_set_pin_value(  struct as_gpio_device *dev,
                                 int aPinNum,
                                 int aValue);
 
@@ -69,7 +77,7 @@ int32_t as_gpio_set_pin_value(char aPortChar,
  *
  * @return pin value if positive or null, error if negative
  */
-int32_t as_gpio_get_pin_value(char aPortChar,
+int32_t as_gpio_get_pin_value(  struct as_gpio_device *dev,
                                 int aPinNum);
 
 /** @brief Close port access
@@ -79,10 +87,10 @@ int32_t as_gpio_get_pin_value(char aPortChar,
  * @return pin value if positive or null, error if negative
  */
 
-int32_t as_gpio_close(char aPortChar);
+int32_t as_gpio_close( struct as_gpio_device *dev);
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // __ASAPF27GPIO_H__
+#endif // __ASGPIO_H__

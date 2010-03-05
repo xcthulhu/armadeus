@@ -26,6 +26,7 @@
 #include "as_apf27_pwm.h"
 #include "as_93lcxx.h"
 #include "as_i2c.h"
+#include "as_gpio.h"
 
 #define PWM_NUM 0
 
@@ -423,3 +424,118 @@ void test_93LC()
         }
     }
 }
+
+void test_gpio()
+{
+    char buffer[50];
+    struct as_gpio_device *gpio_dev;
+    int32_t ret;
+    char c_value;
+    int32_t value;
+    char port_letter = 'F';
+    int port_num = 14;
+    int port_direction = 0;
+    int port_value = 1;
+
+    gpio_dev = as_gpio_open(port_letter);
+    if (gpio_dev == NULL)
+    {
+        printf("Error can't open gpio %c\nHave you run loadgpio.sh ?\n", port_letter);
+        pressEnterToContinue();
+        return ;
+    }
+    ret = as_gpio_get_pin_value(gpio_dev,
+                                port_num);
+    if (ret < 0)
+    {
+        printf("Error, can't get pin value\n");
+        return;
+    }
+    port_value = ret;
+
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("*   Testing GPIO         *\n");
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) Change port num (P%c%d)\n", port_letter, port_num);
+        printf(" 2) Change direction (%d)\n", port_direction);
+        printf(" 3) Change value (%d)\n", port_value);
+        printf(" 4) Read pin value\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Give letter of port in upper case : ");
+                        scanf("%c", &c_value);
+                        if (c_value != port_letter)
+                        {
+                            ret = as_gpio_close(gpio_dev);
+                            if(ret < 0)
+                            {
+                                printf("Error, can't close Port%c\n", port_letter);
+                                return ;
+                            }
+                        }
+                        gpio_dev = as_gpio_open(c_value);
+                        if(gpio_dev == NULL)
+                        {
+                            printf("Error, can't open Port%c\n", c_value);
+                            return;
+                        }
+                        port_letter = c_value;
+                        printf("Ok Port %c is set\n", port_letter);
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Give direction (0:in, 1:out) : ");
+                        scanf("%d", &value);
+                        ret = as_gpio_set_pin_direction(gpio_dev,
+                                                        port_num,
+                                                        value);
+                        if(ret < 0)
+                        {
+                            printf("Error, can't change direction\n");
+                            return ;
+                        }
+                        port_direction = value;
+                        printf("Ok direction changed\n");
+                        pressEnterToContinue();
+                        break;
+            case '3' :  printf("Give value : ");
+                        scanf("%d", &value);
+                        ret = as_gpio_set_pin_value(gpio_dev,
+                                                    port_num,
+                                                    value);
+                        if(ret < 0)
+                        {
+                            printf("Error, can't change pin value\n");
+                            return;
+                        }
+                        port_value = value;
+                        printf("Ok value changed\n");
+                        pressEnterToContinue();
+                        break;
+            case '4' :  printf("Get value \n");
+                        ret = as_gpio_get_pin_value(gpio_dev,
+                                                    port_num);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't get pin value\n");
+                            return;
+                        }
+                        printf("Value is %d\n",ret);
+                        port_value = ret;
+                        pressEnterToContinue();
+                        break;
+                        
+            default : break;
+        }
+    }
+}
+
+

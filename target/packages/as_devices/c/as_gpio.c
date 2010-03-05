@@ -39,57 +39,68 @@
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 
 
-static int mFileHandlerGpioPort[NUMBER_OF_PORTS];
-
 /*------------------------------------------------------------------------------*/
 
-int32_t 
-as_gpio_init(char aPortChar)
+struct as_gpio_device *
+as_gpio_open(char aPortChar)
 {
+    struct as_gpio_device *dev;
     char gpio_file_path[50];
     int ret=0;
+
+    if (((aPortChar-'A') > (NUMBER_OF_PORTS-1)) || ((aPortChar-'A') < 0))
+    {
+        return NULL;
+    }
 
     /* make gpio port string path */
     ret = snprintf(gpio_file_path,50, "%s%c",
                             GPIO_BASE_PORT, aPortChar);
     if (ret < 0) {
-        return ret;
+        return NULL;
     }
 
     /* opening gpio port */
-    mFileHandlerGpioPort[aPortChar-'A'] = open(gpio_file_path, O_RDWR);
-    if (mFileHandlerGpioPort[aPortChar-'A'] < 0) {
-        return mFileHandlerGpioPort[aPortChar-'A'];
+    ret = open(gpio_file_path, O_RDWR);
+    if (ret < 0) {
+        return NULL;
     }
 
-    return 0;
+    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device)); 
+    if (dev == NULL)
+        return NULL;
+    
+    dev->port_letter = aPortChar;
+    dev->fdev = ret;
+
+    return dev;
 }
 
 /*------------------------------------------------------------------------------*/
 
 int32_t
-as_gpio_set_pin_direction(char aPortChar,
-                                int aPinNum,
-                                int aDirection)
+as_gpio_set_pin_direction(struct as_gpio_device *dev,
+                          int aPinNum,
+                          int aDirection)
 {
     int ret=0;
     int portval;
 
     /* Set LED PIN as GPIO; read/modify/write */
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDMODE, &portval);
+    ret = ioctl(dev->fdev, GPIORDMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     portval |= (1 << aPinNum);
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRMODE, &portval);
+    ret = ioctl(dev->fdev, GPIOWRMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     /* set direction */
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDIRECTION, &portval);
+    ret = ioctl(dev->fdev, GPIORDDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -100,7 +111,7 @@ as_gpio_set_pin_direction(char aPortChar,
         portval |= (1 << aPinNum);
     }
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDIRECTION, &portval);
+    ret = ioctl(dev->fdev, GPIOWRDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -110,14 +121,14 @@ as_gpio_set_pin_direction(char aPortChar,
 /*------------------------------------------------------------------------------*/
 
 int32_t 
-as_gpio_set_pin_value(char aPortChar,
-                            int aPinNum,
-                            int aValue)
+as_gpio_set_pin_value( struct as_gpio_device *dev,
+                       int aPinNum,
+                       int aValue)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    ret = ioctl(dev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -127,7 +138,7 @@ as_gpio_set_pin_value(char aPortChar,
     } else {
         portval |= (1 << aPinNum);
     }
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDATA, &portval);
+    ret = ioctl(dev->fdev, GPIOWRDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -137,13 +148,13 @@ as_gpio_set_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_pin_value(char aPortChar,
+int32_t as_gpio_get_pin_value(  struct as_gpio_device *dev,
                                 int aPinNum)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    ret = ioctl(dev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -158,8 +169,11 @@ int32_t as_gpio_get_pin_value(char aPortChar,
 /*------------------------------------------------------------------------------*/
 
 int32_t 
-as_gpio_close(char aPortChar)
+as_gpio_close(struct as_gpio_device *dev)
 {
-    return close(mFileHandlerGpioPort[aPortChar-'A']);
+    int ret;
+    ret = close(dev->fdev);
+    free(dev);
+    return 0;
 }
 
