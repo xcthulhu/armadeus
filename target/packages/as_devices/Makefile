@@ -1,5 +1,5 @@
 # Default values for local compiling:
-ARMADEUS_BASE_DIR=../../../../
+ARMADEUS_BASE_DIR=../../../
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
 CFLAGS=-Wall -g -O0
@@ -33,9 +33,9 @@ ${C_BINARY}: main.c test_c.h ${C_LIB}
 #	cd cpp; make CXX=${CXX}
 
 ${C_LIB}:
-	cd c; make CC=${CC} 
+	cd c; make 
 
 clean:
-	cd c; make clean ; cd ../cpp; make clean; cd ../python; make clean
-	-rm ${C_BINARY} ${CPP_BINARY}
+	cd c; make clean ; #cd ../cpp; make clean; cd ../python; make clean
+	-rm ${C_BINARY} # ${CPP_BINARY}
 
