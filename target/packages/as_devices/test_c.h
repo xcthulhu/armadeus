@@ -458,13 +458,14 @@ void test_gpio()
     {
         system("clear");
         printf("**************************\n");
-        printf("*   Testing GPIO         *\n");
+        printf("   Testing GPIO  P%c%d \n", port_letter, port_num);
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
-        printf(" 1) Change port num (P%c%d)\n", port_letter, port_num);
-        printf(" 2) Change direction (%d)\n", port_direction);
-        printf(" 3) Change value (%d)\n", port_value);
-        printf(" 4) Read pin value\n");
+        printf(" 1) Change port letter (%c)\n", port_letter);
+        printf(" 2) Change port num (%d)\n", port_num);
+        printf(" 3) Change direction (%d)\n", port_direction);
+        printf(" 4) Change value (%d)\n", port_value);
+        printf(" 5) Read pin value\n");
 
         printf("> ");
         scanf("%s",buffer);
@@ -472,27 +473,37 @@ void test_gpio()
         switch(buffer[0])
         {
             case '1' :  printf("Give letter of port in upper case : ");
-                        scanf("%c", &c_value);
-                        if (c_value != port_letter)
+                        scanf("%s", buffer);
+                        if (buffer[0] != port_letter)
                         {
                             ret = as_gpio_close(gpio_dev);
                             if(ret < 0)
                             {
                                 printf("Error, can't close Port%c\n", port_letter);
+                                pressEnterToContinue();
                                 return ;
                             }
                         }
-                        gpio_dev = as_gpio_open(c_value);
+                        gpio_dev = as_gpio_open(buffer[0]);
                         if(gpio_dev == NULL)
                         {
                             printf("Error, can't open Port%c\n", c_value);
+                            pressEnterToContinue();
                             return;
                         }
-                        port_letter = c_value;
+                        port_letter = buffer[0];
                         printf("Ok Port %c is set\n", port_letter);
                         pressEnterToContinue();
                         break;
-            case '2' :  printf("Give direction (0:in, 1:out) : ");
+            case '2' :  printf("Give pin number : ");
+                        scanf("%d", &value);
+                        if ((value < 0) || (value > 31))
+                            printf("Error, wrong value\n");
+                        else
+                            port_num = value;
+                        pressEnterToContinue();
+                        break;
+            case '3' :  printf("Give direction (0:in, 1:out) : ");
                         scanf("%d", &value);
                         ret = as_gpio_set_pin_direction(gpio_dev,
                                                         port_num,
@@ -500,13 +511,14 @@ void test_gpio()
                         if(ret < 0)
                         {
                             printf("Error, can't change direction\n");
+                            pressEnterToContinue();
                             return ;
                         }
                         port_direction = value;
                         printf("Ok direction changed\n");
                         pressEnterToContinue();
                         break;
-            case '3' :  printf("Give value : ");
+            case '4' :  printf("Give value : ");
                         scanf("%d", &value);
                         ret = as_gpio_set_pin_value(gpio_dev,
                                                     port_num,
@@ -514,18 +526,20 @@ void test_gpio()
                         if(ret < 0)
                         {
                             printf("Error, can't change pin value\n");
+                            pressEnterToContinue();
                             return;
                         }
                         port_value = value;
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
-            case '4' :  printf("Get value \n");
+            case '5' :  printf("Get value \n");
                         ret = as_gpio_get_pin_value(gpio_dev,
                                                     port_num);
                         if (ret < 0)
                         {
                             printf("Error, can't get pin value\n");
+                            pressEnterToContinue();
                             return;
                         }
                         printf("Value is %d\n",ret);
