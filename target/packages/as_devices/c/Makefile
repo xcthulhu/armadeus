@@ -3,7 +3,14 @@
 ARMADEUS_BASE_DIR=../../../../
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-CFLAGS=-Wall -g -O0
+ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
+CFLAGS=-Wall -g -O0 -DAPF9328
+endif
+
+ifeq ($(ARMADEUS_BOARD_NAME),apf27)
+CFLAGS=-Wall -g -O0 -DAPF27
+endif
+
 LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip

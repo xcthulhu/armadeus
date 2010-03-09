@@ -28,7 +28,7 @@
 extern "C" {
 #endif // __cplusplus
 
-#define NUMBER_OF_PORTS 6
+//TODO: manage irq
 
 /**
  * Store gpio parameters

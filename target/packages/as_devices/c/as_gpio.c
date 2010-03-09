@@ -38,6 +38,13 @@
 
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 
+#ifdef APF9328
+#   define NUMBER_OF_PORTS 4
+#elif defined(APF27)
+#   define NUMBER_OF_PORTS 6
+#else
+#error Error no platform defined
+#endif
 
 /*------------------------------------------------------------------------------*/
 
