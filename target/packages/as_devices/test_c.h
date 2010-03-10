@@ -27,14 +27,15 @@
 #include "as_93lcxx.h"
 #include "as_i2c.h"
 #include "as_gpio.h"
+#include "as_max1027.h"
 
 #define PWM_NUM 0
 
 void pressEnterToContinue(void)
 {
     printf("\nPress enter to continue\n");
-    getc(stdin);//XXX 
-    while( getc(stdin) != '\n') ; 
+    while( getc(stdin) != '\n');
+    while( getc(stdin) != '\n'); 
 }
 
 /* pwm test */
@@ -549,6 +550,102 @@ void test_gpio()
                         
             default : break;
         }
+    }
+}
+
+#ifdef APF9328
+#   define MAX1027_SPI_NUM (1)
+#elif defined(APF27)
+#   define MAX1027_SPI_NUM (0)
+#else
+#error Error no platform defined
+#endif
+
+#define NUM_OF_CHANNEL (8)
+
+void test_max1027()
+{
+    char buffer[50];
+    int ret;
+    char c_value[10];
+    int value;
+    struct as_max1027_device *max1027_dev;
+    int channel=0;
+    AS_max1027_mode mode= AS_MAX1027_SLOW;
+
+    max1027_dev = as_max1027_open(MAX1027_SPI_NUM, mode);
+    if (max1027_dev == NULL)
+    {
+        printf("Error, can't open max1027. Is max1027 modprobed ?\n");
+        pressEnterToContinue();
+        return ;
+    }
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("   Testing max1027       *\n"); 
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) Change mode (%s)\n",(mode == AS_MAX1027_SLOW)?"SLOW":"FAST");
+        printf(" 2) Select channel (%d)\n", channel);
+        printf(" 3) Read channel value\n");
+        printf(" 4) Read temperature\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Give mode wanted (s:SLOW, f:FAST): ");
+                        scanf("%s",c_value);
+                        if ((c_value[0]=='s') && (mode == AS_MAX1027_FAST)){
+                            as_max1027_close(max1027_dev);
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM, 
+                                                          AS_MAX1027_SLOW);
+                            if (max1027_dev == NULL){
+                                printf("Error, can't open max1027 in slow mode\n");
+                                pressEnterToContinue();
+                                break;
+                            }
+                            mode = AS_MAX1027_SLOW;
+                            printf("Mode changed to Slow\n");
+                        } else if((c_value[0] == 'f') && (mode == AS_MAX1027_SLOW)){
+                            as_max1027_close(max1027_dev);
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM, 
+                                                          AS_MAX1027_FAST);
+                            if (max1027_dev == NULL){
+                                printf("Error, can't open max1027 in fast mode\n");
+                                pressEnterToContinue();
+                                break;
+                            }
+                            mode = AS_MAX1027_FAST;
+                            printf("Mode changed to Fast\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Give channel you want to read (0-8): ");
+                        scanf("%d",&value);
+                        if ((value >= NUM_OF_CHANNEL) || (value < 0)){
+                            printf("Channel num wrong\n");
+                            break;
+                        }
+                        channel = value;
+                        break;
+            case '3' :  printf("TODO");
+                        break;
+            case '4' :  printf("TODO");
+                        break;
+
+            default : break;
+        }
+    }
+
+    ret = as_max1027_close(max1027_dev);
+    if (ret < 0) {
+        printf("Error on closing max1027\n");
+        pressEnterToContinue();
     }
 }
 

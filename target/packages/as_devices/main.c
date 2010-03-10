@@ -42,6 +42,7 @@ int main(int argc, char ** argv)
         printf(" 3) Testing spi\n");
         printf(" 4) Testing 93LCxx eprom\n");
         printf(" 5) Testing gpio\n");
+        printf(" 6) Testing max1027\n");
         printf("> ");
         scanf("%s",buffer);
         
@@ -56,6 +57,8 @@ int main(int argc, char ** argv)
             case '4' : test_93LC();
                        break;
             case '5' : test_gpio();
+                       break;
+            case '6' : test_max1027();
                        break;
 
             default : break;
