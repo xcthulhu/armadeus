@@ -1,19 +1,24 @@
 # Default values for local compiling:
 #
+ifeq ($(KERNEL_INCLUDE),)
 ARMADEUS_BASE_DIR=../../../../
 include $(ARMADEUS_BASE_DIR)/Makefile.in
-
-ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
-CFLAGS=-Wall -g -O0 -DAPF9328
-endif
-
-ifeq ($(ARMADEUS_BOARD_NAME),apf27)
-CFLAGS=-Wall -g -O0 -DAPF27
+KERNEL_INCLUDE=$(ARMADEUS_LINUX_DIR)/include/
+CFLAGS+= -Wall -g -O0
+CFLAGS+= -I$(KERNEL_INCLUDE)
 endif
 
 LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
+
+ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
+CFLAGS+= -DAPF9328
+endif
+
+ifeq ($(ARMADEUS_BOARD_NAME),apf27)
+CFLAGS+= -DAPF27
+endif
 
 OBJ=as_pwm.o
 OBJ+= as_i2c.o
