@@ -1,6 +1,5 @@
-ifeq ($(CC),cc)
-        CC=arm-linux-gcc
-endif
+CC=arm-linux-gcc
+
 
 all: imxregs imx27regs
 
