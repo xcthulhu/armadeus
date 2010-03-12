@@ -1,19 +1,19 @@
 /*
  **    THE ARMadeus Systems
- ** 
- **    Copyright (C) 2009  The armadeus systems team 
+ **
+ **    Copyright (C) 2009  The armadeus systems team
  **    Fabien Marteau <fabien.marteau@armadeus.com>
- ** 
+ **
  ** This library is free software; you can redistribute it and/or
  ** modify it under the terms of the GNU Lesser General Public
  ** License as published by the Free Software Foundation; either
  ** version 2.1 of the License, or (at your option) any later version.
- ** 
+ **
  ** This library is distributed in the hope that it will be useful,
  ** but WITHOUT ANY WARRANTY; without even the implied warranty of
  ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  ** Lesser General Public License for more details.
- ** 
+ **
  ** You should have received a copy of the GNU Lesser General Public
  ** License along with this library; if not, write to the Free Software
  ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -35,7 +35,7 @@ void pressEnterToContinue(void)
 {
     printf("\nPress enter to continue\n");
     while( getc(stdin) != '\n');
-    while( getc(stdin) != '\n'); 
+    while( getc(stdin) != '\n');
 }
 
 /* pwm test */
@@ -303,9 +303,9 @@ void test_93LC()
                             scanf("%s", spidevpath);
                             printf("New path is %s\n",spidevpath);
                             break;
-                case '5' :  dev = as_93lcxx_open((unsigned char *)spidevpath, 
-                                                 type, 
-                                                 frequency, 
+                case '5' :  dev = as_93lcxx_open((unsigned char *)spidevpath,
+                                                 type,
+                                                 frequency,
                                                  word_size);
                             if (dev == NULL)
                             {
@@ -320,7 +320,7 @@ void test_93LC()
         } else {
             switch(buffer[0])
             {
-                case '1' :  as_93lcxx_close(dev); 
+                case '1' :  as_93lcxx_close(dev);
                             printf("eeprom closed\n");
                             initialized = 0;
                             pressEnterToContinue();
@@ -397,7 +397,7 @@ void test_93LC()
                                 {
                                     printf("%03X -> %02X\n",
                                            i,as_93lcxx_read(dev, i));
-                                } else{ 
+                                } else{
                                     printf("%03X -> %04X\n",
                                            i,as_93lcxx_read(dev, i));
                                 }
@@ -547,7 +547,7 @@ void test_gpio()
                         port_value = ret;
                         pressEnterToContinue();
                         break;
-                        
+
             default : break;
         }
     }
@@ -569,9 +569,13 @@ void test_max1027()
     int ret;
     char c_value[10];
     int value;
+    int averaging=1;
+    int temperature = 0;
+    int temp_read=0;
     struct as_max1027_device *max1027_dev;
     int channel=0;
     AS_max1027_mode mode= AS_MAX1027_SLOW;
+
 
     max1027_dev = as_max1027_open(MAX1027_SPI_NUM, mode);
     if (max1027_dev == NULL)
@@ -580,18 +584,20 @@ void test_max1027()
         pressEnterToContinue();
         return ;
     }
+    pressEnterToContinue();
 
     while(buffer[0] != 'q')
     {
         system("clear");
         printf("**************************\n");
-        printf("   Testing max1027       *\n"); 
+        printf("   Testing max1027       *\n");
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
         printf(" 1) Change mode (%s)\n",(mode == AS_MAX1027_SLOW)?"SLOW":"FAST");
         printf(" 2) Select channel (%d)\n", channel);
-        printf(" 3) Read channel value\n");
-        printf(" 4) Read temperature\n");
+        printf(" 3) Set averaging (%d)\n", averaging);
+        printf(" 4) Read channel value\n");
+        printf(" 5) Read temperature\n");
 
         printf("> ");
         scanf("%s",buffer);
@@ -602,7 +608,7 @@ void test_max1027()
                         scanf("%s",c_value);
                         if ((c_value[0]=='s') && (mode == AS_MAX1027_FAST)){
                             as_max1027_close(max1027_dev);
-                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM, 
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
                                                           AS_MAX1027_SLOW);
                             if (max1027_dev == NULL){
                                 printf("Error, can't open max1027 in slow mode\n");
@@ -613,7 +619,7 @@ void test_max1027()
                             printf("Mode changed to Slow\n");
                         } else if((c_value[0] == 'f') && (mode == AS_MAX1027_SLOW)){
                             as_max1027_close(max1027_dev);
-                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM, 
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
                                                           AS_MAX1027_FAST);
                             if (max1027_dev == NULL){
                                 printf("Error, can't open max1027 in fast mode\n");
@@ -633,11 +639,30 @@ void test_max1027()
                         }
                         channel = value;
                         break;
-            case '3' :  printf("TODO");
+            case '3' :  printf("Give averaging (1, 4, 8, 16, 32): ");
+                        scanf("%d", &value);
+                        ret = as_max1027_set_averaging(max1027_dev, value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't set averaging\n");
+                            pressEnterToContinue();
+                            break;
+                        }
+                        averaging = value;
+                        pressEnterToContinue();
                         break;
             case '4' :  printf("TODO");
                         break;
-
+            case '5' :  ret = as_max1027_read_temperature_mC(max1027_dev, &temp_read);
+                        if (ret < 0) {
+                            printf("Error reading temperature\n");
+                            pressEnterToContinue();
+                            break;
+                        }
+                        temperature = temp_read;
+                        printf("Temperature read in mili⁰C : %d\n", temperature);
+                        pressEnterToContinue();
+                        break;
             default : break;
         }
     }
