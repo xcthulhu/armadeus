@@ -34,6 +34,7 @@ typedef unsigned char u8;
 #include <linux/spi/max1027.h>
 #include "as_max1027.h"
 
+
 #define BUFFER_SIZE     (70)
 #define PATH_SIZE       (50)
 #define SYS_PATH        "/sys/bus/spi/devices/spi%d.0/"
@@ -111,8 +112,8 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     int i;
     int fConversion, fSetup, fAveraging;
     int fTemperature;
-    int fLowSpeed[7];
-    int fHighSpeed[7];
+    int fLowSpeed[NUMBER_OF_CHANNELS];
+    int fHighSpeed[NUMBER_OF_CHANNELS];
     char path[PATH_SIZE];
     char buffer[BUFFER_SIZE];
     char slow_input_name[20];
@@ -194,7 +195,7 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     }
 
     /* Open each channels (0 to 6)*/
-    for( i=0 ; i<7 ; i++){
+    for( i=0 ; i<NUMBER_OF_CHANNELS ; i++){
         fLowSpeed[i] = -1;
         fHighSpeed[i] = -1;
         if (aMode == AS_MAX1027_SLOW)
@@ -239,7 +240,7 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     dev->fConversion = fConversion;
     dev->fSetup = fSetup;
     dev->fAveraging = fAveraging;
-    for( i=0 ; i<7 ; i++){
+    for( i=0 ; i<NUMBER_OF_CHANNELS ; i++){
         dev->fLowSpeed[i] = fLowSpeed[i];
         dev->fHighSpeed[i] = fHighSpeed[i];
     }
@@ -258,7 +259,7 @@ int32_t as_max1027_close(struct as_max1027_device *aDev)
 
     if (aDev->fTemperature > 0) close(aDev->fTemperature);
 
-    for (i=0 ; i<7; i++){
+    for (i=0 ; i<NUMBER_OF_CHANNELS; i++){
         if (aDev->fLowSpeed[i] > 0) close(aDev->fLowSpeed[i]);
         if (aDev->fHighSpeed[i] > 0) close(aDev->fHighSpeed[i]);
     }
@@ -332,5 +333,47 @@ int32_t as_max1027_set_averaging(struct as_max1027_device *aDev, uint8_t aNbConv
     }
 
     return aNbConv;
+}
+
+
+int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
+                                       int aChannelNum, int *aValue)
+{
+    int32_t ret;
+
+    if ((aChannelNum >= NUMBER_OF_CHANNELS) || (aChannelNum < 0))
+    {
+        printf("Wrong num channel\n");
+        return -1;
+    }
+
+    /* temperature is read only on slow mode */
+    if (aDev->mode == AS_MAX1027_SLOW)
+    {
+        /* launch conversion */
+        ret = as_max1027_write_buffer( aDev->fConversion,
+                                       MAX1027_CONV |
+                                       MAX1027_CONV_CHSEL(aChannelNum) |
+                                       MAX1027_CONV_SCAN(aDev->scan_mode));
+        if (ret < 0){
+            printf("Error launching conversion\n");
+            return -1;
+        }
+
+        /* read value */
+        ret =  as_max1027_read_buffer(aDev->fLowSpeed[aChannelNum], aValue);
+        if (ret < 0){
+            printf("Error, reading fLowSpeed[%d]\n",aChannelNum);
+            return -1;
+        }
+    } else if (aDev->mode == AS_MAX1027_FAST) {
+        printf("TODO: fast mode channel reading\n");
+        return -1;
+    } else {
+        printf("Uncknow mode\n");
+        return -1;
+    }
+
+    return 0;
 }
 

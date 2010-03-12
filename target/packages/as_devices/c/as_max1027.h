@@ -31,6 +31,8 @@
 extern "C" {
 #endif
 
+#define NUMBER_OF_CHANNELS (7)
+
 typedef enum  {
     AS_MAX1027_FAST,
     AS_MAX1027_SLOW
@@ -45,8 +47,8 @@ struct as_max1027_device {
     uint8_t fConversion;   /**< File handler for conversion register */
     uint8_t fSetup;        /**< File handler for setup register */
     uint8_t fAveraging;    /**< File handler for averaging register */
-    uint8_t fLowSpeed[8];  /**< Files handlers for lowspeed input interface */
-    uint8_t fHighSpeed[8]; /**< Files handlers for high speed input interface */
+    uint8_t fLowSpeed[NUMBER_OF_CHANNELS];  /**< Files handlers for lowspeed */
+    uint8_t fHighSpeed[NUMBER_OF_CHANNELS]; /**< Files handlers for high speed  */
     uint8_t fTemperature;  /**< File handler for temperature */
 
 };
@@ -93,11 +95,15 @@ int32_t as_max1027_read_temperature_mC(struct as_max1027_device *aDev,
 
 /** @brief read milivoltage value
  *
- * @param
+ * @param as_max1027_device structure pointer.
+ * @param aChannelNum channel number to read.
+ * @param *aValue pointer to returned value.
  *
  * @return negative value on error
  */
-int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev);
+int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
+                                       int aChannelNum,
+                                       int *aValue);
 
 #ifdef __cplusplus
 }
