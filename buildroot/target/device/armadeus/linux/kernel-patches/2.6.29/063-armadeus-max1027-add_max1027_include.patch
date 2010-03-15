@@ -28,7 +28,7 @@ Index: linux-2.6.29.6/include/linux/spi/max1027.h
 +#ifndef __LINUX_SPI_MAX1027_H
 +#define __LINUX_SPI_MAX1027_H
 +
-+/* 00 : Scans channels 0 through N.
++/* 00 : Scans channels 0 through N.
 + * 01 : Scans channels N through the highest numbered channel.
 + * 10 : Scans channel N repeatedly. The averaging register sets the number of results
 + * 11 : No scan. Converts channel N once only. */
