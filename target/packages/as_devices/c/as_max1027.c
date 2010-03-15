@@ -42,7 +42,7 @@ typedef unsigned char u8;
 #define SLOW_INPUT_NAME "in%d_input"
 #define FAST_INPUT_PATH "/dev/max1027/AIN%d"
 
-/** @brief Functiun used to write in /sys file
+/** @brief Function used to write in /sys file
  *
  * @param aFile_handler /sys file handler
  * @param aValue int value to write
@@ -65,7 +65,7 @@ int32_t as_max1027_write_buffer(int aFile_handler, int aValue)
         perror("Can't write file ");
         return -1;
     }
-    ret = lseek(aFile_handler,0,SEEK_SET);
+    ret = lseek(aFile_handler, 0, SEEK_SET);
     if (ret < 0)
     {
         perror("lseek error ");
@@ -75,10 +75,10 @@ int32_t as_max1027_write_buffer(int aFile_handler, int aValue)
     return buffer_len;
 }
 
-/** @brief Functiun used to read int value in /sys file
+/** @brief function used to read int value in /sys file
  *
  * @param aFile_handler /sys file handler
- * @param aTemperature pointer to temperature read
+ * @param aValueRead pointer to int value read
  *
  * @return negative value on error,
  */
@@ -127,7 +127,8 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     }
 
     ret = snprintf(path, PATH_SIZE, SYS_PATH, aSpiNum);
-    if (ret<0) {
+    if (ret<0)
+    {
         printf("Error in path writing\n");
         return NULL;
     }
@@ -135,27 +136,31 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     /* Open file handler register */
     /* conversion */
     ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "conversion");
-    if (ret<0) {
+    if (ret<0)
+    {
         printf("Error in path writing\n");
         return NULL;
     }
     fConversion = open(buffer, O_RDWR);
-    if (fConversion < 0){
+    if (fConversion < 0)
+    {
         printf("Error, can't open conversion file. Is max1027 modprobed ?\n");
         return NULL;
     }
     /* setup */
     ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "setup");
-    if (ret<0) {
+    if (ret<0)
+    {
         printf("Error in path writing\n");
         return NULL;
     }
     fSetup = open(buffer, O_RDWR);
-    if (fSetup < 0){
+    if (fSetup < 0)
+    {
         printf("Error, can't open setup file.\n");
         return NULL;
     }
-    ret = as_max1027_write_buffer( fSetup,
+    ret = as_max1027_write_buffer(fSetup,
                                    MAX1027_SETUP |
                                    MAX1027_SETUP_CLKSEL(0) |
                                    MAX1027_SETUP_REFSEL(0) |
@@ -173,20 +178,24 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     }
 
     fAveraging = open(buffer, O_RDWR);
-    if (fAveraging < 0){
+    if (fAveraging < 0)
+    {
         printf("Error, can't open averaging file.\n");
         return NULL;
     }
 
     /* temperature */
-    if (aMode == AS_MAX1027_SLOW){
+    if (aMode == AS_MAX1027_SLOW)
+    {
         ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "temp1_input");
-        if (ret<0) {
+        if (ret<0)
+        {
             printf("Error in path writing\n");
             return NULL;
         }
         fTemperature = open(buffer, O_RDONLY);
-        if (fTemperature < 0){
+        if (fTemperature < 0)
+        {
             printf("Error, can't open temperature file.\n");
             return NULL;
         }
@@ -195,37 +204,44 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     }
 
     /* Open each channels (0 to 6)*/
-    for( i=0 ; i<NUMBER_OF_CHANNELS ; i++){
+    for(i=0 ; i<NUMBER_OF_CHANNELS ; i++){
         fLowSpeed[i] = -1;
         fHighSpeed[i] = -1;
         if (aMode == AS_MAX1027_SLOW)
         {
             ret = snprintf(slow_input_name, 20, SLOW_INPUT_NAME, i);
-            if (ret < 0) {
+            if (ret < 0)
+            {
                 printf("Error in path writing\n");
                 return NULL;
             }
 
             ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, slow_input_name);
-            if (ret < 0) {
+            if (ret < 0)
+            {
                 printf("Error in path writing\n");
                 return NULL;
             }
 
             fLowSpeed[i] = open(buffer, O_RDONLY);
-            if (fLowSpeed[i] < 0){
+            if (fLowSpeed[i] < 0)
+            {
                 printf("Error, can't open %s\n", buffer);
                 return NULL;
             }
-        } else if ((aMode == AS_MAX1027_FAST)){
+        }
+        else if ((aMode == AS_MAX1027_FAST))
+        {
             ret = snprintf(buffer, BUFFER_SIZE, FAST_INPUT_PATH, i);
-            if (ret < 0) {
+            if (ret < 0)
+            {
                 printf("Error in path writing\n");
                 return NULL;
             }
 
             fHighSpeed[i] = open(buffer, O_RDONLY);
-            if (fHighSpeed[i] < 0){
+            if (fHighSpeed[i] < 0)
+            {
                 printf("Error, can't open %s\nIs loadmax.sh launched ?\n", buffer);
                 return NULL;
             }
@@ -240,7 +256,8 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     dev->fConversion = fConversion;
     dev->fSetup = fSetup;
     dev->fAveraging = fAveraging;
-    for( i=0 ; i<NUMBER_OF_CHANNELS ; i++){
+    for(i=0 ; i<NUMBER_OF_CHANNELS ; i++)
+    {
         dev->fLowSpeed[i] = fLowSpeed[i];
         dev->fHighSpeed[i] = fHighSpeed[i];
     }
@@ -259,7 +276,8 @@ int32_t as_max1027_close(struct as_max1027_device *aDev)
 
     if (aDev->fTemperature > 0) close(aDev->fTemperature);
 
-    for (i=0 ; i<NUMBER_OF_CHANNELS; i++){
+    for (i=0 ; i<NUMBER_OF_CHANNELS; i++)
+    {
         if (aDev->fLowSpeed[i] > 0) close(aDev->fLowSpeed[i]);
         if (aDev->fHighSpeed[i] > 0) close(aDev->fHighSpeed[i]);
     }
@@ -279,19 +297,21 @@ int32_t as_max1027_read_temperature_mC(struct as_max1027_device *aDev,
         return -1;
 
     /* launch conversion */
-    ret = as_max1027_write_buffer( aDev->fConversion,
+    ret = as_max1027_write_buffer(aDev->fConversion,
                                    MAX1027_CONV |
                                    MAX1027_CONV_CHSEL(0) |
                                    MAX1027_CONV_SCAN(aDev->scan_mode) |
                                    MAX1027_CONV_TEMP);
-    if (ret < 0){
+    if (ret < 0)
+    {
         printf("Error launching conversion\n");
         return -1;
     }
 
     /* read value */
-    ret =  as_max1027_read_buffer(aDev->fTemperature,aTemperature);
-    if (ret < 0){
+    ret =  as_max1027_read_buffer(aDev->fTemperature, aTemperature);
+    if (ret < 0)
+    {
         printf("Error, reading fTemperature\n");
         return -1;
     }
@@ -326,8 +346,9 @@ int32_t as_max1027_set_averaging(struct as_max1027_device *aDev, uint8_t aNbConv
 
     /* select averaging */
     avg_register |= MAX1027_AVG | MAX1027_AVG_NSCAN(2);
-    ret = as_max1027_write_buffer( aDev->fAveraging, avg_register);
-    if (ret < 0){
+    ret = as_max1027_write_buffer(aDev->fAveraging, avg_register);
+    if (ret < 0)
+    {
         printf("Error, setting averaging\n");
         return -1;
     }
@@ -347,30 +368,35 @@ int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
         return -1;
     }
 
-    /* temperature is read only on slow mode */
     if (aDev->mode == AS_MAX1027_SLOW)
     {
         /* launch conversion */
-        ret = as_max1027_write_buffer( aDev->fConversion,
+        ret = as_max1027_write_buffer(aDev->fConversion,
                                        MAX1027_CONV |
                                        MAX1027_CONV_CHSEL(aChannelNum) |
                                        MAX1027_CONV_SCAN(aDev->scan_mode));
-        if (ret < 0){
+        if (ret < 0)
+        {
             printf("Error launching conversion\n");
             return -1;
         }
 
         /* read value */
         ret =  as_max1027_read_buffer(aDev->fLowSpeed[aChannelNum], aValue);
-        if (ret < 0){
-            printf("Error, reading fLowSpeed[%d]\n",aChannelNum);
+        if (ret < 0)
+        {
+            printf("Error, reading fLowSpeed[%d]\n", aChannelNum);
             return -1;
         }
-    } else if (aDev->mode == AS_MAX1027_FAST) {
+    }
+    else if (aDev->mode == AS_MAX1027_FAST)
+    {
         printf("TODO: fast mode channel reading\n");
         return -1;
-    } else {
-        printf("Uncknow mode\n");
+    }
+    else
+    {
+        printf("Unknown mode\n");
         return -1;
     }
 
