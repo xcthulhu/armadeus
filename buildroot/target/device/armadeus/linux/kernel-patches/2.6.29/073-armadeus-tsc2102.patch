@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-01-19 10:25:41.000000000 +0100
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-02-24 15:11:28.000000000 +0100
 @@ -0,0 +1,302 @@
 +/*
 + * include/linux/spi/tsc2102.h
@@ -311,8 +311,8 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-01-19 11:19:57.000000000 +0100
-@@ -0,0 +1,1188 @@
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-03-15 12:06:23.000000000 +0100
+@@ -0,0 +1,1198 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
@@ -884,6 +884,11 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +			pll->pll2 = (PLL2_D_VAL(6448));
 +		break;
 +
++		case 24000000:
++			pll->pll1 = (PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(2) | PLL1_J_VAL(7));
++			pll->pll2 = (PLL2_D_VAL(5264));
++		break;
++
 +		default:
 +			pll->pll1 = 0x811c;
 +			pll->pll2 = (PLL2_D_VAL(5462));
@@ -901,6 +906,11 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		case 16000000:
 +			pll->pll1 = (PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(1) | PLL1_J_VAL(6));
 +			pll->pll2 = (PLL2_D_VAL(1440));
++		break;
++
++		case 24000000:
++			pll->pll1 = (PLL1_PLLEN | PLL1_Q_VAL(0) | PLL1_P_VAL(2) | PLL1_J_VAL(8));
++			pll->pll2 = (PLL2_D_VAL(1920));
 +		break;
 +
 +		default:
