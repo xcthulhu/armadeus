@@ -6,42 +6,50 @@
 
 SYS_DIR="/sys/class/pwm/pwm0/"
 PERIOD="1000 2000 3000 4000 5000 6000 7000 8000 9000 10000"
-FREQUENCY="100 200 300 400 500 600"
+FREQUENCY="100 200 300 400 500 600 700 800"
 DUTY="001 250 333 500 666 750 999"
 
+modprobe imx-pwm
+
 if [ ! -d "$SYS_DIR" ]; then
-	echo "Can't find /sys/ interface"
+	echo "can't find /sys/ interface"
 	exit 1
 fi
 
 echo "Starting PWM test"
+echo "Press ENTER when ready to check PWM output (frequencies)"
+read
+
 echo 1 > $SYS_DIR/active
 
-#Test frequency setting
-for freq in $FREQUENCY
-do
-    echo $freq > $SYS_DIR/frequency
-    echo "Setting PWM to $freq Hz"
-    sleep 5
+# Test frequency setting
+for freq in $FREQUENCY; do
+	echo $freq > $SYS_DIR/frequency
+	echo "Setting PWM frequency to $freq Hz"
+	sleep 5
 done
 
-#Test period setting
-for period in $PERIOD
-do
-    echo $period > $SYS_DIR/period
-    echo "Setting PWM to $period us"
-    sleep 5
-
+echo "Press ENTER when ready to check PWM output (periods)"
+read
+# Test period setting
+for period in $PERIOD; do
+	echo $period > $SYS_DIR/period
+	freq=$((1000000/period))
+	echo "Setting PWM period to $period us (-> $freq Hz)"
+	sleep 5
 done
 
-#Test duty cycle setting @1kHz -> duty value = positive width signal value
+echo "Press ENTER when ready to check PWM output (duty cycle @1kHz)"
+read
+# Test duty cycle setting @1kHz -> duty value = positive width signal value
 echo 1000 > $SYS_DIR/frequency
-for duty in $DUTY
-do
-    echo $duty > $SYS_DIR/duty
-    echo "Setting duty cycle to $duty/1000 "
-    sleep 5
+for duty in $DUTY; do
+	echo $duty > $SYS_DIR/duty
+	echo "Setting duty cycle to $duty/1000 "
+	sleep 5
 done
 
+echo 500 > $SYS_DIR/duty
 echo 0 > $SYS_DIR/active
 echo "End of PWM test"
+

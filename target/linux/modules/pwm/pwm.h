@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef PWM_DEF_H
-#define PWM_DEF_H
+#ifndef _PWM_DEF_H_
+#define _PWM_DEF_H_
 
 #include <linux/ioctl.h>
 
@@ -49,4 +49,4 @@ struct imx_pwm_platform_data {
     int (*exit)(void);
 };
 
-#endif
+#endif	/* _PWM_DEF_H_*/
