@@ -1,7 +1,7 @@
-Index: linux-2.6.29.4/drivers/video/logo/Kconfig
+Index: linux-2.6.29.6/drivers/video/logo/Kconfig
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/logo/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/drivers/video/logo/Kconfig	2009-06-04 09:54:16.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/video/logo/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/video/logo/Kconfig	2010-03-19 11:01:32.000000000 +0100
 @@ -82,4 +82,11 @@
  	depends on M32R
  	default y
@@ -14,10 +14,10 @@ Index: linux-2.6.29.4/drivers/video/logo/Kconfig
 +      Choose this if you want to have the Armadeus Tux as boot logo
 +
  endif # LOGO
-Index: linux-2.6.29.4/drivers/video/logo/logo_armadeus_clut224.ppm
+Index: linux-2.6.29.6/drivers/video/logo/logo_armadeus_clut224.ppm
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/drivers/video/logo/logo_armadeus_clut224.ppm	2009-06-04 09:54:16.000000000 +0200
++++ linux-2.6.29.6/drivers/video/logo/logo_armadeus_clut224.ppm	2010-03-19 11:01:32.000000000 +0100
 @@ -0,0 +1,19205 @@
 +P3
 +# CREATOR: The GIMP's PNM Filter Version 1.0
@@ -19224,10 +19224,10 @@ Index: linux-2.6.29.4/drivers/video/logo/logo_armadeus_clut224.ppm
 +0
 +0
 +0
-Index: linux-2.6.29.4/drivers/video/logo/logo.c
+Index: linux-2.6.29.6/drivers/video/logo/logo.c
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/logo/logo.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/drivers/video/logo/logo.c	2009-06-04 09:54:16.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/video/logo/logo.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/video/logo/logo.c	2010-03-19 11:20:14.000000000 +0100
 @@ -35,6 +35,7 @@
  extern const struct linux_logo logo_superh_vga16;
  extern const struct linux_logo logo_superh_clut224;
@@ -19241,21 +19241,21 @@ Index: linux-2.6.29.4/drivers/video/logo/logo.c
  		logo = &logo_m32r_clut224;
  #endif
 +#ifdef CONFIG_LOGO_ARMADEUS_CLUT224
-+        /* Armadeus Linux logo */
-+        logo = &logo_armadeus_clut224;
++		/* Armadeus Linux logo */
++		logo = &logo_armadeus_clut224;
 +#endif
  	}
  	return logo;
  }
-Index: linux-2.6.29.4/drivers/video/logo/Makefile
+Index: linux-2.6.29.6/drivers/video/logo/Makefile
 ===================================================================
---- linux-2.6.29.4.orig/drivers/video/logo/Makefile	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.4/drivers/video/logo/Makefile	2009-06-04 09:54:16.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/video/logo/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/video/logo/Makefile	2010-03-19 11:20:39.000000000 +0100
 @@ -15,6 +15,7 @@
  obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
  obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
  obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o
-+obj-$(CONFIG_LOGO_ARMADEUS_CLUT224) += logo_armadeus_clut224.o
++obj-$(CONFIG_LOGO_ARMADEUS_CLUT224)	+= logo_armadeus_clut224.o
  
  obj-$(CONFIG_SPU_BASE)			+= logo_spe_clut224.o
  
