@@ -48,46 +48,46 @@ struct as_gpio_device *as_gpio_open(char aPortChar);
 
 /** @brief  Set pin direction
  *
- * @param aPortChar port character in upper case
+ * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
  * @param aDirection direction 0:input 1:output
  *
  * @return error if negative value 
  */
-int32_t as_gpio_set_pin_direction(  struct as_gpio_device *dev,
+int32_t as_gpio_set_pin_direction(  struct as_gpio_device *aDev,
                                     int aPinNum,
                                     int aDirection);
 
 /** @brief Set pin value 
  *
- * @param aPortChar port character in upper case
+ * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
  * @param aValue value of pin (1 or 0)
  *
  * @return error if negative 
  */
-int32_t as_gpio_set_pin_value(  struct as_gpio_device *dev,
+int32_t as_gpio_set_pin_value(  struct as_gpio_device *aDev,
                                 int aPinNum,
                                 int aValue);
 
 /** @brief Get pin value
  *
- * @param aPortChar port character in upper case
+ * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
  *
  * @return pin value if positive or null, error if negative
  */
-int32_t as_gpio_get_pin_value(  struct as_gpio_device *dev,
+int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
                                 int aPinNum);
 
 /** @brief Close port access
  *
- * @param aPortChar port character in upper case
+ * @param aDev as_gpio_device pointer structure
  *
  * @return pin value if positive or null, error if negative
  */
 
-int32_t as_gpio_close( struct as_gpio_device *dev);
+int32_t as_gpio_close( struct as_gpio_device *aDev);
 
 #ifdef __cplusplus
 }

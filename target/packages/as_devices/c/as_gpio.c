@@ -86,7 +86,7 @@ as_gpio_open(char aPortChar)
 /*------------------------------------------------------------------------------*/
 
 int32_t
-as_gpio_set_pin_direction(struct as_gpio_device *dev,
+as_gpio_set_pin_direction(struct as_gpio_device *aDev,
                           int aPinNum,
                           int aDirection)
 {
@@ -94,20 +94,20 @@ as_gpio_set_pin_direction(struct as_gpio_device *dev,
     int portval;
 
     /* Set LED PIN as GPIO; read/modify/write */
-    ret = ioctl(dev->fdev, GPIORDMODE, &portval);
+    ret = ioctl(aDev->fdev, GPIORDMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     portval |= (1 << aPinNum);
 
-    ret = ioctl(dev->fdev, GPIOWRMODE, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     /* set direction */
-    ret = ioctl(dev->fdev, GPIORDDIRECTION, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -118,7 +118,7 @@ as_gpio_set_pin_direction(struct as_gpio_device *dev,
         portval |= (1 << aPinNum);
     }
 
-    ret = ioctl(dev->fdev, GPIOWRDIRECTION, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -128,14 +128,14 @@ as_gpio_set_pin_direction(struct as_gpio_device *dev,
 /*------------------------------------------------------------------------------*/
 
 int32_t 
-as_gpio_set_pin_value( struct as_gpio_device *dev,
+as_gpio_set_pin_value( struct as_gpio_device *aDev,
                        int aPinNum,
                        int aValue)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(dev->fdev, GPIORDDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -145,7 +145,7 @@ as_gpio_set_pin_value( struct as_gpio_device *dev,
     } else {
         portval |= (1 << aPinNum);
     }
-    ret = ioctl(dev->fdev, GPIOWRDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -155,13 +155,13 @@ as_gpio_set_pin_value( struct as_gpio_device *dev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_pin_value(  struct as_gpio_device *dev,
+int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
                                 int aPinNum)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(dev->fdev, GPIORDDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -176,11 +176,11 @@ int32_t as_gpio_get_pin_value(  struct as_gpio_device *dev,
 /*------------------------------------------------------------------------------*/
 
 int32_t 
-as_gpio_close(struct as_gpio_device *dev)
+as_gpio_close(struct as_gpio_device *aDev)
 {
     int ret;
-    ret = close(dev->fdev);
-    free(dev);
+    ret = close(aDev->fdev);
+    free(aDev);
     return 0;
 }
 
