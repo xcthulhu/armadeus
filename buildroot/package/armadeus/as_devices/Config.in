@@ -12,10 +12,10 @@ config BR2_PACKAGE_AS_DEVICES
 #    help
 #        C++ wrapper for as_devices library
 #
-#config BR2_PACKAGE_AS_DEVICES_PYTHON
-#    depends on BR2_PACKAGE_AS_DEVICES
-#    depends on BR2_PACKAGE_PYTHON
-#    bool "wrapper Python"
-#    default n
-#    help
-#        Python wrapper for as_devices library. need python
+config BR2_PACKAGE_AS_DEVICES_PYTHON
+    depends on BR2_PACKAGE_AS_DEVICES
+    depends on BR2_PACKAGE_PYTHON
+    bool "wrapper Python"
+    default n
+    help
+        Python wrapper for as_devices library. need python
