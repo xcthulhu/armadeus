@@ -21,8 +21,21 @@
 #include "AsGpio_wrap.h"
 #include "as_gpio.h"
 
+/* Methods definitions */
+static PyMethodDef AsGpio_wrap_methods[] = {
+    {"gpio_open", gpio_open, METH_VARARGS, "Initialize gpio"},
+    {"setPinDirection", setPinDirection, METH_VARARGS, "Set pin direction"},
+    {"setPinValue", setPinValue, METH_VARARGS, "Set pin value"},
+    {"getPinValue", getPinValue, METH_VARARGS, "Get pin value"},
+    {"gpio_close", gpio_close, METH_VARARGS, "Close gpio"},
+    {NULL, NULL, 0, NULL} /* Sentinel */
+};
+
 /* Init module */
-//void initAsGpio();
+void initAsGpio_wrap() /* called on first import */
+{                       /* name matter if called dynamically */
+    (void) Py_InitModule("AsGpio_wrap", AsGpio_wrap_methods); /* mod name, table ptr */
+}
 
 /** @brief Initialize port access
  * @param aPortChar character port in UPPER case
@@ -50,7 +63,7 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
                         "Initialization error. Is kernel module loaded ?");
         return NULL;
     }
-    ret = Py_BuildValue("(c,i)",
+    ret = Py_BuildValue("((ci))",
                         dev->port_letter,
                         dev->fdev);
     free(dev);
@@ -59,7 +72,7 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
 
 /** @brief  Set pin direction
  *
- * @param (c,i) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
  * @param aPinNum pin number
  * @param aDirection direction 0:input 1:output
  *
@@ -78,7 +91,7 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "(c,i)ii", 
+    if (!PyArg_ParseTuple(args, "((ci))ii", 
                           &aPort_letter, 
                           &aFdev,
                           &aPinNum,
@@ -113,7 +126,7 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
 
 /** @brief Set pin value 
  *
- * @param (c,i) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
  * @param aPinNum pin number
  * @param aValue value of pin (1 or 0)
  *
@@ -132,7 +145,7 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "(c,i)ii", 
+    if (!PyArg_ParseTuple(args, "((ci))ii", 
                           &aPort_letter, 
                           &aFdev,
                           &aPinNum,
@@ -168,7 +181,7 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
 
 /** @brief Get pin value
  *
- * @param (c,i) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
  * @param aPinNum pin number
  *
  * @return pin value if positive or null, error if negative
@@ -185,7 +198,7 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "(c,i)i", 
+    if (!PyArg_ParseTuple(args, "((ci))i", 
                           &aPort_letter, 
                           &aFdev,
                           &aPinNum))
@@ -219,7 +232,7 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
 
 /** @brief Close port access
  *
- * @param (c,i) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
  *
  * @return pin value if positive or null, error if negative
  */
@@ -233,7 +246,7 @@ static PyObject * gpio_close(PyObject *self, PyObject *args)
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "(c,i)", 
+    if (!PyArg_ParseTuple(args, "((ci))", 
                           &aPort_letter, 
                           &aFdev))
     {

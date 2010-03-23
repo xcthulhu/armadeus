@@ -29,7 +29,7 @@ __version__ = "1.0.0"
 __versionTime__ = "23/03/2010"
 __author__ = "Fabien Marteau <fabien.marteau@armadeus.com>"
 
-import wrappers
+import wrappers.AsGpio_wrap as wrapper
 
 class AsGpioError(Exception):
     def __init__(self, value):
@@ -51,15 +51,14 @@ class AsGpio:
         def __init__(self, port_letter):
             self.__port_letter = port_letter
             try:
-                self.wrapper = wrappers.AsGpio_wrap
-                self.__device = self.wrapper.gpio_open(self.__port_letter)
+                self.__device = wrapper.gpio_open(self.__port_letter)
             except Exception, e:
                 raise AsGpioError("Can't open GPIO "+str(self.__port_letter)+\
                                     ": "+str(e))
 
         def __del__(self):
             try:
-                self.wrapper.gpio_close(self.__device)
+                wrapper.gpio_close(self.__device)
             except Exception, e:
                 raise AsGpioError(str(e))
 
@@ -69,7 +68,7 @@ class AsGpio:
                 \param aDirection pin direction 0:input 1:output
             """
             try:
-                self.wrapper.setPinDirection(self.__device, aPinNum, aDirection)
+                wrapper.setPinDirection(self.__device, aPinNum, aDirection)
             except Exception, e:
                 raise AsGpioError(str(e))
 
@@ -88,7 +87,7 @@ class AsGpio:
         except KeyError:
             AsGpio.__gpio[aPort_letter[0]] = cls.__impl(aPort_letter[0])
 
-        return Apf27Pwm.__gpio[aPort_letter[0]]
+        return AsGpio.__gpio[aPort_letter[0]]
 
     def  __init__(self):
         """ Initialize pwm
@@ -97,12 +96,12 @@ class AsGpio:
 
 if __name__ == "__main__":
    import os
-    def pressEnterToContinue():
-        print "Press enter to continue"
-        raw_input()
-    print "AsGpio class test\n"
-    print AsGpio.__doc__
-    
-    portf = AsGpio.getInstance('F')
-    print str(portf)
+   def pressEnterToContinue():
+       print "Press enter to continue"
+       raw_input()
+   print "AsGpio class test\n"
+   print AsGpio.__doc__
+   
+   portf = AsGpio.getInstance('F')
+   print str(portf)
 
