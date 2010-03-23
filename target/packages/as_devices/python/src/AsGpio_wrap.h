@@ -41,5 +41,6 @@ static PyMethodDef AsGpio_wrap_Methods[] = {
     {"setPinDirection", setPinDirection, METH_VARARGS, "Set pin direction"},
     {"setPinValue", setPinValue, METH_VARARGS, "Set pin value"},
     {"getPinValue", getPinValue, METH_VARARGS, "Get pin value"},
+    {"close", gpio_close, METH_VARARGS, "Close gpio"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
