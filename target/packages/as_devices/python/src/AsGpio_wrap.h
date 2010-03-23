@@ -37,10 +37,10 @@ static PyObject * gpio_close(PyObject *self, PyObject *args);
 
 /* Methods definitions */
 static PyMethodDef AsGpio_wrap_Methods[] = {
-    {"init", gpio_open, METH_VARARGS, "Initialize gpio"},
+    {"gpio_open", gpio_open, METH_VARARGS, "Initialize gpio"},
     {"setPinDirection", setPinDirection, METH_VARARGS, "Set pin direction"},
     {"setPinValue", setPinValue, METH_VARARGS, "Set pin value"},
     {"getPinValue", getPinValue, METH_VARARGS, "Get pin value"},
-    {"close", gpio_close, METH_VARARGS, "Close gpio"},
+    {"gpio_close", gpio_close, METH_VARARGS, "Close gpio"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
