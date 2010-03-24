@@ -1,5 +1,5 @@
 /*
-**    THE ARMadeus Systems
+**    The ARMadeus Project
 ** 
 **    Copyright (C) 2010  The armadeus systems team 
 **    Fabien Marteau <fabien.marteau@armadeus.com>
@@ -160,7 +160,7 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
     if (dev == NULL)
     {
         PyErr_SetString(PyExc_IOError,
-                        "memory allocation: can't malloc fdev structure");
+                        "memory allocation: can't malloc fdev structure");
         return NULL;
     }
     dev->port_letter = aPort_letter;

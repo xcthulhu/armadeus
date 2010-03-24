@@ -1,5 +1,5 @@
 /*
-**    THE ARMadeus Systems
+**    The ARMadeus Project
 ** 
 **    Copyright (C) 2009  The armadeus systems team 
 **    Fabien Marteau <fabien.marteau@armadeus.com>

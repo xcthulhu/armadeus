@@ -1,5 +1,5 @@
 /*
-**    THE ARMadeus Systems
+**    The ARMadeus Project
 ** 
 **    Copyright (C) 2009  The armadeus systems team 
 **    Fabien Marteau <fabien.marteau@armadeus.com>
@@ -54,9 +54,9 @@ struct as_gpio_device *as_gpio_open(char aPortChar);
  *
  * @return error if negative value 
  */
-int32_t as_gpio_set_pin_direction(  struct as_gpio_device *aDev,
-                                    int aPinNum,
-                                    int aDirection);
+int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev,
+                                  int aPinNum,
+                                  int aDirection);
 
 /** @brief Set pin value 
  *
@@ -66,9 +66,9 @@ int32_t as_gpio_set_pin_direction(  struct as_gpio_device *aDev,
  *
  * @return error if negative 
  */
-int32_t as_gpio_set_pin_value(  struct as_gpio_device *aDev,
-                                int aPinNum,
-                                int aValue);
+int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
+                              int aPinNum,
+                              int aValue);
 
 /** @brief Get pin value
  *
@@ -77,8 +77,8 @@ int32_t as_gpio_set_pin_value(  struct as_gpio_device *aDev,
  *
  * @return pin value if positive or null, error if negative
  */
-int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
-                                int aPinNum);
+int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
+                              int aPinNum);
 
 /** @brief Close port access
  *
@@ -87,7 +87,7 @@ int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
  * @return pin value if positive or null, error if negative
  */
 
-int32_t as_gpio_close( struct as_gpio_device *aDev);
+int32_t as_gpio_close(struct as_gpio_device *aDev);
 
 #ifdef __cplusplus
 }
