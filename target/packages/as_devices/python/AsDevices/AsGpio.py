@@ -60,7 +60,7 @@ class AsGpio:
             try:
                 wrapper.gpio_close(self.__device)
             except Exception, e:
-                raise AsGpioError(str(e))
+                pass
 
         def setPinDirection(self, aPinNum, aDirection):
             """ Set period in us
@@ -72,6 +72,26 @@ class AsGpio:
             except Exception, e:
                 raise AsGpioError(str(e))
 
+        def setPinValue(self, aPinNum, aValue):
+            """ Set pin value
+                \param aPinNum pin number
+                \param aValue value to write
+            """
+            try:
+                wrapper.setPinValue(self.__device, aPinNum, aValue)
+            except Exception, e:
+                raise AsGpioError(str(e))
+
+        def getPinValue(self, aPinNum):
+            """ Get pin value
+                \param aPinNum pin number
+                \return pin value
+            """
+            try:
+                return wrapper.getPinValue(self.__device, aPinNum)
+            except Exception, e:
+                raise AsGpioError(str(e))
+
 
     ################################################################
 
@@ -79,7 +99,7 @@ class AsGpio:
     def getInstance(cls, aPort_letter):
         if type(aPort_letter)!=str:
             raise Exception("port letter must be a character")
-        if ((aPort_letter[0] <= 'A') or (aPort_letter[0] >= 'Z')):
+        if ((aPort_letter[0] < 'A') or (aPort_letter[0] > 'Z')):
             raise Exception("Port letter must be an UPPER case letter")
 
         try:
