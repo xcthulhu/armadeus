@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328.c	2009-10-07 14:48:32.000000000 +0200
-@@ -0,0 +1,635 @@
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328.c	2010-03-25 12:26:47.000000000 +0100
+@@ -0,0 +1,627 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
@@ -53,9 +53,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +#include <mach/imx_ssi.h>
 +#include <mach/dma.h>
 +#include "../../../drivers/armadeus/pwm/pwm.h"
-+#ifdef CONFIG_DM9000
 +#include <linux/dm9000.h>
-+#endif
 +#ifdef CONFIG_MACH_APF9328_FPGA
 +#include "../plat-mxc/include/mach/fpga.h" /* To be removed when MX1 arch is fully integrated */
 +#endif
@@ -82,7 +80,6 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +/*
 + * APF9328 has a DM9000 Ethernet controller
 + */
-+#ifdef CONFIG_DM9000
 +static struct resource dm9000_resources[] = {
 +	[0] = {
 +		.start  = (APF9328_ETH_PHYS + 0),
@@ -112,7 +109,6 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +	.resource       = dm9000_resources,
 +	.dev            = { .platform_data = &dm9000_setup, },
 +};
-+#endif /* CONFIG_DM9000 */
 +
 +
 +#ifdef CONFIG_PWM
@@ -543,9 +539,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +static struct platform_device *devices[] __initdata = {
 +	&imx_uart1_device,
 +	&imx_uart2_device,
-+#ifdef CONFIG_DM9000
 +	&dm9000x_device,
-+#endif
 +#ifdef CONFIG_SPI_IMX
 +	&imx_spi1,
 +	&imx_spi2,
@@ -624,10 +618,8 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +	/* Init generic IRQs */
 +	imx_init_irq();
 +
-+	/* Init our custom IRQs */
-+#ifdef CONFIG_DM9000
++	/* Init our custom IRQs (DM9000) */
 +	set_irq_type(APF9328_ETH_IRQ, IRQF_TRIGGER_FALLING);
-+#endif
 +}
 +
 +
@@ -644,7 +636,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h	2009-10-02 08:54:08.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h	2010-03-25 11:50:57.000000000 +0100
 @@ -0,0 +1,301 @@
 +/*
 + *
@@ -950,7 +942,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h	2009-10-02 08:54:08.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h	2010-03-25 11:50:57.000000000 +0100
 @@ -0,0 +1,68 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
@@ -1023,7 +1015,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c	2009-10-02 08:54:08.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c	2010-03-25 11:50:57.000000000 +0100
 @@ -0,0 +1,281 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328-dev.c
