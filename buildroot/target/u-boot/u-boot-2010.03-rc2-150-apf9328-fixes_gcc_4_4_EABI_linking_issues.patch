@@ -1,0 +1,63 @@
+Don't know if it's the right way to do (marked as HACK in Openmoko). But
+without this patch, U-Boot (1.3.4) fails to link when gcc 4.3 or 4.4 is used.
+
+Errors are:
+
+xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivsi3.o): In function `__aeabi_uidiv':
+xxx/buildroot/output/toolchain/gcc-4.3.4/libgcc/../gcc/config/arm/lib1funcs.asm:810: multiple definition of `__udivsi3'                                                             lib_arm/libarm.a(_udivsi3.o):xxx/buildroot/output/build/u-boot-1.3.4/lib_arm/_udivsi3.S:17: first defined here
+...
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: error: Source object xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o) has EABI version 4, but target u-boot has EABI version 0
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: failed to merge target specific data of file /home/julien/workspace/Armadeus_SF/armadeus-git-new-buildroot-build/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o)
+...
+xxx/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-ld: failed to merge target specific data of file xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_clz.o)
+xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclibcgnueabi/4.3.4/libgcc.a(_udivdi3.o):(.ARM.exidx+0x0): undefined reference to `__aeabi_unwind_cpp_pr0'
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+--- u-boot-1.3.4/board/armadeus/apf9328/apf9328.c	2010-03-22 00:41:51.000000000 +0100
++++ u-boot-1.3.4.new/board/armadeus/apf9328/apf9328.c	2010-03-22 00:31:05.000000000 +0100
+@@ -99,3 +99,12 @@ show_boot_progress (int status)
+ {
+ 	return;
+ }
++
++#ifdef CONFIG_DRIVER_DM9000
++int board_eth_init(bd_t *bis)
++{
++	return dm9000_initialize(bis);
++}
++#endif
++
++void abort() {}
+--- u-boot-2010.03-rc1/board/armadeus/apf9328/config.mk	2010-03-28 00:59:04.000000000 +0100
++++ u-boot-2010.03-rc1/board/armadeus/apf9328/config.mk	2010-03-28 01:16:28.000000000 +0100
+@@ -8,3 +8,5 @@
+ #
+ 
+ TEXT_BASE = 0x0BF80000
++
++LDSCRIPT := $(SRCTREE)/board/$(BOARDDIR)/u-boot.lds
+--- u-boot-1.3.4/board/armadeus/apf9328/u-boot.lds	2010-03-22 00:41:51.000000000 +0100
++++ u-boot-1.3.4.new/board/armadeus/apf9328/u-boot.lds	2010-03-22 00:34:06.000000000 +0100
+@@ -38,6 +38,10 @@ SECTIONS
+ 
+ 	. = ALIGN(4);
+ 	.rodata : { *(.rodata) }
++	.ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) }
++	__exidx_start = .;
++	.ARM.exidx   : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) }
++	__exidx_end = .;
+ 
+ 	. = ALIGN(4);
+ 	.data : { *(.data) }
+--- u-boot-2010.03-rc1/Makefile	2010-03-27 19:49:15.000000000 +0100
++++ u-boot-2010.03-rc1/Makefile	2010-03-27 19:47:05.000000000 +0100
+@@ -262,7 +262,7 @@ else
+ PLATFORM_LIBGCC = -L $(USE_PRIVATE_LIBGCC) -lgcc
+ endif
+ else
+-PLATFORM_LIBGCC = -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
++PLATFORM_LIBGCC = -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc -lgcc_eh
+ endif
+ PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+ export PLATFORM_LIBS

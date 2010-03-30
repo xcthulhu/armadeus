@@ -1,0 +1,40 @@
+--- buildroot/target/u-boot/Config.in	2010-03-30 23:10:18.000000000 +0200
++++ buildroot/target/u-boot/Config.in	2010-03-28 17:48:28.000000000 +0200
+@@ -13,7 +13,7 @@ config BR2_TARGET_UBOOT_BOARDNAME
+ 
+ config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
+ 	string "U-Boot header file"
+-	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
++	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME)-uboot-$(BR2_UBOOT_VERSION).h"
+ 	help
+ 	  U-Boot config header file to use to build U-Boot for your target.
+ 	  Mainly for people using boards not (yet) integrated in U-Boot's
+@@ -28,6 +28,9 @@ choice
+ config BR2_TARGET_UBOOT_1_3_4
+ 	bool "u-boot-1.3.4"
+ 
++config BR2_TARGET_UBOOT_2010_03
++	bool "u-boot-2010.03"
++
+ config BR2_TARGET_UBOOT_2009_11
+ 	bool "u-boot-2009.11"
+ 
+@@ -60,6 +63,7 @@ endchoice
+ config BR2_UBOOT_VERSION
+ 	string
+ 	default "1.3.4"		if BR2_TARGET_UBOOT_1_3_4
++	default "2010.03-rc2"	if BR2_TARGET_UBOOT_2010_03
+ 	default "2009.11"	if BR2_TARGET_UBOOT_2009_11
+ 	default "2009.08"	if BR2_TARGET_UBOOT_2009_08
+ 	default "2009.06"	if BR2_TARGET_UBOOT_2009_06
+--- buildroot/target/u-boot/Makefile.in	2010-03-30 23:10:18.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-03-23 23:55:11.000000000 +0100
+@@ -96,7 +96,7 @@ endif
+ 
+ $(U_BOOT_DIR)/.config_header_copied: $(U_BOOT_DIR)/.patched
+ ifneq ($(strip $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE)),)
+-	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/
++	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/$(BR2_BOARD_NAME).h
+ endif
+ 	touch $@
+ 
