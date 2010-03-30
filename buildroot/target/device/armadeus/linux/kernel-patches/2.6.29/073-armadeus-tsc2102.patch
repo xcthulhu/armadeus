@@ -4,8 +4,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-02-24 15:11:28.000000000 +0100
-@@ -0,0 +1,302 @@
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-03-30 15:55:09.000000000 +0200
+@@ -0,0 +1,306 @@
 +/*
 + * include/linux/spi/tsc2102.h
 + *
@@ -75,8 +75,12 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +extern void tsc210x_set_i2s_master(int state);
 +extern void tsc210x_set_deemphasis(int enable);
 +extern void tsc210x_set_bassboost(int enable);
++extern void tsc2101_set_micsel(uint8_t micsel);
++extern uint8_t tsc2101_get_micsel(void);
 +extern void tsc2101_handset_mute(int enable);
 +extern void tsc2101_set_handset_gain(uint8_t gain);
++extern void tsc2101_headset_mute(int enable);
++extern void tsc2101_set_headset_gain(uint8_t gain);
 +#endif
 +
 +extern void tsc210x_keyclick(int amplitude, int freq, int length);
@@ -103,8 +107,8 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +
 +/* Page 2, Audio Control registers */
 +#define TSC2102_AUDIO1_CTRL		TSC210X_REG(2, 0x00)
++#define TSC2101_HEADSET_AUX_PGA_CTRL	TSC210X_REG(2, 0x01)	/* TSC2101 only */
 +#define TSC210X_DAC_GAIN_CTRL		TSC210X_REG(2, 0x02)
-+#define TSC2101_HEADSET_GAIN_CTRL	TSC210X_REG(2, 0x01)	/* TSC2101 only */
 +#define TSC2101_MIXER_PGA_CTRL		TSC210X_REG(2, 0x03)	/* TSC2101 only */
 +#define TSC2102_AUDIO2_CTRL		TSC210X_REG(2, 0x04)
 +#define TSC210X_CODEC_POWER_CTRL	TSC210X_REG(2, 0x05)
@@ -151,13 +155,13 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +#define AC1_ADCFS(ARG)			(((ARG) & 0x07) << 0)
 +/* on TSC2102 always set ADCFS = DACFS */
 +
-+/* Field masks for Gain Control for Headset/Aux Input */
++/* Field masks for TSC2101_HEADSET_AUX_PGA_CTRL */
 +/* TSC2101 only */
-+#define HGC_ADMUT_HED(ARG)	(1 << 15)
-+#define HGC_ADPGA_HED(ARG)	(((ARG) & 0x7f) << 8)
-+#define HGC_AGCTG_HED(ARG)	(((ARG) & 0x07) << 5)
-+#define HGC_AGCTC_HED(ARG)	(((ARG) & 0x0f) << 1)
-+#define HGC_AGCEN_HED(ARG)	(1 << 0)
++#define ADMUT_HED			(1 << 15)
++#define ADPGA_HED(ARG)			(((ARG) & 0x7f) << 8)
++#define AGCTG_HED(ARG)			(((ARG) & 0x07) << 5)
++#define AGCTC_HED(ARG)			(((ARG) & 0x0f) << 1)
++#define AGCEN_HED(ARG)			(1 << 0)
 +
 +/* Field masks for TSC2102_DAC_GAIN_CTRL */
 +#define DGC_DALMU			(1 << 15)
@@ -243,11 +247,11 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 +/* !! FOLLOWING REGISTERS ARE ONLY AVAILABLE ON TSC2101 !! */
 +
 +/* Field masks for TSC2101_HANDSET_PGA_CTRL */
-+#define HIGC_ADMUT_HND			(1 << 15)
-+#define HIGC_ADPGA_HND(ARG)		(((ARG) & 0x7f) << 8)
-+#define HIGC_AGCTG_HND(ARG)		(((ARG) & 0x07) << 5)
-+#define HIGC_AGCTC_HND(ARG)		(((ARG) & 0x0f) << 1)
-+#define HIGC_AGCEN_HND(ARG)		(1 << 0)
++#define ADMUT_HND			(1 << 15)
++#define ADPGA_HND(ARG)			(((ARG) & 0x7f) << 8)
++#define AGCTG_HND(ARG)			(((ARG) & 0x07) << 5)
++#define AGCTC_HND(ARG)			(((ARG) & 0x0f) << 1)
++#define AGCEN_HND(ARG)			(1 << 0)
 +
 +/* Field masks for TSC2101_CELL_BUZZER_PGA_CTRL */
 +#define CPBGC_MUT_CP			(1 << 15)
@@ -311,8 +315,8 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-03-15 12:06:23.000000000 +0100
-@@ -0,0 +1,1198 @@
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-03-30 15:58:55.000000000 +0200
+@@ -0,0 +1,1250 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
@@ -804,16 +808,35 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +}
 +EXPORT_SYMBOL(tsc210x_set_bassboost);
 +
-+void tsc2101_handset_mute(int enable)
++void tsc2101_set_micsel(uint8_t micsel)
++{
++	u16 sel;
++
++	mutex_lock(&tsc.lock_sync);
++	sel = tsc210x_read_sync(TSC2101_MIXER_PGA_CTRL);
++	sel &= ~MPC_MICSEL(7); /* clear MICSEL */
++	sel |= MPC_MICSEL(micsel);
++	tsc210x_write_sync(TSC2101_MIXER_PGA_CTRL, sel);
++	mutex_unlock(&tsc.lock_sync);
++}
++EXPORT_SYMBOL_GPL(tsc2101_set_micsel);
++
++uint8_t tsc2101_get_micsel(void)
++{
++	return (uint8_t)((tsc210x_read_sync(TSC2101_MIXER_PGA_CTRL) >> 5) & 0x07);
++}
++EXPORT_SYMBOL_GPL(tsc2101_get_micsel);
++
++void tsc2101_handset_mute(int muted)
 +{
 +	u16 val;
 +
 +	mutex_lock(&tsc.lock_sync);
 +	val = tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL);
-+	if (enable)
-+		val |= HIGC_ADMUT_HND;
++	if (muted)
++		val |= ADMUT_HND;
 +	else
-+		val &= ~HIGC_ADMUT_HND;
++		val &= ~ADMUT_HND;
 +	tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, val);
 +	mutex_unlock(&tsc.lock_sync);
 +}
@@ -826,13 +849,41 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +	mutex_lock(&tsc.lock_sync);
 +	val = tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL);
-+	val &= ~HIGC_ADPGA_HND(0xff); /* clear current gain */
-+	val |= HIGC_ADPGA_HND(gain);
++	val &= ~ADPGA_HND(0xff); /* clear current gain */
++	val |= ADPGA_HND(gain);
 +	tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, val);
 +	mutex_unlock(&tsc.lock_sync);
 +}
 +EXPORT_SYMBOL_GPL(tsc2101_set_handset_gain);
 +
++void tsc2101_headset_mute(int muted)
++{
++	u16 val;
++
++	mutex_lock(&tsc.lock_sync);
++	val = tsc210x_read_sync(TSC2101_HEADSET_AUX_PGA_CTRL);
++	if (muted)
++		val |= ADMUT_HED;
++	else
++		val &= ~ADMUT_HED;
++	tsc210x_write_sync(TSC2101_HEADSET_AUX_PGA_CTRL, val);
++	mutex_unlock(&tsc.lock_sync);
++}
++EXPORT_SYMBOL_GPL(tsc2101_headset_mute);
++
++/* 0 -> 0dB, 127 -> 59,5dB (0.5dB stepping) */
++void tsc2101_set_headset_gain(uint8_t gain)
++{
++	u16 val;
++
++	mutex_lock(&tsc.lock_sync);
++	val = tsc210x_read_sync(TSC2101_HEADSET_AUX_PGA_CTRL);
++	val &= ~ADPGA_HED(0xff); /* clear current gain */
++	val |= ADPGA_HED(gain);
++	tsc210x_write_sync(TSC2101_HEADSET_AUX_PGA_CTRL, val);
++	mutex_unlock(&tsc.lock_sync);
++}
++EXPORT_SYMBOL_GPL(tsc2101_set_headset_gain);
 +
 +/* {rate, divisor (for AC1), fsref} */
 +static const struct tsc210x_rate_info_s tsc210x_rates[] = {
@@ -991,8 +1042,14 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +		tsc210x_write_sync(TSC2102_AUDIO2_CTRL, TSC210X_KEYCLICK_OFF);
 +		/* 44.1 kHz Fsref, continuous transfer mode, master DAC */
 +		tsc210x_write_sync(TSC2102_AUDIO3_CTRL, 0x2800);
-+		/* Soft-stepping enabled */
-+		tsc210x_write_sync(TSC2102_AUDIO4_CTRL, 0x0000);
++		if (tsc.kind == tsc2101) {
++			/* Soft-stepping enabled + MICBIAS_xx = 2.5V */
++			tsc210x_write_sync(TSC2102_AUDIO4_CTRL,
++					0x0000 | AC4_MB_HED(1));
++		} else {
++			/* Soft-stepping enabled */
++			tsc210x_write_sync(TSC2102_AUDIO4_CTRL, 0x0000);
++		}
 +		/* PLL generates 44.1 kHz */
 +		tsc210x_set_fsref(44100);
 +		/* Codec & DAC power up, virtual ground disabled */
@@ -1064,11 +1121,10 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	tsc210x_set_fsref(44100);
 +
 +	if (tsc.kind == tsc2101) {
-+		tsc210x_write_sync(TSC2101_AUDIO5_CTRL, /*AC5_AST2SPK1 |*/ AC5_DAC2SPK1(1) | AC5_DAC2SPK2(2)|AC5_HDSCPTC);
-+		tsc210x_write_sync(TSC2101_MIXER_PGA_CTRL, /*0x7f00*/ 0xc500 /* reset value */ | MPC_MICSEL(1) | MPC_MICADC);
-+		tsc210x_write_sync(TSC2101_HEADSET_GAIN_CTRL, HGC_ADPGA_HED(0));
++		tsc210x_write_sync(TSC2101_AUDIO5_CTRL, /*AC5_AST2SPK1 |*/ AC5_DAC2SPK1(1) | AC5_DAC2SPK2(2) | AC5_HDSCPTC);
++		tsc210x_write_sync(TSC2101_MIXER_PGA_CTRL, 0xc500 /* reset value */ | MPC_MICSEL(1) | MPC_MICADC);
++		tsc210x_write_sync(TSC2101_HEADSET_AUX_PGA_CTRL, ADPGA_HED(0));
 +		tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, 0x0000);
-+// 		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, 0x00fc);
 +		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, 0xe2fc);
 +	} else {
 +		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, TSC2102_DAC_ON);

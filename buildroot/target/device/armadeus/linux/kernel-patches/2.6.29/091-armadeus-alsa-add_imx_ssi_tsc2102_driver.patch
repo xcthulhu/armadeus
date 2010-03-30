@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa.c	2010-01-19 10:32:20.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa.c	2010-03-25 12:28:12.000000000 +0100
 @@ -0,0 +1,666 @@
 +/*
 + * sound/arm/imx-alsa.c
@@ -675,7 +675,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2010-01-19 10:25:41.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-dma.h	2010-03-25 12:28:12.000000000 +0100
 @@ -0,0 +1,46 @@
 +/*
 + * linux/sound/arm/imx/imx-alsa-dma.h
@@ -726,7 +726,7 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-dma.h
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2010-01-19 10:30:18.000000000 +0100
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c	2010-03-29 15:33:48.000000000 +0200
 @@ -0,0 +1,441 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.c
@@ -989,8 +989,8 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 +			tsc210x_read_reg(TSC210X_DAC_GAIN_CTRL));
 +
 +	if (tsc210x_is_tsc2101()) {
-+		seq_printf(s, "TSC2101_HEADSET_GAIN_CTRL = 0x%04x\n",
-+			tsc210x_read_reg(TSC2101_HEADSET_GAIN_CTRL));
++		seq_printf(s, "TSC2101_HEADSET_AUX_PGA_CTRL = 0x%04x\n",
++			tsc210x_read_reg(TSC2101_HEADSET_AUX_PGA_CTRL));
 +		seq_printf(s, "TSC2101_MIXER_PGA_CTRL = 0x%04x\n",
 +			tsc210x_read_reg(TSC2101_MIXER_PGA_CTRL));
 +	}
@@ -1172,8 +1172,8 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.c
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2010-01-19 10:25:41.000000000 +0100
-@@ -0,0 +1,48 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h	2010-03-29 15:01:58.000000000 +0200
+@@ -0,0 +1,51 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102.h
 + *
@@ -1219,14 +1219,17 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102.h
 +
 +#define INPUT_HND_VOLUME_RANGE		(0x7f)
 +#define DEFAULT_INPUT_HND_VOLUME	50
++#define INPUT_HEAD_VOLUME_RANGE		(0x7f)
++#define DEFAULT_INPUT_HEAD_VOLUME	50
++
 +
 +#endif	/* IMX_ALSA_TSC2102_H_ */
 +
 Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2010-01-19 10:25:41.000000000 +0100
-@@ -0,0 +1,425 @@
++++ linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c	2010-03-30 15:49:07.000000000 +0200
+@@ -0,0 +1,553 @@
 +/*
 + * sound/arm/imx-alsa-tsc2102-mixer.c
 + *
@@ -1268,10 +1271,11 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +
 +#include "imx-alsa-tsc2102.h"
 +
++
 +/* Audio Out: */
 +static int vol[2], mute[2], filter[2];
 +/* Audio In: */
-+static int hnd_vol, hnd_mute;
++static int hnd_vol, hnd_mute, head_vol, head_mute;
 +
 +/*
 + * Converts the Alsa mixer volume (0 - 100) to actual Digital
@@ -1325,6 +1329,22 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +	gain = (hnd_vol * INPUT_HND_VOLUME_RANGE) / 100;
 +
 +	tsc2101_set_handset_gain(gain);
++}
++
++static void set_headset_volume(int volume)
++{
++	uint8_t gain;
++
++	if (volume > 100) {
++		head_vol = 100;
++	} else if (volume < 0) {
++		head_vol = 0;
++	} else {
++		head_vol = volume;
++	}
++	gain = (head_vol * INPUT_HEAD_VOLUME_RANGE) / 100;
++
++	tsc2101_set_headset_gain(gain);
 +}
 +
 +void init_playback_targets(void)
@@ -1476,6 +1496,38 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +
 +/* Capture controls (only available on TSC2101) */
 +
++static int __capture_mux_enum_info(struct snd_kcontrol *kcontrol,
++                          struct snd_ctl_elem_info *uinfo)
++{
++          static char *texts[3] = {
++                  "Headset", "Handset", "None"
++          };
++          uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++          uinfo->count = 1;
++          uinfo->value.enumerated.items = 3;
++          if (uinfo->value.enumerated.item > 2)
++                  uinfo->value.enumerated.item = 2;
++          strcpy(uinfo->value.enumerated.name,
++                 texts[uinfo->value.enumerated.item]);
++          return 0;
++}
++
++static int __capture_mux_enum_get(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.integer.value[0] = tsc2101_get_micsel();
++
++	return 0;
++}
++
++static int __capture_mux_enum_put(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	tsc2101_set_micsel((uint8_t)(ucontrol->value.integer.value[0]));
++
++	return 1;
++}
++
 +static int __handset_capture_volume_info(
 +		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_info *uinfo)
 +{
@@ -1526,8 +1578,62 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 +{
 +	hnd_mute = (ucontrol->value.integer.value[0] == 0);
-+
 +	tsc2101_handset_mute(hnd_mute);
++
++	return 1;
++}
++
++static int __headset_capture_volume_info(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type			= SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count			= 1;	/* Mono */
++	uinfo->value.integer.min	= 0;
++	uinfo->value.integer.max	= 100;
++
++	return 0;
++}
++
++static int __headset_capture_volume_get(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.integer.value[0] = head_vol;
++
++	return 0;
++}
++
++static int __headset_capture_volume_put(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	set_headset_volume(ucontrol->value.integer.value[0]); /* head_vol mod. here */
++
++	return 1;
++}
++
++static int __headset_capture_switch_info(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type			= SNDRV_CTL_ELEM_TYPE_BOOLEAN;
++	uinfo->count			= 1;
++	uinfo->value.integer.min	= 0;
++	uinfo->value.integer.max	= 1;
++
++	return 0;
++}
++
++static int __headset_capture_switch_get(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.integer.value[0] = !head_mute;
++
++	return 0;
++}
++
++static int __headset_capture_switch_put(
++		struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
++{
++	head_mute = (ucontrol->value.integer.value[0] == 0);
++	tsc2101_headset_mute(head_mute);
 +
 +	return 1;
 +}
@@ -1574,6 +1680,13 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +
 +static struct snd_kcontrol_new tsc2101_control[] __devinitdata = {
 +	{
++		.name	= "Mic Capture Route",
++		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
++		.info	= __capture_mux_enum_info,
++		.get	= __capture_mux_enum_get,
++		.put	= __capture_mux_enum_put,
++	},
++	{
 +		.name	= "Handset Capture Volume",
 +		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
 +		.index	= 0,
@@ -1590,6 +1703,24 @@ Index: linux-2.6.29.6/sound/arm/imx-alsa-tsc2102-mixer.c
 +		.info	= __handset_capture_switch_info,
 +		.get	= __handset_capture_switch_get,
 +		.put	= __handset_capture_switch_put,
++	},
++	{
++		.name	= "Headset Capture Volume",
++		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
++		.index	= 0,
++		.access	= SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.info	= __headset_capture_volume_info,
++		.get	= __headset_capture_volume_get,
++		.put	= __headset_capture_volume_put,
++	},
++	{
++		.name	= "Headset Capture Switch",
++		.iface	= SNDRV_CTL_ELEM_IFACE_MIXER,
++		.index	= 0,
++		.access	= SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.info	= __headset_capture_switch_info,
++		.get	= __headset_capture_switch_get,
++		.put	= __headset_capture_switch_put,
 +	},
 +};
 +
