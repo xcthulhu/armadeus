@@ -5,7 +5,7 @@
  config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
  	string "U-Boot header file"
 -	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
-+	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME)-uboot-$(BR2_UBOOT_VERSION).h"
++	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME)-u-boot-$(BR2_UBOOT_VERSION).h"
  	help
  	  U-Boot config header file to use to build U-Boot for your target.
  	  Mainly for people using boards not (yet) integrated in U-Boot's
