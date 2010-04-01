@@ -1,0 +1,133 @@
+--- u-boot-2010.03-rc1/drivers/net/dm9000x.c	2010-03-12 23:06:04.000000000 +0100
++++ u-boot-2010.03-rc1.new/drivers/net/dm9000x.c	2010-03-23 01:24:07.000000000 +0100
+@@ -232,7 +232,7 @@ dm9000_probe(void)
+ 	id_val |= DM9000_ior(DM9000_PIDL) << 16;
+ 	id_val |= DM9000_ior(DM9000_PIDH) << 24;
+ 	if (id_val == DM9000_ID) {
+-		printf("dm9000 i/o: 0x%x, id: 0x%x \n", CONFIG_DM9000_BASE,
++		DM9000_DBG("dm9000 i/o: 0x%x, id: 0x%x \n", CONFIG_DM9000_BASE,
+ 		       id_val);
+ 		return 0;
+ 	} else {
+@@ -298,19 +298,19 @@ static int dm9000_init(struct eth_device
+ 
+ 	switch (io_mode) {
+ 	case 0x0:  /* 16-bit mode */
+-		printf("DM9000: running in 16 bit mode\n");
++		DM9000_DBG("DM9000: running in 16 bit mode\n");
+ 		db->outblk    = dm9000_outblk_16bit;
+ 		db->inblk     = dm9000_inblk_16bit;
+ 		db->rx_status = dm9000_rx_status_16bit;
+ 		break;
+ 	case 0x01:  /* 32-bit mode */
+-		printf("DM9000: running in 32 bit mode\n");
++		DM9000_DBG("DM9000: running in 32 bit mode\n");
+ 		db->outblk    = dm9000_outblk_32bit;
+ 		db->inblk     = dm9000_inblk_32bit;
+ 		db->rx_status = dm9000_rx_status_32bit;
+ 		break;
+ 	case 0x02: /* 8 bit mode */
+-		printf("DM9000: running in 8 bit mode\n");
++		DM9000_DBG("DM9000: running in 8 bit mode\n");
+ 		db->outblk    = dm9000_outblk_8bit;
+ 		db->inblk     = dm9000_inblk_8bit;
+ 		db->rx_status = dm9000_rx_status_8bit;
+--- u-boot-2010.03-rc2/board/armadeus/apf9328/eeprom.c	2010-03-28 23:41:17.000000000 +0200
++++ u-boot-2010.03-rc2/board/armadeus/apf9328/eeprom.c	2010-03-28 23:39:04.000000000 +0200
+@@ -0,0 +1,85 @@
++/*
++ * (C) Copyright 2007
++ * Stefano Babic, DENX Software Engineering, sbabic@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <dm9000.h>
++
++static int do_read_dm9000_eeprom ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
++	unsigned int i;
++	u8 data[2];
++
++	for (i=0; i < 0x40; i++) {
++		if (!(i % 0x10))
++			printf("\n%08x:", i);
++		dm9000_read_srom_word(i, data);
++		printf(" %02x%02x", data[1], data[0]);
++	}
++	printf ("\n");
++	return (0);
++}
++
++static int do_write_dm9000_eeprom ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
++	int offset,value;
++
++	if (argc < 4) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	offset=simple_strtoul(argv[2],NULL,16);
++	value=simple_strtoul(argv[3],NULL,16);
++	if (offset > 0x40) {
++		printf("Wrong offset : 0x%x\n",offset);
++		cmd_usage(cmdtp);
++		return 1;
++	}
++	dm9000_write_srom_word(offset, value);
++	return (0);
++}
++
++int do_dm9000_eeprom ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
++	if (argc < 2) {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++
++	if (strcmp (argv[1],"read") == 0) {
++		return (do_read_dm9000_eeprom(cmdtp,flag,argc,argv));
++	} else if (strcmp (argv[1],"write") == 0) {
++		return (do_write_dm9000_eeprom(cmdtp,flag,argc,argv));
++	} else {
++		cmd_usage(cmdtp);
++		return 1;
++	}
++}
++
++U_BOOT_CMD(
++	dm9000ee,4,1,do_dm9000_eeprom,
++	"Read/Write eeprom connected to Ethernet Controller",
++	"\ndm9000ee write <word offset> <value> \n"
++	"\tdm9000ee read \n"
++	"\tword:\t\t00-02 : MAC Address\n"
++	"\t\t\t03-07 : DM9000 Configuration\n"
++	"\t\t\t08-63 : User data"
++);
+--- u-boot-2010.03-rc2/board/armadeus/apf9328/Makefile	2010-03-28 17:56:25.000000000 +0200
++++ u-boot-2010.03-rc2/board/armadeus/apf9328/Makefile	2010-03-28 23:45:48.000000000 +0200
+@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)lib$(BOARD).a
+ 
+-COBJS	:= apf9328.o i2c.o apf9328fpga.o fpga.o
++COBJS	:= apf9328.o i2c.o apf9328fpga.o fpga.o eeprom.o
+ SOBJS	:= lowlevel_init.o
+ 
+ SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)

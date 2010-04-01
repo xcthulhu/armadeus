@@ -1,7 +1,7 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
+**    Copyright (C) 2010  The armadeus systems team 
 **    Fabien Marteau <fabien.marteau@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
@@ -19,34 +19,19 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef __ASAPF27PWM_H__
-#define __ASAPF27PWM_H__
+#include <Python.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+/* Init module */
+void initAsGpio_wrap();
 
-/* number of pwm under system */
-#define NUMBER_OF_PWM 2
+/*********************/
+/* Functions wrapped */
+/*********************/
+static PyObject * gpio_open(PyObject *self, PyObject *args);
 
-int as_apf27_pwm_init(int aPwmNumber);
+static PyObject * setPinDirection(PyObject *self, PyObject *args);
+static PyObject * setPinValue(PyObject *self, PyObject *args);
+static PyObject * getPinValue(PyObject *self, PyObject *args);
 
-int as_apf27_pwm_setFrequency(int aPwmNumber, int aFrequency);
-int as_apf27_pwm_getFrequency(int aPwmNumber);
+static PyObject * gpio_close(PyObject *self, PyObject *args);
 
-int as_apf27_pwm_setPeriod(int aPwmNumber, int aPeriod);
-int  as_apf27_pwm_getPeriod(int aPwmNumber);
-
-int as_apf27_pwm_setDuty(int aPwmNumber, int aDuty);
-int  as_apf27_pwm_getDuty(int aPwmNumber);
-
-int as_apf27_pwm_activate(int aPwmNumber, int aEnable);
-int as_apf27_pwm_getState(int aPwmNumber);
-
-int as_apf27_pwm_close(int aPwmNumber);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif /* __ASAPF27PWM_H__ */

@@ -1,9 +1,19 @@
-# to compile c tests
-# make CC=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc 
-#
+# Default values for local compiling:
+ARMADEUS_BASE_DIR=../../../../
+include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-CFLAGS=-Wall -g -O0
+ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
+CFLAGS=-Wall -g -O0 -DAPF9328
+else
+ifeq ($(ARMADEUS_BOARD_NAME),apf27)
+CFLAGS=-Wall -g -O0 -DAPF27
+endif
+endif
+
 LDFLAGS=
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 INCLUDE_LIB=../c/
 
@@ -11,7 +21,7 @@ AS_LIB=../c/libas_devices.so
 
 LIBNAME=AsDevices
 
-WRAPPER_LIBS=Apf27Pwm_wrap.so
+WRAPPER_LIBS=AsGpio_wrap.so
 WRAPPER_DIR=src
 
 PYTHON_VERS=2.4

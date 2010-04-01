@@ -1,0 +1,88 @@
+Not needed on BR > 2010.02
+
+From 3b712a3d891bf23055a587fc518f7cd2139a6a09 Mon Sep 17 00:00:00 2001
+From: Peter Korsgaard <jacmet@sunsite.dk>
+Date: Wed, 22 Apr 2009 07:27:17 +0000
+Subject: toolchain/gcc: don't enable libssp support
+
+It's broken anyway as we don't install libssp* into TARGET_DIR, and we
+should use the SSP support in uClibc if we want stack protection.
+---
+diff --git a/toolchain/gcc/Makefile.in b/toolchain/gcc/Makefile.in
+index aaf4513..a1c5564 100644
+--- a/toolchain/gcc/Makefile.in
++++ b/toolchain/gcc/Makefile.in
+@@ -74,7 +74,6 @@ endif
+ ifeq ($(BR2_avr32),y)
+ EXTRA_GCC_CONFIG_OPTIONS+=--disable-libmudflap
+ SOFT_FLOAT_CONFIG_OPTION:=
+-EXTRA_GCC_CONFIG_OPTIONS+=--disable-libssp
+ EXTRA_GCC_CONFIG_OPTIONS+=--with-build-time-tools=$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/bin \
+ #EXTRA_GCC_CONFIG_OPTIONS+=--with-as=$(TARGET_CROSS)as
+ endif
+@@ -90,7 +89,6 @@ EXTRA_TARGET_GCC_CONFIG_OPTIONS:=
+ # AVR32 target GCC configuration
+ ifeq ($(BR2_avr32),y)
+ EXTRA_TARGET_GCC_CONFIG_OPTIONS+=--disable-libmudflap
+-EXTRA_TARGET_GCC_CONFIG_OPTIONS+=--disable-libssp
+ EXTRA_TARGET_GCC_CONFIG_OPTIONS+=--with-build-time-tools=$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/bin \
+ EXTRA_TARGET_GCC_CONFIG_OPTIONS+=--with-as=$(TARGET_CROSS)as
+ endif
+diff --git a/toolchain/gcc/gcc-uclibc-3.x.mk b/toolchain/gcc/gcc-uclibc-3.x.mk
+index a734eef..131c9bd 100644
+--- a/toolchain/gcc/gcc-uclibc-3.x.mk
++++ b/toolchain/gcc/gcc-uclibc-3.x.mk
+@@ -181,6 +181,7 @@ $(GCC_BUILD_DIR1)/.configured: $(GCC_DIR)/.patched
+ 		--enable-target-optspace \
+ 		--with-gnu-ld \
+ 		--disable-shared \
++		--disable-libssp \
+ 		$(GCC_WITH_HOST_GMP) \
+ 		$(GCC_WITH_HOST_MPFR) \
+ 		$(DISABLE_NLS) \
+@@ -246,6 +247,7 @@ $(GCC_BUILD_DIR2)/.configured: $(GCC_DIR)/.patched $(GCC_STAGING_PREREQ)
+ 		--disable-__cxa_atexit \
+ 		--enable-target-optspace \
+ 		--with-gnu-ld \
++		--disable-libssp \
+ 		$(GCC_WITH_HOST_GMP) \
+ 		$(GCC_WITH_HOST_MPFR) \
+ 		$(GCC_SHARED_LIBGCC) \
+@@ -396,6 +398,7 @@ $(GCC_BUILD_DIR3)/.configured: $(GCC_BUILD_DIR3)/.prepared
+ 		--disable-__cxa_atexit \
+ 		--with-gnu-ld \
+ 		--with-gnu-as \
++		--disable-libssp \
+ 		$(GCC_SHARED_LIBGCC) \
+ 		$(GCC_WITH_TARGET_GMP) \
+ 		$(GCC_WITH_TARGET_MPFR) \
+diff --git a/toolchain/gcc/gcc-uclibc-4.x.mk b/toolchain/gcc/gcc-uclibc-4.x.mk
+index c8ca75e..749331f 100644
+--- a/toolchain/gcc/gcc-uclibc-4.x.mk
++++ b/toolchain/gcc/gcc-uclibc-4.x.mk
+@@ -205,6 +205,7 @@ $(GCC_BUILD_DIR1)/.configured: $(GCC_DIR)/.patched
+ 		--enable-target-optspace \
+ 		--with-gnu-ld \
+ 		--disable-shared \
++		--disable-libssp \
+ 		$(GCC_WITH_HOST_GMP) \
+ 		$(GCC_WITH_HOST_MPFR) \
+ 		$(DISABLE_NLS) \
+@@ -279,6 +280,7 @@ $(GCC_BUILD_DIR2)/.configured: $(GCC_SRC_DIR)/.patched $(GCC_STAGING_PREREQ)
+ 		--disable-__cxa_atexit \
+ 		--enable-target-optspace \
+ 		--with-gnu-ld \
++		--disable-libssp \
+ 		$(GCC_SHARED_LIBGCC) \
+ 		$(GCC_WITH_HOST_GMP) \
+ 		$(GCC_WITH_HOST_MPFR) \
+@@ -407,6 +409,7 @@ $(GCC_BUILD_DIR3)/.configured: $(GCC_BUILD_DIR3)/.prepared
+ 		--with-gxx-include-dir=/usr/include/c++ \
+ 		--disable-__cxa_atexit \
+ 		--with-gnu-ld \
++		--disable-libssp \
+ 		$(GCC_SHARED_LIBGCC) \
+ 		$(GCC_WITH_TARGET_GMP) \
+ 		$(GCC_WITH_TARGET_MPFR) \
+--
+cgit v0.8.2.1

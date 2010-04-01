@@ -27,8 +27,8 @@ ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
 #--- User configurable stuff:
-#BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
-#BUILDROOT_VERSION:=20100221
+#BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads
+#BUILDROOT_VERSION:=2010.02
 #BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/2010.02
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_VERSION:=20081103
@@ -39,7 +39,7 @@ BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
 #BUILDROOT_DIR is defined in ./Makefile.in
 PATCH_DIR = patches
 BUILDROOT_FILE_PATH:=downloads
-TAR_OPTIONS=--exclude=.svn --exclude=.git --exclude=.gitignore -xf
+TAR_OPTIONS=--exclude=.svn --exclude=.git --exclude=.gitignore --strip-component=1 -xf
 
 ARMADEUS_ENV_FILE:=$(ARMADEUS_TOPDIR)/armadeus_env.sh
 
@@ -99,7 +99,7 @@ buildroot-sources: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE)
 $(BUILDROOT_DIR)/.unpacked: $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) $(BUILDROOT_PATCH_DIR)/*.patch
 	$(BUILDROOT_PATCH_DIR)/cleanup_buildroot.sh
 	bzcat $(BUILDROOT_FILE_PATH)/$(BUILDROOT_SOURCE) | \
-	tar -C $(ARMADEUS_TOPDIR) $(TAR_OPTIONS) -
+	tar -C $(BUILDROOT_DIR) $(TAR_OPTIONS) -
 	touch $@
 
 buildroot-unpacked: $(BUILDROOT_DIR)/.unpacked

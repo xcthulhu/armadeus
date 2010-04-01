@@ -62,6 +62,8 @@ $THIS_DIR/test_fpga.sh
 echo
 $THIS_DIR/test_gpio.sh
 echo
+$THIS_DIR/test_pwm.sh
+echo
 $THIS_DIR/media_perf.sh speed
 # Following tests needs Internet access:
 ask_user "I will now try to configure Internet access. Press ENTER when ready"

@@ -1,5 +1,5 @@
 /*
-* linux user space apps for generating signl with sleep
+* Linux user space app for generating a pulse (using sleep)
 *
 * Copyright (C) 2009 <gwenhael.goavec-merou@armadeus.com>
 *                         Armadeus Project / Armadeus Systems
@@ -28,22 +28,27 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+
 #include "../../../../common.h"
 
-int main(int argc, char **argv) {
-	int fd, iomask;    
-  	if ((fd = open(PULSE_OUTPUT_DEV, O_RDWR))<0) {
+
+int main(/*int argc, char **argv*/void)
+{
+	int fd, iomask;
+
+  	if ((fd=open(PULSE_OUTPUT_DEV, O_RDWR)) < 0) {
 		printf("Open error on %s\n",PULSE_OUTPUT_DEV);
     		exit(0);
   	}
   	iomask=0x00;
   	printf("Opened on %s\n",PULSE_OUTPUT_DEV);
 	
-	while(1){
+	while (1) {
     		iomask^=1;
-    		write(fd,&iomask,sizeof(iomask));
+    		write(fd, &iomask, sizeof(iomask));
     		usleep(TIMESLEEP);
 	}
 	close(fd);
 	exit(0);
 }
+

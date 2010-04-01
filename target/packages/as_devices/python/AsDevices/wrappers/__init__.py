@@ -34,5 +34,5 @@ __version__ = "1.0.0"
 __versionTime__ = "08/10/2009"
 __author__ = "Fabien Marteau <fabien.marteau@armadeus.com>"
 
-import Apf27Pwm_wrap
+import AsGpio_wrap
 

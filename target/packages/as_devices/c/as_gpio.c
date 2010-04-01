@@ -1,5 +1,5 @@
 /*
-**    THE ARMadeus Systems
+**    The ARMadeus Project
 ** 
 **    Copyright (C) 2009  The armadeus systems team 
 **    Fabien Marteau <fabien.marteau@armadeus.com>
@@ -19,7 +19,7 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "as_apf27_gpio.h"
+#include "as_gpio.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,68 +38,76 @@
 
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 
-
-static int mFileHandlerGpioPort[NUMBER_OF_PORTS];
+#ifdef APF9328
+#   define NUMBER_OF_PORTS 4
+#elif defined(APF27)
+#   define NUMBER_OF_PORTS 6
+#else
+#error Error no platform defined
+#endif
 
 /*------------------------------------------------------------------------------*/
 
-/** Initialize port access
- * @param aPortChar character port in UPPER case
- * @return error if negative value 
- */
-int 
-as_apf27_gpio_init(char aPortChar)
+struct as_gpio_device *
+as_gpio_open(char aPortChar)
 {
+    struct as_gpio_device *dev;
     char gpio_file_path[50];
     int ret=0;
+
+    if (((aPortChar-'A') > (NUMBER_OF_PORTS-1)) || ((aPortChar-'A') < 0))
+    {
+        return NULL;
+    }
 
     /* make gpio port string path */
     ret = snprintf(gpio_file_path,50, "%s%c",
                             GPIO_BASE_PORT, aPortChar);
     if (ret < 0) {
-        return ret;
+        return NULL;
     }
 
     /* opening gpio port */
-    mFileHandlerGpioPort[aPortChar-'A'] = open(gpio_file_path, O_RDWR);
-    if (mFileHandlerGpioPort[aPortChar-'A'] < 0) {
-        return mFileHandlerGpioPort[aPortChar-'A'];
+    ret = open(gpio_file_path, O_RDWR);
+    if (ret < 0) {
+        return NULL;
     }
 
-    return 0;
+    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device)); 
+    if (dev == NULL)
+        return NULL;
+    
+    dev->port_letter = aPortChar;
+    dev->fdev = ret;
+
+    return dev;
 }
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin direction
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @param aDirection direction 0:input 1:output
- * @return error if negative value 
- */
-int
-as_apf27_gpio_set_pin_direction(char aPortChar,
-                                int aPinNum,
-                                int aDirection)
+int32_t
+as_gpio_set_pin_direction(struct as_gpio_device *aDev,
+                          int aPinNum,
+                          int aDirection)
 {
     int ret=0;
     int portval;
 
     /* Set LED PIN as GPIO; read/modify/write */
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDMODE, &portval);
+    ret = ioctl(aDev->fdev, GPIORDMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     portval |= (1 << aPinNum);
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRMODE, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRMODE, &portval);
     if (ret < 0) {
         return ret;
     }
 
     /* set direction */
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDIRECTION, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -110,7 +118,7 @@ as_apf27_gpio_set_pin_direction(char aPortChar,
         portval |= (1 << aPinNum);
     }
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDIRECTION, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRDIRECTION, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -119,21 +127,15 @@ as_apf27_gpio_set_pin_direction(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pin value 
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @param aValue value of pin (1 or 0)
- * @return error if negative 
- */
-int 
-as_apf27_gpio_set_pin_value(char aPortChar,
-                            int aPinNum,
-                            int aValue)
+int32_t 
+as_gpio_set_pin_value( struct as_gpio_device *aDev,
+                       int aPinNum,
+                       int aValue)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -143,7 +145,7 @@ as_apf27_gpio_set_pin_value(char aPortChar,
     } else {
         portval |= (1 << aPinNum);
     }
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIOWRDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIOWRDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -153,18 +155,13 @@ as_apf27_gpio_set_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Get pin value
- * @param aPortChar port character in upper case
- * @param aPinNum pin number
- * @return pin value if positive or null, error if negative
- */
-int as_apf27_gpio_get_pin_value(char aPortChar,
+int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
                                 int aPinNum)
 {
     int ret=0;
     int portval;
 
-    ret = ioctl(mFileHandlerGpioPort[aPortChar-'A'], GPIORDDATA, &portval);
+    ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
         return ret;
     }
@@ -178,13 +175,12 @@ int as_apf27_gpio_get_pin_value(char aPortChar,
 
 /*------------------------------------------------------------------------------*/
 
-/** Close port access
- * @param aPortChar port character in upper case
- * @return pin value if positive or null, error if negative
- */
-int 
-as_apf27_gpio_close(char aPortChar)
+int32_t 
+as_gpio_close(struct as_gpio_device *aDev)
 {
-    return close(mFileHandlerGpioPort[aPortChar-'A']);
+    int ret;
+    ret = close(aDev->fdev);
+    free(aDev);
+    return 0;
 }
 

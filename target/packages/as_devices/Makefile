@@ -1,10 +1,19 @@
-# to compile c tests
-# make CC=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc test_cdevices
-# to compile cpp tests
-# make CC=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-gcc CXX=~/armadeus_trees/apf27/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++ test_cppdevices
-# 
-CFLAGS=-Wall -g -O0
+# Default values for local compiling:
+ARMADEUS_BASE_DIR=../../../
+include $(ARMADEUS_BASE_DIR)/Makefile.in
+
+ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
+CFLAGS=-Wall -g -O0 -DAPF9328
+else
+ifeq ($(ARMADEUS_BOARD_NAME),apf27)
+CFLAGS=-Wall -g -O0 -DAPF27
+endif
+endif
+
 LDFLAGS=
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 C_BINARY=test_cdevices
 C_LIBNAME=as_devices
@@ -31,9 +40,9 @@ ${C_BINARY}: main.c test_c.h ${C_LIB}
 #	cd cpp; make CXX=${CXX}
 
 ${C_LIB}:
-	cd c; make CC=${CC} 
+	cd c; make 
 
 clean:
-	cd c; make clean ; cd ../cpp; make clean; cd ../python; make clean
-	-rm ${C_BINARY} ${CPP_BINARY}
+	cd c; make clean ; #cd ../cpp; make clean; cd ../python; make clean
+	-rm ${C_BINARY} # ${CPP_BINARY}
 

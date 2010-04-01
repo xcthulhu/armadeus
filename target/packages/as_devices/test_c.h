@@ -1,19 +1,19 @@
 /*
  **    THE ARMadeus Systems
- ** 
- **    Copyright (C) 2009  The armadeus systems team 
+ **
+ **    Copyright (C) 2009  The armadeus systems team
  **    Fabien Marteau <fabien.marteau@armadeus.com>
- ** 
+ **
  ** This library is free software; you can redistribute it and/or
  ** modify it under the terms of the GNU Lesser General Public
  ** License as published by the Free Software Foundation; either
  ** version 2.1 of the License, or (at your option) any later version.
- ** 
+ **
  ** This library is distributed in the hope that it will be useful,
  ** but WITHOUT ANY WARRANTY; without even the implied warranty of
  ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  ** Lesser General Public License for more details.
- ** 
+ **
  ** You should have received a copy of the GNU Lesser General Public
  ** License along with this library; if not, write to the Free Software
  ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -23,17 +23,19 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "as_apf27_pwm.h"
+#include "as_pwm.h"
 #include "as_93lcxx.h"
 #include "as_i2c.h"
+#include "as_gpio.h"
+#include "as_max1027.h"
 
 #define PWM_NUM 0
 
 void pressEnterToContinue(void)
 {
     printf("\nPress enter to continue\n");
-    getc(stdin);//XXX 
-    while( getc(stdin) != '\n') ; 
+    while( getc(stdin) != '\n');
+    while( getc(stdin) != '\n');
 }
 
 /* pwm test */
@@ -44,7 +46,7 @@ void test_pwm(void)
     char buffer2[20];
     int value;
 
-    ret = as_apf27_pwm_init(PWM_NUM);
+    ret = as_pwm_init(PWM_NUM);
     if(ret < 0){
         printf("can't init pwm0\n");
         return;
@@ -71,41 +73,41 @@ void test_pwm(void)
         {
             case '1' : printf("Give frequency :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setFrequency(PWM_NUM,value);
+                       as_pwm_setFrequency(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '2' : printf("Current pwm frequency is %d\n",
-                              as_apf27_pwm_getFrequency(PWM_NUM));
+                              as_pwm_getFrequency(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '3' : printf("Give period :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setPeriod(PWM_NUM,value);
+                       as_pwm_setPeriod(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '4' : printf("Current period is %d\n",
-                              as_apf27_pwm_getPeriod(PWM_NUM));
+                              as_pwm_getPeriod(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '5' : printf("Give Duty :");
                        scanf("%d",&value);
-                       as_apf27_pwm_setDuty(PWM_NUM,value);
+                       as_pwm_setDuty(PWM_NUM,value);
                        pressEnterToContinue();
                        break;
             case '6' : printf("Current Duty is %d\n",
-                              as_apf27_pwm_getDuty(PWM_NUM));
+                              as_pwm_getDuty(PWM_NUM));
                        pressEnterToContinue();
                        break;
             case '7' : printf("Activate 'a' or Desactivate 'd' ?");
                        scanf("%s",buffer2);
                        if(buffer2[0] == 'a')
                        {
-                           as_apf27_pwm_activate(PWM_NUM,1);
+                           as_pwm_activate(PWM_NUM,1);
                            printf("Pwm activated\n");
                            pressEnterToContinue();
                        }else if(buffer2[0] == 'd')
                        {
-                           as_apf27_pwm_activate(PWM_NUM,0);
+                           as_pwm_activate(PWM_NUM,0);
                            printf("Pwm desactivated\n");
                            pressEnterToContinue();
                        }else{
@@ -113,7 +115,7 @@ void test_pwm(void)
                            pressEnterToContinue();
                        }
                        break;
-            case '8' : if(as_apf27_pwm_getState(PWM_NUM))
+            case '8' : if(as_pwm_getState(PWM_NUM))
                        {
                            printf("pwm is active\n");
                            pressEnterToContinue();
@@ -125,7 +127,7 @@ void test_pwm(void)
             default : break;
         }
     }
-    ret = as_apf27_pwm_close(PWM_NUM);
+    ret = as_pwm_close(PWM_NUM);
     if(ret < 0){
         printf("can't close pwm0\n");
         return;
@@ -301,9 +303,9 @@ void test_93LC()
                             scanf("%s", spidevpath);
                             printf("New path is %s\n",spidevpath);
                             break;
-                case '5' :  dev = as_93lcxx_open((unsigned char *)spidevpath, 
-                                                 type, 
-                                                 frequency, 
+                case '5' :  dev = as_93lcxx_open((unsigned char *)spidevpath,
+                                                 type,
+                                                 frequency,
                                                  word_size);
                             if (dev == NULL)
                             {
@@ -318,7 +320,7 @@ void test_93LC()
         } else {
             switch(buffer[0])
             {
-                case '1' :  as_93lcxx_close(dev); 
+                case '1' :  as_93lcxx_close(dev);
                             printf("eeprom closed\n");
                             initialized = 0;
                             pressEnterToContinue();
@@ -395,7 +397,7 @@ void test_93LC()
                                 {
                                     printf("%03X -> %02X\n",
                                            i,as_93lcxx_read(dev, i));
-                                } else{ 
+                                } else{
                                     printf("%03X -> %04X\n",
                                            i,as_93lcxx_read(dev, i));
                                 }
@@ -423,3 +425,253 @@ void test_93LC()
         }
     }
 }
+
+void test_gpio()
+{
+    char buffer[50];
+    struct as_gpio_device *gpio_dev;
+    int32_t ret;
+    char c_value;
+    int32_t value;
+    char port_letter = 'F';
+    int port_num = 14;
+    int port_direction = 0;
+    int port_value = 1;
+
+    gpio_dev = as_gpio_open(port_letter);
+    if (gpio_dev == NULL)
+    {
+        printf("Error can't open gpio %c\nHave you run loadgpio.sh ?\n", port_letter);
+        pressEnterToContinue();
+        return ;
+    }
+    ret = as_gpio_get_pin_value(gpio_dev,
+                                port_num);
+    if (ret < 0)
+    {
+        printf("Error, can't get pin value\n");
+        return;
+    }
+    port_value = ret;
+
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("   Testing GPIO  P%c%d \n", port_letter, port_num);
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) Change port letter (%c)\n", port_letter);
+        printf(" 2) Change port num (%d)\n", port_num);
+        printf(" 3) Change direction (%d)\n", port_direction);
+        printf(" 4) Change value (%d)\n", port_value);
+        printf(" 5) Read pin value\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Give letter of port in upper case : ");
+                        scanf("%s", buffer);
+                        if (buffer[0] != port_letter)
+                        {
+                            ret = as_gpio_close(gpio_dev);
+                            if(ret < 0)
+                            {
+                                printf("Error, can't close Port%c\n", port_letter);
+                                pressEnterToContinue();
+                                return ;
+                            }
+                        }
+                        gpio_dev = as_gpio_open(buffer[0]);
+                        if(gpio_dev == NULL)
+                        {
+                            printf("Error, can't open Port%c\n", c_value);
+                            pressEnterToContinue();
+                            return;
+                        }
+                        port_letter = buffer[0];
+                        printf("Ok Port %c is set\n", port_letter);
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Give pin number : ");
+                        scanf("%d", &value);
+                        if ((value < 0) || (value > 31))
+                            printf("Error, wrong value\n");
+                        else
+                            port_num = value;
+                        pressEnterToContinue();
+                        break;
+            case '3' :  printf("Give direction (0:in, 1:out) : ");
+                        scanf("%d", &value);
+                        ret = as_gpio_set_pin_direction(gpio_dev,
+                                                        port_num,
+                                                        value);
+                        if(ret < 0)
+                        {
+                            printf("Error, can't change direction\n");
+                            pressEnterToContinue();
+                            return ;
+                        }
+                        port_direction = value;
+                        printf("Ok direction changed\n");
+                        pressEnterToContinue();
+                        break;
+            case '4' :  printf("Give value : ");
+                        scanf("%d", &value);
+                        ret = as_gpio_set_pin_value(gpio_dev,
+                                                    port_num,
+                                                    value);
+                        if(ret < 0)
+                        {
+                            printf("Error, can't change pin value\n");
+                            pressEnterToContinue();
+                            return;
+                        }
+                        port_value = value;
+                        printf("Ok value changed\n");
+                        pressEnterToContinue();
+                        break;
+            case '5' :  printf("Get value \n");
+                        ret = as_gpio_get_pin_value(gpio_dev,
+                                                    port_num);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't get pin value\n");
+                            pressEnterToContinue();
+                            return;
+                        }
+                        printf("Value is %d\n",ret);
+                        port_value = ret;
+                        pressEnterToContinue();
+                        break;
+
+            default : break;
+        }
+    }
+}
+
+#ifdef APF9328
+#   define MAX1027_SPI_NUM (1)
+#elif defined(APF27)
+#   define MAX1027_SPI_NUM (0)
+#else
+#error Error no platform defined
+#endif
+
+#define NUM_OF_CHANNEL (8)
+
+void test_max1027()
+{
+    char buffer[50];
+    int ret;
+    char c_value[10];
+    int value;
+    int averaging=1;
+    int temperature = 0;
+    int temp_read=0;
+    struct as_max1027_device *max1027_dev;
+    int channel=0;
+    AS_max1027_mode mode= AS_MAX1027_SLOW;
+
+
+    max1027_dev = as_max1027_open(MAX1027_SPI_NUM, mode);
+    if (max1027_dev == NULL)
+    {
+        printf("Error, can't open max1027. Is max1027 modprobed ?\n");
+        pressEnterToContinue();
+        return ;
+    }
+    pressEnterToContinue();
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("   Testing max1027       *\n");
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) Change mode (%s)\n",(mode == AS_MAX1027_SLOW)?"SLOW":"FAST");
+        printf(" 2) Select channel (%d)\n", channel);
+        printf(" 3) Set averaging (%d)\n", averaging);
+        printf(" 4) Read channel value\n");
+        printf(" 5) Read temperature\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Give mode wanted (s:SLOW, f:FAST): ");
+                        scanf("%s",c_value);
+                        if ((c_value[0]=='s') && (mode == AS_MAX1027_FAST)){
+                            as_max1027_close(max1027_dev);
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
+                                                          AS_MAX1027_SLOW);
+                            if (max1027_dev == NULL){
+                                printf("Error, can't open max1027 in slow mode\n");
+                                pressEnterToContinue();
+                                break;
+                            }
+                            mode = AS_MAX1027_SLOW;
+                            printf("Mode changed to Slow\n");
+                        } else if((c_value[0] == 'f') && (mode == AS_MAX1027_SLOW)){
+                            as_max1027_close(max1027_dev);
+                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
+                                                          AS_MAX1027_FAST);
+                            if (max1027_dev == NULL){
+                                printf("Error, can't open max1027 in fast mode\n");
+                                pressEnterToContinue();
+                                break;
+                            }
+                            mode = AS_MAX1027_FAST;
+                            printf("Mode changed to Fast\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Give channel you want to read (0-8): ");
+                        scanf("%d",&value);
+                        if ((value >= NUM_OF_CHANNEL) || (value < 0)){
+                            printf("Channel num wrong\n");
+                            break;
+                        }
+                        channel = value;
+                        break;
+            case '3' :  printf("Give averaging (1, 4, 8, 16, 32): ");
+                        scanf("%d", &value);
+                        ret = as_max1027_set_averaging(max1027_dev, value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't set averaging\n");
+                            pressEnterToContinue();
+                            break;
+                        }
+                        averaging = value;
+                        pressEnterToContinue();
+                        break;
+            case '4' :  printf("TODO");
+                        break;
+            case '5' :  ret = as_max1027_read_temperature_mC(max1027_dev, &temp_read);
+                        if (ret < 0) {
+                            printf("Error reading temperature\n");
+                            pressEnterToContinue();
+                            break;
+                        }
+                        temperature = temp_read;
+                        printf("Temperature read in mili⁰C : %d\n", temperature);
+                        pressEnterToContinue();
+                        break;
+            default : break;
+        }
+    }
+
+    ret = as_max1027_close(max1027_dev);
+    if (ret < 0) {
+        printf("Error on closing max1027\n");
+        pressEnterToContinue();
+    }
+}
+
+
