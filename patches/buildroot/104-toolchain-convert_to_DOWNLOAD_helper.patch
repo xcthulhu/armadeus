@@ -1,0 +1,107 @@
+From 0ef35d5d5efed2d323c1fc7a3f2cc7b1ed977da3 Mon Sep 17 00:00:00 2001
+From: Peter Korsgaard <jacmet@sunsite.dk>
+Date: Fri, 16 Jan 2009 11:47:05 +0000
+Subject: toolchain/: convert to DOWNLOAD helper
+
+---
+diff --git a/toolchain/binutils/binutils.mk b/toolchain/binutils/binutils.mk
+index a9ec7d3..c285c6a 100644
+--- a/toolchain/binutils/binutils.mk
++++ b/toolchain/binutils/binutils.mk
+@@ -81,7 +81,7 @@ BINUTILS_DIR1:=$(TOOL_BUILD_DIR)/binutils-$(BINUTILS_VERSION)-build
+ 
+ $(DL_DIR)/$(BINUTILS_SOURCE):
+ 	mkdir -p $(DL_DIR)
+-	$(WGET) -P $(DL_DIR) $(BINUTILS_SITE)/$(BINUTILS_SOURCE)
++	$(call DOWNLOAD,$(BINUTILS_SITE),$(BINUTILS_SOURCE))
+ 
+ binutils-unpacked: $(BINUTILS_DIR)/.patched
+ $(BINUTILS_DIR)/.unpacked: $(DL_DIR)/$(BINUTILS_SOURCE)
+diff --git a/toolchain/ccache/ccache.mk b/toolchain/ccache/ccache.mk
+index d34bfb3..723b871 100644
+--- a/toolchain/ccache/ccache.mk
++++ b/toolchain/ccache/ccache.mk
+@@ -13,7 +13,7 @@ CCACHE_BINARY:=ccache
+ CCACHE_TARGET_BINARY:=usr/bin/ccache
+ 
+ $(DL_DIR)/$(CCACHE_SOURCE):
+-	$(WGET) -P $(DL_DIR) $(CCACHE_SITE)/$(CCACHE_SOURCE)
++	$(call DOWNLOAD,$(CCACHE_SITE),$(CCACHE_SOURCE))
+ 
+ $(CCACHE_DIR1)/.unpacked: $(DL_DIR)/$(CCACHE_SOURCE)
+ 	$(CCACHE_CAT) $(DL_DIR)/$(CCACHE_SOURCE) | tar -C $(TOOL_BUILD_DIR) $(TAR_OPTIONS) -
+diff --git a/toolchain/gcc/gcc-uclibc-3.x.mk b/toolchain/gcc/gcc-uclibc-3.x.mk
+index 3f1a3ca..fc59b6b 100644
+--- a/toolchain/gcc/gcc-uclibc-3.x.mk
++++ b/toolchain/gcc/gcc-uclibc-3.x.mk
+@@ -138,7 +138,7 @@ GCC_BUILD_DIR1:=$(TOOL_BUILD_DIR)/gcc-$(GCC_VERSION)-initial
+ 
+ $(DL_DIR)/$(GCC_SOURCE):
+ 	mkdir -p $(DL_DIR)
+-	$(WGET) -P $(DL_DIR) $(GCC_SITE)/$(GCC_SOURCE)
++	$(call DOWNLOAD,$(GCC_SITE),$(GCC_SOURCE))
+ 
+ gcc-unpacked: $(GCC_DIR)/.patched
+ $(GCC_DIR)/.unpacked: $(DL_DIR)/$(GCC_SOURCE)
+diff --git a/toolchain/gcc/gcc-uclibc-4.x.mk b/toolchain/gcc/gcc-uclibc-4.x.mk
+index 793e368..88878a8 100644
+--- a/toolchain/gcc/gcc-uclibc-4.x.mk
++++ b/toolchain/gcc/gcc-uclibc-4.x.mk
+@@ -149,7 +149,7 @@ HOST_SOURCE+=gcc-source
+ 
+ $(DL_DIR)/$(GCC_SOURCE):
+ 	mkdir -p $(DL_DIR)
+-	$(WGET) -P $(DL_DIR) $(GCC_SITE)/$(GCC_SOURCE)
++	$(call DOWNLOAD,$(GCC_SITE),$(GCC_SOURCE))
+ 
+ gcc-unpacked: $(GCC_DIR)/.patched
+ $(GCC_DIR)/.unpacked: $(DL_DIR)/$(GCC_SOURCE)
+diff --git a/toolchain/gdb/gdb.mk b/toolchain/gdb/gdb.mk
+index f239dba..6e46c0b 100644
+--- a/toolchain/gdb/gdb.mk
++++ b/toolchain/gdb/gdb.mk
+@@ -46,7 +46,7 @@ endif
+ endif
+ 
+ $(DL_DIR)/$(GDB_SOURCE):
+-	$(WGET) -P $(DL_DIR) $(GDB_SITE)/$(GDB_SOURCE)
++	$(call DOWNLOAD,$(GDB_SITE),$(GDB_SOURCE))
+ 
+ gdb-unpacked: $(GDB_DIR)/.unpacked
+ $(GDB_DIR)/.unpacked: $(DL_DIR)/$(GDB_SOURCE)
+diff --git a/toolchain/kernel-headers/kernel-headers.mk b/toolchain/kernel-headers/kernel-headers.mk
+index 50326c6..dd81555 100644
+--- a/toolchain/kernel-headers/kernel-headers.mk
++++ b/toolchain/kernel-headers/kernel-headers.mk
+@@ -32,7 +32,7 @@ include toolchain/kernel-headers/kernel-headers-new.makefile
+ include toolchain/kernel-headers/kernel-headers-old.makefile
+ 
+ $(DL_DIR)/$(LINUX_HEADERS_SOURCE):
+-	$(WGET) -P $(DL_DIR) $(LINUX_HEADERS_SITE)/$(LINUX_HEADERS_SOURCE)
++	$(call DOWNLOAD,$(LINUX_HEADERS_SITE),$(LINUX_HEADERS_SOURCE))
+ 
+ kernel-headers: $(LINUX_HEADERS_DIR)/.configured
+ 
+diff --git a/toolchain/uClibc/uclibc.mk b/toolchain/uClibc/uclibc.mk
+index af35e33..b595b22 100644
+--- a/toolchain/uClibc/uclibc.mk
++++ b/toolchain/uClibc/uclibc.mk
+@@ -91,14 +91,14 @@ UCLIBC_SPARC_TYPE:=CONFIG_SPARC_$(strip $(subst ",, $(BR2_SPARC_TYPE)))
+ #"))
+ 
+ $(DL_DIR)/$(UCLIBC_SOURCE):
+-	$(WGET) -P $(DL_DIR) $(UCLIBC_SITE)/$(UCLIBC_SOURCE)
++	$(call DOWNLOAD,$(UCLIBC_SITE),$(UCLIBC_SOURCE))
+ 
+ ifneq ($(BR2_ENABLE_LOCALE),)
+ UCLIBC_SITE_LOCALE:=http://www.uclibc.org/downloads
+ UCLIBC_SOURCE_LOCALE:=uClibc-locale-030818.tgz
+ 
+ $(DL_DIR)/$(UCLIBC_SOURCE_LOCALE):
+-	$(WGET) -P $(DL_DIR) $(UCLIBC_SITE_LOCALE)/$(UCLIBC_SOURCE_LOCALE)
++	$(call DOWNLOAD,$(UCLIBC_SITE_LOCALE),$(UCLIBC_SOURCE_LOCALE))
+ 
+ UCLIBC_LOCALE_DATA:=$(DL_DIR)/$(UCLIBC_SOURCE_LOCALE)
+ else
+--
+cgit v0.8.2.1
