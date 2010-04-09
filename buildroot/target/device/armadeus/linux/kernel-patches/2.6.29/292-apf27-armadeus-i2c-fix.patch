@@ -1,7 +1,7 @@
-Index: linux-2.6.29/drivers/i2c/busses/i2c-mxc.c
+Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 ===================================================================
---- linux-2.6.29.orig/drivers/i2c/busses/i2c-mxc.c	2009-04-02 13:31:21.000000000 +0200
-+++ linux-2.6.29/drivers/i2c/busses/i2c-mxc.c	2009-04-02 13:39:00.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-04-09 14:11:51.000000000 +0200
++++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-04-09 14:20:50.000000000 +0200
 @@ -30,6 +30,7 @@
  #include <linux/clk.h>
  #include <asm/irq.h>
@@ -10,7 +10,17 @@ Index: linux-2.6.29/drivers/i2c/busses/i2c-mxc.c
  #include <mach/clock.h>
  #include <mach/imx_i2c.h>
  
-@@ -115,7 +116,7 @@
+@@ -100,7 +101,9 @@
+ 		unsigned int sr = readw(dev->membase + MXC_I2SR);
+ 		if ((sr & MXC_I2SR_IBB) == 0) break;
+ 		if (retry-- <= 0) {
++#ifdef I2C_DEBUG
+ 			printk(KERN_DEBUG "Bus busy\n");
++#endif
+ 			break;
+ 		}
+ 		udelay(3);
+@@ -115,7 +118,7 @@
   */
  static int imx_i2c_wait_for_tc(imx_i2c_device * dev, int trans_flag)
  {
@@ -19,7 +29,7 @@ Index: linux-2.6.29/drivers/i2c/busses/i2c-mxc.c
  
  	while (retry-- && !transfer_done) {
  		wait_event_interruptible_timeout(dev->wq,
-@@ -125,15 +126,13 @@
+@@ -125,15 +128,17 @@
  	transfer_done = false;
  
  	if (retry <= 0) {
@@ -30,16 +40,47 @@ Index: linux-2.6.29/drivers/i2c/busses/i2c-mxc.c
  		if (!tx_success) {
 -			/* An ACK was not received for transmitted byte */
 +			/* An ACK was not received */
++#ifdef I2C_DEBUG
  			printk(KERN_DEBUG "ACK not received \n");
 -			return -1;
++#endif
  		}
 +		/* Unable to send data */
++#ifdef I2C_DEBUG
 +		printk(KERN_DEBUG "Data not transmitted\n");
++#endif
 +		return -1;
  	}
  
  	return 0;
-@@ -441,10 +440,15 @@
+@@ -167,7 +172,9 @@
+ 		sr = readw(dev->membase + MXC_I2SR);
+ 	}
+ 	if (retry <= 0) {
++#ifdef I2C_DEBUG
+ 		printk(KERN_DEBUG "Could not grab Bus ownership\n");
++#endif
+ 	}
+ 
+ 	/* Set the Transmit bit */
+@@ -335,7 +342,9 @@
+ 	/* Check bus state */
+ 	if (sr & MXC_I2SR_IBB) {
+ 		imx_i2c_module_dis(dev);
++#ifdef I2C_DEBUG
+ 		printk(KERN_DEBUG "Bus busy\n");
++#endif
+ 		return -EREMOTEIO;
+ 	}
+ 
+@@ -436,15 +445,22 @@
+ 	writew(0x0, dev->membase + MXC_I2SR);
+ 
+ 	if (sr & MXC_I2SR_IAL) {
++#ifdef I2C_DEBUG
+ 		printk(KERN_DEBUG "Bus Arbitration lost\n");
++#endif
+ 	} else {
  		/* Interrupt due byte transfer completion */
  		tx_success = false;
  		/* Check if RXAK is received in Transmit mode */
