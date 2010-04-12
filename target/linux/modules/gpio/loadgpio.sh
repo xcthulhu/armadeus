@@ -73,15 +73,15 @@ fi
 if [ "$BOARD" == "APF27" ]; then
 	# PortA[0-31]
 	create_dev A 0 31 0
-	# PortB[8-31]
+	# PortB[0-31]
 	create_dev B 0 31 32
-	# PortC[3-17]
+	# PortC[5-31]
 	create_dev C 5 31 64
-	# PortD[6-31]
+	# PortD[16-31]
 	create_dev D 16 31 96
-	# PortE[6-31]
+	# PortE[3-23]
 	create_dev E 3 23 128
-	# PortF[6-31]
+	# PortF[7-22]
 	create_dev F 7 22 160
 	echo
 fi

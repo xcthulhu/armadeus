@@ -1,0 +1,73 @@
+From f293501c61c50b014ad2347661c6acd951c80fed Mon Sep 17 00:00:00 2001
+From: Steve Glendinning <steve.glendinning@smsc.com>
+Date: Fri, 1 May 2009 05:46:51 +0000
+Subject: [PATCH] smsc95xx: configure LED outputs
+
+SMSC LAN9500 has dual purpose GPIO/LED pins, and by default at power-on
+these are configured as GPIOs.  This means that if LEDs are fitted they
+won't ever light.
+
+This patch sets them to be LED outputs for speed, duplex and
+link/activity.
+
+Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/usb/smsc95xx.c |   10 ++++++++++
+ drivers/net/usb/smsc95xx.h |    3 +++
+ 2 files changed, 13 insertions(+), 0 deletions(-)
+
+Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/net/usb/smsc95xx.c	2010-04-12 14:42:46.000000000 +0200
+@@ -945,6 +945,18 @@
+ 	if (netif_msg_ifup(dev))
+ 		devdbg(dev, "ID_REV = 0x%08x", read_buf);
+ 
++	/* Configure GPIO pins as LED outputs */
++    write_buf = LED_GPIO_CFG_SPD_LED | LED_GPIO_CFG_SPD_POL |
++                LED_GPIO_CFG_LNK_LED | LED_GPIO_CFG_LNK_POL |
++		        LED_GPIO_CFG_FDX_LED | LED_GPIO_CFG_FDX_POL |
++                LED_GPIO_CFG_LED_SEL;
++	ret = smsc95xx_write_reg(dev, LED_GPIO_CFG, write_buf);
++	if (ret < 0) {
++		devwarn(dev, "Failed to write LED_GPIO_CFG register, ret=%d",
++			ret);
++		return ret;
++	}
++
+ 	/* Init Tx */
+ 	write_buf = 0;
+ 	ret = smsc95xx_write_reg(dev, FLOW, write_buf);
+@@ -1224,6 +1236,11 @@
+ 		USB_DEVICE(0x0424, 0x9500),
+ 		.driver_info = (unsigned long) &smsc95xx_info,
+ 	},
++	{
++		/* SMSC9500A USB Ethernet Device */
++		USB_DEVICE(0x0424, 0x9E00),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
+ 	{ },		/* END */
+ };
+ MODULE_DEVICE_TABLE(usb, products);
+Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.h
+===================================================================
+--- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.h	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/net/usb/smsc95xx.h	2010-04-09 18:55:34.000000000 +0200
+@@ -99,6 +99,14 @@
+ #define PM_CTL_WUPS_MULTI_		(0x00000003)
+ 
+ #define LED_GPIO_CFG			(0x24)
++#define LED_GPIO_CFG_LED_SEL       (0x80000000)
++#define LED_GPIO_CFG_SPD_LED		(0x01000000)
++#define LED_GPIO_CFG_LNK_LED		(0x00100000)
++#define LED_GPIO_CFG_FDX_LED		(0x00010000)
++
++#define LED_GPIO_CFG_SPD_POL        (0x00000004)
++#define LED_GPIO_CFG_LNK_POL        (0x00000002)
++#define LED_GPIO_CFG_FDX_POL        (0x00000001)
+ 
+ #define GPIO_CFG			(0x28)
+ 
