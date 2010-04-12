@@ -1,0 +1,199 @@
+--- ref/u-boot-1.3.4/common/cmd_nand.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/common/cmd_nand.c	2009-01-12 14:15:21.000000000 +0100
+@@ -80,6 +80,53 @@ static int nand_dump(nand_info_t *nand, 
+ 	return 0;
+ }
+ 
++static int nand_biterr(nand_info_t *nand, ulong off, int value)
++{ /* TODO
++    int tempEcc, i, mask;
++	u_char *buf, *p;
++    struct nand_chip *nand_chip = nand->priv;
++ 
++	buf = malloc(nand->oobavail + nand->oobsize);
++
++	if (!buf) {
++		puts("No memory for page buffer\n");
++		return 1;
++	}
++
++	i = nand_read_raw(nand, buf, off, nand->oobavail, nand->oobsize);
++    if( nand->oobavail == 0x800 )
++        mask = 0x000007ff;
++    else
++        mask = 0x000001ff;
++
++    buf[off & mask] = (u_char)value; //modify buf  
++
++	i = nand->oobavail >> 4; p = buf;
++	while (i--) {
++		printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x"
++			"  %02x %02x %02x %02x %02x %02x %02x %02x\n",
++			p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
++			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
++		p += 16;
++	}
++	puts("OOB:\n");
++	i = nand->oobsize >> 3;
++	while (i--) {
++		printf( "\t%02x %02x %02x %02x %02x %02x %02x %02x\n",
++			p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
++		p += 8;
++	}
++    
++    tempEcc = nand_chip->ecc.mode;
++    nand_chip->ecc.mode = NAND_ECC_NONE; //swith to ECC_NONE
++	nand->write_ecc( nand, off & ~mask, nand->oobavail, &i, buf, NULL, NULL);
++    nand_chip->ecc.mode = tempEcc; //swith to old value      
++
++	free(buf);
++*/
++	return 0;
++}
++
+ /* ------------------------------------------------------------------------- */
+ 
+ static inline int str2long(char *p, ulong *num)
+@@ -294,7 +341,6 @@ int do_nand(cmd_tbl_t * cmdtp, int flag,
+ 	if (strncmp(cmd, "dump", 4) == 0) {
+ 		if (argc < 3)
+ 			goto usage;
+-
+ 		s = strchr(cmd, '.');
+ 		off = (int)simple_strtoul(argv[2], NULL, 16);
+ 
+@@ -382,7 +428,18 @@ int do_nand(cmd_tbl_t * cmdtp, int flag,
+ 		return 1;
+ 	}
+ 	if (strcmp(cmd, "biterr") == 0) {
+-		/* todo */
++		if (argc != 4)
++			goto usage;
++
++		off = (int)simple_strtoul(argv[2], NULL, 16);
++		i = (int)simple_strtoul(argv[3], NULL, 16);
++        
++
++        nand_biterr(nand, off, i);
++/*        tempEcc = nand_chip->eccmode;
++        nand_chip->eccmode = NAND_ECC_NONE; //swith to ECC_NONE
++        nand_write(nand, off, &size, (u_char *)addr);
++        nand_chip->eccmode = tempEcc; //swith to old value      */
+ 		return 1;
+ 	}
+ 
+@@ -471,7 +528,7 @@ U_BOOT_CMD(nand, 5, 1, do_nand,
+ 	"nand dump[.oob] off - dump page\n"
+ 	"nand scrub - really clean NAND erasing bad blocks (UNSAFE)\n"
+ 	"nand markbad off [...] - mark bad block(s) at offset (UNSAFE)\n"
+-	"nand biterr off - make a bit error at offset (UNSAFE)"
++	"nand biterr off value - make an error at offset. copy one page to flash without ECC (UNSAFE)\n"
+ #ifdef CONFIG_CMD_NAND_LOCK_UNLOCK
+ 	"\n"
+ 	"nand lock [tight] [status]\n"
+@@ -519,8 +576,8 @@ static int nand_load_image(cmd_tbl_t *cm
+ 		hdr = (image_header_t *)addr;
+ 
+ 		show_boot_progress (57);
+-		image_print_contents (hdr);
+-
++/*		image_print_contents (hdr);
++*/
+ 		cnt = image_get_image_size (hdr);
+ 		break;
+ #if defined(CONFIG_FIT)
+--- ref/u-boot-1.3.4/drivers/mtd/nand/nand_bbt.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/drivers/mtd/nand/nand_bbt.c	2009-01-12 14:15:21.000000000 +0100
+@@ -159,9 +159,9 @@ static int read_bbt (struct mtd_info *mt
+ 				}
+ 				/* Leave it for now, if its matured we can move this
+ 				 * message to MTD_DEBUG_LEVEL0 */
+-				printk(KERN_DEBUG "nand_read_bbt: Bad block at 0x%012llx\n",
+-					(loff_t)((offs << 2) + (act >> 1)) <<
+-					this->bbt_erase_shift);
++				/*printk(KERN_DEBUG "nand_read_bbt: Bad block at 0x%012llx\n",
++					(loff_t)((offs << 2) + (act >> 1)) <<
++					this->bbt_erase_shift);*/
+ 				/* Factory marked bad or worn out ? */
+ 				if (tmp == 0)
+ 					this->bbt[offs + (act >> 3)] |= 0x3 << (act & 0x06);
+@@ -375,7 +375,7 @@ static int search_bbt (struct mtd_info *
+ 		if (td->pages[i] == -1)
+ 			printk(KERN_WARNING "Bad block table not found for chip %d\n", i);
+ 		else
+-			printk(KERN_DEBUG "Bad block table found at page %d, version 0x%02X\n", td->pages[i],
+-			       td->version[i]);
++			MTDDEBUG(MTD_DEBUG_LEVEL1 "Bad block table found at page %d, version 0x%02X\n", td->pages[i],
++			       td->version[i]);
+ 	}
+ 	return 0;
+ }
+--- u-boot-2010.03/drivers/mtd/nand/mxc_nand.c.ori	2010-04-06 23:07:34.000000000 +0200
++++ u-boot-2010.03/drivers/mtd/nand/mxc_nand.c	2010-04-07 00:18:50.000000000 +0200
+@@ -1110,6 +1110,58 @@ static int mxc_nand_verify_buf(struct mt
+ 	return 0;
+ }
+ 
++/*!
++ * mxc_nand_block_markbad - mark a block bad
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be verified
++ * @param       ofs     offset to the bad block 
++ *
++ * @return      -EFAULT if error else 0
++ *
++ * This function is used by the upper layer to mark bad blocks
++ * We overload the default function to support NAND SPL capabilities to detect
++ * badblocks without scanning the BBT. The OOB is fill with 0
++ *
++ */
++static int mxc_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++	struct nand_chip *this = mtd->priv;
++	u_char buf[NAND_MAX_OOBSIZE] = {0, 0};
++	int block, i, ret = 0;
++	long pages_per_block;
++
++	/* Get block number */
++	block = ((int) ofs) >> this->bbt_erase_shift;
++	this->bbt[block >> 2] |= 0x01 << ((block & 0x03) << 1);
++
++	/* Do we have a flash based bad block table ? */
++	if (this->options & NAND_USE_FLASH_BBT)
++		nand_update_bbt (mtd, ofs);
++
++	/* fill oob with 0 to make it detecable by SPL */
++	memset((void*)buf,0, mtd->oobsize);
++	
++	/* Calculate pages in each block */
++	pages_per_block = 1 << (this->phys_erase_shift - this->page_shift);
++
++	ofs += mtd->oobsize;
++	this->ops.len = this->ops.ooblen = NAND_MAX_OOBSIZE;
++	this->ops.datbuf = NULL;
++	this->ops.oobbuf = buf;
++	this->ops.ooboffs = this->badblockpos & ~0x01;
++
++	for(i=0; i< pages_per_block;i++) {
++
++		ret= mtd->write_oob (mtd, ofs , &this->ops); 
++		ofs += 1 << this->page_shift;
++		if (!ret)
++			mtd->ecc_stats.badblocks++;
++	}
++
++	return ret;
++}
++
+ /*
+  * This function is used by upper layer for select and
+  * deselect of the NAND chip
+@@ -1326,6 +1379,7 @@ int board_nand_init(struct nand_chip *th
+ 	this->write_buf = mxc_nand_write_buf;
+ 	this->read_buf = mxc_nand_read_buf;
+ 	this->verify_buf = mxc_nand_verify_buf;
++	this->block_markbad = mxc_nand_block_markbad;
+ 
+ 	host->regs = (struct nfc_regs __iomem *)CONFIG_MXC_NAND_REGS_BASE;
+ 	host->clk_act = 1;
