@@ -390,7 +390,12 @@ static unsigned int getPortMode(unsigned int aPort)
 	return value;
 }
 
-static void setPortPull(unsigned int aPort, unsigned int aPullMask)
+static unsigned int getPortPullUp(unsigned int aPort)
+{
+        return __raw_readl(VA_GPIO_BASE + MXC_PUEN(aPort));
+}
+
+static void setPortPullUp(unsigned int aPort, unsigned int aPullMask)
 {
 	__raw_writel(aPullMask & 0xffffffff, VA_GPIO_BASE + MXC_PUEN(aPort));
 }
@@ -727,6 +732,26 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		}
 		break;
 
+		case GPIORDIRQMODE:
+        /* TODO */
+		break;
+
+        case GPIOWRIRQMODE:
+        /* TODO */
+        break;
+
+        case GPIORDPULLUP:
+		value = getPortPullUp(MAX_MINOR - minor);
+		ret = __put_user(value, (unsigned int *)arg);
+        break;
+
+        case GPIOWRPULLUP:
+		ret = __get_user(value, (unsigned int *)arg);
+		if (ret == 0) {
+			setPortPullUp(MAX_MINOR - minor, value);
+		}
+        break;
+
 		default:
 		printk("IOCTL not supported\n");
 		ret = -ENOTTY;
@@ -875,7 +900,7 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 			break;
 
 			case PULL_UP:
-				setPortPull(port_ID, gpio_state);
+				setPortPullUp(port_ID, gpio_state);
 			break;
 
 			case INTERRUPT:
