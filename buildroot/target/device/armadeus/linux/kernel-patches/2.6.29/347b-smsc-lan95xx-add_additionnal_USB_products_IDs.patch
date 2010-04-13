@@ -1,0 +1,81 @@
+Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2010-04-13 16:23:57.000000000 +0200
++++ linux-2.6.29.6/drivers/net/usb/smsc95xx.c	2010-04-13 16:25:48.000000000 +0200
+@@ -1229,6 +1229,76 @@
+ 		USB_DEVICE(0x0424, 0x9500),
+ 		.driver_info = (unsigned long) &smsc95xx_info,
+ 	},
++ 	{
++		/* SMSC9505 USB Ethernet Device */
++		USB_DEVICE(0x0424, 0x9505),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500A USB Ethernet Device */
++		USB_DEVICE(0x0424, 0x9E00),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9505A USB Ethernet Device */
++		USB_DEVICE(0x0424, 0x9E01),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9512/9514 USB Hub & Ethernet Device */
++		USB_DEVICE(0x0424, 0xec00),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500 USB Ethernet Device (SAL10) */
++		USB_DEVICE(0x0424, 0x9900),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9505 USB Ethernet Device (SAL10) */
++		USB_DEVICE(0x0424, 0x9901),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500A USB Ethernet Device (SAL10) */
++		USB_DEVICE(0x0424, 0x9902),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9505A USB Ethernet Device (SAL10) */
++		USB_DEVICE(0x0424, 0x9903),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9512/9514 USB Hub & Ethernet Device (SAL10) */
++		USB_DEVICE(0x0424, 0x9904),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500A USB Ethernet Device (HAL) */
++		USB_DEVICE(0x0424, 0x9905),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9505A USB Ethernet Device (HAL) */
++		USB_DEVICE(0x0424, 0x9906),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500 USB Ethernet Device (Alternate ID) */
++		USB_DEVICE(0x0424, 0x9907),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9500A USB Ethernet Device (Alternate ID) */
++		USB_DEVICE(0x0424, 0x9908),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
++	{
++		/* SMSC9512/9514 USB Hub & Ethernet Device (Alternate ID) */
++		USB_DEVICE(0x0424, 0x9909),
++		.driver_info = (unsigned long) &smsc95xx_info,
++	},
+ 	{ },		/* END */
+ };
+ MODULE_DEVICE_TABLE(usb, products);
