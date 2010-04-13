@@ -30,9 +30,10 @@ u-boot-distclean: u-boot-clean
 		 -C $(U_BOOT_DIR) distclean
 	rm -f $(U_BOOT_DIR)/.configured
 
+ifeq ($(BR2_VERSION),"0.10.0-svn")
 $(MKIMAGE): $(BINARIES_DIR)/$(U_BOOT_BIN)
 	ln -fs $(MKIMAGE_BINLOC) $(MKIMAGE)
-
+endif
 u-boot-patch: u-boot-distclean
 	-mkdir -p $(PROJECT_BUILD_DIR)/ref
 	rm -rf $(PROJECT_BUILD_DIR)/ref/u-boot-$(U_BOOT_VERSION)
