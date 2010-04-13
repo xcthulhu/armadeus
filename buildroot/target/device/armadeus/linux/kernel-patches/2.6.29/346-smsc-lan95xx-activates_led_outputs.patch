@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/net/usb/smsc95xx.c	2010-04-12 14:42:46.000000000 +0200
++++ linux-2.6.29.6/drivers/net/usb/smsc95xx.c	2010-04-09 18:53:56.000000000 +0200
 @@ -945,6 +945,18 @@
  	if (netif_msg_ifup(dev))
  		devdbg(dev, "ID_REV = 0x%08x", read_buf);
@@ -40,18 +40,15 @@ Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
  	/* Init Tx */
  	write_buf = 0;
  	ret = smsc95xx_write_reg(dev, FLOW, write_buf);
-@@ -1224,6 +1236,11 @@
- 		USB_DEVICE(0x0424, 0x9500),
+@@ -1221,7 +1233,7 @@
+ static const struct usb_device_id products[] = {
+ 	{
+ 		/* SMSC9500 USB Ethernet Device */
+-		USB_DEVICE(0x0424, 0x9500),
++		USB_DEVICE(0x0424, 0x9e00),
  		.driver_info = (unsigned long) &smsc95xx_info,
  	},
-+	{
-+		/* SMSC9500A USB Ethernet Device */
-+		USB_DEVICE(0x0424, 0x9E00),
-+		.driver_info = (unsigned long) &smsc95xx_info,
-+	},
  	{ },		/* END */
- };
- MODULE_DEVICE_TABLE(usb, products);
 Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.h
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.h	2009-03-24 00:12:14.000000000 +0100
