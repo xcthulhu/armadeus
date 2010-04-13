@@ -1,0 +1,11 @@
+--- u-boot-2010.03-rc2/drivers/mtd/nand/nand_bbt.c.ori	2010-04-05 00:45:20.000000000 +0200
++++ u-boot-2010.03-rc2/drivers/mtd/nand/nand_bbt.c	2010-04-05 00:54:00.000000000 +0200
+@@ -529,7 +529,7 @@ static int search_bbt(struct mtd_info *m
+ 		if (td->pages[i] == -1)
+ 			printk(KERN_WARNING "Bad block table not found for chip %d\n", i);
+ 		else
+-			MTDDEBUG(MTD_DEBUG_LEVEL1 "Bad block table found at page %d, version 0x%02X\n", td->pages[i],
++			MTDDEBUG(MTD_DEBUG_LEVEL1, "Bad block table found at page %d, version 0x%02X\n", td->pages[i],
+ 			       td->version[i]);
+ 	}
+ 	return 0;

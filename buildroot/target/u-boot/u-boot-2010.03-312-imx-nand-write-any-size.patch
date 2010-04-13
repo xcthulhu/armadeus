@@ -1,0 +1,23 @@
+--- u-boot-2010.03/drivers/mtd/nand/nand_util.c.ori	2010-04-12 00:47:03.000000000 +0200
++++ u-boot-2010.03/drivers/mtd/nand/nand_util.c	2010-04-12 00:47:32.000000000 +0200
+@@ -478,8 +478,7 @@ int nand_write_skip_bad(nand_info_t *nan
+ 	u_char *p_buffer = buffer;
+ 
+ 	/* Reject writes, which are not page aligned */
+-	if ((offset & (nand->writesize - 1)) != 0 ||
+-	    (*length & (nand->writesize - 1)) != 0) {
++	if ((offset & (nand->writesize - 1)) != 0 ) {
+ 		printf ("Attempt to write non page aligned data\n");
+ 		return -EINVAL;
+ 	}
+--- u-boot-2010.03/drivers/mtd/nand/nand_base.c.ori	2010-04-12 21:46:18.000000000 +0200
++++ u-boot-2010.03/drivers/mtd/nand/nand_base.c	2010-04-12 21:46:31.000000000 +0200
+@@ -2002,7 +2002,7 @@ static int nand_do_write_ops(struct mtd_
+ 		return 0;
+ 
+ 	/* reject writes, which are not page aligned */
+-	if (NOTALIGNED(to) || NOTALIGNED(ops->len)) {
++	if (NOTALIGNED(to)) {
+ 		printk(KERN_NOTICE "nand_write: "
+ 		       "Attempt to write not page aligned data\n");
+ 		return -EINVAL;

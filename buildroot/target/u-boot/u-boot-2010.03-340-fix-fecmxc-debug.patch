@@ -1,0 +1,11 @@
+--- u-boot-2010.03/drivers/net/fec_mxc.c.ori	2010-04-06 21:52:26.000000000 +0200
++++ u-boot-2010.03/drivers/net/fec_mxc.c	2010-04-06 21:52:38.000000000 +0200
+@@ -325,7 +325,7 @@ static int fec_get_hwaddr(struct eth_dev
+ 	for (i = 0; i < 6; i++)
+ 		mac[6-1-i] = readl(&iim->iim_bank_area0[IIM0_MAC + i]);
+ 
+-	return is_valid_ether_addr(mac);
++	return !is_valid_ether_addr(mac);
+ #endif
+ }
+ 
