@@ -17,19 +17,17 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/smsc95xx.h |    3 +++
  2 files changed, 13 insertions(+), 0 deletions(-)
 
-Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
-===================================================================
---- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/net/usb/smsc95xx.c	2010-04-09 18:53:56.000000000 +0200
-@@ -945,6 +945,18 @@
+diff --git a/drivers/net/usb/smsc95xx.c b/drivers/net/usb/smsc95xx.c
+index dc16653..0fd68a5 100644
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -941,6 +941,16 @@ static int smsc95xx_reset(struct usbnet *dev)
  	if (netif_msg_ifup(dev))
  		devdbg(dev, "ID_REV = 0x%08x", read_buf);
  
 +	/* Configure GPIO pins as LED outputs */
-+    write_buf = LED_GPIO_CFG_SPD_LED | LED_GPIO_CFG_SPD_POL |
-+                LED_GPIO_CFG_LNK_LED | LED_GPIO_CFG_LNK_POL |
-+		        LED_GPIO_CFG_FDX_LED | LED_GPIO_CFG_FDX_POL |
-+                LED_GPIO_CFG_LED_SEL;
++	write_buf = LED_GPIO_CFG_SPD_LED | LED_GPIO_CFG_LNK_LED |
++		LED_GPIO_CFG_FDX_LED;
 +	ret = smsc95xx_write_reg(dev, LED_GPIO_CFG, write_buf);
 +	if (ret < 0) {
 +		devwarn(dev, "Failed to write LED_GPIO_CFG register, ret=%d",
@@ -40,31 +38,20 @@ Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
  	/* Init Tx */
  	write_buf = 0;
  	ret = smsc95xx_write_reg(dev, FLOW, write_buf);
-@@ -1221,7 +1233,7 @@
- static const struct usb_device_id products[] = {
- 	{
- 		/* SMSC9500 USB Ethernet Device */
--		USB_DEVICE(0x0424, 0x9500),
-+		USB_DEVICE(0x0424, 0x9e00),
- 		.driver_info = (unsigned long) &smsc95xx_info,
- 	},
- 	{ },		/* END */
-Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.h
-===================================================================
---- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.h	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/net/usb/smsc95xx.h	2010-04-09 18:55:34.000000000 +0200
-@@ -99,6 +99,14 @@
+diff --git a/drivers/net/usb/smsc95xx.h b/drivers/net/usb/smsc95xx.h
+index 66b5c84..86bc449 100644
+--- a/drivers/net/usb/smsc95xx.h
++++ b/drivers/net/usb/smsc95xx.h
+@@ -99,6 +99,9 @@
  #define PM_CTL_WUPS_MULTI_		(0x00000003)
  
  #define LED_GPIO_CFG			(0x24)
-+#define LED_GPIO_CFG_LED_SEL       (0x80000000)
 +#define LED_GPIO_CFG_SPD_LED		(0x01000000)
 +#define LED_GPIO_CFG_LNK_LED		(0x00100000)
 +#define LED_GPIO_CFG_FDX_LED		(0x00010000)
-+
-+#define LED_GPIO_CFG_SPD_POL        (0x00000004)
-+#define LED_GPIO_CFG_LNK_POL        (0x00000002)
-+#define LED_GPIO_CFG_FDX_POL        (0x00000001)
  
  #define GPIO_CFG			(0x28)
  
+-- 
+1.6.6
+
