@@ -1,8 +1,9 @@
 --- buildrootref/target/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
 +++ buildroot/target/ubifs/Config.in	2009-10-03 17:07:32.000000000 +0200
-@@ -1,9 +1,15 @@
+@@ -1,10 +1,15 @@
  config BR2_TARGET_ROOTFS_UBIFS
  	bool "ubifs root filesystem"
+-	depends on BROKEN # upstream git gone, should use mtd-utils
  	select BR2_HOST_FAKEROOT
 +	select BR2_PACKAGE_MTD
  	help
@@ -16,7 +17,7 @@
  config BR2_TARGET_ROOTFS_UBIFS_LEBSIZE
  	hex "UBI logical erase block size"
  	depends on BR2_TARGET_ROOTFS_UBIFS
-@@ -16,6 +22,13 @@ config BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE
+@@ -17,6 +23,13 @@ config BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE
  	help
  	  Some comment required here
  
@@ -32,7 +33,7 @@
  	depends on BR2_TARGET_ROOTFS_UBIFS
 --- buildrootref/target/ubifs/ubifsroot.mk	2009-10-03 17:55:26.000000000 +0200
 +++ buildroot/target/ubifs/ubifsroot.mk	2009-10-03 17:18:09.000000000 +0200
-@@ -76,7 +76,14 @@ else
+@@ -75,7 +75,14 @@ else
  UBIFS_TARGET := $(UBIFS_BASE)
  endif
  
@@ -45,19 +46,19 @@
 +
 +
 +$(UBIFS_BASE): host-fakeroot makedevs
- 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIPCMD) 2>/dev/null || true
- ifneq ($(BR2_HAVE_MANPAGES),y)
- 	@rm -rf $(TARGET_DIR)/usr/man
-@@ -102,11 +109,18 @@ ifneq ($(TARGET_DEVICE_TABLE),)
- 		>> $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	# Use fakeroot to pretend all target binaries are owned by root
+ 	rm -f $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	touch $(BUILD_DIR)/.fakeroot.00000
+@@ -80,11 +87,18 @@ ifneq ($(TARGET_DEVICE_TABLE),)
+ 		>> $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
  endif
  	# Use fakeroot so mkfs.ubifs believes the previous fakery
 -	echo "$(MKFS_UBIFS_DIR)/mkfs.ubifs -d $(TARGET_DIR) " \
 +	echo "$(MKFS_UBIFS) -d $(TARGET_DIR) " \
- 		"$(UBIFS_OPTS) -o $(UBIFS_BASE)" >> $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
- 	chmod a+x $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
- 	$(STAGING_DIR)/usr/bin/fakeroot -- $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
- 	-@rm -f $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 		"$(UBIFS_OPTS) -o $(UBIFS_BASE)" >> $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	chmod a+x $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	$(HOST_DIR)/usr/bin/fakeroot -- $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
+ 	-@rm -f $(BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
 +	cp target/ubifs/ubinize.cfg .
 +	echo "image=$(UBIFS_BASE)" \
 +		>> ./ubinize.cfg

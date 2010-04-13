@@ -1,0 +1,65 @@
+
+This patch update mtd-utils to build sme host UBI tools:
+* adds mkfs.ubifs tool
+* adds ubi-utils ubinize tool
+
+enable to build an UBI rootfs from scratch.
+
+Signed-off-by: jorasse <jorasse@armadeus.org>
+
+--- buildroot/package/mtd/mtd.mk.ori	2010-04-13 00:48:51.000000000 +0200
++++ buildroot/package/mtd/mtd.mk	2010-04-14 01:04:12.000000000 +0200
+@@ -18,6 +18,9 @@ MTD_CAT:=$(BZCAT)
+ #############################################################
+ MKFS_JFFS2 := $(HOST_DIR)/usr/sbin/mkfs.jffs2
+ SUMTOOL := $(HOST_DIR)/usr/sbin/sumtool
++MKFS_UBIFS:= $(HOST_DIR)/usr/sbin/mkfs.ubifs
++UBINIZE:= $(HOST_DIR)/usr/sbin/ubinize
++MTD_HOST_TARGETS:= $(MKFS_JFFS2) $(SUMTOOL) $(MKFS_UBIFS) $(UBINIZE)
+ 
+ $(DL_DIR)/$(MTD_SOURCE):
+ 	$(call DOWNLOAD,$(MTD_SITE),$(MTD_SOURCE))
+@@ -29,29 +32,35 @@ $(MTD_HOST_DIR)/.unpacked: $(DL_DIR)/$(M
+ 		package/mtd/ mtd-utils-\*.patch
+ 	touch $@
+ 
+-$(MTD_HOST_DIR)/mkfs.jffs2: $(MTD_HOST_DIR)/.unpacked
++$(MTD_HOST_DIR)/mkfs.jffs2 $(MTD_HOST_DIR)/sumtool $(MTD_HOST_DIR)/ubi-utils/ubinize : $(MTD_HOST_DIR)/.unpacked
+ 	CC="$(HOSTCC)" CFLAGS="$(HOST_CFLAGS)" LDFLAGS="$(HOST_LDFLAGS)" \
+ 		CROSS= $(MAKE) BUILDDIR=$(MTD_HOST_DIR) \
+-		WITHOUT_XATTR=1 -C $(MTD_HOST_DIR) $@
++		WITHOUT_XATTR=1 -C $(MTD_HOST_DIR)
+ 
+ $(MKFS_JFFS2): $(MTD_HOST_DIR)/mkfs.jffs2
+ 	install -m 0755 -D $^ $@
+ 
+-$(MTD_HOST_DIR)/sumtool: $(MTD_HOST_DIR)/.unpacked
++$(SUMTOOL): $(MTD_HOST_DIR)/sumtool
++	install -m 0755 $^ $@
++
++$(UBINIZE): $(MTD_HOST_DIR)/ubi-utils/ubinize
++	install -m 0755 $^ $@
++
++$(MTD_HOST_DIR)/mkfs.ubifs/mkfs.ubifs: $(MTD_HOST_DIR)/mkfs.jffs2
+ 	CC="$(HOSTCC)" CFLAGS="$(HOST_CFLAGS)" LDFLAGS="$(HOST_LDFLAGS)" \
+-		CROSS= $(MAKE) BUILDDIR=$(MTD_HOST_DIR) \
+-		WITHOUT_XATTR=1 -C $(MTD_HOST_DIR) $@
++		CROSS= $(MAKE) BUILDDIR=$(MTD_HOST_DIR)/mkfs.ubifs \
++		WITHOUT_XATTR=1 -C $(MTD_HOST_DIR)/mkfs.ubifs
+ 
+-$(SUMTOOL): $(MTD_HOST_DIR)/sumtool
++$(MKFS_UBIFS): $(MTD_HOST_DIR)/mkfs.ubifs/mkfs.ubifs
+ 	install -m 0755 $^ $@
+ 
+-mtd-host: host-lzo $(MKFS_JFFS2) $(SUMTOOL)
++mtd-host: host-lzo $(MTD_HOST_TARGETS)
+ 
+ mtd-host-source: $(DL_DIR)/$(MTD_SOURCE)
+ 
+ mtd-host-clean:
+ 	-$(MAKE) -C $(MTD_HOST_DIR) clean
+-	rm -f $(MKFS_JFFS2) $(SUMTOOL)
++	rm -f MTD_HOST_TARGETS
+ 
+ mtd-host-dirclean:
+ 	rm -rf $(MTD_HOST_DIR)
