@@ -34,6 +34,10 @@
 #define GPIOWRDATA      _IOW(PP_IOCTL, 0xF3, int)
 #define GPIORDMODE      _IOR(PP_IOCTL, 0xF4, int)
 #define GPIOWRMODE      _IOW(PP_IOCTL, 0xF5, int)
+#define GPIORDIRQMODE   _IOR(PP_IOCTL, 0xF6, u64)
+#define GPIOWRIRQMODE   _IOW(PP_IOCTL, 0xF7, u64)
+#define GPIORDPULLUP    _IOR(PP_IOCTL, 0xF8, int)
+#define GPIOWRPULLUP    _IOR(PP_IOCTL, 0xF9, int)
 
 /* Pretend we're PPDEV for IOCTL */
 #include <linux/ppdev.h>
