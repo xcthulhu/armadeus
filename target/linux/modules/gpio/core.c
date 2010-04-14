@@ -30,9 +30,9 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <linux/interrupt.h> /* request_irq */
-#include <linux/irq.h>	     /* set_irq_type */
+#include <linux/irq.h>       /* set_irq_type */
 #include <asm/gpio.h>        /* imx_gpio_... */
-#include <linux/cdev.h>      /* struct cdev */
+#include <linux/cdev.h>	     /* struct cdev */
 #include <mach/hardware.h>
 #include <asm/mach/map.h>
 #ifdef CONFIG_ARCH_MX2
@@ -218,7 +218,7 @@ static unsigned long fromString(char* buffer, int number_of_bits, int base)
 	/* Create WORD to write from the string */
 	for (i=0, j=1; j<=number_of_bits; i++) {
 		//printk("%x j=%d i=%d\n", buffer[i], j, i);
-		if (buffer[i] == '\0') 
+		if (buffer[i] == '\0')
 			break; /* EOC */
 
 		ret_val <<= base;
@@ -347,17 +347,17 @@ static void setPortMode(unsigned int aPort, unsigned int aModeMask)
 {
 	int i;
 	int ocr1, ocr2, gius;
-	
+
 	ocr1 = __raw_readl(VA_GPIO_BASE + MXC_OCR1(aPort));
 	ocr2 = __raw_readl(VA_GPIO_BASE + MXC_OCR2(aPort));
 	gius = __raw_readl(VA_GPIO_BASE + MXC_GIUS(aPort));
 	aModeMask = aModeMask & PORT_MASK[aPort]; /* only sets the allowed pins */
-	for (i=0; i < number_of_pins[aPort]; i++) {	
+	for (i=0; i < number_of_pins[aPort]; i++) {
 		if (i < 16) {
-			if ((aModeMask>>i) & 1) 			
+			if ((aModeMask>>i) & 1)
 				ocr1 = ocr1 | (3<<(i*2));
 		} else {
-			if ((aModeMask>>i) & 1) 			
+			if ((aModeMask>>i) & 1)
 				ocr2 = ocr2 | (3<<((i-16)*2));
 		}
 	}
@@ -500,7 +500,7 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf,
 		value = gpio_get_value(minor);
 		pr_debug("Single pin read: %d\n", value);
 	}
-	
+
 	value = readFromPort(minor);
 	port_status = (char)(value & 0xFF);
 
@@ -523,7 +523,7 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	u32 old_state, new_state;
 
 	pr_debug("IT for pin %d %d\n", gpio->port, gpio->number);
-	
+
 	old_state = gpio->pin_state;
 	new_state = gpio_get_value(gpio->port|gpio->number);
 	gpio->pin_state = new_state;
@@ -607,7 +607,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		if (ret)
 			goto err_irq;
 		switch (gpio->irq_value) {
-			case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):	
+			case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):
 				;
 			case IRQF_TRIGGER_RISING:
 				set_irq_type(irq, IRQF_TRIGGER_RISING);
@@ -659,6 +659,7 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 	unsigned int cmd, unsigned long arg)
 {
 	int err = 0, ret = 0, value = 0;
+    u64 value64;
 	unsigned int minor;
 
 	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
@@ -733,24 +734,30 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		break;
 
 		case GPIORDIRQMODE:
-        /* TODO */
+		value64  = (u64)(shadows_irq2[MAX_MINOR - minor] & 0xFFFFFFFF);
+		value64 |= (u64)(shadows_irq<<32);
+		ret = __put_user(value64, (u64 *)arg);
 		break;
 
-        case GPIOWRIRQMODE:
-        /* TODO */
-        break;
+		case GPIOWRIRQMODE:
+		ret = __get_user(value64, (u64 *)arg);
+		if(ret == 0) {
+			shadows_irq[MAX_MINOR - minor]  = (value64>>32);
+			shadows_irq2[MAX_MINOR - minor] = (value64&0xFFFFFFFF);
+		}
+		break;
 
-        case GPIORDPULLUP:
+		case GPIORDPULLUP:
 		value = getPortPullUp(MAX_MINOR - minor);
 		ret = __put_user(value, (unsigned int *)arg);
-        break;
+		break;
 
-        case GPIOWRPULLUP:
+		case GPIOWRPULLUP:
 		ret = __get_user(value, (unsigned int *)arg);
 		if (ret == 0) {
 			setPortPullUp(MAX_MINOR - minor, value);
 		}
-        break;
+		break;
 
 		default:
 		printk("IOCTL not supported\n");
@@ -918,13 +925,13 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 		} else {
 			pr_debug("/proc wrote 0x%x 0x%x", gpio_state, gpio_state2);
 		}
-		pr_debug(" on %s %s register\n", port_name[port_ID], 
+		pr_debug(" on %s %s register\n", port_name[port_ID],
 			port_setting_name[settings->type]);
 
 	}
 
 	up(&gpio_sema);
-	/* Makes as if we take all the data sent even if we can't handle more 
+	/* Makes as if we take all the data sent even if we can't handle more
 	than register size */
 	return count;
 }
@@ -1087,7 +1094,7 @@ static void print_port_params(int port, int nb, int* params)
 
 	printk("    %s Parameters (%i): ", port_name[port], nb);
 	for (i = 0; i < NB_CONFIG_REGS; i++) {
-		printk(" 0x%x", params[i]); 
+		printk(" 0x%x", params[i]);
 	}
 	printk("\n");
 }
