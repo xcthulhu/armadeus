@@ -32,7 +32,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"1.6"
+#define CONFIG_ENV_VERSION 	"1.7"
 #define CONFIG_IDENT_STRING	" apf27 patch 2.1"
 
 #define CONFIG_ARM926EJS	1	/* this is an ARM926EJS CPU */
@@ -130,7 +130,7 @@
 	"filesize="		MK_STR(CFG_MONITOR_LEN)		"\0"	\
 	"console="		CONFIG_CONSOLE			"\0"	\
 	"mtdparts="		MTDPARTS_DEFAULT		"\0"	\
-	"partition=nand0,3\0"						\
+	"partition=nand0,4\0"						\
 	"uboot_offset="		MK_STR(CFG_MONITOR_OFFSET)	"\0"	\
 	"uboot_len="		MK_STR(CFG_MONITOR_LEN)		"\0"	\
 	"env_offset="		MK_STR(CFG_ENV_OFFSET)		"\0"	\
