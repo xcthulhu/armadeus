@@ -106,7 +106,7 @@ enum {
 
 /* Global variables */
 struct gpio_operations *driver_ops;
-static int gpio_major =  GPIO_MAJOR;
+static int gpio_major = GPIO_MAJOR;
 
 #ifdef CONFIG_ARCH_IMX
 static int number_of_pins[NB_PORTS] = {32, 32, 32, 32};
@@ -417,7 +417,7 @@ static unsigned int getPortDir(unsigned int aPort)
 }
 
 
-char* port_name[NB_PORTS]  = { "portA", "portB", "portC", "portD",
+char* port_name[NB_PORTS] = { "portA", "portB", "portC", "portD",
 #ifdef CONFIG_ARCH_MX2
 				"portE", "portF",
 #endif
@@ -449,7 +449,7 @@ static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data, size
 
 	if (gpio->nb_pins != 1) {
 		pr_debug("Full port write: 0x%x\n", value);
-		writeOnPort( gpio->port, value );
+		writeOnPort(gpio->port, value);
 	} else {
 		value = value ? 1 : 0;
 		pr_debug("Single pin write: %d\n", value);
@@ -572,7 +572,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 #endif
 			gpio->nb_pins = 32;
 			gpio->changed = 1;
-			gpio->port    = FULL_MINOR_TO_PORT(minor);
+			gpio->port = FULL_MINOR_TO_PORT(minor);
 			pr_debug("Reserving full %s\n", port_name[gpio->port]);
 			goto success;
 		break;
@@ -587,7 +587,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		goto err_request;
 	}
 
-	gpio->port   = minor >> GPIO_PORT_SHIFT;
+	gpio->port = minor >> GPIO_PORT_SHIFT;
 	gpio->number = minor & GPIO_PIN_MASK;
 	gpio->pin_state = 0;
 
@@ -659,7 +659,7 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 	unsigned int cmd, unsigned long arg)
 {
 	int err = 0, ret = 0, value = 0;
-    u64 value64;
+	/* u64 value64; TODO */
 	unsigned int minor;
 
 	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
@@ -734,17 +734,19 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		break;
 
 		case GPIORDIRQMODE:
+		/* TODO 
 		value64  = (u64)(shadows_irq2[MAX_MINOR - minor] & 0xFFFFFFFF);
-		value64 |= (u64)(shadows_irq<<32);
-		ret = __put_user(value64, (u64 *)arg);
+		value64 |= ((u64)(shadows_irq[MAX_MINOR - minor])) << 32;
+		ret = __put_user(value64, (u64 *)arg); */
 		break;
 
 		case GPIOWRIRQMODE:
+		/* TODO
 		ret = __get_user(value64, (u64 *)arg);
-		if(ret == 0) {
-			shadows_irq[MAX_MINOR - minor]  = (value64>>32);
-			shadows_irq2[MAX_MINOR - minor] = (value64&0xFFFFFFFF);
-		}
+		if (ret == 0) {
+			shadows_irq[MAX_MINOR - minor] = (value64 >> 32);
+			shadows_irq2[MAX_MINOR - minor] = (value64 & 0xFFFFFFFF);
+		} */
 		break;
 
 		case GPIORDPULLUP:
@@ -927,7 +929,6 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 		}
 		pr_debug(" on %s %s register\n", port_name[port_ID],
 			port_setting_name[settings->type]);
-
 	}
 
 	up(&gpio_sema);
@@ -1183,10 +1184,10 @@ unsigned int gpioGetPortDir(unsigned int aPort)
 	return getPortDir(aPort);
 }
 
-EXPORT_SYMBOL( gpioWriteOnPort );
-EXPORT_SYMBOL( gpioReadFromPort );
-EXPORT_SYMBOL( gpioSetPortDir );
-EXPORT_SYMBOL( gpioGetPortDir );
+EXPORT_SYMBOL(gpioWriteOnPort);
+EXPORT_SYMBOL(gpioReadFromPort);
+EXPORT_SYMBOL(gpioSetPortDir);
+EXPORT_SYMBOL(gpioGetPortDir);
 
 
 module_init(armadeus_gpio_init);
