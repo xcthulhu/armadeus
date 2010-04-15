@@ -180,11 +180,11 @@ struct gpio_item {
 };
 
 #ifdef CONFIG_ARCH_IMX
-static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0 };
-static unsigned int shadows_irq2[NB_PORTS] = { 0, 0, 0, 0 };
+static unsigned int shadows_irq_h[NB_PORTS] = { 0, 0, 0, 0 };
+static unsigned int shadows_irq_l[NB_PORTS] = { 0, 0, 0, 0 };
 #else
-static unsigned int shadows_irq[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
-static unsigned int shadows_irq2[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
+static unsigned int shadows_irq_h[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
+static unsigned int shadows_irq_l[NB_PORTS] = { 0, 0, 0, 0, 0, 0 };
 #endif
 
 
@@ -236,9 +236,9 @@ static unsigned char getIrqFromPin(int num_pin, int num_port)
 	int portSize = number_of_pins[num_port];
 
 	if (num_pin < (portSize/2)) {
-		shad = shadows_irq2[num_port];
+		shad = shadows_irq_l[num_port];
 	} else {
-		shad = shadows_irq[num_port];
+		shad = shadows_irq_h[num_port];
 		num_pin -= (portSize/2);
 	}
 
@@ -659,7 +659,6 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 	unsigned int cmd, unsigned long arg)
 {
 	int err = 0, ret = 0, value = 0;
-	/* u64 value64; TODO */
 	unsigned int minor;
 
 	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
@@ -733,20 +732,28 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		}
 		break;
 
-		case GPIORDIRQMODE:
-		/* TODO 
-		value64  = (u64)(shadows_irq2[MAX_MINOR - minor] & 0xFFFFFFFF);
-		value64 |= ((u64)(shadows_irq[MAX_MINOR - minor])) << 32;
-		ret = __put_user(value64, (u64 *)arg); */
+		case GPIORDIRQMODE_H:
+		value  = shadows_irq_h[MAX_MINOR - minor];
+		ret = __put_user(value, (unsigned int *)arg);
 		break;
 
-		case GPIOWRIRQMODE:
-		/* TODO
-		ret = __get_user(value64, (u64 *)arg);
+		case GPIORDIRQMODE_L:
+		value = shadows_irq_l[MAX_MINOR - minor];
+		ret = __put_user(value, (unsigned int *)arg);
+		break;
+
+		case GPIOWRIRQMODE_H:
+		ret = __get_user(value, (unsigned int *)arg);
 		if (ret == 0) {
-			shadows_irq[MAX_MINOR - minor] = (value64 >> 32);
-			shadows_irq2[MAX_MINOR - minor] = (value64 & 0xFFFFFFFF);
-		} */
+			shadows_irq_h[MAX_MINOR - minor] = value;
+		}
+		break;
+
+		case GPIOWRIRQMODE_L:
+		ret = __get_user(value, (unsigned int *)arg);
+		if (ret == 0) {
+			shadows_irq_l[MAX_MINOR - minor] = value;
+		}
 		break;
 
 		case GPIORDPULLUP:
@@ -820,8 +827,8 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 		break;
 
 		case INTERRUPT:
-			port_status = shadows_irq[port_ID];
-			port_status2 = shadows_irq2[port_ID];
+			port_status = shadows_irq_h[port_ID];
+			port_status2 = shadows_irq_l[port_ID];
 		break;
 
 		default:
@@ -913,8 +920,8 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file,
 			break;
 
 			case INTERRUPT:
-				shadows_irq[port_ID] = gpio_state;
-				shadows_irq2[port_ID] = gpio_state2;
+				shadows_irq_h[port_ID] = gpio_state;
+				shadows_irq_l[port_ID] = gpio_state2;
 			break;
 
 			default:
