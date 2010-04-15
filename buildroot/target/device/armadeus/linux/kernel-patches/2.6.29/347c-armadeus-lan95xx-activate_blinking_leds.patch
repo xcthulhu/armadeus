@@ -1,3 +1,14 @@
+author	Steve Glendinning <steve.glendinning@smsc.com>	
+	Tue, 22 Sep 2009 05:13:02 +0000 (05:13 +0000)
+committer	David S. Miller <davem@davemloft.net>	
+	Tue, 22 Sep 2009 21:00:06 +0000 (14:00 -0700)
+
+smsc95xx: Separe link led and activity led 
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+----
+
 Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2010-04-13 16:27:42.000000000 +0200
