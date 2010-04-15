@@ -46,7 +46,7 @@
 
 
 #define DRIVER_NAME    "Armadeus GPIOs driver"
-#define DRIVER_VERSION "2.3"
+#define DRIVER_VERSION "2.4"
 /* By default, we use dynamic allocation of major numbers -> MAJOR = 0 */
 #define GPIO_MAJOR 0
 #define GPIO_PROC_DIRNAME         "driver/gpio"
