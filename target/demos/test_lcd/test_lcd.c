@@ -65,8 +65,7 @@ int main(int argc, char *argv[])
     int i, height, width;
 
     /* Initialize SDL */
-    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER /*| SDL_INIT_EVENTTHREAD |SDL_INIT_NOPARACHUTE*/) < 0 )
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER /*| SDL_INIT_EVENTTHREAD |SDL_INIT_NOPARACHUTE*/) < 0) {
         fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
         exit(1);
     }
