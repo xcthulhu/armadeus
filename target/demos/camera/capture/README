@@ -1,0 +1,5 @@
+Compile me:
+* native:
+	$ make
+* cross-compilation:
+	$ make CC=/.../.../arm-linux-gcc
