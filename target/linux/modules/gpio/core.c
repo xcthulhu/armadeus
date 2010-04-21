@@ -253,7 +253,7 @@ static unsigned char getIrqFromPin(int num_pin, int num_port)
 #ifdef CONFIG_ARCH_IMX
 static unsigned long PORT_MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF };
 #else
-static unsigned long PORT_MASK[]= { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFF6060, 0xFFFE0000, 0x00FFFCFF8, 0x006B6C80 };
+static unsigned long PORT_MASK[]= { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFC000, 0xFFFE0000, 0x00FFCCF8, 0x00FFFF80 };
 #endif
 
 static void initialize_port(int port, int* init_params)
