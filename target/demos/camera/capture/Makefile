@@ -1,5 +1,5 @@
 CFLAGS=-Wall
-LDFLAGS= -lSDL
+LDFLAGS= -lSDL -lpthread
 ifeq ($(PREFIX),)
 # Host
 CC=gcc
