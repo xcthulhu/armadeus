@@ -77,10 +77,8 @@ struct camera mycamera;
 
 static void errno_exit(const char *s)
 {
-        fprintf (stderr, "%s error %d, %s\n",
-                 s, errno, strerror (errno));
-
-        exit (EXIT_FAILURE);
+	fprintf(stderr, "%s error %d, %s\n", s, errno, strerror (errno));
+	exit(EXIT_FAILURE);
 }
 
 static int xioctl(int fd, int request, void *arg)
@@ -211,7 +209,9 @@ static void process_image(/*const */void *pCaptured)
 	} else if (mycamera.pixelformat == V4L2_PIX_FMT_YUV420) {
 		yuv420_to_rgb565(pCaptured, mycamera.sizeimage, image->pixels);
 	} else {
-		printf("Unknown image format\n");
+		if (mycamera.pixelformat != V4L2_PIX_FMT_RGB565) {
+			printf("Unknown image format\n");
+		}
 		simple_copy(pCaptured, mycamera.sizeimage, image->pixels);
 	}
 
@@ -592,6 +592,22 @@ static Uint32 get_a_supported_pix_fmt(void)
 	struct v4l2_fmtdesc fmtdesc;
 	int i;
 
+	/* First check if a LCD native format is available (-> no CSC) */
+	for (i = 0;; i++) {
+		CLEAR(fmtdesc);
+		fmtdesc.index = i;
+		fmtdesc.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		if (-1 == ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc))
+			break;
+
+		if (fmtdesc.pixelformat == V4L2_PIX_FMT_RGB565) {
+			fprintf(stdout, "Using img format (%d 0x%08x): ", i, fmtdesc.pixelformat);
+			fprintf(stdout, "RGB565\n");
+			return fmtdesc.pixelformat;
+		}
+	}
+
+	/* If no RGB565, then default to YUV422 or YUV420 */
 	for (i = 0;; i++) {
 		CLEAR(fmtdesc);
 		fmtdesc.index = i;
@@ -612,7 +628,7 @@ static Uint32 get_a_supported_pix_fmt(void)
 	return 0;
 }
 
-static void init_device(void)
+static void init_device(unsigned int capt_width, unsigned int capt_height)
 {
         struct v4l2_capability cap;
         struct v4l2_cropcap cropcap;
@@ -691,14 +707,15 @@ static void init_device(void)
 	}
 
         fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width       = CAM_WIDTH; 
-        fmt.fmt.pix.height      = CAM_HEIGHT;
+        fmt.fmt.pix.width       = capt_width;
+        fmt.fmt.pix.height      = capt_height;
         fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
-        if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
-                errno_exit ("VIDIOC_S_FMT");
+        if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
+                errno_exit("VIDIOC_S_FMT");
 
         /* Note VIDIOC_S_FMT may change width and height. */
+	fprintf(stdout, "Camera picture: %dx%d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
 
 	/* Buggy driver paranoia. */
 	min = fmt.fmt.pix.width * 2;
@@ -771,23 +788,37 @@ static void usage(FILE *fp, int argc, char **argv)
                  "-m | --mmap          Use memory mapped buffers\n"
                  "-r | --read          Use read() calls\n"
                  "-u | --userp         Use application allocated buffers\n"
+                 "--width W            Use W as screen width (instead of %d)\n"
+                 "--height H           Use H as screen height (instead of %d)\n"
+                 "--camwidth W         Use W as camera picture width (instead of %d)\n"
+                 "--camheight H        Use H as camera picture height (instead of %d)\n"
                  "",
-		 argv[0]);
+		 argv[0], SCREEN_WIDTH, SCREEN_HEIGHT, CAM_WIDTH, CAM_HEIGHT);
 }
 
-static const char short_options [] = "d:hmru";
+static const char short_options [] = "d:hmruwt";
 
 static const struct option long_options [] = {
-        { "device",     required_argument,      NULL,           'd' },
-        { "help",       no_argument,            NULL,           'h' },
-        { "mmap",       no_argument,            NULL,           'm' },
-        { "read",       no_argument,            NULL,           'r' },
-        { "userp",      no_argument,            NULL,           'u' },
-        { 0, 0, 0, 0 }
+	{ "device",	required_argument,	NULL,	'd' },
+	{ "help",	no_argument,		NULL,	'h' },
+	{ "mmap",	no_argument,		NULL,	'm' },
+	{ "read",	no_argument,		NULL,	'r' },
+	{ "userp",	no_argument,		NULL,	'u' },
+	{ "width",	required_argument,	NULL,	'w' },
+	{ "height",	required_argument,	NULL,	't' },
+	{ "camwidth",	required_argument,	NULL,	'y' },
+	{ "camheight",	required_argument,	NULL,	'z' },
+	{ 0, 0, 0, 0 }
 };
 
 int main(int argc, char **argv)
 {
+	int ret = EXIT_SUCCESS;
+	unsigned int width = SCREEN_WIDTH;
+	unsigned int height = SCREEN_HEIGHT;
+	unsigned int camwidth = CAM_WIDTH;
+	unsigned int camheight = CAM_HEIGHT;
+
         dev_name = "/dev/video0";
 
 	atexit(SDL_Quit);
@@ -812,7 +843,7 @@ int main(int argc, char **argv)
 
                 case 'h':
                         usage(stdout, argc, argv);
-                        exit (EXIT_SUCCESS);
+                        exit(EXIT_SUCCESS);
 
                 case 'm':
                         io = IO_METHOD_MMAP;
@@ -826,17 +857,44 @@ int main(int argc, char **argv)
                         io = IO_METHOD_USERPTR;
 			break;
 
+		case 'w':
+			width = atoi(optarg);
+			break;
+
+		case 't':
+			height = atoi(optarg);
+			break;
+
+		case 'y':
+			camwidth = atoi(optarg);
+			break;
+
+		case 'z':
+			camheight = atoi(optarg);
+			break;
+
                 default:
                         usage(stderr, argc, argv);
                         exit(EXIT_FAILURE);
                 }
         }
 
-        open_device();
-        init_device();
+	open_device();
+	camwidth = camwidth > width ? width : camwidth;
+	camheight = camheight > height ? height : height;
+	init_device(camwidth, camheight);
 
 	SDL_Init(SDL_INIT_VIDEO);
-	screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16, (SDL_HWSURFACE));
+	screen = SDL_SetVideoMode(width, height, 16, (SDL_HWSURFACE));
+	if (screen) {
+		printf("Video mode: %dx%dx%d\n", screen->w, screen->h,
+			screen->format->BitsPerPixel);
+	} else {
+		printf("Unable to set %dx%d video mode: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
+		ret = EXIT_FAILURE;
+		goto the_end;
+	}
+
 	image = SDL_CreateRGBSurface(/*SDL_HWSURFACE*/0, mycamera.width, mycamera.height, 16, 0, 0, 0, 0);
 // 	printf("image fmt: RGB%d%d%d\n", image->format->Rshift, image->format->Gshift, image->format->Bshift);
 
@@ -844,10 +902,11 @@ int main(int argc, char **argv)
         mainloop();
         stop_capturing();
 
-        uninit_device();
-        close_device();
+the_end:
+	uninit_device();
+	close_device();
 
-        exit(EXIT_SUCCESS);
+	exit(ret);
 
-        return 0;
+	return 0;
 }
