@@ -881,7 +881,7 @@ int main(int argc, char **argv)
 
 	open_device();
 	camwidth = camwidth > width ? width : camwidth;
-	camheight = camheight > height ? height : height;
+	camheight = camheight > height ? height : camheight;
 	init_device(camwidth, camheight);
 
 	SDL_Init(SDL_INIT_VIDEO);
