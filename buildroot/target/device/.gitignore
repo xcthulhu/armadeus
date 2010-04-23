@@ -2,7 +2,7 @@ AMD/
 ARM/
 ARMLTD/
 Atmel/
-Config.*
+/Config.*
 Hitachi/
 jp/
 KwikByte/
