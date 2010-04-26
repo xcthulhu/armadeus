@@ -230,7 +230,7 @@ static unsigned long fromString(char* buffer, int number_of_bits, int base)
 }
 
 /* Return the interrupt config for a pin */
-static unsigned char getIrqFromPin(int num_pin, int num_port)
+static unsigned char get_irq_from_pin(int num_pin, int num_port)
 {
 	unsigned long shad;
 	int portSize = number_of_pins[num_port];
@@ -525,7 +525,7 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	pr_debug("IT for pin %d %d\n", gpio->port, gpio->number);
 
 	old_state = gpio->pin_state;
-	new_state = gpio_get_value(gpio->port|gpio->number);
+	new_state = gpio_get_value((gpio->port << GPIO_PORT_SHIFT) | gpio->number);
 	gpio->pin_state = new_state;
 
 	if ((gpio->irq_value != (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)) || new_state != old_state) {
@@ -535,7 +535,7 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 		if (gpio->async_queue)
 			kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
 		if (gpio->irq_value == (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)) {
-			set_irq_type(irq, ((gpio->pin_state)?IRQF_TRIGGER_FALLING:IRQF_TRIGGER_RISING));
+			set_irq_type(irq, ((gpio->pin_state) ? IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING));
 		}
 	}
 
@@ -599,7 +599,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 	}
 
 	/* Request interrupt if pin was configured for */
-	gpio->irq_value = getIrqFromPin(gpio->number,gpio->port);
+	gpio->irq_value = get_irq_from_pin(gpio->number, gpio->port);
 
 	if (gpio->irq_value) {
 		irq = IRQ_GPIOA(minor); /* irq number are continuous */
@@ -780,6 +780,24 @@ out:
 	return ret;
 }
 
+static int armadeus_gpio_fasync(int fd, struct file* filp, int on)
+{
+	struct gpio_item* gpio = filp->private_data;
+
+	return fasync_helper(fd, filp, on, &(gpio->async_queue));
+}
+
+static struct file_operations gpio_fops = {
+	.owner   = THIS_MODULE,
+	.llseek  = no_llseek,
+	.write   = armadeus_gpio_dev_write,
+	.read    = armadeus_gpio_dev_read,
+	.open    = armadeus_gpio_dev_open,
+	.release = armadeus_gpio_dev_release,
+	.ioctl   = armadeus_gpio_dev_ioctl,
+	.fasync  = armadeus_gpio_fasync,
+};
+
 
 /*
  * PROC file functions
@@ -858,7 +876,7 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 
 static char new_gpio_state[MAX_NUMBER_OF_PINS*2];
 
-static int armadeus_gpio_proc_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
+static int armadeus_gpio_proc_write(__attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
 {
 	int len;
 	unsigned int  gpio_state=0, gpio_state2=0;
@@ -1085,16 +1103,6 @@ static void remove_proc_entries(void)
 
 	remove_proc_entry(GPIO_PROC_DIRNAME, NULL);
 }
-/* /dev functionnalities supported: */
-static struct file_operations gpio_fops = {
-	.owner   = THIS_MODULE,
-	.llseek  = no_llseek,
-	.write   = armadeus_gpio_dev_write,
-	.read    = armadeus_gpio_dev_read,
-	.open    = armadeus_gpio_dev_open,
-	.release = armadeus_gpio_dev_release,
-	.ioctl   = armadeus_gpio_dev_ioctl,
-};
 
 static void print_port_params(int port, int nb, int* params)
 {
