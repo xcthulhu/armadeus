@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-02-22 14:38:52.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-04-26 13:53:19.000000000 +0200
 @@ -0,0 +1,789 @@
 + /*
 + * apf27.c
@@ -803,7 +803,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-02-22 14:38:13.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-04-26 15:06:48.000000000 +0200
 @@ -0,0 +1,1019 @@
 + /*
 + * apf27-dev.c
@@ -1827,7 +1827,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-02-16 13:17:29.000000000 +0100
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-04-26 13:53:19.000000000 +0200
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2052,13 +2052,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-02-16 13:17:29.000000000 +0100
-@@ -0,0 +1,201 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-04-26 14:56:34.000000000 +0200
+@@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
-+ * Support for AFP27Dev's wireless extension board.
++ * Support for AFP27Dev's wireless extension board (APW).
 + *
-+ * Copyright (C) 2009 Armadeus Systems
++ * Copyright (C) 2009-2010 Armadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Nicolas Colombain <nicolas.colombain@armadeus.com>
 + *
@@ -2145,17 +2145,15 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS */
 +
 +
-+/* An optionnal Bluetooth + WiFi (Wi2Wi) module can be mounted on wireless
++/* An optional Bluetooth + WiFi module (Wi2Wi) can be mounted on wireless
 +   extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
 +
-+#define BT_RESETn	(GPIO_PORTB | 14)	/* CSI_D4 */
++#define BT_RESETn	(GPIO_PORTB | 14)	/* shared with CSI_D4;
++						   driven by userspace */
 +#define WIFI_PWRDNn	(GPIO_PORTE | 10)	/* UART3_CTS */
 +
 +static int apw_bt_wifi_pins[] = {
-+#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
-+	(BT_RESETn | GPIO_OUT | GPIO_GPIO),	/* Shared with CSI */
-+#endif
 +	(WIFI_PWRDNn | GPIO_OUT | GPIO_GPIO),
 +};
 +
@@ -2194,9 +2192,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +	int res;
 +
 +	gpio_set_value(WIFI_PWRDNn, 1);	/* WiFi on */
-+#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
-+	gpio_set_value(BT_RESETn, 1);	/* Bluetooth on */
-+#endif
 +	res = mxc_gpio_setup_multiple_pins(apw_bt_wifi_pins,
 +			ARRAY_SIZE(apw_bt_wifi_pins), "BT_WIFI");
 +	if (!res)
@@ -2210,9 +2205,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +void apf27dev_extension_resume(void)
 +{
 +#ifdef CONFIG_PM
-+# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
-+	gpio_set_value(BT_RESETn, 1);
-+# endif
 +# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_WIFI
 +	gpio_set_value(WIFI_PWRDNn, 1);
 +# endif
@@ -2225,9 +2217,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 +void apf27dev_extension_suspend(void)
 +{
 +#ifdef CONFIG_PM
-+# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_BT
-+	gpio_set_value(BT_RESETn, 0);
-+# endif
 +# ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_WIFI
 +	gpio_set_value(WIFI_PWRDNn, 0);
 +# endif
