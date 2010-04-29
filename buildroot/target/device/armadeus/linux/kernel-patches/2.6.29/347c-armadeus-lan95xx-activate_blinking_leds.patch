@@ -1,3 +1,9 @@
+smsc95xx: Separe link led and activity led 
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+----
+
 Index: linux-2.6.29.6/drivers/net/usb/smsc95xx.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/net/usb/smsc95xx.c	2010-04-13 16:27:42.000000000 +0200
