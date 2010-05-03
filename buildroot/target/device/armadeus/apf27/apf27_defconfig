@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Apr 30 09:57:54 2010
+# Mon May  3 15:55:29 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -490,6 +490,7 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_VTUN is not set
 # BR2_PACKAGE_WEBIF is not set
 BR2_PACKAGE_WIRELESS_TOOLS=y
+# BR2_PACKAGE_WPA_SUPPLICANT is not set
 BR2_BLOCKDEV_SUPPORT=y
 
 #
