@@ -848,7 +848,6 @@
 +	writel(DSCR2, CONFIG_SYS_DSCR2_VAL)
 +
 +
-+	init_clock
 +
 +	/* skip clock and sdram initialization if we run from ram */
 +	cmp	pc, #0xa0000000
@@ -858,6 +857,7 @@
 +
 +	mov	pc,r10
 +1:
++	init_clock
 +
 +	sdram_init
 +

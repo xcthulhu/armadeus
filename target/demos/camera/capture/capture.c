@@ -200,7 +200,7 @@ static void simple_copy(void *yuv, int size, void* rgb)
 	memcpy(rgb, yuv, size);
 }
 
-static void process_image(/*const */void *pCaptured)
+static void process_image(/*const */void *pCaptured, int size)
 {
 	SDL_Rect update_rec;
 
@@ -212,7 +212,9 @@ static void process_image(/*const */void *pCaptured)
 		if (mycamera.pixelformat != V4L2_PIX_FMT_RGB565) {
 			printf("Unknown image format\n");
 		}
-		simple_copy(pCaptured, mycamera.sizeimage, image->pixels);
+		if (size == 0)
+			size = mycamera.sizeimage;
+		simple_copy(pCaptured, size, image->pixels);
 	}
 
 	/* Blit converted image on screen */
@@ -231,7 +233,7 @@ static int read_frame(void)
 
 	switch (io) {
 	case IO_METHOD_READ:
-    		if (-1 == read (fd, buffers[0].start, buffers[0].length)) {
+    		if (-1 == read(fd, buffers[0].start, buffers[0].length)) {
             		switch (errno) {
             		case EAGAIN:
                     		return 0;
@@ -246,7 +248,7 @@ static int read_frame(void)
 			}
 		}
 
-    		process_image (buffers[0].start);
+    		process_image(buffers[0].start, buffers[0].length);
 
 		break;
 
@@ -256,7 +258,7 @@ static int read_frame(void)
             	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             	buf.memory = V4L2_MEMORY_MMAP;
 
-    		if (-1 == xioctl (fd, VIDIOC_DQBUF, &buf)) {
+    		if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
             		switch (errno) {
             		case EAGAIN:
                     		return 0;
@@ -267,16 +269,16 @@ static int read_frame(void)
 				/* fall through */
 
 			default:
-				errno_exit ("VIDIOC_DQBUF");
+				errno_exit("VIDIOC_DQBUF");
 			}
 		}
 
                 assert (buf.index < n_buffers);
 
-	        process_image (buffers[buf.index].start);
+	        process_image(buffers[buf.index].start, buf.length);
 
-		if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
-			errno_exit ("VIDIOC_QBUF");
+		if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
+			errno_exit("VIDIOC_QBUF");
 
 		break;
 
@@ -308,7 +310,7 @@ static int read_frame(void)
 
 		assert (i < n_buffers);
 
-    		process_image ((void *) buf.m.userptr);
+		process_image((void *) buf.m.userptr, 0);
 
 		if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
 			errno_exit ("VIDIOC_QBUF");
@@ -512,7 +514,7 @@ static void init_mmap(void)
                 exit (EXIT_FAILURE);
         }
 
-        buffers = calloc (req.count, sizeof (*buffers));
+        buffers = calloc(req.count, sizeof (*buffers));
 
         if (!buffers) {
                 fprintf (stderr, "Out of memory\n");
@@ -615,12 +617,16 @@ static Uint32 get_a_supported_pix_fmt(void)
 		if (-1 == ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc))
 			break;
 
-		if ((fmtdesc.pixelformat == V4L2_PIX_FMT_YUYV) || (fmtdesc.pixelformat == V4L2_PIX_FMT_YUV420)) {
+		if ((fmtdesc.pixelformat == V4L2_PIX_FMT_YUYV)
+			|| (fmtdesc.pixelformat == V4L2_PIX_FMT_YUV420)
+			|| (fmtdesc.pixelformat == V4L2_PIX_FMT_JPEG)) {
 			fprintf(stdout, "Using img format (%d 0x%08x): ", i, fmtdesc.pixelformat);
 			if (fmtdesc.pixelformat == V4L2_PIX_FMT_YUYV)
 				fprintf(stdout, "YUYV (YUV:4:2:2)\n");
 			if (fmtdesc.pixelformat == V4L2_PIX_FMT_YUV420)
 				fprintf(stdout, "YUV:4:2:0\n");
+			if (fmtdesc.pixelformat == V4L2_PIX_FMT_JPEG)
+				fprintf(stdout, "JPEG\n");
 			return fmtdesc.pixelformat;
 		}
 	}
@@ -704,6 +710,7 @@ static void init_device(unsigned int capt_width, unsigned int capt_height)
 	if (!fmt.fmt.pix.pixelformat) {
 		fprintf(stderr, "%s does not support requested img formats\n",
 				dev_name);
+		exit(EXIT_FAILURE);
 	}
 
         fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -731,19 +738,22 @@ static void init_device(unsigned int capt_width, unsigned int capt_height)
 	mycamera.bytesperline = fmt.fmt.pix.bytesperline;
 	mycamera.sizeimage = fmt.fmt.pix.sizeimage;
 
+	fprintf(stdout, "    picture size: %d\n", fmt.fmt.pix.sizeimage);
+
 	switch (io) {
 	case IO_METHOD_READ:
-		init_read (fmt.fmt.pix.sizeimage);
+		init_read(fmt.fmt.pix.sizeimage);
 		break;
 
 	case IO_METHOD_MMAP:
-		init_mmap ();
+		init_mmap();
 		break;
 
 	case IO_METHOD_USERPTR:
-		init_userp (fmt.fmt.pix.sizeimage);
+		init_userp(fmt.fmt.pix.sizeimage);
 		break;
 	}
+	fprintf(stdout, "    OK\n");
 }
 
 static void close_device(void)
@@ -881,11 +891,15 @@ int main(int argc, char **argv)
 
 	open_device();
 	camwidth = camwidth > width ? width : camwidth;
-	camheight = camheight > height ? height : height;
+	camheight = camheight > height ? height : camheight;
 	init_device(camwidth, camheight);
 
-	SDL_Init(SDL_INIT_VIDEO);
-	screen = SDL_SetVideoMode(width, height, 16, (SDL_HWSURFACE));
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+		exit(EXIT_FAILURE);
+	}
+	fprintf(stderr, "SDL OK\n");
+	screen = SDL_SetVideoMode(width, height, 16, SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_HWSURFACE);
 	if (screen) {
 		printf("Video mode: %dx%dx%d\n", screen->w, screen->h,
 			screen->format->BitsPerPixel);

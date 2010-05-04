@@ -8,10 +8,11 @@ IMXREGS_VER:=1.0
 IMXREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/imxregs/
 IMXREGS_DIR:=$(BUILD_DIR)/imxregs-$(IMXREGS_VER)
 IMXREGS_CAT:=zcat
-ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
+CPU_NAME=$(call qstrip,$(BR2_CPU_NAME))
+ifeq ($(CPU_NAME),imx27)
 IMXREGS_BINARY:=imx27regs
 else
- ifeq ($(BR2_TARGET_ARMADEUS_APF9328),y)
+ ifeq ($(CPU_NAME),imxl)
  IMXREGS_BINARY:=imxregs
  else
  IMXREGS_BINARY:=unknown_arch

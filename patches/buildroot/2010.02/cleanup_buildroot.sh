@@ -15,3 +15,5 @@ rm -rf buildroot/package/multimedia/flite/
 rm -rf buildroot/package/libcurl/
 rm -f  buildroot/package/multimedia/mplayer/mplayer-1.0rc2-add_pld_asm_inst_for_non_armv5_arch.patch
 rm -f  buildroot/package/multimedia/madplay/madplay-audio-alsa.patch
+rm -f  buildroot/package/busybox/busybox-1.15.3-speed_table-B921600.patch
+rm -rf buildroot/package/firmware/
