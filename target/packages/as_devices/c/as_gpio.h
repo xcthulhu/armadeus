@@ -28,6 +28,11 @@
 extern "C" {
 #endif // __cplusplus
 
+#define GPIO_IRQ_MODE_NOINT    (0)
+#define GPIO_IRQ_MODE_RISING   (1)
+#define GPIO_IRQ_MODE_FALLING  (2)
+#define GPIO_IRQ_MODE_BOTH     (3)
+
 //TODO: manage irq
 
 /**
@@ -85,7 +90,7 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
  * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
  *
- * @return pin value if positive or null, error if negative
+ * @return pin pull up value if positive or null, error if negative
  */
 int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
                               int aPinNum);
@@ -102,13 +107,34 @@ int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
                               int aPinNum,
                               int aValue);
 
+/** @brief Set pin irq mode
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ * @param aMode irq mode
+ *
+ * @return error if negative
+ */
+int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
+                              int aPinNum,
+                              int aMode);
+
+/** @brief Get pin irq mode value
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ *
+ * @return pin mode value if positive or null, error if negative
+ */
+int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
+                              int aPinNum);
+
 /** @brief Close port access
  *
  * @param aDev as_gpio_device pointer structure
  *
  * @return pin value if positive or null, error if negative
  */
-
 int32_t as_gpio_close(struct as_gpio_device *aDev);
 
 #ifdef __cplusplus

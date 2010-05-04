@@ -29,20 +29,22 @@
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>
 
-#define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)
-#define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)
-#define GPIORDDATA	_IOR(PP_IOCTL, 0xF2, int)
-#define GPIOWRDATA	_IOW(PP_IOCTL, 0xF3, int)
-#define GPIORDMODE	_IOR(PP_IOCTL, 0xF4, int)
-#define GPIOWRMODE	_IOW(PP_IOCTL, 0xF5, int)
+#define PORT_SIZE (32)
 
-#define GPIORDPULLUP	_IOR(PP_IOCTL, 0xF6, int)
-#define GPIOWRPULLUP	_IOR(PP_IOCTL, 0xF7, int)
+#define GPIORDDIRECTION    _IOR(PP_IOCTL, 0xF0, int)
+#define GPIOWRDIRECTION    _IOW(PP_IOCTL, 0xF1, int)
+#define GPIORDDATA    _IOR(PP_IOCTL, 0xF2, int)
+#define GPIOWRDATA    _IOW(PP_IOCTL, 0xF3, int)
+#define GPIORDMODE    _IOR(PP_IOCTL, 0xF4, int)
+#define GPIOWRMODE    _IOW(PP_IOCTL, 0xF5, int)
 
-#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int)
-#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int)
-#define GPIOWRIRQMODE_H	_IOR(PP_IOCTL, 0xFA, int)
-#define GPIOWRIRQMODE_L	_IOR(PP_IOCTL, 0xFB, int)
+#define GPIORDPULLUP    _IOR(PP_IOCTL, 0xF6, int)
+#define GPIOWRPULLUP    _IOR(PP_IOCTL, 0xF7, int)
+
+#define GPIORDIRQMODE_H    _IOR(PP_IOCTL, 0xF8, int)
+#define GPIORDIRQMODE_L    _IOR(PP_IOCTL, 0xF9, int)
+#define GPIOWRIRQMODE_H    _IOR(PP_IOCTL, 0xFA, int)
+#define GPIOWRIRQMODE_L    _IOR(PP_IOCTL, 0xFB, int)
 
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 
@@ -227,6 +229,94 @@ int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
     }
 
     return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
+                              int aPinNum)
+{
+    int ret=0;
+    int portval;
+
+    /* check pin num */
+    if (aPinNum >= PORT_SIZE)
+        return -1;
+
+    if (aPinNum < PORT_SIZE/2)
+    {
+
+        ret = ioctl(aDev->fdev, GPIORDIRQMODE_L, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+
+        portval &= (3 << (aPinNum * 2));
+        return portval >> (aPinNum * 2);
+
+    } else {
+
+        ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+
+        portval &= (3 << ((aPinNum - (PORT_SIZE/2)) * 2));
+        return portval >> ((aPinNum - (PORT_SIZE/2)) * 2);
+    }
+}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
+                              int aPinNum,
+                              int aMode)
+{
+    int ret=0;
+    int portval;
+
+    /* check mode value */
+    if (aMode > 3)
+        return -1;
+
+    /* check pin num */
+    if (aPinNum >= PORT_SIZE)
+        return -1;
+
+    if (aPinNum < PORT_SIZE/2)
+    {
+
+        ret = ioctl(aDev->fdev, GPIORDIRQMODE_L, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+
+        portval &= ~(3 << (aPinNum * 2));
+        portval |=  (aMode << (aPinNum * 2));
+
+        ret = ioctl(aDev->fdev, GPIOWRIRQMODE_L, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+
+    } else {
+
+        ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+
+        portval &= ~(3 << ((aPinNum - (PORT_SIZE/2)) * 2));
+        portval |=  (aMode << ((aPinNum - (PORT_SIZE/2)) * 2));
+
+        ret = ioctl(aDev->fdev, GPIOWRIRQMODE_H, &portval);
+        if (ret < 0) {
+            return ret;
+        }
+    }
+
+    return 0;
+
 }
 
 /*------------------------------------------------------------------------------*/
