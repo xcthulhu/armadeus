@@ -33,14 +33,18 @@ extern "C" {
 #define GPIO_IRQ_MODE_FALLING  (2)
 #define GPIO_IRQ_MODE_BOTH     (3)
 
-//TODO: manage irq
+#define PORT_SIZE (32)
+
+//TODO: test irq
 
 /**
  * Store gpio parameters
  */
 struct as_gpio_device {
     unsigned char port_letter;
-    int fdev;
+    int fdev;       /* port file */
+    int fpin[PORT_SIZE];       /* pin file for blocking read */
+    int irq_mode[PORT_SIZE];
 };
 
 /** @brief Initialize port access
@@ -85,6 +89,16 @@ int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
 int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
                               int aPinNum);
 
+/** @brief Get pin value, blocking until interrupt occur
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ *
+ * @return pin value if positive or null, error if negative
+ */
+int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
+                                      int aPinNum);
+
 /** @brief Get pin pull-up value
  *
  * @param aDev as_gpio_device pointer structure
@@ -93,7 +107,7 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
  * @return pin pull up value if positive or null, error if negative
  */
 int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
-                              int aPinNum);
+                                 int aPinNum);
 
 /** @brief Set pin pull-up value
  *
@@ -104,8 +118,8 @@ int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
  * @return error if negative
  */
 int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
-                              int aPinNum,
-                              int aValue);
+                                 int aPinNum,
+                                 int aValue);
 
 /** @brief Set pin irq mode
  *
@@ -116,8 +130,8 @@ int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
  * @return error if negative
  */
 int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
-                              int aPinNum,
-                              int aMode);
+                             int aPinNum,
+                             int aMode);
 
 /** @brief Get pin irq mode value
  *
@@ -127,7 +141,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
  * @return pin mode value if positive or null, error if negative
  */
 int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
-                              int aPinNum);
+                             int aPinNum);
 
 /** @brief Close port access
  *
