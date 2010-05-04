@@ -33,5 +33,11 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args);
 static PyObject * setPinValue(PyObject *self, PyObject *args);
 static PyObject * getPinValue(PyObject *self, PyObject *args);
 
+static PyObject * blockingGetPinValue(PyObject *self, PyObject *args);
+static PyObject * getPullupValue(PyObject *self, PyObject *args);
+static PyObject * setPullupValue(PyObject *self, PyObject *args);
+static PyObject * getIrqMode(PyObject *self, PyObject *args);
+static PyObject * setIrqMode(PyObject *self, PyObject *args);
+
 static PyObject * gpio_close(PyObject *self, PyObject *args);
 
