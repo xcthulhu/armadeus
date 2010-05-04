@@ -1,19 +1,19 @@
 /*
 **    The ARMadeus Project
-** 
-**    Copyright (C) 2009  The armadeus systems team 
+**
+**    Copyright (C) 2009-2010  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
+**
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
 ** License as published by the Free Software Foundation; either
 ** version 2.1 of the License, or (at your option) any later version.
-** 
+**
 ** This library is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ** Lesser General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -27,14 +27,22 @@
 #include <unistd.h> /* for close() */
 
 #include <sys/ioctl.h>
-#include <linux/ppdev.h> 
+#include <linux/ppdev.h>
 
 #define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)
 #define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)
 #define GPIORDDATA	_IOR(PP_IOCTL, 0xF2, int)
-#define GPIOWRDATA	_IOW(PP_IOCTL, 0xF3, int) 
+#define GPIOWRDATA	_IOW(PP_IOCTL, 0xF3, int)
 #define GPIORDMODE	_IOR(PP_IOCTL, 0xF4, int)
-#define GPIOWRMODE	_IOW(PP_IOCTL, 0xF5, int) 
+#define GPIOWRMODE	_IOW(PP_IOCTL, 0xF5, int)
+
+#define GPIORDPULLUP	_IOR(PP_IOCTL, 0xF6, int)
+#define GPIOWRPULLUP	_IOR(PP_IOCTL, 0xF7, int)
+
+#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int)
+#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int)
+#define GPIOWRIRQMODE_H	_IOR(PP_IOCTL, 0xFA, int)
+#define GPIOWRIRQMODE_L	_IOR(PP_IOCTL, 0xFB, int)
 
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 
@@ -73,10 +81,10 @@ as_gpio_open(char aPortChar)
         return NULL;
     }
 
-    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device)); 
+    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
     if (dev == NULL)
         return NULL;
-    
+
     dev->port_letter = aPortChar;
     dev->fdev = ret;
 
@@ -127,7 +135,7 @@ as_gpio_set_pin_direction(struct as_gpio_device *aDev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t 
+int32_t
 as_gpio_set_pin_value( struct as_gpio_device *aDev,
                        int aPinNum,
                        int aValue)
@@ -175,7 +183,55 @@ int32_t as_gpio_get_pin_value(  struct as_gpio_device *aDev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t 
+int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
+                              int aPinNum)
+{
+    int ret=0;
+    int portval;
+
+    ret = ioctl(aDev->fdev, GPIORDPULLUP, &portval);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if ((portval & (1<<aPinNum)) != 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+
+}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
+                              int aPinNum,
+                              int aValue)
+{
+    int ret=0;
+    int portval;
+
+    ret = ioctl(aDev->fdev, GPIORDPULLUP, &portval);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (aValue == 0) {
+        portval &= ~(1 << aPinNum);
+    } else {
+        portval |= (1 << aPinNum);
+    }
+    ret = ioctl(aDev->fdev, GPIOWRPULLUP, &portval);
+    if (ret < 0) {
+        return ret;
+    }
+
+    return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t
 as_gpio_close(struct as_gpio_device *aDev)
 {
     int ret;
