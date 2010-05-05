@@ -4,4 +4,4 @@ config BR2_PACKAGE_FBTEST
 	  Fbtest is a collection of tests for the frame buffer device. 
 	  All tests are gathered inside the same executable.
 
-	  http://linux-fbdev.cvs.sourceforge.net/viewvc/linux-fbdev/FBdev/utlilities/fbtest/
+	  http://linux-fbdev.cvs.sourceforge.net/viewvc/linux-fbdev/fbtest/
