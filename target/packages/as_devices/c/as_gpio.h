@@ -1,19 +1,19 @@
 /*
 **    The ARMadeus Project
-** 
-**    Copyright (C) 2009  The armadeus systems team 
+**
+**    Copyright (C) 2009-2010  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
+**
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
 ** License as published by the Free Software Foundation; either
 ** version 2.1 of the License, or (at your option) any later version.
-** 
+**
 ** This library is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ** Lesser General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -28,21 +28,30 @@
 extern "C" {
 #endif // __cplusplus
 
-//TODO: manage irq
+#define GPIO_IRQ_MODE_NOINT    (0)
+#define GPIO_IRQ_MODE_RISING   (1)
+#define GPIO_IRQ_MODE_FALLING  (2)
+#define GPIO_IRQ_MODE_BOTH     (3)
+
+#define PORT_SIZE (32)
+
+//TODO: test irq
 
 /**
  * Store gpio parameters
  */
 struct as_gpio_device {
     unsigned char port_letter;
-    int fdev;
+    int fdev;       /* port file */
+    int fpin[PORT_SIZE];       /* pin file for blocking read */
+    int irq_mode[PORT_SIZE];
 };
 
 /** @brief Initialize port access
  *
  * @param aPortChar character port in UPPER case
  *
- * @return error if negative value 
+ * @return error if negative value
  */
 struct as_gpio_device *as_gpio_open(char aPortChar);
 
@@ -52,19 +61,19 @@ struct as_gpio_device *as_gpio_open(char aPortChar);
  * @param aPinNum pin number
  * @param aDirection direction 0:input 1:output
  *
- * @return error if negative value 
+ * @return error if negative value
  */
 int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev,
                                   int aPinNum,
                                   int aDirection);
 
-/** @brief Set pin value 
+/** @brief Set pin value
  *
  * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
  * @param aValue value of pin (1 or 0)
  *
- * @return error if negative 
+ * @return error if negative
  */
 int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
                               int aPinNum,
@@ -80,13 +89,66 @@ int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
 int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
                               int aPinNum);
 
+/** @brief Get pin value, blocking until interrupt occur
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ *
+ * @return pin value if positive or null, error if negative
+ */
+int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
+                                      int aPinNum);
+
+/** @brief Get pin pull-up value
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ *
+ * @return pin pull up value if positive or null, error if negative
+ */
+int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
+                                 int aPinNum);
+
+/** @brief Set pin pull-up value
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ * @param aValue value of pin (1 or 0)
+ *
+ * @return error if negative
+ */
+int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
+                                 int aPinNum,
+                                 int aValue);
+
+/** @brief Set pin irq mode
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ * @param aMode irq mode
+ *
+ * @return error if negative
+ */
+int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
+                             int aPinNum,
+                             int aMode);
+
+/** @brief Get pin irq mode value
+ *
+ * @param aDev as_gpio_device pointer structure
+ * @param aPinNum pin number
+ *
+ * @return pin mode value if positive or null, error if negative
+ */
+int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
+                             int aPinNum);
+
 /** @brief Close port access
  *
  * @param aDev as_gpio_device pointer structure
  *
  * @return pin value if positive or null, error if negative
  */
-
 int32_t as_gpio_close(struct as_gpio_device *aDev);
 
 #ifdef __cplusplus

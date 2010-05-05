@@ -27,6 +27,11 @@ static PyMethodDef AsGpio_wrap_methods[] = {
     {"setPinDirection", setPinDirection, METH_VARARGS, "Set pin direction"},
     {"setPinValue", setPinValue, METH_VARARGS, "Set pin value"},
     {"getPinValue", getPinValue, METH_VARARGS, "Get pin value"},
+    {"blockingGetPinValue", blockingGetPinValue, METH_VARARGS, "Blocking read pin value"},
+    {"setPullupValue", setPullupValue, METH_VARARGS, "Set pull up value"},
+    {"getPullupValue", getPullupValue, METH_VARARGS, "Get pull up value"},
+    {"getIrqMode", getIrqMode, METH_VARARGS, "Get IRQ Mode"},
+    {"setIrqMode", setIrqMode, METH_VARARGS, "Set IRQ Mode"},
     {"gpio_close", gpio_close, METH_VARARGS, "Close gpio"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
@@ -228,6 +233,66 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
 
     free(dev);
     return Py_BuildValue("i", ret);
+}
+
+/** @brief TODO 
+ *
+ * @param TODO 
+ * @param TODO 
+ *
+ * @return TODO 
+ */
+static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
+{
+   /* TODO */
+}
+
+/** @brief TODO 
+ *
+ * @param TODO 
+ * @param TODO 
+ *
+ * @return TODO 
+ */
+static PyObject * getPullupValue(PyObject *self, PyObject *args)
+{
+   /* TODO */
+}
+
+/** @brief TODO 
+ *
+ * @param TODO 
+ * @param TODO 
+ *
+ * @return TODO 
+ */
+static PyObject * setPullupValue(PyObject *self, PyObject *args)
+{
+   /* TODO */
+}
+
+/** @brief TODO 
+ *
+ * @param TODO 
+ * @param TODO 
+ *
+ * @return TODO 
+ */
+static PyObject * getIrqMode(PyObject *self, PyObject *args)
+{
+   /* TODO */
+}
+
+/** @brief TODO 
+ *
+ * @param TODO 
+ * @param TODO 
+ *
+ * @return TODO 
+ */
+static PyObject * setIrqMode(PyObject *self, PyObject *args)
+{
+   /* TODO */
 }
 
 /** @brief Close port access
