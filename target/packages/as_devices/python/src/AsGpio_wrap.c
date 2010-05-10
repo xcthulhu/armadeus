@@ -244,7 +244,7 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
  */
 static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
 {
-   /* TODO */
+    printf("TODO\n");
 }
 
 /** @brief TODO 
@@ -257,6 +257,7 @@ static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
 static PyObject * getPullupValue(PyObject *self, PyObject *args)
 {
    /* TODO */
+    printf("TODO\n");
 }
 
 /** @brief TODO 
@@ -269,6 +270,7 @@ static PyObject * getPullupValue(PyObject *self, PyObject *args)
 static PyObject * setPullupValue(PyObject *self, PyObject *args)
 {
    /* TODO */
+    printf("TODO\n");
 }
 
 /** @brief TODO 
@@ -281,6 +283,7 @@ static PyObject * setPullupValue(PyObject *self, PyObject *args)
 static PyObject * getIrqMode(PyObject *self, PyObject *args)
 {
    /* TODO */
+    printf("TODO\n");
 }
 
 /** @brief TODO 
@@ -293,6 +296,7 @@ static PyObject * getIrqMode(PyObject *self, PyObject *args)
 static PyObject * setIrqMode(PyObject *self, PyObject *args)
 {
    /* TODO */
+    printf("TODO\n");
 }
 
 /** @brief Close port access
