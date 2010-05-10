@@ -137,8 +137,8 @@ uint32_t as_spi_msg(int aFd,
     msg = aMsg;
     len = aLen;
 
-    msg = msg << 1;/* XXX  Last bit is always read at 0 */
-    len = len + 1; /* XXX */
+    //msg = msg << 1;/* XXX  Last bit is always read at 0 */
+    //len = len + 1; /* XXX */
 
     memset(xfer, 0, sizeof(xfer));
     memset(buf, 0, sizeof(buf));
