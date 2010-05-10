@@ -66,6 +66,7 @@ test_ethernet()
 		echo "--- Test iteration n°$it ---"
 		echo "  Uploading"
 		time tftp -p -l $TEMP_FILE -r `basename $TEMP_FILE` $SERVER_IP 2>/tmp/writetime
+		sleep 3		# For TFTP server on windoze
 		if [ "$?" == 0 ]; then
 			rm $TEMP_FILE
 		else

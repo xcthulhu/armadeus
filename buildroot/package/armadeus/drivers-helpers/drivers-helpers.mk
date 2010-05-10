@@ -1,8 +1,8 @@
-#############################################################
+##################################################################
 #
-# Armadeus Helpers script for loading Linux drivers
+# Helpers scripts for loading/using Armadeus custom Linux drivers
 #
-#############################################################
+##################################################################
 
 ARMADEUS-DRIVERS_SOURCE_DIR:=$(TOPDIR)/../target/linux/modules
 ARMADEUS-DRIVERS-HELPERS_TARGET_DIR:=$(TARGET_DIR)/usr/bin
@@ -11,6 +11,10 @@ ARMADEUS-DRIVERS-HELPERS_TARGET_DIR:=$(TARGET_DIR)/usr/bin
 $(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadgpio.sh: $(ARMADEUS-DRIVERS_SOURCE_DIR)/gpio/loadgpio.sh
 	cp -f $^ $@
 ARMADEUS-DRIVERS_TARGETS+=$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadgpio.sh
+
+$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/gpio_helpers.sh: $(ARMADEUS-DRIVERS_SOURCE_DIR)/gpio/gpio_helpers.sh
+	cp -f $^ $@
+ARMADEUS-DRIVERS_TARGETS+=$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/gpio_helpers.sh
 
 $(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadmax.sh: $(ARMADEUS-DRIVERS_SOURCE_DIR)/max1027/loadmax.sh
 	cp -f $^ $@
