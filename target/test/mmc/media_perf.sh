@@ -133,7 +133,7 @@ if [ "$2" != "" ]; then
 fi
 
 if [ ! -b $MMC_DEVICE ] && [ ! -b $USB_DEVICE ]; then
-	echo -n "Please insert your MMC/SD/microSD/USB key"
+	echo -n "Please insert your storage device: MMC/SD/microSD or USB key"
 	it=0
 	while [ ! -b $MMC_DEVICE ] && [ ! -b $USB_DEVICE ] && [ $it -le 20 ]; do
 		it=$((it+1))
@@ -229,5 +229,6 @@ echo "Integrity test successful !"
 
 rm -rf $TEMP_DIR
 rm $MOUNT_DIR/*.rnd
+umount $MOUNT_DIR
 
 exit 0
