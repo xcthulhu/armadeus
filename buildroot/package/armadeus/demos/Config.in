@@ -42,6 +42,14 @@ config BR2_PACKAGE_ARMADEUS_DEMOS_MUSIC_PLAYER
 	help
 	  SDL based music player.
 
+config BR2_PACKAGE_ARMADEUS_DEMOS_CAPTURE
+	bool "Camera capture"
+	select BR2_PACKAGE_SDL
+	select BR2_PACKAGE_SDL_TTF
+	select BR2_PACKAGE_SDL_MIXER
+	help
+        capture and print camera video stream.
+
 config BR2_PACKAGE_ARMADEUS_DEMOS_OSCILLO
 	bool "Oscilloscope"
 	help
