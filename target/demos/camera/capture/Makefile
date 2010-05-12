@@ -1,15 +1,15 @@
-CFLAGS=-Wall
+ARMADEUS_BASE_DIR=../../../..
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
+
+# Default values for local compiling:
+STAGING_DIR:=$(ARMADEUS_BUILD_DIR)/staging_dir/
+INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/local/bin/
+CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-sstrip
+SDL_DIR:=$(ARMADEUS_SDL_DIR)
+CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags) -g
+
 LDFLAGS= -lSDL -lpthread
-ifeq ($(PREFIX),)
-# Host
-CC=gcc
-CFLAGS+= -O2
-else
-# APF
-CC=${PREFIX}/usr/bin/arm-linux-uclibc-gcc
-CFLAGS+= -Os
-INSTALL_DIR=/tftpboot
-endif
 
 EXEC=capture
 SRC= $(wildcard *.c *.h)
@@ -30,5 +30,6 @@ clean:
 	rm -f $(EXEC)
 
 install: all
-	cp -f $(EXEC) $(INSTALL_DIR)
+	mkdir -p $(INSTALL_DIR)
+	cp $(EXEC) $(INSTALL_DIR)
 
