@@ -22,6 +22,5 @@
 #include "as_ad5258.h"
 #include "as_i2c.h"
 
-static int mI2cAd5258Addr[NUMBER_OF_AD5258];
-
+/* TODO */
 
