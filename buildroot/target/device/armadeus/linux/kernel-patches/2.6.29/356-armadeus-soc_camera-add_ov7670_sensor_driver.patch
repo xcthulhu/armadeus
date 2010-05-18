@@ -6,8 +6,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-04-22 11:05:56.000000000 +0200
-@@ -0,0 +1,1564 @@
++++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-18 15:32:00.000000000 +0200
+@@ -0,0 +1,1571 @@
 +/*
 + * A V4L2 driver for OmniVision OV7670 cameras.
 + *
@@ -516,15 +516,16 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +static int ov7670_initialize(struct i2c_client *client)
 +{
 +	dev_info(&client->dev, "initializing\n");
++
 +	return ov7670_write_array(client, ov7670_default_regs);
 +}
 +
 +static int ov7670_init(struct soc_camera_device *icd)
 +{
-+	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
-+	struct i2c_client *client = ov7670->i2c_client;
++/*	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++	struct i2c_client *client = ov7670->i2c_client; */
 +
-+	return ov7670_initialize(client);
++	return 0; /*ov7670_initialize(client);*/
 +}
 +
 +static int ov7670_release(struct soc_camera_device *icd)
@@ -580,6 +581,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	if (ret < 0)
 +		return ret;
 +#endif
++	ov7670_read(client, REG_MIDH, &v); /* first access after a reset
++						might fail */
 +	ret = ov7670_read(client, REG_MIDH, &v);
 +	if (ret < 0)
 +		return ret;
@@ -603,6 +606,10 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +		return ret;
 +	if (v != 0x73)  /* PID + VER = 0x76 / 0x73 */
 +		return -ENODEV;
++
++	ret = ov7670_initialize(client);
++	if (ret < 0)
++		return ret;
 +
 +	return 0;
 +}
@@ -1574,8 +1581,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +module_exit(ov7670_mod_exit);
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-04-22 11:04:40.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-04-22 11:09:32.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-17 15:25:43.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-17 15:25:46.000000000 +0200
 @@ -796,6 +796,12 @@
  	help
  	  This is a ov772x camera driver
@@ -1591,8 +1598,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-04-22 11:04:45.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-04-22 11:12:21.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-17 15:25:43.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-17 15:25:46.000000000 +0200
 @@ -145,6 +145,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
