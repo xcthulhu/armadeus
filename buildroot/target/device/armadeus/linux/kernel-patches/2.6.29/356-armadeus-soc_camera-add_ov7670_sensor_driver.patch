@@ -6,8 +6,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-18 15:32:00.000000000 +0200
-@@ -0,0 +1,1571 @@
++++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-19 17:54:35.000000000 +0200
+@@ -0,0 +1,1607 @@
 +/*
 + * A V4L2 driver for OmniVision OV7670 cameras.
 + *
@@ -33,7 +33,9 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +#include <media/v4l2-chip-ident.h>
 +#include <linux/i2c.h>
 +#include <media/soc_camera.h>
-+
++#ifdef DEBUG
++#include <linux/proc_fs.h>
++#endif
 +
 +MODULE_AUTHOR("Jonathan Corbet <corbet@lwn.net>, Julien Boibessot <julien.boibessot@armadeus.com>");
 +MODULE_DESCRIPTION("SoC camera driver for OmniVision ov7670 sensors");
@@ -1398,13 +1400,47 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	return 0;
 +}
 +
++static int
++ov7670_proc_read_register( __attribute__ ((unused)) struct file *file,
++				const char *buf, unsigned long count,
++				void *data)
++{
++	int len;
++	char given_param[16];
++	u8 reg_addr;
++	u8 reg_val;
++	struct i2c_client *i2c_client = data;
++
++	if (count <= 0) {
++		printk("Empty string transmitted !\n");
++		return 0;
++	}
++	if (count > 4) {
++		len = 4;
++		printk("Only 4x[0-9] decimal values supported !\n");
++	} else {
++		len = count;
++	}
++
++	if (copy_from_user(given_param, buf, len)) {
++		return -EFAULT;
++	}
++
++	reg_addr = (u8)(simple_strtol(given_param, 0, 16));
++	/*current_reg_addr = reg_addr;*/
++	ov7670_read(i2c_client, reg_addr, &reg_val);
++	printk("Read 0x%02x @ 0x%02x\n", reg_val, reg_addr);
++
++	return len;
++}
++
 +/* Interface active, can use i2c. If it fails, it can indeed mean, that
 + * this wasn't our capture interface, so, we wait for the right one */
 +static int ov7670_video_probe(struct soc_camera_device *icd)
 +{
 +	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
 +#ifdef DEBUG
-+	struct proc_dir_entry *proc_read, *proc_write;
++	struct proc_dir_entry *proc_read/*, *proc_write*/;
 +#endif
 +	struct i2c_client *client = ov7670->i2c_client;
 +	int ret;
@@ -1422,16 +1458,16 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +
 +#ifdef DEBUG
 +	/* create proc files */
-+	proc_read = create_proc_entry( "driver/ovread", S_IWUSR | S_IRGRP | S_IROTH, NULL);
-+	proc_write = create_proc_entry( "driver/ovwrite", S_IWUSR | S_IRGRP | S_IROTH, NULL);
-+	if ((proc_read == NULL) || (proc_write == NULL)) {
++	proc_read = create_proc_entry("driver/ovread", S_IWUSR | S_IRGRP | S_IROTH, NULL);
++	/*proc_write = create_proc_entry("driver/ovwrite", S_IWUSR | S_IRGRP | S_IROTH, NULL);*/
++	if ((proc_read == NULL) /*|| (proc_write == NULL)*/) {
 +		printk(KERN_ERR DRIVER_NAME ": Could not register one /proc file. Terminating\n");
 +		return -ENOMEM;
 +	} else {
 +		proc_read->write_proc = ov7670_proc_read_register;
 +		proc_read->data = client;
-+		proc_write->write_proc = ov7670_proc_write_register;
-+		proc_write->data = client;
++		/*proc_write->write_proc = ov7670_proc_write_register;
++		proc_write->data = client;*/
 +	}
 +#endif
 +
@@ -1536,7 +1572,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +		return -ENODEV;	/* our client isn't attached */
 +#ifdef DEBUG
 +	remove_proc_entry("driver/ovread", NULL);
-+	remove_proc_entry("driver/ovwrite", NULL);
++	/*remove_proc_entry("driver/ovwrite", NULL);*/
 +#endif
 +	soc_camera_device_unregister(&ov7670->icd);
 +	i2c_set_clientdata(client, NULL);
@@ -1581,8 +1617,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +module_exit(ov7670_mod_exit);
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-17 15:25:43.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-17 15:25:46.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-19 17:48:31.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-19 17:48:46.000000000 +0200
 @@ -796,6 +796,12 @@
  	help
  	  This is a ov772x camera driver
@@ -1598,8 +1634,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-17 15:25:43.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-17 15:25:46.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-19 17:48:31.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-19 17:48:46.000000000 +0200
 @@ -145,6 +145,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
