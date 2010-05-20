@@ -50,7 +50,7 @@ test_wifi()
 	ask_user_choice "Which one is your AP ?" $AP_LIST
 	AP="$answer"
 	echo "Choosed: $AP"
-	ask_user "Please enter you WEP key (default=$DEFAULT_WEP_KEY)"
+	ask_user "Please enter your WEP key (default=$DEFAULT_WEP_KEY)"
 	if [ "$response" == "" ]; then
 		WEP_KEY=$DEFAULT_WEP_KEY
 	else
