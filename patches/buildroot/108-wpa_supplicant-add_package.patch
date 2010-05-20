@@ -5,9 +5,9 @@ Not needed for recent BR.
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-05-03 14:23:54.000000000 +0200
-+++ buildroot/package/Config.in	2010-05-03 14:25:24.000000000 +0200
-@@ -236,6 +236,7 @@
+--- buildroot.orig/package/Config.in	2010-05-10 16:43:00.000000000 +0200
++++ buildroot/package/Config.in	2010-05-10 16:43:00.000000000 +0200
+@@ -227,6 +227,7 @@
  source "package/wget/Config.in"
  endif
  source "package/wireless-tools/Config.in"
@@ -18,7 +18,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/wpa_supplicant/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/wpa_supplicant/Config.in	2010-05-03 14:29:34.000000000 +0200
++++ buildroot/package/wpa_supplicant/Config.in	2010-05-10 16:43:00.000000000 +0200
 @@ -0,0 +1,32 @@
 +config BR2_PACKAGE_WPA_SUPPLICANT
 +	bool "wpa_supplicant"
@@ -55,8 +55,8 @@ Index: buildroot/package/wpa_supplicant/Config.in
 Index: buildroot/package/wpa_supplicant/wpa_supplicant.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/wpa_supplicant/wpa_supplicant.mk	2010-05-03 14:33:11.000000000 +0200
-@@ -0,0 +1,80 @@
++++ buildroot/package/wpa_supplicant/wpa_supplicant.mk	2010-05-11 15:02:38.000000000 +0200
+@@ -0,0 +1,84 @@
 +#############################################################
 +#
 +# wpa_supplicant
@@ -81,7 +81,7 @@ Index: buildroot/package/wpa_supplicant/wpa_supplicant.mk
 +	WPA_SUPPLICANT_DEPENDENCIES += openssl
 +endif
 +ifeq ($(BR2_PACKAGE_DBUS),y)
-+	WPA_SUPPLICANT_DEPENDENCIES += host-pkgconfig dbus
++	WPA_SUPPLICANT_DEPENDENCIES += pkgconfig dbus
 +	WPA_SUPPLICANT_MAKE_ENV = \
 +		PKG_CONFIG_SYSROOT_DIR="$(STAGING_DIR)"	\
 +		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig"
@@ -92,6 +92,10 @@ Index: buildroot/package/wpa_supplicant/wpa_supplicant.mk
 +$(WPA_SUPPLICANT_TARGET_CONFIGURE):
 +	cp $(WPA_SUPPLICANT_DIR)/wpa_supplicant/defconfig $(WPA_SUPPLICANT_CONFIG)
 +	echo "CFLAGS += $(TARGET_CFLAGS)" >>$(WPA_SUPPLICANT_CONFIG)
++ifeq ($(BR2_PACKAGE_DBUS),y)
++	echo "CFLAGS += -I$(STAGING_DIR)/usr/include/dbus-1.0/" >>$(WPA_SUPPLICANT_CONFIG)
++	echo "CFLAGS += -I$(STAGING_DIR)/usr/lib/dbus-1.0/include/" >>$(WPA_SUPPLICANT_CONFIG)
++endif
 +	echo "CC = $(TARGET_CC)" >>$(WPA_SUPPLICANT_CONFIG)
 +	$(SED) "s/\/local//" $(WPA_SUPPLICANT_DIR)/wpa_supplicant/Makefile
 +ifneq ($(BR2_PACKAGE_WPA_SUPPLICANT_EAP),y)

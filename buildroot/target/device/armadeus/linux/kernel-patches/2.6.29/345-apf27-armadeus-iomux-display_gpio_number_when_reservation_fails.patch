@@ -4,14 +4,15 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29.6/arch/arm/plat-mxc/iomux-mx1-mx2.c
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/plat-mxc/iomux-mx1-mx2.c	2009-12-17 10:04:43.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/plat-mxc/iomux-mx1-mx2.c	2009-12-17 10:49:56.000000000 +0100
-@@ -136,6 +136,8 @@
+--- linux-2.6.29.6.orig/arch/arm/plat-mxc/iomux-mx1-mx2.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/arch/arm/plat-mxc/iomux-mx1-mx2.c	2010-05-19 10:46:15.000000000 +0200
+@@ -136,6 +136,9 @@
  	return 0;
  
  setup_error:
-+	printk("*** Failed to reserve GPIO %d (port %d pin %d)\n", gpio,
-+			gpio & GPIO_PORT_MASK, gpio & GPIO_PIN_MASK);
++	printk("*** Failed to reserve GPIO %d (port %c pin %d)\n", gpio,
++			0x41 + ((gpio & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT),
++			gpio & GPIO_PIN_MASK);
  	mxc_gpio_release_multiple_pins(pin_list, i);
  	return ret;
  }
