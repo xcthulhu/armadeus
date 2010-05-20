@@ -1,0 +1,15 @@
+Not needed with recent BR.
+
+Index: buildroot/package/lsof/lsof.mk
+===================================================================
+--- buildroot.orig/package/lsof/lsof.mk	2010-05-20 21:11:44.000000000 +0200
++++ buildroot/package/lsof/lsof.mk	2010-05-20 21:12:13.000000000 +0200
+@@ -21,7 +21,7 @@
+ endif
+ 
+ $(DL_DIR)/$(LSOF_SOURCE):
+-	 $(WGET) -P $(DL_DIR) $(LSOF_SITE)/$(LSOF_SOURCE)
++	$(call DOWNLOAD,$(LSOF_SITE),$(LSOF_SOURCE))
+ 
+ lsof-source: $(DL_DIR)/$(LSOF_SOURCE)
+ 
