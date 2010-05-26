@@ -41,56 +41,56 @@ void process_events()
 {
     SDL_Event event;
 
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type)
-        {
-        case SDL_KEYDOWN:
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                letsexit = 1;
+                break;
+
+            case SDL_KEYDOWN:
                 printf("\rKey %3d down (%s)        ",
                         event.key.keysym.sym,
                         SDL_GetKeyName(event.key.keysym.sym));
                 fflush(stdout);
-                switch (event.key.keysym.sym)
-                {
-                case SDLK_ESCAPE:
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
                         letsexit = 1;
                         break;
-                case SDLK_LEFT:
+                    case SDLK_LEFT:
                         xvel = -1;
                         break;
-                case SDLK_RIGHT:
+                    case SDLK_RIGHT:
                         xvel = 1;
                         break;
-                case SDLK_UP:
+                    case SDLK_UP:
                         yvel = -1;
                         break;
-                case SDLK_DOWN:
+                    case SDLK_DOWN:
                         yvel = 1;
                         break;
-                default:
+                    default:
                         break;
                 }
                 break;
 
-        case SDL_KEYUP:
+            case SDL_KEYUP:
                 printf("\rKey %3d up  ", event.key.keysym.sym);
                 fflush(stdout);
-                switch (event.key.keysym.sym)
-                {
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
+                switch (event.key.keysym.sym) {
+                    case SDLK_LEFT:
+                    case SDLK_RIGHT:
                         xvel =0;
                         break;
-                case SDLK_UP:
-                case SDLK_DOWN:
+                    case SDLK_UP:
+                    case SDLK_DOWN:
                         yvel = 0;
                         break;
-                default:
+                    default:
                         break;
                 }
                 break;
 
-        case SDL_MOUSEMOTION:
+            case SDL_MOUSEMOTION:
                 spritepos.x += event.motion.xrel;
                 spritepos.y += event.motion.yrel;
                 printf("\rMouse coords: (%3d, %3d)", event.motion.x,
@@ -98,94 +98,93 @@ void process_events()
                 fflush(stdout);
                 break;
 
-        case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONDOWN:
                 printf("\rMouse button %d down    ", event.button.button);
                 fflush(stdout);
                 break;
 
-        case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONUP:
                 printf("\rMouse button %d up  ", event.button.button);
                 fflush(stdout);
-        break;
+                break;
 
-        case SDL_JOYAXISMOTION:
-            printf("\rJoy %d Axis %d = %d     ",
-                    event.jaxis.which, event.jaxis.axis, event.jaxis.value);
-            fflush(stdout);
-            /* Even axes = verticals, odd = horizontals.
-               jaxis.value are big so divide it by 2^14 */
-            if (event.jaxis.axis % 2)
+            case SDL_JOYAXISMOTION:
+                printf("\rJoy %d Axis %d = %d     ",
+                       event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                fflush(stdout);
+                /* Even axes = verticals, odd = horizontals.
+                   jaxis.value are big so divide it by 2^14 */
+                if (event.jaxis.axis % 2)
                     yvel = event.jaxis.value >> 14;
-            else
+                else
                     xvel = event.jaxis.value >> 14;
-            break;
+                break;
 
-        case SDL_JOYHATMOTION:
-            printf("Joy %d Hat %d pos: ",
-                    event.jhat.which, event.jhat.hat);
-            switch (event.jhat.value)
-            {
-            case SDL_HAT_CENTERED:
-                xvel = 0; yvel = 0;
-                printf("centered\n");
+            case SDL_JOYHATMOTION:
+                printf("Joy %d Hat %d pos: ",
+                        event.jhat.which, event.jhat.hat);
+                switch (event.jhat.value) {
+                    case SDL_HAT_CENTERED:
+                        xvel = 0; yvel = 0;
+                        printf("centered\n");
+                        break;
+                    case SDL_HAT_UP:
+                        xvel = 0; yvel = -1;
+                        printf("up\n");
+                        break;
+                    case SDL_HAT_RIGHT:
+                        xvel = 1; yvel = 0;
+                        printf("right\n");
+                        break;
+                    case SDL_HAT_DOWN:
+                        xvel = 0; yvel = 1;
+                        printf("down\n");
+                        break;
+                    case SDL_HAT_LEFT:
+                        xvel = -1; yvel = 0;
+                        printf("left\n");
+                        break;
+                    case SDL_HAT_RIGHTUP:
+                        xvel = 1; yvel = -1;
+                        printf("right/up\n");
+                        break;
+                    case SDL_HAT_RIGHTDOWN:
+                        xvel = 1; yvel = 1;
+                        printf("right/down\n");
+                        break;
+                    case SDL_HAT_LEFTUP:
+                        xvel = -1; yvel = -1;
+                        printf("left/up\n");
+                        break;
+                    case SDL_HAT_LEFTDOWN:
+                        xvel = -1; yvel = 1;
+                        printf("left/down\n");
+                        break;
+                }
                 break;
-            case SDL_HAT_UP:
-                xvel = 0; yvel = -1;
-                printf("up\n");
-                break;
-            case SDL_HAT_RIGHT:
-                xvel = 1; yvel = 0;
-                printf("right\n");
-                break;
-            case SDL_HAT_DOWN:
-                xvel = 0; yvel = 1;
-                printf("down\n");
-                break;
-            case SDL_HAT_LEFT:
-                xvel = -1; yvel = 0;
-                printf("left\n");
-                break;
-            case SDL_HAT_RIGHTUP:
-                xvel = 1; yvel = -1;
-                printf("right/up\n");
-                break;
-            case SDL_HAT_RIGHTDOWN:
-                xvel = 1; yvel = 1;
-                printf("right/down\n");
-                break;
-            case SDL_HAT_LEFTUP:
-                xvel = -1; yvel = -1;
-                printf("left/up\n");
-                break;
-            case SDL_HAT_LEFTDOWN:
-                xvel = -1; yvel = 1;
-                printf("left/down\n");
-                break;
-            }
-            break;
 
-        case SDL_JOYBALLMOTION:
-            spritepos.x += event.jball.xrel;
-            spritepos.y += event.jball.yrel;
-            printf("Joy %d Trackball %d moved: (%d, %d)\n",
-                    event.jball.which, event.jball.ball,
-                    event.jball.xrel, event.jball.yrel);
-            break;
+            case SDL_JOYBALLMOTION:
+                spritepos.x += event.jball.xrel;
+                spritepos.y += event.jball.yrel;
+                printf("Joy %d Trackball %d moved: (%d, %d)\n",
+                        event.jball.which, event.jball.ball,
+                        event.jball.xrel, event.jball.yrel);
+                break;
 
-        case SDL_JOYBUTTONDOWN:
-            printf("\rJoy %d button %d down     ",
-                    event.jbutton.which, event.jbutton.button);
-            fflush(stdout);
-            break;
+            case SDL_JOYBUTTONDOWN:
+                printf("\rJoy %d button %d down     ",
+                        event.jbutton.which, event.jbutton.button);
+                fflush(stdout);
+                break;
 
-        case SDL_JOYBUTTONUP:
-            printf("\rJoy %d button %d up  ",
-                    event.jbutton.which, event.jbutton.button);
-            fflush(stdout);
-            break;
+            case SDL_JOYBUTTONUP:
+                printf("\rJoy %d button %d up  ",
+                        event.jbutton.which, event.jbutton.button);
+                fflush(stdout);
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
     }
 }
@@ -205,8 +204,7 @@ int main(int argc, char * argv[])
     int nbjoysticks;
     int i;
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
         fprintf(stderr, "Error during SDL init: %s\n",
                 SDL_GetError());
         return 1;
@@ -230,8 +228,7 @@ int main(int argc, char * argv[])
     /* Find available Joysticks */
     nbjoysticks = SDL_NumJoysticks();
     printf("Number of Joysticks found: %d\n", nbjoysticks);
-    for (i = 0; i < nbjoysticks; i++)
-    {
+    for (i = 0; i < nbjoysticks; i++) {
         SDL_Joystick * joy = SDL_JoystickOpen(i);
         printf("--- Joystick %d: %s\n", i, SDL_JoystickName(i));
         printf("    Axes: %d\n", SDL_JoystickNumAxes(joy));
@@ -262,8 +259,7 @@ int main(int argc, char * argv[])
     spritepos.h = 0;
 
     /* Main loop */
-    while (!letsexit)
-    {
+    while (!letsexit) {
         process_events();
 
         /* Update sprite pos */
