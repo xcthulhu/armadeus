@@ -4,7 +4,7 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-03-30 15:55:09.000000000 +0200
++++ linux-2.6.29.6/include/linux/spi/tsc2102.h	2010-05-31 11:02:34.000000000 +0200
 @@ -0,0 +1,306 @@
 +/*
 + * include/linux/spi/tsc2102.h
@@ -315,8 +315,8 @@ Index: linux-2.6.29.6/include/linux/spi/tsc2102.h
 Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-03-30 15:58:55.000000000 +0200
-@@ -0,0 +1,1250 @@
++++ linux-2.6.29.6/drivers/spi/tsc2102.c	2010-05-31 13:50:30.000000000 +0200
+@@ -0,0 +1,1311 @@
 +/*
 + * drivers/spi/tsc2102.c
 + *
@@ -383,6 +383,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +#define TSC2102_RESET			0xbb00
 +#define TSC2102_ADC_PSTCM		(1 << 15)
 +#define TSC2102_ADC_ADST		(1 << 14)
++#define TSC2102_PWRDN			(1 << 13)
 +#define TSC2102_TS_DAV			0x0780
 +#define TSC2102_PS_DAV			0x0078
 +#define TSC2102_T1_DAV			0x0004
@@ -399,6 +400,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +
 +#define SM_BAT_AUX 0
 +#define SM_TEMP1   1
++#define SM_SUSPENDED 2
 +
 +struct tsc210x_spi_req {
 +	struct spi_device *dev;
@@ -434,11 +436,11 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	struct spi_device *spi;
 +
 +	int bat[2], aux[2], temp;
++
 +	struct device *hwmondev;
 +	struct work_struct	work;
 +	unsigned long		todo;
 +#define WORK_CHANGE_MODE	0	/* change mode */
-+
 +};
 +
 +static struct tsc210x_dev tsc;
@@ -547,7 +549,6 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +#define Z2STAT (1<<7)
 +#define AXSTAT (3<<3)
 +#define T1STAT (1<<2)
-+
 +	int status;
 +
 + 	mutex_lock(&tsc.lock_sync);
@@ -679,11 +680,11 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) data;
 +
-+//	if(!test_bit( PENDOWN,&dev->todo)){
++	if (dev->state != SM_SUSPENDED) {
 +		/* request change of SM state */
 +		set_bit(WORK_CHANGE_MODE, &dev->todo);
 +		schedule_work(&dev->work);
-+//	}
++	}
 +}
 +
 +/* TSC has new data for us available.  */
@@ -691,11 +692,13 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) dev_id;
 +
-+	/* restart pen up timer */
-+	mod_timer(&tsc.ts_timer, jiffies +
-+			msecs_to_jiffies(tsc.ts_msecs));
++	if (dev->state != SM_SUSPENDED) {
++		/* restart pen up timer */
++		mod_timer(&tsc.ts_timer, jiffies +
++				msecs_to_jiffies(tsc.ts_msecs));
 +
-+	schedule_work(&dev->work);
++		schedule_work(&dev->work);
++	}
 +
 +	return IRQ_HANDLED;
 +}
@@ -704,8 +707,6 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +{
 +	struct tsc210x_dev *dev = (struct tsc210x_dev *) data;
 +
-+	//printk("pen up\n");
-+	//clear_bit(PENDOWN, &dev->todo);
 +	if (dev->touch_cb)
 +		dev->touch_cb(0);
 +}
@@ -1265,24 +1266,75 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +static int
 +tsc210x_suspend(struct spi_device *spi, pm_message_t state)
 +{
++	int reg;
++	unsigned long timeout;
 +	struct tsc210x_dev *dev = dev_get_drvdata(&spi->dev);
-+
 +	if (!dev)
 +		return 0;
 +
 +	mutex_lock(&dev->lock_sync);
 +
++	dev->state = SM_SUSPENDED;
 +	del_timer(&dev->mode_timer);
 +	del_timer(&dev->ts_timer);
 +	flush_scheduled_work();
 +
++	tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_PINTDAV);
++
 +	if (dev->touch_cb)
 +		dev->touch_cb(0);
 +
-+	/* Abort current conversion and power down the ADC */
-+	tsc210x_write_sync(TSC2102_TS_ADC_CTRL, TSC2102_ADC_ADST);
++	/* shut down audio parts (start with DACs) */
++	/* mute DACs */
++	reg = tsc210x_read_sync(TSC210X_DAC_GAIN_CTRL);
++	tsc210x_write_sync(TSC210X_DAC_GAIN_CTRL, reg | DGC_DALMU | DGC_DARMU);
++	/* speaker power down */
++	reg = tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL);
++	tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, reg | CPC_SP1PWDN | CPC_SP2PWDN);
++	/* wait until soft stepping is complete */
++	timeout = jiffies + HZ;
++	while ((tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL) & (CPC_RDAPWDF | CPC_LDAPWDF)) !=
++			(CPC_RDAPWDF | CPC_LDAPWDF)) {
++		if (time_after(jiffies, timeout)) {
++			dev_err(&spi->dev, "unable to shut down speaker's DACs\n");
++			break;
++		}
++	}
++	/* finally power down DAC */
++	reg = tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL);
++	tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, reg | CPC_DAPWDN);
++
++	/* ADC*/
++	if (tsc.kind == tsc2101) {
++		/* Headset mute */
++		reg = tsc210x_read_sync(TSC2101_HEADSET_AUX_PGA_CTRL);
++		tsc210x_write_sync(TSC2101_HEADSET_AUX_PGA_CTRL, reg | ADMUT_HED);
++		/* Handdset mute */
++		reg = tsc210x_read_sync(TSC2101_HANDSET_PGA_CTRL);
++		tsc210x_write_sync(TSC2101_HANDSET_PGA_CTRL, reg | ADMUT_HND);
++		/* cell mute */
++		reg = tsc210x_read_sync(TSC2101_CELL_BUZZER_PGA_CTRL);
++		tsc210x_write_sync(TSC2101_CELL_BUZZER_PGA_CTRL, reg | CPBGC_MUT_CP |
++								CPBGC_MUT_BU);
++		/* shut down mic bias, sidetone and vgnd */
++		reg = tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL);
++		tsc210x_write_sync(TSC210X_CODEC_POWER_CTRL, reg |
++						CPC_MBIAS_HND | CPC_MBIAS_HED |
++						CPC_ASTPWD | CPC_VGPWDN |
++						CPC_ADPWDN);
++		/* wait until power down is complete */
++		timeout = jiffies + HZ;
++		while ((tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL) & (CPC_ASTPWF|CPC_ADPWDF)) !=
++				(CPC_ASTPWF | CPC_ADPWDF)) {
++			if (time_after(jiffies, timeout)) {
++				dev_err(&spi->dev, "unable to shut down ADC %x\n", tsc210x_read_sync(TSC210X_CODEC_POWER_CTRL));
++				break;
++			}
++		}
++	}
 +
 +	dev->spi->dev.power.power_state = state;
++
 +	mutex_unlock(&dev->lock_sync);
 +
 +	return 0;
@@ -1294,17 +1346,24 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +static int tsc210x_resume(struct spi_device *spi)
 +{
 +	struct tsc210x_dev *dev = dev_get_drvdata(&spi->dev);
-+	int err;
 +
 +	if (!dev)
 +		return 0;
 +
 +	mutex_lock(&dev->lock_sync);
++
 +	dev->spi->dev.power.power_state = PMSG_ON;
-+	err = tsc2102_configure(dev);
++	/* Init mode state machine */
++	dev->state = SM_BAT_AUX;
++	tsc210x_write_sync(TSC2102_TS_STATUS_CTRL, TSC2102_ADC_DAV);
++
 +	mutex_unlock(&dev->lock_sync);
 +
-+	return err;
++	/* Start mode timer */
++	mod_timer(&dev->mode_timer, jiffies +
++			msecs_to_jiffies(dev->mode_msecs));
++
++	return 0;
 +}
 +#else
 +#define tsc210x_suspend	NULL
@@ -1481,6 +1540,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +	del_timer(&tsc.mode_timer);
 +	flush_scheduled_work();
 +	dev_set_drvdata(&spi->dev, NULL);
++	free_irq(spi->irq, &tsc);
 +err_clk:
 +/*	clk_disable(tsc.bclk_ck); TODO add clock mechanism to i.MX ???
 +	clk_put(tsc.bclk_ck);*/
@@ -1521,6 +1581,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +#ifdef CONFIG_APM
 +	apm_get_power_status = 0;
 +#endif
++	free_irq(spi->irq, &tsc);
 +
 +	mutex_unlock(&dev->lock_sync);
 +
