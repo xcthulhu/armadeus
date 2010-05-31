@@ -196,7 +196,6 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
 int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
                                        int aPinNum)
 {
-    /* TODO */
     int ret;
     char value;
 
@@ -308,7 +307,6 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
                              int aMode)
 {
     int ret=0;
-    int i;
     int portval;
     char buffer[BUFF_SIZE];
 
@@ -320,9 +318,15 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
     if (aPinNum >= PORT_SIZE)
         return -1;
 
+    /* close fpin file */
+    if (aDev->fpin[aPinNum] != -1)
+    {
+        close(aDev->fpin[aPinNum]);
+        aDev->fpin[aPinNum] = -1;
+    }
+
     if (aPinNum < PORT_SIZE/2)
     {
-
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_L, &portval);
         if (ret < 0) {
             return ret;
@@ -336,7 +340,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
             return ret;
         }
 
-    } else {
+} else {
 
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
         if (ret < 0) {
@@ -352,15 +356,6 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
         }
     }
 
-
-
-    /* close fpin file */
-    if ((aMode == GPIO_IRQ_MODE_NOINT) && (aDev->fpin[aPinNum] != -1))
-    {
-        close(aDev->fpin[aPinNum]);
-        aDev->fpin[aPinNum] = -1;
-    }
-
     /* open fpin file */
     if ((aMode != GPIO_IRQ_MODE_NOINT) && (aDev->fpin[aPinNum] == -1))
     {
@@ -372,11 +367,10 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
         ret = open(buffer, O_RDONLY);
         if (ret < 0)
             return ret;
-
         aDev->fpin[aPinNum] = ret;
     }
 
-    aDev->irq_mode[i] = aMode;
+    aDev->irq_mode[aPinNum] = aMode;
 
     return 0;
 }
