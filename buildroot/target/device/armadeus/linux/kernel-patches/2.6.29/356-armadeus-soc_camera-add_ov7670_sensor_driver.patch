@@ -6,8 +6,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-31 10:56:41.000000000 +0200
-@@ -0,0 +1,1673 @@
++++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-31 14:23:25.000000000 +0200
+@@ -0,0 +1,1682 @@
 +/*
 + * A V4L2 driver for OmniVision OV7670 cameras.
 + *
@@ -1423,6 +1423,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	return 0;
 +}
 +
++#ifdef DEBUG
 +static int
 +ov7670_proc_read_register( __attribute__ ((unused)) struct file *file,
 +				const char *buf, unsigned long count,
@@ -1456,6 +1457,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +
 +	return len;
 +}
++#endif
 +
 +/* Interface active, can use i2c. If it fails, it can indeed mean, that
 + * this wasn't our capture interface, so, we wait for the right one */
@@ -1469,8 +1471,11 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	struct i2c_client *client = ov7670->i2c_client;
 +	int ret;
 +
-+	if (icl->reset)
++	if (icl->reset) {
 +		ret = icl->reset(&ov7670->i2c_client->dev);
++	} else {
++		ov7670_reset(client); /* soft reset */
++	}
 +
 +	ret = ov7670_detect(client);
 +	if (ret < 0) {
@@ -1524,7 +1529,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
 +	int ret;
 +
-+	printk("--- %s %d\n", __func__, state);
++	printk("--- %s %d\n", __func__, state.event);
 +
 +	/* supposing camera link power() is a powerdown: */
 +	if (icl->power) {
@@ -1535,6 +1540,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +			return ret;
 +		}
 +	}
++
++	return 0;
 +}
 +
 +static int ov7670_resume(struct soc_camera_device *icd)
@@ -1553,6 +1560,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +			return ret;
 +		}
 +	}
++
++	return 0;
 +}
 +
 +static struct soc_camera_ops ov7670_ops = {
@@ -1683,8 +1692,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +module_exit(ov7670_mod_exit);
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-31 08:41:51.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-31 08:41:55.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-31 13:51:22.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-31 13:51:23.000000000 +0200
 @@ -796,6 +796,12 @@
  	help
  	  This is a ov772x camera driver
@@ -1700,8 +1709,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-31 08:41:51.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-31 08:41:55.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-31 13:51:22.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-31 13:51:23.000000000 +0200
 @@ -145,6 +145,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
