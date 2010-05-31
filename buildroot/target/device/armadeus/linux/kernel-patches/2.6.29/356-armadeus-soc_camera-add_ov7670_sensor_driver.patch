@@ -6,8 +6,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-19 17:54:35.000000000 +0200
-@@ -0,0 +1,1607 @@
++++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-31 10:56:41.000000000 +0200
+@@ -0,0 +1,1673 @@
 +/*
 + * A V4L2 driver for OmniVision OV7670 cameras.
 + *
@@ -524,17 +524,41 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +
 +static int ov7670_init(struct soc_camera_device *icd)
 +{
-+/*	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
-+	struct i2c_client *client = ov7670->i2c_client; */
++	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++/*	struct i2c_client *client = ov7670->i2c_client; */
++	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
++	int ret;
++
++	printk(KERN_DEBUG "- %s\n", __func__);
++
++	if (icl->power) {
++		ret = icl->power(&ov7670->i2c_client->dev, 1);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to power-on the camera.\n");
++			return ret;
++		}
++	} else {
++		/* soft powerup ? */
++	}
 +
 +	return 0; /*ov7670_initialize(client);*/
 +}
 +
 +static int ov7670_release(struct soc_camera_device *icd)
 +{
-+	/* Disable the chip ?? */
-+	/* TBDJB */
++	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
++
 +	printk(KERN_DEBUG "- %s\n", __func__);
++
++	/* powerdown the chip */
++	if (icl->power) {
++		icl->power(&ov7670->i2c_client->dev, 0);
++	} else {
++		/* soft powerdown ? */
++	}
++
 +	return 0;
 +}
 +
@@ -578,13 +602,12 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	unsigned char v;
 +	int ret;
 +
++	printk(KERN_DEBUG "- %s\n", __func__);
 +#if 0
 +	ret = ov7670_initialize(client);
 +	if (ret < 0)
 +		return ret;
 +#endif
-+	ov7670_read(client, REG_MIDH, &v); /* first access after a reset
-+						might fail */
 +	ret = ov7670_read(client, REG_MIDH, &v);
 +	if (ret < 0)
 +		return ret;
@@ -1439,11 +1462,15 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +static int ov7670_video_probe(struct soc_camera_device *icd)
 +{
 +	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
 +#ifdef DEBUG
 +	struct proc_dir_entry *proc_read/*, *proc_write*/;
 +#endif
 +	struct i2c_client *client = ov7670->i2c_client;
 +	int ret;
++
++	if (icl->reset)
++		ret = icl->reset(&ov7670->i2c_client->dev);
 +
 +	ret = ov7670_detect(client);
 +	if (ret < 0) {
@@ -1491,10 +1518,49 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	soc_camera_video_stop(icd);
 +}
 +
++static int ov7670_suspend(struct soc_camera_device *icd, pm_message_t state)
++{
++	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
++	int ret;
++
++	printk("--- %s %d\n", __func__, state);
++
++	/* supposing camera link power() is a powerdown: */
++	if (icl->power) {
++		ret = icl->power(&ov7670->i2c_client->dev, 0);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to powerdown the camera.\n");
++			return ret;
++		}
++	}
++}
++
++static int ov7670_resume(struct soc_camera_device *icd)
++{
++	struct ov7670 *ov7670 = container_of(icd, struct ov7670, icd);
++	struct soc_camera_link *icl = ov7670->i2c_client->dev.platform_data;
++	int ret;
++
++	printk("--- %s\n", __func__);
++
++	if (icl->power) {
++		ret = icl->power(&ov7670->i2c_client->dev, 1);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to resume the camera.\n");
++			return ret;
++		}
++	}
++}
++
 +static struct soc_camera_ops ov7670_ops = {
 +	.owner			= THIS_MODULE,
 +	.probe			= ov7670_video_probe,
 +	.remove			= ov7670_video_remove,
++	.suspend		= ov7670_suspend,
++	.resume			= ov7670_resume,
 +	.init			= ov7670_init,
 +	.release		= ov7670_release,
 +	.start_capture		= ov7670_start_capture,
@@ -1617,8 +1683,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +module_exit(ov7670_mod_exit);
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-19 17:48:31.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-19 17:48:46.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-31 08:41:51.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-31 08:41:55.000000000 +0200
 @@ -796,6 +796,12 @@
  	help
  	  This is a ov772x camera driver
@@ -1634,8 +1700,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-19 17:48:31.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-19 17:48:46.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-31 08:41:51.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-31 08:41:55.000000000 +0200
 @@ -145,6 +145,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
