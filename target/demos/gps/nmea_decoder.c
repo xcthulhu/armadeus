@@ -9,12 +9,12 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <fcntl.h> // O_RDWR
+#include <fcntl.h> /* O_RDWR */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h> // sigaction
-#include <ctype.h> // isprint
+#include <signal.h> /* sigaction */
+#include <ctype.h> /* isprint */
 
 
 struct termios oldtio, newtio;
@@ -33,18 +33,18 @@ struct GPSData
 #define HEADER_SIZE 6
 int serialfd;
 
-int openSerialPort( char* aDeviceName, int aSpeed )
+int openSerialPort(char* aDeviceName, int aSpeed)
 {
     int fd;
 
-    fd = open( aDeviceName, O_RDWR | O_NOCTTY );
+    fd = open(aDeviceName, O_RDWR | O_NOCTTY);
     if (fd <0) {
         perror(aDeviceName);
-        return(-1);
+        return -1;
     }
 
-    tcgetattr( fd, &oldtio ); /* save current serial port settings */
-    memset( &newtio, sizeof(newtio), 0 ); /* clear struct for new port settings */
+    tcgetattr(fd, &oldtio); /* save current serial port settings */
+    memset(&newtio, sizeof(newtio), 0); /* clear struct for new port settings */
 // newtio.c_cflag = BAUDRATE | CRTSCTS | CS8 | CLOCAL | CREAD; 
     newtio.c_cflag = aSpeed | CS8 | CLOCAL | CREAD;  /* _no_ CRTSCTS */
     newtio.c_iflag = IGNPAR; //  | ICRNL |IXON; 
@@ -68,17 +68,18 @@ int openSerialPort( char* aDeviceName, int aSpeed )
 // newtio.c_cc[VLNEXT]   = 0;     /* Ctrl-v */
 // newtio.c_cc[VEOL2]    = 0;     /* '\0' */
     tcflush(fd, TCIFLUSH);
-    tcsetattr( fd, TCSANOW, &newtio );
+    tcsetattr(fd, TCSANOW, &newtio);
 
     printf("RS232 Initialization done\n");
-    return(fd);
+
+    return fd;
 }
 
 void closeSerialPort(int fd)
 {
-    if (fd ) {
+    if (fd) {
         printf("Restoring old Termio config\n");
-        tcsetattr( fd, TCSANOW, &oldtio ); /* restore the old port settings */
+        tcsetattr(fd, TCSANOW, &oldtio); /* restore the old port settings */
         close(fd);
     }
 }
@@ -89,30 +90,31 @@ int waitForData(int fd)
     struct timeval tv;
     int retval;
 
-    FD_ZERO( &fds );
-    FD_SET( fd, &fds );
-    // Set timeout to 2 secs
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    /* Set timeout to 2 secs */
     tv.tv_sec = 2;
     tv.tv_usec = 0;
 
-    retval = select( fd+1, &fds, NULL, NULL, &tv );
+    retval = select(fd+1, &fds, NULL, NULL, &tv);
 //    retval = FD_ISSET(fd,&rfds);
 
-    return(retval);
+    return retval;
 }
 
-unsigned int getParameterFromIndex( unsigned int index, char* aFrame, char* aBuffer, unsigned int buffersize)
+unsigned int getParameterFromIndex(unsigned int index, char* aFrame, char* aBuffer, unsigned int buffersize)
 {
     char c = 'P';
     int i = 0;
 
-    while( (c != ',') && ( i < buffersize) ) {
+    while ((c != ',') && (i < buffersize)) {
         c = aFrame[index++];
         aBuffer[i++] = c;
     }
 
     aBuffer[i-1] = '\0';
-    return(index);
+
+    return index;
 }
 
 struct GPSData gpsdata;
@@ -124,47 +126,47 @@ int readAndParseFrame(int fd)
     char frame[128];
     char c;
 
-    // Find start of Frame
-    while( c != '$' ) {
+    /* Find start of Frame */
+    while (c != '$') {
         ret = read(fd, &c, 1);
         if (ret < 0) {
             perror("header");
-            return(ret);
+            return ret;
         }
     }
 
-    // read Header
-    while( count < HEADER_SIZE ) {
-        ret = read( fd, buf+count, HEADER_SIZE-count);
+    /* read Header */
+    while (count < HEADER_SIZE) {
+        ret = read(fd, buf+count, HEADER_SIZE-count);
         if (ret < 0) {
             perror("header");
-            return(ret);
+            return ret;
         }
         else
             count += ret;
     }
 
     count = 0;
-    while( c != 0x0a ) {
+    while (c != 0x0a) {
         ret = read(fd, &c, 1);
         if (ret < 0) {
             perror("header");
-            return(ret);
+            return ret;
         }
         frame[count++] = c;
     }
-    ret = read(fd, &c, 1); // read last trailing 0x0a
+    ret = read(fd, &c, 1); /* read last trailing 0x0a */
     printf( "  [%s]", buf );
 
-    if( (ret=strncmp(buf, "GPGGA,", HEADER_SIZE)) == 0) {
-        memcpy( date, frame, DATE_SIZE );
-        next_index = getParameterFromIndex( 0, frame, gpsdata.time, sizeof(gpsdata.time) );
-        next_index = getParameterFromIndex( next_index, frame, gpsdata.latitude, sizeof(gpsdata.latitude) );
+    if ((ret=strncmp(buf, "GPGGA,", HEADER_SIZE)) == 0) {
+        memcpy(date, frame, DATE_SIZE);
+        next_index = getParameterFromIndex(0, frame, gpsdata.time, sizeof(gpsdata.time));
+        next_index = getParameterFromIndex(next_index, frame, gpsdata.latitude, sizeof(gpsdata.latitude));
     } else {
-        ; // don't care
+        ; /* don't care */
     }
 
-    return(0);
+    return 0;
 }
 
 void showValues( void )
@@ -180,19 +182,20 @@ void showUsage(void)
     printf(" default device: /dev/ttySMX1\n");
     printf(" default speed: 4800\n");
     printf("\n");
+
     exit(1);
 }
 
 void signal_handler(int param)
 {
     printf("Signal caught %i\n", param);
+
     exit(0);
 }
 
 void cleanup(void)
 {
-    //printf("Cleaning up...\n");
-    closeSerialPort( serialfd );
+    closeSerialPort(serialfd);
 }
 
 
@@ -209,7 +212,7 @@ int main(int argc, char **argv)
     atexit(cleanup);
 
     opterr = 0;
-    while ((c = getopt (argc, argv, "hd:s:")) != -1)
+    while ((c = getopt(argc, argv, "hd:s:")) != -1)
     {
         switch (c)
         {
@@ -227,11 +230,11 @@ int main(int argc, char **argv)
 
             case '?':
                 if( (optopt == 's') || (optopt == 'd') )
-                    fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-                else if (isprint (optopt))
-                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                else if (isprint(optopt))
+                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
                 else
-                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
                 showUsage();
                 //exit(1);
 
@@ -245,7 +248,7 @@ int main(int argc, char **argv)
     for (index = optind; index < argc; index++)
         printf ("Non-option argument %s\n", argv[index]);
 
-    if( str_speed && strcmp( str_speed, "9600") == 0 ) {
+    if (str_speed && strcmp(str_speed, "9600") == 0) {
         speed = B9600;
     }
     else {
@@ -253,29 +256,29 @@ int main(int argc, char **argv)
         printf("Using default speed: 4800 bauds\n");
     }
 
-    // Install signal handler (CTRL+C)
+    /* Install signal handler (CTRL+C) */
     action.sa_handler = signal_handler;
-    sigemptyset( &action.sa_mask );
-    sigaddset( &action.sa_mask, SIGTERM );
+    sigemptyset(&action.sa_mask);
+    sigaddset(&action.sa_mask, SIGTERM);
     action.sa_flags = 0;
     action.sa_restorer = NULL;
-    sigaction( SIGINT, &action, /*struct sigaction *oact*/ 0 );
+    sigaction(SIGINT, &action, /*struct sigaction *oact*/ 0);
 
-    // Open serial device
-    if( device )
+    /* Open serial device */
+    if (device) {
         serialfd = openSerialPort(device, B4800);
-    else {
+    } else {
         device = "/dev/ttySMX1";
         printf("Using default device: %s\n", device);
         serialfd = openSerialPort(device, B4800);
     }
-    if ( serialfd < 0 )
+    if (serialfd < 0)
         exit(1);
 
-    // Main loop
-    while(1) {
-        if( waitForData( serialfd ) ) {
-            readAndParseFrame( serialfd );
+    /* Main loop */
+    while (1) {
+        if (waitForData(serialfd)) {
+            readAndParseFrame(serialfd);
             showValues();
         } else {
             printf("No data\n");

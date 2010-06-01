@@ -1,0 +1,17 @@
+Strange but CSI's PIXCLK sampling on rising edge was not handled.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.6/drivers/media/video/mx27_camera.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/media/video/mx27_camera.c	2010-05-27 11:07:37.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/mx27_camera.c	2010-05-27 15:09:34.000000000 +0200
+@@ -607,6 +607,8 @@
+ 
+ 	if (common_flags & SOCAM_PCLK_SAMPLE_FALLING)
+ 		csicr1 |= CSICR1_INV_PCLK;
++	if (common_flags & SOCAM_PCLK_SAMPLE_RISING)
++		csicr1 |= CSICR1_REDGE;
+ 	if (common_flags & SOCAM_HSYNC_ACTIVE_HIGH)
+ 		csicr1 |= CSICR1_HSYNC_POL;
+ 	if (pcdev->platform_flags & MX27_CAMERA_SWAP16)

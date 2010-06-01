@@ -899,7 +899,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	fprintf(stderr, "SDL OK\n");
-	screen = SDL_SetVideoMode(width, height, 16, SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_HWSURFACE);
+	screen = SDL_SetVideoMode(width, height, 16, SDL_ANYFORMAT /*| SDL_DOUBLEBUF | SDL_HWSURFACE*/);
 	if (screen) {
 		printf("Video mode: %dx%dx%d\n", screen->w, screen->h,
 			screen->format->BitsPerPixel);
