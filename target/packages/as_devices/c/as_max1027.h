@@ -21,12 +21,6 @@
 #ifndef AS_MAX1027_H_
 #define AS_MAX1027_H_
 
-/** @file
- * @brief Read/Write analog value with max1027 chip
- *
- *
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,15 +57,6 @@ struct as_max1027_device {
 struct as_max1027_device *as_max1027_open(int aSpiNum,
                                           AS_max1027_mode aMode);
 
-/** @brief Close max1027
- *
- * @param aDev structure device pointer
- *
- * @return negative value on error
- */
-int32_t as_max1027_close(struct as_max1027_device *aDev);
-
-
 /** @brief set averaging measurement
  *
  * @param as_max1027_device structure pointer.
@@ -105,8 +90,17 @@ int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
                                        int aChannelNum,
                                        int *aValue);
 
+/** @brief Close max1027
+ *
+ * @param aDev structure device pointer
+ *
+ * @return negative value on error
+ */
+int32_t as_max1027_close(struct as_max1027_device *aDev);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* AS_MAX1027_H_ */
+

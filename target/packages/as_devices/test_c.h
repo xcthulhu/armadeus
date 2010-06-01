@@ -581,16 +581,16 @@ void test_gpio()
                         pullup = ret;
                         pressEnterToContinue();
                         break;
-            case '8' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");   
+            case '8' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
                         printf("2)  GPIO_IRQ_MODE_RISING \n");
                         printf("3)  GPIO_IRQ_MODE_FALLING\n");
                         printf("4)  GPIO_IRQ_MODE_BOTH   \n");
                         printf("Give value : ");
                         scanf("%d", &value);
-                        if (value == 1)value = GPIO_IRQ_MODE_NOINT  ; 
-                        if (value == 2)value = GPIO_IRQ_MODE_RISING ; 
-                        if (value == 3)value = GPIO_IRQ_MODE_FALLING; 
-                        if (value == 4)value = GPIO_IRQ_MODE_BOTH   ; 
+                        if (value == 1)value = GPIO_IRQ_MODE_NOINT  ;
+                        if (value == 2)value = GPIO_IRQ_MODE_RISING ;
+                        if (value == 3)value = GPIO_IRQ_MODE_FALLING;
+                        if (value == 4)value = GPIO_IRQ_MODE_BOTH   ;
                         ret = as_gpio_set_irq_mode(gpio_dev,
                                                    pin_num,
                                                    value);
@@ -611,10 +611,10 @@ void test_gpio()
                             pressEnterToContinue();
                             break;
                         }
-                        if (ret==GPIO_IRQ_MODE_NOINT  )printf("GPIO_IRQ_MODE_NOINT  \n"); 
-                        if (ret==GPIO_IRQ_MODE_RISING )printf("GPIO_IRQ_MODE_RISING \n"); 
-                        if (ret==GPIO_IRQ_MODE_FALLING)printf("GPIO_IRQ_MODE_FALLING\n"); 
-                        if (ret==GPIO_IRQ_MODE_BOTH   )printf("GPIO_IRQ_MODE_BOTH   \n"); 
+                        if (ret==GPIO_IRQ_MODE_NOINT  )printf("GPIO_IRQ_MODE_NOINT  \n");
+                        if (ret==GPIO_IRQ_MODE_RISING )printf("GPIO_IRQ_MODE_RISING \n");
+                        if (ret==GPIO_IRQ_MODE_FALLING)printf("GPIO_IRQ_MODE_FALLING\n");
+                        if (ret==GPIO_IRQ_MODE_BOTH   )printf("GPIO_IRQ_MODE_BOTH   \n");
                         pressEnterToContinue();
                         break;
             case 'a' :  printf("Blocking read \n");
@@ -715,7 +715,7 @@ void test_max1027()
                         }
                         pressEnterToContinue();
                         break;
-            case '2' :  printf("Give channel you want to read (0-8): ");
+            case '2' :  printf("Give channel you want to read (0-6): ");
                         scanf("%d",&value);
                         if ((value >= NUM_OF_CHANNEL) || (value < 0)){
                             printf("Channel num wrong\n");
@@ -735,7 +735,15 @@ void test_max1027()
                         averaging = value;
                         pressEnterToContinue();
                         break;
-            case '4' :  printf("TODO");
+            case '4' :  ret = as_max1027_get_value_milliVolt(max1027_dev,
+                                                             channel,&value);
+                        if (ret < 0) {
+                            printf("Error reading temperature\n");
+                            pressEnterToContinue();
+                            break;
+                        }
+                        printf("Channel %d value read : %d\n", channel, value);
+                        pressEnterToContinue();
                         break;
             case '5' :  ret = as_max1027_read_temperature_mC(max1027_dev, &temp_read);
                         if (ret < 0) {
