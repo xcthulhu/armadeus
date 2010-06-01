@@ -1,10 +1,16 @@
-config BR2_PACKAGE_BLUEZ
+config BR2_PACKAGE_BLUEZ_LIBS
 	bool "bluez"
-	default n
-	depends on BR2_PACKAGE_DBUS
 	select BR2_PACKAGE_PKGCONFIG
 	help
-	  Install the bluez package
+	  Install the bluez library
 
-comment "bluez not available (need dbus)"
+config BR2_PACKAGE_BLUEZ_UTILS
+	bool "bluez-utils"
+	default n
+	depends on BR2_PACKAGE_DBUS
+	select BR2_PACKAGE_BLUEZ_LIBS
+	help
+	  Install the bluez utilities
+
+comment "bluez-utils not available (need dbus)"
         depends on !BR2_PACKAGE_DBUS

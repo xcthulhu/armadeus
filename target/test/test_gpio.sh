@@ -42,8 +42,7 @@ blink_led_apf9328()
 
 check_button_apf27()
 {
-	setbit /proc/driver/gpio/portFmode 13 1
-	setbit /proc/driver/gpio/portFdir 13 0
+	gpio_mode PF13 0	# input
 	setbit /proc/driver/gpio/portFirq 13 1
 	echo "Press 2 times on S1 button"
 	/usr/bin/testsuite/testbutton /dev/gpio/PF13 3
@@ -78,6 +77,7 @@ test_led_gpio()
 
 	execute_for_target check_button_apf9328 check_button_apf27
 
+	rmmod gpio
 	echo_test_ok
 	exit 0
 }
