@@ -26,6 +26,7 @@ OBJ+= as_gpio.o
 OBJ+= as_93lcxx.o
 OBJ+= as_spi.o
 OBJ+= as_max1027.o
+OBJ+= as_max5821.o
 
 LIBRARY=as_devices
 LIB_VERS=1

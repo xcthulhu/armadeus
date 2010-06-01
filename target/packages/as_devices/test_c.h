@@ -28,6 +28,7 @@
 #include "as_i2c.h"
 #include "as_gpio.h"
 #include "as_max1027.h"
+#include "as_max5821.h"
 
 #define PWM_NUM 0
 
@@ -762,6 +763,112 @@ void test_max1027()
     ret = as_max1027_close(max1027_dev);
     if (ret < 0) {
         printf("Error on closing max1027\n");
+        pressEnterToContinue();
+    }
+}
+
+void test_max5821()
+{
+    char buffer[50];
+    int ret;
+    int value;
+    struct as_max5821_device *max5821_dev;
+    int channelA=0;
+    int channelB=0;
+
+
+    max5821_dev = as_max5821_open(0, 0x38);
+    if (max5821_dev == NULL)
+    {
+        printf("Error, can't open max5821.\n");
+        pressEnterToContinue();
+        return ;
+    }
+    pressEnterToContinue();
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("   Testing max5821       *\n");
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) select power mode for channel A\n");
+        printf(" 2) select power mode for channel B\n");
+        printf(" 3) select channel A value %d\n", channelA);
+        printf(" 4) select channel B value %d\n", channelB);
+        printf(" 5) select both channel values\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Choose your mode:\n");
+                        printf(" 0) MAX5821_POWER_UP        \n");
+                        printf(" 1) MAX5821_POWER_DOWN_MODE0\n");
+                        printf(" 2) MAX5821_POWER_DOWN_MODE1\n");
+                        printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_power(max5821_dev, 'a', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select power mode\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Choose your mode:\n");
+                        printf(" 0) MAX5821_POWER_UP        \n");
+                        printf(" 1) MAX5821_POWER_DOWN_MODE0\n");
+                        printf(" 2) MAX5821_POWER_DOWN_MODE1\n");
+                        printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_power(max5821_dev, 'b', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select power mode\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '3' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_one_value(max5821_dev, 'a', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '4' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_one_value(max5821_dev, 'b', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '5' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_both_value(max5821_dev, value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            default : break;
+        }
+    }
+
+    ret = as_max5821_close(max5821_dev);
+    if (ret < 0) {
+        printf("Error on closing max5821_dev\n");
         pressEnterToContinue();
     }
 }
