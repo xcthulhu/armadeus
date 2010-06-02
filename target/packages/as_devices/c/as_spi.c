@@ -40,6 +40,8 @@
 #   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
 #endif
 
+/*--------------------------------------------------------------*/
+
 int as_spi_open(const unsigned char *aSpidev_name)
 {
     int fd;
@@ -53,33 +55,43 @@ int as_spi_open(const unsigned char *aSpidev_name)
     return fd;
 }
 
-int as_spi_set_mode(int aFd, uint8_t aMode)
-{
-    /* TODO */
-    printf("TODO\n");
-    return -1;
-}
+/*--------------------------------------------------------------*/
 
 int as_spi_set_lsb(int aFd, uint8_t aLsb)
 {
-    /* TODO */
-    printf("TODO\n");
-    return -1;
+    if (ioctl(aFd, SPI_IOC_WR_LSB_FIRST, &aLsb) < 0) {
+            ERROR("SPI set lsb");
+            return -1;
+    }
+    return 0;
 }
 
-int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
+/*--------------------------------------------------------------*/
+
+int as_spi_get_lsb(int aFd)
 {
-    /* TODO */
-    printf("TODO\n");
-    return -1;
+    uint8_t lsb;
+
+    if (ioctl(aFd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
+            ERROR("SPI get lsb");
+            return -1;
+    }
+
+    return lsb;
 }
 
-int as_spi_set_speed(int aFd)
+/*--------------------------------------------------------------*/
+
+int as_spi_set_mode(int aFd, uint8_t aMode)
 {
-    /* TODO */
-    printf("TODO\n");
-    return -1;
+    if (ioctl(aFd, SPI_IOC_WR_MODE, &aMode) < 0) {
+            ERROR("SPI wr_mode");
+            return -1;
+    }
+    return 0;
 }
+
+/*--------------------------------------------------------------*/
 
 int as_spi_get_mode(int aFd)
 {
@@ -93,17 +105,33 @@ int as_spi_get_mode(int aFd)
     return mode;
 }
 
-int as_spi_get_lsb(int aFd)
-{
-    uint8_t lsb;
+/*--------------------------------------------------------------*/
 
-    if (ioctl(aFd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
-            ERROR("SPI rd_lsb_fist");
+int as_spi_set_speed(int aFd, uint32_t aSpeed)
+{
+    if (ioctl(aFd, SPI_IOC_WR_MAX_SPEED_HZ, &aSpeed) < 0) {
+            ERROR("SPI set speed");
             return -1;
     }
 
-    return lsb;
+    return 0;
 }
+
+/*--------------------------------------------------------------*/
+
+uint32_t as_spi_get_speed(int aFd)
+{
+    uint8_t speed;
+
+    if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
+            ERROR("SPI max_speed_hz");
+            return -1;
+    }
+
+    return speed;
+}
+
+/*--------------------------------------------------------------*/
 
 int as_spi_get_bits_per_word(int aFd)
 {
@@ -117,17 +145,18 @@ int as_spi_get_bits_per_word(int aFd)
     return bits;
 }
 
-int as_spi_get_speed(int aFd)
-{
-    uint8_t speed;
+/*--------------------------------------------------------------*/
 
-    if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
-            ERROR("SPI max_speed_hz");
+int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
+{
+    if (ioctl(aFd, SPI_IOC_WR_BITS_PER_WORD, &aBits) < 0) {
+            ERROR("SPI set bits_per_word");
             return -1;
     }
-
-    return speed;
+    return 0;
 }
+
+/*--------------------------------------------------------------*/
 
 uint32_t as_spi_msg(int aFd, 
                     uint32_t aMsg, 
@@ -181,6 +210,8 @@ uint32_t as_spi_msg(int aFd,
     }
     return msg; 
 }
+
+/*--------------------------------------------------------------*/
 
 void as_spi_close(int aFd)
 {
