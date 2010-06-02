@@ -3,12 +3,12 @@
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -46,7 +46,7 @@ extern "C" {
 
 /** @brief Open an I2C bus.
  *
- * \e i2c_id is the ID of the I2C bus to open, it should strictly lower than
+ * \e i2c_id is the ID of the I2C bus to open, it should be strictly lower than
  * \e AS_I2C_DEV_COUNT.
  *
  * @return the file descriptor of the opened device, -1 on error.
@@ -67,7 +67,6 @@ int as_i2c_close(int fd);
  */
 int as_i2c_set_slave(int fd, uint8_t addr);
 
-
 /** @brief Read several bytes.
  *
  * @return 0 on success, -1 on error.
@@ -79,7 +78,6 @@ int as_i2c_read(int fd, uint8_t addr, uint8_t *data, size_t n);
  * @return 0 on success, -1 on error.
  */
 int as_i2c_write(int fd, uint8_t addr, const uint8_t *data, size_t n);
-
 
 /** @brief Read at a given register address.
  *
@@ -96,7 +94,6 @@ int as_i2c_read_reg(int fd, uint8_t addr, uint8_t reg, uint8_t *data, size_t n);
  * @return 0 on success, -1 on error.
  */
 int as_i2c_write_reg(int fd, uint8_t addr, uint8_t reg, const uint8_t *data, size_t n);
-
 
 /** @brief Read a given register byte.
  *
@@ -118,7 +115,6 @@ int as_i2c_read_reg_byte(int fd, uint8_t addr, uint8_t reg);
  * @note Equivalent to \e as_i2c_write() with a 2-byte buffer.
  */
 int as_i2c_write_reg_byte(int fd, uint8_t addr, uint8_t reg, uint8_t val);
-
 
 #ifdef __cplusplus
 }

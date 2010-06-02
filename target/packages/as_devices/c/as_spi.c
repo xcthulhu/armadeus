@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * Copyright (C) 2009 Fabien Marteau <fabien.marteau@armadeus.com> 
+ * Copyright (C) 2009-2010 Fabien Marteau <fabien.marteau@armadeus.com> 
  *
  */
 
@@ -33,6 +33,14 @@
 
 #include "as_spi.h"
 
+//#define DEBUG
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
+
+/*--------------------------------------------------------------*/
 
 int as_spi_open(const unsigned char *aSpidev_name)
 {
@@ -40,84 +48,115 @@ int as_spi_open(const unsigned char *aSpidev_name)
 
     fd = open((char *)aSpidev_name, O_RDWR);
     if (fd < 0) {
-            perror("open");
+            ERROR("spi open.");
             return -1;
     }
 
     return fd;
 }
 
-int as_spi_set_mode(int aFd, uint8_t aMode)
-{
-    /* TODO */
-    return -1;
-}
+/*--------------------------------------------------------------*/
 
 int as_spi_set_lsb(int aFd, uint8_t aLsb)
 {
-    /* TODO */
-    return -1;
-}
-
-int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
-{
-    /* TODO */
-    return -1;
-}
-
-int as_spi_set_speed(int aFd)
-{
-    /* TODO */
-    return -1;
-}
-
-int as_spi_get_mode(int aFd)
-{
-    uint8_t mode;
-
-    if (ioctl(aFd, SPI_IOC_RD_MODE, &mode) < 0) {
-            perror("SPI rd_mode");
+    if (ioctl(aFd, SPI_IOC_WR_LSB_FIRST, &aLsb) < 0) {
+            ERROR("SPI set lsb");
             return -1;
     }
-
-    return mode;
+    return 0;
 }
+
+/*--------------------------------------------------------------*/
 
 int as_spi_get_lsb(int aFd)
 {
     uint8_t lsb;
 
     if (ioctl(aFd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
-            perror("SPI rd_lsb_fist");
+            ERROR("SPI get lsb");
             return -1;
     }
 
     return lsb;
 }
 
+/*--------------------------------------------------------------*/
+
+int as_spi_set_mode(int aFd, uint8_t aMode)
+{
+    if (ioctl(aFd, SPI_IOC_WR_MODE, &aMode) < 0) {
+            ERROR("SPI wr_mode");
+            return -1;
+    }
+    return 0;
+}
+
+/*--------------------------------------------------------------*/
+
+int as_spi_get_mode(int aFd)
+{
+    uint8_t mode;
+
+    if (ioctl(aFd, SPI_IOC_RD_MODE, &mode) < 0) {
+            ERROR("SPI rd_mode");
+            return -1;
+    }
+
+    return mode;
+}
+
+/*--------------------------------------------------------------*/
+
+int as_spi_set_speed(int aFd, uint32_t aSpeed)
+{
+    if (ioctl(aFd, SPI_IOC_WR_MAX_SPEED_HZ, &aSpeed) < 0) {
+            ERROR("SPI set speed");
+            return -1;
+    }
+
+    return 0;
+}
+
+/*--------------------------------------------------------------*/
+
+uint32_t as_spi_get_speed(int aFd)
+{
+    uint8_t speed;
+
+    if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
+            ERROR("SPI max_speed_hz");
+            return -1;
+    }
+
+    return speed;
+}
+
+/*--------------------------------------------------------------*/
+
 int as_spi_get_bits_per_word(int aFd)
 {
     uint8_t bits;
 
     if (ioctl(aFd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
-            perror("SPI bits_per_word");
+            ERROR("SPI bits_per_word");
             return -1;
     }
 
     return bits;
 }
 
-int as_spi_get_speed(int aFd)
-{
-    uint8_t speed;
+/*--------------------------------------------------------------*/
 
-    if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
-            perror("SPI max_speed_hz");
+int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
+{
+    if (ioctl(aFd, SPI_IOC_WR_BITS_PER_WORD, &aBits) < 0) {
+            ERROR("SPI set bits_per_word");
             return -1;
     }
-
-    return speed;
+    return 0;
 }
+
+/*--------------------------------------------------------------*/
 
 uint32_t as_spi_msg(int aFd, 
                     uint32_t aMsg, 
@@ -136,9 +175,6 @@ uint32_t as_spi_msg(int aFd,
 
     msg = aMsg;
     len = aLen;
-
-    //msg = msg << 1;/* XXX  Last bit is always read at 0 */
-    //len = len + 1; /* XXX */
 
     memset(xfer, 0, sizeof(xfer));
     memset(buf, 0, sizeof(buf));
@@ -162,7 +198,7 @@ uint32_t as_spi_msg(int aFd,
 
     status = ioctl(aFd, SPI_IOC_MESSAGE(1), xfer);
     if (status < 0) {
-        perror("SPI_IOC_MESSAGE");
+        ERROR("SPI_IOC_MESSAGE");
         return 0;
     }
 
@@ -174,6 +210,8 @@ uint32_t as_spi_msg(int aFd,
     }
     return msg; 
 }
+
+/*--------------------------------------------------------------*/
 
 void as_spi_close(int aFd)
 {

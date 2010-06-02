@@ -28,6 +28,7 @@
 #include "as_i2c.h"
 #include "as_gpio.h"
 #include "as_max1027.h"
+#include "as_max5821.h"
 
 #define PWM_NUM 0
 
@@ -45,10 +46,12 @@ void test_pwm(void)
     char buffer[20];
     char buffer2[20];
     int value;
+    struct as_pwm_device *pwm_dev;
 
-    ret = as_pwm_init(PWM_NUM);
-    if(ret < 0){
+    pwm_dev = as_pwm_open(PWM_NUM);
+    if(pwm_dev == NULL){
         printf("can't init pwm0\n");
+        pressEnterToContinue();
         return;
     }
     while(buffer[0] != 'q')
@@ -73,41 +76,41 @@ void test_pwm(void)
         {
             case '1' : printf("Give frequency :");
                        scanf("%d",&value);
-                       as_pwm_setFrequency(PWM_NUM,value);
+                       as_pwm_set_frequency(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '2' : printf("Current pwm frequency is %d\n",
-                              as_pwm_getFrequency(PWM_NUM));
+                              as_pwm_get_frequency(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '3' : printf("Give period :");
                        scanf("%d",&value);
-                       as_pwm_setPeriod(PWM_NUM,value);
+                       as_pwm_set_period(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '4' : printf("Current period is %d\n",
-                              as_pwm_getPeriod(PWM_NUM));
+                              as_pwm_get_period(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '5' : printf("Give Duty :");
                        scanf("%d",&value);
-                       as_pwm_setDuty(PWM_NUM,value);
+                       as_pwm_set_duty(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '6' : printf("Current Duty is %d\n",
-                              as_pwm_getDuty(PWM_NUM));
+                              as_pwm_get_duty(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '7' : printf("Activate 'a' or Desactivate 'd' ?");
                        scanf("%s",buffer2);
                        if(buffer2[0] == 'a')
                        {
-                           as_pwm_activate(PWM_NUM,1);
+                           as_pwm_set_state(pwm_dev,1);
                            printf("Pwm activated\n");
                            pressEnterToContinue();
                        }else if(buffer2[0] == 'd')
                        {
-                           as_pwm_activate(PWM_NUM,0);
+                           as_pwm_set_state(pwm_dev,0);
                            printf("Pwm desactivated\n");
                            pressEnterToContinue();
                        }else{
@@ -115,7 +118,7 @@ void test_pwm(void)
                            pressEnterToContinue();
                        }
                        break;
-            case '8' : if(as_pwm_getState(PWM_NUM))
+            case '8' : if(as_pwm_get_state(pwm_dev))
                        {
                            printf("pwm is active\n");
                            pressEnterToContinue();
@@ -127,7 +130,7 @@ void test_pwm(void)
             default : break;
         }
     }
-    ret = as_pwm_close(PWM_NUM);
+    ret = as_pwm_close(pwm_dev);
     if(ret < 0){
         printf("can't close pwm0\n");
         return;
@@ -762,6 +765,112 @@ void test_max1027()
     ret = as_max1027_close(max1027_dev);
     if (ret < 0) {
         printf("Error on closing max1027\n");
+        pressEnterToContinue();
+    }
+}
+
+void test_max5821()
+{
+    char buffer[50];
+    int ret;
+    int value;
+    struct as_max5821_device *max5821_dev;
+    int channelA=0;
+    int channelB=0;
+
+
+    max5821_dev = as_max5821_open(0, 0x38);
+    if (max5821_dev == NULL)
+    {
+        printf("Error, can't open max5821.\n");
+        pressEnterToContinue();
+        return ;
+    }
+    pressEnterToContinue();
+
+    while(buffer[0] != 'q')
+    {
+        system("clear");
+        printf("**************************\n");
+        printf("   Testing max5821       *\n");
+        printf("**************************\n");
+        printf("Choose ('q' to quit):\n");
+        printf(" 1) select power mode for channel A\n");
+        printf(" 2) select power mode for channel B\n");
+        printf(" 3) select channel A value %d\n", channelA);
+        printf(" 4) select channel B value %d\n", channelB);
+        printf(" 5) select both channel values\n");
+
+        printf("> ");
+        scanf("%s",buffer);
+
+        switch(buffer[0])
+        {
+            case '1' :  printf("Choose your mode:\n");
+                        printf(" 0) MAX5821_POWER_UP        \n");
+                        printf(" 1) MAX5821_POWER_DOWN_MODE0\n");
+                        printf(" 2) MAX5821_POWER_DOWN_MODE1\n");
+                        printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_power(max5821_dev, 'a', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select power mode\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '2' :  printf("Choose your mode:\n");
+                        printf(" 0) MAX5821_POWER_UP        \n");
+                        printf(" 1) MAX5821_POWER_DOWN_MODE0\n");
+                        printf(" 2) MAX5821_POWER_DOWN_MODE1\n");
+                        printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_power(max5821_dev, 'b', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select power mode\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '3' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_one_value(max5821_dev, 'a', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '4' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_one_value(max5821_dev, 'b', value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            case '5' :  printf("Give value between 0-1023\n");
+                        printf("> ");
+                        scanf("%d", &value);
+                        ret = as_max5821_set_both_value(max5821_dev, value);
+                        if (ret < 0)
+                        {
+                            printf("Error, can't select value\n");
+                        }
+                        pressEnterToContinue();
+                        break;
+            default : break;
+        }
+    }
+
+    ret = as_max5821_close(max5821_dev);
+    if (ret < 0) {
+        printf("Error on closing max5821_dev\n");
         pressEnterToContinue();
     }
 }
