@@ -14,7 +14,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * Copyright (C) 2009 Fabien Marteau <fabien.marteau@armadeus.com> 
+ * Copyright (C) 2009-2010 Fabien Marteau <fabien.marteau@armadeus.com> 
  *
  */
 
@@ -33,6 +33,12 @@
 
 #include "as_spi.h"
 
+//#define DEBUG
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
 
 int as_spi_open(const unsigned char *aSpidev_name)
 {
@@ -40,7 +46,7 @@ int as_spi_open(const unsigned char *aSpidev_name)
 
     fd = open((char *)aSpidev_name, O_RDWR);
     if (fd < 0) {
-            perror("open");
+            ERROR("spi open.");
             return -1;
     }
 
@@ -50,24 +56,28 @@ int as_spi_open(const unsigned char *aSpidev_name)
 int as_spi_set_mode(int aFd, uint8_t aMode)
 {
     /* TODO */
+    printf("TODO\n");
     return -1;
 }
 
 int as_spi_set_lsb(int aFd, uint8_t aLsb)
 {
     /* TODO */
+    printf("TODO\n");
     return -1;
 }
 
 int as_spi_set_bits_per_word(int aFd, uint8_t aBits)
 {
     /* TODO */
+    printf("TODO\n");
     return -1;
 }
 
 int as_spi_set_speed(int aFd)
 {
     /* TODO */
+    printf("TODO\n");
     return -1;
 }
 
@@ -76,7 +86,7 @@ int as_spi_get_mode(int aFd)
     uint8_t mode;
 
     if (ioctl(aFd, SPI_IOC_RD_MODE, &mode) < 0) {
-            perror("SPI rd_mode");
+            ERROR("SPI rd_mode");
             return -1;
     }
 
@@ -88,7 +98,7 @@ int as_spi_get_lsb(int aFd)
     uint8_t lsb;
 
     if (ioctl(aFd, SPI_IOC_RD_LSB_FIRST, &lsb) < 0) {
-            perror("SPI rd_lsb_fist");
+            ERROR("SPI rd_lsb_fist");
             return -1;
     }
 
@@ -100,7 +110,7 @@ int as_spi_get_bits_per_word(int aFd)
     uint8_t bits;
 
     if (ioctl(aFd, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0) {
-            perror("SPI bits_per_word");
+            ERROR("SPI bits_per_word");
             return -1;
     }
 
@@ -112,7 +122,7 @@ int as_spi_get_speed(int aFd)
     uint8_t speed;
 
     if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
-            perror("SPI max_speed_hz");
+            ERROR("SPI max_speed_hz");
             return -1;
     }
 
@@ -137,9 +147,6 @@ uint32_t as_spi_msg(int aFd,
     msg = aMsg;
     len = aLen;
 
-    //msg = msg << 1;/* XXX  Last bit is always read at 0 */
-    //len = len + 1; /* XXX */
-
     memset(xfer, 0, sizeof(xfer));
     memset(buf, 0, sizeof(buf));
     memset(buf_read, 0, sizeof(buf_read));
@@ -162,7 +169,7 @@ uint32_t as_spi_msg(int aFd,
 
     status = ioctl(aFd, SPI_IOC_MESSAGE(1), xfer);
     if (status < 0) {
-        perror("SPI_IOC_MESSAGE");
+        ERROR("SPI_IOC_MESSAGE");
         return 0;
     }
 

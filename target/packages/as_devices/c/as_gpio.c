@@ -58,6 +58,13 @@
 #error Error no platform defined
 #endif
 
+//#define DEBUG
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
+
 /*------------------------------------------------------------------------------*/
 
 struct as_gpio_device *
@@ -70,6 +77,7 @@ as_gpio_open(char aPortChar)
 
     if (((aPortChar-'A') > (NUMBER_OF_PORTS-1)) || ((aPortChar-'A') < 0))
     {
+        ERROR("No port named %c\n",aPortChar);
         return NULL;
     }
 
@@ -77,18 +85,23 @@ as_gpio_open(char aPortChar)
     ret = snprintf(gpio_file_path,50, "%s%c",
                             GPIO_BASE_PORT, aPortChar);
     if (ret < 0) {
+        ERROR("Can't forge gpio port path\n");
         return NULL;
     }
 
     /* opening gpio port */
     ret = open(gpio_file_path, O_RDWR);
     if (ret < 0) {
+        ERROR("Can't open file port\n");
         return NULL;
     }
 
     dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
     if (dev == NULL)
+    {
+        ERROR("Can't allocate memory for gpio device structure\n");
         return NULL;
+    }
 
     dev->port_letter = aPortChar;
     dev->fdev = ret;
@@ -111,9 +124,10 @@ as_gpio_set_pin_direction(struct as_gpio_device *aDev,
     int ret=0;
     int portval;
 
-    /* Set LED PIN as GPIO; read/modify/write */
+    /* Set PIN as GPIO; read/modify/write */
     ret = ioctl(aDev->fdev, GPIORDMODE, &portval);
     if (ret < 0) {
+        ERROR("Can't set gpio read mode\n");
         return ret;
     }
 
@@ -121,12 +135,14 @@ as_gpio_set_pin_direction(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIOWRMODE, &portval);
     if (ret < 0) {
+        ERROR("Can't set gpio write mode\n");
         return ret;
     }
 
     /* set direction */
     ret = ioctl(aDev->fdev, GPIORDDIRECTION, &portval);
     if (ret < 0) {
+        ERROR("Can't get gpio direction\n");
         return ret;
     }
 
@@ -138,6 +154,7 @@ as_gpio_set_pin_direction(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIOWRDIRECTION, &portval);
     if (ret < 0) {
+        ERROR("Can't get gpio direction\n");
         return ret;
     }
     return 0;
@@ -155,6 +172,7 @@ as_gpio_set_pin_value(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
+        ERROR("Can't read gpio data\n");
         return ret;
     }
 
@@ -165,6 +183,7 @@ as_gpio_set_pin_value(struct as_gpio_device *aDev,
     }
     ret = ioctl(aDev->fdev, GPIOWRDATA, &portval);
     if (ret < 0) {
+        ERROR("Can't write gpio data\n");
         return ret;
     }
 
@@ -181,6 +200,7 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIORDDATA, &portval);
     if (ret < 0) {
+        ERROR("Can't read gpio data\n");
         return ret;
     }
 
@@ -200,16 +220,28 @@ int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
     char value;
 
     if (aPinNum >= PORT_SIZE )
+    {
+        ERROR("Pin num %d upper than port size (%d)\n", aPinNum, PORT_SIZE);
         return -1;     /* aPinNum wrong */
+    }
     if (aPinNum < 0 )
+    {
+        ERROR("Wrong pin number %d\n",aPinNum);
         return -1;
+    }
 
     if (aDev->fpin[aPinNum] == -1)
-        return -1; /* irq must be configured before */
+    {
+        ERROR("irq must be configured before\n");
+        return -1;
+    }
 
     ret = read(aDev->fpin[aPinNum], &value, 1);
     if (ret < 0)
+    {
+        ERROR("can't read pin %d value \n",aPinNum);
         return ret;
+    }
 
     if (value != 0)
         return 1;
@@ -227,6 +259,7 @@ int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIORDPULLUP, &portval);
     if (ret < 0) {
+        ERROR("can't get pullup value\n");
         return ret;
     }
 
@@ -249,6 +282,7 @@ int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
 
     ret = ioctl(aDev->fdev, GPIORDPULLUP, &portval);
     if (ret < 0) {
+        ERROR("Can't get pullup value\n");
         return ret;
     }
 
@@ -259,6 +293,7 @@ int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
     }
     ret = ioctl(aDev->fdev, GPIOWRPULLUP, &portval);
     if (ret < 0) {
+        ERROR("Can't set pullup value\n");
         return ret;
     }
 
@@ -275,13 +310,17 @@ int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
 
     /* check pin num */
     if (aPinNum >= PORT_SIZE)
+    {
+        ERROR("Pin num %d upper than port size (%d)\n", aPinNum, PORT_SIZE);
         return -1;
+    }
 
     if (aPinNum < PORT_SIZE/2)
     {
 
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_L, &portval);
         if (ret < 0) {
+            ERROR("Can't read irq mode L\n");
             return ret;
         }
 
@@ -292,6 +331,7 @@ int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
 
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
         if (ret < 0) {
+            ERROR("Can't read irq mode H\n");
             return ret;
         }
 
@@ -312,11 +352,17 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
 
     /* check mode value */
     if (aMode > 3)
+    {
+        ERROR("Wrong mode value %d\n",aMode);
         return -1;
+    }
 
     /* check pin num */
     if (aPinNum >= PORT_SIZE)
+    {
+        ERROR("Pin num %d upper than port size (%d)\n", aPinNum, PORT_SIZE);
         return -1;
+    }
 
     /* close fpin file */
     if (aDev->fpin[aPinNum] != -1)
@@ -329,6 +375,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
     {
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_L, &portval);
         if (ret < 0) {
+            ERROR("Can't read irq mode L\n");
             return ret;
         }
 
@@ -337,6 +384,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
 
         ret = ioctl(aDev->fdev, GPIOWRIRQMODE_L, &portval);
         if (ret < 0) {
+            ERROR("Can't write irq mode L\n");
             return ret;
         }
 
@@ -344,6 +392,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
 
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
         if (ret < 0) {
+            ERROR("Can't read irq mode H\n");
             return ret;
         }
 
@@ -352,6 +401,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
 
         ret = ioctl(aDev->fdev, GPIOWRIRQMODE_H, &portval);
         if (ret < 0) {
+            ERROR("Can't write irq mode H\n");
             return ret;
         }
     }
@@ -362,16 +412,21 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
         ret = snprintf(buffer, BUFF_SIZE, "%s%c%d",
                             GPIO_BASE_PIN, aDev->port_letter, aPinNum);
         if (ret < 0)
+        {
+            ERROR("Can't forge fpin path\n");
             return ret;
+        }
 
         ret = open(buffer, O_RDONLY);
         if (ret < 0)
+        {
+            ERROR("Can't open %s\n",buffer);
             return ret;
+        }
         aDev->fpin[aPinNum] = ret;
     }
 
     aDev->irq_mode[aPinNum] = aMode;
-
     return 0;
 }
 

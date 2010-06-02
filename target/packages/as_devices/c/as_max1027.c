@@ -43,6 +43,13 @@ typedef unsigned char u8;
 #define SLOW_INPUT_NAME "in%d_input"
 #define FAST_INPUT_PATH "/dev/max1027/AIN%d"
 
+//#define DEBUG
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
+
 /** @brief Function used to write in /sys file
  *
  * @param aFile_handler /sys file handler
@@ -63,13 +70,13 @@ int32_t as_max1027_write_buffer(int aFile_handler, int aValue)
     ret = write(aFile_handler, buffer, buffer_len);
     if (ret < 0)
     {
-        perror("Can't write file ");
+        ERROR("Can't write file ");
         return -1;
     }
     ret = lseek(aFile_handler, 0, SEEK_SET);
     if (ret < 0)
     {
-        perror("lseek error ");
+        ERROR("lseek error ");
         return -1;
     }
 
@@ -93,9 +100,7 @@ int32_t as_max1027_read_buffer(int aFile_handler, int *aValueRead)
     ret = read(aFile_handler, valueRead, SIZEOFBUFF);
     if (ret < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, reading buffer file\n");
-#endif
+        ERROR("Error, reading buffer file\n");
         return -1;
     }
     valueRead[ret-1] = '\0';
@@ -125,18 +130,14 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     /** XXX */
     if (aMode == AS_MAX1027_FAST)
     {
-#ifdef ERROR_MSG
         printf("Error, fast mode not supported yet\n");
-#endif
         return NULL;
     }
 
     ret = snprintf(path, PATH_SIZE, SYS_PATH, aSpiNum);
     if (ret<0)
     {
-#ifdef ERROR_MSG
-        printf("Error in path writing\n");
-#endif
+        ERROR("Error in path writing\n");
         return NULL;
     }
 
@@ -145,34 +146,26 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
     ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "conversion");
     if (ret<0)
     {
-#ifdef ERROR_MSG
-        printf("Error in path writing\n");
-#endif
+        ERROR("Error in path writing\n");
         return NULL;
     }
     fConversion = open(buffer, O_RDWR);
     if (fConversion < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, can't open conversion file. Is max1027 modprobed ?\n");
-#endif
+        ERROR("Error, can't open conversion file. Is max1027 modprobed ?\n");
         return NULL;
     }
     /* setup */
     ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "setup");
     if (ret<0)
     {
-#ifdef ERROR_MSG
-        printf("Error in path writing\n");
-#endif
+        ERROR("Error in path writing\n");
         return NULL;
     }
     fSetup = open(buffer, O_RDWR);
     if (fSetup < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, can't open setup file.\n");
-#endif
+        ERROR("Error, can't open setup file.\n");
         return NULL;
     }
     ret = as_max1027_write_buffer(fSetup,
@@ -182,26 +175,20 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
                                    MAX1027_SETUP_DIFFSEL(0));
     if (ret < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, can't set default setup parameters\n");
-#endif
+        ERROR("Error, can't set default setup parameters\n");
         return NULL;
     }
     /* averaging */
     ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "averaging");
     if (ret<0) {
-#ifdef ERROR_MSG
-        printf("Error in path writing\n");
-#endif
+        ERROR("Error in path writing\n");
         return NULL;
     }
 
     fAveraging = open(buffer, O_RDWR);
     if (fAveraging < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, can't open averaging file.\n");
-#endif
+        ERROR("Error, can't open averaging file.\n");
         return NULL;
     }
 
@@ -211,17 +198,13 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
         ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, "temp1_input");
         if (ret<0)
         {
-#ifdef ERROR_MSG
-            printf("Error in path writing\n");
-#endif
+            ERROR("Error in path writing\n");
             return NULL;
         }
         fTemperature = open(buffer, O_RDONLY);
         if (fTemperature < 0)
         {
-#ifdef ERROR_MSG
-            printf("Error, can't open temperature file.\n");
-#endif
+            ERROR("Error, can't open temperature file.\n");
             return NULL;
         }
     } else {
@@ -237,27 +220,21 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
             ret = snprintf(slow_input_name, 20, SLOW_INPUT_NAME, i);
             if (ret < 0)
             {
-#ifdef ERROR_MSG
-                printf("Error in path writing\n");
-#endif
+                ERROR("Error in path writing\n");
                 return NULL;
             }
 
             ret = snprintf(buffer, BUFFER_SIZE, "%s%s", path, slow_input_name);
             if (ret < 0)
             {
-#ifdef ERROR_MSG
-                printf("Error in path writing\n");
-#endif
+                ERROR("Error in path writing\n");
                 return NULL;
             }
 
             fLowSpeed[i] = open(buffer, O_RDONLY);
             if (fLowSpeed[i] < 0)
             {
-#ifdef ERROR_MSG
-                printf("Error, can't open %s\n", buffer);
-#endif
+                ERROR("Error, can't open %s\n", buffer);
                 return NULL;
             }
         }
@@ -266,18 +243,14 @@ struct as_max1027_device *as_max1027_open(int aSpiNum,
             ret = snprintf(buffer, BUFFER_SIZE, FAST_INPUT_PATH, i);
             if (ret < 0)
             {
-#ifdef ERROR_MSG
-                printf("Error in path writing\n");
-#endif
+                ERROR("Error in path writing\n");
                 return NULL;
             }
 
             fHighSpeed[i] = open(buffer, O_RDONLY);
             if (fHighSpeed[i] < 0)
             {
-#ifdef ERROR_MSG
-                printf("Error, can't open %s\nIs loadmax.sh launched ?\n", buffer);
-#endif
+                ERROR("Error, can't open %s\nIs loadmax.sh launched ?\n", buffer);
                 return NULL;
             }
 
@@ -318,9 +291,7 @@ int32_t as_max1027_read_temperature_mC(struct as_max1027_device *aDev,
                                    MAX1027_CONV_TEMP);
     if (ret < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error launching conversion\n");
-#endif
+        ERROR("Error launching conversion\n");
         return -1;
     }
 
@@ -328,9 +299,7 @@ int32_t as_max1027_read_temperature_mC(struct as_max1027_device *aDev,
     ret =  as_max1027_read_buffer(aDev->fTemperature, aTemperature);
     if (ret < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, reading fTemperature\n");
-#endif
+        ERROR("Error, reading fTemperature\n");
         return -1;
     }
 
@@ -359,9 +328,7 @@ int32_t as_max1027_set_averaging(struct as_max1027_device *aDev, uint8_t aNbConv
                  aDev->scan_mode = SCAN_MODE_10; /* scan */
                  break;
         default: 
-#ifdef ERROR_MSG
-                 printf("%s: unsupported setting\n", __func__);
-#endif
+                 ERROR("%s: unsupported setting\n", __func__);
                  return -1;
     }
 
@@ -370,9 +337,7 @@ int32_t as_max1027_set_averaging(struct as_max1027_device *aDev, uint8_t aNbConv
     ret = as_max1027_write_buffer(aDev->fAveraging, avg_register);
     if (ret < 0)
     {
-#ifdef ERROR_MSG
-        printf("Error, setting averaging\n");
-#endif
+        ERROR("Error, setting averaging\n");
         return -1;
     }
 
@@ -386,9 +351,7 @@ int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
 
     if ((aChannelNum >= NUMBER_OF_CHANNELS) || (aChannelNum < 0))
     {
-#ifdef ERROR_MSG
-        printf("Wrong num channel\n");
-#endif
+        ERROR("Wrong num channel\n");
         return -1;
     }
 
@@ -401,9 +364,7 @@ int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
                                        MAX1027_CONV_SCAN(aDev->scan_mode));
         if (ret < 0)
         {
-#ifdef ERROR_MSG
-            printf("Error launching conversion\n");
-#endif
+            ERROR("Error launching conversion\n");
             return -1;
         }
 
@@ -411,24 +372,18 @@ int32_t as_max1027_get_value_milliVolt(struct as_max1027_device *aDev,
         ret =  as_max1027_read_buffer(aDev->fLowSpeed[aChannelNum], aValue);
         if (ret < 0)
         {
-#ifdef ERROR_MSG
-            printf("Error, reading fLowSpeed[%d]\n", aChannelNum);
-#endif
+            ERROR("Error, reading fLowSpeed[%d]\n", aChannelNum);
             return -1;
         }
     }
     else if (aDev->mode == AS_MAX1027_FAST)
     {
-#ifdef ERROR_MSG
-        printf("TODO: fast mode channel reading\n");
-#endif
+        ERROR("TODO: fast mode channel reading\n");
         return -1;
     }
     else
     {
-#ifdef ERROR_MSG
-        printf("Unknown mode\n");
-#endif
+        ERROR("Unknown mode\n");
         return -1;
     }
 
