@@ -34,8 +34,13 @@
 
 #define MAX5821M_MAX_DATA_VALUE              (1023)
 
-//#define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
-#define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+//#define DEBUG
+
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
 
 /*-----------------------------------------------------------------------------*/
 
@@ -108,17 +113,17 @@ int32_t as_max5821_set_one_value(struct as_max5821_device *aDev,
     switch(aChannel)
     {
         case 'a':
-        case 'A': buff[0] = (aValue >> 8) & 0x0F;
+        case 'A': buff[0] = (aValue >> 6) & 0x0F;
                   break;
         case 'b':
-        case 'B': buff[0] = 0x10 | ((aValue >> 8) & 0x0F);
+        case 'B': buff[0] = 0x10 | ((aValue >> 6) & 0x0F);
                   break;
         default: ERROR("Wrong channel name %c\n", aChannel);
                  return -1;
     }
 
-    buff[1] =(unsigned char)(aValue & 0x00FF);
-    
+    buff[1] =(unsigned char)((aValue << 2) & 0x00FC);
+
     ret = as_i2c_write(aDev->i2c_bus, aDev->i2c_address, buff, 2);
     if (ret < 0) {
         ERROR("can't write on i2c bus\n");
@@ -136,8 +141,8 @@ int32_t as_max5821_set_both_value(struct as_max5821_device *aDev,
     int ret;
     unsigned char buff[2];
 
-    buff[0] = 0xC0 | ((unsigned char)((aValue >> 8)) & 0x0F);
-    buff[1] = (unsigned char)(aValue & 0x00FF);
+    buff[0] = 0xC0 | ((unsigned char)((aValue >> 6)) & 0x0F);
+    buff[1] = (unsigned char)((aValue << 2) & 0x00FC);
     
     ret = as_i2c_write(aDev->i2c_bus, aDev->i2c_address, buff, 2);
     if (ret < 0) {
