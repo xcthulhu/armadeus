@@ -46,10 +46,12 @@ void test_pwm(void)
     char buffer[20];
     char buffer2[20];
     int value;
+    struct as_pwm_device *pwm_dev;
 
-    ret = as_pwm_init(PWM_NUM);
-    if(ret < 0){
+    pwm_dev = as_pwm_open(PWM_NUM);
+    if(pwm_dev == NULL){
         printf("can't init pwm0\n");
+        pressEnterToContinue();
         return;
     }
     while(buffer[0] != 'q')
@@ -74,41 +76,41 @@ void test_pwm(void)
         {
             case '1' : printf("Give frequency :");
                        scanf("%d",&value);
-                       as_pwm_setFrequency(PWM_NUM,value);
+                       as_pwm_set_frequency(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '2' : printf("Current pwm frequency is %d\n",
-                              as_pwm_getFrequency(PWM_NUM));
+                              as_pwm_get_frequency(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '3' : printf("Give period :");
                        scanf("%d",&value);
-                       as_pwm_setPeriod(PWM_NUM,value);
+                       as_pwm_set_period(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '4' : printf("Current period is %d\n",
-                              as_pwm_getPeriod(PWM_NUM));
+                              as_pwm_get_period(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '5' : printf("Give Duty :");
                        scanf("%d",&value);
-                       as_pwm_setDuty(PWM_NUM,value);
+                       as_pwm_set_duty(pwm_dev,value);
                        pressEnterToContinue();
                        break;
             case '6' : printf("Current Duty is %d\n",
-                              as_pwm_getDuty(PWM_NUM));
+                              as_pwm_get_duty(pwm_dev));
                        pressEnterToContinue();
                        break;
             case '7' : printf("Activate 'a' or Desactivate 'd' ?");
                        scanf("%s",buffer2);
                        if(buffer2[0] == 'a')
                        {
-                           as_pwm_activate(PWM_NUM,1);
+                           as_pwm_set_state(pwm_dev,1);
                            printf("Pwm activated\n");
                            pressEnterToContinue();
                        }else if(buffer2[0] == 'd')
                        {
-                           as_pwm_activate(PWM_NUM,0);
+                           as_pwm_set_state(pwm_dev,0);
                            printf("Pwm desactivated\n");
                            pressEnterToContinue();
                        }else{
@@ -116,7 +118,7 @@ void test_pwm(void)
                            pressEnterToContinue();
                        }
                        break;
-            case '8' : if(as_pwm_getState(PWM_NUM))
+            case '8' : if(as_pwm_get_state(pwm_dev))
                        {
                            printf("pwm is active\n");
                            pressEnterToContinue();
@@ -128,7 +130,7 @@ void test_pwm(void)
             default : break;
         }
     }
-    ret = as_pwm_close(PWM_NUM);
+    ret = as_pwm_close(pwm_dev);
     if(ret < 0){
         printf("can't close pwm0\n");
         return;

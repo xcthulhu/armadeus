@@ -1,19 +1,19 @@
 /*
 **    THE ARMadeus Systems
-** 
-**    Copyright (C) 2009  The armadeus systems team 
+**
+**    Copyright (C) 2009-2010  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
+**
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
 ** License as published by the Free Software Foundation; either
 ** version 2.1 of the License, or (at your option) any later version.
-** 
+**
 ** This library is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ** Lesser General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -22,225 +22,206 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>  /* for open()   */
-#include <errno.h>  /* for perror() */
 #include <unistd.h> /* for write()  */
 
 #include "as_pwm.h"
 
+//#define DEBUG
+#ifdef DEBUG
+#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
+#endif
+
 #define PWM_SYS_PATH   "/sys/class/pwm/pwm"
 #define FREQUENCY_PATH "frequency"
 #define PERIOD_PATH    "period"
-#define DUTY_PATH      "duty" 
+#define DUTY_PATH      "duty"
 #define ACTIVE_PATH    "active"
 
-/* global static variable */
-static int mFHandlerFrequency[NUMBER_OF_PWM];
-static int mFHandlerPeriod[NUMBER_OF_PWM];
-static int mFHandlerDuty[NUMBER_OF_PWM];
-static int mFHandlerActive[NUMBER_OF_PWM];
-static int mFrequency[NUMBER_OF_PWM];
-static int mPeriod[NUMBER_OF_PWM];
-static int mDuty[NUMBER_OF_PWM];         
-static int mState[NUMBER_OF_PWM];
+#define SIZE_OF_BUFF 50
 
 /*------------------------------------------------------------------------------*/
 
-/** Write a string value in file
+/** @brief Write a string value in file
  *
  * @param aFile_handler: file handler
  * @param aValueWrite: string value
- * @return error code or number char wrote
+ *
+ * @return number char wrote, negative value on error
  */
-int
-writeBuffer(int aFile_handler, char *aValueWrite)
+int writeBuffer(int aFile_handler, char *aValueWrite)
 {
     int ret;
     ret = write(aFile_handler, aValueWrite, strlen(aValueWrite));
     if (ret < 0)
     {
-        perror("Can't write file ");
+        ERROR("Can't write file ");
         return ret;
     }
     ret = lseek(aFile_handler,0,SEEK_SET);
     if (ret < 0)
     {
-        perror("lseek error ");
+        ERROR("lseek error ");
         return ret;
     }
     return ret;
 }
-/*------------------------------------------------------------------------------*/
-
-/** Initialize pwm
- * @param aPwmNumber number of pwm used
- * @return error code
- */
-int
-as_pwm_init(int aPwmNumber)
-{
-    char buffer[50];
-
-    mState[aPwmNumber] = 0;
-
-    /* open pwm files management */
-    snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,FREQUENCY_PATH); 
-    if((mFHandlerFrequency[aPwmNumber] = open(buffer,O_RDWR)) < 0)
-    {
-        perror("Can't open frequency files : ");
-        return -1;
-    }
-    snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,PERIOD_PATH); 
-    if((mFHandlerPeriod[aPwmNumber] = open(buffer,O_RDWR)) < 0)
-    {
-        perror("Can't open period files : ");
-        return -1;
-    }
-    snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,DUTY_PATH); 
-    if((mFHandlerDuty[aPwmNumber] = open(buffer,O_RDWR)) < 0)
-    {
-        perror("Can't open duty files : ");
-        return -1;
-    }
-    snprintf(buffer,50,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,ACTIVE_PATH); 
-    if((mFHandlerActive[aPwmNumber] = open(buffer,O_RDWR)) < 0)
-    {
-        perror("Can't open active files : ");
-        return -1;
-    }
-
-    return 0;
-}
 
 /*------------------------------------------------------------------------------*/
 
-/** Set pwm frequency
- * @param aPwmNumber number of pwm to close
- * @return no error if positive value
+/** @brief read a string value in file
+ *
+ * @param aFile_handler: file handler
+ * @param aValueRead[SIZE_OF_BUFF]: char pointer to read buffer
+ *
+ * @return number char read, negative value on error
  */
-int
-as_pwm_close(int aPwmNumber)
+int readBuffer(int aFile_handler, char *aValueRead)
 {
-    int ret = 0;
-
-    mState[aPwmNumber] = 0;
-
-    /* open pwm files management */
-    ret = close(mFHandlerFrequency[aPwmNumber]);
-    if(ret < 0)
+    int ret;
+    ret = read(aFile_handler, aValueRead, SIZE_OF_BUFF);
+    if (ret < 0)
     {
-        perror("Can't close frequency files : ");
+        ERROR("Can't read file ");
         return ret;
     }
-    ret = close(mFHandlerPeriod[aPwmNumber]);
-    if(ret < 0)
+    ret = lseek(aFile_handler,0,SEEK_SET);
+    if (ret < 0)
     {
-        perror("Can't close period files : ");
+        ERROR("lseek error ");
         return ret;
     }
-    ret = close(mFHandlerDuty[aPwmNumber]);
-    if(ret < 0)
-    {
-        perror("Can't close duty files : ");
-        return ret;
-    }
-    ret = close(mFHandlerActive[aPwmNumber]);
-    if(ret < 0)
-    {
-        perror("Can't close active files : ");
-        return ret;
-    }
-
     return ret;
-
 }
+
 /*------------------------------------------------------------------------------*/
 
-/** Set pwm frequency
- * @param aPwmNumber number of pwm used
- * @param aFrequency frequency in Hz
- * @return no error if positive value
- */
-int
-as_pwm_setFrequency(int aPwmNumber, int aFrequency)
+struct as_pwm_device *as_pwm_open(int aPwmNumber)
 {
-    char buffer[50];
+    char buffer[SIZE_OF_BUFF];
+    struct as_pwm_device *dev;
 
-    mFrequency[aPwmNumber] = aFrequency;
-    snprintf(buffer,50,"%d",mFrequency[aPwmNumber]);
-    return writeBuffer(mFHandlerFrequency[aPwmNumber],buffer);
+    dev = (struct as_pwm_device *)malloc(sizeof(struct as_pwm_device));
+    if (dev == NULL)
+    {
+        ERROR("Can't allocate memory for pwm device structure\n");
+        return NULL;
+    }
+
+    /* open pwm files management */
+    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,FREQUENCY_PATH);
+    if ((dev->fileFrequency = open(buffer,O_RDWR)) < 0)
+    {
+        ERROR("Can't open frequency files");
+        return NULL;
+    }
+    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,PERIOD_PATH);
+    if ((dev->filePeriod = open(buffer,O_RDWR)) < 0)
+    {
+        ERROR("Can't open period files");
+        return NULL;
+    }
+    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,DUTY_PATH);
+    if((dev->fileDuty = open(buffer,O_RDWR)) < 0)
+    {
+        ERROR("Can't open duty files");
+        return NULL;
+    }
+    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,ACTIVE_PATH);
+    if((dev->fileActive = open(buffer,O_RDWR)) < 0)
+    {
+        ERROR("Can't open active files");
+        return NULL;
+    }
+
+    return dev;
 }
 
 /*------------------------------------------------------------------------------*/
-/** get Frequency value
- * @param aPwmNumber number of pwm used
- * @return int frequency in Hz
- */
-int 
-as_pwm_getFrequency(int aPwmNumber)
+
+int32_t as_pwm_set_frequency(struct as_pwm_device *aDev, int aFrequency)
 {
-    return mFrequency[aPwmNumber];
+    char buffer[SIZE_OF_BUFF];
+
+    snprintf(buffer,SIZE_OF_BUFF,"%d",aFrequency);
+    return writeBuffer(aDev->fileFrequency,buffer);
 }
 
 /*------------------------------------------------------------------------------*/
-/** set period
- *
- * @param pwm number used
- * @param aPeriod period in us
- * @return positive value if no error
- */
-int
-as_pwm_setPeriod(int aPwmNumber, int aPeriod)
+
+int32_t as_pwm_get_frequency(struct as_pwm_device *aDev)
 {
-    char buffer[50];
-    mPeriod[aPwmNumber] = aPeriod;
-    snprintf(buffer,50,"%d",mPeriod[aPwmNumber]);
-    return writeBuffer(mFHandlerPeriod[aPwmNumber],buffer);
+    char buffer[SIZE_OF_BUFF];
+    int ret;
+
+    ret = readBuffer(aDev->fileFrequency,  buffer);
+    if (ret < 0)
+    {
+        ERROR("Can't read frequency\n");
+        return ret;
+    }
+
+    return atoi(buffer);
 }
 
 /*------------------------------------------------------------------------------*/
-/** get Period
- * @param aPwmNumber pwm number used
- * @return period int in us
- */
-int  
-as_pwm_getPeriod(int aPwmNumber)
+
+int32_t as_pwm_set_period(struct as_pwm_device *aDev, int aPeriod)
 {
-    return mPeriod[aPwmNumber];
+    char buffer[SIZE_OF_BUFF];
+
+    snprintf(buffer,SIZE_OF_BUFF,"%d",aPeriod);
+    return writeBuffer(aDev->filePeriod, buffer);
 }
 
 /*------------------------------------------------------------------------------*/
-/** set duty
- * @param aPwmNumber pwm number used
- * @param aDuty duty in 1/1000
- * @return positive value if no error
- */
-int 
-as_pwm_setDuty(int aPwmNumber, int aDuty)
+
+int32_t as_pwm_get_period(struct as_pwm_device *aDev)
 {
-    char buffer[50];
-    mDuty[aPwmNumber] = aDuty;
-    snprintf(buffer, 50, "%d", aDuty);
-    return writeBuffer(mFHandlerDuty[aPwmNumber], buffer);
+    char buffer[SIZE_OF_BUFF];
+    int ret;
+
+    ret = readBuffer(aDev->filePeriod,  buffer);
+    if (ret < 0)
+    {
+        ERROR("Can't read period\n");
+        return ret;
+    }
+
+    return atoi(buffer);
 }
 
 /*------------------------------------------------------------------------------*/
-/** get duty
- *
- * @param aPwmNumber pwm number used
- * @return duty
- */
-int  
-as_pwm_getDuty(int aPwmNumber)
+
+int32_t as_pwm_set_duty(struct as_pwm_device *aDev, int aDuty)
 {
-    return mDuty[aPwmNumber];
+    char buffer[SIZE_OF_BUFF];
+
+    snprintf(buffer, SIZE_OF_BUFF, "%d", aDuty);
+    return writeBuffer( aDev->fileDuty, buffer);
 }
 
 /*------------------------------------------------------------------------------*/
-/** activate pwm
- * @param aPwmNumber pwm number used
- * @param aEnable
- */
-int as_pwm_activate(int aPwmNumber, int aEnable)
+
+int32_t  as_pwm_get_duty(struct as_pwm_device *aDev)
+{
+    char buffer[SIZE_OF_BUFF];
+    int ret;
+
+    ret = readBuffer(aDev->fileDuty,  buffer);
+    if (ret < 0)
+    {
+        ERROR("Can't read duty\n");
+        return ret;
+    }
+
+    return atoi(buffer);
+}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t as_pwm_set_state(struct as_pwm_device *aDev, int aEnable)
 {
     char one[] = "1";
     char zero[] = "0";
@@ -248,23 +229,67 @@ int as_pwm_activate(int aPwmNumber, int aEnable)
 
     if(aEnable)
     {
-        ret = writeBuffer(mFHandlerActive[aPwmNumber],one);
+        ret = writeBuffer(aDev->fileActive,one);
     }else{
-        ret = writeBuffer(mFHandlerActive[aPwmNumber],zero);
+        ret = writeBuffer(aDev->fileActive,zero);
     }
     if (ret < 0)
     {
+        ERROR("Can't write file Active\n");
         return ret;
     }
-    mState[aPwmNumber] = aEnable;
-    return mState[aPwmNumber];
-
+    return ret;
 }
 
-int as_pwm_getState(int aPwmNumber)
+/*------------------------------------------------------------------------------*/
+
+int32_t as_pwm_get_state(struct as_pwm_device *aDev)
 {
-    //XXX: get real state in pwm driver instead global variable
-    return mState[aPwmNumber];
+    char buffer[SIZE_OF_BUFF];
+    int ret;
+
+    ret = readBuffer(aDev->fileActive,  buffer);
+    if (ret < 0)
+    {
+        ERROR("Can't read state\n");
+        return ret;
+    }
+
+    return atoi(buffer);
 }
 
+/*------------------------------------------------------------------------------*/
 
+int32_t as_pwm_close(struct as_pwm_device *aDev)
+{
+    int ret = 0;
+
+    /* open pwm files management */
+    ret = close(aDev->fileFrequency);
+    if(ret < 0)
+    {
+        ERROR("Can't close frequency files");
+        return ret;
+    }
+    ret = close(aDev->filePeriod);
+    if(ret < 0)
+    {
+        ERROR("Can't close period files");
+        return ret;
+    }
+    ret = close(aDev->fileDuty);
+    if(ret < 0)
+    {
+        ERROR("Can't close duty files");
+        return ret;
+    }
+    ret = close(aDev->fileActive);
+    if(ret < 0)
+    {
+        ERROR("Can't close active files");
+        return ret;
+    }
+
+    return ret;
+
+}
