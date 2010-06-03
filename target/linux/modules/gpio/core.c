@@ -1,7 +1,7 @@
 /*
  * Armadeus i.MXL/27 GPIO management driver
  *
- * Copyright (C) 2006-2008 Julien Boibessot <julien.boibessot@armadeus.com>
+ * Copyright (C) 2006-2010 Julien Boibessot <julien.boibessot@armadeus.com>
  *                         Nicolas Colombain <nicolas.colombain@armadeus.com>
  *                         Armadeus Project / Armadeus Systems
  *
@@ -412,7 +412,6 @@ static void set_port_pullup(unsigned int aPort, unsigned int aPullMask)
 	__raw_writel(aPullMask & 0xffffffff, VA_GPIO_BASE + MXC_PUEN(aPort));
 }
 
-
 static void set_port_dir(unsigned int aPort, unsigned int aDirMask)
 {
 	__raw_writel(aDirMask & 0xffffffff, VA_GPIO_BASE + MXC_DDIR(aPort));
@@ -814,11 +813,12 @@ static unsigned int armadeus_gpio_dev_poll(struct file *filp, poll_table *wait)
 	spin_lock_irq(&gpio->lock);
 
 	poll_wait(filp, &gpio->change_wq, wait);
-	if (gpio->changed)
-	{
-	    mask |= (POLLIN | POLLRDNORM);
+	if (gpio->changed) {
+		mask |= (POLLIN | POLLRDNORM);
 	}
+
 	spin_unlock_irq(&gpio->lock);
+
 	return mask;
 }
 
@@ -906,7 +906,6 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 	*eof = 1;
 	up(&gpio_sema);
 
-	/* Return the length */
 	return len;
 }
 
