@@ -437,7 +437,7 @@ void test_gpio()
     char c_value;
     int32_t value;
     char port_letter = 'F';
-    int pin_num = 14;
+    int pin_num = 13;
     int port_direction = 0;
     int port_value = 1;
     int pullup=1;
@@ -621,7 +621,7 @@ void test_gpio()
                         pressEnterToContinue();
                         break;
             case 'a' :  printf("Blocking read \n");
-                        ret = as_gpio_blocking_get_pin_value(gpio_dev, pin_num);
+                        ret = as_gpio_blocking_get_pin_value(gpio_dev, pin_num, 10, 0);
                         if (ret < 0)
                         {
                             printf("Error, can't read value\n");

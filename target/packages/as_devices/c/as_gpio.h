@@ -93,11 +93,15 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
  *
  * @param aDev as_gpio_device pointer structure
  * @param aPinNum pin number
+ * @param aDelay_s waiting delay in seconds
+ * @param aDelay_us waiting delay in useconds (plus delay in seconds)
  *
- * @return pin value if positive or null, error if negative
+ * @return pin value if positive or null, read error if -1, timeout if -10
  */
 int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
-                                      int aPinNum);
+                                       int aPinNum,
+                                       int aDelay_s,
+                                       int aDelay_us);
 
 /** @brief Get pin pull-up value
  *
