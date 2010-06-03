@@ -1,23 +1,23 @@
 /*
-**    The ARMadeus Project
-**
-**    Copyright (C) 2009-2010  The armadeus systems team
-**    Fabien Marteau <fabien.marteau@armadeus.com>
-**
-** This library is free software; you can redistribute it and/or
-** modify it under the terms of the GNU Lesser General Public
-** License as published by the Free Software Foundation; either
-** version 2.1 of the License, or (at your option) any later version.
-**
-** This library is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** Lesser General Public License for more details.
-**
-** You should have received a copy of the GNU Lesser General Public
-** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+ **    The ARMadeus Project
+ **
+ **    Copyright (C) 2009-2010  The armadeus systems team
+ **    Fabien Marteau <fabien.marteau@armadeus.com>
+ **
+ ** This library is free software; you can redistribute it and/or
+ ** modify it under the terms of the GNU Lesser General Public
+ ** License as published by the Free Software Foundation; either
+ ** version 2.1 of the License, or (at your option) any later version.
+ **
+ ** This library is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ ** Lesser General Public License for more details.
+ **
+ ** You should have received a copy of the GNU Lesser General Public
+ ** License along with this library; if not, write to the Free Software
+ ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #include "as_gpio.h"
 
@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h> /* for close() */
+#include <sys/select.h>
 
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>
@@ -38,12 +39,15 @@
 #define GPIOWRMODE         _IOW(PP_IOCTL, 0xF5, int)
 
 #define GPIORDPULLUP       _IOR(PP_IOCTL, 0xF6, int)
-#define GPIOWRPULLUP       _IOR(PP_IOCTL, 0xF7, int)
+#define GPIOWRPULLUP       _IOW(PP_IOCTL, 0xF7, int)
 
 #define GPIORDIRQMODE_H    _IOR(PP_IOCTL, 0xF8, int)
 #define GPIORDIRQMODE_L    _IOR(PP_IOCTL, 0xF9, int)
-#define GPIOWRIRQMODE_H    _IOR(PP_IOCTL, 0xFA, int)
-#define GPIOWRIRQMODE_L    _IOR(PP_IOCTL, 0xFB, int)
+#define GPIOWRIRQMODE_H    _IOW(PP_IOCTL, 0xFA, int)
+#define GPIOWRIRQMODE_L    _IOW(PP_IOCTL, 0xFB, int)
+
+#define GPIORDISR          _IOR(PP_IOCTL, 0xFC, int)
+#define GPIOWRISR          _IOW(PP_IOCTL, 0xFD, int)
 
 #define GPIO_BASE_PORT ("/dev/gpio/port")
 #define GPIO_BASE_PIN  ("/dev/gpio/P")
@@ -67,8 +71,7 @@
 
 /*------------------------------------------------------------------------------*/
 
-struct as_gpio_device *
-as_gpio_open(char aPortChar)
+struct as_gpio_device *as_gpio_open(char aPortChar)
 {
     struct as_gpio_device *dev;
     char gpio_file_path[50];
@@ -83,7 +86,7 @@ as_gpio_open(char aPortChar)
 
     /* make gpio port string path */
     ret = snprintf(gpio_file_path,50, "%s%c",
-                            GPIO_BASE_PORT, aPortChar);
+                   GPIO_BASE_PORT, aPortChar);
     if (ret < 0) {
         ERROR("Can't forge gpio port path\n");
         return NULL;
@@ -116,10 +119,9 @@ as_gpio_open(char aPortChar)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t
-as_gpio_set_pin_direction(struct as_gpio_device *aDev,
-                          int aPinNum,
-                          int aDirection)
+int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev,
+                                  int aPinNum,
+                                  int aDirection)
 {
     int ret=0;
     int portval;
@@ -162,10 +164,9 @@ as_gpio_set_pin_direction(struct as_gpio_device *aDev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t
-as_gpio_set_pin_value(struct as_gpio_device *aDev,
-                      int aPinNum,
-                      int aValue)
+int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
+                              int aPinNum,
+                              int aValue)
 {
     int ret=0;
     int portval;
@@ -214,15 +215,22 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
 /*------------------------------------------------------------------------------*/
 
 int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
-                                       int aPinNum)
+                                       int aPinNum,
+                                       int aDelay_s,
+                                       int aDelay_us)
 {
     int ret;
     char value;
 
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
+
     if (aPinNum >= PORT_SIZE )
     {
         ERROR("Pin num %d upper than port size (%d)\n", aPinNum, PORT_SIZE);
-        return -1;     /* aPinNum wrong */
+        return -1;
     }
     if (aPinNum < 0 )
     {
@@ -236,16 +244,31 @@ int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
         return -1;
     }
 
-    ret = read(aDev->fpin[aPinNum], &value, 1);
-    if (ret < 0)
-    {
-        ERROR("can't read pin %d value \n",aPinNum);
-        return ret;
-    }
+    FD_ZERO(&rfds);
+    FD_SET(aDev->fpin[aPinNum], &rfds);
 
-    if (value != 0)
-        return 1;
-    else return 0;
+    tv.tv_sec = aDelay_s;
+    tv.tv_usec = aDelay_us;
+
+    /* flush the file */
+    retval = select(aDev->fpin[aPinNum]+1, &rfds, NULL, NULL, &tv);
+    if (retval > 0)
+    {
+        printf("DEBUG: read value\n");
+        ret = read(aDev->fpin[aPinNum], &value, 1);
+        if (ret < 0)
+        {
+            ERROR("Can't read pin value\n");
+            return -1;
+        }
+        if (value != 0)
+            return 1;
+        else return 0;
+    } else if (retval == 0) {
+        return -10;
+    } else {
+        return -1;
+    }
 
 }
 
@@ -350,6 +373,11 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
     int portval;
     char buffer[BUFF_SIZE];
 
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
+
     /* check mode value */
     if (aMode > 3)
     {
@@ -361,7 +389,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
     if (aPinNum >= PORT_SIZE)
     {
         ERROR("Pin num %d upper than port size (%d)\n", aPinNum, PORT_SIZE);
-        return -1;
+        return -2;
     }
 
     /* close fpin file */
@@ -388,7 +416,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
             return ret;
         }
 
-} else {
+    } else {
 
         ret = ioctl(aDev->fdev, GPIORDIRQMODE_H, &portval);
         if (ret < 0) {
@@ -406,11 +434,11 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
         }
     }
 
-    /* open fpin file */
     if ((aMode != GPIO_IRQ_MODE_NOINT) && (aDev->fpin[aPinNum] == -1))
     {
+        /* open fpin file */
         ret = snprintf(buffer, BUFF_SIZE, "%s%c%d",
-                            GPIO_BASE_PIN, aDev->port_letter, aPinNum);
+                       GPIO_BASE_PIN, aDev->port_letter, aPinNum);
         if (ret < 0)
         {
             ERROR("Can't forge fpin path\n");
@@ -424,6 +452,22 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
             return ret;
         }
         aDev->fpin[aPinNum] = ret;
+
+    }
+
+
+    FD_ZERO(&rfds);
+    FD_SET(aDev->fpin[aPinNum], &rfds);
+
+    tv.tv_sec = 0;
+    tv.tv_usec = 1;
+
+
+    /* flush the file */
+    retval = select(aDev->fpin[aPinNum]+1, &rfds, NULL, NULL, &tv);
+    if (retval)
+    {
+        read(aDev->fpin[aPinNum], buffer, BUFF_SIZE);
     }
 
     aDev->irq_mode[aPinNum] = aMode;
@@ -432,8 +476,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t
-as_gpio_close(struct as_gpio_device *aDev)
+int32_t as_gpio_close(struct as_gpio_device *aDev)
 {
     int i;
     close(aDev->fdev);
