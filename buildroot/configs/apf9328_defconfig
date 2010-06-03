@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Apr 30 09:57:54 2010
+# Tue Jun  1 17:51:37 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.02"
@@ -301,9 +301,11 @@ BR2_HOST_FAKEROOT=y
 # Armadeus specific packages
 #
 # BR2_PACKAGE_UUCP is not set
+# BR2_PACKAGE_LIBDNET is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
 
 #
-# bluez not available (need dbus)
+# bluez-utils not available (need dbus)
 #
 # BR2_PACKAGE_MESALIB is not set
 # BR2_PACKAGE_FBTEST is not set

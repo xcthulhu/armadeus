@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Mon May  3 15:55:29 2010
+# Tue Jun  1 17:51:37 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -331,9 +331,10 @@ BR2_PACKAGE_PKGCONFIG=y
 #
 # BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_LIBDNET is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
 
 #
-# bluez not available (need dbus)
+# bluez-utils not available (need dbus)
 #
 # BR2_PACKAGE_MESALIB is not set
 
