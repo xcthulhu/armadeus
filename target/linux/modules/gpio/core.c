@@ -390,6 +390,17 @@ static unsigned int get_port_mode(unsigned int aPort)
 	return value;
 }
 
+
+static unsigned int get_port_isr(unsigned int aPort)
+{
+	return __raw_readl(VA_GPIO_BASE + MXC_ISR(aPort));
+}
+
+static void set_port_isr(unsigned int aPort, unsigned int aIsr)
+{
+	__raw_writel(aIsr & 0xffffffff, VA_GPIO_BASE + MXC_ISR(aPort));
+}
+
 static unsigned int get_port_pull_up(unsigned int aPort)
 {
         return __raw_readl(VA_GPIO_BASE + MXC_PUEN(aPort));
@@ -761,6 +772,18 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 		ret = __get_user(value, (unsigned int *)arg);
 		if (ret == 0) {
 			set_port_pullup(MAX_MINOR - minor, value);
+		}
+		break;
+
+		case GPIORDISR:
+		value = get_port_isr(MAX_MINOR - minor);
+		ret = __put_user(value, (unsigned int *)arg);
+		break;
+
+		case GPIOWRISR:
+		ret = __get_user(value, (unsigned int *)arg);
+		if (ret == 0) {
+			set_port_isr(MAX_MINOR - minor, value);
 		}
 		break;
 
