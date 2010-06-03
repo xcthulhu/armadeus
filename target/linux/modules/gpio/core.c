@@ -35,6 +35,7 @@
 #include <linux/cdev.h>	     /* struct cdev */
 #include <mach/hardware.h>
 #include <asm/mach/map.h>
+#include <linux/poll.h>
 #ifdef CONFIG_ARCH_MX2
 #include <mach/iomux-mx1-mx2.h>
 #endif
@@ -403,7 +404,7 @@ static void set_port_isr(unsigned int aPort, unsigned int aIsr)
 
 static unsigned int get_port_pull_up(unsigned int aPort)
 {
-        return __raw_readl(VA_GPIO_BASE + MXC_PUEN(aPort));
+	return __raw_readl(VA_GPIO_BASE + MXC_PUEN(aPort));
 }
 
 static void set_port_pullup(unsigned int aPort, unsigned int aPullMask)
@@ -549,7 +550,6 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-/* Handles open() done on /dev/gpioxx */
 static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 {
 	unsigned minor = MINOR(inode->i_rdev);
@@ -799,11 +799,27 @@ out:
 	return ret;
 }
 
-static int armadeus_gpio_fasync(int fd, struct file* filp, int on)
+static int armadeus_gpio_dev_fasync(int fd, struct file* filp, int on)
 {
 	struct gpio_item* gpio = filp->private_data;
 
 	return fasync_helper(fd, filp, on, &(gpio->async_queue));
+}
+
+static unsigned int armadeus_gpio_dev_poll(struct file *filp, poll_table *wait)
+{
+	struct gpio_item *gpio = filp->private_data;
+	unsigned int mask = 0;
+
+	spin_lock_irq(&gpio->lock);
+
+	poll_wait(filp, &gpio->change_wq, wait);
+	if (gpio->changed)
+	{
+	    mask |= (POLLIN | POLLRDNORM);
+	}
+	spin_unlock_irq(&gpio->lock);
+	return mask;
 }
 
 static struct file_operations gpio_fops = {
@@ -814,7 +830,8 @@ static struct file_operations gpio_fops = {
 	.open    = armadeus_gpio_dev_open,
 	.release = armadeus_gpio_dev_release,
 	.ioctl   = armadeus_gpio_dev_ioctl,
-	.fasync  = armadeus_gpio_fasync,
+	.fasync  = armadeus_gpio_dev_fasync,
+	.poll    = armadeus_gpio_dev_poll,
 };
 
 
