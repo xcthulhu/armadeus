@@ -254,7 +254,6 @@ int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
     retval = select(aDev->fpin[aPinNum]+1, &rfds, NULL, NULL, &tv);
     if (retval > 0)
     {
-        printf("DEBUG: read value\n");
         ret = read(aDev->fpin[aPinNum], &value, 1);
         if (ret < 0)
         {
