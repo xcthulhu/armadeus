@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Jun  4 16:29:01 2010
+# Fri Jun  4 16:31:42 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -128,7 +128,7 @@ BR2_TOPDIR_SUFFIX=""
 BR2_ROOTFS_PREFIX="$(BR2_BOARD_NAME)-rootfs"
 BR2_ROOTFS_SUFFIX=""
 BR2_GNU_BUILD_SUFFIX="pc-linux-gnu"
-BR2_GNU_TARGET_SUFFIX="linux-uclibc"
+BR2_GNU_TARGET_SUFFIX="linux-uclibcgnueabi"
 BR2_JLEVEL=1
 # BR2_PREFER_IMA is not set
 # BR2_DEPRECATED is not set
