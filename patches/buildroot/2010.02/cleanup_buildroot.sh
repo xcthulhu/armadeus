@@ -19,3 +19,4 @@ rm -f  buildroot/package/busybox/busybox-1.15.3-speed_table-B921600.patch
 rm -rf buildroot/package/firmware/
 rm -f  buildroot/toolchain/gcc/4.2.1/999-4.2.1-armeabi-aapcs-linux.patch
 rm -f  buildroot/toolchain/gcc/4.2.4/999-4.2.4-armeabi-aapcs-linux.patch
+rm -rf buildroot/package/games/wolf4sdl/
