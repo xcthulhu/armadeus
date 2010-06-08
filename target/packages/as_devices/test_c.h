@@ -434,7 +434,6 @@ void test_gpio()
     char buffer[50];
     struct as_gpio_device *gpio_dev;
     int32_t ret;
-    char c_value;
     int32_t value;
     char port_letter = 'F';
     int pin_num = 13;
@@ -442,15 +441,14 @@ void test_gpio()
     int port_value = 1;
     int pullup=1;
 
-    gpio_dev = as_gpio_open(port_letter);
+    gpio_dev = as_gpio_open(port_letter, pin_num);
     if (gpio_dev == NULL)
     {
         printf("Error can't open gpio %c\nHave you run loadgpio.sh ?\n", port_letter);
         pressEnterToContinue();
         return ;
     }
-    ret = as_gpio_get_pin_value(gpio_dev,
-                                pin_num);
+    ret = as_gpio_get_pin_value(gpio_dev);
     if (ret < 0)
     {
         printf("Error, can't get pin value\n");
@@ -463,18 +461,17 @@ void test_gpio()
     {
         system("clear");
         printf("**************************\n");
-        printf("   Testing GPIO  P%c%d \n", port_letter, pin_num);
+        printf("   Testing GPIO  P%c%d \n", as_gpio_get_port_letter(gpio_dev), 
+                                            as_gpio_get_pin_num(gpio_dev));
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
-        printf(" 1) Change port letter (%c)\n", port_letter);
-        printf(" 2) Change port num (%d)\n", pin_num);
-        printf(" 3) Change direction (%d)\n", port_direction);
-        printf(" 4) Change value (%d)\n", port_value);
+        printf(" 1) Change gpio (P%c%d)\n", as_gpio_get_port_letter(gpio_dev), 
+                                            as_gpio_get_pin_num(gpio_dev));
+        printf(" 3) Change direction (%d)\n", as_gpio_get_pin_direction(gpio_dev));
+        printf(" 4) Change value (%d)\n", as_gpio_get_pin_value(gpio_dev));
         printf(" 5) Read pin value\n");
-        printf(" 6) Change Pull-Up (%d)\n", pullup);
-        printf(" 7) Read Pull-Up\n");
-        printf(" 8) Set irq mode\n");
-        printf(" 9) get irq mode\n");
+        printf(" 6) Change Pull-Up (%d)\n", as_gpio_get_pullup_value(gpio_dev));
+        printf(" 8) Set irq mode (%d)\n", as_gpio_get_irq_mode(gpio_dev));
         printf(" a) blocking read\n");
 
         printf("> ");
@@ -489,35 +486,29 @@ void test_gpio()
                             ret = as_gpio_close(gpio_dev);
                             if(ret < 0)
                             {
-                                printf("Error, can't close Port%c\n", port_letter);
+                                printf("Error, can't close gpio\n");
                                 pressEnterToContinue();
                                 break;
                             }
                         }
-                        gpio_dev = as_gpio_open(buffer[0]);
+                        port_letter = buffer[0];
+
+                        printf("Give pin number : ");
+                        scanf("%d", &pin_num);
+                        
+                        gpio_dev = as_gpio_open(port_letter,pin_num);
                         if(gpio_dev == NULL)
                         {
-                            printf("Error, can't open Port%c\n", c_value);
+                            printf("Error, can't open P%c%d\n", port_letter, pin_num);
                             pressEnterToContinue();
                             break;
                         }
-                        port_letter = buffer[0];
-                        printf("Ok Port %c is set\n", port_letter);
-                        pressEnterToContinue();
-                        break;
-            case '2' :  printf("Give pin number : ");
-                        scanf("%d", &value);
-                        if ((value < 0) || (value > 31))
-                            printf("Error, wrong value\n");
-                        else
-                            pin_num = value;
+                        printf("Ok P%c%d is open\n", port_letter, pin_num);
                         pressEnterToContinue();
                         break;
             case '3' :  printf("Give direction (0:in, 1:out) : ");
                         scanf("%d", &value);
-                        ret = as_gpio_set_pin_direction(gpio_dev,
-                                                        pin_num,
-                                                        value);
+                        ret = as_gpio_set_pin_direction(gpio_dev, value);
                         if(ret < 0)
                         {
                             printf("Error, can't change direction\n");
@@ -530,37 +521,31 @@ void test_gpio()
                         break;
             case '4' :  printf("Give value : ");
                         scanf("%d", &value);
-                        ret = as_gpio_set_pin_value(gpio_dev,
-                                                    pin_num,
-                                                    value);
+                        ret = as_gpio_set_pin_value(gpio_dev, value);
                         if(ret < 0)
                         {
                             printf("Error, can't change pin value\n");
                             pressEnterToContinue();
                             break;
                         }
-                        port_value = value;
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
             case '5' :  printf("Get value \n");
-                        ret = as_gpio_get_pin_value(gpio_dev,
-                                                    pin_num);
+                        ret = as_gpio_get_pin_value(gpio_dev);
                         if (ret < 0)
                         {
                             printf("Error, can't get pin value\n");
                             pressEnterToContinue();
                             break;
                         }
-                        printf("Value is %d\n",ret);
+                        printf("Value is %d\n", ret);
                         port_value = ret;
                         pressEnterToContinue();
                         break;
             case '6' :  printf("Give value : ");
                         scanf("%d", &value);
-                        ret = as_gpio_set_pullup_value(gpio_dev,
-                                                       pin_num,
-                                                       value);
+                        ret = as_gpio_set_pullup_value(gpio_dev, value);
                         if(ret < 0)
                         {
                             printf("Error, can't change pull up value\n");
@@ -569,19 +554,6 @@ void test_gpio()
                         }
                         pullup = value;
                         printf("Ok value changed\n");
-                        pressEnterToContinue();
-                        break;
-            case '7' :  printf("Get value \n");
-                        ret = as_gpio_get_pullup_value(gpio_dev,
-                                                       pin_num);
-                        if (ret < 0)
-                        {
-                            printf("Error, can't get pull up value\n");
-                            pressEnterToContinue();
-                            break;
-                        }
-                        printf("Value is %d\n",ret);
-                        pullup = ret;
                         pressEnterToContinue();
                         break;
             case '8' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
@@ -594,9 +566,7 @@ void test_gpio()
                         if (value == 2)value = GPIO_IRQ_MODE_RISING ;
                         if (value == 3)value = GPIO_IRQ_MODE_FALLING;
                         if (value == 4)value = GPIO_IRQ_MODE_BOTH   ;
-                        ret = as_gpio_set_irq_mode(gpio_dev,
-                                                   pin_num,
-                                                   value);
+                        ret = as_gpio_set_irq_mode(gpio_dev, value);
                         if(ret < 0)
                         {
                             printf("Error, can't change irq value\n");
@@ -606,22 +576,8 @@ void test_gpio()
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
-            case '9' :  printf("Get value \n");
-                        ret = as_gpio_get_irq_mode(gpio_dev, pin_num);
-                        if (ret < 0)
-                        {
-                            printf("Error, can't get pull up value\n");
-                            pressEnterToContinue();
-                            break;
-                        }
-                        if (ret==GPIO_IRQ_MODE_NOINT  )printf("GPIO_IRQ_MODE_NOINT  \n");
-                        if (ret==GPIO_IRQ_MODE_RISING )printf("GPIO_IRQ_MODE_RISING \n");
-                        if (ret==GPIO_IRQ_MODE_FALLING)printf("GPIO_IRQ_MODE_FALLING\n");
-                        if (ret==GPIO_IRQ_MODE_BOTH   )printf("GPIO_IRQ_MODE_BOTH   \n");
-                        pressEnterToContinue();
-                        break;
             case 'a' :  printf("Blocking read \n");
-                        ret = as_gpio_blocking_get_pin_value(gpio_dev, pin_num, 10, 0);
+                        ret = as_gpio_blocking_get_pin_value(gpio_dev, 10, 0);
                         if (ret < 0)
                         {
                             printf("Error, can't read value\n");

@@ -35,71 +35,72 @@ extern "C" {
 
 #define PORT_SIZE (32)
 
-//TODO: test irq
+//TODO: Change structure to use pin instead of port.
 
 /**
  * Store gpio parameters
  */
 struct as_gpio_device {
     unsigned char port_letter;
-    int fdev;       /* port file */
-    int fpin[PORT_SIZE];       /* pin file for blocking read */
-    int irq_mode[PORT_SIZE];
+    int pin_num;
+    int fpin;       /* pin file */
+    int irq_mode;
 };
 
 /** @brief Initialize port access
  *
  * @param aPortChar character port in UPPER case
+ * @param aPinNum int pin number
  *
  * @return error if negative value
  */
-struct as_gpio_device *as_gpio_open(char aPortChar);
+struct as_gpio_device *as_gpio_open(char aPortChar, int aPinNum);
 
 /** @brief  Set pin direction
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  * @param aDirection direction 0:input 1:output
  *
  * @return error if negative value
  */
 int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev,
-                                  int aPinNum,
                                   int aDirection);
+
+/** @brief  Get pin direction
+ *
+ * @param aDev as_gpio_device pointer structure
+ *
+ * @return error if negative value
+ */
+int32_t as_gpio_get_pin_direction(struct as_gpio_device *aDev);
 
 /** @brief Set pin value
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  * @param aValue value of pin (1 or 0)
  *
  * @return error if negative
  */
 int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
-                              int aPinNum,
                               int aValue);
 
 /** @brief Get pin value
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  *
  * @return pin value if positive or null, error if negative
  */
-int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev,
-                              int aPinNum);
+int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev);
 
 /** @brief Get pin value, blocking until interrupt occur
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  * @param aDelay_s waiting delay in seconds
  * @param aDelay_us waiting delay in useconds (plus delay in seconds)
  *
  * @return pin value if positive or null, read error if -1, timeout if -10
  */
 int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
-                                       int aPinNum,
                                        int aDelay_s,
                                        int aDelay_us);
 
@@ -110,42 +111,54 @@ int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
  *
  * @return pin pull up value if positive or null, error if negative
  */
-int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev,
-                                 int aPinNum);
+int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev);
 
 /** @brief Set pin pull-up value
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  * @param aValue value of pin (1 or 0)
  *
  * @return error if negative
  */
 int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
-                                 int aPinNum,
                                  int aValue);
 
 /** @brief Set pin irq mode
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  * @param aMode irq mode
  *
  * @return error if negative
  */
 int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
-                             int aPinNum,
                              int aMode);
 
 /** @brief Get pin irq mode value
  *
  * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
  *
  * @return pin mode value if positive or null, error if negative
  */
-int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev,
-                             int aPinNum);
+int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev);
+
+/** @brief Get pin number value
+ *
+ * @param aDev as_gpio_device pointer structure
+ *
+ * @return pin mode value if positive or null, error if negative
+ */
+int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev)
+{ return aDev->pin_num;}
+
+/** @brief Get port letter
+ *
+ * @param aDev as_gpio_device pointer structure
+ *
+ * @return pin mode value if positive or null, error if negative
+ */
+int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev)
+{ return aDev->port_letter;}
+
 
 /** @brief Close port access
  *
