@@ -26,7 +26,6 @@
 #ifndef __CORE_GPIO_H__
 #define __CORE_GPIO_H__
 
-
 /* IOCTL */
 #define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)/* Read/write bitmask that determine*/
 #define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)/*in/out pins (1 output, 0 input) */
@@ -40,13 +39,16 @@
 #define GPIORDPULLUP	_IOR(PP_IOCTL, 0xF6, int)
 #define GPIOWRPULLUP	_IOW(PP_IOCTL, 0xF7, int)
 
-#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int)
-#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int)
-#define GPIOWRIRQMODE_H	_IOW(PP_IOCTL, 0xFA, int)
-#define GPIOWRIRQMODE_L	_IOW(PP_IOCTL, 0xFB, int)
+#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int) /* only for /dev/gpio/gpioX 	*/
+#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int) /*							*/
+#define GPIOWRIRQMODE_H	_IOW(PP_IOCTL, 0xFA, int) /*							*/
+#define GPIOWRIRQMODE_L	_IOW(PP_IOCTL, 0xFB, int) /*							*/
 
 #define GPIORDISR 	_IOR(PP_IOCTL, 0xFC, int)
 #define GPIOWRISR	_IOW(PP_IOCTL, 0xFD, int)
+
+#define GPIORDIRQMODE	_IOR(PP_IOCTL, 0xFE, int) /* only for /dev/gpio/PXx */
+#define GPIOWRIRQMODE	_IOW(PP_IOCTL, 0xFF, int) /*						*/
 
 /* Pretend we're PPDEV for IOCTL */
 #include <linux/ppdev.h>

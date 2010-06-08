@@ -1,9 +1,10 @@
 /*
  * Armadeus i.MXL/27 GPIO management driver
  *
- * Copyright (C) 2006-2008 Julien Boibessot <julien.boibessot@armadeus.com>
- *                         Nicolas Colombain <nicolas.colombain@armadeus.com>
- *                         Armadeus Project / Armadeus Systems
+ * Copyright (C) 2006-2008	Julien Boibessot <julien.boibessot@armadeus.com>
+ *				Nicolas Colombain <nicolas.colombain@armadeus.com>
+ *				Fabien Marteau <fabien.marteau@armadeus.com>
+ *				Armadeus Project / Armadeus Systems
  *
  * Inspired by a lot of other GPIO management systems...
  *
@@ -14,7 +15,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -29,10 +30,10 @@
 #include <linux/proc_fs.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
-#include <linux/interrupt.h> /* request_irq */
-#include <linux/irq.h>       /* set_irq_type */
-#include <asm/gpio.h>        /* imx_gpio_... */
-#include <linux/cdev.h>	     /* struct cdev */
+#include <linux/interrupt.h>	/* request_irq */
+#include <linux/irq.h>		/* set_irq_type */
+#include <asm/gpio.h>		/* imx_gpio_... */
+#include <linux/cdev.h>		/* struct cdev */
 #include <mach/hardware.h>
 #include <asm/mach/map.h>
 #include <linux/poll.h>
@@ -46,31 +47,31 @@
 #include "core.h" /* for ioctl defs */
 
 
-#define DRIVER_NAME    "Armadeus GPIOs driver"
+#define DRIVER_NAME	"Armadeus GPIOs driver"
 #define DRIVER_VERSION "2.4"
 /* By default, we use dynamic allocation of major numbers -> MAJOR = 0 */
 #define GPIO_MAJOR 0
-#define GPIO_PROC_DIRNAME         "driver/gpio"
+#define GPIO_PROC_DIRNAME	"driver/gpio"
 
 #define GPIO_PROC_FILE 1
-#define SETTINGS_PROC_FILE        (1 << 3)
-#define SETTINGS_IRQ_PROC_FILE    (1 << 4)
-#define SETTINGS_PULLUP_PROC_FILE (1 << 5)
-#define SETTINGS_MODE_PROC_FILE   (1 << 6)
+#define SETTINGS_PROC_FILE		(1 << 3)
+#define SETTINGS_IRQ_PROC_FILE		(1 << 4)
+#define SETTINGS_PULLUP_PROC_FILE	(1 << 5)
+#define SETTINGS_MODE_PROC_FILE		(1 << 6)
 
 #define MAX_NUMBER_OF_PINS 32
 
-#define PORT_A      0
-#define PORT_B      1
-#define PORT_C      2
-#define PORT_D      3
+#define PORT_A		(0)
+#define PORT_B		(1)
+#define PORT_C		(2)
+#define PORT_D		(3)
 #ifdef CONFIG_ARCH_IMX
-#define NB_PORTS    4
+#define NB_PORTS	(4)
 #endif
 #ifdef CONFIG_ARCH_MX2
-#define PORT_E      4
-#define PORT_F      5
-#define NB_PORTS    6
+#define PORT_E		(4)
+#define PORT_F		(5)
+#define NB_PORTS	(6)
 #endif
 
 #define MAX_MINOR (255) /* Linux limitation */
@@ -242,15 +243,30 @@ static unsigned char get_irq_from_pin(int num_pin, int num_port)
 		shad = shadows_irq_h[num_port];
 		num_pin -= (portSize/2);
 	}
-
-	return shad >> (/*portSize-2-*/(2*num_pin))& 3;
+	return (shad >> (2*num_pin))&0x03;
 }
+
+static void set_irq_for_pin(int pin_num, int port_num, int value)
+{
+	int portSize = number_of_pins[port_num];
+	int return_value;
+
+	if (pin_num < (portSize/2)) {
+		return_value = shadows_irq_l[port_num]&(~(0x03<<(pin_num*2)));
+		shadows_irq_l[port_num] |= (value&0x03) << (pin_num*2);
+	} else {
+		return_value =
+			shadows_irq_h[port_num]&(~(0x03 << (2*(pin_num - MAX_NUMBER_OF_PINS))));
+		shadows_irq_h[port_num] |= (value&0x03) << (2*(pin_num - MAX_NUMBER_OF_PINS));
+	}
+}
+
 
 /*
  * Low level functions
  */
 /* These masks are for restricting user access to configuration of some
-   criticals GPIO pins used by Armadeus and not configurable */
+ * criticals GPIO pins used by Armadeus and not configurable */
 #ifdef CONFIG_ARCH_IMX
 static unsigned long PORT_MASK[]= { 0x0003FFFE, 0xF00FFF00, 0x0003E1F8, 0xFFFFFFFF };
 #else
@@ -331,7 +347,7 @@ static void initialize_all_ports(void)
 
 static void write_on_port(unsigned int aPort, unsigned int aValue)
 {
-	__raw_writel(aValue, VA_GPIO_BASE + MXC_DR(aPort));
+	__raw_writel(aValue & 0xFFFFFFFF, VA_GPIO_BASE + MXC_DR(aPort));
 }
 
 static unsigned int read_from_port(unsigned int aPort)
@@ -373,18 +389,18 @@ static unsigned int get_port_mode(unsigned int aPort)
 	int i;
 	int ocr1, ocr2, gius, value = 0;
 
-        ocr1 = __raw_readl(VA_GPIO_BASE + MXC_OCR1(aPort));
-        ocr2 = __raw_readl(VA_GPIO_BASE + MXC_OCR2(aPort));
+	ocr1 = __raw_readl(VA_GPIO_BASE + MXC_OCR1(aPort));
+	ocr2 = __raw_readl(VA_GPIO_BASE + MXC_OCR2(aPort));
 	gius = __raw_readl(VA_GPIO_BASE + MXC_GIUS(aPort));
 	/* pin is a GPIO if OCR == 3 AND GIUS == 1 */
 	for (i=0; i < number_of_pins[aPort]; i++) {
 		if (i < 16) {
-                        if (((ocr1>>(i*2)) & 3) == 3)
-                                value = value | (1<<i);
-                } else {
-                        if (((ocr2>>((i-16)*2)) & 3) == 3)
+			if (((ocr1>>(i*2)) & 3) == 3)
 				value = value | (1<<i);
-                }
+		} else {
+			if (((ocr2>>((i-16)*2)) & 3) == 3)
+				value = value | (1<<i);
+		}
 	}
 	value = value & gius;
 
@@ -561,7 +577,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 
 	gpio = kzalloc(sizeof(struct gpio_item), GFP_KERNEL);
 	if (!gpio)
-		goto err_request;
+		goto err_kzalloc;
 
 	file->private_data = gpio;
 	spin_lock_init(&gpio->lock);
@@ -578,7 +594,7 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		case FULL_PORTF_MINOR:
 #endif
 			gpio->nb_pins = 32;
-			gpio->changed = 1;
+			gpio->changed = 0;
 			gpio->port = FULL_MINOR_TO_PORT(minor);
 			pr_debug("Reserving full %s\n", port_name[gpio->port]);
 			goto success;
@@ -587,11 +603,11 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 
 	/* Pin by pin access */
 	gpio->nb_pins = 1;
-	gpio->changed = 1;
+	gpio->changed = 0;
 
 	if ((ret = gpio_request(minor, "gpio-dev"))) {
 		printk("GPIO %i is already in use\n", minor);
-		goto err_request;
+		goto err_gpio_request;
 	}
 
 	gpio->port = minor >> GPIO_PORT_SHIFT;
@@ -615,7 +631,8 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 			goto err_irq;
 		switch (gpio->irq_value) {
 			case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):
-				;
+				set_irq_type(irq, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING);
+				break ;
 			case IRQF_TRIGGER_RISING:
 				set_irq_type(irq, IRQF_TRIGGER_RISING);
 				break;
@@ -632,11 +649,13 @@ success:
 	gpio->initialized = 1;
 	return 0;
 
+	free_irq(irq, gpio);
 err_irq:
 	printk("%s error while requesting irq %d\n", __FUNCTION__, irq);
-	free_irq(irq, gpio);
-err_request:
+	gpio_free(minor);
+err_gpio_request:
 	kfree(gpio);
+err_kzalloc:
 	/* what about spinlock & wait_queue ?? */
 	return ret;
 }
@@ -663,21 +682,25 @@ static int armadeus_gpio_dev_release(struct inode *inode, struct file *file)
 
 /* Handling of IOCTL calls */
 int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
-	unsigned int cmd, unsigned long arg)
+			unsigned int cmd, unsigned long arg)
 {
 	int err = 0, ret = 0, value = 0;
+	unsigned int return_value;
+	unsigned int port_num, pin_num;
 	unsigned int minor;
+	unsigned int irq;
+	struct gpio_item *gpio = filp->private_data;
 
 	pr_debug(DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd);
 
 	/* Extract the type and number bitfields, and don't decode wrong cmds:
-	   return ENOTTY (inappropriate ioctl) before access_ok() */
+	 * return ENOTTY (inappropriate ioctl) before access_ok() */
 	if (_IOC_TYPE(cmd) != PP_IOCTL)
 		return -ENOTTY;
 
 	/* The direction is a bitmask, and VERIFY_WRITE catches R/W transfers.
-	`Type' is user-oriented, while access_ok is kernel-oriented,
-	so the concept of "read" and "write" is reversed */
+	 * `Type' is user-oriented, while access_ok is kernel-oriented,
+	 * so the concept of "read" and "write" is reversed */
 	if (_IOC_DIR(cmd) & _IOC_READ)
 		err = !access_ok(VERIFY_WRITE, (void *)arg, _IOC_SIZE(cmd));
 	else if (_IOC_DIR(cmd) & _IOC_WRITE)
@@ -697,106 +720,234 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 #else
 	if (minor < FULL_PORTD_MINOR) {
 #endif
-		printk("IOCTLs are only available on 'full port' minors !\n");
-		ret = -EFAULT;
-		goto out;
-	}
+	port_num= (unsigned int)(minor/MAX_NUMBER_OF_PINS);
+	pin_num	= (unsigned int)(minor%MAX_NUMBER_OF_PINS);
 
-	switch (cmd) {
+	/* ioctl for /dev/gpio/PXx */
+	switch(cmd)
+	{
 		case GPIORDDIRECTION:
-		value = get_port_dir(MAX_MINOR - minor);
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
+			value = get_port_dir(port_num);
+			return_value = (((value & (1<<pin_num))!=0)?1:0);
+			ret = __put_user(return_value, (unsigned int *)arg);
+			break;
 
 		case GPIOWRDIRECTION:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			set_port_dir(MAX_MINOR - minor, value);
-		}
-		break;
+			ret = __get_user(value, (unsigned int *)arg);
+			return_value = get_port_dir(port_num);
+			if (value != 0)
+				set_port_dir(port_num, return_value | (1<<pin_num));
+			else
+				set_port_dir(port_num, return_value & (~(1<<pin_num)));
+			break;
 
 		case GPIORDDATA:
-		value = read_from_port(MAX_MINOR - minor);
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
+			value = read_from_port(port_num);
+			return_value = (((value & (1<<pin_num))!=0)?1:0);
+			ret = __put_user(return_value, (unsigned int *)arg);
+			break;
 
 		case GPIOWRDATA:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			write_on_port(MAX_MINOR - minor, value);
-		}
-		break;
+			ret = __get_user(value, (unsigned int *)arg);
+			return_value = __raw_readl(VA_GPIO_BASE + MXC_DR(port_num));
+			if (value != 0)
+			{
+				write_on_port(port_num, return_value | (1<<pin_num));
+			}
+			else
+			{
+				write_on_port(port_num, return_value & (~(1<<pin_num)));
+			}
+			break;
 
 		case GPIORDMODE:
-		value = get_port_mode(MAX_MINOR - minor);
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
+			value = get_port_mode(port_num);
+			return_value = (((value & (1<<pin_num))!=0)?1:0);
+			ret = __put_user(return_value, (unsigned int *)arg);
+			break;
 
 		case GPIOWRMODE:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			set_port_mode(MAX_MINOR - minor, value);
-		}
-		break;
+			ret = __get_user(value, (unsigned int *)arg);
+			return_value = get_port_mode(port_num);
+			if (value != 0)
+				set_port_mode(port_num, return_value | (1<<pin_num));
+			else
+				set_port_mode(port_num, return_value & (~(1<<pin_num)));
+			break;
 
-		case GPIORDIRQMODE_H:
-		value  = shadows_irq_h[MAX_MINOR - minor];
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
-
-		case GPIORDIRQMODE_L:
-		value = shadows_irq_l[MAX_MINOR - minor];
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
-
-		case GPIOWRIRQMODE_H:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			shadows_irq_h[MAX_MINOR - minor] = value;
-		}
-		break;
-
-		case GPIOWRIRQMODE_L:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			shadows_irq_l[MAX_MINOR - minor] = value;
-		}
-		break;
+		case GPIORDIRQMODE:
+			ret = __put_user(get_irq_from_pin(pin_num, port_num), (unsigned int *)arg);
+			break;
+		case GPIOWRIRQMODE:
+			ret = __get_user(value, (unsigned int *)arg);
+			value &= 0x03;
+			if (ret == 0) {
+				set_irq_for_pin(pin_num, port_num, value);
+			}
+			irq = IRQ_GPIOA(minor); /* irq number are continuous */
+			if (value != IRQF_TRIGGER_NONE) {
+				if (gpio->irq_value == IRQF_TRIGGER_NONE)
+				{
+					ret = request_irq(irq, armadeus_gpio_interrupt, 0, "gpio", gpio);
+					if (ret)
+					{
+						printk(KERN_ERR "GPIO TODO: manage request_irq error\n");
+					}
+				}
+				gpio->irq_value = value;
+				switch (gpio->irq_value) {
+					case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):
+						set_irq_type(irq, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING);
+						break ;
+					case IRQF_TRIGGER_RISING:
+						set_irq_type(irq, IRQF_TRIGGER_RISING);
+						break;
+					case IRQF_TRIGGER_FALLING:
+						set_irq_type(irq, IRQF_TRIGGER_FALLING);
+						break;
+					case IRQF_TRIGGER_NONE:
+						break;
+				}
+			} else {
+				if (gpio->irq_value != IRQF_TRIGGER_NONE){
+					free_irq(irq, gpio);
+				}
+				gpio->irq_value = IRQF_TRIGGER_NONE;
+			}
+			break;
 
 		case GPIORDPULLUP:
-		value = get_port_pull_up(MAX_MINOR - minor);
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
+			value = get_port_pull_up(port_num);
+			return_value = (((value & (1<<pin_num))!=0)?1:0);
+			ret = __put_user(return_value, (unsigned int *)arg);
+			break;
 
 		case GPIOWRPULLUP:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			set_port_pullup(MAX_MINOR - minor, value);
-		}
-		break;
+			ret = __get_user(value, (unsigned int *)arg);
+			return_value = get_port_pull_up(port_num);
+			if (value != 0)
+				set_port_pullup(port_num, return_value | (1<<pin_num));
+			else
+				set_port_pullup(port_num, return_value & (~(1<<pin_num)));
+			break;
 
 		case GPIORDISR:
-		value = get_port_isr(MAX_MINOR - minor);
-		ret = __put_user(value, (unsigned int *)arg);
-		break;
+			value = get_port_isr(port_num);
+			return_value = (((value & (1<<pin_num))!=0)?1:0);
+			ret = __put_user(return_value, (unsigned int *)arg);
+			break;
 
 		case GPIOWRISR:
-		ret = __get_user(value, (unsigned int *)arg);
-		if (ret == 0) {
-			set_port_isr(MAX_MINOR - minor, value);
-		}
-		break;
+			ret = __get_user(value, (unsigned int *)arg);
+			return_value = get_port_isr(port_num);
+			if (value != 0)
+				set_port_isr(port_num, return_value | (1<<pin_num));
+			else
+				set_port_isr(port_num, return_value & (~(1<<pin_num)));
+
+			break;
 
 		default:
-		printk("IOCTL not supported\n");
-		ret = -ENOTTY;
-		break;
-	}
-out:
-	/* Release exclusive access */
-	up(&gpio_sema);
+			printk("IOCTL not supported\n");
+			ret = -ENOTTY;
+			break;
+		}
+	} else switch (cmd) {
 
-	return ret;
+			case GPIORDDIRECTION:
+				value = get_port_dir(MAX_MINOR - minor);
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRDIRECTION:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					set_port_dir(MAX_MINOR - minor, value);
+				}
+				break;
+
+			case GPIORDDATA:
+				value = read_from_port(MAX_MINOR - minor);
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRDATA:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					write_on_port(MAX_MINOR - minor, value);
+				}
+				break;
+
+			case GPIORDMODE:
+				value = get_port_mode(MAX_MINOR - minor);
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRMODE:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					set_port_mode(MAX_MINOR - minor, value);
+				}
+				break;
+
+			case GPIORDIRQMODE_H:
+				value= shadows_irq_h[MAX_MINOR - minor];
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIORDIRQMODE_L:
+				value = shadows_irq_l[MAX_MINOR - minor];
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRIRQMODE_H:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					shadows_irq_h[MAX_MINOR - minor] = value;
+				}
+				break;
+
+			case GPIOWRIRQMODE_L:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					shadows_irq_l[MAX_MINOR - minor] = value;
+				}
+				break;
+
+			case GPIORDPULLUP:
+				value = get_port_pull_up(MAX_MINOR - minor);
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRPULLUP:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					set_port_pullup(MAX_MINOR - minor, value);
+				}
+				break;
+
+			case GPIORDISR:
+				value = get_port_isr(MAX_MINOR - minor);
+				ret = __put_user(value, (unsigned int *)arg);
+				break;
+
+			case GPIOWRISR:
+				ret = __get_user(value, (unsigned int *)arg);
+				if (ret == 0) {
+					set_port_isr(MAX_MINOR - minor, value);
+				}
+				break;
+
+			default:
+				printk("IOCTL not supported\n");
+				ret = -ENOTTY;
+				break;
+		}
+
+		/* Release exclusive access */
+		up(&gpio_sema);
+
+		return ret;
 }
 
 static int armadeus_gpio_dev_fasync(int fd, struct file* filp, int on)
@@ -816,24 +967,23 @@ static unsigned int armadeus_gpio_dev_poll(struct file *filp, poll_table *wait)
 	poll_wait(filp, &gpio->change_wq, wait);
 	if (gpio->changed)
 	{
-	    mask |= (POLLIN | POLLRDNORM);
+		mask |= (POLLIN | POLLRDNORM);
 	}
 	spin_unlock_irq(&gpio->lock);
 	return mask;
 }
 
 static struct file_operations gpio_fops = {
-	.owner   = THIS_MODULE,
-	.llseek  = no_llseek,
-	.write   = armadeus_gpio_dev_write,
-	.read    = armadeus_gpio_dev_read,
-	.open    = armadeus_gpio_dev_open,
-	.release = armadeus_gpio_dev_release,
-	.ioctl   = armadeus_gpio_dev_ioctl,
-	.fasync  = armadeus_gpio_dev_fasync,
-	.poll    = armadeus_gpio_dev_poll,
+	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
+	.write		= armadeus_gpio_dev_write,
+	.read		= armadeus_gpio_dev_read,
+	.open		= armadeus_gpio_dev_open,
+	.release	= armadeus_gpio_dev_release,
+	.ioctl		= armadeus_gpio_dev_ioctl,
+	.fasync		= armadeus_gpio_dev_fasync,
+	.poll		= armadeus_gpio_dev_poll,
 };
-
 
 /*
  * PROC file functions
@@ -852,10 +1002,10 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 	}
 
 	/* We give all of our information in one go, so if the user asks us if we
-	   have more information the answer should always be no. This is important
-	   because the standard read function from the library would continue to
-	   issue the read system call until the kernel replies that it has no more
-	   information, or until its buffer is filled
+	 * have more information the answer should always be no. This is important
+	 * because the standard read function from the library would continue to
+	 * issue the read system call until the kernel replies that it has no more
+	 * information, or until its buffer is filled
 	*/
 	if (offset > 0 || buffer_length < (number_of_pins[port_ID]+2))
 		return 0;
@@ -915,7 +1065,7 @@ static char new_gpio_state[MAX_NUMBER_OF_PINS*2];
 static int armadeus_gpio_proc_write(__attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, __attribute__ ((unused)) void* data)
 {
 	int len;
-	unsigned int  gpio_state=0, gpio_state2=0;
+	unsigned int gpio_state=0, gpio_state2=0;
 	unsigned int port_ID = 0;
 	struct gpio_settings *settings = (struct gpio_settings *) data;
 
@@ -951,7 +1101,7 @@ static int armadeus_gpio_proc_write(__attribute__ ((unused)) struct file *file, 
 		if (settings->type != INTERRUPT) {
 			gpio_state = fromString(new_gpio_state, number_of_pins[port_ID], 1);
 		} else {
-			gpio_state =  fromString(new_gpio_state, number_of_pins[port_ID]/2, 2);
+			gpio_state = fromString(new_gpio_state, number_of_pins[port_ID]/2, 2);
 			gpio_state2 = fromString(new_gpio_state+(number_of_pins[port_ID]/2), (number_of_pins[port_ID]/2), 2);
 		}
 
@@ -1017,9 +1167,9 @@ static int initialize_proc_entry( struct proc_config_entry *config )
 			printk(KERN_ERR DRIVER_NAME ": Couldn't register %s. Terminating.\n", config[i].name);
 			return -ENOMEM;
 		}
-		config[i].entry->read_proc  = armadeus_gpio_proc_read;
-		config[i].entry->write_proc = armadeus_gpio_proc_write;
-		config[i].entry->data       = kmalloc(sizeof(struct gpio_settings), GFP_KERNEL);
+		config[i].entry->read_proc	= armadeus_gpio_proc_read;
+		config[i].entry->write_proc	= armadeus_gpio_proc_write;
+		config[i].entry->data		= kmalloc(sizeof(struct gpio_settings), GFP_KERNEL);
 		((struct gpio_settings*) config[i].entry->data)->port = i;
 		((struct gpio_settings*) config[i].entry->data)->type = config[i].type;
 	}
@@ -1144,7 +1294,7 @@ static void print_port_params(int port, int nb, int* params)
 {
 	int i;
 
-	printk("    %s Parameters (%i): ", port_name[port], nb);
+	printk("	%s Parameters (%i): ", port_name[port], nb);
 	for (i = 0; i < NB_CONFIG_REGS; i++) {
 		printk(" 0x%x", params[i]);
 	}
@@ -1243,7 +1393,7 @@ EXPORT_SYMBOL(gpioGetPortDir);
 
 module_init(armadeus_gpio_init);
 module_exit(armadeus_gpio_cleanup);
-MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain");
+MODULE_AUTHOR("Julien Boibessot / Nicolas Colombain / Fabien Marteau");
 MODULE_DESCRIPTION("Armadeus GPIOs driver");
 MODULE_LICENSE("GPL");
 
