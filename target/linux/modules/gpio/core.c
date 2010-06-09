@@ -577,19 +577,14 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	    gpio_get_value((gpio->port << GPIO_PORT_SHIFT) | gpio->number);
 	gpio->pin_state = new_state;
 
-	if ((gpio->irq_value != (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING))
-	    || new_state != old_state) {
+	if ((gpio->irq_value != (IRQ_TYPE_EDGE_BOTH)) || new_state != old_state) {
 		gpio->changed = 1;
 		wake_up_interruptible(&gpio->change_wq);
 
 		if (gpio->async_queue)
 			kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
-		if (gpio->irq_value ==
-		    (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING)) {
-			set_irq_type(irq,
-				     ((gpio->
-				       pin_state) ? IRQF_TRIGGER_FALLING :
-				      IRQF_TRIGGER_RISING));
+		if (gpio->irq_value == (IRQ_TYPE_EDGE_BOTH)) {
+			set_irq_type(irq, ((gpio-> pin_state) ? IRQ_TYPE_EDGE_FALLING : IRQ_TYPE_EDGE_RISING));
 		}
 	}
 
@@ -661,18 +656,16 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		if (ret)
 			goto err_irq;
 		switch (gpio->irq_value) {
-		case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):
-			set_irq_type(irq,
-				     IRQF_TRIGGER_RISING |
-				     IRQF_TRIGGER_FALLING);
+		case (IRQ_TYPE_EDGE_BOTH):
+			set_irq_type(irq, IRQ_TYPE_EDGE_BOTH);
 			break;
-		case IRQF_TRIGGER_RISING:
-			set_irq_type(irq, IRQF_TRIGGER_RISING);
+		case IRQ_TYPE_EDGE_RISING:
+			set_irq_type(irq, IRQ_TYPE_EDGE_RISING);
 			break;
-		case IRQF_TRIGGER_FALLING:
-			set_irq_type(irq, IRQF_TRIGGER_FALLING);
+		case IRQ_TYPE_EDGE_FALLING:
+			set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
 			break;
-		case IRQF_TRIGGER_NONE:
+		case IRQ_TYPE_NONE:
 			break;
 		}
 	}
@@ -827,8 +820,8 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 				set_irq_for_pin(pin_num, port_num, value);
 			}
 			irq = IRQ_GPIOA(minor);	/* irq number are continuous */
-			if (value != IRQF_TRIGGER_NONE) {
-				if (gpio->irq_value == IRQF_TRIGGER_NONE) {
+			if (value != IRQ_TYPE_NONE) {
+				if (gpio->irq_value == IRQ_TYPE_NONE) {
 					ret =
 					    request_irq(irq,
 							armadeus_gpio_interrupt,
@@ -840,26 +833,25 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 				}
 				gpio->irq_value = value;
 				switch (gpio->irq_value) {
-				case (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING):
-					set_irq_type(irq,
-						     IRQF_TRIGGER_RISING |
-						     IRQF_TRIGGER_FALLING);
+				case (IRQ_TYPE_EDGE_BOTH):
+					set_irq_type(irq, IRQ_TYPE_EDGE_BOTH);
 					break;
-				case IRQF_TRIGGER_RISING:
-					set_irq_type(irq, IRQF_TRIGGER_RISING);
+				case IRQ_TYPE_EDGE_RISING:
+					set_irq_type(irq, IRQ_TYPE_EDGE_RISING);
 					break;
-				case IRQF_TRIGGER_FALLING:
-					set_irq_type(irq, IRQF_TRIGGER_FALLING);
+				case IRQ_TYPE_EDGE_FALLING:
+					set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
 					break;
-				case IRQF_TRIGGER_NONE:
+				case IRQ_TYPE_NONE:
 					break;
 				}
 			} else {
-				if (gpio->irq_value != IRQF_TRIGGER_NONE) {
+				if (gpio->irq_value != IRQ_TYPE_NONE) {
 					free_irq(irq, gpio);
 				}
-				gpio->irq_value = IRQF_TRIGGER_NONE;
+				gpio->irq_value = IRQ_TYPE_NONE;
 			}
+            gpio->changed=0;
 			break;
 
 		case GPIORDPULLUP:
