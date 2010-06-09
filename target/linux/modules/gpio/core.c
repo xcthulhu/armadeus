@@ -1,7 +1,7 @@
 /*
  * Armadeus i.MXL/27 GPIO management driver
  *
- * Copyright (C) 2006-2008	Julien Boibessot <julien.boibessot@armadeus.com>
+ * Copyright (C) 2006-2010	Julien Boibessot <julien.boibessot@armadeus.com>
  *				Nicolas Colombain <nicolas.colombain@armadeus.com>
  *				Fabien Marteau <fabien.marteau@armadeus.com>
  *				Armadeus Project / Armadeus Systems
@@ -47,7 +47,7 @@
 #include "core.h"		/* for ioctl defs */
 
 #define DRIVER_NAME	"Armadeus GPIOs driver"
-#define DRIVER_VERSION "2.4"
+#define DRIVER_VERSION "2.5"
 /* By default, we use dynamic allocation of major numbers -> MAJOR = 0 */
 #define GPIO_MAJOR 0
 #define GPIO_PROC_DIRNAME	"driver/gpio"
@@ -260,13 +260,13 @@ static void set_irq_for_pin(int pin_num, int port_num, int value)
 	if (pin_num < (portSize / 2)) {
 		return_value =
 		    shadows_irq_l[port_num] & (~(0x03 << (pin_num * 2)));
-		shadows_irq_l[port_num] |= (value & 0x03) << (pin_num * 2);
+		shadows_irq_l[port_num] = return_value | ((value & 0x03) << (pin_num * 2));
 	} else {
 		return_value =
 		    shadows_irq_h[port_num] &
 		    (~(0x03 << (2 * (pin_num - MAX_NUMBER_OF_PINS))));
-		shadows_irq_h[port_num] |=
-		    (value & 0x03) << (2 * (pin_num - MAX_NUMBER_OF_PINS));
+		shadows_irq_h[port_num] = return_value |
+		    ((value & 0x03) << (2 * (pin_num - MAX_NUMBER_OF_PINS)));
 	}
 }
 
