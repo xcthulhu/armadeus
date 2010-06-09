@@ -577,16 +577,11 @@ static irqreturn_t armadeus_gpio_interrupt(int irq, void *dev_id)
 	    gpio_get_value((gpio->port << GPIO_PORT_SHIFT) | gpio->number);
 	gpio->pin_state = new_state;
 
-	if ((gpio->irq_value != (IRQ_TYPE_EDGE_BOTH)) || new_state != old_state) {
-		gpio->changed = 1;
-		wake_up_interruptible(&gpio->change_wq);
+	gpio->changed = 1;
+	wake_up_interruptible(&gpio->change_wq);
 
-		if (gpio->async_queue)
-			kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
-		if (gpio->irq_value == (IRQ_TYPE_EDGE_BOTH)) {
-			set_irq_type(irq, ((gpio-> pin_state) ? IRQ_TYPE_EDGE_FALLING : IRQ_TYPE_EDGE_RISING));
-		}
-	}
+	if (gpio->async_queue)
+		kill_fasync(&gpio->async_queue, SIGIO, POLL_IN);
 
 	return IRQ_HANDLED;
 }
