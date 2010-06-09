@@ -52,28 +52,28 @@
 #define GPIO_MAJOR 0
 #define GPIO_PROC_DIRNAME	"driver/gpio"
 
-#define GPIO_PROC_FILE 1
-#define SETTINGS_PROC_FILE		(1 << 3)
-#define SETTINGS_IRQ_PROC_FILE		(1 << 4)
-#define SETTINGS_PULLUP_PROC_FILE	(1 << 5)
-#define SETTINGS_MODE_PROC_FILE		(1 << 6)
+#define GPIO_PROC_FILE_INIT		(1 << 0)
+#define SETTINGS_PROC_FILE_INIT		(1 << 3)
+#define SETTINGS_IRQ_PROC_FILE_INIT	(1 << 4)
+#define SETTINGS_PULLUP_PROC_FILE_INIT	(1 << 5)
+#define SETTINGS_MODE_PROC_FILE_INIT	(1 << 6)
 
 #define MAX_NUMBER_OF_PINS 32
 
-#define PORT_A		(0)
-#define PORT_B		(1)
-#define PORT_C		(2)
-#define PORT_D		(3)
+#define PORT_A		0
+#define PORT_B		1
+#define PORT_C		2
+#define PORT_D		3
 #ifdef CONFIG_ARCH_IMX
-#define NB_PORTS	(4)
+#define NB_PORTS	4
 #endif
 #ifdef CONFIG_ARCH_MX2
-#define PORT_E		(4)
-#define PORT_F		(5)
-#define NB_PORTS	(6)
+#define PORT_E		4
+#define PORT_F		5
+#define NB_PORTS	6
 #endif
 
-#define MAX_MINOR (255)		/* Linux limitation */
+#define MAX_MINOR	255	/* Linux limitation */
 
 #define FULL_PORTA_MINOR (MAX_MINOR - PORT_A)
 #define FULL_PORTB_MINOR (MAX_MINOR - PORT_B)
@@ -327,22 +327,19 @@ static void initialize_port(int port, int *init_params)
 		__raw_writel(init_params[SWR_I], VA_GPIO_BASE + MXC_SWR(port));
 	}
 	if (init_params[GPR_I]) {
-		lTemp =
-		    __raw_readl(VA_GPIO_BASE +
+		lTemp = __raw_readl(VA_GPIO_BASE +
 				MXC_GPR(port)) & (~PORT_MASK[port]);
 		__raw_writel(lTemp | (init_params[GPR_I] & PORT_MASK[port]),
 			     VA_GPIO_BASE + MXC_GPR(port));
 	}
 	if (init_params[GIUS_I]) {
-		lTemp =
-		    __raw_readl(VA_GPIO_BASE +
+		lTemp = __raw_readl(VA_GPIO_BASE +
 				MXC_GIUS(port)) & (~PORT_MASK[port]);
 		__raw_writel(lTemp | (init_params[GIUS_I] & PORT_MASK[port]),
 			     VA_GPIO_BASE + MXC_GIUS(port));
 	}
 	if (init_params[PUEN_I]) {
-		lTemp =
-		    __raw_readl(VA_GPIO_BASE +
+		lTemp = __raw_readl(VA_GPIO_BASE +
 				MXC_PUEN(port)) & (~PORT_MASK[port]);
 		__raw_writel(lTemp | (init_params[PUEN_I] & PORT_MASK[port]),
 			     VA_GPIO_BASE + MXC_PUEN(port));
@@ -510,7 +507,7 @@ static ssize_t armadeus_gpio_dev_write(struct file *file, const char *data,
 	}
 	ret = count;
 
- out:
+out:
 	up(&gpio_sema);
 	return ret;
 }
@@ -560,7 +557,7 @@ static ssize_t armadeus_gpio_dev_read(struct file *file, char *buf,
 	}
 	ret = count;
 
- out:
+out:
 	spin_unlock_irq(&gpio->lock);
 	return ret;
 }
@@ -665,19 +662,19 @@ static int armadeus_gpio_dev_open(struct inode *inode, struct file *file)
 		}
 	}
 
- success:
+success:
 	pr_debug("Opening /dev node for %s pin %d\n", port_name[gpio->port],
 		 gpio->number);
 	gpio->initialized = 1;
 	return 0;
 
 	free_irq(irq, gpio);
- err_irq:
+err_irq:
 	printk("%s error while requesting irq %d\n", __FUNCTION__, irq);
 	gpio_free(minor);
- err_gpio_request:
+err_gpio_request:
 	kfree(gpio);
- err_kzalloc:
+err_kzalloc:
 	/* what about spinlock & wait_queue ?? */
 	return ret;
 }
@@ -804,9 +801,8 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 			break;
 
 		case GPIORDIRQMODE:
-			ret =
-			    __put_user(get_irq_from_pin(pin_num, port_num),
-				       (unsigned int *)arg);
+			ret = __put_user(get_irq_from_pin(pin_num, port_num),
+					(unsigned int *)arg);
 			break;
 		case GPIOWRIRQMODE:
 			ret = __get_user(value, (unsigned int *)arg);
@@ -817,8 +813,7 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 			irq = IRQ_GPIOA(minor);	/* irq number are continuous */
 			if (value != IRQ_TYPE_NONE) {
 				if (gpio->irq_value == IRQ_TYPE_NONE) {
-					ret =
-					    request_irq(irq,
+					ret = request_irq(irq,
 							armadeus_gpio_interrupt,
 							0, "gpio", gpio);
 					if (ret) {
@@ -846,7 +841,7 @@ int armadeus_gpio_dev_ioctl(struct inode *inode, struct file *filp,
 				}
 				gpio->irq_value = IRQ_TYPE_NONE;
 			}
-            gpio->changed=0;
+			gpio->changed = 0;
 			break;
 
 		case GPIORDPULLUP:
@@ -1087,12 +1082,11 @@ static int armadeus_gpio_proc_read(char *buffer, char **start, off_t offset,
 	if (settings->type != INTERRUPT) {
 		len = toString(port_status, buffer, number_of_pins[port_ID], 1);
 	} else {
-		len =
-		    toString(port_status, buffer, number_of_pins[port_ID] / 2,
-			     2);
-		len +=
-		    toString(port_status2, buffer + len - 1,
-			     number_of_pins[port_ID] / 2, 2);
+		len = toString(port_status, buffer,
+				number_of_pins[port_ID] / 2,
+				2);
+		len += toString(port_status2, buffer + len - 1,
+				number_of_pins[port_ID] / 2, 2);
 		len -= 1;
 	}
 
@@ -1150,17 +1144,17 @@ static int armadeus_gpio_proc_write( __attribute__ ((unused))
 	if (strlen(new_gpio_state) > 0) {
 		/* Convert it from String to Int */
 		if (settings->type != INTERRUPT) {
-			gpio_state =
-			    fromString(new_gpio_state, number_of_pins[port_ID],
-				       1);
+			gpio_state = fromString(new_gpio_state,
+						number_of_pins[port_ID],
+						1);
 		} else {
-			gpio_state =
-			    fromString(new_gpio_state,
-				       number_of_pins[port_ID] / 2, 2);
-			gpio_state2 =
-			    fromString(new_gpio_state +
-				       (number_of_pins[port_ID] / 2),
-				       (number_of_pins[port_ID] / 2), 2);
+			gpio_state = fromString(new_gpio_state,
+						number_of_pins[port_ID] / 2,
+						2);
+			gpio_state2 = fromString(new_gpio_state +
+						(number_of_pins[port_ID] / 2),
+						(number_of_pins[port_ID] / 2),
+						2);
 		}
 
 		switch (settings->type) {
@@ -1219,10 +1213,9 @@ static int initialize_proc_entry(struct proc_config_entry *config)
 	int i;
 
 	for (i = 0; i < NB_PORTS; i++) {
-		config[i].entry =
-		    create_proc_entry(config[i].name,
-				      S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH,
-				      NULL);
+		config[i].entry = create_proc_entry(config[i].name,
+					S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH,
+					NULL);
 		if (config[i].entry == NULL) {
 			printk(KERN_ERR DRIVER_NAME
 			       ": Couldn't register %s. Terminating.\n",
@@ -1231,8 +1224,8 @@ static int initialize_proc_entry(struct proc_config_entry *config)
 		}
 		config[i].entry->read_proc = armadeus_gpio_proc_read;
 		config[i].entry->write_proc = armadeus_gpio_proc_write;
-		config[i].entry->data =
-		    kmalloc(sizeof(struct gpio_settings), GFP_KERNEL);
+		config[i].entry->data = kmalloc(sizeof(struct gpio_settings),
+						GFP_KERNEL);
 		((struct gpio_settings *)config[i].entry->data)->port = i;
 		((struct gpio_settings *)config[i].entry->data)->type =
 		    config[i].type;
@@ -1263,7 +1256,7 @@ static int create_proc_entries(void)
 
 	if ((ret = initialize_proc_entry(proc_config)))
 		return ret;
-	init_map |= GPIO_PROC_FILE;
+	init_map |= GPIO_PROC_FILE_INIT;
 
 	/* Create proc file to handle GPIO mode */
 	for (i = 0; i < NB_PORTS; i++) {
@@ -1274,7 +1267,7 @@ static int create_proc_entries(void)
 
 	if ((ret = initialize_proc_entry(proc_config)))
 		return ret;
-	init_map |= SETTINGS_MODE_PROC_FILE;
+	init_map |= SETTINGS_MODE_PROC_FILE_INIT;
 
 	/* Create proc file to handle GPIO direction settings */
 	for (i = 0; i < NB_PORTS; i++) {
@@ -1285,7 +1278,7 @@ static int create_proc_entries(void)
 
 	if ((ret = initialize_proc_entry(proc_config)))
 		return ret;
-	init_map |= SETTINGS_PROC_FILE;
+	init_map |= SETTINGS_PROC_FILE_INIT;
 
 	/* Create proc file to handle GPIO interrupt settings */
 	for (i = 0; i < NB_PORTS; i++) {
@@ -1296,7 +1289,7 @@ static int create_proc_entries(void)
 
 	if ((ret = initialize_proc_entry(proc_config)))
 		return ret;
-	init_map |= SETTINGS_IRQ_PROC_FILE;
+	init_map |= SETTINGS_IRQ_PROC_FILE_INIT;
 
 	/* Create proc file to handle GPIO pullup settings */
 	for (i = 0; i < NB_PORTS; i++) {
@@ -1307,7 +1300,7 @@ static int create_proc_entries(void)
 
 	if ((ret = initialize_proc_entry(proc_config)))
 		return ret;
-	init_map |= SETTINGS_PULLUP_PROC_FILE;
+	init_map |= SETTINGS_PULLUP_PROC_FILE_INIT;
 
 	pr_debug("OK!\n");
 
@@ -1320,7 +1313,7 @@ static void remove_proc_entries(void)
 	int i;
 
 	/* Remove /proc entries */
-	if (init_map & GPIO_PROC_FILE) {
+	if (init_map & GPIO_PROC_FILE_INIT) {
 		printk(DRIVER_NAME " removing /proc/.../portX\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%s", GPIO_PROC_DIRNAME,
@@ -1328,7 +1321,7 @@ static void remove_proc_entries(void)
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
-	if (init_map & SETTINGS_MODE_PROC_FILE) {
+	if (init_map & SETTINGS_MODE_PROC_FILE_INIT) {
 		printk(DRIVER_NAME " removing /proc/.../portXmode\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%smode", GPIO_PROC_DIRNAME,
@@ -1336,7 +1329,7 @@ static void remove_proc_entries(void)
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
-	if (init_map & SETTINGS_PROC_FILE) {
+	if (init_map & SETTINGS_PROC_FILE_INIT) {
 		printk(DRIVER_NAME " removing /proc/.../portXdir\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%sdir", GPIO_PROC_DIRNAME,
@@ -1344,7 +1337,7 @@ static void remove_proc_entries(void)
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
-	if (init_map & SETTINGS_IRQ_PROC_FILE) {
+	if (init_map & SETTINGS_IRQ_PROC_FILE_INIT) {
 		printk(DRIVER_NAME " removing /proc/.../portXirq\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%sirq", GPIO_PROC_DIRNAME,
@@ -1352,7 +1345,7 @@ static void remove_proc_entries(void)
 			remove_proc_entry(proc_name, NULL);
 		}
 	}
-	if (init_map & SETTINGS_PULLUP_PROC_FILE) {
+	if (init_map & SETTINGS_PULLUP_PROC_FILE_INIT) {
 		printk(DRIVER_NAME " removing /proc/.../portXpullup\n");
 		for (i = 0; i < NB_PORTS; i++) {
 			sprintf(proc_name, "%s/%spullup", GPIO_PROC_DIRNAME,
