@@ -40,19 +40,19 @@
 #define GPIORDPULLUP	_IOR(PP_IOCTL, 0xF6, int)
 #define GPIOWRPULLUP	_IOW(PP_IOCTL, 0xF7, int)
 
-#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int) /* only for /dev/gpio/gpioX 	*/
-#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int) /*							*/
-#define GPIOWRIRQMODE_H	_IOW(PP_IOCTL, 0xFA, int) /*							*/
-#define GPIOWRIRQMODE_L	_IOW(PP_IOCTL, 0xFB, int) /*							*/
+#define GPIORDIRQMODE_H	_IOR(PP_IOCTL, 0xF8, int)	/* only for /dev/gpio/gpioX   */
+#define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int)	/*                                                    */
+#define GPIOWRIRQMODE_H	_IOW(PP_IOCTL, 0xFA, int)	/*                                                    */
+#define GPIOWRIRQMODE_L	_IOW(PP_IOCTL, 0xFB, int)	/*                                                    */
 /* 2bits per pin for IRQ mode: 0 none, 1 rising, 2 falling, 3 both */
 
 #define GPIORDISR 	_IOR(PP_IOCTL, 0xFC, int)
 #define GPIOWRISR	_IOW(PP_IOCTL, 0xFD, int)
 
-#define GPIORDIRQMODE	_IOR(PP_IOCTL, 0xFE, int) /* only for /dev/gpio/PXx */
-#define GPIOWRIRQMODE	_IOW(PP_IOCTL, 0xFF, int) /*						*/
+#define GPIORDIRQMODE	_IOR(PP_IOCTL, 0xFE, int)	/* only for /dev/gpio/PXx */
+#define GPIOWRIRQMODE	_IOW(PP_IOCTL, 0xFF, int)	/*                                            */
 
 /* Pretend we're PPDEV for IOCTL */
 #include <linux/ppdev.h>
 
-#endif /* __CORE_GPIO_H__ */
+#endif				/* __CORE_GPIO_H__ */
