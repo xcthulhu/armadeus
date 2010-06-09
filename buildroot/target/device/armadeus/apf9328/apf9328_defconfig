@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Tue Jun  1 17:51:37 2010
+# Fri Jun  4 16:31:42 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -23,33 +23,34 @@ BR2_arm=y
 # BR2_sparc64 is not set
 # BR2_x86_64 is not set
 # BR2_generic_arm is not set
-# BR2_arm600 is not set
-# BR2_arm610 is not set
-# BR2_arm620 is not set
-# BR2_arm710 is not set
 # BR2_arm7tdmi is not set
-# BR2_arm710t is not set
+# BR2_arm610 is not set
+# BR2_arm710 is not set
 # BR2_arm720t is not set
-# BR2_arm740t is not set
 BR2_arm920t=y
 # BR2_arm922t is not set
 # BR2_arm926t is not set
-# BR2_arm926ej_s is not set
 # BR2_arm10t is not set
 # BR2_arm1136jf_s is not set
 # BR2_arm1176jz_s is not set
 # BR2_arm1176jzf_s is not set
+
+#
+# cortex-A8 needs gcc >= 4.4.x
+#
+# BR2_cortex_a8 is not set
 # BR2_sa110 is not set
 # BR2_sa1100 is not set
 # BR2_xscale is not set
 # BR2_iwmmxt is not set
 BR2_ARM_TYPE="ARM920T"
-# BR2_ARM_OABI is not set
 BR2_ARM_EABI=y
+# BR2_ARM_OABI is not set
 BR2_ARCH="arm"
 BR2_ENDIAN="LITTLE"
 BR2_GCC_TARGET_TUNE="arm920t"
 BR2_GCC_TARGET_ARCH="armv4t"
+BR2_GCC_TARGET_ABI="aapcs-linux"
 
 #
 # Target options
@@ -127,7 +128,7 @@ BR2_TOPDIR_SUFFIX=""
 BR2_ROOTFS_PREFIX="$(BR2_BOARD_NAME)-rootfs"
 BR2_ROOTFS_SUFFIX=""
 BR2_GNU_BUILD_SUFFIX="pc-linux-gnu"
-BR2_GNU_TARGET_SUFFIX="linux-uclibc"
+BR2_GNU_TARGET_SUFFIX="linux-uclibcgnueabi"
 BR2_JLEVEL=1
 # BR2_PREFER_IMA is not set
 # BR2_DEPRECATED is not set
@@ -327,11 +328,6 @@ BR2_PACKAGE_PKGCONFIG=y
 #
 # BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_LIBDNET is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
-
-#
-# bluez-utils not available (need dbus)
-#
 # BR2_PACKAGE_MESALIB is not set
 
 #
@@ -346,10 +342,12 @@ BR2_PACKAGE_IMXREGS=y
 # BR2_PACKAGE_IMXSSI is not set
 BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
-# BR2_PACKAGE_FIRMWARE is not set
-# BR2_PACKAGE_FIRMWARE_88W8686_SDIO_V8 is not set
-# BR2_PACKAGE_FIRMWARE_88W8686_SDIO_V9 is not set
 # BR2_PACKAGE_DUMMY is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
+
+#
+# bluez-utils not available (need dbus)
+#
 # BR2_PACKAGE_FBTEST is not set
 # BR2_PACKAGE_SNES9X is not set
 
@@ -487,6 +485,7 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_VTUN is not set
 # BR2_PACKAGE_WEBIF is not set
 # BR2_PACKAGE_WIRELESS_TOOLS is not set
+# BR2_PACKAGE_WPA_SUPPLICANT is not set
 BR2_BLOCKDEV_SUPPORT=y
 
 #
@@ -498,6 +497,7 @@ BR2_BLOCKDEV_SUPPORT=y
 # BR2_PACKAGE_E2FSPROGS is not set
 # BR2_PACKAGE_EEPROG is not set
 # BR2_PACKAGE_FCONFIG is not set
+# BR2_PACKAGE_FIRMWARE is not set
 # BR2_PACKAGE_FIS is not set
 # BR2_PACKAGE_LIBFUSE is not set
 # BR2_PACKAGE_GADGETFS_TEST is not set
@@ -794,7 +794,7 @@ BR2_TARGET_UBOOT_NETMASK=""
 BR2_TARGET_UBOOT_ETHADDR=""
 # BR2_TARGET_UBOOT_SILENT is not set
 # BR2_TARGET_UBOOT_TOOL_MKIMAGE is not set
-# BR2_TARGET_UBOOT_TOOL_ENV is not set
+BR2_TARGET_UBOOT_TOOL_ENV=y
 BR2_TARGET_UBOOT_COPYTO=""
 
 #

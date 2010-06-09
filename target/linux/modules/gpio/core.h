@@ -1,7 +1,7 @@
 /*
  * Armadeus i.MXL GPIO management driver
  *
- * Copyright (C) 2006-2008 Julien Boibessot <julien.boibessot@armadeus.com>
+ * Copyright (C) 2006-2010 Julien Boibessot <julien.boibessot@armadeus.com>
  *                         Nicolas Colombain <nicolas.colombain@armadeus.com>
  *                         Armadeus Project / Armadeus Systems
  *
@@ -27,12 +27,13 @@
 #define __CORE_GPIO_H__
 
 /* IOCTL */
-#define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)/* Read/write bitmask that determine*/
-#define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)/*in/out pins (1 output, 0 input) */
+/* direction: 1 output, 0 input */
+#define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)
+#define GPIOWRDIRECTION	_IOW(PP_IOCTL, 0xF1, int)
 
 #define GPIORDDATA	_IOR(PP_IOCTL, 0xF2, int)
 #define GPIOWRDATA	_IOW(PP_IOCTL, 0xF3, int)
-
+/* mode: 1 GPIO, 0 device function */
 #define GPIORDMODE	_IOR(PP_IOCTL, 0xF4, int)
 #define GPIOWRMODE	_IOW(PP_IOCTL, 0xF5, int)
 
@@ -43,6 +44,7 @@
 #define GPIORDIRQMODE_L	_IOR(PP_IOCTL, 0xF9, int) /*							*/
 #define GPIOWRIRQMODE_H	_IOW(PP_IOCTL, 0xFA, int) /*							*/
 #define GPIOWRIRQMODE_L	_IOW(PP_IOCTL, 0xFB, int) /*							*/
+/* 2bits per pin for IRQ mode: 0 none, 1 rising, 2 falling, 3 both */
 
 #define GPIORDISR 	_IOR(PP_IOCTL, 0xFC, int)
 #define GPIOWRISR	_IOW(PP_IOCTL, 0xFD, int)

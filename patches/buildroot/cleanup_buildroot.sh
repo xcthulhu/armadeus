@@ -18,3 +18,8 @@ rm -f  buildroot/package/mplayer/mplayer-1.0rc1-add_pld_asm_inst_for_non_armv5_a
 rm -f  buildroot/package/busybox/busybox-1.12.1-speed_table-B921600.patch
 rm -rf buildroot/package/firmware/
 rm -rf buildroot/package/wpa_supplicant/
+rm -f  buildroot/package/strace/strace-arm-eabi-fix.patch
+rm -f  buildroot/package/strace/strace-arm-no-cachectl.patch
+rm -f  buildroot/toolchain/gcc/4.2.1/999-4.2.1-armeabi-aapcs-linux.patch
+rm -f  buildroot/toolchain/gcc/4.2.4/999-4.2.4-armeabi-aapcs-linux.patch
+rm -rf buildroot/package/games/wolf4sdl/

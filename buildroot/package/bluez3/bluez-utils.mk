@@ -12,13 +12,14 @@ BLUEZ_UTILS_SOURCE=bluez-utils-$(BLUEZ_UTILS_VERSION).tar.gz
 
 
 ifeq ($(strip $(BR2_PACKAGE_ALSA-LIB)),y)
+ALSA_DEP=alsa
 WITH_ALSA=--with-alsa=$(STAGING_DIR)
 else
 WITH_ALSA=--without-alsa
 endif
 
 ifeq ($(strip $(BR2_PACKAGE_OPENOBEX)),y)
-OBEX_DEP=$(STAGING_DIR)/lib/libopenobex.so
+OBEX_DEP=openobex
 WITH_OBEX=--with-openobex=$(STAGING_DIR)
 else
 OBEX_DEP=
@@ -28,14 +29,14 @@ endif
 BLUEZ_UTILS_CONF_OPT = \
 		$(WITH_OBEX) \
 		$(WITH_ALSA) \
+		--disable-pie \
 		--disable-expat \
 		--enable-network \
 		--enable-serial \
-		--disable-audio \
-		--disable-input \
+		--enable-audio \
+		--enable-input \
 		--enable-sync \
 		--enable-hcid \
-		--enable-sdpd \
 		--enable-hidd \
 		--enable-pand \
 		--disable-test \
@@ -46,16 +47,24 @@ BLUEZ_UTILS_CONF_OPT = \
 		--disable-bccmd \
 		--enable-avctrl \
 		--enable-hid2hci \
-		--disable-dfutool \
+		--disable-dfutool
 
-# --disable-audio : otherwise link problem with Host libasound 
-
+# --disable-pie: uClibc doesn't handle "position independent executables" (segfault at launching)
+# sdpd is obsolete
 
 #$(BLUEZ_UTILS_BUILD_DIR)/.configured: $(BLUEZ_UTILS_BUILD_DIR)/.unpacked $(TARGET_DIR)/usr/lib/libbluetooth.so $(OBEX_DEP)
 
-BLUEZ_UTILS_DEPENDENCIES = bluez-libs dbus
+BLUEZ_UTILS_DEPENDENCIES = bluez-libs dbus $(OBEX_DEP) $(ALSA_DEP)
 
 $(eval $(call AUTOTARGETS,package,bluez-utils))
+
+# Hook to prevent link with Host asound and libusb
+# (seems not needed with recent BR)
+$(BLUEZ_UTILS_HOOK_POST_CONFIGURE):
+	@$(call MESSAGE,"Post configuring")
+	$(SED) 's,^sys_lib_search_path_spec=.*,sys_lib_search_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib",' $(@D)/libtool
+	touch $@
+
 
 
 $(BLUEZ_HCIDUMP_BUILD_DIR)/hcidump: $(BLUEZ_HCIDUMP_BUILD_DIR)/.configured

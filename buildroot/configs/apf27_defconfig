@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Tue Jun  1 17:51:37 2010
+# Thu Jun  3 17:54:06 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.02-rc1"
@@ -48,7 +48,7 @@ BR2_ARM_EABI=y
 # BR2_ARM_OABI is not set
 BR2_ARCH="arm"
 BR2_ENDIAN="LITTLE"
-BR2_GCC_TARGET_TUNE="arm9tdmi"
+BR2_GCC_TARGET_TUNE="arm926ej-s"
 BR2_GCC_TARGET_ARCH="armv5te"
 BR2_GCC_TARGET_ABI="aapcs-linux"
 

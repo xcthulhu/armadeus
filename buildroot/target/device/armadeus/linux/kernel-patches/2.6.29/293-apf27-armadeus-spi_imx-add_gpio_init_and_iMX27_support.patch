@@ -5,10 +5,10 @@ Makes spi_imx driver:
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.29/arch/arm/mach-imx/include/mach/spi_imx.h
+Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/spi_imx.h
 ===================================================================
---- linux-2.6.29.orig/arch/arm/mach-imx/include/mach/spi_imx.h	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29/arch/arm/mach-imx/include/mach/spi_imx.h	2009-03-31 11:22:44.000000000 +0200
+--- linux-2.6.29.6.orig/arch/arm/mach-imx/include/mach/spi_imx.h	2010-06-07 11:54:25.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/spi_imx.h	2010-06-07 11:54:44.000000000 +0200
 @@ -38,6 +38,8 @@
  struct spi_imx_master {
  	u8 num_chipselect;
@@ -18,10 +18,10 @@ Index: linux-2.6.29/arch/arm/mach-imx/include/mach/spi_imx.h
  };
  /*-------------------------------------------------------------------------*/
  
-Index: linux-2.6.29/drivers/spi/spi_imx.c
+Index: linux-2.6.29.6/drivers/spi/spi_imx.c
 ===================================================================
---- linux-2.6.29.orig/drivers/spi/spi_imx.c	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29/drivers/spi/spi_imx.c	2009-03-31 11:25:40.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/spi/spi_imx.c	2010-06-07 11:54:25.000000000 +0200
++++ linux-2.6.29.6/drivers/spi/spi_imx.c	2010-06-07 11:56:06.000000000 +0200
 @@ -36,8 +36,13 @@
  #include <asm/delay.h>
  
@@ -36,7 +36,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  /*-------------------------------------------------------------------------*/
  /* SPI Registers offsets from peripheral base address */
-@@ -50,38 +55,70 @@
+@@ -50,38 +55,77 @@
  #define SPI_DMA			(0x18)
  #define SPI_RESET		(0x1C)
  
@@ -53,11 +53,16 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
 +#define SPI_CONTROL_SPIEN		(0x1 << 10)	/* SPI Module Enable */
 +#define SPI_CONTROL_MODE_SHIFT		(11)
 +#define SPI_CONTROL_DRCTL_SHIFT		(12)
-+#define SPI_CONTROL_DATARATE_SHIFT	(16)
-+/* Data Rate Mask */
++#define SPI_CONTROL_DATARATE_SHIFT	(14)
++/* Data Rate */
 +#define SPI_CONTROL_DATARATE		(0x1f << (SPI_CONTROL_DATARATE_SHIFT))
-+#define SPI_CLOCK_DIV_MIN		(0)		/* ??????? */
-+#define SPI_CLOCK_DIV_MAX		(0x10)		/* ????? */
++#define SPI_CLOCK_DIV_MIN		(1)		/* PERCLK2 / 3 */
++#define SPI_CLOCK_DIV_MAX		(0x10)		/* PERCLK2 /512 */
++/* First entry is reserved, second entry is valid only if SDHC_SPIEN is set
++ * (which is currently not the case in this driver)
++ */
++static int mxc_clkdivs[] = {0, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192,
++	256, 384, 512};
 +
 +/* SPI Interrupt/Status Register Bit Fields & Masks */
 +#define SPI_STATUS_TE	(0x1 << 0)	/* TXFIFO Empty Status */
@@ -123,19 +128,21 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
 -#define SPI_CONTROL_DRCTL_2		(0x2 << 11)     /* /SPI_RDY active low level triggers input */
 +#define SPI_CONTROL_MODE_SHIFT		(10)
 +#define SPI_CONTROL_DRCTL_SHIFT		(11)
++/* Data Rate */
  #define SPI_CONTROL_DATARATE		(0x7 << 13)     /* Data Rate Mask */
 -#define SPI_PERCLK2_DIV_MIN		(0)		/* PERCLK2:4 */
 -#define SPI_PERCLK2_DIV_MAX		(7)		/* PERCLK2:512 */
 -#define SPI_CONTROL_DATARATE_MIN	(SPI_PERCLK2_DIV_MAX << 13)
 -#define SPI_CONTROL_DATARATE_MAX	(SPI_PERCLK2_DIV_MIN << 13)
 -#define SPI_CONTROL_DATARATE_BAD	(SPI_CONTROL_DATARATE_MIN + 1)
-+#define SPI_CLOCK_DIV_MIN		(0)		/* PERCLK2:4 */
-+#define SPI_CLOCK_DIV_MAX		(7)		/* PERCLK2:512 */
++#define SPI_CLOCK_DIV_MIN		(0)		/* PERCLK2 / 4 */
++#define SPI_CLOCK_DIV_MAX		(7)		/* PERCLK2 / 512 */
 +#define SPI_CONTROL_DATARATE_SHIFT	(13)
++static int mxc_clkdivs[] = {4, 8, 16, 32, 64, 128, 256, 512};
  
  /* SPI Interrupt/Status Register Bit Fields & Masks */
  #define SPI_STATUS_TE	(0x1 << 0)	/* TXFIFO Empty Status */
-@@ -103,6 +140,54 @@
+@@ -103,6 +147,54 @@
  #define SPI_INTEN_BO	(0x1 << 15)     /* Bit Count Overflow Interrupt Enable */
  #define SPI_INTEN	(0xFF << 8)	/* SPI Interrupt Enable Mask */
  
@@ -190,7 +197,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  /* SPI Test Register Bit Fields & Masks */
  #define SPI_TEST_TXCNT		(0xF << 0)	/* TXFIFO Counter */
  #define SPI_TEST_RXCNT_LSB	(4)		/* RXFIFO Counter LSB */
-@@ -134,6 +219,20 @@
+@@ -134,6 +226,20 @@
  #define SPI_RESET_START	(0x1)		/* Start */
  
  /* Default SPI configuration values */
@@ -211,7 +218,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  #define SPI_DEFAULT_CONTROL		\
  (					\
  	SPI_CONTROL_BITCOUNT(16) | 	\
-@@ -145,6 +244,7 @@
+@@ -145,6 +251,7 @@
  	SPI_CONTROL_DRCTL_0 |		\
  	SPI_CONTROL_DATARATE_MIN	\
  )
@@ -219,7 +226,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  #define SPI_DEFAULT_ENABLE_LOOPBACK	(0)
  #define SPI_DEFAULT_ENABLE_DMA		(0)
  #define SPI_DEFAULT_PERIOD_WAIT		(8)
-@@ -154,7 +254,11 @@
+@@ -154,7 +261,11 @@
  /*-------------------------------------------------------------------------*/
  /* TX/RX SPI FIFO size */
  #define SPI_FIFO_DEPTH			(8)
@@ -231,7 +238,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  #define SPI_FIFO_OVERFLOW_MARGIN	(2)
  
  /* DMA burst length for half full/empty request trigger */
-@@ -332,19 +436,17 @@
+@@ -332,19 +443,17 @@
  	void *tx = drv_data->tx;
  	void *tx_end = drv_data->tx_end;
  	u8 n_bytes = drv_data->n_bytes;
@@ -252,7 +259,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	dev_dbg(&drv_data->pdev->dev,
  		"write type %s\n"
-@@ -352,7 +454,7 @@
+@@ -352,7 +461,7 @@
  		"    fifo avail space = %d\n"
  		"    fifo writes      = %d\n",
  		(n_bytes == 1) ? "u8" : "u16",
@@ -261,7 +268,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  		fifo_avail_space,
  		n);
  
-@@ -395,16 +497,14 @@
+@@ -395,16 +504,14 @@
  	void *rx = drv_data->rx;
  	void *rx_end = drv_data->rx_end;
  	u8 n_bytes = drv_data->n_bytes;
@@ -279,7 +286,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	dev_dbg(&drv_data->pdev->dev,
  		"read type %s\n"
-@@ -412,7 +512,7 @@
+@@ -412,7 +519,7 @@
  		"    fifo rx count   = %d\n"
  		"    fifo reads      = %d\n",
  		(n_bytes == 1) ? "u8" : "u16",
@@ -288,7 +295,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  		fifo_rxcnt,
  		n);
  
-@@ -456,6 +556,30 @@
+@@ -456,6 +563,30 @@
  	return DONE_STATE;
  }
  
@@ -319,7 +326,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  static int map_dma_buffers(struct driver_data *drv_data)
  {
  	struct spi_message *msg;
-@@ -568,29 +692,6 @@
+@@ -568,29 +699,6 @@
  	}
  }
  
@@ -349,7 +356,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  static void dma_err_handler(int channel, void *data, int errcode)
  {
  	struct driver_data *drv_data = data;
-@@ -695,6 +796,7 @@
+@@ -695,6 +803,7 @@
  	/* Opps problem detected */
  	return IRQ_NONE;
  }
@@ -357,35 +364,42 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  static irqreturn_t interrupt_wronly_transfer(struct driver_data *drv_data)
  {
-@@ -858,7 +960,7 @@
+@@ -858,21 +967,26 @@
  
  static inline u32 spi_speed_hz(struct driver_data *drv_data, u32 data_rate)
  {
 -	return clk_get_rate(drv_data->clk) / (4 << ((data_rate) >> 13));
-+	return clk_get_rate(drv_data->clk) / (4 << ((data_rate) >> SPI_CONTROL_DATARATE_SHIFT));
++	u32 res;
++	int index;
++
++	index = ((data_rate & SPI_CONTROL_DATARATE) >> SPI_CONTROL_DATARATE_SHIFT);
++	res = clk_get_rate(drv_data->clk) / mxc_clkdivs[index];
++
++	return res;
  }
  
  static u32 spi_data_rate(struct driver_data *drv_data, u32 speed_hz)
-@@ -866,12 +968,13 @@
+ {
  	u32 div;
- 	u32 quantized_hz = clk_get_rate(drv_data->clk) >> 2;
+-	u32 quantized_hz = clk_get_rate(drv_data->clk) >> 2;
++	u32 perclk2 = clk_get_rate(drv_data->clk);
  
 -	for (div = SPI_PERCLK2_DIV_MIN;
 -		div <= SPI_PERCLK2_DIV_MAX;
-+	for (div = SPI_CLOCK_DIV_MIN;
-+		div <= SPI_CLOCK_DIV_MAX;
- 		div++, quantized_hz >>= 1) {
+-		div++, quantized_hz >>= 1) {
 -			if (quantized_hz <= speed_hz)
 -				/* Max available speed LEQ required speed */
 -				return div << 13;
-+			if (quantized_hz <= speed_hz) {
-+ 				/* Max available speed LEQ required speed */
-+				return div << SPI_CONTROL_DATARATE_SHIFT;
-+            }
++	for (div = SPI_CLOCK_DIV_MIN; div <= SPI_CLOCK_DIV_MAX; div++) {
++		if (perclk2/(mxc_clkdivs[div]) <= speed_hz) {
++			return div << SPI_CONTROL_DATARATE_SHIFT;
++		}
  	}
++
  	return SPI_CONTROL_DATARATE_BAD;
  }
-@@ -956,6 +1059,7 @@
+ 
+@@ -956,6 +1070,7 @@
  	/* Assert device chip-select */
  	drv_data->cs_control(SPI_CS_ASSERT);
  
@@ -393,7 +407,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* DMA cannot read/write SPI FIFOs other than 16 bits at a time; hence
  	   if bits_per_word is less or equal 8 PIO transfers are performed.
  	   Moreover DMA is convinient for transfer length bigger than FIFOs
-@@ -1034,7 +1138,9 @@
+@@ -1034,7 +1149,9 @@
  			writel(SPI_DMA_THDEN, regs + SPI_DMA);
  
  		imx_dma_enable(drv_data->tx_channel);
@@ -404,7 +418,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  		dev_dbg(&drv_data->pdev->dev,
  			"pump pio transfer\n"
  			"    tx      = %p\n"
-@@ -1487,7 +1593,7 @@
+@@ -1487,7 +1604,7 @@
  
  	drv_data->dummy_dma_buf = SPI_DUMMY_u32;
  
@@ -413,7 +427,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	if (IS_ERR(drv_data->clk)) {
  		dev_err(&pdev->dev, "probe - cannot get clock\n");
  		status = PTR_ERR(drv_data->clk);
-@@ -1495,6 +1601,10 @@
+@@ -1495,6 +1612,10 @@
  	}
  	clk_enable(drv_data->clk);
  
@@ -424,7 +438,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* Find and map resources */
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -1516,7 +1626,6 @@
+@@ -1516,7 +1637,6 @@
  		status = -ENXIO;
  		goto err_no_iomap;
  	}
@@ -432,7 +446,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	/* Attach to IRQ */
  	irq = platform_get_irq(pdev, 0);
-@@ -1531,6 +1640,8 @@
+@@ -1531,6 +1651,8 @@
  		goto err_no_irqres;
  	}
  
@@ -441,7 +455,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* Setup DMA if requested */
  	drv_data->tx_channel = -1;
  	drv_data->rx_channel = -1;
-@@ -1583,7 +1694,7 @@
+@@ -1583,7 +1705,7 @@
  		BLR(drv_data->rx_channel) = SPI_DMA_BLR;
  		BLR(drv_data->tx_channel) = SPI_DMA_BLR;
  	}
@@ -450,7 +464,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* Load default SPI configuration */
  	writel(SPI_RESET_START, drv_data->regs + SPI_RESET);
  	writel(0, drv_data->regs + SPI_RESET);
-@@ -1617,9 +1728,11 @@
+@@ -1617,9 +1739,11 @@
  err_spi_register:
  	destroy_queue(drv_data);
  
@@ -462,7 +476,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	free_irq(irq, drv_data);
  
  err_no_irqres:
-@@ -1632,6 +1745,8 @@
+@@ -1632,6 +1756,8 @@
  err_no_iores:
  	clk_disable(drv_data->clk);
  	clk_put(drv_data->clk);
@@ -471,7 +485,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  err_no_clk:
  	spi_master_put(master);
-@@ -1646,6 +1761,8 @@
+@@ -1646,6 +1772,8 @@
  	struct driver_data *drv_data = platform_get_drvdata(pdev);
  	int irq;
  	int status = 0;
@@ -480,7 +494,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	if (!drv_data)
  		return 0;
-@@ -1658,11 +1775,14 @@
+@@ -1658,11 +1786,14 @@
  		dev_err(&pdev->dev, "queue remove failed (%d)\n", status);
  		return status;
  	}
@@ -495,7 +509,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* Release DMA */
  	if (drv_data->master_info->enable_dma) {
  		RSSR(drv_data->rx_channel) = 0;
-@@ -1670,7 +1790,7 @@
+@@ -1670,7 +1801,7 @@
  		imx_dma_free(drv_data->tx_channel);
  		imx_dma_free(drv_data->rx_channel);
  	}
@@ -504,7 +518,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  	/* Release IRQ */
  	irq = platform_get_irq(pdev, 0);
  	if (irq >= 0)
-@@ -1713,14 +1833,19 @@
+@@ -1713,14 +1844,19 @@
  {
  	struct driver_data *drv_data = platform_get_drvdata(pdev);
  	int status = 0;
@@ -524,7 +538,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	return 0;
  }
-@@ -1729,6 +1854,11 @@
+@@ -1729,6 +1865,11 @@
  {
  	struct driver_data *drv_data = platform_get_drvdata(pdev);
  	int status = 0;
@@ -536,7 +550,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	/* Start the queue running */
  	status = start_queue(drv_data);
-@@ -1736,6 +1866,7 @@
+@@ -1736,6 +1877,7 @@
  		dev_err(&pdev->dev, "problem starting queue (%d)\n", status);
  	else
  		dev_dbg(&pdev->dev, "resumed\n");
@@ -544,7 +558,7 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  
  	return status;
  }
-@@ -1749,7 +1880,11 @@
+@@ -1749,7 +1891,11 @@
  
  static struct platform_driver driver = {
  	.driver = {
@@ -556,10 +570,10 @@ Index: linux-2.6.29/drivers/spi/spi_imx.c
  		.owner = THIS_MODULE,
  	},
  	.remove = __exit_p(spi_imx_remove),
-Index: linux-2.6.29/drivers/spi/Kconfig
+Index: linux-2.6.29.6/drivers/spi/Kconfig
 ===================================================================
---- linux-2.6.29.orig/drivers/spi/Kconfig	2009-03-31 09:21:31.000000000 +0200
-+++ linux-2.6.29/drivers/spi/Kconfig	2009-03-31 11:22:44.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/spi/Kconfig	2010-06-07 11:54:41.000000000 +0200
++++ linux-2.6.29.6/drivers/spi/Kconfig	2010-06-07 11:54:44.000000000 +0200
 @@ -118,11 +118,28 @@
  
  config SPI_IMX
