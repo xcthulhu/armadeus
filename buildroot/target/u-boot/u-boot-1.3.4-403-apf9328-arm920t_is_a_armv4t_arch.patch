@@ -1,0 +1,19 @@
+Otherwise if gcc is compiled with --with-arch=armv4t, following warning
+occurs:
+	warning: target CPU does not support interworking
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: u-boot-1.3.4/cpu/arm920t/config.mk
+===================================================================
+--- u-boot-1.3.4.orig/cpu/arm920t/config.mk	2010-06-10 13:57:28.000000000 +0200
++++ u-boot-1.3.4/cpu/arm920t/config.mk	2010-06-10 13:57:39.000000000 +0200
+@@ -24,7 +24,7 @@
+ PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+ 	-msoft-float
+ 
+-PLATFORM_CPPFLAGS += -march=armv4
++PLATFORM_CPPFLAGS += -march=armv4t
+ # =========================================================================
+ #
+ # Supply options according to compiler version
