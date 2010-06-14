@@ -340,6 +340,16 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev, int aMode)
 
 /*------------------------------------------------------------------------------*/
 
+int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev)
+{ return aDev->pin_num;}
+
+/*------------------------------------------------------------------------------*/
+
+int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev)
+{ return aDev->port_letter;}
+
+/*------------------------------------------------------------------------------*/
+
 int32_t as_gpio_close(struct as_gpio_device *aDev)
 {
     close(aDev->fpin);
