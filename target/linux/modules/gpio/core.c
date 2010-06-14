@@ -44,7 +44,7 @@
 #include "iomux-mx1.h"
 #endif
 
-#include "core.h"		/* for ioctl defs */
+#include "gpio-dev.h"		/* for ioctl defs */
 
 
 #define DRIVER_NAME	"Armadeus GPIOs driver"
