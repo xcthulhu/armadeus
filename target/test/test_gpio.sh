@@ -12,7 +12,6 @@
 #
 
 source ./test_helpers.sh
-source ./test_env.sh
 source /usr/bin/gpio_helpers.sh
 
 
