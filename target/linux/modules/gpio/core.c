@@ -388,9 +388,9 @@ static void set_gpio_irq(unsigned int gpio, int value)
 			((value & 0x03) << (pin_num * 2));
 	} else {
 		return_value = shadows_irq_h[port_num] &
-		    (~(0x03 << (2 * (pin_num - MAX_NUMBER_OF_PINS))));
+		    (~(0x03 << (2 * (pin_num - (port_size/2)))));
 		shadows_irq_h[port_num] = return_value |
-		    ((value & 0x03) << (2 * (pin_num - MAX_NUMBER_OF_PINS)));
+		    ((value & 0x03) << (2 * (pin_num - (port_size/2))));
 	}
 }
 
