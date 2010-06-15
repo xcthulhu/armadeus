@@ -27,19 +27,20 @@ WRAPPER_DIR=src
 PYTHON_VERS=2.4
 PYTHON_SUBVERS=5
 PYINC=/usr/include/python2.4
-PYLIB=../../../../buildroot/project_build_armv5te/apf27/root/usr/lib/python${PYTHON_VERS}
+PYLIB=../../../../buildroot/project_build_armv5te/apf27/root/usr/lib/python$(PYTHON_VERS)
 
 .PHONY: all
 
-all: ${WRAPPER_LIBS}
+all: $(WRAPPER_LIBS)
 
 %.so: %.o
-	${CC} -shared $< -o $@ -lc -L${PYLIB} ${AS_LIB}
-	mv $@ ${LIBNAME}/wrappers
+	$(CC) -shared $< -o $@ -L$(PYLIB) $(AS_LIB)
+	mv $@ $(LIBNAME)/wrappers
 	rm $<
 
-%.o : ${WRAPPER_DIR}/%.c
-	${CC} -fpic -o $@ -c $< ${CFLAGS} -L${PYLIB} -I${PYINC} -I${INCLUDE_LIB}
+%.o : $(WRAPPER_DIR)/%.c
+	$(CC) -fpic -o $@ -c $< $(CFLAGS) -L$(PYLIB) -I$(PYINC) -I$(INCLUDE_LIB)
 
 clean:
-	-rm ${LIBNAME}/wrappers/*.so
+	rm -f $(LIBNAME)/wrappers/*.so
+
