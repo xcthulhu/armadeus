@@ -35,8 +35,6 @@ extern "C" {
 
 #define PORT_SIZE (32)
 
-//TODO: Change structure to use pin instead of port.
-
 /**
  * Store gpio parameters
  */
