@@ -2,13 +2,7 @@
 ARMADEUS_BASE_DIR=../../../../
 include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
-CFLAGS=-Wall -g -O0 -DAPF9328
-else
-ifeq ($(ARMADEUS_BOARD_NAME),apf27)
-CFLAGS=-Wall -g -O0 -DAPF27
-endif
-endif
+CFLAGS=-Wall -g -O0
 
 LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
