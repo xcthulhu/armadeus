@@ -11,14 +11,7 @@ endif
 LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
-
-ifeq ($(ARMADEUS_BOARD_NAME),apf9328)
-CFLAGS+= -DAPF9328
-endif
-
-ifeq ($(ARMADEUS_BOARD_NAME),apf27)
-CFLAGS+= -DAPF27
-endif
+CFLAGS+=
 
 OBJ=as_pwm.o
 OBJ+= as_i2c.o

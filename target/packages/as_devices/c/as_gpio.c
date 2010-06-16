@@ -54,14 +54,6 @@
 
 #define BUFF_SIZE (300)
 
-#ifdef APF9328
-#   define NUMBER_OF_PORTS 4
-#elif defined(APF27)
-#   define NUMBER_OF_PORTS 6
-#else
-#error Error no platform defined
-#endif
-
 //#define DEBUG
 #ifdef DEBUG
 #   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
@@ -78,12 +70,6 @@ struct as_gpio_device *as_gpio_open(char aPortChar, int aPinNum)
     int ret=0;
     int file;
     int value;
-
-    if (((aPortChar-'A') > (NUMBER_OF_PORTS-1)) || ((aPortChar-'A') < 0))
-    {
-        ERROR("No port named %c\n",aPortChar);
-        goto letter_error;
-    }
 
     /* make gpio port string path */
     ret = snprintf(gpio_file_path,50, "%s%c%d",
@@ -127,7 +113,6 @@ malloc_error:
     close(file);
 open_file_error:
 path_error:
-letter_error:
     return NULL;
 }
 
