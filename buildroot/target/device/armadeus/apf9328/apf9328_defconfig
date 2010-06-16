@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Jun  4 16:31:42 2010
+# Tue Jun 15 18:24:10 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -654,7 +654,7 @@ BR2_PACKAGE_NCURSES=y
 #
 # other GUIs
 #
-# BR2_PACKAGE_QTOPIA4 is not set
+# BR2_PACKAGE_QT is not set
 
 #
 # X Window System server

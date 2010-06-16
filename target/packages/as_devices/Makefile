@@ -14,20 +14,20 @@ LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
+INSTALL_DIR:=$(ARMADEUS_STAGING_DIR)
 
 C_BINARY=test_cdevices
-C_LIBNAME=as_devices
-C_LIB=c/lib$(C_LIBNAME).so
-C_INCLUDE=c/
+C_LIBNAME=libas_devices.so
+C_LIB=c/$(C_LIBNAME)
+C_INCLUDE=c
 
 P_WRAPPER=.python_wrappers
 
 CPP_BINARY=test_cppdevices
-CPP_LIBNAME=as_devices_cpp
-CPP_LIB=cpp/lib$(CPP_LIBNAME).so
-CPP_INCLUDE=cpp/
+CPP_LIBNAME=libas_devices_cpp.so
+CPP_LIB=cpp/$(CPP_LIBNAME)
+CPP_INCLUDE=cpp
 
-INSTALL_DIR=
 
 .PHONY: all
 
@@ -51,17 +51,17 @@ $(P_WRAPPER):
 	touch $(P_WRAPPER)
 
 install:
-	install -D $(C_LIB) $(INSTALL_DIR)/usr/lib/
-	install -D $(C_INCLUDE)/*.h $(INSTALL_DIR)/usr/include/as_devices/
+	install -D $(C_LIB) $(INSTALL_DIR)/usr/lib/$(C_LIBNAME)
+	mkdir -p $(INSTALL_DIR)/usr/include/as_devices/
+	cp $(C_INCLUDE)/*.h $(INSTALL_DIR)/usr/include/as_devices/
 
 install-exe:
-	mkdir -p $(INSTALL_DIR)/usr/lib
-	cp $(C_LIB) $(INSTALL_DIR)/usr/lib/
-	$(STRIP) $(INSTALL_DIR)/usr/lib/lib$(C_LIBNAME).so
+	install -D $(C_LIB) $(INSTALL_DIR)/usr/lib/$(C_LIBNAME)
+	$(STRIP) $(INSTALL_DIR)/usr/lib/$(C_LIBNAME)
 
 clean:
-	cd c; make clean ;
-	-rm $(P_WRAPPER)
-	cd python; make clean
-	-rm $(C_BINARY) # $(CPP_BINARY)
+	make -C c/ clean
+	rm -f $(P_WRAPPER)
+	make -C python/ clean
+	rm -f $(C_BINARY) # $(CPP_BINARY)
 
