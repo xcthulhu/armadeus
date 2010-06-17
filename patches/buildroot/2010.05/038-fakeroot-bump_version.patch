@@ -8,4 +8,4 @@
 +FAKEROOT_VERSION:=1.11
  FAKEROOT_SOURCE:=fakeroot_$(FAKEROOT_VERSION).tar.gz
  FAKEROOT_SITE:=http://snapshot.debian.net/archive/2008/04/27/debian/pool/main/f/fakeroot/
- FAKEROOT_CAT:=$(ZCAT)
+ FAKEROOT_LIBTOOL_PATCH=NO

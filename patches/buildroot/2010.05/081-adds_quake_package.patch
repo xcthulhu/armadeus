@@ -159,13 +159,11 @@ Index: buildroot/package/games/Config.in
 ===================================================================
 --- buildroot.orig/package/games/Config.in	2009-12-15 18:26:09.000000000 +0100
 +++ buildroot/package/games/Config.in	2009-12-15 18:28:19.000000000 +0100
-@@ -5,7 +5,9 @@
+@@ -5,5 +5,7 @@
  source "package/games/lxdoom/Config.in"
  source "package/games/magiccube4d/Config.in"
  source "package/games/prboom/Config.in"
 +source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
 +source "package/games/sdlquake/Config.in"
- source "package/games/vice/Config.in"
- source "package/games/xboard/Config.in"
- endif
+ endmenu

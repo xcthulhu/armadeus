@@ -123,10 +123,10 @@ Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-01-25 10:00:14.000000000 +0100
 +++ buildroot/package/Config.in	2010-01-25 10:02:52.000000000 +0100
-@@ -243,6 +243,7 @@
- source "package/fis/Config.in"
- source "package/fuse/Config.in"
+@@ -168,6 +168,7 @@
  source "package/gadgetfs-test/Config.in"
+ source "package/genext2fs/Config.in"
+ source "package/genromfs/Config.in"
 +source "package/gpm/Config.in"
  source "package/gvfs/Config.in"
  source "package/hal/Config.in"

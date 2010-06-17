@@ -1,5 +1,5 @@
 
-This patch update mtd-utils to build sme host UBI tools:
+This patch update mtd-utils to build some host UBI tools:
 * adds mkfs.ubifs tool
 * adds ubi-utils ubinize tool
 

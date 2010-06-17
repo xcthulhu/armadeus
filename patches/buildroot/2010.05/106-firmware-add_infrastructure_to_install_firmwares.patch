@@ -7,14 +7,14 @@ Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-04-27 14:52:04.000000000 +0200
 +++ buildroot/package/Config.in	2010-04-27 14:54:12.000000000 +0200
-@@ -256,6 +256,7 @@
+@@ -164,6 +164,7 @@
  source "package/e2fsprogs/Config.in"
  source "package/eeprog/Config.in"
  source "package/fconfig/Config.in"
 +source "package/firmware/Config.in"
  source "package/fis/Config.in"
- source "package/fuse/Config.in"
  source "package/gadgetfs-test/Config.in"
+ source "package/genext2fs/Config.in"
 Index: buildroot/package/firmware/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

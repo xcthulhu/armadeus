@@ -11,11 +11,11 @@
  ifeq ($(BOARD_PATH),)
  BOARD_PATH:=$(call qstrip,$(BR2_BOARD_PATH))
 @@ -158,8 +158,9 @@ endif
- ROOTFS_STRIPPED_SUFFIX=$(call qstrip,$(ROOTFS_SUFFIX))
+ 
  # -----------------------------------------------------------------------------
  # File name for the Linux kernel binary
 +ifeq ($(strip $(LINUX26_KERNEL_NAME)),)
- LINUX26_KERNEL_NAME:=$(LINUX26_FORMAT)$(ROOTFS_STRIPPED_SUFFIX)
+ LINUX26_KERNEL_NAME:=$(LINUX26_FORMAT)
 -
 +endif
 

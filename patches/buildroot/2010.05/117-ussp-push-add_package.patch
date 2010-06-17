@@ -6,9 +6,9 @@ Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-06-16 14:31:45.000000000 +0200
 +++ buildroot/package/Config.in	2010-06-16 14:37:34.000000000 +0200
-@@ -220,6 +220,7 @@
- #source "package/udhcp/Config.in"
- #endif
+@@ -430,6 +430,7 @@
+ source "package/tn5250/Config.in"
+ source "package/ttcp/Config.in"
  source "package/udpcast/Config.in"
 +source "package/ussp-push/Config.in"
  source "package/vpnc/Config.in"

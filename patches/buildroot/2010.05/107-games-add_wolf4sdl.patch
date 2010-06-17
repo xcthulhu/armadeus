@@ -82,10 +82,9 @@ Index: buildroot/package/games/Config.in
 ===================================================================
 --- buildroot.orig/package/games/Config.in	2010-06-07 16:15:27.000000000 +0200
 +++ buildroot/package/games/Config.in	2010-06-07 16:18:33.000000000 +0200
-@@ -15,5 +15,6 @@
+@@ -8,4 +8,5 @@
+ source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
  source "package/games/sdlquake/Config.in"
- source "package/games/vice/Config.in"
 +source "package/games/wolf4sdl/Config.in"
- source "package/games/xboard/Config.in"
- endif
+ endmenu

@@ -1,11 +1,6 @@
---- buildrootref/target/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
-+++ buildroot/target/ubifs/Config.in	2009-10-03 17:07:32.000000000 +0200
-@@ -1,10 +1,15 @@
- config BR2_TARGET_ROOTFS_UBIFS
- 	bool "ubifs root filesystem"
--	depends on BROKEN # upstream git gone, should use mtd-utils
- 	select BR2_HOST_FAKEROOT
-+	select BR2_PACKAGE_MTD
+--- buildrootref/fs/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/fs/ubifs/Config.in	2009-10-03 17:07:32.000000000 +0200
+@@ -1,6 +1,11 @@
  	help
  	  Build a ubifs root filesystem
  
@@ -31,8 +26,8 @@
  config BR2_TARGET_ROOTFS_UBIFS_MAXLEBCNT
  	int "Maximum LEB count"
  	depends on BR2_TARGET_ROOTFS_UBIFS
---- buildrootref/target/ubifs/ubifsroot.mk	2009-10-03 17:55:26.000000000 +0200
-+++ buildroot/target/ubifs/ubifsroot.mk	2009-10-03 17:18:09.000000000 +0200
+--- buildrootref/fs/ubifs/ubifs.mk	2009-10-03 17:55:26.000000000 +0200
++++ buildroot/fs/ubifs/ubifs.mk	2009-10-03 17:18:09.000000000 +0200
 @@ -75,7 +75,14 @@ else
  UBIFS_TARGET := $(UBIFS_BASE)
  endif

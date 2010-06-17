@@ -3,10 +3,10 @@ Index: buildroot/package/Config.in
 --- buildroot.orig/package/Config.in	2010-01-25 10:04:25.000000000 +0100
 +++ buildroot/package/Config.in	2010-01-25 10:05:15.000000000 +0100
 @@ -325,6 +325,7 @@
- comment "--> May be broken in busybox"
- source "package/fbv/Config.in"
- source "package/fbset/Config.in"
+ source "package/directfb-examples/Config.in"
+ source "package/divine/Config.in"
+ source "package/fbdump/Config.in"
 +source "package/fbgrab/Config.in"
- 
- comment "other GUIs"
- source "package/qt/Config.in"
+ if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
+ source "package/fbset/Config.in"
+ endif

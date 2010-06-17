@@ -1,6 +1,6 @@
 --- buildroot/target/device/Config.in.ref       2008-11-03 15:31:26.000000000 +0100
 +++ buildroot/target/device/Config.in   2008-11-03 15:32:00.000000000 +0100
-@@ -5,6 +5,7 @@ source "project/Config.in"
+@@ -2,6 +2,7 @@ source "project/Config.in"
  
  comment "Preset Devices"
 

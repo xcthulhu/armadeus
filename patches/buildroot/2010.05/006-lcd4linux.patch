@@ -2,11 +2,11 @@ Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-01-25 10:03:35.000000000 +0100
 +++ buildroot/package/Config.in	2010-01-25 10:03:44.000000000 +0100
-@@ -260,6 +260,7 @@
+@@ -172,6 +172,7 @@
  source "package/i2c-tools/Config.in"
  source "package/input-tools/Config.in"
  source "package/iostat/Config.in"
 +source "package/lcd4linux/Config.in"
- source "package/libaio/Config.in"
- source "package/libraw1394/Config.in"
- source "package/libusb/Config.in"
+ source "package/lm-sensors/Config.in"
+ source "package/lvm2/Config.in"
+ source "package/makedevs/Config.in"

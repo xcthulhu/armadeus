@@ -4,11 +4,16 @@ Index: buildroot/target/linux/Config.in.advanced
 ===================================================================
 --- buildroot.orig/target/linux/Config.in.advanced	2010-02-03 13:21:18.000000000 +0100
 +++ buildroot/target/linux/Config.in.advanced	2010-02-03 13:27:11.000000000 +0100
-@@ -127,17 +127,21 @@
+@@ -127,21 +127,26 @@
  
  config BR2_LINUX_2_6_STABLE
- 	bool "The latest stable Linux kernel (2.6.32.9)"
+ 	bool "The latest stable Linux kernel (2.6.33.4)"
 +	depends on !BR2_TARGET_ARMADEUS
+ 
+ config BR2_LINUX_2_6_33
+ 	bool "Linux 2.6.33"
++	depends on !BR2_TARGET_ARMADEUS
+ 	select BR2_KERNEL_BASE
  
  config BR2_LINUX_2_6_32
  	bool "Linux 2.6.32"
@@ -34,21 +39,3 @@ Index: buildroot/target/linux/Config.in.advanced
  	select BR2_KERNEL_BASE
  
  config BR2_LINUX_2_6_27
-@@ -141,14 +144,17 @@
- 
- config BR2_LINUX_2_6_26
- 	bool "Linux 2.6.26"
-+	depends on !BR2_TARGET_ARMADEUS
- 	select BR2_KERNEL_BASE
- 
- config BR2_LINUX_2_6_25
- 	bool "Linux 2.6.25"
-+	depends on !BR2_TARGET_ARMADEUS
- 	select BR2_KERNEL_BASE
- 
- config BR2_LINUX_2_6_24
- 	bool "Linux 2.6.24"
-+	depends on !BR2_TARGET_ARMADEUS
- 	select BR2_KERNEL_BASE
- 
- config BR2_LINUX26_CUSTOM
