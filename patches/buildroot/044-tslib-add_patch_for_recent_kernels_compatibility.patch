@@ -1,0 +1,53 @@
+Index: buildroot/package/tslib/tslib-1.0-zz-make_it_work_on_powerpc_and_recent_kernels.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/tslib/tslib-1.0-zz-make_it_work_on_powerpc_and_recent_kernels.patch	2010-06-17 18:01:06.000000000 +0200
+@@ -0,0 +1,48 @@
++The bit / absbit is defined the same way as in kernel. {EV|ABS}_CNT is
++only exported in recent kernels.
++
++Signed-off-by: Sebastian Siewior <sebastian@breakpoint.cc>
++
++
++--- tslib-1.0.org/plugins/input-raw.c	2008-11-18 11:38:02.000000000 +0100
+++++ tslib-1.0/plugins/input-raw.c	2008-11-18 11:44:10.000000000 +0100
++@@ -44,23 +44,31 @@
++ 	int	using_syn;
++ };
++ 
+++#define BITS_PER_LONG	(sizeof(long) * 8)
+++#ifndef EV_CNT
+++#define EV_CNT	(EV_MAX+1)
+++#endif
+++#ifndef ABS_CNT
+++#define ABS_CNT	(ABS_MAX+1)
+++#endif
+++
++ static int check_fd(struct tslib_input *i)
++ {
++ 	struct tsdev *ts = i->module.dev;
++ 	int version;
++-	u_int32_t bit;
++-	u_int32_t absbit;
+++	unsigned long bit[EV_CNT / BITS_PER_LONG + 1];
+++	unsigned long absbit[ABS_MAX / BITS_PER_LONG + 1];
++ 
++ 	if (! ((ioctl(ts->fd, EVIOCGVERSION, &version) >= 0) &&
++ 		(version == EV_VERSION) &&
++-		(ioctl(ts->fd, EVIOCGBIT(0, sizeof(bit) * 8), &bit) >= 0) &&
++-		(bit & (1 << EV_ABS)) &&
++-		(ioctl(ts->fd, EVIOCGBIT(EV_ABS, sizeof(absbit) * 8), &absbit) >= 0) &&
++-		(absbit & (1 << ABS_X)) &&
++-		(absbit & (1 << ABS_Y)) && (absbit & (1 << ABS_PRESSURE)))) {
+++		(ioctl(ts->fd, EVIOCGBIT(0, sizeof(bit)), bit) >= 0) &&
+++		(bit[0] & (1 << EV_ABS)) &&
+++		(ioctl(ts->fd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit) >= 0) &&
+++		(absbit[0] & (1 << ABS_X)) &&
+++		(absbit[0] & (1 << ABS_Y)) && (absbit[0] & (1 << ABS_PRESSURE)))) {
++ 	}
++ 
++-	if (bit & (1 << EV_SYN))
+++	if (bit[0] & (1 << EV_SYN))
++ 		i->using_syn = 1;
++ 
++ 	return 0;

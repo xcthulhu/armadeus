@@ -1,8 +1,0 @@
-/Config.in
-/ts.conf
-/tslib-1.0-absbit.patch
-/tslib-1.0-remove-bzero.patch
-/tslib-1.0-remove-return-on-error-from-check-df.patch
-/tslib.mk
-/tslib_add_finddef_and_inputattach_utils.patch
-
