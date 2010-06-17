@@ -8,9 +8,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/target/linux/Makefile.in.advanced
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-01-25 10:04:56.000000000 +0100
-+++ buildroot/target/linux/Makefile.in.advanced	2010-01-25 10:06:08.000000000 +0100
-@@ -197,9 +197,11 @@
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:46:27.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:46:34.000000000 +0200
+@@ -201,9 +201,11 @@
  ifneq ($(strip $(LINUX26_PATCH_SOURCE)),)
  $(DL_DIR)/$(LINUX26_PATCH_SOURCE):
  	 $(call DOWNLOAD,$(LINUX26_PATCH_SITE),$(LINUX26_PATCH_SOURCE))
@@ -23,7 +23,7 @@ Index: buildroot/target/linux/Makefile.in.advanced
  	rm -rf $(LINUX26_DIR)
  	@echo "*** Unpacking kernel source"
  	$(LINUX26_BZCAT) $(DL_DIR)/$(LINUX26_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-@@ -465,7 +467,7 @@
+@@ -464,7 +466,7 @@
  
  linux26-modules: cross-depmod26 $(STAMP_DIR)/linux_modules_target_installed
  

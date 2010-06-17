@@ -1,6 +1,8 @@
---- buildroot/target/linux/Makefile.in.advanced	2007-10-27 09:15:08.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced.new	2008-10-22 16:06:21.000000000 +0200
-@@ -41,7 +41,8 @@ endif
+Index: buildroot/target/linux/Makefile.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:46:27.000000000 +0200
+@@ -41,7 +41,8 @@
  endif
  
  # Ask the kernel what version number it will use when installing modules
@@ -10,7 +12,7 @@
  
  ifeq ($(BOARD_PATH),)
  BOARD_PATH:=$(call qstrip,$(BR2_BOARD_PATH))
-@@ -158,8 +158,9 @@ endif
+@@ -162,8 +163,9 @@
  
  # -----------------------------------------------------------------------------
  # File name for the Linux kernel binary
@@ -18,10 +20,10 @@
  LINUX26_KERNEL_NAME:=$(LINUX26_FORMAT)
 -
 +endif
-
+ 
  ifeq ($(BOARD_NAME),)
  BOARD_NAME=$(ARCH)
-@@ -330,8 +332,8 @@ endif
+@@ -334,8 +336,8 @@
  	$(SED) '/CONFIG_AEABI=y/d' $(LINUX26_DIR)/.config
  ifeq ($(BR2_ARM_EABI),y)
  	echo "CONFIG_AEABI=y" >> $(LINUX26_DIR)/.config
@@ -32,7 +34,7 @@
  else
  	echo "# CONFIG_AEABI is not set" >> $(LINUX26_DIR)/.config
  endif
-@@ -360,6 +362,9 @@ ifeq ($(BR2_PACKAGE_BUSYBOX_INITRAMFS),y
+@@ -364,6 +366,9 @@
  	echo "CONFIG_INITRAMFS_ROOT_UID=0" >> $(LINUX26_DIR)/.config
  	echo "CONFIG_INITRAMFS_ROOT_GID=0" >> $(LINUX26_DIR)/.config
  endif

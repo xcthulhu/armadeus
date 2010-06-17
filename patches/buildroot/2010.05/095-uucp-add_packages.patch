@@ -8,7 +8,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/uucp/uucp.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/uucp/uucp.mk	2009-12-28 11:06:42.000000000 +0100
++++ buildroot/package/uucp/uucp.mk	2010-06-17 16:49:43.000000000 +0200
 @@ -0,0 +1,17 @@
 +#############################################################
 +#
@@ -30,7 +30,7 @@ Index: buildroot/package/uucp/uucp.mk
 Index: buildroot/package/uucp/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/uucp/Config.in	2009-12-28 10:44:17.000000000 +0100
++++ buildroot/package/uucp/Config.in	2010-06-17 16:49:43.000000000 +0200
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_UUCP
 +	bool "uucp"

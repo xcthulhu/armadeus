@@ -5,7 +5,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/games/wolf4sdl/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/Config.in	2010-06-07 16:17:18.000000000 +0200
++++ buildroot/package/games/wolf4sdl/Config.in	2010-06-17 16:50:31.000000000 +0200
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_WOLF4SDL
 +	bool "Wolf4SDL"
@@ -21,7 +21,7 @@ Index: buildroot/package/games/wolf4sdl/Config.in
 Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2010-06-07 16:36:19.000000000 +0200
++++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2010-06-17 16:50:31.000000000 +0200
 @@ -0,0 +1,55 @@
 +#############################################################
 +#
@@ -80,8 +80,8 @@ Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 +endif
 Index: buildroot/package/games/Config.in
 ===================================================================
---- buildroot.orig/package/games/Config.in	2010-06-07 16:15:27.000000000 +0200
-+++ buildroot/package/games/Config.in	2010-06-07 16:18:33.000000000 +0200
+--- buildroot.orig/package/games/Config.in	2010-06-17 16:47:28.000000000 +0200
++++ buildroot/package/games/Config.in	2010-06-17 16:50:31.000000000 +0200
 @@ -8,4 +8,5 @@
  source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"

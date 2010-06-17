@@ -1,13 +1,13 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-01-25 10:04:02.000000000 +0100
-+++ buildroot/package/Config.in	2010-01-25 10:04:10.000000000 +0100
+--- buildroot.orig/package/Config.in	2010-06-17 16:45:48.000000000 +0200
++++ buildroot/package/Config.in	2010-06-17 16:46:13.000000000 +0200
 @@ -106,6 +106,8 @@
  source "package/sdl_net/Config.in"
  source "package/sdl_ttf/Config.in"
  source "package/sdl_gfx/Config.in"
 +comment "Demos"
-+source "package/sdlwater/Config.in" 
++source "package/sdlwater/Config.in"
  
  comment "other GUIs"
  source "package/qt/Config.in"

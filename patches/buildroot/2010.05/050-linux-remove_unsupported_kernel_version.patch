@@ -2,9 +2,9 @@ Remove kernel versions not supported by Armadeus boards from user choice.
 
 Index: buildroot/target/linux/Config.in.advanced
 ===================================================================
---- buildroot.orig/target/linux/Config.in.advanced	2010-02-03 13:21:18.000000000 +0100
-+++ buildroot/target/linux/Config.in.advanced	2010-02-03 13:27:11.000000000 +0100
-@@ -127,21 +127,26 @@
+--- buildroot.orig/target/linux/Config.in.advanced	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/target/linux/Config.in.advanced	2010-06-17 16:46:36.000000000 +0200
+@@ -98,21 +98,26 @@
  
  config BR2_LINUX_2_6_STABLE
  	bool "The latest stable Linux kernel (2.6.33.4)"
@@ -31,8 +31,8 @@ Index: buildroot/target/linux/Config.in.advanced
  	select BR2_KERNEL_BASE
  
  config BR2_LINUX_2_6_29
-@@ -146,6 +148,7 @@
- 	
+@@ -121,6 +126,7 @@
+ 
  config BR2_LINUX_2_6_28
  	bool "Linux 2.6.28"
 +	depends on !BR2_TARGET_ARMADEUS

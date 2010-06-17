@@ -1,12 +1,12 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-01-25 10:05:15.000000000 +0100
-+++ buildroot/package/Config.in	2010-01-25 10:05:22.000000000 +0100
-@@ -200,6 +200,7 @@
+--- buildroot.orig/package/Config.in	2010-06-17 16:46:29.000000000 +0200
++++ buildroot/package/Config.in	2010-06-17 16:46:31.000000000 +0200
+@@ -408,6 +408,7 @@
  source "package/samba/Config.in"
  source "package/ser2net/Config.in"
  source "package/socat/Config.in"
 +source "package/socketcan/Config.in"
  source "package/spawn-fcgi/Config.in"
+ source "package/squid/Config.in"
  source "package/stunnel/Config.in"
- source "package/tcpdump/Config.in"

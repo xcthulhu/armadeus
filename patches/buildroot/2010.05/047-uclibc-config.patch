@@ -1,6 +1,8 @@
---- buildroot/toolchain/uClibc/uclibc.mk.ref	2008-10-24 11:13:56.000000000 +0200
-+++ buildroot/toolchain/uClibc/uclibc.mk	2008-11-05 21:30:07.000000000 +0100
-@@ -141,23 +141,6 @@ $(UCLIBC_DIR)/.oldconfig: $(UCLIBC_DIR)/
+Index: buildroot/toolchain/uClibc/uclibc.mk
+===================================================================
+--- buildroot.orig/toolchain/uClibc/uclibc.mk	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/toolchain/uClibc/uclibc.mk	2010-06-17 16:46:32.000000000 +0200
+@@ -101,23 +101,6 @@
  		-e 's,^SHARED_LIB_LOADER_PREFIX=.*,SHARED_LIB_LOADER_PREFIX=\"/lib\",g' \
  		$(UCLIBC_DIR)/.oldconfig
  ifeq ($(UCLIBC_TARGET_ARCH),arm)

@@ -7,8 +7,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-02-09 16:25:54.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2010-02-09 16:48:44.000000000 +0100
+--- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:47:00.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:47:02.000000000 +0200
 @@ -11,14 +11,18 @@
  U_BOOT_DIR:=$(BUILD_DIR)/u-boot-$(U_BOOT_VERSION)
  U_BOOT_PATCH_DIR:=$(BUILD_DIR)/u-boot-$(U_BOOT_VERSION)-patches

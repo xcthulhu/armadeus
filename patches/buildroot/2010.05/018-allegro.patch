@@ -1,7 +1,7 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-01-25 10:04:00.000000000 +0100
-+++ buildroot/package/Config.in	2010-01-25 10:04:02.000000000 +0100
+--- buildroot.orig/package/Config.in	2010-06-17 16:45:46.000000000 +0200
++++ buildroot/package/Config.in	2010-06-17 16:45:48.000000000 +0200
 @@ -86,6 +86,7 @@
  menu "Graphic libraries and applications (graphic/text)"
  

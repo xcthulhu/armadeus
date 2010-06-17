@@ -1,7 +1,7 @@
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-02-08 11:34:47.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2010-02-08 11:34:52.000000000 +0100
+--- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:56.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:58.000000000 +0200
 @@ -162,6 +162,17 @@
  endif
  	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)

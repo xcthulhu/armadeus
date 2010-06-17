@@ -5,8 +5,10 @@ This patch tries to correct that.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
---- buildroot.org/package/sdl/sdl.mk	2008-11-03 09:15:18.000000000 +0100
-+++ buildroot/package/sdl/sdl.mk	2009-06-15 23:16:13.000000000 +0200
+Index: buildroot/package/sdl/sdl.mk
+===================================================================
+--- buildroot.orig/package/sdl/sdl.mk	2010-06-17 16:45:11.000000000 +0200
++++ buildroot/package/sdl/sdl.mk	2010-06-17 16:47:26.000000000 +0200
 @@ -97,6 +97,9 @@
  # use correct rpath for linking
  	$(SED) 's^libdir=\$${exec_prefix}^libdir=/usr^' \

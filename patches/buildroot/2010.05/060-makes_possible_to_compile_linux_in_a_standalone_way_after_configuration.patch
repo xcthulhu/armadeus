@@ -1,6 +1,8 @@
---- buildroot/target/linux/Makefile.in.advanced.org	2008-12-12 21:55:37.000000000 +0100
-+++ buildroot/target/linux/Makefile.in.advanced	2008-12-12 22:25:20.000000000 +0100
-@@ -378,6 +378,8 @@
+Index: buildroot/target/linux/Makefile.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:47:06.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:15.000000000 +0200
+@@ -369,6 +369,8 @@
  	echo "CONFIG_INITRAMFS_ROOT_GID=0" >> $(LINUX26_DIR)/.config
  endif
  ifeq ($(strip $(BR2_TARGET_ARMADEUS)),y)

@@ -1,6 +1,8 @@
---- buildroot.work/target/linux/Makefile.in.advanced	2008-11-14 10:33:55.000000000 +0100
-+++ buildroot/target/linux/Makefile.in.advanced	2008-11-13 17:49:25.000000000 +0100
-@@ -460,7 +460,9 @@
+Index: buildroot/target/linux/Makefile.in.advanced
+===================================================================
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:46:38.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:06.000000000 +0200
+@@ -468,7 +468,9 @@
  
  linux26-source: $(DL_DIR)/$(LINUX26_SOURCE) $(LINUX26_PATCH_SOURCE_FILE)
  

@@ -1,8 +1,8 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-01-25 10:05:22.000000000 +0100
-+++ buildroot/package/Config.in	2010-01-25 10:06:55.000000000 +0100
-@@ -221,6 +221,7 @@
+--- buildroot.orig/package/Config.in	2010-06-17 16:46:31.000000000 +0200
++++ buildroot/package/Config.in	2010-06-17 16:47:12.000000000 +0200
+@@ -216,6 +216,7 @@
  source "package/microperl/Config.in"
  source "package/php/Config.in"
  source "package/python/Config.in"

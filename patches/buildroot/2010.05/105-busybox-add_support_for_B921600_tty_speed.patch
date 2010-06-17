@@ -4,7 +4,7 @@ Without this patch stty will refuse to setup a tty to B921600 speed.
 Index: buildroot/package/busybox/busybox-1.15.3-speed_table-B921600.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/busybox/busybox-1.15.3-speed_table-B921600.patch	2010-04-26 10:29:53.000000000 +0200
++++ buildroot/package/busybox/busybox-1.15.3-speed_table-B921600.patch	2010-06-17 16:50:17.000000000 +0200
 @@ -0,0 +1,32 @@
 +From e707a3000b2f6e2f684b6e85cd60590318d157c4 Mon Sep 17 00:00:00 2001
 +From: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>

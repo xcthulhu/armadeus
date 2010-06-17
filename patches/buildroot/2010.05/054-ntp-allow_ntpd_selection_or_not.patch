@@ -6,8 +6,10 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Would BR be interested ?
 
---- buildroot/package/ntp/Config.in	2008-11-03 09:15:26.000000000 +0100
-+++ buildroot/package/ntp/Config.in	2008-11-26 12:11:59.000000000 +0100
+Index: buildroot/package/ntp/Config.in
+===================================================================
+--- buildroot.orig/package/ntp/Config.in	2010-06-17 16:45:12.000000000 +0200
++++ buildroot/package/ntp/Config.in	2010-06-17 16:47:10.000000000 +0200
 @@ -6,6 +6,12 @@
  
  	  http://www.ntp.org/
@@ -21,8 +23,10 @@ Would BR be interested ?
  config BR2_PACKAGE_NTP_SNTP
  	bool "sntp"
  	depends on BR2_PACKAGE_NTP
---- buildroot/package/ntp/ntp.mk	2008-11-03 09:15:26.000000000 +0100
-+++ buildroot/package/ntp/ntp.mk	2008-11-26 13:17:39.000000000 +0100
+Index: buildroot/package/ntp/ntp.mk
+===================================================================
+--- buildroot.orig/package/ntp/ntp.mk	2010-06-17 16:45:12.000000000 +0200
++++ buildroot/package/ntp/ntp.mk	2010-06-17 16:47:10.000000000 +0200
 @@ -61,12 +61,15 @@
  	$(MAKE) -C $(NTP_DIR)
  

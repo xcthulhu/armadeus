@@ -3,9 +3,11 @@ unneeded stuff for most everyday use.
 
 Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
---- /home/fabien/virgin-armadeus/buildroot/package/mysql_client/Config.in	2008-12-15 13:18:29.000000000 +0100
-+++ buildroot/package/mysql_client/Config.in	2008-12-15 11:00:35.000000000 +0100
-@@ -8,3 +8,19 @@ config BR2_PACKAGE_MYSQL_CLIENT
+Index: buildroot/package/mysql_client/Config.in
+===================================================================
+--- buildroot.orig/package/mysql_client/Config.in	2010-06-17 16:45:12.000000000 +0200
++++ buildroot/package/mysql_client/Config.in	2010-06-17 16:47:17.000000000 +0200
+@@ -8,3 +8,19 @@
  
  comment "Mysql client requires a toolchain with C++ support enabled"
  	depends on !BR2_INSTALL_LIBSTDCPP
@@ -25,8 +27,10 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 +	  usr/bin/myisamlog
 +	  usr/bin/my_print_defaults
 +endif
---- /home/fabien/virgin-armadeus/buildroot/package/mysql_client/mysql_client.mk	2008-12-15 13:18:29.000000000 +0100
-+++ buildroot/package/mysql_client/mysql_client.mk	2008-12-15 11:05:57.000000000 +0100
+Index: buildroot/package/mysql_client/mysql_client.mk
+===================================================================
+--- buildroot.orig/package/mysql_client/mysql_client.mk	2010-06-17 16:45:12.000000000 +0200
++++ buildroot/package/mysql_client/mysql_client.mk	2010-06-17 16:47:17.000000000 +0200
 @@ -28,4 +28,15 @@
  
  $(MYSQL_CLIENT_HOOK_POST_INSTALL):

@@ -1,8 +1,8 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-01-25 10:04:25.000000000 +0100
-+++ buildroot/package/Config.in	2010-01-25 10:05:15.000000000 +0100
-@@ -325,6 +325,7 @@
+--- buildroot.orig/package/Config.in	2010-06-17 16:46:21.000000000 +0200
++++ buildroot/package/Config.in	2010-06-17 16:46:29.000000000 +0200
+@@ -91,6 +91,7 @@
  source "package/directfb-examples/Config.in"
  source "package/divine/Config.in"
  source "package/fbdump/Config.in"

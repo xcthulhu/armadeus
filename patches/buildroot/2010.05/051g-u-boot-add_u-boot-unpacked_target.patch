@@ -2,8 +2,8 @@ Specific for Armadeus (needed by quiltify script).
 
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-02-05 15:09:08.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2010-02-05 15:09:35.000000000 +0100
+--- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:58.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:47:00.000000000 +0200
 @@ -74,6 +74,8 @@
  	mkdir -p $(U_BOOT_DIR)
  	touch $@

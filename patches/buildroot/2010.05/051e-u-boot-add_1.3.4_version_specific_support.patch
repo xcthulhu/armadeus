@@ -2,8 +2,8 @@ Specific for Armadeus boards.
 
 Index: buildroot/target/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-02-08 11:19:36.000000000 +0100
-+++ buildroot/target/u-boot/Config.in	2010-02-08 11:19:36.000000000 +0100
+--- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:46:54.000000000 +0200
++++ buildroot/target/u-boot/Config.in	2010-06-17 16:46:56.000000000 +0200
 @@ -25,6 +25,9 @@
  	help
  	  Select the specific U-Boot version you want to use
@@ -14,7 +14,7 @@ Index: buildroot/target/u-boot/Config.in
  config BR2_TARGET_UBOOT_2010_03
  	bool "u-boot-2010.03"
  
-@@ -56,6 +59,7 @@
+@@ -58,6 +61,7 @@
  
  config BR2_UBOOT_VERSION
  	string
@@ -24,8 +24,8 @@ Index: buildroot/target/u-boot/Config.in
  	default "2009.08"	if BR2_TARGET_UBOOT_2009_08
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-02-08 11:25:55.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2010-02-08 11:33:26.000000000 +0100
+--- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:54.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:56.000000000 +0200
 @@ -190,6 +190,11 @@
  
  $(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BIN)

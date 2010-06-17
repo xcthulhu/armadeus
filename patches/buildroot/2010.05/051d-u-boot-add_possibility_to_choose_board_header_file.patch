@@ -7,8 +7,8 @@ So this patch reverts the removing + refines it.
 
 Index: buildroot/target/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-02-08 11:34:35.000000000 +0100
-+++ buildroot/target/u-boot/Config.in	2010-02-08 11:34:38.000000000 +0100
+--- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:46:48.000000000 +0200
++++ buildroot/target/u-boot/Config.in	2010-06-17 16:46:54.000000000 +0200
 @@ -11,6 +11,14 @@
  	  One of U-Boot supported boards to be built.
  	  This will be suffixed with _config to meet U-Boot standard naming.
@@ -23,11 +23,11 @@ Index: buildroot/target/u-boot/Config.in
 +
  choice
  	prompt "U-Boot Version"
- 	default BR2_TARGET_UBOOT_2009_11
+ 	default BR2_TARGET_UBOOT_2010_03
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-02-08 11:34:36.000000000 +0100
-+++ buildroot/target/u-boot/Makefile.in	2010-02-08 11:34:38.000000000 +0100
+--- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:50.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:54.000000000 +0200
 @@ -88,7 +88,13 @@
  endif
  	touch $@

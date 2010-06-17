@@ -1,5 +1,7 @@
---- buildroot/package/fakeroot/fakeroot.mk.ref	2008-11-03 09:15:23.000000000 +0100
-+++ buildroot/package/fakeroot/fakeroot.mk	2008-12-02 10:39:42.000000000 +0100
+Index: buildroot/package/fakeroot/fakeroot.mk
+===================================================================
+--- buildroot.orig/package/fakeroot/fakeroot.mk	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/package/fakeroot/fakeroot.mk	2010-06-17 16:46:25.000000000 +0200
 @@ -3,7 +3,7 @@
  # fakeroot
  #

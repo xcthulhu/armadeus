@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/multimedia/Config.in
 ===================================================================
---- buildroot.orig/package/multimedia/Config.in	2010-01-22 13:52:37.000000000 +0100
-+++ buildroot/package/multimedia/Config.in	2010-01-22 13:53:01.000000000 +0100
+--- buildroot.orig/package/multimedia/Config.in	2010-06-17 16:45:11.000000000 +0200
++++ buildroot/package/multimedia/Config.in	2010-06-17 16:49:46.000000000 +0200
 @@ -3,6 +3,7 @@
  source "package/multimedia/alsa-utils/Config.in"
  source "package/multimedia/aumix/Config.in"
@@ -17,7 +17,7 @@ Index: buildroot/package/multimedia/Config.in
 Index: buildroot/package/multimedia/flite/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/multimedia/flite/Config.in	2010-01-22 13:55:42.000000000 +0100
++++ buildroot/package/multimedia/flite/Config.in	2010-06-17 16:49:46.000000000 +0200
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_FLITE
 +	bool "flite"
@@ -33,7 +33,7 @@ Index: buildroot/package/multimedia/flite/Config.in
 Index: buildroot/package/multimedia/flite/flite.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/multimedia/flite/flite.mk	2010-01-22 14:44:19.000000000 +0100
++++ buildroot/package/multimedia/flite/flite.mk	2010-06-17 16:49:46.000000000 +0200
 @@ -0,0 +1,44 @@
 +#############################################################
 +#
