@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Wed Jun 16 16:58:03 2010
+# Thu Jun 17 18:25:20 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -504,6 +504,7 @@ BR2_BLOCKDEV_SUPPORT=y
 # BR2_PACKAGE_LIBFUSE is not set
 # BR2_PACKAGE_GADGETFS_TEST is not set
 # BR2_PACKAGE_GPM is not set
+# BR2_PACKAGE_GPSD is not set
 # BR2_PACKAGE_HAL is not set
 # BR2_PACKAGE_HWDATA is not set
 # BR2_PACKAGE_I2C_TOOLS is not set
