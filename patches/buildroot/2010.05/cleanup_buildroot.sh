@@ -32,3 +32,4 @@ rm -rf buildroot/package/pyserial/
 rm -rf buildroot/package/pymysql/
 rm -rf buildroot/package/socketcan/
 rm -rf buildroot/package/lcd4linux/
+rm -rf buildroot/package/mesa/
