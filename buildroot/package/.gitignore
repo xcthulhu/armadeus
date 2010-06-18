@@ -9,7 +9,6 @@
 /buildroot-libtool.patch
 
 # except:
-!/allegro/
 !/armadeus/
 !/bluez/
 !/fbgrab/

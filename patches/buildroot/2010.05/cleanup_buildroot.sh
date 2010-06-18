@@ -35,3 +35,4 @@ rm -rf buildroot/package/socketcan/
 rm -rf buildroot/package/lcd4linux/
 rm -rf buildroot/package/mesa/
 rm -rf buildroot/package/games/snes9x/
+rm -rf buildroot/package/allegro/
