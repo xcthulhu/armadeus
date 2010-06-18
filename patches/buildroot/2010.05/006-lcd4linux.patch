@@ -1,3 +1,7 @@
+Add lcd4linux package to BR.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-06-17 16:45:14.000000000 +0200
@@ -10,3 +14,740 @@ Index: buildroot/package/Config.in
  source "package/lm-sensors/Config.in"
  source "package/lvm2/Config.in"
  source "package/makedevs/Config.in"
+Index: buildroot/package/lcd4linux/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/lcd4linux/Config.in	2010-06-18 18:00:21.000000000 +0200
+@@ -0,0 +1,7 @@
++config BR2_PACKAGE_LCD4LINUX
++	bool "LCD4Linux daemon"
++	select BR2_PACKAGE_NCURSES
++	help
++	  LCD4Linux allows you to show some system parameters on a textual LCD
++	  connected to your Armadeus board.
++
+Index: buildroot/package/lcd4linux/lcd4linux.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/lcd4linux/lcd4linux.mk	2010-06-18 17:25:24.000000000 +0200
+@@ -0,0 +1,66 @@
++#############################################################
++#
++# LCD4Linux daemon
++#
++#############################################################
++
++LCD4LINUX_VER:=0.10.1-RC2
++LCD4LINUX_SOURCE:=lcd4linux-$(LCD4LINUX_VER).tar.gz
++LCD4LINUX_SITE:=http://ssl.bulix.org/projects/lcd4linux/raw-attachment/wiki/Download/
++LCD4LINUX_DIR:=$(BUILD_DIR)/lcd4linux-$(LCD4LINUX_VER)
++LCD4LINUX_CAT:=zcat
++LCD4LINUX_BINARY:=lcd4linux
++LCD4LINUX_TARGET_BINARY:=usr/bin/lcd4linux
++LCD4LINUX_PATCH:=lcd4linux_armadeus.patch
++LCD4LINUX_CONF:=lcd4linux_armadeus.conf
++LCD4LINUX_TARGET_CONF:=etc/lcd4linux.conf
++
++
++$(DL_DIR)/$(LCD4LINUX_SOURCE):
++	$(call DOWNLOAD,$(LCD4LINUX_SITE),$(LCD4LINUX_SOURCE))
++
++lcd4linux-source: $(DL_DIR)/$(LCD4LINUX_SOURCE)
++
++$(LCD4LINUX_DIR)/.unpacked: $(DL_DIR)/$(LCD4LINUX_SOURCE)
++	$(LCD4LINUX_CAT) $(DL_DIR)/$(LCD4LINUX_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
++	touch $@
++
++$(LCD4LINUX_DIR)/.patched: $(LCD4LINUX_DIR)/.unpacked
++	toolchain/patch-kernel.sh $(LCD4LINUX_DIR) package/lcd4linux lcd4linux\*.patch
++	(if [ -d $(BUILD_DIR)/linux-2.6.12/include/asm-generic ]; then ln -sf $(BUILD_DIR)/linux-2.6.12/include/asm-generic/ $(BUILD_DIR)/staging_dir/arm-linux-uclibc/sys-include/asm-generic; fi)
++	touch $@
++
++$(LCD4LINUX_DIR)/.configured: $(LCD4LINUX_DIR)/.patched
++	(cd $(LCD4LINUX_DIR); rm -rf config.cache; \
++		$(TARGET_CONFIGURE_OPTS) CC_FOR_BUILD=$(HOSTCC) \
++		CFLAGS="$(TARGET_CFLAGS)" \
++		./configure \
++		--host=$(GNU_TARGET_NAME) \
++	);
++	touch $@
++
++$(LCD4LINUX_DIR)/$(LCD4LINUX_BINARY): $(LCD4LINUX_DIR)/.configured
++	$(TARGET_CONFIGURE_OPTS) $(MAKE) CC=$(TARGET_CC) -C $(LCD4LINUX_DIR)
++
++$(TARGET_DIR)/$(LCD4LINUX_TARGET_BINARY): $(LCD4LINUX_DIR)/$(LCD4LINUX_BINARY)
++	install -D $< $@
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
++	cp package/lcd4linux/$(LCD4LINUX_CONF) $(TARGET_DIR)/$(LCD4LINUX_TARGET_CONF)
++
++lcd4linux: uclibc ncurses $(TARGET_DIR)/$(LCD4LINUX_TARGET_BINARY)
++
++lcd4linux-clean:
++	rm -f $(TARGET_DIR)/$(LCD4LINUX_TARGET_BINARY)
++	-$(MAKE) -C $(LCD4LINUX_DIR) clean
++
++lcd4linux-dirclean:
++	rm -rf $(LCD4LINUX_DIR)
++
++#############################################################
++#
++# Toplevel Makefile options
++#
++#############################################################
++ifeq ($(strip $(BR2_PACKAGE_LCD4LINUX)),y)
++TARGETS+=lcd4linux
++endif
+Index: buildroot/package/lcd4linux/lcd4linux-remove-wireless.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/lcd4linux/lcd4linux-remove-wireless.patch	2010-06-18 17:26:55.000000000 +0200
+@@ -0,0 +1,13 @@
++This plugin doesn't compile yet (/anymore?)
++
++--- lcd4linux-0.10.0/configure.org	2007-11-21 22:31:40.000000000 +0100
+++++ lcd4linux-0.10.0/configure  	2007-11-21 22:32:04.000000000 +0100
++@@ -6366,7 +6366,7 @@
++          PLUGIN_STATFS="yes"
++          PLUGIN_UNAME="yes"
++          PLUGIN_UPTIME="yes"
++-         PLUGIN_WIRELESS="yes"
+++         PLUGIN_WIRELESS="no"
++          PLUGIN_XMMS="yes"
++          ;;
++       apm)
+Index: buildroot/package/lcd4linux/lcd4linux-armadeus.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/lcd4linux/lcd4linux-armadeus.patch	2010-06-18 17:27:39.000000000 +0200
+@@ -0,0 +1,181 @@
++diff -uprN lcd4linux-0.10.0/configure lcd4linux-0.10.0.armadeus/configure
++--- lcd4linux-0.10.0/configure	2005-06-10 13:21:49.000000000 +0200
+++++ lcd4linux-0.10.0.armadeus/configure	2005-09-11 20:39:47.000000000 +0200
++@@ -7242,7 +7242,7 @@ for driver in $drivers; do
++          picoLCD="yes"
++          PNG="yes"
++          PPM="yes"
++-         ROUTERBOARD="yes"
+++         ROUTERBOARD="no"
++          SAMPLE="yes"
++ 	 SERDISPLIB="yes"
++          SIMPLELCD="yes"
++diff -uprN lcd4linux-0.10.0/drv_generic_parport.c lcd4linux-0.10.0.armadeus/drv_generic_parport.c
++--- lcd4linux-0.10.0/drv_generic_parport.c	2005-05-08 06:32:44.000000000 +0200
+++++ lcd4linux-0.10.0.armadeus/drv_generic_parport.c	2005-09-11 20:46:27.000000000 +0200
++@@ -215,9 +215,8 @@ int drv_generic_parport_open(const char 
++ 	    return -1;
++ 	}
++     } else
++-#endif
++-
++     {
+++#else
++ 	error("using raw port 0x%x (deprecated!)", Port);
++ 	error("You *really* should change your setup and use ppdev!");
++ 	if ((Port + 3) <= 0x3ff) {
++@@ -231,6 +230,7 @@ int drv_generic_parport_open(const char 
++ 		return -1;
++ 	    }
++ 	}
+++#endif // WITH_PPDEV
++     }
++     return 0;
++ }
++@@ -250,9 +250,9 @@ int drv_generic_parport_close(void)
++ 	}
++ 	free(PPdev);
++     } else
++-#endif
++     {
++ 	debug("closing raw port 0x%x", Port);
+++#else
++ 	if ((Port + 3) <= 0x3ff) {
++ 	    if (ioperm(Port, 3, 0) != 0) {
++ 		error("%s: ioperm(0x%x) failed: %s", Driver, Port, strerror(errno));
++@@ -264,6 +264,7 @@ int drv_generic_parport_close(void)
++ 		return -1;
++ 	    }
++ 	}
+++#endif // WITH_PPDEV
++     }
++ 
++     return 0;
++@@ -426,11 +427,12 @@ void drv_generic_parport_direction(const
++     if (PPdev) {
++ 	ioctl(PPfd, PPDATADIR, &direction);
++     } else
++-#endif
++     {
+++#else
++ 	/* code stolen from linux/parport_pc.h */
++ 	ctr = (ctr & ~0x20) ^ (direction ? 0x20 : 0x00);
++ 	outb(ctr, Port + 2);
+++#endif
++     }
++ }
++ 
++@@ -445,9 +447,10 @@ unsigned char drv_generic_parport_status
++     if (PPdev) {
++ 	ioctl(PPfd, PPRSTATUS, &data);
++     } else
++-#endif
++     {
+++#else
++ 	data = inb(Port + 1);
+++#endif
++     }
++ 
++     /* clear unused bits */
++@@ -476,11 +479,12 @@ void drv_generic_parport_control(const u
++ 	frob.val = val;
++ 	ioctl(PPfd, PPFCONTROL, &frob);
++     } else
++-#endif
++     {
+++#else
++ 	/* code stolen from linux/parport_pc.h */
++ 	ctr = (ctr & ~mask) ^ val;
++ 	outb(ctr, Port + 2);
+++#endif
++     }
++ }
++ 
++@@ -519,9 +523,10 @@ void drv_generic_parport_toggle(const un
++ 	frob.val = value2;
++ 	ioctl(PPfd, PPFCONTROL, &frob);
++ 
++-    } else
++-#endif
+++    }
+++     else
++     {
+++#else
++ 	/* rise */
++ 	ctr = (ctr & ~bits) ^ value1;
++ 	outb(ctr, Port + 2);
++@@ -532,6 +537,7 @@ void drv_generic_parport_toggle(const un
++ 	/* lower */
++ 	ctr = (ctr & ~bits) ^ value2;
++ 	outb(ctr, Port + 2);
+++#endif
++     }
++ }
++ 
++@@ -541,11 +547,13 @@ void drv_generic_parport_data(const unsi
++ #ifdef WITH_PPDEV
++     if (PPdev) {
++ 	ioctl(PPfd, PPWDATA, &data);
++-    } else
++-#endif
+++    }
+++#else
+++ else
++     {
++ 	outb(data, Port);
++     }
+++#endif
++ }
++ 
++ unsigned char drv_generic_parport_read(void)
++@@ -555,11 +563,13 @@ unsigned char drv_generic_parport_read(v
++ #ifdef WITH_PPDEV
++     if (PPdev) {
++ 	ioctl(PPfd, PPRDATA, &data);
++-    } else
++-#endif
++-    {
+++    }
+++#else
+++    else {
++ 	data = inb(Port);
++     }
+++#endif // WITH_PPDEV
+++
++     return data;
++ }
++ 
++@@ -571,11 +581,12 @@ void drv_generic_parport_debug(void)
++ #ifdef WITH_PPDEV
++     if (PPdev) {
++ 	ioctl(PPfd, PPRCONTROL, &control);
++-    } else
++-#endif
++-    {
+++    }
+++#else
+++    else {
++ 	control = ctr;
++     }
+++#endif // WITH_PPDEV
++ 
++     debug("%cSTROBE %cAUTOFD %cINIT %cSLCTIN",
++ 	  control & PARPORT_CONTROL_STROBE ? '-' : '+',
++diff -uprN lcd4linux-0.10.0/stamp-h lcd4linux-0.10.0.armadeus/stamp-h
++--- lcd4linux-0.10.0/stamp-h	1970-01-01 01:00:00.000000000 +0100
+++++ lcd4linux-0.10.0.armadeus/stamp-h	2005-09-11 20:40:06.000000000 +0200
++@@ -0,0 +1 @@
+++timestamp
++diff -uprN lcd4linux-0.10.0/udelay.c lcd4linux-0.10.0.armadeus/udelay.c
++--- lcd4linux-0.10.0/udelay.c	2005-05-08 06:32:45.000000000 +0200
+++++ lcd4linux-0.10.0.armadeus/udelay.c	2005-09-11 19:59:42.000000000 +0200
++@@ -133,6 +133,7 @@
++ #include <stdlib.h>
++ #include <stdio.h>
++ 
+++#undef USE_OLD_UDELAY // otherwise x86 asm code is used
++ 
++ #ifdef USE_OLD_UDELAY
++ 
++ 
++ 
+Index: buildroot/package/lcd4linux/lcd4linux_armadeus.conf
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/lcd4linux/lcd4linux_armadeus.conf	2010-06-18 17:32:42.000000000 +0200
+@@ -0,0 +1,445 @@
++
++# Armadeus HD44780 display (Nico wiring ;-))
++Display HD44780-generic {
++    Driver 'HD44780'
++    Model 'generic'
++    Port '/dev/parports/0'
++    Size '40x2'
++    asc255bug 0
++    Bits 4
++    Wire {
++        RW      'DB4'
++        RS      'DB5'
++        ENABLE  'DB6'
++        ENABLE2 'GND'
++        GPO     'GND'
++    }
++}
++
++Plugin Seti {
++    Directory '/root/setiathome-3.08.i686-pc-linux-gnu'
++}
++
++
++Plugin MySQL {
++    server 'gsmlandia.com'	# if none, localhost assumed
++    port 3306			# if none, MySQL default assumed
++    user 'lcd4linux'		# if none, lcd4linux unix owner assumed
++    password 'lcd4linux'	# if none, empty password assumed
++    database 'lcd4linux'	# MUST be specified
++}
++
++Plugin Pop3 {
++   server1 'localhost'
++   port1 110
++   user1 'michael'
++   password1 'secret'
++}
++
++
++Widget OS {
++    class 'Text'
++    expression '*** '.uname('sysname').' '.uname('release').' ***'
++    width 20
++    align 'M'
++    speed 100
++    update tick
++}
++
++Widget CPU {
++    class  'Text'
++    expression  uname('machine')
++    prefix 'CPU '
++    width  9
++    align  'L'
++    update tick
++}
++
++
++Widget RAM {
++    class  'Text'
++    expression meminfo('MemTotal')/1024
++    postfix ' MB RAM'
++    width  11
++    precision 0
++    align  'R'
++    update tick
++}
++
++Widget Busy {
++    class 'Text'
++    expression proc_stat::cpu('busy', 500)
++    prefix 'Busy'
++    postfix '%'
++    width 8
++    precision 1
++    align 'R'
++    update tick
++}
++
++Widget BusyBar {
++    class 'Bar'
++    expression  proc_stat::cpu('busy',   500)
++    expression2 proc_stat::cpu('system', 500)
++    length 10
++    direction 'E'
++    update tack
++}
++
++Widget Load {
++    class 'Text'
++    expression loadavg(1)
++    prefix 'Load'
++    postfix loadavg(1)>1.0?'!':' '
++    width 10
++    precision 1
++    align 'R'
++    update tick
++}
++
++Widget LoadBar {
++    class 'Bar'
++    expression  loadavg(1)
++    max 2.0
++    length 10
++    direction 'E'
++    update tack
++}
++
++
++Widget Disk {
++    class 'Text'
++    # disk.[rw]blk return blocks, we assume a blocksize of 512
++    # to get the number in kB/s we would do blk*512/1024, which is blk/2
++    # expression (proc_stat::disk('.*', 'rblk', 500)+proc_stat::disk('.*', 'wblk', 500))/2
++    # with kernel 2.6, disk_io disappeared from /proc/stat but moved to /proc/diskstat
++    # therefore you have to use another function called 'diskstats':
++    expression diskstats('hd.', 'read_sectors', 500) + diskstats('hd.', 'write_sectors', 500)
++    prefix 'disk'
++    postfix ' '
++    width 10
++    precision 0
++    align 'R'
++    update tick
++}
++
++Widget DiskBar {
++    class 'Bar'
++    #expression  proc_stat::disk('.*', 'rblk', 500)
++    #expression2 proc_stat::disk('.*', 'wblk', 500)
++    # for kernel 2.6:
++    expression  diskstats('hd.', 'read_sectors',  500)
++    expression2 diskstats('hd.', 'write_sectors', 500)
++    length 14
++    direction 'E'
++    update tack
++}
++
++Widget Eth0 {
++    class 'Text'
++    expression (netdev('eth0', 'Rx_bytes', 500)+netdev('eth0', 'Tx_bytes', 500))/1024
++    prefix 'eth0'
++    postfix ' '
++    width 10
++    precision 0
++    align 'R'
++    update tick
++}
++
++Widget Eth0Bar {
++    class 'Bar'
++    expression  netdev('eth0', 'Rx_bytes', 500)
++    expression2 netdev('eth0', 'Tx_bytes', 500)
++    length 14
++    direction 'E'
++    update tack
++}
++
++Widget PPP {
++    class 'Text'
++    expression (ppp('Rx:0', 500)+ppp('Tx:0', 500))
++    prefix 'PPP'
++    width 9
++    precision 0
++    align 'R'
++    update tick
++}
++
++Widget Temp {
++    class 'Text'
++    expression i2c_sensors('temp_input3')*1.0324-67
++    prefix 'Temp'
++    width 9
++    precision 1
++    align 'R'
++    update tick
++}
++
++Widget TempBar {
++    class 'Bar'
++    expression  i2c_sensors('temp_input3')*1.0324-67
++    min 40
++    max 80
++    length 10
++    direction 'E'
++    update tack
++}
++
++Widget MySQLtest1 {
++    class 'Text'
++    expression MySQL::query('SELECT id FROM table1')
++    width 20
++    align 'R'
++    prefix 'MySQL test:'
++    update minute
++}
++
++Widget MySQLtest2 {
++    class 'Text'
++    expression MySQL::status()
++    width 20
++    align 'M'
++    prefix 'Status: '
++    update minute
++}
++
++Widget Uptime {
++    class 'Text'
++    expression uptime('%d days %H:%M:%S')
++    width 20
++    align 'R'
++    prefix 'Up '
++    update 1000
++}
++
++
++# debugging widgets
++
++Widget BarTest {
++    class 'Bar'
++    # test::bar(barno,maxval,startval,delta) - move a test value between 0 and max.
++    # delta= step to change value by each time it's read.
++    # barno - ten different test bar values can be set up, with barno=0..9
++    # if delta=0, just returns the value of bar n instead of changing it.
++    expression test::bar(0,30,25,1)
++    expression2 test::bar(1,30,0,1)
++    length 8
++    # max 50
++    direction 'E'
++    update 10
++}
++
++Widget BarTestVal {
++    class 'Text'
++    expression test::bar(0,100,50,0)
++    prefix 'Test '
++    width 9
++    update 200
++}
++
++Widget LightningTest {
++    class 'icon'
++    speed 500
++    visible test::onoff(0)
++    bitmap {
++        row1 '...***'
++        row2 '..***.'
++        row3 '.***..'
++        row4 '.****.'
++        row5 '..**..'
++        row6 '.**...'
++        row7 '**....'
++        row8 '*.....'
++    }
++}
++
++
++# Icons
++
++Widget Heartbeat {
++    class 'Icon'
++    speed 800
++    Bitmap {
++	Row1 '.....|.....'
++	Row2 '.*.*.|.*.*.'
++	Row3 '*****|*.*.*'
++	Row4 '*****|*...*'
++	Row5 '.***.|.*.*.'
++	Row6 '.***.|.*.*.'
++	Row7 '..*..|..*..'
++	Row8 '.....|.....'
++    }
++}
++
++Widget EKG {
++    class 'Icon'
++    speed 50
++    Bitmap {
++	Row1 '.....|.....|.....|.....|.....|.....|.....|.....'
++	Row2 '.....|....*|...*.|..*..|.*...|*....|.....|.....'
++	Row3 '.....|....*|...*.|..*..|.*...|*....|.....|.....'
++	Row4 '.....|....*|...**|..**.|.**..|**...|*....|.....'
++	Row5 '.....|....*|...**|..**.|.**..|**...|*....|.....'
++	Row6 '.....|....*|...*.|..*.*|.*.*.|*.*..|.*...|*....'
++	Row7 '*****|*****|****.|***..|**..*|*..**|..***|.****'
++	Row8 '.....|.....|.....|.....|.....|.....|.....|.....'
++    }
++}
++Widget Karo {
++    class 'Icon'
++    speed 200
++    Bitmap {
++	Row1 '.....|.....|.....|.....|..*..|.....|.....|.....'
++	Row2 '.....|.....|.....|..*..|.*.*.|..*..|.....|.....'
++	Row3 '.....|.....|..*..|.*.*.|*...*|.*.*.|..*..|.....'
++	Row4 '.....|..*..|.*.*.|*...*|.....|*...*|.*.*.|..*..'
++	Row5 '.....|.....|..*..|.*.*.|*...*|.*.*.|..*..|.....'
++	Row6 '.....|.....|.....|..*..|.*.*.|..*..|.....|.....'
++	Row7 '.....|.....|.....|.....|..*..|.....|.....|.....'
++	Row8 '.....|.....|.....|.....|.....|.....|.....|.....'
++    }
++}
++Widget Heart {
++    class 'Icon'
++    speed 250
++    Bitmap {
++	Row1 '.....|.....|.....|.....|.....|.....'
++	Row2 '.*.*.|.....|.*.*.|.....|.....|.....'
++	Row3 '*****|.*.*.|*****|.*.*.|.*.*.|.*.*.'
++	Row4 '*****|.***.|*****|.***.|.***.|.***.'
++	Row5 '.***.|.***.|.***.|.***.|.***.|.***.'
++	Row6 '.***.|..*..|.***.|..*..|..*..|..*..'
++	Row7 '..*..|.....|..*..|.....|.....|.....'
++	Row8 '.....|.....|.....|.....|.....|.....'
++    }
++}
++Widget Blob {
++    class 'Icon'
++    speed 250
++    Bitmap {
++	Row1 '.....|.....|.....'
++	Row2 '.....|.....|.***.'
++	Row3 '.....|.***.|*...*'
++	Row4 '..*..|.*.*.|*...*'
++	Row5 '.....|.***.|*...*'
++	Row6 '.....|.....|.***.'
++	Row7 '.....|.....|.....'
++	Row8 '.....|.....|.....'
++    }
++}
++Widget Wave {
++    class 'Icon'
++    speed 100
++    Bitmap {
++	Row1 '..**.|.**..|**...|*....|.....|.....|.....|.....|....*|...**'
++	Row2 '.*..*|*..*.|..*..|.*...|*....|.....|.....|....*|...*.|..*..'
++	Row3 '*....|....*|...*.|..*..|.*...|*....|....*|...*.|..*..|.*...'
++	Row4 '*....|....*|...*.|..*..|.*...|*....|....*|...*.|..*..|.*...'
++	Row5 '*....|....*|...*.|..*..|.*...|*....|....*|...*.|..*..|.*...'
++	Row6 '.....|.....|....*|...*.|..*..|.*..*|*..*.|..*..|.*...|*....'
++	Row7 '.....|.....|.....|....*|...**|..**.|.**..|**...|*....|.....'
++	Row8 '.....|.....|.....|.....|.....|.....|.....|.....|.....|.....'
++    }
++}
++Widget Squirrel {
++    class 'Icon'
++    speed 100
++    Bitmap {
++	Row1 '.....|.....|.....|.....|.....|.....'
++	Row2 '.....|.....|.....|.....|.....|.....'
++	Row3 '.....|.....|.....|.....|.....|.....'
++	Row4 '**...|.**..|..**.|...**|....*|.....'
++	Row5 '*****|*****|*****|*****|*****|*****'
++	Row6 '...**|..**.|.**..|**...|*....|.....'
++	Row7 '.....|.....|.....|.....|.....|.....'
++	Row8 '.....|.....|.....|.....|.....|.....'
++    }
++}
++
++Widget Lightning {
++    class 'icon'
++    speed 100
++    visible cpu('busy', 500)-50
++    bitmap {
++        row1 '...***'
++        row2 '..***.'
++        row3 '.***..'
++        row4 '.****.'
++        row5 '..**..'
++        row6 '.**...'
++        row7 '**....'
++        row8 '*.....'
++    }
++}
++
++Widget Rain {
++    class 'icon'
++    speed 200
++    bitmap {
++	row1 '...*.|.....|.....|.*...|....*|..*..|.....|*....'
++	row2 '*....|...*.|.....|.....|.*...|....*|..*..|.....'
++	row3 '.....|*....|...*.|.....|.....|.*...|....*|..*..'
++	row4 '..*..|.....|*....|...*.|.....|.....|.*...|....*'
++	row5 '....*|..*..|.....|*....|...*.|.....|.....|.*...'
++	row6 '.*...|....*|..*..|.....|*....|...*.|.....|.....'
++	row7 '.....|.*...|....*|..*..|.....|*....|...*.|.....'
++	row8 '.....|.....|.*...|....*|..*..|.....|*....|...*.'
++    }
++}
++
++Widget Test {
++    class 'Text'
++    expression '1234567890123456789012345678901234567890'
++    #expression '|'
++    width 40
++}
++
++Widget Armadeus {
++    class 'Text'
++    expression 'Armadeus Project'
++    width 20
++}
++
++
++Layout L40x2 {
++    Row1 {
++        Col1  'Busy'
++        Col10 'BusyBar'
++        Col20 'Uptime'
++    }
++    Row2 {
++        Col1 'Load'
++        Col10 'LoadBar'
++        Col21 'Armadeus
++    }
++}
++
++Layout Test {
++    Row01.Col1 'Test'
++    Row02.Col1 'Test'
++    Row03.Col1 'Test'
++    Row04.Col1 'Test'
++}
++
++Layout testMySQL {
++    Row1 {
++        Col1 'MySQLtest1'
++    }
++    Row2 {
++        Col1 'MySQLtest2'
++    }
++}
++
++
++#
++# Specify here which diplay and layout should be used
++#
++Display 'HD44780-generic'
++Layout 'L40x2'
++
++
++Variables {
++   tick 500
++   tack 100
++   minute 60000
++}
