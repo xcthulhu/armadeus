@@ -25,3 +25,4 @@ rm -rf buildroot/package/openobex/
 rm -rf buildroot/package/gpsd/
 rm -rf buildroot/package/lmbench/
 rm -rf buildroot/package/tslib/
+rm -rf buildroot/package/openssh/
