@@ -27,10 +27,11 @@ rm -rf buildroot/package/lmbench/
 rm -rf buildroot/package/tslib/
 rm -rf buildroot/package/openssh/
 rm -rf buildroot/package/sdl/
+rm -rf buildroot/package/sdlwater/
 rm -rf buildroot/package/slideshow/
 rm -rf buildroot/package/pyserial/
 rm -rf buildroot/package/pymysql/
 rm -rf buildroot/package/socketcan/
 rm -rf buildroot/package/lcd4linux/
 rm -rf buildroot/package/mesa/
-rm -rf buildroot/package/snes9x/
+rm -rf buildroot/package/games/snes9x/
