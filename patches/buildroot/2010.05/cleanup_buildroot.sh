@@ -29,3 +29,4 @@ rm -rf buildroot/package/openssh/
 rm -rf buildroot/package/sdl/
 rm -rf buildroot/package/slideshow/
 rm -rf buildroot/package/pyserial/
+rm -rf buildroot/package/pymysql/

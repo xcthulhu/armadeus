@@ -1,9 +1,0 @@
-config BR2_PACKAGE_PYMYSQL
-	depends on BR2_PACKAGE_PYTHON
-	bool "MySQL support for Python"
-	help
-	  MySQLdb is an thread-compatible interface to the popular MySQL 
-	  database server that provides the Python database API.
-
-	  http://sourceforge.net/projects/mysql-python
-
