@@ -1,3 +1,7 @@
+Add slideshow package to BR.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-06-17 16:46:13.000000000 +0200
@@ -10,3 +14,169 @@ Index: buildroot/package/Config.in
  comment "Demos"
  source "package/sdlwater/Config.in"
  
+Index: buildroot/package/slideshow/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/slideshow/Config.in	2010-06-18 11:33:25.000000000 +0200
+@@ -0,0 +1,9 @@
++config BR2_PACKAGE_SLIDESHOW
++	bool "Slideshow"
++	depends on BR2_PACKAGE_SDL && BR2_PACKAGE_SDL_IMAGE
++	help
++
++	  Perigee Slideshow is a command line program that searches a directory
++	  for supported graphic files and displays them in a slideshow.
++
++	  http://www.xmission.com/~jstanley/slideshow.html
+Index: buildroot/package/slideshow/slideshow.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/slideshow/slideshow.mk	2010-06-18 11:48:12.000000000 +0200
+@@ -0,0 +1,51 @@
++#############################################################
++#
++# slideshow
++#
++#############################################################
++SLIDESHOW_VERSION:=1.1
++SLIDESHOW_SOURCE:=slideshow-source-$(SLIDESHOW_VERSION).zip
++SLIDESHOW_SITE:=http://www.xmission.com/~jstanley/
++SLIDESHOW_CAT:=zcat
++SLIDESHOW_DIR:=$(BUILD_DIR)/slideshow
++
++$(DL_DIR)/$(SLIDESHOW_SOURCE):
++	$(WGET) -P $(DL_DIR) $(SLIDESHOW_SITE)/$(SLIDESHOW_SOURCE)
++
++slideshow-source: $(DL_DIR)/$(SLIDESHOW_SOURCE)
++
++$(SLIDESHOW_DIR)/.unpacked: $(DL_DIR)/$(SLIDESHOW_SOURCE)
++	unzip $(DL_DIR)/$(SLIDESHOW_SOURCE) -d $(BUILD_DIR)
++	touch $@
++
++$(SLIDESHOW_DIR)/.configured: $(SLIDESHOW_DIR)/.unpacked
++	@echo "Patching slideshow..."
++	toolchain/patch-kernel.sh $(SLIDESHOW_DIR) package/slideshow/ slideshow-\*.patch
++	touch $@
++
++$(SLIDESHOW_DIR)/slideshow: $(SLIDESHOW_DIR)/.configured
++	$(MAKE) CC=$(TARGET_CXX) CFLAGS="$(TARGET_CFLAGS) `sh $(STAGING_DIR)/usr/bin/sdl-config --cflags`" \
++		LFLAGS="`sh $(STAGING_DIR)/usr/bin/sdl-config --libs` -lSDL_image" \
++		-C $(SLIDESHOW_DIR)
++
++$(TARGET_DIR)/usr/bin/slideshow: $(SLIDESHOW_DIR)/slideshow
++	cp -dpf $< $(TARGET_DIR)/usr/bin
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
++
++SLIDESHOW slideshow: sdl sdl_image $(TARGET_DIR)/usr/bin/slideshow
++
++slideshow-clean:
++	rm -f $(TARGET_DIR)/usr/bin/slideshow
++	-$(MAKE) -C $(SLIDESHOW_DIR) clean
++
++slideshow-dirclean:
++	rm -rf $(SLIDESHOW_DIR)
++
++#############################################################
++#
++# Toplevel Makefile options
++#
++#############################################################
++ifeq ($(strip $(BR2_PACKAGE_SLIDESHOW)),y)
++TARGETS+=slideshow
++endif
+Index: buildroot/package/slideshow/slideshow-01-restart-after-end.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/slideshow/slideshow-01-restart-after-end.patch	2010-06-18 11:50:12.000000000 +0200
+@@ -0,0 +1,73 @@
++--- slideshow/slideshow.cpp	2003-12-08 22:17:38.000000000 +0100
+++++ slideshow.mod/slideshow.cpp	2007-09-08 19:05:10.000000000 +0200
++@@ -196,43 +196,48 @@
++ 			SDL_FillRect(m_sdl, &rc, SDL_MapRGB(m_sdl->format, 0, 255, 0));
++ 			SDL_UpdateRects(m_sdl, 1, &rc);
++ 		}
++-
++-		user_command cmd = wait_for_command();
++-
+++
+++		user_command cmd = wait_for_command();
+++
++ 		switch(cmd)
++-		{
++-		case c_quit:
++-			stop_timer();
++-			return true;
++-		case c_first_slide:
+++		{
+++		case c_quit:
+++			stop_timer();
+++			return true;
+++		case c_first_slide:
++ 			stop_timer();
++ 			m_image_index = 0;
++ 			break;
++ 		case c_last_slide:
++-			stop_timer();
+++			stop_timer();
++ 			m_image_index = m_file_list->count() - 1;
++-			break;
+++			break;
++ 		case c_prev_slide:
++-			stop_timer();
+++			stop_timer();
++ 			if ( m_image_index > 0 )
++ 				m_image_index--;
++ 			break;
++ 		case c_next_slide:
++-			stop_timer();
++-			// fall through
++-		case c_timer_advance:
++-			if ( m_image_index < m_file_list->count() - 1 )
+++			stop_timer();
+++			// fall through
+++		case c_timer_advance:
+++			if ( m_image_index <= m_file_list->count() - 1 )
++ 				m_image_index++;
++-			break;
++-		case c_redraw:
++ 			break;
++-		}
+++		case c_redraw:
+++			break;
+++		}
++ 
++ 		// stop the auto-advance when the last picture is about to be shown
++-		if ( m_image_index == m_file_list->count() - 1 )
++-			stop_timer();
++-	}
++-
+++		if ( m_image_index == m_file_list->count() /*- 1*/ )
+++		{
+++			//stop_timer();
+++			m_image_index = 0;
+++			m_prev_image_index = -1;
+++		}
+++
+++	}
+++
++ 	return true;
++ }
++ 
+Index: buildroot/package/slideshow/slideshow-02-remove-compile-warning.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/slideshow/slideshow-02-remove-compile-warning.patch	2010-06-18 11:50:59.000000000 +0200
+@@ -0,0 +1,13 @@
++--- slideshow.org/SDLFont.cpp	2007-11-17 19:25:02.000000000 +0100
+++++ slideshow/SDLFont.cpp	2007-11-17 20:06:20.000000000 +0100
++@@ -84,8 +84,8 @@
++ 
++     Uint8 *pixloc = (Uint8 *)pDisplay->pixels + dpitch * y + Bpp * x;
++     Uint8 *pChar, *pScreen;
++-    char c;
++-    int i, j;
+++    //char c;
+++    int i, j, c;
++ 
++     for(const char *p = text; *p != '\0'; p++)
++     {
