@@ -11,6 +11,5 @@
 # except:
 !/armadeus/
 !/bluez/
-!/fbtest/
 !/mtd/
 !/xenomai/

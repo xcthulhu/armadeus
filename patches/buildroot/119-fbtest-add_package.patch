@@ -1,0 +1,141 @@
+Add fbtest package to BR.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-18 23:44:05.000000000 +0200
++++ buildroot/package/Config.in	2010-06-18 23:49:19.000000000 +0200
+@@ -344,6 +344,7 @@
+ comment "--> May be broken in busybox"
+ source "package/fbv/Config.in"
+ source "package/fbset/Config.in"
++source "package/fbtest/Config.in"
+ source "package/fbgrab/Config.in"
+ 
+ comment "other GUIs"
+Index: buildroot/package/fbtest/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/fbtest/Config.in	2010-06-18 23:51:27.000000000 +0200
+@@ -0,0 +1,7 @@
++config BR2_PACKAGE_FBTEST
++	bool "fbtest"
++	help
++	  Fbtest is a collection of tests for the framebuffer device.
++	  All tests are gathered inside the same executable.
++
++	  http://linux-fbdev.cvs.sourceforge.net/viewvc/linux-fbdev/fbtest/
+Index: buildroot/package/fbtest/fbtest.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/fbtest/fbtest.mk	2010-06-18 23:56:39.000000000 +0200
+@@ -0,0 +1,51 @@
++#############################################################
++#
++# fbtest
++#
++#############################################################
++FBTEST_VERSION:=20041102-1
++FBTEST_SOURCE:=fbtest-$(FBTEST_VERSION).tar.gz
++FBTEST_SITE:=http://www.pengutronix.de/software/ptxdist/temporary-src/
++FBTEST_DIR:=$(BUILD_DIR)/fbtest-$(FBTEST_VERSION)
++FBTEST_CAT:=$(ZCAT)
++FBTEST_BINARY:=fbtest
++FBTEST_TARGET_BINARY:=usr/bin/$(FBTEST_BINARY)
++
++$(DL_DIR)/$(FBTEST_SOURCE):
++	$(call DOWNLOAD,$(FBTEST_SITE),$(FBTEST_SOURCE))
++
++$(FBTEST_DIR)/.unpacked: $(DL_DIR)/$(FBTEST_SOURCE)
++	$(FBTEST_CAT) $(DL_DIR)/$(FBTEST_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
++	toolchain/patch-kernel.sh $(FBTEST_DIR) package/fbtest/ \
++		fbtest-$(FBTEST_VERSION)\*.patch \
++		fbtest-$(FBTEST_VERSION)\*.patch.$(ARCH)
++	touch $@
++
++$(FBTEST_DIR)/$(FBTEST_BINARY): $(FBTEST_DIR)/.unpacked
++	$(MAKE1) ARCH=$(ARCH) CROSS_COMPILE=$(TARGET_CROSS) -C $(FBTEST_DIR)
++	touch -c $@
++
++$(TARGET_DIR)/$(FBTEST_TARGET_BINARY): $(FBTEST_DIR)/$(FBTEST_BINARY)
++	$(INSTALL) -m 755 $(FBTEST_DIR)/$(FBTEST_BINARY) $(TARGET_DIR)/$(FBTEST_TARGET_BINARY)
++	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/$(FBTEST_TARGET_BINARY)
++	touch -c $@
++
++fbtest: $(TARGET_DIR)/$(FBTEST_TARGET_BINARY)
++
++fbtest-source: $(DL_DIR)/$(FBTEST_SOURCE)
++
++fbtest-clean:
++	rm -f $(TARGET_DIR)/$(FBTEST_TARGET_BINARY)
++	-$(MAKE) -C $(FBTEST_DIR) clean
++
++fbtest-dirclean:
++	rm -rf $(FBTEST_DIR)
++
++#############################################################
++#
++# Toplevel Makefile options
++#
++#############################################################
++ifeq ($(strip $(BR2_PACKAGE_FBTEST)),y)
++TARGETS+=fbtest
++endif
+Index: buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch	2010-06-18 23:56:15.000000000 +0200
+@@ -0,0 +1,36 @@
++--- fbtest-20041102-1.org/fb.c	2003-04-04 14:07:55.000000000 +0200
+++++ fbtest-20041102-1/fb.c	2009-05-20 10:32:32.000000000 +0200
++@@ -19,7 +19,6 @@
++ #include <sys/stat.h>
++ #include <unistd.h>
++ 
++-#include <asm/page.h>
++ 
++ #include "types.h"
++ #include "fb.h"
++@@ -179,6 +179,7 @@
++ void fb_map(void)
++ {
++     caddr_t addr;
+++    unsigned long PAGE_MASK = ~(sysconf(_SC_PAGE_SIZE)-1);
++ 
++     Debug("fb_map()\n");
++     fb_start = (unsigned long)fb_fix.smem_start & PAGE_MASK;
++@@ -189,7 +190,7 @@
++     addr = mmap(NULL, fb_len, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, 0);
++     if (addr == (caddr_t)-1)
++ 	Fatal("mmap smem: %s\n", strerror(errno));
++-    fb = addr+fb_offset;
+++    fb = (u8*)(addr+fb_offset);
++ }
++ 
++ 
++@@ -199,6 +200,8 @@
++ 
++ void fb_unmap(void)
++ {
+++    unsigned long PAGE_MASK = ~(sysconf(_SC_PAGE_SIZE)-1);
+++
++     Debug("fb_unmap()\n");
++     if (munmap((caddr_t)((unsigned long)fb & PAGE_MASK), fb_len) == -1)
++ 	Fatal("munmap smem: %s\n", strerror(errno));
+Index: buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch	2010-06-19 00:01:03.000000000 +0200
+@@ -0,0 +1,11 @@
++--- fbtest-20041102-1.org/Makefile	2009-05-21 10:16:05.000000000 +0200
+++++ fbtest-20041102-1/Makefile	2009-05-21 10:17:47.000000000 +0200
++@@ -1,7 +1,7 @@
++ 
++ TOPDIR = .
++ 
++-TARGET = $(CROSS_COMPILE)fbtest
+++TARGET = fbtest
++ 
++ OBJS += drawops/drawops.o fonts/fonts.o images/images.o visops/visops.o \
++ 	tests/tests.o
