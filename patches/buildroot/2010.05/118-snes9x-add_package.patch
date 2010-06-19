@@ -6,7 +6,7 @@ Index: buildroot/package/games/Config.in
  source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
  source "package/games/sdlquake/Config.in"
-+source "package/games/snes9x/config.in"
++source "package/games/snes9x/Config.in"
  source "package/games/vice/Config.in"
  source "package/games/wolf4sdl/Config.in"
  source "package/games/xboard/Config.in"

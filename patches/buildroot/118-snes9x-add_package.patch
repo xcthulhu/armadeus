@@ -1,19 +1,19 @@
 Index: buildroot/package/games/Config.in
 ===================================================================
---- buildroot.orig/package/games/Config.in	2010-06-18 18:41:36.000000000 +0200
-+++ buildroot/package/games/Config.in	2010-06-18 18:42:27.000000000 +0200
+--- buildroot.orig/package/games/Config.in	2010-06-19 17:34:23.000000000 +0200
++++ buildroot/package/games/Config.in	2010-06-19 17:37:18.000000000 +0200
 @@ -14,6 +14,7 @@
  source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
  source "package/games/sdlquake/Config.in"
-+source "package/games/snes9x/config.in"
++source "package/games/snes9x/Config.in"
  source "package/games/vice/Config.in"
  source "package/games/wolf4sdl/Config.in"
  source "package/games/xboard/Config.in"
 Index: buildroot/package/games/snes9x/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/snes9x/Config.in	2010-06-18 18:43:27.000000000 +0200
++++ buildroot/package/games/snes9x/Config.in	2010-06-19 17:34:24.000000000 +0200
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_SNES9X
 +	bool "Snes9X"
@@ -29,7 +29,7 @@ Index: buildroot/package/games/snes9x/Config.in
 Index: buildroot/package/games/snes9x/snes9x.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/snes9x/snes9x.mk	2010-06-18 18:46:07.000000000 +0200
++++ buildroot/package/games/snes9x/snes9x.mk	2010-06-19 17:34:24.000000000 +0200
 @@ -0,0 +1,80 @@
 +#############################################################
 +#
@@ -114,7 +114,7 @@ Index: buildroot/package/games/snes9x/snes9x.mk
 Index: buildroot/package/games/snes9x/snes9x-1.39-compile.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/snes9x/snes9x-1.39-compile.patch	2010-06-18 18:44:21.000000000 +0200
++++ buildroot/package/games/snes9x/snes9x-1.39-compile.patch	2010-06-19 17:34:24.000000000 +0200
 @@ -0,0 +1,295 @@
 +
 +#
