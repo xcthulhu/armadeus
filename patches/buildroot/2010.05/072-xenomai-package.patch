@@ -1,3 +1,7 @@
+Add xenomai package to BR.
+
+Signed-off-by: Gwenhael Goavec-Merou <gwenhael.goavec@armadeus.com>
+
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-06-17 16:47:13.000000000 +0200
@@ -12,9 +16,9 @@ Index: buildroot/package/Config.in
  
 Index: buildroot/target/linux/Makefile.in.advanced
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:47:19.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:20.000000000 +0200
-@@ -373,6 +373,9 @@
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-20 18:22:31.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-20 18:26:32.000000000 +0200
+@@ -382,6 +382,9 @@
  	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
  	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
  endif
@@ -24,3 +28,227 @@ Index: buildroot/target/linux/Makefile.in.advanced
  	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) oldconfig
  	touch $@
  
+Index: buildroot/package/xenomai/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/xenomai/Config.in	2010-06-20 18:38:51.000000000 +0200
+@@ -0,0 +1,7 @@
++config BR2_PACKAGE_XENOMAI
++	bool "Xenomai"
++	depends on BR2_LINUX_2_6_29 || BR2_LINUX_2_6_27
++	help
++	  Real-Time Framework for Linux
++
++	  http://xenomai.org
+Index: buildroot/package/xenomai/xenomai.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/xenomai/xenomai.mk	2010-06-20 18:35:44.000000000 +0200
+@@ -0,0 +1,99 @@
++#############################################################
++#
++# xenomai :
++# URL  : http://xenomai.org
++# NOTE : Real-Time Framework for Linux
++#
++# adeos :
++# URL   : http://home.gna.org/adeos/
++# NOTE  : The purpose of Adeos is to provide a flexible
++#         environment for sharing hardware resources among
++#         multiple operating systems, or among multiple
++#         instances of a single OS.
++#
++#############################################################
++
++KERN_DIR:=$(PROJECT_BUILD_DIR)/linux-$(shell echo $(BR2_LINUX26_VERSION))
++XENOMAI_ARCH:=$(shell echo $(BR2_ARCH))
++
++XENOMAI_VERSION:=2.4.8
++XENOMAI_SOURCE:=xenomai-$(XENOMAI_VERSION).tar.bz2
++XENOMAI_SITE:=http://download.gna.org/xenomai/stable
++XENOMAI_DIR:=$(BUILD_DIR)/xenomai-$(XENOMAI_VERSION)
++XENOMAI_CAT:=bzcat
++XENOMAI_BINARY:=xeno-load
++XENOMAI_TARGET_BINARY:=usr/xenomai/bin/$(XENOMAI_BINARY)
++
++ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
++	CPU_TYPE:=mx2
++else
++ifeq ($(BR2_TARGET_ARMADEUS_APF9328),y)
++	CPU_TYPE:=imx
++endif
++endif
++
++$(DL_DIR)/$(XENOMAI_SOURCE):
++	$(call DOWNLOAD,$(XENOMAI_SITE),$(XENOMAI_SOURCE))
++
++xenomai-source: $(DL_DIR)/$(XENOMAI_SOURCE)
++
++$(XENOMAI_DIR)/.unpacked: $(DL_DIR)/$(XENOMAI_SOURCE)
++	$(XENOMAI_CAT) $(DL_DIR)/$(XENOMAI_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
++	touch $@
++
++$(KERN_DIR)/.patched.xenomai: $(XENOMAI_DIR)/.unpacked
++	 toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
++		\*-before-adeos-\*.patch
++	$(XENOMAI_DIR)/scripts/prepare-kernel.sh \
++		--linux=$(LINUX26_DIR) \
++		--arch=$(BR2_ARCH) \
++		--default
++	cat package/xenomai/xeno-kernel.config >> $(LINUX26_DIR)/.config
++	toolchain/patch-kernel.sh $(LINUX26_DIR) package/xenomai \
++		\*-after-adeos-\*.patch
++	touch $@
++
++xenomai-patch-kernel: $(KERN_DIR)/.patched.xenomai
++
++$(XENOMAI_DIR)/.configured: $(KERN_DIR)/.patched.xenomai
++	(cd $(XENOMAI_DIR); rm -rf config.cache; \
++                $(TARGET_CONFIGURE_OPTS) \
++		$(TARGET_CONFIGURE_ARGS) \
++                CCFLAGS_FOR_BUILD="$(HOST_CFLAGS)" \
++		./configure \
++			--enable-$(XENOMAI_ARCH)-mach=$(CPU_TYPE) \
++			--enable-$(XENOMAI_ARCH)-eabi=$(if $(BR2_ARM_EABI),yes,no) \
++			--host=$(XENOMAI_ARCH)-linux \
++			--datarootdir=/xenodoc \
++	)
++	touch $@
++
++$(XENOMAI_DIR)/scripts/$(XENOMAI_BINARY): $(XENOMAI_DIR)/.configured
++	$(MAKE) -C $(XENOMAI_DIR) CC="$(TARGET_CC)" LD="$(TARGET_LD)"
++
++$(TARGET_DIR)/$(XENOMAI_TARGET_BINARY): $(XENOMAI_DIR)/scripts/$(XENOMAI_BINARY)
++	echo $@
++	$(STAGING_DIR)/usr/bin/fakeroot $(MAKE) -C $(XENOMAI_DIR) \
++		CC=$(TARGET_CC) LD=$(TARGET_LD) \
++		DESTDIR=$(TARGET_DIR) install
++	rm -rf $(TARGET_DIR)/xenodoc
++	echo "/usr/xenomai/lib" > $(TARGET_DIR)/etc/ld.so.conf
++	echo -e 'export PATH=/usr/xenomai/bin:$${PATH}' >> $(TARGET_DIR)/etc/profile
++
++xenomai: uclibc host-fakeroot kernel-headers $(TARGET_DIR)/$(XENOMAI_TARGET_BINARY)
++
++xenomai-clean:
++	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(XENOMAI_DIR) uninstall
++	-$(MAKE) DESTDIR=$(TARGET_DIR) -C $(XENOMAI_DIR) clean
++
++xenomai-dirclean: xenomai-clean
++	rm -rf $(XENOMAI_DIR)
++
++#############################################################
++#
++# Toplevel Makefile options
++#
++#############################################################
++ifeq ($(strip $(BR2_PACKAGE_XENOMAI)),y)
++TARGETS+=xenomai
++endif
+Index: buildroot/package/xenomai/xeno-kernel.config
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/xenomai/xeno-kernel.config	2010-06-20 18:36:20.000000000 +0200
+@@ -0,0 +1,59 @@
++CONFIG_XENOMAI=y
++CONFIG_XENO_OPT_NUCLEUS=y
++CONFIG_XENO_OPT_PERVASIVE=y
++# CONFIG_XENO_OPT_ISHIELD is not set
++CONFIG_XENO_OPT_PRIOCPL=y
++CONFIG_XENO_OPT_PIPELINE_HEAD=y
++CONFIG_XENO_OPT_PIPE_NRDEV=32
++CONFIG_XENO_OPT_REGISTRY_NRSLOTS=512
++CONFIG_XENO_OPT_SYS_HEAPSZ=128
++CONFIG_XENO_OPT_SYS_STACKPOOLSZ=32
++CONFIG_XENO_OPT_STATS=y
++# CONFIG_XENO_OPT_DEBUG is not set
++# CONFIG_XENO_OPT_SHIRQ is not set
++CONFIG_XENO_OPT_TIMING_PERIODIC=y
++CONFIG_XENO_OPT_TIMING_SCHEDLAT=0
++# CONFIG_XENO_OPT_SCALABLE_SCHED is not set
++CONFIG_XENO_OPT_TIMER_LIST=y
++# CONFIG_XENO_OPT_TIMER_HEAP is not set
++# CONFIG_XENO_OPT_TIMER_WHEEL is not set
++CONFIG_XENO_HW_FPU=y
++CONFIG_XENO_SKIN_NATIVE=y
++CONFIG_XENO_OPT_NATIVE_PERIOD=0
++CONFIG_XENO_OPT_NATIVE_PIPE=y
++CONFIG_XENO_OPT_NATIVE_PIPE_BUFSZ=1024
++CONFIG_XENO_OPT_NATIVE_SEM=y
++CONFIG_XENO_OPT_NATIVE_EVENT=y
++CONFIG_XENO_OPT_NATIVE_MUTEX=y
++CONFIG_XENO_OPT_NATIVE_COND=y
++CONFIG_XENO_OPT_NATIVE_QUEUE=y
++CONFIG_XENO_OPT_NATIVE_HEAP=y
++CONFIG_XENO_OPT_NATIVE_ALARM=y
++CONFIG_XENO_OPT_NATIVE_MPS=y
++CONFIG_XENO_OPT_NATIVE_INTR=y
++CONFIG_XENO_SKIN_POSIX=y
++CONFIG_XENO_OPT_POSIX_PERIOD=0
++# CONFIG_XENO_OPT_POSIX_SHM is not set
++# CONFIG_XENO_OPT_POSIX_INTR is not set
++# CONFIG_XENO_OPT_POSIX_SELECT is not set
++# CONFIG_XENO_OPT_DEBUG_POSIX is not set
++# CONFIG_XENO_SKIN_PSOS is not set
++# CONFIG_XENO_SKIN_UITRON is not set
++# CONFIG_XENO_SKIN_VRTX is not set
++# CONFIG_XENO_SKIN_VXWORKS is not set
++# CONFIG_XENO_SKIN_RTAI is not set
++CONFIG_XENO_SKIN_RTDM=y
++CONFIG_XENO_OPT_RTDM_PERIOD=0
++CONFIG_XENO_OPT_RTDM_FILDES=128
++CONFIG_XENO_OPT_RTDM_SELECT=y
++# CONFIG_XENO_DRIVERS_16550A is not set
++CONFIG_XENO_DRIVERS_TIMERBENCH=m
++CONFIG_XENO_DRIVERS_KLATENCY=m
++CONFIG_XENO_DRIVERS_IRQBENCH=m
++CONFIG_XENO_DRIVERS_SWITCHTEST=m
++# CONFIG_XENO_DRIVERS_CAN is not set
++# CONFIG_ARM_FCSE is not set
++CONFIG_IPIPE=y
++CONFIG_IPIPE_DOMAINS=4
++CONFIG_IPIPE_COMPAT=y
++# CONFIG_IPIPE_DEBUG is not set
+\ No newline at end of file
+Index: buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch	2010-06-20 18:36:48.000000000 +0200
+@@ -0,0 +1,10 @@
++--- a/arch/arm/mach-imx/include/mach/imxfb.h
+++++ b/arch/arm/mach-imx/include/mach/imxfb.h
++@@ -14,7 +14,6 @@
++ #define PCR_BPIX_8	(3 << 25)
++ #define PCR_BPIX_12	(4 << 25)
++ #define PCR_BPIX_16	(4 << 25)
++-#define PCR_BPIX_MASK	(7 << 25)
++ #define PCR_PIXPOL	(1 << 24)
++ #define PCR_FLMPOL	(1 << 23)
++ #define PCR_LPPOL	(1 << 22)
+Index: buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch	2010-06-20 18:37:17.000000000 +0200
+@@ -0,0 +1,23 @@
++Corrects Freeze problem with MX2 when Adeos is active and 
++application/driver uses interruption on GPIO
++
++Signed-off-by: Gwenhael GOAVEC-MEROU <gwe@trabucayre.com>
++
++Index: kernel/arch/arm/plat-mxc/gpio.c
++===================================================================
++--- a/arch/arm/plat-mxc/gpio.c	2009-12-17 22:09:56.000000000 +0100
+++++ b/arch/arm/plat-mxc/gpio.c	2009-12-17 15:45:17.000000000 +0100
++@@ -241,11 +241,11 @@
++ 	int i;
++ 
++ 	for (i = 0; i < gpio_table_size; i++) {
++-		irq_msk = __raw_readl(port->base + GPIO_IMR);
+++		irq_msk = __raw_readl(port[i].base + GPIO_IMR);
++ 		if (!irq_msk)
++ 			continue;
++ 
++-		irq_stat = __raw_readl(port->base + GPIO_ISR) & irq_msk;
+++		irq_stat = __raw_readl(port[i].base + GPIO_ISR) & irq_msk;
++ 
++ 		gpio_irq_no = port[i].virtual_irq_start;
++ 

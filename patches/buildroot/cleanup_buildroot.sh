@@ -42,3 +42,4 @@ rm -rf buildroot/package/games/snes9x/
 rm -rf buildroot/package/allegro/
 rm -rf buildroot/package/fbgrab/
 rm -rf buildroot/package/fbtest/
+rm -rf buildroot/package/xenomai/
