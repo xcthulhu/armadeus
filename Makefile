@@ -52,6 +52,13 @@ ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
                 echo "                                                   "; \
 		echo -en "\033[0m";
 
+ARMADEUS_BSP_VERSION=$(shell cat $(BUILDROOT_DIR)/target/device/armadeus/rootfs/target_skeleton/etc/armadeus-version)
+ECHO_BUILD_IS_OK:= echo -en "\033[1m"; \
+		echo ""; \
+		echo "Your Armadeus BSP (version "$(ARMADEUS_BSP_VERSION)") was successfully built !"; \
+		echo ""; \
+		echo -en "\033[0m";
+
 default: all
 
 help:
@@ -160,6 +167,7 @@ all: $(BUILDROOT_DIR)/.configured
 	@echo "If your /bin/sh link doesn't point to /bin/bash, please correct that."
 	@ls -al /bin/sh | grep bash 
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
+	@$(ECHO_BUILD_IS_OK)
 
 menuconfig: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) $@
