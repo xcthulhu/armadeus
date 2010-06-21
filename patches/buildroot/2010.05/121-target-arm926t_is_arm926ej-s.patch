@@ -1,0 +1,18 @@
+Real name for arm926t is arm926ej-s. arm926t is the old name still used in
+Linux & uClibc.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/target/Config.in.arch
+===================================================================
+--- buildroot.orig/target/Config.in.arch	2010-06-21 14:55:43.000000000 +0200
++++ buildroot/target/Config.in.arch	2010-06-21 14:56:15.000000000 +0200
+@@ -72,7 +72,7 @@
+ config BR2_arm922t
+ 	bool "arm922t"
+ config BR2_arm926t
+-	bool "arm926t"
++	bool "arm926ej-s (arm926t)"
+ config BR2_arm10t
+ 	bool "arm10t"
+ config BR2_arm1136jf_s
