@@ -139,3 +139,19 @@ Index: buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch
 + 
 + OBJS += drawops/drawops.o fonts/fonts.o images/images.o visops/visops.o \
 + 	tests/tests.o
+Index: buildroot/package/fbtest/fbtest-20041102-1-pnmtohex-libs-depends.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/fbtest/fbtest-20041102-1-pnmtohex-libs-depends.patch	2010-06-21 16:35:18.000000000 +0200
+@@ -0,0 +1,11 @@
++--- fbtest-20041102-1.org/pnmtohex/Makefile	2004-11-02 09:43:02.000000000 +0100
+++++ fbtest-20041102-1/pnmtohex/Makefile	2005-11-16 22:24:08.406157582 +0100
++@@ -3,7 +3,7 @@ TOPDIR = ..
++ 
++ HOST_TARGET = pnmtohex
++ 
++-LIBS += -lnetpnm -lnetpbm -lnetpgm -lnetppm
+++LIBS += -lnetpbm -lm
++ 
++ include $(TOPDIR)/Rules.make
++ 
