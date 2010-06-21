@@ -4,8 +4,8 @@ Signed-off-by: Gwenhael Goavec-Merou <gwenhael.goavec@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-17 16:47:13.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-17 16:47:20.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-06-21 09:56:27.000000000 +0200
++++ buildroot/package/Config.in	2010-06-21 09:56:27.000000000 +0200
 @@ -206,6 +206,7 @@
  source "package/usbmount/Config.in"
  source "package/usbutils/Config.in"
@@ -16,9 +16,9 @@ Index: buildroot/package/Config.in
  
 Index: buildroot/target/linux/Makefile.in.advanced
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-20 18:22:31.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-20 18:26:32.000000000 +0200
-@@ -382,6 +382,9 @@
+--- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-21 09:56:27.000000000 +0200
++++ buildroot/target/linux/Makefile.in.advanced	2010-06-21 09:56:27.000000000 +0200
+@@ -373,6 +373,9 @@
  	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
  	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
  endif
@@ -31,7 +31,7 @@ Index: buildroot/target/linux/Makefile.in.advanced
 Index: buildroot/package/xenomai/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/Config.in	2010-06-20 18:38:51.000000000 +0200
++++ buildroot/package/xenomai/Config.in	2010-06-21 09:56:27.000000000 +0200
 @@ -0,0 +1,7 @@
 +config BR2_PACKAGE_XENOMAI
 +	bool "Xenomai"
@@ -43,7 +43,7 @@ Index: buildroot/package/xenomai/Config.in
 Index: buildroot/package/xenomai/xenomai.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/xenomai.mk	2010-06-20 18:35:44.000000000 +0200
++++ buildroot/package/xenomai/xenomai.mk	2010-06-21 09:56:27.000000000 +0200
 @@ -0,0 +1,99 @@
 +#############################################################
 +#
@@ -147,7 +147,7 @@ Index: buildroot/package/xenomai/xenomai.mk
 Index: buildroot/package/xenomai/xeno-kernel.config
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/xeno-kernel.config	2010-06-20 18:36:20.000000000 +0200
++++ buildroot/package/xenomai/xeno-kernel.config	2010-06-21 09:56:27.000000000 +0200
 @@ -0,0 +1,59 @@
 +CONFIG_XENOMAI=y
 +CONFIG_XENO_OPT_NUCLEUS=y
@@ -212,7 +212,7 @@ Index: buildroot/package/xenomai/xeno-kernel.config
 Index: buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch	2010-06-20 18:36:48.000000000 +0200
++++ buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch	2010-06-21 09:56:27.000000000 +0200
 @@ -0,0 +1,10 @@
 +--- a/arch/arm/mach-imx/include/mach/imxfb.h
 ++++ b/arch/arm/mach-imx/include/mach/imxfb.h
@@ -227,7 +227,7 @@ Index: buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.pat
 Index: buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch	2010-06-20 18:37:17.000000000 +0200
++++ buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch	2010-06-21 09:56:27.000000000 +0200
 @@ -0,0 +1,23 @@
 +Corrects Freeze problem with MX2 when Adeos is active and 
 +application/driver uses interruption on GPIO
