@@ -1,0 +1,106 @@
+Add cwiid package to BR.
+
+Signed-off-by: Yannick Heinrich <yageek@free.fr>
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com> 
+
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-20 19:58:08.000000000 +0200
++++ buildroot/package/Config.in	2010-06-20 20:45:06.000000000 +0200
+@@ -158,6 +158,7 @@
+ source "package/acpid/Config.in"
+ source "package/cdrkit/Config.in"
+ source "package/cramfs/Config.in"
++source "package/cwiid/Config.in"
+ source "package/dbus/Config.in"
+ source "package/dbus-glib/Config.in"
+ source "package/dbus-python/Config.in"
+Index: buildroot/package/cwiid/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/cwiid/Config.in	2010-06-20 23:14:48.000000000 +0200
+@@ -0,0 +1,8 @@
++config BR2_PACKAGE_CWIID
++	bool "cwiid"
++	select BR2_PACKAGE_BLUEZ
++	help
++	  A collection of Linux tools written in C for interfacing to the
++	  Nintendo Wiimote.
++
++	  http://abstrakraft.org/cwiid/
+Index: buildroot/package/cwiid/cwiid.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/cwiid/cwiid.mk	2010-06-20 23:03:30.000000000 +0200
+@@ -0,0 +1,28 @@
++#############################################################
++#
++# cwiid
++#
++#############################################################
++CWIID_VERSION:=0.6.00
++CWIID_SOURCE:=cwiid-$(CWIID_VERSION).tgz
++CWIID_SITE:=http://abstrakraft.org/cwiid/downloads
++CWIID_AUTORECONF:=YES
++CWIID_INSTALL_STAGING:=YES
++CWIID_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
++
++CWIID_CONF_OPT = --disable-ldconfig
++ifneq ($(BR2_PACKAGE_PYTHON26),y)
++	CWIID_CONF_OPT += --without-python
++endif
++
++CWIID_DEPENDENCIES = bluez-libs
++
++$(eval $(call AUTOTARGETS,package,cwiid))
++
++$(CWIID_HOOK_POST_INSTALL):
++	$(call MESSAGE,"Post-installing")
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/lswm
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/wminput
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/libcwiid.so.1
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/cwiid/plugins/*
++	touch $@
+Index: buildroot/package/cwiid/cwiid-0.6.00-configure_ac_remove_gtk_dependancy.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/cwiid/cwiid-0.6.00-configure_ac_remove_gtk_dependancy.patch	2010-06-20 21:07:24.000000000 +0200
+@@ -0,0 +1,22 @@
++--- cwiid-0.6.00.org/configure.ac	2007-08-27 02:27:58.000000000 +0200
+++++ cwiid-0.6.00/configure.ac	2010-03-01 17:28:00.425401362 +0100
++@@ -124,11 +124,6 @@ else
++ fi
++ AC_SUBST(LDCONFIG)
++ 
++-pkg_modules="gtk+-2.0 >= 2.0.0 gthread-2.0"
++-PKG_CHECK_MODULES([GTK], [$pkg_modules])
++-AC_SUBST(GTK_CFLAGS)
++-AC_SUBST(GTK_LIBS)
++-
++ AC_OUTPUT(
++ 	[Makefile]
++ 	[defs.mak]
++@@ -137,7 +132,6 @@ AC_OUTPUT(
++ 	[man/Makefile]
++ 	[libcwiid/Makefile]
++ 	[wmdemo/Makefile]
++-	[wmgui/Makefile]
++ 	[wminput/Makefile]
++ 	[wminput/plugins/Makefile]
++ 	[wminput/plugins/ir_ptr/Makefile]
+Index: buildroot/package/cwiid/cwiid-0.6.00-makefile_in-remove_wmgui.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/cwiid/cwiid-0.6.00-makefile_in-remove_wmgui.patch	2010-06-20 21:13:26.000000000 +0200
+@@ -0,0 +1,11 @@
++--- cwiid-0.6.00.org/Makefile.in	2007-07-28 20:47:03.000000000 +0200
+++++ cwiid-0.6.00/Makefile.in	2010-03-01 17:28:08.337399709 +0100
++@@ -3,7 +3,7 @@
++ include @top_builddir@/defs.mak
++ 
++ LIB_DIRS = libcwiid
++-BIN_DIRS = wmgui wminput lswm
+++BIN_DIRS = wminput lswm
++ DOC_DIRS = man doc
++ ifdef PYTHON
++ BIND_DIRS = python
