@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Jun 17 18:25:20 2010
+# Mon Jun 21 10:30:46 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -326,9 +326,12 @@ BR2_PACKAGE_PKGCONFIG=y
 #
 # Armadeus specific packages
 #
-# BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_LIBDNET is not set
-# BR2_PACKAGE_MESALIB is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
+
+#
+# bluez-utils not available (need dbus)
+#
 
 #
 # Armadeus specific tools/utilities
@@ -343,13 +346,6 @@ BR2_PACKAGE_IMXREGS=y
 BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
 # BR2_PACKAGE_DUMMY is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
-
-#
-# bluez-utils not available (need dbus)
-#
-# BR2_PACKAGE_FBTEST is not set
-# BR2_PACKAGE_SNES9X is not set
 
 #
 # Other stuff
@@ -389,7 +385,6 @@ BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_STARTUP_NOTIFICATION is not set
 # BR2_PACKAGE_STRACE is not set
 # BR2_PACKAGE_SUDO is not set
-# BR2_PACKAGE_XENOMAI is not set
 # BR2_DATABASE_SUPPORT is not set
 BR2_TEXTEDIT_SUPPORT=y
 # BR2_PACKAGE_ED is not set
@@ -482,6 +477,7 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_TTCP is not set
 # BR2_PACKAGE_UDPCAST is not set
 # BR2_PACKAGE_USSP_PUSH is not set
+# BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_VPNC is not set
 # BR2_PACKAGE_VSFTPD is not set
 # BR2_PACKAGE_VTUN is not set
@@ -489,6 +485,7 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_WIRELESS_TOOLS is not set
 # BR2_PACKAGE_WPA_SUPPLICANT is not set
 BR2_BLOCKDEV_SUPPORT=y
+# BR2_PACKAGE_CWIID is not set
 
 #
 # dbus not available (need expat or libxml2)
@@ -564,6 +561,7 @@ BR2_PACKAGE_MTD_UBIUPDATEVOL=y
 # BR2_PACKAGE_USBMOUNT is not set
 # BR2_PACKAGE_USBUTILS is not set
 # BR2_PACKAGE_WIPE is not set
+# BR2_PACKAGE_XENOMAI is not set
 # BR2_PACKAGE_XFSPROGS is not set
 BR2_AUDIO_SUPPORT=y
 BR2_PACKAGE_ALSA_LIB=y
@@ -634,6 +632,7 @@ BR2_PACKAGE_NCURSES=y
 # BR2_PACKAGE_LIBART is not set
 # BR2_PACKAGE_LIBPNG is not set
 # BR2_PACKAGE_LIBUNGIF is not set
+# BR2_PACKAGE_MESALIB is not set
 # BR2_PACKAGE_PIXMAN is not set
 # BR2_PACKAGE_SDL is not set
 # BR2_PACKAGE_TIFF is not set
@@ -652,6 +651,7 @@ BR2_PACKAGE_NCURSES=y
 #
 # BR2_PACKAGE_FBV is not set
 # BR2_PACKAGE_FBSET is not set
+# BR2_PACKAGE_FBTEST is not set
 # BR2_PACKAGE_FBGRAB is not set
 
 #
@@ -777,18 +777,6 @@ BR2_TARGET_ROOTFS_TAR_COPYTO=""
 BR2_TARGET_UBOOT=y
 BR2_TARGET_UBOOT_BOARDNAME="$(BR2_BOARD_NAME)"
 BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE="$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
-BR2_TARGET_UBOOT_1_3_4=y
-# BR2_TARGET_UBOOT_2010_03 is not set
-# BR2_TARGET_UBOOT_2009_11 is not set
-# BR2_TARGET_UBOOT_2009_08 is not set
-# BR2_TARGET_UBOOT_2009_06 is not set
-# BR2_TARGET_UBOOT_2009_03 is not set
-# BR2_TARGET_UBOOT_2009_01 is not set
-# BR2_TARGET_UBOOT_2008_10 is not set
-# BR2_TARGET_UBOOT_1_2_0_ATMEL is not set
-BR2_UBOOT_VERSION="1.3.4"
-BR2_U_BOOT_SITE="ftp://ftp.denx.de/pub/u-boot"
-# BR2_TARGET_U_BOOT_ARCH_PATCH is not set
 BR2_TARGET_UBOOT_CUSTOM_PATCH=""
 BR2_TARGET_UBOOT_SERVERIP=""
 BR2_TARGET_UBOOT_IPADDR=""
