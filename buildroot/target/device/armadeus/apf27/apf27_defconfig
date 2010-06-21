@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Jun 17 18:25:20 2010
+# Mon Jun 21 10:10:19 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -330,14 +330,12 @@ BR2_PACKAGE_PKGCONFIG=y
 #
 # Armadeus specific packages
 #
-# BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_LIBDNET is not set
 # BR2_PACKAGE_BLUEZ_LIBS is not set
 
 #
 # bluez-utils not available (need dbus)
 #
-# BR2_PACKAGE_MESALIB is not set
 
 #
 # Armadeus specific tools/utilities
@@ -351,12 +349,7 @@ BR2_PACKAGE_IMXREGS=y
 # BR2_PACKAGE_IMXSSI is not set
 BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
-# BR2_PACKAGE_FIRMWARE is not set
-# BR2_PACKAGE_FIRMWARE_88W8686_SDIO_V8 is not set
-# BR2_PACKAGE_FIRMWARE_88W8686_SDIO_V9 is not set
 # BR2_PACKAGE_DUMMY is not set
-# BR2_PACKAGE_FBTEST is not set
-# BR2_PACKAGE_SNES9X is not set
 
 #
 # Other stuff
@@ -396,7 +389,6 @@ BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_STARTUP_NOTIFICATION is not set
 BR2_PACKAGE_STRACE=y
 # BR2_PACKAGE_SUDO is not set
-# BR2_PACKAGE_XENOMAI is not set
 # BR2_DATABASE_SUPPORT is not set
 BR2_TEXTEDIT_SUPPORT=y
 # BR2_PACKAGE_ED is not set
@@ -489,6 +481,7 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_TTCP is not set
 # BR2_PACKAGE_UDPCAST is not set
 # BR2_PACKAGE_USSP_PUSH is not set
+# BR2_PACKAGE_UUCP is not set
 # BR2_PACKAGE_VPNC is not set
 # BR2_PACKAGE_VSFTPD is not set
 # BR2_PACKAGE_VTUN is not set
@@ -496,6 +489,7 @@ BR2_PACKAGE_PORTMAP=y
 BR2_PACKAGE_WIRELESS_TOOLS=y
 # BR2_PACKAGE_WPA_SUPPLICANT is not set
 BR2_BLOCKDEV_SUPPORT=y
+# BR2_PACKAGE_CWIID is not set
 
 #
 # dbus not available (need expat or libxml2)
@@ -506,6 +500,7 @@ BR2_BLOCKDEV_SUPPORT=y
 # BR2_PACKAGE_E2FSPROGS is not set
 # BR2_PACKAGE_EEPROG is not set
 # BR2_PACKAGE_FCONFIG is not set
+# BR2_PACKAGE_FIRMWARE is not set
 # BR2_PACKAGE_FIS is not set
 # BR2_PACKAGE_LIBFUSE is not set
 # BR2_PACKAGE_GADGETFS_TEST is not set
@@ -570,6 +565,7 @@ BR2_PACKAGE_MTD_UBIUPDATEVOL=y
 # BR2_PACKAGE_USBMOUNT is not set
 # BR2_PACKAGE_USBUTILS is not set
 # BR2_PACKAGE_WIPE is not set
+# BR2_PACKAGE_XENOMAI is not set
 # BR2_PACKAGE_XFSPROGS is not set
 BR2_AUDIO_SUPPORT=y
 BR2_PACKAGE_ALSA_LIB=y
@@ -640,6 +636,7 @@ BR2_PACKAGE_NCURSES=y
 # BR2_PACKAGE_LIBART is not set
 # BR2_PACKAGE_LIBPNG is not set
 # BR2_PACKAGE_LIBUNGIF is not set
+# BR2_PACKAGE_MESALIB is not set
 # BR2_PACKAGE_PIXMAN is not set
 # BR2_PACKAGE_SDL is not set
 # BR2_PACKAGE_TIFF is not set
@@ -658,6 +655,7 @@ BR2_PACKAGE_NCURSES=y
 #
 # BR2_PACKAGE_FBV is not set
 # BR2_PACKAGE_FBSET is not set
+# BR2_PACKAGE_FBTEST is not set
 # BR2_PACKAGE_FBGRAB is not set
 
 #
