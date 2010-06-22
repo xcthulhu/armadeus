@@ -113,8 +113,6 @@ buildroot-unpacked: $(BUILDROOT_DIR)/.unpacked
 
 $(BUILDROOT_DIR)/.patched: $(BUILDROOT_DIR)/.unpacked
 	$(BUILDROOT_DIR)/toolchain/patch-kernel.sh $(BUILDROOT_DIR) $(BUILDROOT_PATCH_DIR) \*.patch
-# Since patches may add/delete packages, we process extra packages after patching
-	perl $(BUILDROOT_PATCH_DIR)/add_packages_config_entry.pl buildroot=$(BUILDROOT_DIR)
 	touch $@
 
 buildroot-patched: $(BUILDROOT_DIR)/.patched

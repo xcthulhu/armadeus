@@ -1,8 +1,25 @@
---- buildroot/target/device/Config.in.ref       2008-11-03 15:31:26.000000000 +0100
-+++ buildroot/target/device/Config.in   2008-11-03 15:32:00.000000000 +0100
-@@ -5,6 +5,7 @@ source "project/Config.in"
- comment "Preset Devices"
+Add armadeus target and packages specific menu to BR.
 
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-22 11:13:07.000000000 +0200
++++ buildroot/package/Config.in	2010-06-22 11:22:16.000000000 +0200
+@@ -120,6 +120,8 @@
+ source "package/which/Config.in"
+ endif
+ 
++source "package/armadeus/Config.in"
++
+ source "package/database/Config.in"
+ 
+ if !BR2_PACKAGE_BUSYBOX_HIDE_OTHERS
+Index: buildroot/target/device/Config.in
+===================================================================
+--- buildroot.orig/target/device/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/device/Config.in	2010-06-22 11:10:57.000000000 +0200
+@@ -5,6 +5,7 @@
+ comment "Preset Devices"
+ 
  source "target/device/AMD/Config.in"
 +source "target/device/armadeus/Config.in"
  source "target/device/ARMLTD/Config.in"

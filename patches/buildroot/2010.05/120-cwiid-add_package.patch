@@ -22,7 +22,7 @@ Index: buildroot/package/cwiid/Config.in
 @@ -0,0 +1,8 @@
 +config BR2_PACKAGE_CWIID
 +	bool "cwiid"
-+	select BR2_PACKAGE_BLUEZ
++	select BR2_PACKAGE_BLUEZ_LIBS
 +	help
 +	  A collection of Linux tools written in C for interfacing to the
 +	  Nintendo Wiimote.

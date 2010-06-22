@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Mon Jun 21 10:30:46 2010
+# Tue Jun 22 11:39:22 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -324,30 +324,6 @@ BR2_PACKAGE_PKGCONFIG=y
 # BR2_PACKAGE_PCRE is not set
 
 #
-# Armadeus specific packages
-#
-# BR2_PACKAGE_LIBDNET is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
-
-#
-# bluez-utils not available (need dbus)
-#
-
-#
-# Armadeus specific tools/utilities
-#
-# BR2_PACKAGE_AD9889CTRL is not set
-# BR2_PACKAGE_AS_DEVICES is not set
-BR2_PACKAGE_CH7024CTRL=y
-# BR2_PACKAGE_ARMADEUS_DEMOS is not set
-BR2_PACKAGE_FPGAREGS=y
-BR2_PACKAGE_IMXREGS=y
-# BR2_PACKAGE_IMXSSI is not set
-BR2_PACKAGE_MAX5821CTRL=y
-# BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
-# BR2_PACKAGE_DUMMY is not set
-
-#
 # Other stuff
 #
 # BR2_PACKAGE_AT is not set
@@ -385,6 +361,19 @@ BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_STARTUP_NOTIFICATION is not set
 # BR2_PACKAGE_STRACE is not set
 # BR2_PACKAGE_SUDO is not set
+
+#
+# Armadeus specific tools/utilities
+#
+# BR2_PACKAGE_AD9889CTRL is not set
+# BR2_PACKAGE_AS_DEVICES is not set
+# BR2_PACKAGE_CH7024CTRL is not set
+# BR2_PACKAGE_ARMADEUS_DEMOS is not set
+# BR2_PACKAGE_FPGAREGS is not set
+# BR2_PACKAGE_IMXREGS is not set
+# BR2_PACKAGE_IMXSSI is not set
+BR2_PACKAGE_MAX5821CTRL=y
+# BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
 # BR2_DATABASE_SUPPORT is not set
 BR2_TEXTEDIT_SUPPORT=y
 # BR2_PACKAGE_ED is not set
@@ -400,6 +389,11 @@ BR2_NETWORK_SUPPORT=y
 # BR2_PACKAGE_AXEL is not set
 # BR2_PACKAGE_BOA is not set
 # BR2_PACKAGE_BIND is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
+
+#
+# bluez-utils not available (need dbus)
+#
 # BR2_PACKAGE_BRIDGE is not set
 # BR2_PACKAGE_DNSMASQ is not set
 # BR2_PACKAGE_DROPBEAR is not set
