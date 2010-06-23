@@ -1,0 +1,163 @@
+Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:56:23.000000000 +0200
++++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:57:16.000000000 +0200
+@@ -45,6 +45,7 @@
+ 	struct clk *clk;
+ 	bool low_power;
+ 	struct imx_i2c_platform_data *pdata;
++	int trans_flag;
+ } imx_i2c_device;
+ 
+ /*
+@@ -118,7 +119,14 @@
+  */
+ static int imx_i2c_wait_for_tc(imx_i2c_device * dev, int trans_flag)
+ {
+-	int retry = 4;
++	int retry;
++
++	if (trans_flag& I2C_M_IGNORE_NAK)
++	{
++		retry = 1;
++	} else {
++		retry = 4;
++	}
+ 
+ 	while (retry-- && !transfer_done) {
+ 		wait_event_interruptible_timeout(dev->wq,
+@@ -138,6 +146,9 @@
+ #ifdef I2C_DEBUG
+ 		printk(KERN_DEBUG "Data not transmitted\n");
+ #endif
++	if (trans_flag& I2C_M_IGNORE_NAK)
++		return 0;
++	else
+ 		return -1;
+ 	}
+ 
+@@ -156,7 +167,10 @@
+ 	 * in the data register
+ 	 */
+ 	addr_trans = msg->addr << 1;
+-	if (msg->flags & I2C_M_RD) {
++	if ((msg->flags & I2C_M_RD) && ((msg->flags & I2C_M_REV_DIR_ADDR)==0)) {
++		addr_trans |= 0x01;
++	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0)
++	{
+ 		addr_trans |= 0x01;
+ 	}
+ 
+@@ -196,7 +210,10 @@
+ 	 * in the data register
+ 	 */
+ 	addr_trans = msg->addr << 1;
+-	if (msg->flags & I2C_M_RD) {
++	if ((msg->flags & I2C_M_RD) && ((msg->flags & I2C_M_REV_DIR_ADDR)==0)) {
++		addr_trans |= 0x01;
++	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0)
++	{
+ 		addr_trans |= 0x01;
+ 	}
+ 	cr = readw(dev->membase + MXC_I2CR);
+@@ -213,7 +230,7 @@
+  * The function returns the number of bytes read or -1 on time out.
+  */
+ static int imx_i2c_readbytes(imx_i2c_device * dev, struct i2c_msg *msg,
+-			     int last, int addr_comp)
++				 int last, int addr_comp)
+ {
+ 	int i;
+ 	char *buf = msg->buf;
+@@ -245,10 +262,17 @@
+ 			imx_i2c_stop(dev);
+ 			return -1;
+ 		}
+-		/* Do not generate an ACK for the last byte */
++		/* Do not generate an ACK for the last byte
++		 * or if I2C_M_NO_RD_ACK flag is set
++		 */
+ 		if (i == (len - 2)) {
+ 			cr = readw(dev->membase + MXC_I2CR);
+-			cr |= MXC_I2CR_TXAK;
++			if ((msg->flags & I2C_M_NO_RD_ACK) == 0)
++			{
++				cr |= MXC_I2CR_TXAK;
++			} else {
++				cr &= ~MXC_I2CR_TXAK;
++			}
+ 			writew(cr, dev->membase + MXC_I2CR);
+ 		} else if (i == (len - 1)) {
+ 			if (last)
+@@ -352,6 +376,7 @@
+ 	tx_success = false;
+ 	for (i = 0; i < num && ret >= 0; i++) {
+ 		addr_comp = 0;
++		dev->trans_flag = msgs[i].flags;
+ 		/*
+ 		 * Send the slave address and transfer direction in the
+ 		 * address cycle
+@@ -372,17 +397,19 @@
+ 			 * changed or the transfer direction changed
+ 			 */
+ 			if ((msgs[i].addr != msgs[i - 1].addr) ||
+-			    ((msgs[i].flags & I2C_M_RD) !=
+-			     (msgs[i - 1].flags & I2C_M_RD))) {
+-				imx_i2c_repstart(dev, &msgs[i]);
+-				/* Wait for the address cycle to complete */
+-				if (imx_i2c_wait_for_tc(dev, msgs[i].flags)) {
+-					imx_i2c_stop(dev);
+-					imx_i2c_module_dis(dev);
+-					return -EREMOTEIO;
++				((msgs[i].flags & I2C_M_RD) !=
++				 (msgs[i - 1].flags & I2C_M_RD)))
++				if ((msgs[i].flags & I2C_M_NOSTART) == 0)
++				{
++					imx_i2c_repstart(dev, &msgs[i]);
++					/* Wait for the address cycle to complete */
++					if (imx_i2c_wait_for_tc(dev, msgs[i].flags)) {
++						imx_i2c_stop(dev);
++						imx_i2c_module_dis(dev);
++						return -EREMOTEIO;
++					}
+ 				}
+ 				addr_comp = 1;
+-			}
+ 		}
+ 
+ 		/* Transfer the data */
+@@ -414,7 +441,7 @@
+  */
+ static u32 imx_i2c_func(struct i2c_adapter *adap)
+ {
+-	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL | I2C_FUNC_PROTOCOL_MANGLING ;
+ }
+ 
+ /*
+@@ -450,6 +477,7 @@
+ #endif
+ 	} else {
+ 		/* Interrupt due byte transfer completion */
++
+ 		tx_success = false;
+ 		/* Check if RXAK is received in Transmit mode */
+ 		if (cr & MXC_I2CR_MTX) {
+@@ -542,7 +570,7 @@
+ 	}
+ 	if (!request_mem_region(res->start, res->end - res->start + 1, DRV_NAME)) {
+ 		dev_err(&pdev->dev, "request_mem_region failed for IMX I2C %d\n", id);
+-		     ret = -EBUSY;
++			 ret = -EBUSY;
+ 		goto err1;
+ 	}
+ 
+@@ -581,7 +609,7 @@
+ 	if (i2c_plat_data->max_clk) {
+ 		/* Calculate divider and round up any fractional part */
+ 		int div = (clk_freq + i2c_plat_data->max_clk - 1) /
+-		    i2c_plat_data->max_clk;
++			i2c_plat_data->max_clk;
+ 		for (i = 0; i2c_clk_table[i].div != 0; i++) {
+ 			if (i2c_clk_table[i].div >= div) {
+ 				imx_i2c->clkdiv = i2c_clk_table[i].reg_value;
