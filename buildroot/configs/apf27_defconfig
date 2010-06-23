@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Mon Jun 21 14:41:46 2010
+# Wed Jun 23 11:44:57 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.05"
@@ -664,6 +664,11 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 # BR2_PACKAGE_AVAHI is not set
 # BR2_PACKAGE_AXEL is not set
 # BR2_PACKAGE_BIND is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
+
+#
+# bluez-utils not available (need dbus)
+#
 # BR2_PACKAGE_BMON is not set
 # BR2_PACKAGE_BRIDGE is not set
 # BR2_PACKAGE_CTORRENT is not set
