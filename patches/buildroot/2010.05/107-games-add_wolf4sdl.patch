@@ -5,7 +5,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/games/wolf4sdl/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/Config.in	2010-06-21 10:00:59.000000000 +0200
++++ buildroot/package/games/wolf4sdl/Config.in	2010-06-23 14:13:01.000000000 +0200
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_WOLF4SDL
 +	bool "Wolf4SDL"
@@ -21,7 +21,7 @@ Index: buildroot/package/games/wolf4sdl/Config.in
 Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2010-06-21 10:00:59.000000000 +0200
++++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2010-06-23 14:13:01.000000000 +0200
 @@ -0,0 +1,55 @@
 +#############################################################
 +#
@@ -80,8 +80,8 @@ Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 +endif
 Index: buildroot/package/games/Config.in
 ===================================================================
---- buildroot.orig/package/games/Config.in	2010-06-21 09:56:48.000000000 +0200
-+++ buildroot/package/games/Config.in	2010-06-21 10:00:59.000000000 +0200
+--- buildroot.orig/package/games/Config.in	2010-06-23 14:11:31.000000000 +0200
++++ buildroot/package/games/Config.in	2010-06-23 14:13:01.000000000 +0200
 @@ -8,4 +8,5 @@
  source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
@@ -90,9 +90,9 @@ Index: buildroot/package/games/Config.in
  endmenu
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-21 10:01:27.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-21 10:01:48.000000000 +0200
-@@ -83,6 +83,7 @@
+--- buildroot.orig/package/Config.in	2010-06-23 14:12:57.000000000 +0200
++++ buildroot/package/Config.in	2010-06-23 14:13:01.000000000 +0200
+@@ -86,6 +86,7 @@
  source "package/games/quake-pak/Config.in"
  source "package/games/rubix/Config.in"
  source "package/games/sdlquake/Config.in"

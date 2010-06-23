@@ -1,7 +1,9 @@
+Add armadeus target and packages specific menu to BR.
+
 Index: buildroot/target/device/Config.in
 ===================================================================
---- buildroot.orig/target/device/Config.in	2010-06-17 16:45:14.000000000 +0200
-+++ buildroot/target/device/Config.in	2010-06-17 16:45:25.000000000 +0200
+--- buildroot.orig/target/device/Config.in	2010-05-30 22:24:10.000000000 +0200
++++ buildroot/target/device/Config.in	2010-06-23 14:05:46.000000000 +0200
 @@ -2,6 +2,7 @@
  
  comment "Preset Devices"
@@ -10,3 +12,17 @@ Index: buildroot/target/device/Config.in
  source "target/device/ARMLTD/Config.in"
  source "target/device/Atmel/Config.in"
  source "target/device/KwikByte/Config.in"
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-23 14:06:51.000000000 +0200
++++ buildroot/package/Config.in	2010-06-23 14:09:19.000000000 +0200
+@@ -3,6 +3,9 @@
+ source "package/busybox/Config.in"
+ source "package/customize/Config.in"
+ 
++# Armadeus specific
++source "package/armadeus/Config.in"
++
+ # Audio and video applications
+ source "package/multimedia/Config.in"
+ 

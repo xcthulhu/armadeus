@@ -13,7 +13,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/pygame/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pygame/Config.in	2010-06-17 16:49:15.000000000 +0200
++++ buildroot/package/pygame/Config.in	2010-06-23 14:11:36.000000000 +0200
 @@ -0,0 +1,92 @@
 +config BR2_PACKAGE_PYGAME
 +	bool "pygame"
@@ -110,7 +110,7 @@ Index: buildroot/package/pygame/Config.in
 Index: buildroot/package/pygame/pygame.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pygame/pygame.mk	2010-06-17 16:49:15.000000000 +0200
++++ buildroot/package/pygame/pygame.mk	2010-06-23 14:11:36.000000000 +0200
 @@ -0,0 +1,100 @@
 +#
 +# Pygame
@@ -214,9 +214,9 @@ Index: buildroot/package/pygame/pygame.mk
 +endif
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-17 16:47:20.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-17 16:49:15.000000000 +0200
-@@ -99,6 +99,7 @@
+--- buildroot.orig/package/Config.in	2010-06-23 14:11:31.000000000 +0200
++++ buildroot/package/Config.in	2010-06-23 14:11:36.000000000 +0200
+@@ -104,6 +104,7 @@
  source "package/imagemagick/Config.in"
  source "package/linux-fusion/Config.in"
  source "package/lite/Config.in"
@@ -227,7 +227,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/pygame/Setup
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pygame/Setup	2010-06-17 16:49:15.000000000 +0200
++++ buildroot/package/pygame/Setup	2010-06-23 14:11:36.000000000 +0200
 @@ -0,0 +1,64 @@
 +#This Setup file is used by the setup.py script to configure the
 +#python extensions. You will likely use the "config.py" which will

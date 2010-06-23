@@ -1,8 +1,8 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-18 18:15:21.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-18 18:16:00.000000000 +0200
-@@ -266,6 +266,7 @@
+--- buildroot.orig/package/Config.in	2010-06-23 14:10:36.000000000 +0200
++++ buildroot/package/Config.in	2010-06-23 14:10:43.000000000 +0200
+@@ -269,6 +269,7 @@
  source "package/libgtk2/Config.in"
  source "package/libpng/Config.in"
  source "package/libungif/Config.in"
@@ -13,7 +13,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/mesa/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/mesa/Config.in	2010-06-18 18:17:52.000000000 +0200
++++ buildroot/package/mesa/Config.in	2010-06-23 14:10:43.000000000 +0200
 @@ -0,0 +1,6 @@
 +config BR2_PACKAGE_MESALIB
 +	bool "Mesa library"
@@ -24,7 +24,7 @@ Index: buildroot/package/mesa/Config.in
 Index: buildroot/package/mesa/mesa.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/mesa/mesa.mk	2010-06-18 18:21:31.000000000 +0200
++++ buildroot/package/mesa/mesa.mk	2010-06-23 14:10:43.000000000 +0200
 @@ -0,0 +1,66 @@
 +#############################################################
 +#
@@ -95,7 +95,7 @@ Index: buildroot/package/mesa/mesa.mk
 Index: buildroot/package/mesa/mesa.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/mesa/mesa.patch	2010-06-18 18:24:03.000000000 +0200
++++ buildroot/package/mesa/mesa.patch	2010-06-23 14:10:43.000000000 +0200
 @@ -0,0 +1,188 @@
 +diff -bruN Mesa-7.0.orig/configs/arm-linux-osmesa Mesa-7.0/configs/arm-linux-osmesa
 +--- Mesa-7.0.orig/configs/arm-linux-osmesa	1970-01-01 01:00:00.000000000 +0100
