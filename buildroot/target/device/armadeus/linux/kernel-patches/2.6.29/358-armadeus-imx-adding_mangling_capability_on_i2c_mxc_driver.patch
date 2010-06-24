@@ -1,3 +1,7 @@
+Adding mangling capability on mxc I²C driver.
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
 Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:56:23.000000000 +0200
@@ -17,7 +21,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 -	int retry = 4;
 +	int retry;
 +
-+	if (trans_flag& I2C_M_IGNORE_NAK) {
++	if (trans_flag & I2C_M_IGNORE_NAK) {
 +		retry = 1;
 +	} else {
 +		retry = 4;
@@ -31,11 +35,11 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  #endif
 -		return -1;
 -	}
-+	    if (trans_flag& I2C_M_IGNORE_NAK)
-+		    return 0;
-+    	else
-+	    	return -1;
-+    	}
++	if (trans_flag & I2C_M_IGNORE_NAK)
++		return 0;
++	else
++		return -1;
++ 	}
  
  	return 0;
  }
