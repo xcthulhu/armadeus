@@ -1,11 +1,7 @@
-Adding mangling capability on mxc I²C driver.
-
-Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
-
 Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:56:23.000000000 +0200
-+++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-24 09:05:32.000000000 +0200
++++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-24 09:42:49.000000000 +0200
 @@ -45,6 +45,7 @@
  	struct clk *clk;
  	bool low_power;
@@ -65,15 +61,6 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		addr_trans |= 0x01;
  	}
  	cr = readw(dev->membase + MXC_I2CR);
-@@ -213,7 +227,7 @@
-  * The function returns the number of bytes read or -1 on time out.
-  */
- static int imx_i2c_readbytes(imx_i2c_device * dev, struct i2c_msg *msg,
--			     int last, int addr_comp)
-+				 int last, int addr_comp)
- {
- 	int i;
- 	char *buf = msg->buf;
 @@ -245,10 +259,16 @@
  			imx_i2c_stop(dev);
  			return -1;
@@ -138,29 +125,3 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  }
  
  /*
-@@ -450,6 +472,7 @@
- #endif
- 	} else {
- 		/* Interrupt due byte transfer completion */
-+
- 		tx_success = false;
- 		/* Check if RXAK is received in Transmit mode */
- 		if (cr & MXC_I2CR_MTX) {
-@@ -542,7 +565,7 @@
- 	}
- 	if (!request_mem_region(res->start, res->end - res->start + 1, DRV_NAME)) {
- 		dev_err(&pdev->dev, "request_mem_region failed for IMX I2C %d\n", id);
--		     ret = -EBUSY;
-+			 ret = -EBUSY;
- 		goto err1;
- 	}
- 
-@@ -581,7 +604,7 @@
- 	if (i2c_plat_data->max_clk) {
- 		/* Calculate divider and round up any fractional part */
- 		int div = (clk_freq + i2c_plat_data->max_clk - 1) /
--		    i2c_plat_data->max_clk;
-+			i2c_plat_data->max_clk;
- 		for (i = 0; i2c_clk_table[i].div != 0; i++) {
- 			if (i2c_clk_table[i].div >= div) {
- 				imx_i2c->clkdiv = i2c_clk_table[i].reg_value;
