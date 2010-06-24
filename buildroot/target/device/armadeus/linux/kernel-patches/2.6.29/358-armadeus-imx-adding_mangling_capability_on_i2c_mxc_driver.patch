@@ -1,7 +1,11 @@
+Adding mangling capability on mxc I²C driver.
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
 Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:56:23.000000000 +0200
-+++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:57:16.000000000 +0200
++++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-24 09:05:32.000000000 +0200
 @@ -45,6 +45,7 @@
  	struct clk *clk;
  	bool low_power;
@@ -10,15 +14,14 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  } imx_i2c_device;
  
  /*
-@@ -118,7 +119,14 @@
+@@ -118,7 +119,13 @@
   */
  static int imx_i2c_wait_for_tc(imx_i2c_device * dev, int trans_flag)
  {
 -	int retry = 4;
 +	int retry;
 +
-+	if (trans_flag& I2C_M_IGNORE_NAK)
-+	{
++	if (trans_flag& I2C_M_IGNORE_NAK) {
 +		retry = 1;
 +	} else {
 +		retry = 4;
@@ -26,41 +29,43 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  
  	while (retry-- && !transfer_done) {
  		wait_event_interruptible_timeout(dev->wq,
-@@ -138,6 +146,9 @@
+@@ -138,8 +145,11 @@
  #ifdef I2C_DEBUG
  		printk(KERN_DEBUG "Data not transmitted\n");
  #endif
-+	if (trans_flag& I2C_M_IGNORE_NAK)
-+		return 0;
-+	else
- 		return -1;
- 	}
+-		return -1;
+-	}
++	    if (trans_flag& I2C_M_IGNORE_NAK)
++		    return 0;
++    	else
++	    	return -1;
++    	}
  
-@@ -156,7 +167,10 @@
+ 	return 0;
+ }
+@@ -156,7 +166,9 @@
  	 * in the data register
  	 */
  	addr_trans = msg->addr << 1;
 -	if (msg->flags & I2C_M_RD) {
 +	if ((msg->flags & I2C_M_RD) && ((msg->flags & I2C_M_REV_DIR_ADDR)==0)) {
 +		addr_trans |= 0x01;
-+	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0)
-+	{
++	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0) {
  		addr_trans |= 0x01;
  	}
  
-@@ -196,7 +210,10 @@
+@@ -196,7 +208,9 @@
  	 * in the data register
  	 */
  	addr_trans = msg->addr << 1;
 -	if (msg->flags & I2C_M_RD) {
 +	if ((msg->flags & I2C_M_RD) && ((msg->flags & I2C_M_REV_DIR_ADDR)==0)) {
 +		addr_trans |= 0x01;
-+	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0)
-+	{
++	} else if ((msg->flags & I2C_M_REV_DIR_ADDR) != 0) {
  		addr_trans |= 0x01;
  	}
  	cr = readw(dev->membase + MXC_I2CR);
-@@ -213,7 +230,7 @@
+@@ -213,7 +227,7 @@
   * The function returns the number of bytes read or -1 on time out.
   */
  static int imx_i2c_readbytes(imx_i2c_device * dev, struct i2c_msg *msg,
@@ -69,7 +74,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  {
  	int i;
  	char *buf = msg->buf;
-@@ -245,10 +262,17 @@
+@@ -245,10 +259,16 @@
  			imx_i2c_stop(dev);
  			return -1;
  		}
@@ -80,8 +85,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		if (i == (len - 2)) {
  			cr = readw(dev->membase + MXC_I2CR);
 -			cr |= MXC_I2CR_TXAK;
-+			if ((msg->flags & I2C_M_NO_RD_ACK) == 0)
-+			{
++			if ((msg->flags & I2C_M_NO_RD_ACK) == 0) {
 +				cr |= MXC_I2CR_TXAK;
 +			} else {
 +				cr &= ~MXC_I2CR_TXAK;
@@ -89,7 +93,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  			writew(cr, dev->membase + MXC_I2CR);
  		} else if (i == (len - 1)) {
  			if (last)
-@@ -352,6 +376,7 @@
+@@ -352,6 +372,7 @@
  	tx_success = false;
  	for (i = 0; i < num && ret >= 0; i++) {
  		addr_comp = 0;
@@ -97,7 +101,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		/*
  		 * Send the slave address and transfer direction in the
  		 * address cycle
-@@ -372,17 +397,19 @@
+@@ -372,17 +393,18 @@
  			 * changed or the transfer direction changed
  			 */
  			if ((msgs[i].addr != msgs[i - 1].addr) ||
@@ -111,8 +115,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 -					return -EREMOTEIO;
 +				((msgs[i].flags & I2C_M_RD) !=
 +				 (msgs[i - 1].flags & I2C_M_RD)))
-+				if ((msgs[i].flags & I2C_M_NOSTART) == 0)
-+				{
++				if ((msgs[i].flags & I2C_M_NOSTART) == 0) {
 +					imx_i2c_repstart(dev, &msgs[i]);
 +					/* Wait for the address cycle to complete */
 +					if (imx_i2c_wait_for_tc(dev, msgs[i].flags)) {
@@ -126,7 +129,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		}
  
  		/* Transfer the data */
-@@ -414,7 +441,7 @@
+@@ -414,7 +436,7 @@
   */
  static u32 imx_i2c_func(struct i2c_adapter *adap)
  {
@@ -135,7 +138,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  }
  
  /*
-@@ -450,6 +477,7 @@
+@@ -450,6 +472,7 @@
  #endif
  	} else {
  		/* Interrupt due byte transfer completion */
@@ -143,7 +146,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		tx_success = false;
  		/* Check if RXAK is received in Transmit mode */
  		if (cr & MXC_I2CR_MTX) {
-@@ -542,7 +570,7 @@
+@@ -542,7 +565,7 @@
  	}
  	if (!request_mem_region(res->start, res->end - res->start + 1, DRV_NAME)) {
  		dev_err(&pdev->dev, "request_mem_region failed for IMX I2C %d\n", id);
@@ -152,7 +155,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		goto err1;
  	}
  
-@@ -581,7 +609,7 @@
+@@ -581,7 +604,7 @@
  	if (i2c_plat_data->max_clk) {
  		/* Calculate divider and round up any fractional part */
  		int div = (clk_freq + i2c_plat_data->max_clk - 1) /
