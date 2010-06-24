@@ -141,6 +141,25 @@ static Uint16 inline YUV2B(int Y, int U, int V)
 	return B;
 }
 
+static void yuv422_to_greyscale(void *yuv, int size, void *grey)
+{
+	unsigned int Y, Y2, yuv32;
+	int i;
+	Uint8 *dest = (Uint8*) grey;
+	Uint32 *src = (Uint32*) yuv;
+
+	for (i=size/4; i; i--) {
+		yuv32 = *(src++);
+
+		/* takes Ys from YUV422 packed format */
+		Y = (yuv32 & 0x000000ff);
+		Y2 = (yuv32 & 0x00ff0000) >> 16;
+
+		*(dest++) = (Uint8)Y;
+		*(dest++) = (Uint8)Y2;
+	}
+}
+
 static void yuv422_to_rgb565(void *yuv, int size, void *rgb)
 {
 	unsigned int Y, Y2, U, V, yuv32, rgb32;
