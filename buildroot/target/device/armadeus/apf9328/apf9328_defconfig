@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Tue Jun 22 11:39:22 2010
+# Thu Jun 24 16:15:39 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -552,6 +552,7 @@ BR2_PACKAGE_MTD_UBIUPDATEVOL=y
 # BR2_PACKAGE_RAIDTOOLS is not set
 # BR2_PACKAGE_SETSERIAL is not set
 # BR2_PACKAGE_SMARTMONTOOLS is not set
+# BR2_PACKAGE_URG is not set
 # BR2_PACKAGE_USBMOUNT is not set
 # BR2_PACKAGE_USBUTILS is not set
 # BR2_PACKAGE_WIPE is not set
