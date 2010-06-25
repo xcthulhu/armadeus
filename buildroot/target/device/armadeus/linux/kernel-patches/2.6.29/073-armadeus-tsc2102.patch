@@ -379,7 +379,7 @@ Index: linux-2.6.29.6/drivers/spi/tsc2102.c
 +#define TSC2102_ADC_INT_REF_250		0x0017
 +#define TSC2102_ADC_REF			TSC2102_ADC_INT_REF_250 /*2.5V*/
 +#define TSC2102_ADC_EXT_REF		0x0002
-+#define TSC2102_CONFIG_TIMES		0x0008
++#define TSC2102_CONFIG_TIMES		0x0012
 +#define TSC2102_RESET			0xbb00
 +#define TSC2102_ADC_PSTCM		(1 << 15)
 +#define TSC2102_ADC_ADST		(1 << 14)
