@@ -1,0 +1,241 @@
+Adding Austria Microsystem AS5011 joystick driver
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-06-25 17:58:01.000000000 +0200
+@@ -0,0 +1,200 @@
++/*
++ * Copyright (c) 2010 Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ * Sponsored by ARMadeus Systems
++ */
++
++/*
++ * Driver for Austria Microsystems joysticks AS5011
++ */
++
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/i2c.h>
++#include <linux/string.h>
++#include <linux/list.h>
++#include <linux/sysfs.h>
++#include <linux/ctype.h>
++#include <linux/hwmon-sysfs.h>
++
++#include <linux/types.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/mutex.h>
++
++#include <linux/input.h>
++#include <linux/gpio.h>
++
++#include <linux/as5011.h>
++#define DRIVER_DESC "Driver for Austria Microsystems AS5011 joystick"
++
++MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
++MODULE_DESCRIPTION(DRIVER_DESC);
++MODULE_LICENSE("GPL");
++
++#define SIZE_NAME 30
++/*
++ * input operations
++ */
++
++static irqreturn_t button_interrupt(int irq, void *dev_id)
++{
++	struct as5011_platform_data *plat_dat = (struct as5011_platform_data *)dev_id;
++	int ret;
++	ret = gpio_get_value(plat_dat->button_gpio);
++	input_report_key(plat_dat->input_dev, BTN_0, 1);
++	input_sync(plat_dat->input_dev);
++	return IRQ_HANDLED;
++}
++
++/*
++ * I2C bus operation
++ */
++static int as5011_probe(struct i2c_client *client, const struct i2c_device_id *id)
++{
++	struct as5011_platform_data *plat_dat = client->dev.platform_data;
++	int retval = 0;
++
++	if (!i2c_check_functionality(client->adapter,I2C_FUNC_PROTOCOL_MANGLING)) {
++		dev_err(&client->dev,
++		"i2c bus does not support protocol mangling, as5011 can't work\n");
++		retval = -ENODEV;
++		goto i2c_protocol_error;
++	}
++
++	plat_dat->input_dev = input_allocate_device();
++	if (plat_dat->input_dev < 0) {
++		dev_err(&client->dev,
++		"not enough memory for input devices structure\n");
++		retval = -ENOMEM;
++		goto input_allocate_device_error;
++	}
++
++	plat_dat->input_dev->evbit[0] = BIT_MASK(EV_KEY);
++	plat_dat->input_dev->keybit[BIT_WORD(BTN_0)] = BIT_MASK(BTN_0);
++
++	plat_dat->button_irq_name = (unsigned char *)kmalloc(sizeof(unsigned char)*SIZE_NAME, GFP_KERNEL);
++	if (plat_dat->button_irq_name == NULL)
++	{
++		dev_err(&client->dev,
++		"not enough memory for input devices irq name\n");
++		retval = -ENOMEM;
++		goto input_allocate_device_name_error;
++	}
++
++
++	retval = snprintf(plat_dat->button_irq_name, SIZE_NAME, "as5011_%d_button", plat_dat->num);
++	if (retval < 0)
++	{
++		dev_err(&client->dev, "as5011: Failed to give button irq name\n");
++		retval = -1; //FIXME: find the right code
++		goto button_irq_name_error;
++	}
++
++	if (request_irq(plat_dat->button_irq, button_interrupt,
++			0, plat_dat->button_irq_name, (void *)plat_dat)) {
++                dev_err(&client->dev, "as5011: Can't allocate irq %d\n",
++			plat_dat->button_irq);
++                retval = -EBUSY;
++		goto request_irq_error;
++        }
++
++	retval = input_register_device(plat_dat->input_dev);
++	if (retval) {
++		dev_err(&client->dev, "as5011: Failed to register device\n");
++		retval = -1; //FIXME: find the right code
++		goto input_register_device_error;
++	}
++
++	retval = plat_dat->init_gpio();
++	if (retval < 0) {
++		dev_err(&client->dev, "as5011: Failed to init gpios\n");
++		retval = -1; //FIXME: find the right code
++		goto init_gpio_error;
++	}
++
++
++
++	printk(KERN_DEBUG "as5011 probed\n");//XXX
++	return 0;
++
++	/* Error management */
++
++	plat_dat->exit_gpio();
++init_gpio_error:
++	input_unregister_device(plat_dat->input_dev);
++input_register_device_error:
++	free_irq(plat_dat->button_irq, button_interrupt);
++request_irq_error:
++button_irq_name_error:
++	kfree(plat_dat->button_irq_name);
++input_allocate_device_name_error:
++	input_free_device(plat_dat->input_dev);
++input_allocate_device_error:
++i2c_protocol_error:
++	return retval;
++}
++static int as5011_remove(struct i2c_client *client)
++{
++	struct as5011_platform_data *plat_dat = client->dev.platform_data;
++
++	input_unregister_device(plat_dat->input_dev);
++	free_irq(plat_dat->button_irq, plat_dat);
++	kfree(plat_dat->button_irq_name);
++	input_free_device(plat_dat->input_dev);
++	plat_dat->exit_gpio();
++
++	printk(KERN_DEBUG "as5011_remove\n");//XXX
++	return 0;
++}
++static const struct i2c_device_id as5011_id[] = {
++	{ "as5011", 0 },
++	{ }
++};
++
++static struct i2c_driver as5011_driver = {
++	.driver = {
++		.name = "as5011",
++	},
++	.probe    = as5011_probe,
++	.remove   = as5011_remove,
++	.id_table = as5011_id,
++};
++
++/*
++ * Module initialization
++ */
++
++static int __init as5011_init(void)
++{
++    printk(KERN_DEBUG "as5011_init\n");//XXX
++    return i2c_add_driver(&as5011_driver);
++}
++
++static void __exit as5011_exit(void)
++{
++    printk(KERN_DEBUG "as5011_exit\n");//XXX
++    i2c_del_driver(&as5011_driver);
++}
++
++module_init(as5011_init);
++module_exit(as5011_exit);
+Index: linux-2.6.29.6/drivers/input/joystick/Kconfig
+===================================================================
+--- linux-2.6.29.6.orig/drivers/input/joystick/Kconfig	2010-06-24 15:11:45.000000000 +0200
++++ linux-2.6.29.6/drivers/input/joystick/Kconfig	2010-06-24 15:15:16.000000000 +0200
+@@ -254,6 +254,15 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called amijoy.
+ 
++config JOYSTICK_AS5011
++	tristate "Austria Microsystem AS5011 joystick"
++	depends on I2C
++	help
++	  Say Y here if you have an AS5011 digital joystick.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called as5011.
++
+ config JOYSTICK_JOYDUMP
+ 	tristate "Gameport data dumper"
+ 	select GAMEPORT
+Index: linux-2.6.29.6/drivers/input/joystick/Makefile
+===================================================================
+--- linux-2.6.29.6.orig/drivers/input/joystick/Makefile	2010-06-24 15:11:05.000000000 +0200
++++ linux-2.6.29.6/drivers/input/joystick/Makefile	2010-06-24 15:11:27.000000000 +0200
+@@ -7,6 +7,7 @@
+ obj-$(CONFIG_JOYSTICK_A3D)		+= a3d.o
+ obj-$(CONFIG_JOYSTICK_ADI)		+= adi.o
+ obj-$(CONFIG_JOYSTICK_AMIGA)		+= amijoy.o
++obj-$(CONFIG_JOYSTICK_AS5011)		+= as5011.o
+ obj-$(CONFIG_JOYSTICK_ANALOG)		+= analog.o
+ obj-$(CONFIG_JOYSTICK_COBRA)		+= cobra.o
+ obj-$(CONFIG_JOYSTICK_DB9)		+= db9.o
