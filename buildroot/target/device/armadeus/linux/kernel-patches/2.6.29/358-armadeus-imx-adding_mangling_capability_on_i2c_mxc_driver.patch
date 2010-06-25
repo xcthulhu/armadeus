@@ -4,8 +4,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 ===================================================================
---- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-23 17:56:23.000000000 +0200
-+++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-24 09:42:49.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/i2c/busses/i2c-mxc.c	2010-06-25 18:19:38.000000000 +0200
++++ linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c	2010-06-25 18:23:43.000000000 +0200
 @@ -45,6 +45,7 @@
  	struct clk *clk;
  	bool low_power;
@@ -14,7 +14,18 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  } imx_i2c_device;
  
  /*
-@@ -118,7 +119,13 @@
+@@ -99,7 +100,9 @@
+ 	 */
+ 	for (;;) {
+ 		unsigned int sr = readw(dev->membase + MXC_I2SR);
+-		if ((sr & MXC_I2SR_IBB) == 0) break;
++		if ((sr & MXC_I2SR_IBB) == 0) {
++			break;
++		}
+ 		if (retry-- <= 0) {
+ #ifdef I2C_DEBUG
+ 			printk(KERN_DEBUG "Bus busy\n");
+@@ -118,7 +121,13 @@
   */
  static int imx_i2c_wait_for_tc(imx_i2c_device * dev, int trans_flag)
  {
@@ -29,21 +40,22 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  
  	while (retry-- && !transfer_done) {
  		wait_event_interruptible_timeout(dev->wq,
-@@ -138,8 +145,11 @@
+@@ -138,8 +147,12 @@
  #ifdef I2C_DEBUG
  		printk(KERN_DEBUG "Data not transmitted\n");
  #endif
 -		return -1;
 -	}
-+	if (trans_flag & I2C_M_IGNORE_NAK)
-+		return 0;
-+	else
-+		return -1;
++		if (trans_flag & I2C_M_IGNORE_NAK) {
++			return 0;
++		} else {
++			return -1;
++		}
 + 	}
  
  	return 0;
  }
-@@ -156,7 +166,9 @@
+@@ -156,7 +169,9 @@
  	 * in the data register
  	 */
  	addr_trans = msg->addr << 1;
@@ -54,7 +66,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		addr_trans |= 0x01;
  	}
  
-@@ -196,7 +208,9 @@
+@@ -196,7 +211,9 @@
  	 * in the data register
  	 */
  	addr_trans = msg->addr << 1;
@@ -65,7 +77,30 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		addr_trans |= 0x01;
  	}
  	cr = readw(dev->membase + MXC_I2CR);
-@@ -245,10 +259,16 @@
+@@ -227,17 +244,19 @@
+ 	/*
+ 	 * Clear the TXAK bit to gen an ack when receiving only one byte.
+ 	 */
+-	if (len == 1)
++	if (len == 1) {
+ 		cr |= MXC_I2CR_TXAK;
+-	else
++	} else {
+ 		cr &= ~MXC_I2CR_TXAK;
++	}
+ 
+ 	writew(cr, dev->membase + MXC_I2CR);
+ 	/*
+ 	 * Dummy read only at the end of an address cycle
+ 	 */
+-	if (addr_comp > 0)
++	if (addr_comp > 0) {
+ 		readw(dev->membase + MXC_I2DR);
++	}
+ 
+ 	for (i = 0; i < len; i++) {
+ 		/* Wait for data transmission to complete */
+@@ -245,14 +264,21 @@
  			imx_i2c_stop(dev);
  			return -1;
  		}
@@ -83,8 +118,25 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 +			}
  			writew(cr, dev->membase + MXC_I2CR);
  		} else if (i == (len - 1)) {
- 			if (last)
-@@ -352,6 +372,7 @@
+-			if (last)
++			if (last) {
+ 				imx_i2c_stop(dev);
++			}
+ 		}
+ 		/* Read the data */
+ 		*buf++ = readw(dev->membase + MXC_I2DR);
+@@ -333,8 +359,9 @@
+ 		return -EREMOTEIO;
+ 	}
+ 
+-	if (num < 1)
++	if (num < 1) {
+ 		return 0;
++	}
+ 
+ 	imx_i2c_module_en(dev, msgs[0].flags);
+ 	sr = readw(dev->membase + MXC_I2SR);
+@@ -352,6 +379,7 @@
  	tx_success = false;
  	for (i = 0; i < num && ret >= 0; i++) {
  		addr_comp = 0;
@@ -92,7 +144,7 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  		/*
  		 * Send the slave address and transfer direction in the
  		 * address cycle
-@@ -372,17 +393,18 @@
+@@ -372,16 +400,18 @@
  			 * changed or the transfer direction changed
  			 */
  			if ((msgs[i].addr != msgs[i - 1].addr) ||
@@ -104,23 +156,24 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
 -					imx_i2c_stop(dev);
 -					imx_i2c_module_dis(dev);
 -					return -EREMOTEIO;
+-				}
+-				addr_comp = 1;
 +				((msgs[i].flags & I2C_M_RD) !=
-+				 (msgs[i - 1].flags & I2C_M_RD)))
-+				if ((msgs[i].flags & I2C_M_NOSTART) == 0) {
-+					imx_i2c_repstart(dev, &msgs[i]);
-+					/* Wait for the address cycle to complete */
-+					if (imx_i2c_wait_for_tc(dev, msgs[i].flags)) {
-+						imx_i2c_stop(dev);
-+						imx_i2c_module_dis(dev);
-+						return -EREMOTEIO;
++				 (msgs[i - 1].flags & I2C_M_RD))) {
++					if ((msgs[i].flags & I2C_M_NOSTART) == 0) {
++						imx_i2c_repstart(dev, &msgs[i]);
++						/* Wait for the address cycle to complete */
++						if (imx_i2c_wait_for_tc(dev, msgs[i].flags)) {
++							imx_i2c_stop(dev);
++							imx_i2c_module_dis(dev);
++							return -EREMOTEIO;
++						}
 +					}
- 				}
- 				addr_comp = 1;
--			}
++					addr_comp = 1;
+ 			}
  		}
  
- 		/* Transfer the data */
-@@ -414,7 +436,7 @@
+@@ -414,7 +444,7 @@
   */
  static u32 imx_i2c_func(struct i2c_adapter *adap)
  {
@@ -129,3 +182,14 @@ Index: linux-2.6.29.6/drivers/i2c/busses/i2c-mxc.c
  }
  
  /*
+@@ -505,8 +535,9 @@
+ {
+ 	imx_i2c_device *mxcdev = platform_get_drvdata(pdev);
+ 
+-	if (mxcdev == NULL)
++	if (mxcdev == NULL) {
+ 		return -1;
++	}
+ 
+ 	mxcdev->low_power = false;
+ 	mxcdev->pdata->init(pdev);
