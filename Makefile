@@ -31,10 +31,12 @@ ifeq ($(BUILDROOT_VERSION),)
 BUILDROOT_VERSION:=20081103
 BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
 BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot
+ARMADEUS_CONFIG_DIR:=$(BUILDROOT_DIR)/target/device/armadeus
 else
 #BUILDROOT_VERSION:=2010.05
 BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads
 BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/$(BUILDROOT_VERSION)
+ARMADEUS_CONFIG_DIR:=$(BUILDROOT_DIR)/configs
 endif
 #--- End of user conf (don't touch anything below unless you know what you're doing !! ;-) )
 
@@ -51,7 +53,7 @@ ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
                 echo "                                                   "; \
                 echo " System not configured. Use make <board>_defconfig " >&2; \
                 echo " armadeus valid configurations are:                " >&2; \
-                echo "     "$(shell find $(BUILDROOT_DIR)/target/device/armadeus -name *_defconfig|sed 's/.*\///');\
+                echo "     "$(shell find $(ARMADEUS_CONFIG_DIR) -name "apf*_defconfig" | sed 's/.*\///');\
                 echo "                                                   "; \
 		echo -en "\033[0m";
 
@@ -146,7 +148,7 @@ linux26-clean: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
 
 %_defconfig: $(BUILDROOT_DIR)/.patched
-	@if [ -e "$(BUILDROOT_DIR)/target/device/armadeus/$(patsubst %_defconfig,%,$@)/$@" ]; then \
+	@if [ -e "$(ARMADEUS_CONFIG_DIR)/$@" ] || [ -e "$(ARMADEUS_CONFIG_DIR)/$(patsubst %_defconfig,%,$@)/$@" ]; then \
 		rm -f $(BUILDROOT_DIR)/.config ; \
 		$(MAKE) -C $(BUILDROOT_DIR) $@ ; \
 		$(MAKE) -C $(BUILDROOT_DIR) menuconfig ; \
