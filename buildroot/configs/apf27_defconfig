@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Wed Jun 23 14:22:58 2010
+# Sun Jul  4 16:19:24 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.05"
@@ -274,12 +274,12 @@ BR2_PACKAGE_BUSYBOX_CONFIG="target/device/armadeus/busybox-$(BR2_BUSYBOX_VERSION
 #
 # Armadeus specific tools/utilities
 #
-# BR2_PACKAGE_AD9889CTRL is not set
+BR2_PACKAGE_AD9889CTRL=y
 # BR2_PACKAGE_AS_DEVICES is not set
 # BR2_PACKAGE_CH7024CTRL is not set
 # BR2_PACKAGE_ARMADEUS_DEMOS is not set
-# BR2_PACKAGE_FPGAREGS is not set
-# BR2_PACKAGE_IMXREGS is not set
+BR2_PACKAGE_FPGAREGS=y
+BR2_PACKAGE_IMXREGS=y
 # BR2_PACKAGE_IMXSSI is not set
 BR2_PACKAGE_MAX5821CTRL=y
 # BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
