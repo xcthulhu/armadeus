@@ -1,0 +1,54 @@
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-29 11:20:37.000000000 +0200
++++ buildroot/package/Config.in	2010-07-04 18:03:11.000000000 +0200
+@@ -79,6 +79,7 @@
+ menu "Games"
+ source "package/games/ace_of_penguins/Config.in"
+ source "package/games/doom-wad/Config.in"
++source "package/e-uae/Config.in"
+ source "package/games/gnuchess/Config.in"
+ source "package/games/lxdoom/Config.in"
+ source "package/games/magiccube4d/Config.in"
+Index: buildroot/package/e-uae/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/e-uae/Config.in	2010-07-04 18:05:06.000000000 +0200
+@@ -0,0 +1,9 @@
++config BR2_PACKAGE_E_UAE
++	bool "e-uae"
++	select BR2_PACKAGE_SDL
++	help
++	  This is a version of UAE, the Ubiquitous Amiga Emulator, with an
++	  emulation core largely based on WinUAE. It attempts to bring many of
++	  the great features of WinUAE to non-Windows platforms.
++
++	  http://www.rcdrummond.net/uae/
+Index: buildroot/package/e-uae/e-uae.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/e-uae/e-uae.mk	2010-07-04 18:06:43.000000000 +0200
+@@ -0,0 +1,23 @@
++#############################################################
++#
++# e-uae
++#
++#############################################################
++E_UAE_VERSION:=0.8.29-WIP4
++E_UAE_SITE = http://www.rcdrummond.net/uae/e-uae-$(E_UAE_VERSION)
++E_UAE_SOURCE:=e-uae-$(E_UAE_VERSION).tar.bz2
++
++E_UAE_CONF_ENV = CFLAGS="$(TARGET_CFLAGS) -g -DSTAT_STATFS2_BSIZE=1"
++
++E_UAE_CONF_OPT = \
++		--with-hostcc=gcc \
++		--disable-ui \
++		--without-x \
++		--without-gtk \
++		--with-zlib=$(STAGING_DIR) \
++		--with-sdl \
++		--with-sdl-sound \
++		--with-sdl-gfx \
++		--with-sdl-prefix=$(STAGING_DIR)/usr
++
++$(eval $(call AUTOTARGETS,package,e-uae))

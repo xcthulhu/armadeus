@@ -1,0 +1,83 @@
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-06-29 11:21:25.000000000 +0200
++++ buildroot/package/Config.in	2010-06-29 11:21:25.000000000 +0200
+@@ -83,6 +83,7 @@
+ source "package/games/gnuchess/Config.in"
+ source "package/games/lxdoom/Config.in"
+ source "package/games/magiccube4d/Config.in"
++source "package/opentyrian/Config.in"
+ source "package/games/prboom/Config.in"
+ source "package/games/quake-pak/Config.in"
+ source "package/games/rubix/Config.in"
+Index: buildroot/package/opentyrian/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/opentyrian/Config.in	2010-06-29 11:21:25.000000000 +0200
+@@ -0,0 +1,11 @@
++config BR2_PACKAGE_OPENTYRIAN
++	bool "OpenTyrian"
++	select BR2_PACKAGE_SDL
++	select BR2_PACKAGE_SDL_NET
++	help
++	  OpenTyrian is a port of the DOS shoot-em-up Tyrian. Jason Emery
++	  generously gave the OpenTyrian developers a copy of the Tyrian 2.1
++	  source code, which has since been ported from Turbo Pascal to C.
++	  The port uses SDL, making it easily cross-platform.
++
++	  http://code.google.com/p/opentyrian/
+Index: buildroot/package/opentyrian/opentyrian.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/opentyrian/opentyrian.mk	2010-07-04 18:03:01.000000000 +0200
+@@ -0,0 +1,50 @@
++#############################################################
++#
++# OpenTyrian
++#
++#############################################################
++
++OPENTYRIAN_TRUNK:=https://opentyrian.googlecode.com/hg/
++# Opentyrian sources should be checked out from it's main repository (they
++# dont't provide stable versions), but this would require mercurial to be
++# intalled on host system. So I use a custom made tar.bz2
++OPENTYRIAN_SITE:=ftp://ftp2.armadeus.com/armadeusw/download/
++OPENTYRIAN_VERSION:=2a8a946b62bd
++OPENTYRIAN_NAME:=opentyrian-hg-r$(OPENTYRIAN_VERSION)
++OPENTYRIAN_DIR:=$(BUILD_DIR)/$(OPENTYRIAN_NAME)
++OPENTYRIAN_SOURCE:=$(OPENTYRIAN_NAME).tar.bz2
++OPENTYRIAN_CAT=$(BZCAT)
++OPENTYRIAN_DATA:=tyrian21.zip
++OPENTYRIAN_DATA_SITE:=http://camanis.net/tyrian
++
++define OPENTYRIAN_DOWNLOAD_DATA
++	$(call DOWNLOAD,$(OPENTYRIAN_DATA_SITE),$(OPENTYRIAN_DATA))
++	unzip $(DL_DIR)/$(OPENTYRIAN_DATA) -d $(OPENTYRIAN_DIR)
++endef
++
++OPENTYRIAN_POST_EXTRACT_HOOKS += OPENTYRIAN_DOWNLOAD_DATA
++
++define OPENTYRIAN_BUILD_CMDS
++        $(MAKE) PLATFORM=UNIX \
++		CC=$(TARGET_CC) \
++		STRIP="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" \
++		SDL_CONFIG=$(STAGING_DIR)/usr/bin/sdl-config \
++		-C $(OPENTYRIAN_DIR) \
++		release
++endef
++
++define OPENTYRIAN_INSTALL_TARGET_CMDS
++	mkdir -p $(TARGET_DIR)/usr/games
++	cp $(@D)/opentyrian $(TARGET_DIR)/usr/games/
++	mkdir -p $(TARGET_DIR)/usr/share/opentyrian/data/
++	cp $(@D)/tyrian21/* $(TARGET_DIR)/usr/share/opentyrian/data/
++	rm -f $(TARGET_DIR)/usr/share/opentyrian/data/*.doc
++	rm -f $(TARGET_DIR)/usr/share/opentyrian/data/*.exe
++endef
++
++define OPENTYRIAN_UNINSTALL_TARGET_CMDS
++	rm -rf $(TARGET_DIR)/usr/share/opentyrian
++	rm -f $(TARGET_DIR)/usr/games/opentyrian
++endef
++
++$(eval $(call GENTARGETS,package,opentyrian))
