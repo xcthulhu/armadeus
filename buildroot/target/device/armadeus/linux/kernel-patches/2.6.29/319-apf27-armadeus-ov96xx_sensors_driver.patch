@@ -6,8 +6,8 @@ Signed-off-by: Julien boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-19 17:05:55.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-19 17:48:31.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-01 16:25:15.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-05 18:34:51.000000000 +0200
 @@ -298,6 +298,13 @@
  	  OV7670 VGA camera.  It currently only works with the M88ALP01
  	  controller.
@@ -24,8 +24,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on I2C && VIDEO_V4L2
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-19 17:05:55.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-19 17:48:31.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-01 16:25:15.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-05 18:34:51.000000000 +0200
 @@ -106,6 +106,7 @@
  
  obj-$(CONFIG_VIDEO_CAFE_CCIC) += cafe_ccic.o
@@ -37,8 +37,8 @@ Index: linux-2.6.29.6/drivers/media/video/Makefile
 Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-05-19 17:05:55.000000000 +0200
-@@ -0,0 +1,1785 @@
++++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-07-05 18:20:21.000000000 +0200
+@@ -0,0 +1,1676 @@
 +/*
 + * drivers/media/video/ov96xx.c
 + *
@@ -51,7 +51,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 + *
 + * Copyright (C) 2004 MontaVista Software, Inc.
 + * Copyright (C) 2004 Texas Instruments.
-+ * Copyright (C) 2009 Armadeus Systems
++ * Copyright (C) 2009-2010 Armadeus Systems
 + *
 + * This file is licensed under the terms of the GNU General Public License
 + * version 2. This program is licensed "as is" without any warranty of any
@@ -64,7 +64,10 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +#include <linux/proc_fs.h>
 +#include <media/soc_camera.h>
 +
++#define DEBUG
 +// #include "ov9640.h"
++/* to put in include/media/v4l2-chip-ident.h : */
++#define V4L2_IDENT_OV9653 253
 +
 +#define DRIVER_NAME  "ov96xx"
 +/* ov96xx i2c address 0x30
@@ -72,7 +75,9 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 + * and call i2c_register_board_info() */
 +#define OV96XX_I2C_ADDR		0x30	/* = 0x60 with read/write bit */
 +
-+/* define register offsets for the OV9640 sensor chip */
++/*
++ * register offsets
++ */
 +#define OV96XX_GAIN		0x00
 +#define OV96XX_BLUE		0x01
 +#define OV96XX_RED		0x02
@@ -90,7 +95,17 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +#define OV96XX_COM6		0x0F
 +#define OV96XX_AECH		0x10
 +#define OV96XX_CLKRC		0x11
-+#define OV96XX_COM7		0x12
++#define REG_COM7	0x12	/* Control 7 */
++#define   COM7_RESET	  0x80	  /* Register reset */
++#define   COM7_FMT_MASK	  0x78
++#define   COM7_FMT_VGA	  0x40
++#define	  COM7_FMT_CIF	  0x20	  /* CIF format */
++#define   COM7_FMT_QVGA	  0x10	  /* QVGA format */
++#define   COM7_FMT_QCIF	  0x08	  /* QCIF format */
++#define	  COM7_RGB	  0x04	  /* RGB */
++#define	  COM7_YUV	  0x00	  /* YUV */
++#define	  COM7_BAYER	  0x01	  /* Bayer format */
++#define	  COM7_PBAYER	  0x05	  /* "Processed bayer" */
 +#define OV96XX_COM8		0x13
 +#define OV96XX_COM9		0x14
 +#define OV96XX_COM10		0x15
@@ -204,8 +219,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	unsigned char val;
 +};
 +
-+enum image_size { QQCIF, QQVGA, QCIF, QVGA, CIF, VGA, SXGA };
-+enum pixel_format { YUV, RGB565, RGB555 };
++enum image_size { QQCIF = 0, QQVGA, QCIF, QVGA, CIF, VGA, SXGA };
++enum pixel_format { YUV = 0, RGB565, RGB555 };
 +
 +#define NUM_IMAGE_SIZES 7
 +#define NUM_PIXEL_FORMATS 3
@@ -235,6 +250,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	{  352, 288 },	/* CIF */
 +	{  640, 480 },	/* VGA */
 +	{ 1280, 960 },	/* SXGA */
++	{    0,   0 },  /* END */
 +};
 +
 +
@@ -242,6 +258,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +struct ov96xx_sensor {
 +	struct i2c_client *i2c_client;
 +	struct soc_camera_device icd;
++	int model;
 +	int ver;				/*ov96xx chip version*/
 +
 +	const struct ov96xx_platform_data *pdata;
@@ -268,6 +285,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		 */
 +		.name	= "RGB565, le",
 +		.fourcc	= V4L2_PIX_FMT_RGB565,
++		.depth = 16,
 +	},
 +	{
 +		/* Note:  V4L2 defines RGB565X as:
@@ -282,14 +300,17 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		 */
 +		.name	= "RGB565, be",
 +		.fourcc	= V4L2_PIX_FMT_RGB565X,
++		.depth = 16,
 +	},
 +	{
 +		.name	= "YUYV (YUV 4:2:2), packed",
 +		.fourcc	= V4L2_PIX_FMT_YUYV,
++		.depth = 16,
 +	},
 +	{
 +		.name	= "UYVY, packed",
 +		.fourcc	= V4L2_PIX_FMT_UYVY,
++		.depth = 16,
 +	},
 +	{
 +		/* Note:  V4L2 defines RGB555 as:
@@ -304,6 +325,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		 */
 +		.name	= "RGB555, le",
 +		.fourcc	= V4L2_PIX_FMT_RGB555,
++		.depth = 16,
 +	},
 +	{
 +		/* Note:  V4L2 defines RGB555X as:
@@ -318,6 +340,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		 */
 +		.name	= "RGB555, be",
 +		.fourcc	= V4L2_PIX_FMT_RGB555X,
++		.depth = 16,
 +	},
 +};
 +
@@ -751,8 +774,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 + * Write a value to a register in an OV96xx sensor device.
 + * Returns zero if successful, or non-zero otherwise.
 + */
-+static int
-+ov96xx_write_reg(struct i2c_client *client, u8 reg, u8 val)
++static int ov96xx_write(struct i2c_client *client, u8 reg, u8 val)
 +{
 +	int err;
 +	struct i2c_msg msg[1];
@@ -792,7 +814,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	}
 +
 +	/* write the new value to the register */
-+	rc = ov96xx_write_reg(client, reg, newval);
++	rc = ov96xx_write(client, reg, newval);
 +	if (rc)
 +		return rc;
 +
@@ -831,7 +853,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	while (!((next->reg == OV96XX_REG_TERM)
 +		&& (next->val == OV96XX_VAL_TERM))) {
-+		err = ov96xx_write_reg(client, next->reg, next->val);
++		err = ov96xx_write(client, next->reg, next->val);
 +		udelay(100);
 +		if (err)
 +			return err;
@@ -1016,9 +1038,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 + * The actual frame period is returned in fper.
 + */
 +static int ov96xx_configure(struct soc_camera_device *icd)
-+// struct v4l2_int_device *s)
 +{
-+// 	struct ov96xx_sensor *sensor = s->priv;
 +	struct ov96xx_sensor *sensor = container_of(icd, struct ov96xx_sensor, icd);
 +	struct v4l2_pix_format *pix = &sensor->pix;
 +	struct v4l2_fract *fper = &sensor->timeperframe;
@@ -1046,7 +1066,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	}
 +
 +	xclk = ov96xxsensor_calc_xclk(client);
-+	printk("%s xclk: %d\n", __func__, xclk);
++	printk("%s xclk: %lu\n", __func__, xclk);
 +	return 0;
 +
 +	isize = ov96xx_find_size(pix->width, pix->height);
@@ -1063,7 +1083,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	/* configure frame rate */
 +	clkrc = ov96xx_clkrc(isize, xclk, fper);
-+	err = ov96xx_write_reg(client, OV96XX_CLKRC, clkrc);
++	err = ov96xx_write(client, OV96XX_CLKRC, clkrc);
 +	if (err)
 +		return err;
 +
@@ -1113,49 +1133,6 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	return ver;
 +}
 +
-+static int ioctl_g_ext_clk(struct v4l2_int_device *s, u32 *xclk)
-+{
-+	struct ov96xx_sensor *sensor = s->priv;
-+	struct i2c_client *client = sensor->i2c_client;
-+	unsigned long tgt_xclk;
-+
-+	tgt_xclk = ov96xxsensor_calc_xclk(client);
-+
-+	*xclk = tgt_xclk;
-+
-+	return 0;
-+}
-+
-+static int ioctl_s_ext_clk(struct v4l2_int_device *s, u32 xclk)
-+{
-+	if (xclk > XCLK_MAX || xclk < XCLK_MIN)
-+		return -EINVAL;
-+
-+	return 0;
-+}
-+
-+/*
-+ * following are sensor interface functions implemented by
-+ * OV9640 sensor driver.
-+ */
-+/*static int ioctl_queryctrl(struct v4l2_int_device *s,
-+				struct v4l2_queryctrl *qc)
-+{
-+	int i;
-+
-+	i = find_vctrl(qc->id);
-+	if (i == -EINVAL) {
-+		qc->flags = V4L2_CTRL_FLAG_DISABLED;
-+		return 0;
-+	}
-+	if (i < 0)
-+		return -EINVAL;
-+
-+	*qc = video_control[i].qc;
-+	return 0;
-+}*/
-+
-+// static int ioctl_g_ctrl(struct v4l2_int_device *s,
 +static int ov96xx_get_control(struct soc_camera_device *icd,
 +			     struct v4l2_control *vctrl)
 +{
@@ -1180,17 +1157,16 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		return val;
 +}
 +
-+// static int ioctl_s_ctrl(struct v4l2_int_device *s,
 +static int ov96xx_set_control(struct soc_camera_device *icd,
-+			     struct v4l2_control *vc)
++				struct v4l2_control *ctrl)
 +{
 +	struct ov96xx_sensor *sensor = container_of(icd, struct ov96xx_sensor, icd);
 +	struct i2c_client *client = sensor->i2c_client;
 +	struct vcontrol *lvc;
-+	int val = vc->value;
++	int val = ctrl->value;
 +	int i;
 +
-+	i = find_vctrl(vc->id);
++	i = find_vctrl(ctrl->id);
 +	if (i < 0)
 +		return -EINVAL;
 +
@@ -1208,77 +1184,55 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +}
 +
 +static int ov96xx_get_chip_id(struct soc_camera_device *icd,
-+			       struct v4l2_chip_ident_old *id)
++			       struct v4l2_dbg_chip_ident *id)
 +{
-+/*	struct mt9m001 *mt9m001 = container_of(icd, struct mt9m001, icd);
++	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
 +
-+	if (id->match_type != V4L2_CHIP_MATCH_I2C_ADDR)
++	if (id->match.type != V4L2_CHIP_MATCH_I2C_ADDR)
 +		return -EINVAL;
 +
-+	if (id->match_chip != mt9m001->client->addr)
-+		return -ENODEV;*/
++	if (id->match.addr != ov96xx->i2c_client->addr)
++		return -ENODEV;
 +
-+	id->ident	= 0x53; //mt9m001->model;
++	id->ident	= ov96xx->model;
 +	id->revision	= 0;
 +
 +	return 0;
 +}
 +
 +/*
-+ * Implement the VIDIOC_ENUM_FMT ioctl for the CAPTURE buffer type.
++ * Negotiates the image capture size and pixel format without actually making
++ * it take effect.
 + */
-+// static int ioctl_enum_fmt_cap(struct v4l2_int_device *s,
-+// 				   struct v4l2_fmtdesc *fmt)
-+// {
-+// 	int index = fmt->index;
-+// 	enum v4l2_buf_type type = fmt->type;
-+// 
-+// 	memset(fmt, 0, sizeof(*fmt));
-+// 	fmt->index = index;
-+// 	fmt->type = type;
-+// 
-+// 	switch (fmt->type) {
-+// 	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
-+// 		if (index >= NUM_CAPTURE_FORMATS)
-+// 			return -EINVAL;
-+// 	break;
-+// 	default:
-+// 		return -EINVAL;
-+// 	}
-+// 
-+// 	fmt->flags = ov96xx_formats[index].flags;
-+// 	strlcpy(fmt->description, ov96xx_formats[index].description,
-+// 					sizeof(fmt->description));
-+// 	fmt->pixelformat = ov96xx_formats[index].pixelformat;
-+// 
-+// 	return 0;
-+// }
-+
-+/*
-+ * Implement the VIDIOC_TRY_FMT ioctl for the CAPTURE buffer type.  This
-+ * ioctl is used to negotiate the image capture size and pixel format
-+ * without actually making it take effect.
-+ */
-+static int ov96xx_try_fmt_cap(struct soc_camera_device *icd, /*struct v4l2_int_device *s,*/
-+			     struct v4l2_format *f)
++static int ov96xx_try_fmt(struct soc_camera_device *icd, struct v4l2_format *fmt)
 +{
 +	enum image_size isize;
 +	int ifmt;
-+	struct v4l2_pix_format *pix = &f->fmt.pix;
++	struct v4l2_pix_format *pix;
++
++	if ((!fmt) || (fmt->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)) {
++		printk("Invalid format\n");
++		return -EINVAL;
++	}
++	pix = &(fmt->fmt.pix);
 +
 +	isize = ov96xx_find_size(pix->width, pix->height);
++
 +	pix->width = ov96xx_sizes[isize].width;
 +	pix->height = ov96xx_sizes[isize].height;
++
 +	for (ifmt = 0; ifmt < NUM_CAPTURE_FORMATS; ifmt++) {
 +		if (pix->pixelformat == ov96xx_formats[ifmt].fourcc)
 +			break;
 +	}
 +	if (ifmt == NUM_CAPTURE_FORMATS)
-+		ifmt = 0;
++		ifmt = 0; /* default to first format */
++
 +	pix->pixelformat = ov96xx_formats[ifmt].fourcc;
 +	pix->field = V4L2_FIELD_NONE;
-+	pix->bytesperline = pix->width*2;
-+	pix->sizeimage = pix->bytesperline*pix->height;
++	pix->bytesperline = pix->width * (ov96xx_formats[ifmt].depth <= 8 ? 1 : 2);
++	printk("%s bytesperline = %d\n", __func__, pix->bytesperline);
++	pix->sizeimage = pix->bytesperline * pix->height;
 +	pix->priv = 0;
 +	switch (pix->pixelformat) {
 +	case V4L2_PIX_FMT_YUYV:
@@ -1341,116 +1295,65 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		width_flag;
 +}
 +
-+static int ov96xx_set_fmt_cap(struct soc_camera_device *icd,/*struct v4l2_int_device *s,*/
-+				struct v4l2_format *f)
++static int ov96xx_set_fmt(struct soc_camera_device *icd,
++				__u32 pixfmt,
++				struct v4l2_rect *rect)
 +{
 +	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
-+	struct v4l2_pix_format *pix = &f->fmt.pix;
-+	int rval;
++//	struct v4l2_pix_format *pix = &fmt->fmt.pix;
++	int ret;
++	int i;
 +
-+	rval = ov96xx_try_fmt_cap(icd, f);
++	printk("%s %d 0x%08x\n", __func__, __LINE__, pixfmt);
++
++	for (i = 0; i < NUM_CAPTURE_FORMATS; i++) {
++		if (pixfmt == ov96xx_formats[i].fourcc) {
++			ov96xx->pix.pixelformat = ov96xx_formats[i].fourcc;
++			icd->current_fmt = &ov96xx_formats[i];
++			break;
++		}
++	}
++	if (i == NUM_CAPTURE_FORMATS)
++		return -EINVAL;
++
++	printk("%s %d 0x%08x\n", __func__, __LINE__, pixfmt);
++
++	ov96xx->pix.width = rect->width;
++	ov96xx->pix.height = rect->height;
++/*	rval = ov96xx_try_fmt(icd, fmt);
 +	if (rval)
-+		return rval;
++		return rval; */
 +
-+	rval = ov96xx_configure(icd);
++	ret = ov96xx_configure(icd);
 +
-+	if (!rval)
-+		ov96xx->pix = *pix;
++/*	if (!ret)
++		ov96xx->pix = *pix; */
 +
-+	return rval;
++	return ret;
 +}
 +
-+static int ioctl_g_fmt_cap(struct v4l2_int_device *s,
-+				struct v4l2_format *f)
++static void ov96xx_reset(struct i2c_client *client)
 +{
-+	struct ov96xx_sensor *sensor = s->priv;
-+
-+	f->fmt.pix = sensor->pix;
-+
-+	return 0;
++	ov96xx_write(client, REG_COM7, COM7_RESET);
++	msleep(1);
 +}
-+
-+// static int ioctl_g_parm(struct v4l2_int_device *s,
-+// 			     struct v4l2_streamparm *a)
-+// {
-+// 	struct ov96xx_sensor *sensor = s->priv;
-+// 	struct v4l2_captureparm *cparm = &a->parm.capture;
-+// 
-+// 	if (a->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
-+// 		return -EINVAL;
-+// 
-+// 	memset(a, 0, sizeof(*a));
-+// 	a->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-+// 
-+// 	cparm->capability = V4L2_CAP_TIMEPERFRAME;
-+// 	cparm->timeperframe = sensor->timeperframe;
-+// 
-+// 	return 0;
-+// }
-+// 
-+// static int ioctl_s_parm(struct v4l2_int_device *s,
-+// 			     struct v4l2_streamparm *a)
-+// {
-+// 	struct ov96xx_sensor *sensor = s->priv;
-+// 	struct v4l2_fract *timeperframe = &a->parm.capture.timeperframe;
-+// 	struct v4l2_fract timeperframe_old;
-+// 	int rval;
-+// 
-+// 	timeperframe_old = sensor->timeperframe;
-+// 	sensor->timeperframe = *timeperframe;
-+// 
-+// 	rval = ov96xx_configure(s);
-+// 
-+// 	if (rval)
-+// 		sensor->timeperframe = timeperframe_old;
-+// 	else
-+// 		*timeperframe = sensor->timeperframe;
-+// 
-+// 	return rval;
-+// }
-+// 
-+// static int ioctl_g_ifparm(struct v4l2_int_device *s, struct v4l2_ifparm *p)
-+// {
-+// 	struct ov96xx_sensor *sensor = s->priv;
-+// 
-+// 	return sensor->pdata->ifparm(p);
-+// }
-+// 
-+// static int ioctl_s_power(struct v4l2_int_device *s, int on)
-+// {
-+// 	struct ov96xx_sensor *sensor = s->priv;
-+// 
-+// 	return sensor->pdata->power_set(on);
-+// }
-+
 +
 +static int ov96xx_init(struct soc_camera_device *icd)
 +{
-+	printk("%s\n", __func__);
-+	return ov96xx_configure(icd);
-+}
++	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
++	struct soc_camera_link *icl = ov96xx->i2c_client->dev.platform_data;
++	int ret;
 +
-+static int ioctl_dev_exit(struct v4l2_int_device *s)
-+{
-+	return 0;
-+}
-+
-+static int ioctl_dev_init(struct v4l2_int_device *s)
-+{
-+	struct ov96xx_sensor *sensor = s->priv;
-+	struct i2c_client *c = sensor->i2c_client;
-+	int err;
-+
-+	err = ov96xx_detect(c);
-+	if (err < 0) {
-+		dev_err(&c->dev, "Unable to detect " DRIVER_NAME " sensor\n");
-+		return err;
++	if (icl->power) {
++		ret = icl->power(&ov96xx->i2c_client->dev, 1);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to power-on the camera.\n");
++			return ret;
++		}
 +	}
 +
-+	sensor->ver = err;
-+	pr_info(DRIVER_NAME " chip version 0x%02x detected\n", sensor->ver);
-+
-+	return 0;
++	return 0; /*ov96xx_configure(icd);*/
 +}
 +
 +#ifdef CONFIG_VIDEO_ADV_DEBUG
@@ -1488,66 +1391,17 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	if (reg->match_chip != ov96xx->i2c_client->addr)
 +		return -ENODEV;
 +
-+	ret = ov96xx_write_reg(ov96xx->i2c_client, (u8)reg->reg, (u8)reg->val);
++	ret = ov96xx_write(ov96xx->i2c_client, (u8)reg->reg, (u8)reg->val);
 +	if (ret)
 +		return ret;
 +
 +	return 0;
 +}
-+#endif
-+// static struct v4l2_int_ioctl_desc ov96xx_ioctl_desc[] = {
-+// 	{ vidioc_int_dev_init_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_dev_init },
-+// 	{ vidioc_int_dev_exit_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_dev_exit },
-+// 	{ vidioc_int_s_power_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_s_power },
-+// /*	{ vidioc_int_g_ext_clk_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_g_ext_clk },*/
-+// 	{ vidioc_int_g_ifparm_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_g_ifparm },
-+// /*	{ vidioc_int_s_ext_clk_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_s_ext_clk },*/
-+// 	{ vidioc_int_init_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_init },
-+// 	{ vidioc_int_enum_fmt_cap_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_enum_fmt_cap },
-+// 	{ vidioc_int_try_fmt_cap_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_try_fmt_cap },
-+// 	{ vidioc_int_g_fmt_cap_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_g_fmt_cap },
-+// 	{ vidioc_int_s_fmt_cap_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_s_fmt_cap },
-+// 	{ vidioc_int_g_parm_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_g_parm },
-+// 	{ vidioc_int_s_parm_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_s_parm },
-+// 	{ vidioc_int_queryctrl_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_queryctrl },
-+// 	{ vidioc_int_g_ctrl_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_g_ctrl },
-+// 	{ vidioc_int_s_ctrl_num,
-+// 	  (v4l2_int_ioctl_func *)ioctl_s_ctrl },
-+// };
-+// 
-+// static struct v4l2_int_slave ov96xx_slave = {
-+// 	.ioctls		= ov96xx_ioctl_desc,
-+// 	.num_ioctls	= ARRAY_SIZE(ov96xx_ioctl_desc),
-+// };
-+// 
-+// static struct v4l2_int_device ov96xx_int_device = {
-+// 	.module	= THIS_MODULE,
-+// 	.name	= DRIVER_NAME,
-+// 	.priv	= &ov96xx,
-+// 	.type	= v4l2_int_type_slave,
-+// 	.u	= {
-+// 		.slave = &ov96xx_slave,
-+// 	},
-+// };
-+
++#endif /* CONFIG_VIDEO_ADV_DEBUG */
 +
 +static u8 current_reg_addr;
 +
++#ifdef DEBUG
 +static int ov96xx_proc_read_register( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
 +{
 +	int len;
@@ -1601,12 +1455,9 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		return -EFAULT;
 +	}
 +
-+	ov96xx_read_reg(i2c_client, current_reg_addr, &reg_val);
-+	printk("Read 0x%02x @ 0x%02x\n", reg_val, current_reg_addr);
-+
 +	reg_val = (u8)(simple_strtol(given_param, 0, 16));
-+	printk("Writing+ 0x%02x @ 0x%02x\n", reg_val, current_reg_addr);
-+// 	ret = ov96xx_write_reg(i2c_client, current_reg_addr, reg_val);
++	printk("Writing 0x%02x @ 0x%02x\n", reg_val, current_reg_addr);
++/* 	ret = ov96xx_write(i2c_client, current_reg_addr, reg_val); */
 +	ret = i2c_smbus_write_byte_data(i2c_client, current_reg_addr, reg_val);
 +	udelay(100);
 +	if (ret) {
@@ -1615,20 +1466,33 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	return len;
 +}
++#endif /* DEBUG */
++
 +
 +/* Interface active, can use i2c. If it fails, it can indeed mean, that
 + * this wasn't our capture interface, so, we wait for the right one */
 +static int ov96xx_video_probe(struct soc_camera_device *icd)
 +{
 +	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
++	struct soc_camera_link *icl = ov96xx->i2c_client->dev.platform_data;
++#ifdef DEBUG
 +	struct proc_dir_entry *proc_read, *proc_write;
++#endif
 +	struct i2c_client *client = ov96xx->i2c_client;
 +	int version, ret;
 +
 +	/* Make the default capture format QCIF RGB565 */
-+	ov96xx->pix.width = ov96xx_sizes[QCIF].width;
++/*	ov96xx->pix.width = ov96xx_sizes[QCIF].width;
 +	ov96xx->pix.height = ov96xx_sizes[QCIF].height;
-+	ov96xx->pix.pixelformat = V4L2_PIX_FMT_RGB565;
++	ov96xx->pix.pixelformat = V4L2_PIX_FMT_RGB565; */
++
++	if (icl->reset) {
++		ret = icl->reset(&ov96xx->i2c_client->dev);
++	} else {
++		dev_info(&client->dev, "No hardware reset available,"
++					" using soft one\n");
++		ov96xx_reset(client); /* soft reset */
++	}
 +
 +	version = ov96xx_detect(client);
 +	if (version < 0) {
@@ -1638,6 +1502,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	dev_info(&icd->dev, "Detected an ov96%02x sensor\n", version);
 +// 	switch (version) { ??
++	ov96xx->model = V4L2_IDENT_OV9653;
 +	icd->formats = ov96xx_formats;
 +	icd->num_formats = ARRAY_SIZE(ov96xx_formats);
 +
@@ -1646,6 +1511,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	if (ret)
 +		goto err;
 +
++#ifdef DEBUG
 +	/* create proc files */
 +	proc_read = create_proc_entry("driver/ovread", S_IWUSR | S_IRGRP | S_IROTH, NULL);
 +	proc_write = create_proc_entry("driver/ovwrite", S_IWUSR | S_IRGRP | S_IROTH, NULL);
@@ -1658,6 +1524,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +		proc_write->write_proc = ov96xx_proc_write_register;
 +		proc_write->data = client;
 +	}
++#endif
 +
 +	/* Now that we know the model, we can start video */
 +	ret = soc_camera_video_start(icd);
@@ -1676,19 +1543,62 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	dev_dbg(&icd->dev, "Video %x removed: %p, %p\n", ov96xx->i2c_client->addr,
 +		ov96xx->icd.dev.parent, ov96xx->icd.vdev);
-+	soc_camera_video_stop(&ov96xx->icd);
++	soc_camera_video_stop(icd);
++}
++
++static int ov96xx_suspend(struct soc_camera_device *icd, pm_message_t state)
++{
++	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
++	struct soc_camera_link *icl = ov96xx->i2c_client->dev.platform_data;
++	int ret;
++
++	printk("--- %s %d\n", __func__, state.event);
++
++	/* supposing camera link power() is a powerdown: */
++	if (icl->power) {
++		ret = icl->power(&ov96xx->i2c_client->dev, 0);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to powerdown the camera.\n");
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static int ov96xx_resume(struct soc_camera_device *icd)
++{
++	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
++	struct soc_camera_link *icl = ov96xx->i2c_client->dev.platform_data;
++	int ret;
++
++	printk("--- %s\n", __func__);
++
++	if (icl->power) {
++		ret = icl->power(&ov96xx->i2c_client->dev, 1);
++		if (ret < 0) {
++			dev_err(icd->vdev->parent,
++				"Platform failed to resume the camera.\n");
++			return ret;
++		}
++	}
++
++	return 0;
 +}
 +
 +static struct soc_camera_ops ov96xx_ops = {
 +	.owner			= THIS_MODULE,
 +	.probe			= ov96xx_video_probe,
 +	.remove			= ov96xx_video_remove,
++	.suspend		= ov96xx_suspend,
++	.resume			= ov96xx_resume,
 +	.init			= ov96xx_init,
 +	.release		= ov96xx_release,
 +	.start_capture		= ov96xx_start_capture,
 +	.stop_capture		= ov96xx_stop_capture,
-+	.set_fmt		= ov96xx_set_fmt_cap,
-+	.try_fmt		= ov96xx_try_fmt_cap,
++	.set_fmt		= ov96xx_set_fmt,
++	.try_fmt		= ov96xx_try_fmt,
 +	.set_bus_param		= ov96xx_set_bus_param,
 +	.query_bus_param	= ov96xx_query_bus_param,
 +	.controls		= ov96xx_controls,
@@ -1702,16 +1612,10 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +#endif
 +};
 +
-+// static struct ov96xx_sensor ov96xx = {
-+// 	.timeperframe = {
-+// 		.numerator = 1,
-+// 		.denominator = 15,
-+// 	},
-+// };
-+
-+static int __init
-+ov96xx_probe(struct i2c_client *client, const struct i2c_device_id *did)
++static int __init ov96xx_probe(struct i2c_client *client,
++				const struct i2c_device_id *did)
 +{
++
 +	struct ov96xx_sensor *ov96xx;
 +	struct soc_camera_device *icd;
 +	struct soc_camera_link *icl = client->dev.platform_data;
@@ -1719,20 +1623,11 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	if (!icl) {
 +		dev_err(&client->dev, DRIVER_NAME " driver needs platform data\n");
-+// 		return -EINVAL;
++		return -EINVAL;
 +	}
-+
-+	printk("%s\n", __func__);
 +
 +	if (i2c_get_clientdata(client))
 +		return -EBUSY;
-+
-+// 	sensor->pdata = client->dev.platform_data;
-+// 
-+// 	if (!sensor->pdata || !sensor->pdata->default_regs) {
-+// 		dev_err(&client->dev, "no platform data?\n");
-+// // 		return -ENODEV;
-+// 	}
 +
 +	ov96xx = kzalloc(sizeof(struct ov96xx_sensor), GFP_KERNEL);
 +	if (!ov96xx)
@@ -1755,7 +1650,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +	icd->height_min	= 72;
 +	icd->height_max	= 1024;
 +	icd->y_skip_top	= 1;
-+// 	icd->iface	= icl->bus_id;
++/*	icd->iface	= icl->bus_id; XXX */
 +
 +	ret = soc_camera_device_register(icd);
 +	if (ret)
@@ -1763,28 +1658,23 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	return 0;
 +
-+/*	err = v4l2_int_device_register(sensor->v4l2_int_device);
-+	if (err)
-+		i2c_set_clientdata(client, NULL);*/
-+
 +err:
++	i2c_set_clientdata(client, NULL);
 +	kfree(ov96xx);
 +	return ret;
 +}
 +
-+static int __exit
-+ov96xx_remove(struct i2c_client *client)
++static int __exit ov96xx_remove(struct i2c_client *client)
 +{
 + 	struct ov96xx_sensor *ov96xx = i2c_get_clientdata(client);
 +
 +	if (!client->adapter)
 +		return -ENODEV;	/* our client isn't attached */
-+
++#ifdef DEBUG
 +	remove_proc_entry("driver/ovread", NULL);
 +	remove_proc_entry("driver/ovwrite", NULL);
-+
++#endif
 +	soc_camera_device_unregister(&ov96xx->icd);
-+// 	v4l2_int_device_unregister(sensor->v4l2_int_device);
 +	i2c_set_clientdata(client, NULL);
 +	kfree(ov96xx);
 +
@@ -1810,6 +1700,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +static int __init ov96xx_mod_init(void)
 +{
++	printk(KERN_NOTICE "OmniVision ov96xx sensor driver, at your service\n");
 +	return i2c_add_driver(&ov96xx_i2c_driver);
 +}
 +
@@ -1821,6 +1712,6 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +module_init(ov96xx_mod_init);
 +module_exit(ov96xx_mod_exit);
 +
-+MODULE_DESCRIPTION("OV96xx camera sensor driver");
++MODULE_DESCRIPTION("SoC camera driver for OV96xx");
 +MODULE_AUTHOR("Julien Boibessot <julien.boibessot@armadeus.com>");
 +MODULE_LICENSE("GPL");
