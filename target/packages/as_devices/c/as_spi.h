@@ -3,18 +3,18 @@
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * Copyright (C) 2009 Fabien Marteau <fabien.marteau@armadeus.com> 
+ * Copyright (C) 2009 Fabien Marteau <fabien.marteau@armadeus.com>
  *
  */
 
@@ -36,7 +36,7 @@ extern "C" {
 
 /** @brief Open a SPI bus.
  *
- * @param aSpidev_name path name  
+ * @param aSpidev_name path name
  *
  * @return the file descriptor of the opened device, -1 on error
  */
@@ -76,7 +76,7 @@ int as_spi_set_mode(int aFd, uint8_t aMode);
  * @param aFd spidev file handler
  *
  * @return mode if positive value, negative value on error
- * TODO: test it 
+ * TODO: test it
  */
 int as_spi_get_mode(int aFd);
 
@@ -85,7 +85,7 @@ int as_spi_get_mode(int aFd);
  * @param aFd spidev file handler
  *
  * @return lsb first if positive, msb first if 0, negative value on error
- * 
+ *
  */
 int as_spi_get_lsb(int aFd);
 
@@ -135,10 +135,10 @@ int as_spi_set_bits_per_word(int aFd, uint8_t aBits);
  *
  * @return message read
  */
-uint32_t as_spi_msg(int aFd, 
-                    uint32_t aMsg, 
-                    size_t aLen,
-                    uint32_t aSpeed);
+unsigned long long as_spi_msg(int aFd,
+                              unsigned long long aMsg,
+                              size_t aLen,
+                              uint32_t aSpeed);
 
 /** @brief Close a SPI bus.
  *
