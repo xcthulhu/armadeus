@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-04-26 13:53:19.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-06-29 16:12:27.000000000 +0200
 @@ -0,0 +1,789 @@
 + /*
 + * apf27.c
@@ -803,8 +803,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-04-26 15:06:48.000000000 +0200
-@@ -0,0 +1,1019 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-07-01 16:25:06.000000000 +0200
+@@ -0,0 +1,1049 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -865,15 +865,12 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#include "../../../drivers/net/can/mcp251x.h"
 +#include "../../../drivers/armadeus/pwm/pwm.h"
 +#include <media/ad9889.h>
-+#if defined(CONFIG_SND) || defined (CONFIG_SND_MODULE)
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
 +#include <mach/imx_ssi.h>
 +#include <mach/imx-alsa.h>
-+#endif
-+#if defined(CONFIG_VIDEO_MX27_MODULE) || defined(CONFIG_VIDEO_MX27)
 +#include <mach/imx_cam.h>
-+#endif
++#include <media/soc_camera.h>
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
 +#include "cpufreq_imx.h"
 +#endif
@@ -948,6 +945,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +};
 +
 +/* I2C1 devices: RTC & Optionnal Camera */
++# ifdef CONFIG_VIDEO_OV96xx
++static struct soc_camera_link ov96xx_iclink; /* declared later */
++#endif
 +static struct i2c_board_info apf27dev_i2c_devices_bus0[] = {
 +	[0] = {
 +		/* APF27Dev has an RTC */
@@ -962,7 +962,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +		.type = "ov96xx",
 +		.flags = 0,  /* FIXME */
 +		.addr = 0x30,
-+		.platform_data = NULL,
++		.platform_data = &ov96xx_iclink,
 +		.irq = 0
 +	},
 +# endif
@@ -1623,14 +1623,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +
 +/* APF27Dev can have an optionnal Camera module extension using i.MX27 CSI */
-+/* TO BE DONE */
 +#ifdef CONFIG_VIDEO_MX27
 +# ifdef CONFIG_VIDEO_OV96xx
-+#define OV9653_PWDN	(GPIO_PORTC | 30) /* SSI3_TX as POWERDOWN*/
++#define OV9653_PWRDN	(GPIO_PORTC | 30) /* SSI3_TX as POWERDOWN*/
 +#define OV9653_RESET	(GPIO_PORTC | 31) /* SSI3_CLK as RESET */
 +
 +static int apf27dev_ov9653_ctl_pins[] = {
-+	(OV9653_PWDN | GPIO_OUT | GPIO_GPIO),
++	(OV9653_PWRDN | GPIO_OUT | GPIO_GPIO),
 +	(OV9653_RESET | GPIO_OUT | GPIO_GPIO),
 +};
 +# endif
@@ -1653,28 +1652,26 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +static int apf27dev_camera_init(struct platform_device *pdev)
 +{
 +# ifdef CONFIG_VIDEO_OV96xx
-+	/* To be put in OV96xx driver init part: */
 +	int err;
 +
-+	gpio_set_value(OV9653_PWDN, 0);
++	/* Setup PWRDN/RESET pins default value */
++	gpio_set_value(OV9653_PWRDN, 0);
 +	gpio_set_value(OV9653_RESET, 0);
 +	err = mxc_gpio_setup_multiple_pins(apf27dev_ov9653_ctl_pins,
-+		ARRAY_SIZE(apf27dev_ov9653_ctl_pins), "OV9653");
-+	if (err) {
++			ARRAY_SIZE(apf27dev_ov9653_ctl_pins), "OV9653");
++	if (err)
 +		printk("Error %s", __func__);
-+	}
 +# endif
 +
 +	return mxc_gpio_setup_multiple_pins(apf27dev_csi_pins,
-+		ARRAY_SIZE(apf27dev_csi_pins), "CSI");
++				ARRAY_SIZE(apf27dev_csi_pins), "CSI");
 +}
 +
 +static int apf27dev_camera_exit(struct platform_device *pdev)
 +{
 +# ifdef CONFIG_VIDEO_OV96xx
-+	/* To be put in OV96xx driver specific exit */
 +	mxc_gpio_release_multiple_pins(apf27dev_ov9653_ctl_pins,
-+		ARRAY_SIZE(apf27dev_ov9653_ctl_pins));
++				ARRAY_SIZE(apf27dev_ov9653_ctl_pins));
 +# endif
 +
 +	mxc_gpio_release_multiple_pins(apf27dev_csi_pins, ARRAY_SIZE(apf27dev_csi_pins));
@@ -1687,8 +1684,41 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	.exit = apf27dev_camera_exit,
 +	.clk  = 26600000,
 +	.flags = MX27_CAMERA_HSYNC_HIGH | MX27_CAMERA_GATED_CLOCK |
-+		MX27_CAMERA_PACK_DIR_MSB,
++			MX27_CAMERA_SWAP16,
 +};
++
++# ifdef CONFIG_VIDEO_OV96xx
++static int ov96xx_power(struct device *dev, int state)
++{
++        printk(KERN_DEBUG "*** %s %d\n", __func__, state);
++
++        if (state) /* UP */
++                gpio_set_value(OV9653_PWRDN, 0);
++        else /* DOWN */
++                gpio_set_value(OV9653_PWRDN, 1);
++
++        return 0;
++}
++
++static int ov96xx_reset(struct device *dev)
++{
++        printk(KERN_DEBUG "*** %s\n", __func__);
++
++        gpio_set_value(OV9653_RESET, 1);
++        msleep(10);
++        gpio_set_value(OV9653_RESET, 0);
++        msleep(10);
++
++        return 0;
++}
++
++static struct soc_camera_link ov96xx_iclink = {
++        .bus_id = 0,
++        .power = ov96xx_power,
++        .reset = ov96xx_reset,
++};
++# endif
++
 +#endif /* CONFIG_VIDEO_MX27 */
 +
 +
@@ -1827,7 +1857,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-04-26 13:53:19.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-06-29 16:12:27.000000000 +0200
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2052,7 +2082,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-04-26 14:56:34.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-06-29 16:12:27.000000000 +0200
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
