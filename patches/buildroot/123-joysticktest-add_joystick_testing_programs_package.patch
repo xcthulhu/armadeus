@@ -1,0 +1,264 @@
+Adding jstest and jscal joystick testing programs
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+Index: buildroot/package/joysticktest/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/joysticktest/Config.in	2010-07-07 09:46:38.000000000 +0200
+@@ -0,0 +1,4 @@
++config BR2_PACKAGE_JOYSTICKTEST
++        bool "joysticktest"
++        help
++            jstest and jscal joystick testing programs.
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2010-07-07 09:42:49.000000000 +0200
++++ buildroot/package/Config.in	2010-07-07 09:57:48.000000000 +0200
+@@ -499,5 +499,6 @@
+ 
+ # various games packages
+ source "package/games/Config.in"
++source "package/joysticktest/Config.in"
+ 
+ endmenu
+Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch	2010-07-07 09:26:04.000000000 +0200
+@@ -0,0 +1,204 @@
++Index: joystick-1.2.15/Makefile
++===================================================================
++--- joystick-1.2.15.orig/Makefile	2010-07-07 09:16:58.000000000 +0200
+++++ joystick-1.2.15/Makefile	2010-07-07 09:23:33.000000000 +0200
++@@ -27,168 +27,28 @@
++ # Edit the options below to suit your needs
++ #
++ 
++-CC		= gcc
+++ifeq ($(ARMADEUS_BASE_DIR),)
+++	ARMADEUS_BASE_DIR=~/armadeus_trees/apf27_virgin/
+++endif
+++include $(ARMADEUS_BASE_DIR)/Makefile.in
++ 
++-CPPFLAGS	= -I.#						# for joystick.h
+++CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
++ 
++-CFLAGS		= -O2 -Wall -pipe -m486 -fomit-frame-pointer#	# i386
++-# CFLAGS	= -O2 -Wall -pipe -m68020 -ffixed-a2#		# m68k
++-# CFLAGS	= -O2 -Wall -pipe -fomit-frame-pointer -ffixed-8# Alpha
++-# CFLAGS	= -O2 -Wall -pipe#				# Generic
++-
++-MODFLAGS	= -D__KERNEL__ -DMODULE#			# Normal modules
++-#MODFLAGS	= -D__KERNEL__ -DMODULE -DMODVERSIONS\
++-#		  -include /usr/src/linux/include/linux/modversions.h # Versioned modules
++-
++-DRIVERS		= joy-analog.o joy-sidewinder.o joy-logitech.o\
++-		  joy-assassin.o joy-gravis.o joy-lightning.o\
++-		  joy-thrustmaster.o joy-creative.o joy-console.o\
++-		  joy-db9.o joy-turbografx.o joy-spaceorb.o\
++-		  joy-spaceball.o joy-magellan.o joy-warrior.o\
++-		  joy-pci.o#					# PC drivers
++-# DRIVERS	= joy-amiga.o#					# Amiga driver
+++CFLAGS=-Wall -g -O2 -lm
+++LDFLAGS=-L$(ARMADEUS_STAGING_DIR)/usr/lib/
+++INCLUDE=
+++LIB=
++ 
++-MODDIR		= /lib/modules/preferred/misc#			# RedHat location
++-# MODDIR	= /lib/modules/current/misc#			# For some others?
+++all: jscal jstest
++ 
++-PROGRAMS	= jstest jscal jsattach 
+++jscal: jscal.c
+++	${CC} ${CFLAGS} $< -o $@ ${LDFLAGS}
++ 
++-#
++-# Nothing should need to be changed below this line
++-#
++-
++-JOYPATH		:= $(shell pwd)
++-JOYDIR		:= $(shell basename "$(JOYPATH)")
++-JOYVER		:= $(shell expr "$(JOYDIR)" : "joystick-\(.*\)")
++-JOYOPRE		:= $(shell if [ -f .prerelease ]; then cat .prerelease; else echo 0; fi)
++-JOYPRE		:= $(shell expr $(JOYOPRE) + 1)
++-
++-compile: joystick.o $(DRIVERS) $(PROGRAMS)
++-
++-install: compile
++-	mkdir -p $(MODDIR)
++-	rm -f $(MODDIR)/joy*.o
++-	cp joy*.o $(MODDIR)
++-	/sbin/depmod -a
++-	install -m 644 joystick.h /usr/include/linux
++-	install -m 755 jscal /usr/local/bin
++-	install -m 755 jstest /usr/local/bin
++-	install -m 755 jsattach /usr/local/bin
++-	install -m 644 jscal.1 /usr/local/man/man1
++-	install -m 644 jstest.1 /usr/local/man/man1
++-	install -m 644 jsattach.1 /usr/local/man/man1
++-
++-joystick.o: joystick.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -DEXPORT_SYMTAB -c joystick.c -o joystick.o
++-
++-joy-analog.o: joy-analog.c joy-analog.h joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-analog.c -o joy-analog.o
++-
++-joy-sidewinder.o: joy-sidewinder.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-sidewinder.c -o joy-sidewinder.o
++-
++-joy-logitech.o: joy-logitech.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-logitech.c -o joy-logitech.o
++-
++-joy-gravis.o: joy-gravis.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-gravis.c -o joy-gravis.o
++-
++-joy-assassin.o: joy-assassin.c joy-analog.h joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-assassin.c -o joy-assassin.o
++-
++-joy-thrustmaster.o: joy-thrustmaster.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-thrustmaster.c -o joy-thrustmaster.o
++-
++-joy-creative.o: joy-creative.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-creative.c -o joy-creative.o
++-
++-joy-lightning.o: joy-lightning.c joy-analog.h joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-lightning.c -o joy-lightning.o
++-
++-joy-pci.o: joy-pci.c joy-analog.h joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-pci.c -o joy-pci.o
++-
++-joy-amiga.o: joy-amiga.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-amiga.c -o joy-amiga.o
++-
++-joy-console.o: joy-console.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-console.c -o joy-console.o
++-
++-joy-db9.o: joy-db9.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-db9.c -o joy-db9.o
++-
++-joy-turbografx.o: joy-turbografx.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-turbografx.c -o joy-turbografx.o
++-
++-joy-spaceorb.o: joy-spaceorb.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-spaceorb.c -o joy-spaceorb.o
++-
++-joy-spaceball.o: joy-spaceball.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-spaceball.c -o joy-spaceball.o
++-
++-joy-magellan.o: joy-magellan.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-magellan.c -o joy-magellan.o
++-
++-joy-warrior.o: joy-warrior.c joystick.h
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joy-warrior.c -o joy-warrior.o
++-
++-joydump: joydump.o
++-	
++-joydump.o: joydump.c
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c joydump.c -o joydump.o
++-
++-legacy.o: legacy.c
++-	$(CC) $(CFLAGS) $(CPPFLAGS) $(MODFLAGS) -c legacy.c -o legacy.o
++-
++-jscal: jscal.o
++-	$(CC) $(cflags) $(cppflags) -lm $^ -o $@
++-
++-jstest: jstest.o
++-	$(CC) $(cflags) $(cppflags) $^ -o $@
++-
++-devs:
++-	-$(RM) /dev/js0 /dev/js1 /dev/js2 /dev/js3
++-	mknod /dev/js0 c 15 0
++-	mknod /dev/js1 c 15 1
++-	mknod /dev/js2 c 15 2
++-	mknod /dev/js3 c 15 3
+++jstest: jstest.c
+++	${CC} ${CFLAGS} $< -o $@ ${LDFLAGS}
++ 
+++eventtest: eventtest.c
+++	${CC} ${CFLAGS} $< -o $@ ${LDFLAGS}
++ clean:
++-	-$(RM) *.o *.swp $(PROGRAMS) *.orig *.rej map
++-
++-dist: clean
++-	( \
++-	  rm -f *.diff ;\
++-	  cd .. ;\
++-	  mkdir -p arch ;\
++-	  rm -f arch/$(JOYDIR).tar.gz ;\
++-	  tar czf arch/$(JOYDIR).tar.gz $(JOYDIR) ;\
++-	)
++-
++-bumprel: clean
++-	echo $(JOYPRE) > .prerelease
++-
++-pre: compile bumprel dist
++-	( \
++-	  cd .. ;\
++-	  mv arch/$(JOYDIR).tar.gz arch/devel/joystick-pre-$(JOYVER)-$(JOYPRE).tar.gz ;\
++-	  scp arch/devel/joystick-pre-$(JOYVER)-$(JOYPRE).tar.gz atrey:joystick/devel ;\
++-	  scp arch/devel/joystick-pre-$(JOYVER)-$(JOYPRE).tar.gz suse-ftp:joystick/devel ;\
++-	)
++-
++-relclean: clean
++-	$(RM) .prerelease
++-
++-release: compile relclean dist
++-	( \
++-	  echo 0 > .prerelease ;\
++-	  cd .. ;\
++-	  scp arch/$(JOYDIR).tar.gz atrey:joystick ;\
++-	  scp arch/$(JOYDIR).tar.gz suse-ftp:joystick ;\
++-	  ssh atrey rm -f "joystick/devel/*" &\
++-	  ssh suse-ftp rm -f "joystick/devel/*" &\
++-	)
++-
++-jstest.o: jstest.c joystick.h
++-jscal.o: jscal.c joystick.h
++-jsattach.o: jsattach.c
+++	rm jscal
+++	rm jstest
++Index: joystick-1.2.15/jscal.c
++===================================================================
++--- joystick-1.2.15.orig/jscal.c	2010-07-07 09:24:59.000000000 +0200
+++++ joystick-1.2.15/jscal.c	2010-07-07 09:25:48.000000000 +0200
++@@ -30,6 +30,8 @@
++  * Vojtech Pavlik, Ucitelska 1576, Prague 8, 182 00 Czech Republic
++  */
++ 
+++#include <stdlib.h>
+++
++ #include <sys/ioctl.h>
++ #include <sys/time.h>
++ #include <fcntl.h>
+Index: buildroot/package/joysticktest/joysticktest.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/joysticktest/joysticktest.mk	2010-07-07 10:14:49.000000000 +0200
+@@ -0,0 +1,26 @@
++############################################################
++#
++# Joysticktest
++#
++############################################################
++JOYSTICKTEST_VERSION:=1.2.15
++JOYSTICKTEST_SOURCE:=joystick-$(JOYSTICKTEST_VERSION).tar.gz
++JOYSTICKTEST_SITE:=ftp://atrey.karlin.mff.cuni.cz/pub/linux/joystick/
++JOYSTICKTEST_INSTALL_STAGING=YES
++JOYSTICKTEST_DEPENDENCIES =
++
++define JOYSTICKTEST_BUILD_CMDS
++        $(MAKE) CC=$(TARGET_CC) LD=$(TARGET_LD) -C $(@D) all
++endef
++
++define JOYSTICKTEST_INSTALL_STAGING_CMDS
++        $(INSTALL) -D $(@D)/jstest $(STAGING_DIR)/usr/bin/jstest
++        $(INSTALL) -D $(@D)/jscal $(STAGING_DIR)/usr/bin/jscal
++endef
++
++define JOYSTICKTEST_INSTALL_TARGET_CMDS
++        cp -dpf $(@D)/jstest $(TARGET_DIR)/usr/bin/jstest
++        cp -dpf $(@D)/jscal $(TARGET_DIR)/usr/bin/jscal
++endef
++
++$(eval $(call GENTARGETS,package,joysticktest,target))
