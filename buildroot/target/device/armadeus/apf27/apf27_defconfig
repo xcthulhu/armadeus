@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Jun 24 16:14:29 2010
+# Wed Jul  7 17:06:28 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -728,6 +728,7 @@ BR2_PACKAGE_ZLIB=y
 # BR2_XML_SUPPORT is not set
 # BR2_JAVA_SUPPORT is not set
 # BR2_GAMES is not set
+# BR2_PACKAGE_JOYSTICKTEST is not set
 
 #
 # Target filesystem options
