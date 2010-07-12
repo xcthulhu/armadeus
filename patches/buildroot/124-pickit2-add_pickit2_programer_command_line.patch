@@ -1,7 +1,7 @@
 Index: buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch	2010-07-12 17:58:56.000000000 +0200
++++ buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch	2010-07-12 18:17:35.000000000 +0200
 @@ -0,0 +1,29 @@
 +Index: pk2cmdv1.20LinuxMacSource/Makefile
 +===================================================================
@@ -35,7 +35,7 @@ Index: buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-07-12 17:59:53.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-12 18:01:46.000000000 +0200
++++ buildroot/package/Config.in	2010-07-12 18:17:35.000000000 +0200
 @@ -268,6 +268,7 @@
  source "package/i2c-tools/Config.in"
  source "package/input-tools/Config.in"
@@ -47,18 +47,18 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/pickit2/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/Config.in	2010-07-12 18:04:11.000000000 +0200
++++ buildroot/package/pickit2/Config.in	2010-07-12 18:17:35.000000000 +0200
 @@ -0,0 +1,5 @@
 +config BR2_PACKAGE_PICKIT2
 +        bool "pickit2"
 +        select BR2_PACKAGE_LIBUSB
-+        hep
++        help
 +            Use microchip programmer adapt PICkit 2
 Index: buildroot/package/pickit2/pickit2.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/pickit2.mk	2010-07-12 18:13:15.000000000 +0200
-@@ -0,0 +1,51 @@
++++ buildroot/package/pickit2/pickit2.mk	2010-07-12 18:48:52.000000000 +0200
+@@ -0,0 +1,54 @@
 +#############################################################
 +#
 +# PICkit2
@@ -77,17 +77,20 @@ Index: buildroot/package/pickit2/pickit2.mk
 +$(PICKIT2_DIR)/.source: $(DL_DIR)/$(PICKIT2_SOURCE)
 +	$(ZCAT) $(DL_DIR)/$(PICKIT2_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 +	cd $(BUILD_DIR);patch -p0 < $(BASE_DIR)/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
++	mv $(BUILD_DIR)/$(PICKIT2_BINARY)v$(PICKIT2_VERSION)LinuxMacSource $(PICKIT2_DIR)
 +	touch $@
 +
 +$(PICKIT2_DIR)/.configured: $(PICKIT2_DIR)/.source
 +	touch $@
 +
 +$(PICKIT2_DIR)/$(PICKIT2_BINARY): $(PICKIT2_DIR)/.configured
-+	$(MAKE) CC=$(TARGET_CC) -C $(PICKIT2_DIR)
++	$(MAKE) -C $(PICKIT2_DIR) linux
 +
 +$(TARGET_DIR)/$(PICKIT2_TARGET_BINARY): $(PICKIT2_DIR)/$(PICKIT2_BINARY)
-+	install -D $(PICKIT2_DIR)/PK2DeviceFile.dat $(TARGET_DIR)/usr/share/pk2/
-+	install -D $(PICKIT2_DIR)/pk2cmd $(TARGET_DIR)/usr/bin/
++	install -D $(PICKIT2_DIR)/PK2DeviceFile.dat $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
++	install -D $(PICKIT2_DIR)/pk2cmd $(TARGET_DIR)/usr/bin/pk2cmd
++	chmod 755 $(TARGET_DIR)/usr/bin/pk2cmd
++	chmod 755 $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
 +	rm -Rf $(TARGET_DIR)/usr/man
 +
 +pickit2: uclibc libusb $(TARGET_DIR)/$(PICKIT2_TARGET_BINARY)
@@ -107,6 +110,6 @@ Index: buildroot/package/pickit2/pickit2.mk
 +#
 +############################################################
 +ifeq ($(BR2_PACKAGE_PICKIT2),y)
-+ARGETS+=pickit2
++TARGETS+=pickit2
 +endif
 +
