@@ -284,6 +284,6 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +#
 +############################################################
 +ifeq ($(BR2_PACKAGE_JOYSTICKTEST),y)
-+ARGETS+=joysticktest
++TARGETS+=joysticktest
 +endif
 +
