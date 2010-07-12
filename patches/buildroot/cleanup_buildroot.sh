@@ -45,3 +45,4 @@ rm -rf buildroot/package/fbtest/
 rm -rf buildroot/package/xenomai/
 rm -rf buildroot/package/cwiid/
 rm -rf buildroot/package/urg/
+rm -rf buildroot/package/joysticktest/
