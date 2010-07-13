@@ -4,8 +4,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-07-12 17:59:53.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-12 18:17:35.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-07-13 10:10:50.000000000 +0200
++++ buildroot/package/Config.in	2010-07-13 10:10:50.000000000 +0200
 @@ -268,6 +268,7 @@
  source "package/i2c-tools/Config.in"
  source "package/input-tools/Config.in"
@@ -17,7 +17,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/pickit2/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/Config.in	2010-07-12 18:17:35.000000000 +0200
++++ buildroot/package/pickit2/Config.in	2010-07-13 10:10:50.000000000 +0200
 @@ -0,0 +1,5 @@
 +config BR2_PACKAGE_PICKIT2
 +        bool "pickit2"
@@ -27,8 +27,8 @@ Index: buildroot/package/pickit2/Config.in
 Index: buildroot/package/pickit2/pickit2.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/pickit2.mk	2010-07-12 18:48:52.000000000 +0200
-@@ -0,0 +1,54 @@
++++ buildroot/package/pickit2/pickit2.mk	2010-07-13 11:01:08.000000000 +0200
+@@ -0,0 +1,49 @@
 +#############################################################
 +#
 +# PICkit2
@@ -37,8 +37,8 @@ Index: buildroot/package/pickit2/pickit2.mk
 +PICKIT2_VERSION:=1.20
 +PICKIT2_BINARY:=pk2cmd
 +PICKIT2_SOURCE:=$(PICKIT2_BINARY)v$(PICKIT2_VERSION)LinuxMacSource.tar.gz
-+PICKIT2_SITE =http://ww1.microchip.com/downloads/en/DeviceDoc/
-+PICKIT2_DIR:=$(BUILD_DIR)/pickit2-$(PICKIT2_VERSION)
++PICKIT2_SITE:=http://ww1.microchip.com/downloads/en/DeviceDoc/
++PICKIT2_DIR:=$(BUILD_DIR)/pickit2-$(PICKIT2_VERSION)/
 +PICKIT2_TARGET_BINARY:=usr/bin/pk2cmd
 +
 +$(DL_DIR)/$(PICKIT2_SOURCE):
@@ -46,7 +46,6 @@ Index: buildroot/package/pickit2/pickit2.mk
 +
 +$(PICKIT2_DIR)/.source: $(DL_DIR)/$(PICKIT2_SOURCE)
 +	$(ZCAT) $(DL_DIR)/$(PICKIT2_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-+	cd $(BUILD_DIR);patch -p0 < $(BASE_DIR)/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
 +	mv $(BUILD_DIR)/$(PICKIT2_BINARY)v$(PICKIT2_VERSION)LinuxMacSource $(PICKIT2_DIR)
 +	touch $@
 +
@@ -54,21 +53,17 @@ Index: buildroot/package/pickit2/pickit2.mk
 +	touch $@
 +
 +$(PICKIT2_DIR)/$(PICKIT2_BINARY): $(PICKIT2_DIR)/.configured
-+	$(MAKE) -C $(PICKIT2_DIR) linux
++	$(MAKE) -C $(PICKIT2_DIR) CC=$(TARGET_CXX) LIBUSB=$(STAGING_DIR)/usr/lib/ TARGET=linux
 +
 +$(TARGET_DIR)/$(PICKIT2_TARGET_BINARY): $(PICKIT2_DIR)/$(PICKIT2_BINARY)
-+	install -D $(PICKIT2_DIR)/PK2DeviceFile.dat $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
-+	install -D $(PICKIT2_DIR)/pk2cmd $(TARGET_DIR)/usr/bin/pk2cmd
-+	chmod 755 $(TARGET_DIR)/usr/bin/pk2cmd
-+	chmod 755 $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
-+	rm -Rf $(TARGET_DIR)/usr/man
++	$(INSTALL) -D $(PICKIT2_DIR)/PK2DeviceFile.dat $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
++	$(INSTALL) -D $(PICKIT2_DIR)/pk2cmd $(TARGET_DIR)/usr/bin/pk2cmd
 +
-+pickit2: uclibc libusb $(TARGET_DIR)/$(PICKIT2_TARGET_BINARY)
++pickit2: libusb $(TARGET_DIR)/$(PICKIT2_TARGET_BINARY)
 +
 +pickit2-source: $(DL_DIR)/$(PICKIT2_SOURCE)
 +
 +pickit2-clean:
-+	$(MAKE) prefix=$(TARGET_DIR)/usr -C $(PICKIT2_DIR) uninstall
 +	-$(MAKE) -C $(PICKIT2_DIR) clean
 +
 +pickit2-dirclean:
@@ -83,38 +78,3 @@ Index: buildroot/package/pickit2/pickit2.mk
 +TARGETS+=pickit2
 +endif
 +
-Index: buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch	2010-07-12 18:17:35.000000000 +0200
-@@ -0,0 +1,29 @@
-+Index: pk2cmdv1.20LinuxMacSource/Makefile
-+===================================================================
-+--- pk2cmdv1.20LinuxMacSource.orig/Makefile	2010-07-12 17:33:48.000000000 +0200
-++++ pk2cmdv1.20LinuxMacSource/Makefile	2010-07-12 17:33:56.000000000 +0200
-+@@ -12,9 +12,13 @@
-+ # or
-+ #    make mac
-+ #
-++ifeq ($(ARMADEUS_BASE_DIR),)
-++	ARMADEUS_BASE_DIR=../../../
-++endif
-++include $(ARMADEUS_BASE_DIR)/Makefile.in
-+ 
-+ APP=pk2cmd
-+-CC=g++
-++CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
-+ # Uncomment this for debugging with gdb
-+ #DBG=-ggdb -O0
-+ # Uncomment this for no debugging (default)
-+@@ -24,7 +28,8 @@
-+ 
-+ # Grab the version of libusb in /usr/local if possible:
-+ LIBUSB=/usr/local
-+-LDFLAGS=-L$(LIBUSB)/lib -lusb
-++LDFLAGS=-L$(ARMADEUS_STAGING_DIR)/usr/lib/ -lusb
-++#LDFLAGS=-L$(LIBUSB)/lib -lusb
-+ 
-+ # CHOOSE A TARGET BEFORE COMPILING
-+ #
-
