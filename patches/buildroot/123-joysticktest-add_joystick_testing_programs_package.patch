@@ -4,8 +4,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-07-13 11:16:25.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-13 11:24:19.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-07-13 15:27:37.000000000 +0200
++++ buildroot/package/Config.in	2010-07-13 15:36:09.000000000 +0200
 @@ -499,5 +499,6 @@
  
  # various games packages
@@ -16,7 +16,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/joysticktest/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/Config.in	2010-07-13 11:16:25.000000000 +0200
++++ buildroot/package/joysticktest/Config.in	2010-07-13 15:27:37.000000000 +0200
 @@ -0,0 +1,4 @@
 +config BR2_PACKAGE_JOYSTICKTEST
 +        bool "joysticktest"
@@ -25,7 +25,7 @@ Index: buildroot/package/joysticktest/Config.in
 Index: buildroot/package/joysticktest/joysticktest.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/joysticktest.mk	2010-07-13 11:26:28.000000000 +0200
++++ buildroot/package/joysticktest/joysticktest.mk	2010-07-13 15:34:38.000000000 +0200
 @@ -0,0 +1,51 @@
 +#############################################################
 +#
@@ -37,7 +37,7 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +JOYSTICKTEST_SITE = ftp://atrey.karlin.mff.cuni.cz/pub/linux/joystick/
 +JOYSTICKTEST_DIR:=$(BUILD_DIR)/joystick-$(JOYSTICKTEST_VERSION)
 +JOYSTICKTEST_JSTEST_BINARY:=jstest
-+JOYSTICKTEST_TARGET_JSTEST_BINARY:=usr/bin/jstest
++JOYSTICKTEST_TARGET_BINARY:=/usr/bin/jstest
 +
 +$(DL_DIR)/$(JOYSTICKTEST_SOURCE):
 +	$(call DOWNLOAD,$(JOYSTICKTEST_SITE),$(JOYSTICKTEST_SOURCE))
@@ -51,7 +51,7 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +	touch $@
 +
 +$(JOYSTICKTEST_DIR)/$(JOYSTICKTEST_BINARY): $(JOYSTICKTEST_DIR)/.configured
-+	$(MAKE) CC=$(TARGET_CC) -C $(JOYSTICKTEST_DIR)
++	$(MAKE) CC=$(TARGET_CC) -C $(JOYSTICKTEST_DIR) CC=$(TARGET_CC) LDFLAGS=-L$(STAGING_DIR)/usr/lib/
 +
 +$(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY): $(JOYSTICKTEST_DIR)/$(JOYSTICKTEST_BINARY)
 +	$(INSTALL) -D $(JOYSTICKTEST_DIR)/jstest $(TARGET_DIR)/usr/bin/
@@ -59,7 +59,7 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jstest
 +	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jscal
 +
-+joysticktest: $(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY)
++joysticktest: uclibc $(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY)
 +
 +joysticktest-source: $(DL_DIR)/$(JOYSTICKTEST_SOURCE)
 +
@@ -81,30 +81,31 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch	2010-07-13 11:16:25.000000000 +0200
-@@ -0,0 +1,204 @@
++++ buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch	2010-07-13 15:28:27.000000000 +0200
+@@ -0,0 +1,198 @@
 +Index: joystick-1.2.15/Makefile
 +===================================================================
-+--- joystick-1.2.15.orig/Makefile	2010-07-07 09:16:58.000000000 +0200
-++++ joystick-1.2.15/Makefile	2010-07-07 09:23:33.000000000 +0200
-+@@ -27,168 +27,28 @@
++--- joystick-1.2.15.orig/Makefile	2010-07-13 14:28:24.000000000 +0200
+++++ joystick-1.2.15/Makefile	2010-07-13 14:28:29.000000000 +0200
++@@ -27,168 +27,20 @@
 + # Edit the options below to suit your needs
 + #
 + 
 +-CC		= gcc
-++ifeq ($(ARMADEUS_BASE_DIR),)
-++	ARMADEUS_BASE_DIR=~/armadeus_trees/apf27_virgin/
-++endif
-++include $(ARMADEUS_BASE_DIR)/Makefile.in
+++CFLAGS=-Wall -g -O2 -lm
+++INCLUDE=
+++LIB=
 + 
 +-CPPFLAGS	= -I.#						# for joystick.h
-++CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
+++all: jscal jstest
 + 
 +-CFLAGS		= -O2 -Wall -pipe -m486 -fomit-frame-pointer#	# i386
 +-# CFLAGS	= -O2 -Wall -pipe -m68020 -ffixed-a2#		# m68k
 +-# CFLAGS	= -O2 -Wall -pipe -fomit-frame-pointer -ffixed-8# Alpha
 +-# CFLAGS	= -O2 -Wall -pipe#				# Generic
-+-
+++jscal: jscal.c
+++	${CC} ${CFLAGS} $< -o $@ ${LDFLAGS}
++ 
 +-MODFLAGS	= -D__KERNEL__ -DMODULE#			# Normal modules
 +-#MODFLAGS	= -D__KERNEL__ -DMODULE -DMODVERSIONS\
 +-#		  -include /usr/src/linux/include/linux/modversions.h # Versioned modules
@@ -116,19 +117,12 @@ Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_p
 +-		  joy-spaceball.o joy-magellan.o joy-warrior.o\
 +-		  joy-pci.o#					# PC drivers
 +-# DRIVERS	= joy-amiga.o#					# Amiga driver
-++CFLAGS=-Wall -g -O2 -lm
-++LDFLAGS=-L$(ARMADEUS_STAGING_DIR)/usr/lib/
-++INCLUDE=
-++LIB=
-+ 
++-
 +-MODDIR		= /lib/modules/preferred/misc#			# RedHat location
 +-# MODDIR	= /lib/modules/current/misc#			# For some others?
-++all: jscal jstest
-+ 
++-
 +-PROGRAMS	= jstest jscal jsattach 
-++jscal: jscal.c
-++	${CC} ${CFLAGS} $< -o $@ ${LDFLAGS}
-+ 
++-
 +-#
 +-# Nothing should need to be changed below this line
 +-#
@@ -276,8 +270,8 @@ Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_p
 ++	rm jstest
 +Index: joystick-1.2.15/jscal.c
 +===================================================================
-+--- joystick-1.2.15.orig/jscal.c	2010-07-07 09:24:59.000000000 +0200
-++++ joystick-1.2.15/jscal.c	2010-07-07 09:25:48.000000000 +0200
++--- joystick-1.2.15.orig/jscal.c	2010-07-13 15:24:46.000000000 +0200
+++++ joystick-1.2.15/jscal.c	2010-07-13 15:25:02.000000000 +0200
 +@@ -30,6 +30,8 @@
 +  * Vojtech Pavlik, Ucitelska 1576, Prague 8, 182 00 Czech Republic
 +  */
