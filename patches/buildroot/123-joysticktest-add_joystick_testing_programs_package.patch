@@ -75,7 +75,7 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +#
 +############################################################
 +ifeq ($(BR2_PACKAGE_JOYSTICKTEST),y)
-+ARGETS+=joysticktest
++TARGETS+=joysticktest
 +endif
 +
 Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch
