@@ -1,37 +1,7 @@
-Index: buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch	2010-07-12 18:17:35.000000000 +0200
-@@ -0,0 +1,29 @@
-+Index: pk2cmdv1.20LinuxMacSource/Makefile
-+===================================================================
-+--- pk2cmdv1.20LinuxMacSource.orig/Makefile	2010-07-12 17:33:48.000000000 +0200
-++++ pk2cmdv1.20LinuxMacSource/Makefile	2010-07-12 17:33:56.000000000 +0200
-+@@ -12,9 +12,13 @@
-+ # or
-+ #    make mac
-+ #
-++ifeq ($(ARMADEUS_BASE_DIR),)
-++	ARMADEUS_BASE_DIR=../../../
-++endif
-++include $(ARMADEUS_BASE_DIR)/Makefile.in
-+ 
-+ APP=pk2cmd
-+-CC=g++
-++CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
-+ # Uncomment this for debugging with gdb
-+ #DBG=-ggdb -O0
-+ # Uncomment this for no debugging (default)
-+@@ -24,7 +28,8 @@
-+ 
-+ # Grab the version of libusb in /usr/local if possible:
-+ LIBUSB=/usr/local
-+-LDFLAGS=-L$(LIBUSB)/lib -lusb
-++LDFLAGS=-L$(ARMADEUS_STAGING_DIR)/usr/lib/ -lusb
-++#LDFLAGS=-L$(LIBUSB)/lib -lusb
-+ 
-+ # CHOOSE A TARGET BEFORE COMPILING
-+ #
+Adding PICKit 2 programmer command line
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-07-12 17:59:53.000000000 +0200
@@ -113,3 +83,38 @@ Index: buildroot/package/pickit2/pickit2.mk
 +TARGETS+=pickit2
 +endif
 +
+Index: buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/pickit2/pickit2-1.20-compile_it_for_armadeus.patch	2010-07-12 18:17:35.000000000 +0200
+@@ -0,0 +1,29 @@
++Index: pk2cmdv1.20LinuxMacSource/Makefile
++===================================================================
++--- pk2cmdv1.20LinuxMacSource.orig/Makefile	2010-07-12 17:33:48.000000000 +0200
+++++ pk2cmdv1.20LinuxMacSource/Makefile	2010-07-12 17:33:56.000000000 +0200
++@@ -12,9 +12,13 @@
++ # or
++ #    make mac
++ #
+++ifeq ($(ARMADEUS_BASE_DIR),)
+++	ARMADEUS_BASE_DIR=../../../
+++endif
+++include $(ARMADEUS_BASE_DIR)/Makefile.in
++ 
++ APP=pk2cmd
++-CC=g++
+++CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
++ # Uncomment this for debugging with gdb
++ #DBG=-ggdb -O0
++ # Uncomment this for no debugging (default)
++@@ -24,7 +28,8 @@
++ 
++ # Grab the version of libusb in /usr/local if possible:
++ LIBUSB=/usr/local
++-LDFLAGS=-L$(LIBUSB)/lib -lusb
+++LDFLAGS=-L$(ARMADEUS_STAGING_DIR)/usr/lib/ -lusb
+++#LDFLAGS=-L$(LIBUSB)/lib -lusb
++ 
++ # CHOOSE A TARGET BEFORE COMPILING
++ #
+
