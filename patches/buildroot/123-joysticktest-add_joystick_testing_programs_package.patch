@@ -4,8 +4,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-07-07 11:52:54.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-07 11:52:54.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-07-13 11:16:25.000000000 +0200
++++ buildroot/package/Config.in	2010-07-13 11:24:19.000000000 +0200
 @@ -499,5 +499,6 @@
  
  # various games packages
@@ -16,7 +16,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/joysticktest/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/Config.in	2010-07-07 11:52:54.000000000 +0200
++++ buildroot/package/joysticktest/Config.in	2010-07-13 11:16:25.000000000 +0200
 @@ -0,0 +1,4 @@
 +config BR2_PACKAGE_JOYSTICKTEST
 +        bool "joysticktest"
@@ -25,7 +25,7 @@ Index: buildroot/package/joysticktest/Config.in
 Index: buildroot/package/joysticktest/joysticktest.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/joysticktest.mk	2010-07-07 16:24:31.000000000 +0200
++++ buildroot/package/joysticktest/joysticktest.mk	2010-07-13 11:26:28.000000000 +0200
 @@ -0,0 +1,51 @@
 +#############################################################
 +#
@@ -54,16 +54,16 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +	$(MAKE) CC=$(TARGET_CC) -C $(JOYSTICKTEST_DIR)
 +
 +$(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY): $(JOYSTICKTEST_DIR)/$(JOYSTICKTEST_BINARY)
-+	install -D $(JOYSTICKTEST_DIR)/jstest $(TARGET_DIR)/usr/bin/
-+	install -D $(JOYSTICKTEST_DIR)/jscal $(TARGET_DIR)/usr/bin/
-+	rm -Rf $(TARGET_DIR)/usr/man
++	$(INSTALL) -D $(JOYSTICKTEST_DIR)/jstest $(TARGET_DIR)/usr/bin/
++	$(INSTALL) -D $(JOYSTICKTEST_DIR)/jscal $(TARGET_DIR)/usr/bin/
++	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jstest
++	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jscal
 +
-+joysticktest: uclibc $(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY)
++joysticktest: $(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY)
 +
 +joysticktest-source: $(DL_DIR)/$(JOYSTICKTEST_SOURCE)
 +
 +joysticktest-clean:
-+	$(MAKE) prefix=$(TARGET_DIR)/usr -C $(JOYSTICKTEST_DIR) uninstall
 +	-$(MAKE) -C $(JOYSTICKTEST_DIR) clean
 +
 +joysticktest-dirclean:
@@ -81,7 +81,7 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 Index: buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch	2010-07-07 11:52:54.000000000 +0200
++++ buildroot/package/joysticktest/joysticktest-1.2.15-compile_only_testing_programs.patch	2010-07-13 11:16:25.000000000 +0200
 @@ -0,0 +1,204 @@
 +Index: joystick-1.2.15/Makefile
 +===================================================================
