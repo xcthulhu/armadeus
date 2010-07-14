@@ -1,0 +1,27 @@
+From c0e307b848d8de23e6f10a179c4f240c023c8b82 Mon Sep 17 00:00:00 2001
+From: Peter Korsgaard <jacmet@sunsite.dk>
+Date: Tue, 13 Jul 2010 11:10:39 +0000
+Subject: sstrip: fix section length corruption bug
+
+Based on openwrt #6847:
+
+https://dev.openwrt.org/ticket/6847
+
+Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
+---
+diff --git a/toolchain/sstrip/sstrip.c b/toolchain/sstrip/sstrip.c
+index 1842f05..03adc0e 100644
+--- a/toolchain/sstrip/sstrip.c
++++ b/toolchain/sstrip/sstrip.c
+@@ -253,8 +253,7 @@ static int modifyheaders ## CLASS (Elf ## CLASS ## _Ehdr *ehdr, \
+ 			ESET(phdr->p_offset,newsize); \
+ 			ESET(phdr->p_filesz,0); \
+ 		} else if (EGET(phdr->p_offset) + EGET(phdr->p_filesz) > newsize) { \
+-			newsize -= EGET(phdr->p_offset); \
+-			ESET(phdr->p_filesz, newsize); \
++			ESET(phdr->p_filesz, newsize - EGET(phdr->p_offset)); \
+ 		} \
+ 	} \
+  \
+--
+cgit v0.8.2.1
