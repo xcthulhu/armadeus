@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Jun 24 16:15:39 2010
+# Wed Jul 14 12:00:26 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -501,6 +501,7 @@ BR2_BLOCKDEV_SUPPORT=y
 # BR2_PACKAGE_I2C_TOOLS is not set
 # BR2_PACKAGE_INPUT_TOOLS is not set
 # BR2_PACKAGE_IOSTAT is not set
+# BR2_PACKAGE_PICKIT2 is not set
 # BR2_PACKAGE_LCD4LINUX is not set
 # BR2_PACKAGE_LIBAIO is not set
 # BR2_PACKAGE_LIBRAW1394 is not set
@@ -724,6 +725,7 @@ BR2_PACKAGE_ZLIB=y
 # BR2_XML_SUPPORT is not set
 # BR2_JAVA_SUPPORT is not set
 # BR2_GAMES is not set
+# BR2_PACKAGE_JOYSTICKTEST is not set
 
 #
 # Target filesystem options
