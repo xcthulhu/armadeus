@@ -44,3 +44,6 @@ rm -rf buildroot/package/urg/
 rm -rf buildroot/package/pywebradio/
 rm -rf buildroot/package/e-uae/
 rm -rf buildroot/package/opentyrian/
+rm -rf buildroot/package/ipsec-tools/
+rm -rf buildroot/package/lbreakout2/
+rm -rf buildroot/package/ltris/
