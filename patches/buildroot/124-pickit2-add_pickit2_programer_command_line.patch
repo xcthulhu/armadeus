@@ -58,7 +58,7 @@ Index: buildroot/package/pickit2/pickit2.mk
 +$(TARGET_DIR)/$(PICKIT2_TARGET_BINARY): $(PICKIT2_DIR)/$(PICKIT2_BINARY)
 +	$(INSTALL) -D $(PICKIT2_DIR)/PK2DeviceFile.dat $(TARGET_DIR)/usr/share/pk2/PK2DeviceFile.dat
 +	$(INSTALL) -D $(PICKIT2_DIR)/pk2cmd $(TARGET_DIR)/usr/bin/pk2cmd
-+	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/pk2cmd
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/pk2cmd
 +
 +pickit2: libusb $(TARGET_DIR)/$(PICKIT2_TARGET_BINARY)
 +

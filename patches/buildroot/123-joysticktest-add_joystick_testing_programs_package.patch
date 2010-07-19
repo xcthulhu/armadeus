@@ -56,8 +56,8 @@ Index: buildroot/package/joysticktest/joysticktest.mk
 +$(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY): $(JOYSTICKTEST_DIR)/$(JOYSTICKTEST_BINARY)
 +	$(INSTALL) -D $(JOYSTICKTEST_DIR)/jstest $(TARGET_DIR)/usr/bin/
 +	$(INSTALL) -D $(JOYSTICKTEST_DIR)/jscal $(TARGET_DIR)/usr/bin/
-+	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jstest
-+	$(STRIPCMD) $(STRIP_STRIPUNEEDED) $(TARGET_DIR)/usr/bin/jscal
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/jstest
++	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/bin/jscal
 +
 +joysticktest: uclibc $(TARGET_DIR)/$(JOYSTICKTEST_TARGET_BINARY)
 +
