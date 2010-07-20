@@ -33,6 +33,7 @@
 #include <asm/types.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>        /* get_user,copy_to_user */
+#include <linux/jiffies.h>
 
 #ifdef CONFIG_ARCH_MX2
 #include <mach/dma-mx1-mx2.h>
