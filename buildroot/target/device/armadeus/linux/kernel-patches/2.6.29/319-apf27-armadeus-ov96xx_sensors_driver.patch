@@ -7,38 +7,38 @@ Signed-off-by: Julien boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-01 16:25:15.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-05 18:34:51.000000000 +0200
-@@ -298,6 +298,13 @@
- 	  OV7670 VGA camera.  It currently only works with the M88ALP01
- 	  controller.
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-20 15:22:05.000000000 +0200
+@@ -789,6 +789,13 @@
+ 	help
+ 	  This is a ov772x camera driver
  
-+config VIDEO_OV96xx
-+	tristate "OmniVision OV96xx sensor support"
-+	depends on I2C && VIDEO_V4L2
++config SOC_CAMERA_OV96XX
++	tristate "ov96xx support"
++	depends on SOC_CAMERA && I2C
 +	---help---
-+	  This is a Video4Linux2 sensor-level driver for the OmniVision
-+	  OV96xx camera.  It currently only works on i.MX27 systems.
++	  This driver supports ov96xx camera from OmniVision.
++	  It currently only works on i.MX27 systems.
 +
- config VIDEO_TCM825X
- 	tristate "TCM825x camera sensor support"
- 	depends on I2C && VIDEO_V4L2
+ config VIDEO_PXA27x
+ 	tristate "PXA27x Quick Capture Interface driver"
+ 	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-01 16:25:15.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-05 18:34:51.000000000 +0200
-@@ -106,6 +106,7 @@
- 
- obj-$(CONFIG_VIDEO_CAFE_CCIC) += cafe_ccic.o
- obj-$(CONFIG_VIDEO_OV7670) 	+= ov7670.o
-+obj-$(CONFIG_VIDEO_OV96xx)	+= ov96xx.o
- 
- obj-$(CONFIG_VIDEO_TCM825X) += tcm825x.o
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-20 15:22:05.000000000 +0200
+@@ -145,6 +145,7 @@
+ obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
+ obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
+ obj-$(CONFIG_SOC_CAMERA_OV772X)		+= ov772x.o
++obj-$(CONFIG_SOC_CAMERA_OV96XX)		+= ov96xx.o
+ obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
+ obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
  
 Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-07-05 18:20:21.000000000 +0200
-@@ -0,0 +1,1676 @@
++++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-07-20 15:21:57.000000000 +0200
+@@ -0,0 +1,1673 @@
 +/*
 + * drivers/media/video/ov96xx.c
 + *
@@ -1134,7 +1134,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +}
 +
 +static int ov96xx_get_control(struct soc_camera_device *icd,
-+			     struct v4l2_control *vctrl)
++				struct v4l2_control *vctrl)
 +{
 +	struct ov96xx_sensor *sensor = container_of(icd, struct ov96xx_sensor, icd);
 +	struct i2c_client *client = sensor->i2c_client;
@@ -1284,10 +1284,9 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +static unsigned long ov96xx_query_bus_param(struct soc_camera_device *icd)
 +{
-+// 	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
 +	unsigned int width_flag = SOCAM_DATAWIDTH_10 | SOCAM_DATAWIDTH_8;
 +
-+	/* MT9M001 has all capture_format parameters fixed */
++	/* OV96xx has all capture_format parameters fixed */
 +	return SOCAM_PCLK_SAMPLE_RISING |
 +		SOCAM_HSYNC_ACTIVE_HIGH |
 +		SOCAM_VSYNC_ACTIVE_HIGH |
@@ -1554,7 +1553,6 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +	printk("--- %s %d\n", __func__, state.event);
 +
-+	/* supposing camera link power() is a powerdown: */
 +	if (icl->power) {
 +		ret = icl->power(&ov96xx->i2c_client->dev, 0);
 +		if (ret < 0) {
@@ -1615,7 +1613,6 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +static int __init ov96xx_probe(struct i2c_client *client,
 +				const struct i2c_device_id *did)
 +{
-+
 +	struct ov96xx_sensor *ov96xx;
 +	struct soc_camera_device *icd;
 +	struct soc_camera_link *icl = client->dev.platform_data;

@@ -6,7 +6,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-05-31 14:23:25.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/ov7670_soc.c	2010-07-15 12:02:24.000000000 +0200
 @@ -0,0 +1,1682 @@
 +/*
 + * A V4L2 driver for OmniVision OV7670 cameras.
@@ -1692,11 +1692,11 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +module_exit(ov7670_mod_exit);
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-05-31 13:51:22.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-05-31 13:51:23.000000000 +0200
-@@ -796,6 +796,12 @@
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-15 12:00:19.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-15 12:02:24.000000000 +0200
+@@ -783,6 +783,12 @@
  	help
- 	  This is a ov772x camera driver
+ 	  This is a generic SoC camera platform driver, useful for testing
  
 +config SOC_CAMERA_OV7670
 +	tristate "ov7670 camera support"
@@ -1704,18 +1704,18 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
 +	help
 +	  This is a (SoC camera compatible) ov7670 sensor driver
 +
- config VIDEO_PXA27x
- 	tristate "PXA27x Quick Capture Interface driver"
- 	depends on VIDEO_DEV && PXA27x && SOC_CAMERA
+ config SOC_CAMERA_OV772X
+ 	tristate "ov772x camera support"
+ 	depends on SOC_CAMERA && I2C
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-05-31 13:51:22.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-05-31 13:51:23.000000000 +0200
-@@ -145,6 +145,7 @@
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-15 12:01:36.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-15 12:02:24.000000000 +0200
+@@ -144,6 +144,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
  obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
 +obj-$(CONFIG_SOC_CAMERA_OV7670)		+= ov7670_soc.o
  obj-$(CONFIG_SOC_CAMERA_OV772X)		+= ov772x.o
+ obj-$(CONFIG_SOC_CAMERA_OV96XX)		+= ov96xx.o
  obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
- obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
