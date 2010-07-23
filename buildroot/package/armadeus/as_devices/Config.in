@@ -1,9 +1,8 @@
 config BR2_PACKAGE_AS_DEVICES
 	bool "as_devices"
 	depends on BR2_TARGET_ARMADEUS
-	default n
 	help
-        library that drive armadeus specific devices
+          Library that drives armadeus specific devices.
 
 #config BR2_PACKAGE_AS_DEVICES_CPP
 #    depends on BR2_PACKAGE_AS_DEVICES
@@ -13,9 +12,8 @@ config BR2_PACKAGE_AS_DEVICES
 #        C++ wrapper for as_devices library
 #
 config BR2_PACKAGE_AS_DEVICES_PYTHON
-    depends on BR2_PACKAGE_AS_DEVICES
-    depends on BR2_PACKAGE_PYTHON
-    bool "wrapper Python"
-    default n
-    help
-        Python wrapper for as_devices library. need python
+	depends on BR2_PACKAGE_AS_DEVICES
+	depends on BR2_PACKAGE_PYTHON
+	bool "Python wrapper"
+	help
+	  Python wrapper for as_devices library. needs python.
