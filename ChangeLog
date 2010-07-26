@@ -4,7 +4,390 @@
 
 ----
 
-Changes since last release
+Changes in release 3.3 (no due date yet)
+
+* Wiki dump available here: http://www.armadeus.com/assos_downloads/wiki/armadeus-3.3_wiki_dump.tar.gz
+
+* Corrected Tickets/Bugs:
+
+* Buildroot:
+  Main changes: Preliminary support of BR 2010.05, APW support (Bluetooth, WiFi, GSM & GPS),
+                toolchain moved to EABI by default, wiimote support, liburg, Qt 4.5.3
+
+  List of all changes:
+    - [AS_DEVICES] Config.in: Indentation + spelling + 'n' is default value for options
+    - Updates freescale-tools package: now uses DOWNLOAD helper and copy libvpu to staging_dir
+    - Updates apf27 test config
+    - Adding pickit2 in default configuration (not set)
+    - Add pickit2 programer command line program
+    - adding joysticktest package in cleanup script
+    - unselect joysticktest package in config file
+    - Add Hokuyo's URG series sensor control library/tools
+    - Bump NcFTP version to 3.2.4
+    - Continue the (not armadeus specific) packages moving to BR patches. Only bluez3 remains.
+    - update config file for package cwiid (apf9328)
+    - update config file for package cwiid
+    - Add Cwiid package (wiimote control). Thanks YaGeek!
+    - move xenomai package as patch against BR
+    - Updates uucp & ussp-push packages patches
+    - move fbtest, fbgrab, allegro, sdlwater, snes9x, mesa, lcd4linux, socketcan, pymysql, pyserial & slideshow packages as patches against BR
+    - Put sdl, openssh & tslib modifications as patches against BR
+    - unversion package/audio/
+    - Convert lmbench package as a patch
+    - Add gpsd package
+    - Change system timezone to France (CET+0).
+    - Add openobex and ussp-push packages
+    - Qt: bump version to 4.5.3
+    - Put correct as_devices version in package
+    - Busybox: add chat (Automated conversational script with a modem) to default configs
+    - Add new mount point for FLASH partitions (/mnt/flash)
+    - Remove /mnt/mmc of target skeleton (use /media/mmc instead)
+    - Add a file in rootfs to know armadeus bsp version used
+    - wolf3d: remove old unsupported version and replace it with wolf4SDL
+    - Put correct BR2_GNU_TARGET_SUFFIX in apf9328 default configs
+    - apf938: updates default configs
+    - Put correct BR2_GNU_TARGET_SUFFIX in apf27 BR default configs
+    - gcc 4.2.x: add support for --with-abi=aapcs-linux configure option
+    - strace: needs patches when compiled with EABI
+    - bluez: improve package config/compilation
+    - Move package/bluez -> package/bluez3, as there will be a bluez4 package
+    - Updates GCC optim & EABI flags selection for ARM926
+    - Upgrade bluez to 3.36 and do a little cleanup while we are at it.
+    - Cleanup default /etc/profile
+    - Convert lsof to DOWNLOAD helper
+    - aumix SITE has changed
+    - Correct bad dependencies in wpa_supplicant package
+    - Add spanish keymap
+    - Remove warnings in fbtest and uucp Config.in
+    - Add wpa_supplicant package (for 2008.11 Buildroot)
+    - Add an infrastructure to install closed source linux-firmwares
+    - Add a new (hidden) BR2_CPU_NAME config variable and updates imxregs accordingly
+    - Bluez: remove no more needed serial port speed patch
+    - Convert toolchain makefiles to DOWNLOAD helper (uClibc 0.9.29 archive moved)
+    - restore target_suffix original value
+    - Fixed apf27 UBoot boardname
+    - mkfs.ubifs depends on mtd-host
+    - toolchain/gcc: don't enable libssp support (as on BR mainline)
+    - Updates Imagemagick package to latest BR state
+    - Moves buildroot/package/audio/madplay/madplay-audio-alsa.patch as a BR patch
+    - Fixes freescale-tools building due to recent packages move
+    - Don't uncompress .gitignore from BR archive if present
+    - fbgrab depends on zlib
+    - Definitly remove no more used 'package/mplayer/' directory
+    - Removes buildroot/package/mplayer/mplayer-1.0rc1-armv4.patch from GIT and replace it by a patch in buildroot/patches/
+    - Add the possibility to choose Buildroot version + regroup configurable options in main Makefile
+    - Make armadeus specific packages source dir relative to BR's TOPDIR and not BUILD_DIR (which is not stable between BR versions). Remove implicit uClibc dependancy while we are at it.
+    - Makes TOPDIR an absolute path
+    - Pygame's tslib patch doesn't work properly on *Ubuntu 9.10. Mark it as 'to fix'
+    - Removes unused/unapplied sdl_ttf patch
+    - Merge curl -> libcurl transition in one single patch
+    - Cleanup patches after some packages moved in package/armadeus/
+    - Move freescale-tools package to package/armadeus/
+    - Move imxregs package to package/armadeus/
+    - Move fpgaregs package to package/armadeus/
+    - Move ch7024ctrl & max5821ctrl packages to package/armadeus/
+    - Move ad9889ctrl package to package/armadeus/
+    - Adds Flite speech synthesis engine
+    - Add uucp package (preliminary) + updates cleanup_buildroot.sh
+    - libsndfile: some refinements after moving to autotools infrastructure and 1.0.21 version
+    - Moves libsndfile to autotools infrastructure and bump version to 1.0.21 while we are at it.
+    - Add ALSA's arecord to default config
+    - mtd-utils GIT archive format has changed: handle the new one.
+    - Updates APF27 default Linux config
+    - Makes Quake visible/selectable in menuconfig
+    - Add 2 new mount points in default rootfs for removable media: /media/mmc and /media/usbdisk.
+    - Add a fix for uClibc 0.9.29 to be able to set speed > 115200 on serial terminal/port
+    - Fixes snes9x package build
+    - Fix 070-add_ad9889ctl_package.patch due to recent moves of packages to armadeus/
+    - Move as_devices to newly created package/armadeus/
+    - Move imxssi to newly created package/armadeus/
+    - Rename armadeus-tests.mk
+    - Move Drivers Helpers to newly created package/armadeus/
+    - Move TestSuite to newly created package/armadeus/
+    - Add an armadeus/ dir in package/ to store all Armadeus specific utilities/tools building. Add it demos stuff to start.
+    - Makes Mesa compile again and be better installed (Thanks CimCim)
+    - Improve GPM installation
+    - Add a button Quit in ts_test to be able to terminate the application even when SIGINT is not handled.
+    - Adding jstest and jscal joystick testing programs
+    - [XENOMAI] Renamed patch to distinguish if it's needed before or after adeos and Xenomai modifications
+    - [XENOMAI] Patch to prevent System freeze on mxc with gpio generated interrupts
+    - Fixed default uboot configuration with regular buildroot release
+    - uClibc: takes errno from kernel instead of redefining them
+    - [UCLIBC] Correct the times() system call: some return values are returned as errors but shouldn't
+    - Patch for uClibc : add the function trunc to avoid problems during Qt cross-compiling.
+    - [UCLIBC] Add patch for ftruncate64() pb on ARM EABI (uClibc 0.9.29)
+    - Busybox: add patch to be able to use serial speed of 921600 from stty
+  New BR support:
+    - [2010.05] Add LBreakout2 and LTris games
+    - [2010.05] Add series of patches from BR mainline to make ipsec-tools compiling better
+    - [2010.05] Add pywebradio, e-uae & opentyrian packages
+    - [2010.05] Reactivates ad9889, fpgaregs and imxregs in default APF27 config
+    - [2010.05] Makes the configurations correctly detected
+    - [2010.05] Reactivates Armadeus specific packages in menuconfig
+    - [2010.05] Updates apf27 default config
+    - [2010.05] Updates apf9328 & apf27 default configs
+    - [2010.05] Add some minor patches for arm926t arch
+    - [2010.05] Also adds Cwiid...
+    - [2010.05] Updates patches so that they apply without errors
+    - Upgrade new BR support from 2010.02 to 2010.05 (part IV: updates patches so that they don't generate warnings when applied)
+    - Upgrade new BR support from 2010.02 to 2010.05 (part III: updates apf9328 configs)
+    - Upgrade new BR support from 2010.02 to 2010.05 (part II: patches apply)
+    - Upgrade new BR support from 2010.02 to 2010.05 (part I)
+    - Finalizes support for BR 2010.02 version
+    - Fixed buildroot 2010.02 compilation failure on Ubuntu
+    - [2010.02] Add custom config file for busybox 1.16.0
+    - [2010.02] Makes mplayer compiles again (charset pb)
+    - [2010.02] Updates to latest available snapshot
+    - [2010.02] Add fixes to correctly build rsync and alsamixer
+    - [2010.02] Updates apf27_defconfig
+    - [2010.02] Adapt main Makefile.in for new BR
+    - [2010.02] Makes Linux use the correct config file again
+    - [2010.02] Makes U-Boot binary renaming work again
+    - [2010.02] Updates apf27 default config
+    - [2010.02] Makes 051/U-Boot patch work again by dividing it in functionnal sub-patches. Add a first U-Boot 1.3.4 fix for gcc 4.4 (from mainline).
+    - [2010.02] Fixes 053-libusb.patch
+    - [2010.02] Updates cleanup_buildroot.sh
+    - [2010.02] Removes unneeded 026-jffs2root.patch
+    - [2010.02] Removes unneeded 035 patch
+    - [2010.02] Alternate download site is now integrated in BR (Backup site)
+    - support ubifs with buildroot 2010.02
+    - improved apf9328 default configuration to be used with new buildroot
+    - added default uclibc config for new buildroot
+    - added default apf9328 to be used with new buildroot
+    - Patch 050 is now ok for 2010.02
+    - Ports patch 099-mplayer-add_patch_for_pld_asm_instruction_on_non_armv5_arch.patch to 2010.02 BR
+    - Add default configs for BR 2010.02 (apf27 & only for test)
+    - Add patches to support upcoming 2010.02 BR version (some patches still require to be fixed)
+* Linux:
+  Main changes: Better CMOS Camera & APW support, GPIO driver simplified, as5011 driver,
+                USB device, better audio & keypad support on APF27, hs5116 driver, max9768 driver
+  List of all changes:
+    - Updates apf27 linux default config and add OSS emulation
+    - Makes dma_test driver compile again
+    - Reorganizes patch 356 internals
+    - renames patch 319
+    - Add soc_camera driver for OV3640 and updates OV96xx & OV7670 ones
+    -[as5011] Do not try to free tabular pointer
+    - ov96xx: updates driver to make it more friendly with V4L apps
+    - Add vivi (v4l test driver) to default apf27 configs
+    - Working version of as5011 joystick driver
+    - adding_as5011_joystick_driver
+    - change tsc2102 precharge time
+    -[i2c] adding_mangling_capability_on_i2c_mxc_driver
+    - Add uinput driver in default configs
+    - Fix bug in irq mode gpio configuration
+    - gpio: rename core.h in gpio-dev.h
+    - Simplify gpio driver by removing all unneeded features (mostly on full port access)
+    - suppress both edge management in interrupt function for gpio driver
+    - change irq macro name for gpio driver
+    - Add pin management full capability on gpio driver module
+    - spi_imx: Add correct SPI clock calculation for i.MX27
+    - ov7670: remove compilation warnings
+    - tsc210x: improve suspend/resume
+    - ov7670: improve suspend/resume.
+    - mx27camera: handles PIXCLK rising edge sampling
+    - ov7670: add possibility to read registers through /proc in DEBUG mode
+    - Improve error message when failing to allocate a GPIO
+    - ov7670: change init/detect sequence
+    - gpio: correct bug in armadeus_gpio_dev_read() (thanks to CimCim) and apply Linux coding rules on some function names
+    - gpio: correct bug while getting IRQ state & add fasync handling (thanks to CimCim for both)
+    - fix some bugs in gpio driver, change version
+    - adding poll capability in gpio driver (for select() )
+    - Adding interrupt status read/write capability on gpio driver
+    - APW: Bluetooth RESET pin should be driven by userspace
+    - Add ov7670_soc driver in default APF27 Linux configs
+    - SoC camera: add driver for OV7670 sensors
+    - GPIO mask correction
+    - change gpio drivers version number
+    - GPIO: Workaround compilation problem due to recent commits (grrrrr) + indentation
+    - Add comments in 347x patches
+    - GPIO: Adding irq configuration capability and suppress trailling white space
+    - shrink lan95xx patch
+    - smsc95xx: add additional USB product IDs
+    - Adding ioctl for gpio pullup resistor
+    - Adding lan9500A in smsc95xx driver
+    - Fix smsc95xx led output
+    - Suppress i2c debuging messages from i2c-mxc.c
+    - Correcting comments in loadgpio.sh
+    - Add the possibility to use the 2nd Audio/Mic input of the TSC2101 (when available)
+    - DM9000 chip is not an option on APF9328. Moreover, with this modification, DM9000 driver can now be used as module (Thanks to Cyril Wallois for the report and the correction idea)
+    - Indentation in 015-armadeus-logo-add_armadeus-project_tux.patch
+    - Cleanup PWM driver & add automatic /dev creation
+    - Add 24MHz external clock support to TSC210x
+    - Update max1027 header
+    - update apf9328 linux config file
+    - Add (preliminary) support for USB device functionnality of APF27 module
+    - max1027 code cleanup
+    - fix suspend/resume of hrtimer. Must be corrected in 2.6.32
+    - max1027: allow CNVST pin to be used in low speed mode
+    - add suspend/resume for APF27 USB PHY
+    - add backlight power switch capability in fb driver
+    - suppress power_on function callback in hx5116.h
+    - Suppressing backlight powering capability from hx5116_display driver (this capability must be in imx_fb driver)
+    - Fixes APW Bluetooth module init and UART5 GPIOs freeing. Thanks to Nicolas S.
+    - Improve support of SDIO cards on APF27
+    - Remove old & obsolete APF27DevTest support
+    - Add support for WiFi module of APW
+    - Cleanup 339-apf27-armadeus-spidev.patch
+    - Previous changes on SPI (for spidev) broke the modprobing of tsc210x module. Corrects that...
+    - tsc210x/ALSA: increase ALSA PCM buffer
+    - tsc210x: improve error messages
+    - Adding timing initialization in hx5116_display driver
+    - Suppress traces under spi_gpio driver
+    - Improve configuration file to add HX5116_DISPLAY
+    - Add hx5116-display driver in ARMadeus specific drivers directory
+    - HX5116-display header improve. (adding reset function in structure
+    - Delete useless hx5116_backlight driver and improve hx5116.h for futur hx5116-display drivers
+    - Adding HX5116 Amoled driver in linux-menuconfig
+    - Patch 349 fixed
+    - Improve spi_gpio for single data pin
+    - Backport spi driver from 2.6.32.2 to use half duplex capabilities
+    - Fix little behavior bug in mxc_gpio_set()
+    - Add version number to tsc210x alsa pcm driver
+    - tsc2101: has a mono ADC but transmit data in 2 I2S channels to i.MX
+    - tsc2101/ALSA: makes DMA (for audio in) work
+    - Backport some 2.6.3x convenient patches for LAN95xx
+    - max9768: add possibility to read back internal values through /sys/ (were write only before)
+    - Makes TSC2101 Audio In usable on APF27 + add corresponding ALSA mixer controls. It still remains a DMA problem to fix
+    - Makes MAX9768 driver more verbose when errors occur
+    - apf9328: update default config with new LCDs
+    - On APF27 I2C1 bus configuration is baseboard specific, so move it from apf27.c to apf27-dev.c
+    - Add debug trace for GPIO allocation
+    - Renamed patch 342
+    - Add better serial port configuration (RTS/CTS) + config hiding when options are not available. Add configuration options for Bluetooth and WiFi on wireless extension board (APW). Add preliminary power management for APW.
+    - Adding spi3 in apf27-dev and manage spi with menuconfig
+    - Adding hx5116 and p0340wql amoled in default config
+    - Begin AMOLED p0340wql integration
+    - Move APF27Dev extension board support in a separate file. Ease UART selection for APF27 while we are at it.
+    - Make Linux 2.6.27 compiles on Ubuntu 9.10 (and probably other recent releases). Thanks Sebastien V.C. for the report.
+    - Add support for i.MX27 internal keypad controller
+    - Add comment to describe patch 339
+    - spidev patch
+    - Add custom driver for MAX9768 audio amplifier
+* U-Boot:
+  Main changes: preliminary support of 2010.03 version, bug fixes
+  List of all changes:
+    - removes thumb interworking warning when compiling U-Boot for apf9328
+    - Fix clock init to support bootstrap loader
+    - set active partition on rootsfs to support fsload, ls..
+    - move to the U-Boot release 2010.03
+    - APF27 migration to U-Boot 2010.03
+    - Fixed file naming convention
+    - Changed default U-Boot name of config file to support multiple U-Boot versions
+    - added U-Boot 2010.03-rc2 support for apf9328
+    - update rules to generate U-Boot binary files
+    - fixed apf9328 GCC4.4.x EABI compilation issues
+    - Makes fw_setenv command work with NAND Flash
+    - Make it linkable with gcc 4.3/4.4 EABI
+    - add zero boot delay check
+    - Rename u-boot-unpacked target to u-boot-src-unpacked
+* Firmware:
+* Demos:
+    - Adding camera capture tool in demos package
+    - capture: add yuv422_to_greyscale()
+    - capture: do not use double buffer as mx2fb do not support it yet
+    - Makes input_test quit correctly when using CTRL+Z+kill or CTRL+C. + Indentation
+    - Add better error handling in capture app
+    - Correct picture size bug in capture tool
+    - Capture: add RGR565 support (default format) + the possibility to choose screen and picture sizes
+    - Capture: link with libpthread otherwise runtime crash may occur
+    - Capture: improve doc
+    - Add a small app to test V4L2 compatible cameras (capture images and display them on LCD)
+    - Cleanup in oscillo & real_time/fractal
+    - Updates real_time/Makefile.in
+    - Fixes Config.in
+    - Add a new tool to seek LCD's dead pixels
+    - Homogenize demos build & install
+    - input_test now looks up in /usr/share/images/ too to load its image file
+* Debug:
+    - Cleanup imxregs build
+    - imxregs: differentiates both ULPI viewports on i.MX27
+    - Adding imx-fpga communication testing program
+    - Cleanup imxssi debug tool and add it Audio In -> Audio Out loop option
+* Test:
+    - Improves test_backlight.sh
+    - Improve media_perf.sh
+    - Add default capture volume to test_audio.sh
+    - Add a test for WiFi (only for APW for the moment)
+    - rename test_sound.sh to test_audio.sh (part 2)
+    - rename test_sound.sh to test_audio.sh
+    - Add test for Audio In (when applicable)
+    - Add newline before asking something to user (for clarity)
+    - Rename mmc_perf.sh to media_perf.sh
+    - Makes mmc_perf.sh usable with USB keys
+    - gpio test doesn't need test_env.sh
+    - Add test for GSM MoDem (APW)
+    - Add test for GPS (APW)
+    - Add test for Bluetooth
+    - test_gpio.sh: use gpio_mode instead of setbit and test driver is correctly unloading
+    - Adding image to test lcd
+    - Transform test_pwm.sh in a release test
+    - Move test_pwm.sh to the test scripts dir
+* Tools:
+    - Add gpio_helpers.sh to ease usage of gpio driver (extract of test_gpio.sh). New script will be located in /usr/bin/ on the target.
+    - Improves quiltify.sh for new BR handling and modify main Makefile accordingly
+    - Now U-Boot can be quiltified too
+    - quiltify: works on 2.6.X.y Linux sources instead of 2.6.X ones
+    - quiltify.sh: Correct date of renamed dir
+    - Cleanup Buildroot patches in a better way in quiltify.sh
+    - Add a small script to ease installation on Debian like systems. Thanks Sebastien.
+    - quiltify.sh: Check VCS used before launching correspondig status command
+    - Removes ambiguous message from quiltify.sh
+    - Suppress old named quilt script
+    - change quiltify script name
+    - little bug in ad5258 to be fixed
+    - quilt script messages update
+* As_Devices:
+    - Adding eeprom 93lcxx test in AsDevices test program
+    - [AS_DEVICES] adding python wrapper in menu
+    - [AS_DEVICES] Config.in: Indentation + spelling + 'n' is default value for options
+    - Change data lenght for spi msg command
+    - suppress -DAPFXX compilation option
+    - Cleanup makefiles and makes install targets work
+    - {} replaced by () in Makefiles
+    - ioctl changed
+    - as_gpio: no code in header
+    - Modify as_gpio to manage gpio pin independantly
+    - deleting a debug message
+    - adding timeout for blocking read
+    - as_spi: code done, test to be done
+    - as_pwm done and tested
+    - as_max5821 tested, little bug fixed
+    - adding Digital to Analog Chip as_max5821, not fully tested
+    - as_max1027 SLOW mode done
+    - GPIO IRQ tested
+    - suppressing spi tricks
+    - somes TODO in as_gpio python wrapper
+    - Adding irq and pullup function prototype for Python wrapper
+    - Add blocking read function (not tested), correct indent
+    - Add irq mode configuration function (not tested), suppress tab
+    - Adding pullup capability (not tested) and suppress trailling white space
+    - AsGpio python wrapper done
+    - python class asgpio in progress
+    - Adding python gpio multiton class
+    - Compiling gpio python wrapper low level api
+    - AsGpio python wrapper in progress
+    - Adding reading channel capability in as_max1027, not tested yet
+    - Adding reading temperature capability in as_max1027
+    - Adding test for max1027
+    - fix makefile platform variable
+    - Add platform parameter in compilation
+    - Adding as_max1027 in progress…
+    - Fix makefile bug
+    - Suppress apf27 reference in pwm lib
+    - Testbench corrections
+    - Update as_gpio library
+    - AsDevice refactoring and bug correction in ad5258
+    - fix as_93lcxx lib bugs and clean indentation
+* Other:
+    - [BUILD] Updates some envt variables for BR 2010.05
+    - [BUILD] Makes Buildroot version choosable with "make BUILDROOT_VERSION=20xx.xx"
+    - [BUILD] Add message when compiling of BSP is successful
+    - [BUILD] Add ARMADEUS_XENOMAI_DIR envt variable
+    - [BUILD] Add U-Boot version to armadeus global envt variables
+    - [BUILD] Add U-Boot dir to armadeus global envt variables
+    - [BUILD] Add some more .gitignore files
+    - [BUILD] Updates .gitignore files
 
 ----
 
