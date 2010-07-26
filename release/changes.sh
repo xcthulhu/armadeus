@@ -12,9 +12,10 @@ CHANGES_TEST=$TEMP_DIR/test.log
 CHANGES_DEMOS=$TEMP_DIR/demos.log
 CHANGES_DEBUG=$TEMP_DIR/debug.log
 CHANGES_TOOLS=$TEMP_DIR/tools.log
+CHANGES_ASDEVICES=$TEMP_DIR/asdevices.log
 CHANGES_OTHER=$TEMP_DIR/other.log
 
-LATEST_RELEASE_DATE="Wed Jul 1"
+LATEST_RELEASE_DATE="2009-12-02"
 
 usage()
 {
@@ -55,8 +56,10 @@ cat $LOG_CLEAN_TMP.6 | grep -i  "\[DEBUG\]" > $CHANGES_DEBUG
 cat $LOG_CLEAN_TMP.6 | grep -iv "\[DEBUG\]" > $LOG_CLEAN_TMP.7
 cat $LOG_CLEAN_TMP.7 | grep -i  "\[TOOLS\]" > $CHANGES_TOOLS
 cat $LOG_CLEAN_TMP.7 | grep -iv "\[TOOLS\]" > $LOG_CLEAN_TMP.8
+cat $LOG_CLEAN_TMP.8 | grep -i  "\[AS_DEVICES\]" > $CHANGES_ASDEVICES
+cat $LOG_CLEAN_TMP.8 | grep -iv "\[AS_DEVICES\]" > $LOG_CLEAN_TMP.9
 
-cat $LOG_CLEAN_TMP.8 > $CHANGES_OTHER
+cat $LOG_CLEAN_TMP.9 > $CHANGES_OTHER
 
 # compose Changelog:
 echo
@@ -80,6 +83,8 @@ echo "* Test:"
 cat $CHANGES_TEST | grep -v "^$" | sed 's/\[[Tt][Ee][Ss][Tt]\]/    -/g'
 echo "* Tools:"
 cat $CHANGES_TOOLS | grep -v "^$" | sed 's/\[[Tt][Oo][Oo][Ll][Ss]\]/    -/g'
+echo "* As_Devices:"
+cat $CHANGES_ASDEVICES | grep -v "^$" | sed 's/\[[Aa][Ss]_[Dd][Ee][Vv][Ii][Ce][Ee][Ss]\]/    -/g'
 echo "* Other:"
 cat $CHANGES_OTHER | grep -v "^$"
 echo
