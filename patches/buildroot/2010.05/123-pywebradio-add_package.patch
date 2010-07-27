@@ -34,7 +34,7 @@ Index: buildroot/package/pywebradio/pywebradio.mk
 +
 +PYWEBRADIO_TRUNK:=http://forge.doumenc.org/svn/pyqtradio/trunk
 +PYWEBRADIO_SITE:=
-+PYWEBRADIO_VERSION:=381
++PYWEBRADIO_VERSION:=421
 +PYWEBRADIO_NAME:=pywebradio-svn-r$(PYWEBRADIO_VERSION)
 +PYWEBRADIO_DIR:=$(BUILD_DIR)/$(PYWEBRADIO_NAME)
 +PYWEBRADIO_SOURCE:=$(PYWEBRADIO_NAME).tar.bz2
