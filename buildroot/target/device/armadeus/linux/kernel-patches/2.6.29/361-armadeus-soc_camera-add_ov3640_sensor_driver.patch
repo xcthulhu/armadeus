@@ -1,7 +1,7 @@
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-15 12:19:53.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-15 12:22:35.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-23 11:41:31.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-23 11:41:31.000000000 +0200
 @@ -783,6 +783,12 @@
  	help
  	  This is a generic SoC camera platform driver, useful for testing
@@ -17,8 +17,8 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
  	depends on SOC_CAMERA && I2C
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-15 12:22:50.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-15 12:23:50.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-23 11:41:31.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-23 11:41:31.000000000 +0200
 @@ -144,6 +144,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
@@ -30,8 +30,8 @@ Index: linux-2.6.29.6/drivers/media/video/Makefile
 Index: linux-2.6.29.6/drivers/media/video/ov3640.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov3640.c	2010-07-20 15:06:58.000000000 +0200
-@@ -0,0 +1,1460 @@
++++ linux-2.6.29.6/drivers/media/video/ov3640.c	2010-07-27 12:28:15.000000000 +0200
+@@ -0,0 +1,1459 @@
 +/*
 + *
 + * Copyright 2010 Armadeus Systems
@@ -1234,40 +1234,39 @@ Index: linux-2.6.29.6/drivers/media/video/ov3640.c
 +
 +#ifdef CONFIG_VIDEO_ADV_DEBUG
 +static int ov3640_get_register(struct soc_camera_device *icd,
-+				struct v4l2_register *reg)
++				struct v4l2_dbg_register *reg)
 +{
 +	struct ov3640_sensor *ov3640 = container_of(icd, struct ov3640_sensor, icd);
 +	int ret;
 +	u8 val;
 +
-+	if (reg->match_type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xffff)
 +		return -EINVAL;
 +
-+	if (reg->match_chip != ov3640->i2c_client->addr)
++	if (reg->match.addr != ov3640->i2c_client->addr)
 +		return -ENODEV;
 +
-+	ret = ov3640_read(ov3640->i2c_client, (u8)reg->reg, &val);
++	ret = ov3640_read(ov3640->i2c_client, (u16)reg->reg, &val);
 +	if (ret)
 +		return ret;
-+
 +	reg->val = val;
 +
 +	return 0;
 +}
 +
 +static int ov3640_set_register(struct soc_camera_device *icd,
-+				struct v4l2_register *reg)
++				struct v4l2_dbg_register *reg)
 +{
 +	struct ov3640_sensor *ov3640 = container_of(icd, struct ov3640_sensor, icd);
 +	int ret;
 +
-+	if (reg->match_type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xffff)
 +		return -EINVAL;
 +
-+	if (reg->match_chip != ov3640->i2c_client->addr)
++	if (reg->match.addr != ov3640->i2c_client->addr)
 +		return -ENODEV;
 +
-+	ret = ov3640_write(ov3640->i2c_client, (u8)reg->reg, (u8)reg->val);
++	ret = ov3640_write(ov3640->i2c_client, (u16)reg->reg, (u8)reg->val);
 +	if (ret)
 +		return ret;
 +
@@ -1495,7 +1494,7 @@ Index: linux-2.6.29.6/drivers/media/video/ov3640.c
 Index: linux-2.6.29.6/drivers/media/video/ov3640_regs.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov3640_regs.h	2010-07-19 11:00:29.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/ov3640_regs.h	2010-07-23 11:41:31.000000000 +0200
 @@ -0,0 +1,596 @@
 +/*
 + * drivers/media/video/ov3640_regs.h
@@ -2095,8 +2094,8 @@ Index: linux-2.6.29.6/drivers/media/video/ov3640_regs.h
 +#endif				/* ifndef OV3640_REGS_H */
 Index: linux-2.6.29.6/include/media/v4l2-chip-ident.h
 ===================================================================
---- linux-2.6.29.6.orig/include/media/v4l2-chip-ident.h	2010-07-19 15:43:26.000000000 +0200
-+++ linux-2.6.29.6/include/media/v4l2-chip-ident.h	2010-07-19 15:44:12.000000000 +0200
+--- linux-2.6.29.6.orig/include/media/v4l2-chip-ident.h	2010-07-23 11:36:30.000000000 +0200
++++ linux-2.6.29.6/include/media/v4l2-chip-ident.h	2010-07-23 11:41:31.000000000 +0200
 @@ -62,6 +62,7 @@
  	V4L2_IDENT_OV7670 = 250,
  	V4L2_IDENT_OV7720 = 251,

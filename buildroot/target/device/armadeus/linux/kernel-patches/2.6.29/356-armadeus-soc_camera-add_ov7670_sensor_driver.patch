@@ -1612,10 +1612,10 @@ Index: linux-2.6.29.6/drivers/media/video/ov7670_soc.c
 +	.get_control		= ov7670_get_control,
 +	.set_control		= ov7670_set_control,
 +	.get_chip_id		= ov7670_get_chip_id,
-+#ifdef CONFIG_VIDEO_ADV_DEBUG
++/*#ifdef CONFIG_VIDEO_ADV_DEBUG
 +	.get_register		= ov7670_get_register,
 +	.set_register		= ov7670_set_register,
-+#endif
++#endif*/
 +};
 +
 +static int __init

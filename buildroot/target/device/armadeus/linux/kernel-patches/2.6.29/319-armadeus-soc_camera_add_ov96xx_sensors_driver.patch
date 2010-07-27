@@ -7,7 +7,7 @@ Signed-off-by: Julien boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.29.6/drivers/media/video/Kconfig
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/media/video/Kconfig	2010-07-01 16:25:15.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-20 15:22:05.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Kconfig	2010-07-27 17:11:53.000000000 +0200
 @@ -789,6 +789,13 @@
  	help
  	  This is a ov772x camera driver
@@ -25,7 +25,7 @@ Index: linux-2.6.29.6/drivers/media/video/Kconfig
 Index: linux-2.6.29.6/drivers/media/video/Makefile
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/media/video/Makefile	2010-07-01 16:25:15.000000000 +0200
-+++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-20 15:22:05.000000000 +0200
++++ linux-2.6.29.6/drivers/media/video/Makefile	2010-07-27 17:11:53.000000000 +0200
 @@ -145,6 +145,7 @@
  obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
  obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
@@ -37,8 +37,8 @@ Index: linux-2.6.29.6/drivers/media/video/Makefile
 Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-07-20 15:21:57.000000000 +0200
-@@ -0,0 +1,1673 @@
++++ linux-2.6.29.6/drivers/media/video/ov96xx.c	2010-07-27 17:01:32.000000000 +0200
+@@ -0,0 +1,1672 @@
 +/*
 + * drivers/media/video/ov96xx.c
 + *
@@ -1357,37 +1357,36 @@ Index: linux-2.6.29.6/drivers/media/video/ov96xx.c
 +
 +#ifdef CONFIG_VIDEO_ADV_DEBUG
 +static int ov96xx_get_register(struct soc_camera_device *icd,
-+				struct v4l2_register *reg)
++				struct v4l2_dbg_register *reg)
 +{
 +	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
 +	int ret;
 +	u8 val;
 +
-+	if (reg->match_type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
 +		return -EINVAL;
 +
-+	if (reg->match_chip != ov96xx->i2c_client->addr)
++	if (reg->match.addr != ov96xx->i2c_client->addr)
 +		return -ENODEV;
 +
 +	ret = ov96xx_read_reg(ov96xx->i2c_client, (u8)reg->reg, &val);
 +	if (ret)
 +		return ret;
-+
 +	reg->val = val;
 +
 +	return 0;
 +}
 +
 +static int ov96xx_set_register(struct soc_camera_device *icd,
-+				struct v4l2_register *reg)
++				struct v4l2_dbg_register *reg)
 +{
 +	struct ov96xx_sensor *ov96xx = container_of(icd, struct ov96xx_sensor, icd);
 +	int ret;
 +
-+	if (reg->match_type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
++	if (reg->match.type != V4L2_CHIP_MATCH_I2C_ADDR || reg->reg > 0xff)
 +		return -EINVAL;
 +
-+	if (reg->match_chip != ov96xx->i2c_client->addr)
++	if (reg->match.addr != ov96xx->i2c_client->addr)
 +		return -ENODEV;
 +
 +	ret = ov96xx_write(ov96xx->i2c_client, (u8)reg->reg, (u8)reg->val);
