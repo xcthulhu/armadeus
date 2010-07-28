@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-06-29 16:12:27.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-07-28 10:43:04.000000000 +0200
 @@ -0,0 +1,789 @@
 + /*
 + * apf27.c
@@ -803,8 +803,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-07-01 16:25:06.000000000 +0200
-@@ -0,0 +1,1049 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-07-28 10:59:04.000000000 +0200
+@@ -0,0 +1,1147 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -831,6 +831,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#include <linux/mtd/physmap.h>
 +#include <asm/mach/flash.h>
 +#include <linux/spi/spi.h>
++#include <linux/spi/spidev.h>
 +#include <linux/i2c.h>
 +#include <linux/serial.h>
 +#include <linux/delay.h>
@@ -900,6 +901,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_CAN_MCP251X_MODULE
 +#define CONFIG_CAN_MCP251X 1
 +#endif
++#ifdef CONFIG_SPI_SPIDEV_MODULE
++#define CONFIG_SPI_SPIDEV 1
++#endif
 +#ifdef CONFIG_IMX_BACKLIGHT_MODULE
 +#define CONFIG_IMX_BACKLIGHT
 +#endif
@@ -909,8 +913,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#ifdef CONFIG_VIDEO_MX27_MODULE
 +#define CONFIG_VIDEO_MX27 1
 +#endif
-+#ifdef CONFIG_VIDEO_OV96xx_MODULE
-+#define CONFIG_VIDEO_OV96xx 1
++#ifdef CONFIG_SOC_CAMERA_OV96XX_MODULE
++#define CONFIG_SOC_CAMERA_OV96XX 1
 +#endif
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
@@ -945,7 +949,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +};
 +
 +/* I2C1 devices: RTC & Optionnal Camera */
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +static struct soc_camera_link ov96xx_iclink; /* declared later */
 +#endif
 +static struct i2c_board_info apf27dev_i2c_devices_bus0[] = {
@@ -957,7 +961,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +		.platform_data = NULL,
 +		.irq = 0
 +	},
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +	[1] = {
 +		.type = "ov96xx",
 +		.flags = 0,  /* FIXME */
@@ -1201,15 +1205,17 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif /* CONFIG_SERIAL_IMX_UART6 */
 +
 +
-+/* Both APF27 SPI ports are used on APF27Dev */
-+#ifdef CONFIG_SPI
++/* SPI ports declarations */
++#ifdef CONFIG_SPI_MXC_SELECT1
 +static int mxc_cspi0_pins[] = {
 +	/* PD28_PF_CSPI1_SS0, Preferably use CS pin as GPIO */
 +	PD29_PF_CSPI1_SCLK,
 +	PD30_PF_CSPI1_MISO,
 +	PD31_PF_CSPI1_MOSI
 +};
++#endif /* CONFIG_SPI_MXC_SELECT1 */
 +
++#ifdef CONFIG_SPI_MXC_SELECT2
 +static int mxc_cspi1_pins[] = {
 +	/* PD19_PF_CSPI2_SS2,
 +	PD20_PF_CSPI2_SS1, Preferably use CS pin as GPIO
@@ -1218,11 +1224,25 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	PD23_PF_CSPI2_MISO,
 +	PD24_PF_CSPI2_MOSI
 +};
++#endif /* CONFIG_SPI_MXC_SELECT2 */
 +
++#ifdef CONFIG_SPI_MXC_SELECT3
++static int mxc_cspi2_pins[] = {
++	/*
++	PE21_AF_CSPI3_SS,
++	Preferably use CS pin as GPIO
++	*/
++	PE23_AF_CSPI3_SCLK,
++	PE18_AF_CSPI3_MISO,
++	PE22_AF_CSPI3_MOSI
++};
++#endif /* CONFIG_SPI_MXC_SELECT3 */
++
++#ifdef CONFIG_SPI_MXC_SELECT1
 +static int gpio_spi0_active(struct platform_device *pdev)
 +{
 +	return mxc_gpio_setup_multiple_pins(mxc_cspi0_pins,
-+			ARRAY_SIZE(mxc_cspi0_pins), "CSPI0");
++			ARRAY_SIZE(mxc_cspi0_pins), "CSPI1");
 +}
 +
 +static int gpio_spi0_inactive(struct platform_device *pdev)
@@ -1230,11 +1250,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	mxc_gpio_release_multiple_pins(mxc_cspi0_pins, ARRAY_SIZE(mxc_cspi0_pins));
 +	return 0;
 +}
++#endif /* CONFIG_SPI_MXC_SELECT1 */
 +
++#ifdef CONFIG_SPI_MXC_SELECT2
 +static int gpio_spi1_active(struct platform_device *pdev)
 +{
 +	return mxc_gpio_setup_multiple_pins(mxc_cspi1_pins,
-+			ARRAY_SIZE(mxc_cspi1_pins), "CSPI1");
++			ARRAY_SIZE(mxc_cspi1_pins), "CSPI2");
 +}
 +
 +static int gpio_spi1_inactive(struct platform_device *pdev)
@@ -1242,21 +1264,48 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	mxc_gpio_release_multiple_pins(mxc_cspi1_pins, ARRAY_SIZE(mxc_cspi1_pins));
 +	return 0;
 +}
++#endif /* CONFIG_SPI_MXC_SELECT2 */
 +
++#ifdef CONFIG_SPI_MXC_SELECT3
++static int gpio_spi2_active(struct platform_device *pdev)
++{
++	return mxc_gpio_setup_multiple_pins(mxc_cspi2_pins, ARRAY_SIZE(mxc_cspi2_pins), "CSPI3");
++}
++
++static int gpio_spi2_inactive(struct platform_device *pdev)
++{
++	mxc_gpio_release_multiple_pins(mxc_cspi2_pins, ARRAY_SIZE(mxc_cspi2_pins));
++	return 0;
++}
++#endif /* CONFIG_SPI_MXC_SELECT3 */
++
++#ifdef CONFIG_SPI_MXC_SELECT1
 +static struct spi_imx_master imx_spi0_master_info = {
 +	.num_chipselect	= 1,
 +	.enable_dma     = 0,
 +	.init = gpio_spi0_active,
 +	.exit = gpio_spi0_inactive,
 +};
++#endif /* CONFIG_SPI_MXC_SELECT1 */
 +
++#ifdef CONFIG_SPI_MXC_SELECT2
 +static struct spi_imx_master imx_spi1_master_info = {
-+	.num_chipselect	= 2,
++	.num_chipselect	= 3,
 +	.enable_dma     = 0,
 +	.init = gpio_spi1_active,
 +	.exit = gpio_spi1_inactive,
 +};
-+#endif /* CONFIG_SPI */
++#endif /* CONFIG_SPI_MXC_SELECT2 */
++
++#ifdef CONFIG_SPI_MXC_SELECT3
++static struct spi_imx_master imx_spi2_master_info = {
++	.num_chipselect	= 1,
++	.enable_dma     = 0,
++	.init = gpio_spi2_active,
++	.exit = gpio_spi2_inactive,
++};
++#endif /* CONFIG_SPI_MXC_SELECT3 */
++
 +
 +
 +/* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI1) */
@@ -1304,7 +1353,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	.exit = max1027_exit
 +};
 +#endif /* CONFIG_ARMADEUS_MAX1027 */
-+
 +
 +/* APF27Dev has a SPI Touchscreen controller */
 +#define TSC2101_INT 17
@@ -1398,6 +1446,38 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif /* CONFIG_CAN_MCP251X */
 +
 +
++/* SPI2 can be used as userspace general SPI bus (CS 2) */
++#ifdef CONFIG_SPI_SPIDEV
++#define SPIDEV_CS (GPIO_PORTB | 17)
++
++static int spidev_pins[] = {
++	(SPIDEV_CS | GPIO_OUT | GPIO_GPIO),
++};
++
++static int spidev_init_gpio(void)
++{
++	gpio_set_value(SPIDEV_CS, 1);
++	return mxc_gpio_setup_multiple_pins(spidev_pins, ARRAY_SIZE(spidev_pins), "spidev");
++}
++
++/* Chip select command for spidev */
++static void spidev_cs(u32 command)
++{
++	if (command == SPI_CS_DEASSERT)
++		gpio_set_value(SPIDEV_CS, 1);
++	else
++		gpio_set_value(SPIDEV_CS, 0);
++}
++
++static struct spi_imx_chip spidev_hw = {
++	.cs_control     = spidev_cs,
++};
++
++static struct spidev_platform_data apf27_spidev_config = {
++	.init = spidev_init_gpio,
++};
++#endif /* CONFIG_SPI_SPIDEV */
++
 +static struct spi_board_info spi_board_info[] __initdata = {
 +#ifdef CONFIG_ARMADEUS_MAX1027
 +	{
@@ -1435,6 +1515,17 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +		.platform_data		= &apf27_mcp251x_config,
 +	},
 +#endif /* CONFIG_CAN_MCP251X */
++#ifdef CONFIG_SPI_SPIDEV
++	{
++		.modalias		= "spidev",
++		.controller_data	= &spidev_hw,
++		.max_speed_hz		= 8000000, /* 8MHz */
++		.bus_num		= 1, /* SPI2 */
++		.mode			= SPI_MODE_1,
++		.chip_select		= 2,
++		.platform_data		= &apf27_spidev_config,
++	},
++#endif /* CONFIG_SPI_SPIDEV */
 +};
 +
 +
@@ -1624,7 +1715,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +/* APF27Dev can have an optionnal Camera module extension using i.MX27 CSI */
 +#ifdef CONFIG_VIDEO_MX27
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +#define OV9653_PWRDN	(GPIO_PORTC | 30) /* SSI3_TX as POWERDOWN*/
 +#define OV9653_RESET	(GPIO_PORTC | 31) /* SSI3_CLK as RESET */
 +
@@ -1651,7 +1742,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static int apf27dev_camera_init(struct platform_device *pdev)
 +{
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +	int err;
 +
 +	/* Setup PWRDN/RESET pins default value */
@@ -1669,7 +1760,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +
 +static int apf27dev_camera_exit(struct platform_device *pdev)
 +{
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +	mxc_gpio_release_multiple_pins(apf27dev_ov9653_ctl_pins,
 +				ARRAY_SIZE(apf27dev_ov9653_ctl_pins));
 +# endif
@@ -1687,7 +1778,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +			MX27_CAMERA_SWAP16,
 +};
 +
-+# ifdef CONFIG_VIDEO_OV96xx
++# ifdef CONFIG_SOC_CAMERA_OV96XX
 +static int ov96xx_power(struct device *dev, int state)
 +{
 +        printk(KERN_DEBUG "*** %s %d\n", __func__, state);
@@ -1822,10 +1913,17 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	i2c_register_board_info(1, apf27dev_i2c_devices_bus1,
 +				ARRAY_SIZE(apf27dev_i2c_devices_bus1));
 +#endif
-+#ifdef CONFIG_SPI
++#ifdef CONFIG_SPI_MXC_SELECT1
 +	mxc_register_device(&mxc_spi_device0, &imx_spi0_master_info);
++#endif
++#ifdef CONFIG_SPI_MXC_SELECT2
 +	mxc_register_device(&mxc_spi_device1, &imx_spi1_master_info);
 +#endif
++#ifdef CONFIG_SPI_MXC_SELECT3
++	mxc_register_device(&mxc_spi_device2, &imx_spi2_master_info);
++#endif
++
++
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 +
 +#ifdef CONFIG_SPI_TSC2102
@@ -1837,7 +1935,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	/* Reserve "fixed" GPIOs */
 +	tsc2101_init_fixed_gpio();
 +#endif
-+#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++#if defined (CONFIG_ARMADEUS_MAX1027) || defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X) || defined(CONFIG_SPI_SPIDEV)
 +	spi_register_board_info(spi_board_info,
 +				ARRAY_SIZE(spi_board_info));
 +#endif
@@ -1857,7 +1955,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-06-29 16:12:27.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-07-28 10:43:04.000000000 +0200
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2082,7 +2180,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-06-29 16:12:27.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-07-28 10:43:04.000000000 +0200
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
