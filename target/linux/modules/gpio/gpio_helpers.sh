@@ -26,10 +26,14 @@ gpio_set_value()
 {
 	GPIO=$1
 	VALUE=$2
-	if [ "$VALUE" == "1" ]; then
-		echo -ne "\x01" > $GPIO_DEV_DIR/$GPIO
+	if [ -c "$GPIO_DEV_DIR/$GPIO" ]; then
+		if [ "$VALUE" == "1" ]; then
+			echo -ne "\x01" > $GPIO_DEV_DIR/$GPIO
+		else
+			echo -ne "\x00" > $GPIO_DEV_DIR/$GPIO
+		fi
 	else
-		echo -ne "\x00" > $GPIO_DEV_DIR/$GPIO
+		echo "$GPIO GPIO not usable !"
 	fi
 }
 
