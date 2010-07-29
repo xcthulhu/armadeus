@@ -55,7 +55,7 @@ ask_user()
 	AWAITEN="$2"
 
 	echo -e "\n  >>>> $MESSAGE <<<<"
-	read response
+	read -p "> " response
 }
 
 ask_user_banner()

@@ -23,7 +23,12 @@
 source ./test_helpers.sh
 
 # Script parameters
-TEMP_FILE_SIZE=16384 # kbytes (ex: 16384 24576)
+BOARD=`cat /etc/machine`
+if [ "$BOARD" == "APF9328" ]; then
+	TEMP_FILE_SIZE=4096
+else
+	TEMP_FILE_SIZE=16384 # kbytes (ex: 16384 24576)
+fi
 NB_ITER=10
 
 MMC_MOUNT_DIR="/media/mmc"
@@ -131,6 +136,8 @@ fi
 if [ "$2" != "" ]; then
 	MMC_DEVICE="$2"
 fi
+
+show_test_banner "Storage medium performances"
 
 if [ ! -b $MMC_DEVICE ] && [ ! -b $USB_DEVICE ]; then
 	echo -n "Please insert your storage device: MMC/SD/microSD or USB key"

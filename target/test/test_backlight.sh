@@ -37,6 +37,7 @@ test_backlight()
 	ask_user "Backlight set to MAX, press ENTER"
 	echo 0 > $SYS_DIR/brightness
 	ask_user "Backlight set to MIN, press ENTER"
+	echo $current > $SYS_DIR/brightness
 
 	ask_user "I will now loop through brightness, press ENTER when ready"
 	for loop in `seq 1 2 150`; do

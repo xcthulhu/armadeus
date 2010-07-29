@@ -14,6 +14,7 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+USB_MOUNT_POINT=/media/usbdisk
 
 load_usb_host_driver_apf9328()
 {
@@ -50,9 +51,9 @@ wait_key_removal()
 
 check_usb_key()
 {
-	mount `ls /dev/sd*1` /mnt/mmc && ls /mnt/mmc/
+	mount `ls /dev/sd*1` $USB_MOUNT_POINT && ls $USB_MOUNT_POINT
 	df -h
-	umount /mnt/mmc
+	umount $USB_MOUNT_POINT
 	if [ "$?" != 0 ]; then
 		exit_failed
 	fi
@@ -69,12 +70,12 @@ test_usb_host()
 		exit_failed
 	fi
 
-	wait_key_insertion "upper"
+	wait_key_insertion "the UPPER"
 	check_usb_key
 
 	wait_key_removal
 
-	wait_key_insertion "lower"
+	wait_key_insertion "the LOWER"
 	check_usb_key
 
 	wait_key_removal

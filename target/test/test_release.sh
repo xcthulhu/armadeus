@@ -46,6 +46,9 @@ $THIS_DIR/test_rs232.sh
 echo
 $THIS_DIR/test_usb_device.sh
 echo
+# FPGA test should be run before touch one on APF9328
+$THIS_DIR/test_fpga.sh
+echo
 $THIS_DIR/test_backlight.sh
 echo
 $THIS_DIR/test_framebuffer.sh
@@ -58,13 +61,12 @@ $THIS_DIR/test_adc.sh
 echo
 $THIS_DIR/test_audio.sh
 echo
-$THIS_DIR/test_fpga.sh
-echo
 $THIS_DIR/test_gpio.sh
 echo
 $THIS_DIR/test_pwm.sh
 echo
 $THIS_DIR/media_perf.sh speed
+rm /tmp/data.bin
 # Following tests needs Internet access:
 ask_user "I will now try to configure Internet access. Press ENTER when ready"
 $THIS_DIR/dhcp.sh
@@ -78,6 +80,9 @@ for package_test in $PACKAGES_TESTS; do
 		$package_test
 	fi
 done
+
+echo
+echo "--- END OF RELEASE TESTS ! ---"
 
 exit 0
 

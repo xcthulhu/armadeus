@@ -62,7 +62,7 @@ test_boa()
 		sleep 8
 		if [ "$?" == 0 ]; then
 			ask_user "Did you manage to show the web page ? (y/N)"
-			if [ "$response" == "y" ]; then
+			if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 				echo_test_ok
 				test_cleanup
 				exit 0

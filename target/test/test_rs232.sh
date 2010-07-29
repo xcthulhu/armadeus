@@ -71,6 +71,7 @@ echo_apf27_ports()
         echo "    Available one: [ 2 ]"
 }
 
+show_test_banner "Serial ports"
 PORT="$1"
 if [ "$1" == "" ]; then
 	echo "Please give the port number to test !"

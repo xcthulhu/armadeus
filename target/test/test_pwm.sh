@@ -28,12 +28,12 @@ SLEEP_TIME=4
 
 prepare_test_for_apf9328()
 {
-	ask_user "Please connect your oscilloscope probe to pin 4 of X21 connector (press ENTER when ready)"
+	ask_user "Please connect your oscilloscope probe to pin 4 of X21/Timer connector (GND is on pin 8), then press ENTER when ready"
 }
 
 prepare_test_for_apf27()
 {
-	ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector (press ENTER when ready)"
+	ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector, then press ENTER when ready"
 }
 
 test_pwm()

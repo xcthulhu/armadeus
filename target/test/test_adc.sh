@@ -17,7 +17,7 @@ source ./test_env.sh
 
 test_setup_apf9328()
 {
-	echo "I hope you didn't forget to wire EOC and CVNST !"
+	ask_user "Please connect EOC (ADC pin 11 & CSI pin 12) and CVNST (ADC pin 10 & CSI pin 9), then press ENTER"
 	ADC_SPI_SYS="/sys/bus/spi/devices/spi1.0"
 }
 
