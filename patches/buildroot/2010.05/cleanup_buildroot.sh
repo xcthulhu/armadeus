@@ -20,7 +20,6 @@ rm -rf buildroot/package/firmware/
 rm -f  buildroot/toolchain/gcc/4.2.1/999-4.2.1-armeabi-aapcs-linux.patch
 rm -f  buildroot/toolchain/gcc/4.2.4/999-4.2.4-armeabi-aapcs-linux.patch
 rm -rf buildroot/package/games/wolf4sdl/
-rm -rf buildroot/package/qtopia4/
 rm -rf buildroot/package/ussp-push/
 rm -rf buildroot/package/openobex/
 rm -rf buildroot/package/gpsd/
