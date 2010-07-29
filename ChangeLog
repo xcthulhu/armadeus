@@ -9,12 +9,19 @@ Changes in release 3.3 (no due date yet)
 * Wiki dump available here: http://www.armadeus.com/assos_downloads/wiki/armadeus-3.3_wiki_dump.tar.gz
 
 * Corrected Tickets/Bugs:
+    #58  	 max1027 driver crash with scheduling error
+    #60  	 Add Bluez (Bluetooth stack) support to Buildroot
+    #70  	 Cannot download ed-0.8
+    #75  	 Make the 6 serial ports on APF27 selectable in Linux menuconfig
 
 * Buildroot:
-  Main changes: Preliminary support of BR 2010.05, APW support (Bluetooth, WiFi, GSM & GPS),
-                toolchain moved to EABI by default, wiimote support, liburg, Qt 4.5.3
+  Main changes: Preliminary support of BR 2010.05, APW support (Bluetooth (bluez), WiFi (wpa_supplicant, GSM & GPS (gpsd)),
+                toolchain moved to EABI by default, wiimote support, liburg, Qt 4.5.3, move most packages as patches to
+                ease BR mainline integration, custom armadeus packages now have a custom dir/menu
 
   List of all changes:
+    - ed: bump version and convert to autotools
+    - Updates apf9328_test configs 
     - [AS_DEVICES] Config.in: Indentation + spelling + 'n' is default value for options
     - Updates freescale-tools package: now uses DOWNLOAD helper and copy libvpu to staging_dir
     - Updates apf27 test config
@@ -162,6 +169,9 @@ Changes in release 3.3 (no due date yet)
   Main changes: Better CMOS Camera & APW support, GPIO driver simplified, as5011 driver,
                 USB device, better audio & keypad support on APF27, hs5116 driver, max9768 driver
   List of all changes:
+    - pwm ressources were badly registered on APF9328
+    - Merge patches 344 & 339 into 281 one + add new correct OV96xx config define
+    - Makes ov96xx, ov7670 & ov3640 drivers compile when CONFIG_ADV_DEBUG is used
     - Updates apf27 linux default config and add OSS emulation
     - Makes dma_test driver compile again
     - Reorganizes patch 356 internals
@@ -305,6 +315,7 @@ Changes in release 3.3 (no due date yet)
     - Adding imx-fpga communication testing program
     - Cleanup imxssi debug tool and add it Audio In -> Audio Out loop option
 * Test:
+    - Updates test scripts for 3.3 release
     - Improves test_backlight.sh
     - Improve media_perf.sh
     - Add default capture volume to test_audio.sh
@@ -324,7 +335,8 @@ Changes in release 3.3 (no due date yet)
     - Transform test_pwm.sh in a release test
     - Move test_pwm.sh to the test scripts dir
 * Tools:
-    - Add gpio_helpers.sh to ease usage of gpio driver (extract of test_gpio.sh). New script will be located in /usr/bin/ on the target.
+    - Add gpio_helpers.sh to ease usage of gpio driver (extract of test_gpio.sh). New script will be located in /usr/bin/ on the target
+    - Add error message to gpio_set_value when corresponding /dev/gpio/PXnn is not available
     - Improves quiltify.sh for new BR handling and modify main Makefile accordingly
     - Now U-Boot can be quiltified too
     - quiltify: works on 2.6.X.y Linux sources instead of 2.6.X ones
