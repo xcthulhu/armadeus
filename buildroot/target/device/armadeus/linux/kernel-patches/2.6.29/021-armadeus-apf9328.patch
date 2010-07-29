@@ -114,8 +114,8 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +#ifdef CONFIG_PWM
 +static struct resource pwm_resources[] = {
 +	[0] = {
-+		.start  = (IMX_PWM_BASE),
-+		.end    = (IMX_PWM_BASE + 0x0C),
++		.start  = 0x00208000,
++		.end    = 0x0020800c,
 +		.flags  = IORESOURCE_MEM,
 +	},
 +	[1] = {
