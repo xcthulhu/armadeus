@@ -17,7 +17,7 @@ source ./test_env.sh
 # Requires: test_sdl.sh
 # Validates: libpng & slideshow
 EXEC_NAME="slideshow"
-TEST_FILE="../data/images/"
+TEST_DIR="../data/images/"
 
 test_slideshow()
 {

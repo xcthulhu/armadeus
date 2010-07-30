@@ -36,7 +36,7 @@ test_sdlwater()
 		$EXEC_NAME /usr/share/images/water320.bmp 1>/dev/null &
 		echo "Please touch the LCD screen"
 		sleep 5
-		ask_user "Did you manage to draw water circles ? (y/N)"
+		ask_user "Did you manage to draw circles in water ? (y/N)"
 		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
 			test_cleanup

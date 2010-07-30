@@ -67,6 +67,8 @@ $THIS_DIR/test_pwm.sh
 echo
 $THIS_DIR/media_perf.sh speed
 rm /tmp/data.bin
+echo
+$THIS_DIR/test_wifi.sh
 # Following tests needs Internet access:
 ask_user "I will now try to configure Internet access. Press ENTER when ready"
 $THIS_DIR/dhcp.sh

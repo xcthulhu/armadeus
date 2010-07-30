@@ -33,7 +33,7 @@ prepare_test_for_apf9328()
 
 prepare_test_for_apf27()
 {
-	ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector, then press ENTER when ready"
+	ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector (GND is on pin 6 or 40), then press ENTER when ready"
 }
 
 test_pwm()

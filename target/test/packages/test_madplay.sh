@@ -18,7 +18,7 @@ source ./test_env.sh
 # Requires: ALSA & Internet access
 #DEBUG=True
 EXEC_NAME="madplay"
-FILE_WEB_ADDRESS="http://www.armadeus.com//assos_downloads/misc/mozart.mp3"
+FILE_WEB_ADDRESS="http://www.armadeus.com/assos_downloads/misc/mozart.mp3"
 MUSIC_FILE_NAME="$TEMP_DIR/mozart.mp3"
 
 test_madplay()
@@ -47,11 +47,11 @@ test_madplay()
 	if [ "$?" == 0 ]; then
 		sleep 10
 		ask_user "Was music correctly played ? (y/N)"
+		kill $PID
 		if [ "$response" == "y" ] || [ "$response" == "yes" ]; then
 			echo_test_ok
 			exit 0
 		fi
-		kill $PID
 	fi
 
 	exit_failed
