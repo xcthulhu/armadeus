@@ -5,8 +5,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-08-02 17:02:44.000000000 +0200
-@@ -0,0 +1,430 @@
++++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-08-02 17:22:53.000000000 +0200
+@@ -0,0 +1,429 @@
 +/*
 + * Copyright (c) 2010 Fabien Marteau <fabien.marteau@armadeus.com>
 + *
