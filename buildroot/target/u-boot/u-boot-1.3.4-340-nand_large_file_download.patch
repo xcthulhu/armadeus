@@ -1,0 +1,209 @@
+--- ref/u-boot-1.3.4/common/cmd_net.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/common/cmd_net.c	2010-08-03 18:00:51.000000000 +0200
+@@ -28,6 +28,9 @@
+ #include <command.h>
+ #include <net.h>
+ 
++
++int tftpboot2nand=0;	/* set to 1 for tftp to nand direct */
++
+ extern int do_bootm (cmd_tbl_t *, int, int, char *[]);
+ 
+ static int netboot_common (proto_t, cmd_tbl_t *, int , char *[]);
+@@ -49,9 +52,9 @@ int do_tftpb (cmd_tbl_t *cmdtp, int flag
+ }
+ 
+ U_BOOT_CMD(
+-	tftpboot,	3,	1,	do_tftpb,
++	tftpboot,	4,	1,	do_tftpb,
+ 	"tftpboot- boot image via network using TFTP protocol\n",
+-	"[loadAddress] [[hostIPaddr:]bootfilename]\n"
++	"[loadAddress] [[hostIPaddr:]bootfilename] [nand]\n"
+ );
+ 
+ int do_rarpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+@@ -157,6 +160,8 @@ netboot_common (proto_t proto, cmd_tbl_t
+ 	int   rcode = 0;
+ 	int   size;
+ 
++	tftpboot2nand = 0;
++
+ 	/* pre-set load_addr */
+ 	if ((s = getenv("loadaddr")) != NULL) {
+ 		load_addr = simple_strtoul(s, NULL, 16);
+@@ -179,7 +184,12 @@ netboot_common (proto_t proto, cmd_tbl_t
+ 
+ 	case 3:	load_addr = simple_strtoul(argv[1], NULL, 16);
+ 		copy_filename (BootFile, argv[2], sizeof(BootFile));
++		break;
+ 
++	case 4: load_addr = simple_strtoul(argv[1], NULL, 16);
++		copy_filename (BootFile, argv[2], sizeof(BootFile));
++		if( strcmp(argv[3],"nand") == 0 )
++			tftpboot2nand = 1;
+ 		break;
+ 
+ 	default: printf ("Usage:\n%s\n", cmdtp->usage);
+--- ref/u-boot-1.3.4/net/tftp.c	2008-08-12 16:08:38.000000000 +0200
++++ u-boot-1.3.4/net/tftp.c	2010-08-03 18:01:04.000000000 +0200
+@@ -10,6 +10,11 @@
+ #include "tftp.h"
+ #include "bootp.h"
+ 
++#if defined(CONFIG_CMD_NAND)
++#include <nand.h>
++extern int tftpboot2nand;
++#endif 
++
+ #undef	ET_DEBUG
+ 
+ #if defined(CONFIG_CMD_NET)
+@@ -65,8 +70,10 @@ static char default_filename[DEFAULT_NAM
+ static char tftp_filename[MAX_LEN];
+ 
+ #ifdef CFG_DIRECT_FLASH_TFTP
++#ifndef CFG_NO_FLASH
+ extern flash_info_t flash_info[];
+ #endif
++#endif
+ 
+ /* 512 is poor choice for ethernet, MTU is typically 1500.
+  * Minus eth.hdrs thats 1468.  Can get 2x better throughput with
+@@ -101,12 +108,109 @@ mcast_cleanup(void)
+ 
+ #endif	/* CONFIG_MCAST_TFTP */
+ 
++
++
++int tftp_nand_write(nand_info_t *meminfo, uchar *src, unsigned long *offset   )
++{
++	size_t written;
++	int ret;
++	loff_t offs;
++	int blockstart = -1;
++
++	/* find first non bad block */
++	do {
++		blockstart = (*offset) & (~meminfo->erasesize+1);
++		offs = blockstart;
++		ret = meminfo->block_isbad(meminfo, offs);
++
++		if (ret < 0) {
++			printf("Bad block check failed\n");
++			return -1;
++		}
++		if (ret == 1) {
++			(*offset) = blockstart + meminfo->erasesize;
++/*			printf("\rBad block at 0x%lx "
++			       "in erase block from "
++			       "0x%x will be skipped. new offset %x\n",
++			       (long) offs,
++			       blockstart, *offset);*/
++		}
++	} while ((ret!=0) && (*offset < meminfo->size) );
++
++	if (*offset < meminfo->size)
++	/* write out the page data */
++	ret = meminfo->write(meminfo,
++				*offset,
++				meminfo->oobblock,
++				&written,
++				src);
++	if (ret != 0) {
++		printf("writing NAND page at offset 0x%lx failed\n",
++		       *offset);
++		return -1;
++	}
++}
++
++static void tftp_2_nand(uchar * src, unsigned len)
++{
++	#define TFTP2NAND_BUFFER_SIZE 4096
++	static int temp_buf_offset;
++	static unsigned long nand_offset;
++	static u_char temp_buf[TFTP2NAND_BUFFER_SIZE];
++	int nand_page_size;
++	/* retrieve current nand infos */
++	nand_info_t *nand;
++	nand = &nand_info[nand_curr_device];
++
++	nand_page_size = nand->oobblock;
++	if ((nand_page_size<<1) > TFTP2NAND_BUFFER_SIZE) {
++		printf("error: NAND page size too big\n");
++		NetState = NETLOOP_FAIL;
++		return;
++	}
++
++	if ((TftpBlkSize<<1) > TFTP2NAND_BUFFER_SIZE) {
++		printf("error: tftp block size too big\n");
++		NetState = NETLOOP_FAIL;
++		return;
++	}
++
++
++	if (TftpBlock == 1) { /* reset local nand buffer */
++		temp_buf_offset = 0;
++		nand_offset = load_addr;		
++	}
++
++	if (len)
++		(void)memcpy((void *)(temp_buf + temp_buf_offset), src, len);
++	temp_buf_offset += len;
++	if ((temp_buf_offset >= nand_page_size) || (!len) ){
++		if( tftp_nand_write(nand, temp_buf, &nand_offset) ){
++			NetState = NETLOOP_FAIL;
++			return;		
++		}		
++		nand_offset += nand_page_size;
++		if (len){
++			temp_buf_offset -= nand_page_size;
++			(void)memcpy((void *)(temp_buf), (void *)(temp_buf+nand_page_size), temp_buf_offset);
++		}
++	}
++}
++
++
+ static __inline__ void
+ store_block (unsigned block, uchar * src, unsigned len)
+ {
+ 	ulong offset = block * TftpBlkSize + TftpBlockWrapOffset;
+ 	ulong newsize = offset + len;
++
+ #ifdef CFG_DIRECT_FLASH_TFTP
++#ifdef CFG_NO_FLASH
++
++	if (tftpboot2nand) {
++		tftp_2_nand(src, len);
++	} else 
++#else
+ 	int i, rc = 0;
+ 
+ 	for (i=0; i<CFG_MAX_FLASH_BANKS; i++) {
+@@ -126,6 +230,7 @@ store_block (unsigned block, uchar * src
+ 		}
+ 	}
+ 	else
++#endif /* CFG_NO_FLASH */
+ #endif /* CFG_DIRECT_FLASH_TFTP */
+ 	{
+ 		(void)memcpy((void *)(load_addr + offset), src, len);
+@@ -418,8 +523,18 @@ TftpHandler (uchar * pkt, unsigned dest,
+ 			 *	We received the whole thing.  Try to
+ 			 *	run it.
+ 			 */
++
++#ifdef CFG_DIRECT_FLASH_TFTP
++#ifdef CFG_NO_FLASH
++		/* complete write to nand with last buffer */
++		if (tftpboot2nand)
++			tftp_2_nand(NULL, 0);
++
++#endif /* CFG_NO_FLASH */
++#endif /* CFG_DIRECT_FLASH_TFTP */
++
+ 			puts ("\ndone\n");
+-			NetState = NETLOOP_SUCCESS;
++ 			NetState = NETLOOP_SUCCESS;
+ 		}
+ 		break;
+ 
