@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"1.7"
-#define CONFIG_IDENT_STRING	" apf27 patch 2.1"
+#define CONFIG_ENV_VERSION 	"1.8"
+#define CONFIG_IDENT_STRING	" apf27 patch 2.2"
 
 #define CONFIG_ARM926EJS	1	/* this is an ARM926EJS CPU */
 #define CONFIG_IMX27		1	/* in a Freescale i.MX27 Chip */
@@ -206,13 +206,18 @@
 		" ${serverpath}${board_name}-rootfs.arm.jffs2\0"	\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
-	"update_rootfs=run download_rootfs flash_rootfs\0"		\
+	"update_rootfs=nand erase clean ${rootfs_offset} ${rootfs_len};" \
+		"if tftpboot ${rootfs_offset} ${serverpath}${board_name}-rootfs.arm.jffs2 nand ;"\
+			"then echo Flashing of rootfs succeed;"		\
+			"else echo Flashing of rootfs failed;"		\
+		"fi\0"							\
 	"update_all=run download_kernel flash_kernel download_rootfs "	\
 		"flash_rootfs download_uboot flash_uboot\0"		\
 	"unlock_regs=mw 10000008 0; mw 10020008 0\0"			\
 
 #define CONFIG_BOOTCOMMAND	"run jffsboot"
 #define CFG_AUTOLOAD		"no"
+#define CFG_DIRECT_FLASH_TFTP
 
 #define CONFIG_MACH_TYPE MACH_TYPE_APF27
 #define CONFIG_BOOT_PARAMS_ADDR	0xa0000100
