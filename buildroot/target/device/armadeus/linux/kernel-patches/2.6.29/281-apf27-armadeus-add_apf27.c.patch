@@ -357,7 +357,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	temp |= 0x02;
 +	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + UOG_USBCMD);
 +	pr_debug("reset controller: 0x%08x\n", temp);
-+	mdelay(50);
++	mdelay(10);
 +}
 +
 +static int otg_mode_host = 1;
