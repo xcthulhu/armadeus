@@ -804,7 +804,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-07-28 10:59:04.000000000 +0200
-@@ -0,0 +1,1147 @@
+@@ -0,0 +1,1139 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -1573,14 +1573,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +	temp |= 0x02; /* reset controller */
 +	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x340);
 +	pr_debug("reset controller: 0x%08x\n", temp);
-+	mdelay(10);
-+
-+	/* force port powerup in case of connected device */
-+	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x384);
-+	pr_debug("PORTSC1 before: 0x%08x\n", temp);
-+	temp &= ~(1 << 12);
-+	temp |= 1 << 12;
-+	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x384);
 +	mdelay(10);
 +
 +	return ret;
