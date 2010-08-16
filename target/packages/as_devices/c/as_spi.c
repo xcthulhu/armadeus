@@ -121,7 +121,7 @@ int as_spi_set_speed(int aFd, uint32_t aSpeed)
 
 uint32_t as_spi_get_speed(int aFd)
 {
-    uint8_t speed;
+    uint32_t speed;
 
     if (ioctl(aFd, SPI_IOC_RD_MAX_SPEED_HZ, &speed) < 0) {
             ERROR("SPI max_speed_hz");

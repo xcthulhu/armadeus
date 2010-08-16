@@ -95,7 +95,6 @@ int as_spi_get_lsb(int aFd);
  * @param aSpeed clock speed
  *
  * @return speed in Hz, negative value on error
- * TODO: test it
  */
 int as_spi_set_speed(int aFd, uint32_t aSpeed);
 
@@ -104,7 +103,6 @@ int as_spi_set_speed(int aFd, uint32_t aSpeed);
  * @param aFd spidev file handler
  *
  * @return speed in Hz
- * TODO: test it
  */
 uint32_t as_spi_get_speed(int aFd);
 
