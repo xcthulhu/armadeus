@@ -55,6 +55,11 @@ static int as1531_init_gpio(void)
 	return mxc_gpio_setup_multiple_pins(as1531_pins, ARRAY_SIZE(as1531_pins), "as1531");
 }
 
+static void as1531_exit_gpio(void)
+{
+	mxc_gpio_release_multiple_pins(as1531_pins, ARRAY_SIZE(as1531_pins));
+}
+
 /* Chip select command for as1531 */
 static void as1531_cs(u32 command)
 {
@@ -105,6 +110,7 @@ register_error:
 static void __exit exit_as1531_plat(void)
 {
 	spi_unregister_device(as1531_spi_dev);
+	as1531_exit_gpio();
 }
 
 module_init(init_as1531_plat);
