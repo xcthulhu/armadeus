@@ -1,0 +1,11 @@
+#
+#
+
+config ARMADEUS_AS1531_PLAT
+        tristate "AS1531 platform data"
+        default n
+        depends on ARMADEUS_DRIVERS
+        select SENSORS_AS1531 
+        ---help---
+				Specific platform data for as1531 plugged on apf27-Dev board
+				on SPI3.
