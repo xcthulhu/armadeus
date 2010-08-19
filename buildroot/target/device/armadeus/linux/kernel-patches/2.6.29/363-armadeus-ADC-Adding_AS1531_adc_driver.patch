@@ -6,7 +6,7 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: linux-2.6.29.6/drivers/hwmon/as1531.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/hwmon/as1531.c	2010-08-18 17:43:10.000000000 +0200
++++ linux-2.6.29.6/drivers/hwmon/as1531.c	2010-08-19 10:34:37.000000000 +0200
 @@ -0,0 +1,298 @@
 +/*
 + * as1531.c
@@ -43,7 +43,7 @@ Index: linux-2.6.29.6/drivers/hwmon/as1531.c
 +#include <linux/spi/spi.h>
 +
 +#define AS1531_SPI_SPEED 64941
-+#define AS1531_MAX_VALUE 4095
++#define AS1531_MAX_VALUE 2500
 +
 +#define AS1531_START_BIT					0x80
 +#define AS1531_CHAN0						(0<<4)
@@ -175,7 +175,7 @@ Index: linux-2.6.29.6/drivers/hwmon/as1531.c
 +	if (status < 0)
 +		goto out;
 +
-+	status = sprintf(buf, "%d\n", ret_value);
++	status = sprintf(buf, "%d\n", ret_value*2500/4096);
 +out:
 +	mutex_unlock(&adc->lock);
 +	return status;
@@ -308,8 +308,8 @@ Index: linux-2.6.29.6/drivers/hwmon/as1531.c
 +MODULE_DESCRIPTION("Driver for AS1531 ADC");
 Index: linux-2.6.29.6/drivers/hwmon/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/drivers/hwmon/Kconfig	2010-08-17 16:24:13.000000000 +0200
-+++ linux-2.6.29.6/drivers/hwmon/Kconfig	2010-08-17 16:45:26.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/hwmon/Kconfig	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/hwmon/Kconfig	2010-08-19 09:58:10.000000000 +0200
 @@ -93,6 +93,14 @@
  	  This driver can also be built as a module.  If so, the module
  	  will be called adcxx.
@@ -327,8 +327,8 @@ Index: linux-2.6.29.6/drivers/hwmon/Kconfig
  	depends on I2C
 Index: linux-2.6.29.6/drivers/hwmon/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/drivers/hwmon/Makefile	2010-08-17 16:24:10.000000000 +0200
-+++ linux-2.6.29.6/drivers/hwmon/Makefile	2010-08-17 16:45:55.000000000 +0200
+--- linux-2.6.29.6.orig/drivers/hwmon/Makefile	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29.6/drivers/hwmon/Makefile	2010-08-19 09:58:10.000000000 +0200
 @@ -18,6 +18,7 @@
  obj-$(CONFIG_SENSORS_AD7414)	+= ad7414.o
  obj-$(CONFIG_SENSORS_AD7418)	+= ad7418.o
@@ -337,3 +337,23 @@ Index: linux-2.6.29.6/drivers/hwmon/Makefile
  obj-$(CONFIG_SENSORS_ADM1021)	+= adm1021.o
  obj-$(CONFIG_SENSORS_ADM1025)	+= adm1025.o
  obj-$(CONFIG_SENSORS_ADM1026)	+= adm1026.o
+Index: linux-2.6.29.6/Documentation/hwmon/as1531
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/Documentation/hwmon/as1531	2010-08-19 10:14:41.000000000 +0200
+@@ -0,0 +1,15 @@
++Kernel driver as1531
++====================
++
++Supported chips:
++  * Austriamicrosystems AS1531
++	  Datasheet: http://www.austriamicrosystems.com/eng/Products/Data-Converters/A-D-Converter/AS1531
++
++Author:
++        Fabien Marteau <fabien.marteau@armadeus.com>
++
++Description
++-----------
++
++This driver implements support for the Austriamicrosystems AS1531
++12bits 8channels Analog to Digital Converter.
