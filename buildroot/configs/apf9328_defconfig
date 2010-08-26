@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Mon Jun 21 14:37:01 2010
+# Thu Aug 26 14:31:57 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.05"
@@ -268,6 +268,19 @@ BR2_PACKAGE_BUSYBOX_CONFIG="target/device/armadeus/busybox-$(BR2_BUSYBOX_VERSION
 # BR2_PACKAGE_CUSTOMIZE is not set
 
 #
+# Armadeus specific tools/utilities
+#
+# BR2_PACKAGE_AD9889CTRL is not set
+# BR2_PACKAGE_AS_DEVICES is not set
+BR2_PACKAGE_CH7024CTRL=y
+# BR2_PACKAGE_ARMADEUS_DEMOS is not set
+BR2_PACKAGE_FPGAREGS=y
+BR2_PACKAGE_IMXREGS=y
+# BR2_PACKAGE_IMXSSI is not set
+BR2_PACKAGE_MAX5821CTRL=y
+# BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
+
+#
 # Audio and video libraries and applications
 #
 BR2_PACKAGE_ALSA_LIB=y
@@ -323,6 +336,7 @@ BR2_PACKAGE_ALSA_UTILS_SPEAKER_TEST=y
 # BR2_PACKAGE_MADPLAY is not set
 # BR2_PACKAGE_MPG123 is not set
 # BR2_PACKAGE_MPLAYER is not set
+# BR2_PACKAGE_PYWEBRADIO is not set
 # BR2_PACKAGE_SPEEX is not set
 # BR2_PACKAGE_SWFDEC is not set
 # BR2_PACKAGE_FESTIVAL is not set
@@ -377,7 +391,11 @@ BR2_PACKAGE_ALSA_UTILS_SPEAKER_TEST=y
 #
 # Games
 #
+# BR2_PACKAGE_E_UAE is not set
 # BR2_PACKAGE_GNUCHESS is not set
+# BR2_PACKAGE_LBREAKOUT2 is not set
+# BR2_PACKAGE_LTRIS is not set
+# BR2_PACKAGE_OPENTYRIAN is not set
 # BR2_PACKAGE_PRBOOM is not set
 # BR2_PACKAGE_SDLQUAKE is not set
 # BR2_PACKAGE_SNES9X is not set
@@ -509,6 +527,7 @@ BR2_PACKAGE_MTD_UBIUPDATEVOL=y
 # BR2_PACKAGE_SMARTMONTOOLS is not set
 # BR2_PACKAGE_SQUASHFS is not set
 # BR2_PACKAGE_SYSSTAT is not set
+# BR2_PACKAGE_URG is not set
 # BR2_PACKAGE_USB_MODESWITCH is not set
 # BR2_PACKAGE_USBMOUNT is not set
 # BR2_PACKAGE_USBUTILS is not set
@@ -660,6 +679,11 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 # BR2_PACKAGE_AVAHI is not set
 # BR2_PACKAGE_AXEL is not set
 # BR2_PACKAGE_BIND is not set
+# BR2_PACKAGE_BLUEZ_LIBS is not set
+
+#
+# bluez-utils not available (need dbus)
+#
 # BR2_PACKAGE_BMON is not set
 # BR2_PACKAGE_BRIDGE is not set
 # BR2_PACKAGE_CTORRENT is not set
@@ -753,32 +777,6 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_ED is not set
 BR2_PACKAGE_NANO=y
 # BR2_PACKAGE_UEMACS is not set
-
-#
-# Armadeus specific packages
-#
-# BR2_PACKAGE_UUCP is not set
-# BR2_PACKAGE_MESALIB is not set
-
-#
-# Armadeus specific tools/utilities
-#
-# BR2_PACKAGE_AD9889CTRL is not set
-# BR2_PACKAGE_AS_DEVICES is not set
-BR2_PACKAGE_CH7024CTRL=y
-# BR2_PACKAGE_ARMADEUS_DEMOS is not set
-BR2_PACKAGE_FPGAREGS=y
-BR2_PACKAGE_IMXREGS=y
-# BR2_PACKAGE_IMXSSI is not set
-BR2_PACKAGE_MAX5821CTRL=y
-# BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
-
-#
-# bluez-utils not available (need dbus)
-#
-# BR2_PACKAGE_FBTEST is not set
-# BR2_PACKAGE_SNES9X is not set
 
 #
 # Target filesystem options
