@@ -38,6 +38,7 @@ static PyObject * getPullupValue(PyObject *self, PyObject *args);
 static PyObject * setPullupValue(PyObject *self, PyObject *args);
 static PyObject * getIrqMode(PyObject *self, PyObject *args);
 static PyObject * setIrqMode(PyObject *self, PyObject *args);
+static PyObject * getPinNumber(PyObject *self, PyObject *args);
+static PyObject * getPortLetter(PyObject *self, PyObject *args);
 
 static PyObject * gpio_close(PyObject *self, PyObject *args);
-

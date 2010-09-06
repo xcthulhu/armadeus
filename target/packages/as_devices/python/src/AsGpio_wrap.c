@@ -21,6 +21,7 @@
 #include "AsGpio_wrap.h"
 #include "as_gpio.h"
 
+
 /* Methods definitions */
 static PyMethodDef AsGpio_wrap_methods[] = {
     {"gpio_open", gpio_open, METH_VARARGS, "Initialize gpio"},
@@ -32,6 +33,8 @@ static PyMethodDef AsGpio_wrap_methods[] = {
     {"getPullupValue", getPullupValue, METH_VARARGS, "Get pull up value"},
     {"getIrqMode", getIrqMode, METH_VARARGS, "Get IRQ Mode"},
     {"setIrqMode", setIrqMode, METH_VARARGS, "Set IRQ Mode"},
+    {"getPortLetter", getPortLetter, METH_VARARGS, "Get port letter"},
+    {"getPinNumber", getPinNumber, METH_VARARGS, "Get pin number"},
     {"gpio_close", gpio_close, METH_VARARGS, "Close gpio"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
@@ -42,43 +45,46 @@ void initAsGpio_wrap() /* called on first import */
     (void) Py_InitModule("AsGpio_wrap", AsGpio_wrap_methods); /* mod name, table ptr */
 }
 
-/** @brief Initialize port access
+/** @brief Initialize pin port access
  * @param aPortChar character port in UPPER case
+ * @param aPinNum pin number on port
  * @return PyObject 
  */
 static PyObject * gpio_open(PyObject *self, PyObject *args)
 {
     /* parameters */
     char aPortChar;
+    int aPinNum;
+
     struct as_gpio_device *dev;
     PyObject *ret;
-
+    char buff[300];
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "c", &aPortChar))
+    if (!PyArg_ParseTuple(args, "ci", &aPortChar, &aPinNum))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
     
-    dev = as_gpio_open(aPortChar);
+    dev = as_gpio_open(aPortChar, aPinNum);
     if (dev == NULL)
     {
-        PyErr_SetString(PyExc_IOError,
-                        "Initialization error. Is kernel module loaded ?");
+        snprintf(buff, 300, 
+                "Initialization error P%c%d. Is kernel module loaded ?",
+                aPortChar, aPinNum);
+        PyErr_SetString(PyExc_IOError,buff);
         return NULL;
     }
-    ret = Py_BuildValue("((ci))",
-                        dev->port_letter,
-                        dev->fdev);
-    free(dev);
+    
+    ret = Py_BuildValue("l", (long)dev);
+
     return ret;
 }
 
 /** @brief  Set pin direction
  *
- * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
- * @param aPinNum pin number
+ * @param aFdev as_gpio_device structure pointer
  * @param aDirection direction 0:input 1:output
  *
  * @return error if negative value 
@@ -86,38 +92,22 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
 static PyObject * setPinDirection(PyObject *self, PyObject *args)
 {
     /* parameters */
-    char aPort_letter;
-    int aFdev;
-
-    int aPinNum;
+    struct as_gpio_device *aFdev;
     int aDirection;
 
-    struct as_gpio_device *dev;
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "((ci))ii", 
-                          &aPort_letter, 
-                          &aFdev,
-                          &aPinNum,
+    if (!PyArg_ParseTuple(args, "li", 
+                          (long *)&aFdev,
                           &aDirection))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
-   
-    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
-    if (dev == NULL)
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "memory allocation: can't malloc fdev structure");
-        return NULL;
-    }
-    dev->port_letter = aPort_letter;
-    dev->fdev = aFdev;
 
-    ret = as_gpio_set_pin_direction(dev, aPinNum, aDirection);
+    ret = as_gpio_set_pin_direction(aFdev, aDirection);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,
@@ -125,14 +115,12 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    free(dev);
     return Py_BuildValue("i", ret);
 }
 
 /** @brief Set pin value 
  *
- * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
- * @param aPinNum pin number
+ * @param aFdev as_gpio_device structure pointer
  * @param aValue value of pin (1 or 0)
  *
  * @return error if negative 
@@ -140,38 +128,20 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
 static PyObject * setPinValue(PyObject *self, PyObject *args)
 {
     /* parameters */
-    char aPort_letter;
-    int aFdev;
-
-    int aPinNum;
+    struct as_gpio_device *aFdev;
     int aValue;
 
-    struct as_gpio_device *dev;
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "((ci))ii", 
-                          &aPort_letter, 
-                          &aFdev,
-                          &aPinNum,
-                          &aValue))
+    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aValue))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
    
-    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
-    if (dev == NULL)
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "memory allocation: can't malloc fdev structure");
-        return NULL;
-    }
-    dev->port_letter = aPort_letter;
-    dev->fdev = aFdev;
-
-    ret = as_gpio_set_pin_value(dev, aPinNum, aValue);
+    ret = as_gpio_set_pin_value(aFdev, aValue);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,
@@ -179,14 +149,13 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    free(dev);
     return Py_BuildValue("i", ret);
 
 }
 
 /** @brief Get pin value
  *
- * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param aFdev as_gpio_device structure pointer
  * @param aPinNum pin number
  *
  * @return pin value if positive or null, error if negative
@@ -194,36 +163,19 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
 static PyObject * getPinValue(PyObject *self, PyObject *args)
 {
     /* parameters */
-    char aPort_letter;
-    int aFdev;
+    struct as_gpio_device *aFdev;
 
-    int aPinNum;
-
-    struct as_gpio_device *dev;
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "((ci))i", 
-                          &aPort_letter, 
-                          &aFdev,
-                          &aPinNum))
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
    
-    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
-    if (dev == NULL)
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "memory allocation: can't malloc fdev structure");
-        return NULL;
-    }
-    dev->port_letter = aPort_letter;
-    dev->fdev = aFdev;
-
-    ret = as_gpio_get_pin_value(dev, aPinNum);
+    ret = as_gpio_get_pin_value(aFdev);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,
@@ -231,110 +183,275 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    free(dev);
     return Py_BuildValue("i", ret);
 }
 
-/** @brief TODO 
+/** @brief Get pin value, blocking until interrupt occur
  *
- * @param TODO 
- * @param TODO 
- *
- * @return TODO 
- */
-static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
-{
-    printf("TODO\n");
-}
-
-/** @brief TODO 
- *
- * @param TODO 
- * @param TODO 
- *
- * @return TODO 
- */
-static PyObject * getPullupValue(PyObject *self, PyObject *args)
-{
-   /* TODO */
-    printf("TODO\n");
-}
-
-/** @brief TODO 
- *
- * @param TODO 
- * @param TODO 
- *
- * @return TODO 
- */
-static PyObject * setPullupValue(PyObject *self, PyObject *args)
-{
-   /* TODO */
-    printf("TODO\n");
-}
-
-/** @brief TODO 
- *
- * @param TODO 
- * @param TODO 
- *
- * @return TODO 
- */
-static PyObject * getIrqMode(PyObject *self, PyObject *args)
-{
-   /* TODO */
-    printf("TODO\n");
-}
-
-/** @brief TODO 
- *
- * @param TODO 
- * @param TODO 
- *
- * @return TODO 
- */
-static PyObject * setIrqMode(PyObject *self, PyObject *args)
-{
-   /* TODO */
-    printf("TODO\n");
-}
-
-/** @brief Close port access
- *
- * @param ((ci)) -> (aPort_letter, aFdev) as_gpio_device structure_list
+ * @param aFdev as_gpio_device structure pointer
+ * @param aDelay_s seconds delay
+ * @param aDelay_us useconds delay
  *
  * @return pin value if positive or null, error if negative
  */
-static PyObject * gpio_close(PyObject *self, PyObject *args)
+static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
 {
     /* parameters */
-    char aPort_letter;
-    int aFdev;
+    struct as_gpio_device *aFdev;
+    int aDelay_s;
+    int aDelay_us;
 
-    struct as_gpio_device *dev;
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "((ci))", 
-                          &aPort_letter, 
-                          &aFdev))
+    if (!PyArg_ParseTuple(args, "lii",
+                          (long *)&aFdev,
+                          &aDelay_s,
+                          &aDelay_us))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
    
-    dev = (struct as_gpio_device *)malloc(sizeof(struct as_gpio_device));
-    if (dev == NULL)
+    ret = as_gpio_blocking_get_pin_value(aFdev, aDelay_s, aDelay_us);
+    if (ret == -10)
     {
-        PyErr_SetString(PyExc_IOError,
-                        "memory allocation: can't malloc fdev structure");
+        PyErr_SetString(PyExc_IOError, "TIMEOUT");
         return NULL;
     }
-    dev->port_letter = aPort_letter;
-    dev->fdev = aFdev;
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
 
-    ret = as_gpio_close(dev);
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Get pin pull-up value
+ *
+ * @param aFdev as_gpio_device structure pointer
+ *
+ * @return pin value if positive or null, error if negative
+ */
+static PyObject * getPullupValue(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_get_pullup_value(aFdev);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Set pin pull-up value
+ *
+ * @param aFdev as_gpio_device structure pointer
+ * @param aValue pull-up value 0:off 1:on
+ *
+ * @return pin value if positive or null, error if negative
+ */
+static PyObject * setPullupValue(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+    int aValue;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aValue))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_set_pullup_value(aFdev, aValue);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Set pin irq mode
+ *
+ * @param aFdev as_gpio_device structure pointer
+ * @param aMode irq mode
+ *
+ * @return error if negative
+ */
+static PyObject * setIrqMode(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+    int aMode;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aMode))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_set_irq_mode(aFdev, aMode);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Get pin irq mode value
+ *
+ * @param aFDev as_gpio_device pointer structure
+ *
+ * @return pin mode value if positive or null, error if negative
+ */
+static PyObject * getIrqMode(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_get_irq_mode(aFdev);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Get pin number value
+ *
+ * @param aDev as_gpio_device pointer structure
+ *
+ * @return pin number, error if negative
+ */
+static PyObject * getPinNumber(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_get_pin_num(aFdev);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Get port letter
+ *
+ * @param aDev as_gpio_device pointer structure
+ *
+ * @return port letter, error if negative
+ */
+static PyObject * getPortLetter(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    char buf[2];
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_get_port_letter(aFdev);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin value");
+        return NULL;
+    }
+    buf[0] = ret;
+    buf[1] = '\0';
+
+    return Py_BuildValue("s", buf);
+
+}
+
+/** @brief Close port access
+ *
+ * @param aFdev as_gpio_device structure pointer
+ *
+ * @return pin value if positive or null, error if negative
+ */
+static PyObject * gpio_close(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+   
+    ret = as_gpio_close(aFdev);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,

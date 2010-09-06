@@ -143,7 +143,7 @@ int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev);
  *
  * @param aDev as_gpio_device pointer structure
  *
- * @return pin mode value if positive or null, error if negative
+ * @return pin number, error if negative
  */
 int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev);
 
@@ -151,7 +151,7 @@ int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev);
  *
  * @param aDev as_gpio_device pointer structure
  *
- * @return pin mode value if positive or null, error if negative
+ * @return port letter, error if negative
  */
 int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev);
 

@@ -15,12 +15,12 @@ AS_LIB=../c/libas_devices.so
 
 LIBNAME=AsDevices
 
-#WRAPPER_LIBS=AsGpio_wrap.so
+WRAPPER_LIBS=AsGpio_wrap.so
 WRAPPER_DIR=src
 
 PYTHON_VERS=2.4
 PYTHON_SUBVERS=5
-PYINC=/usr/include/python2.4
+PYINC=$(STAGING_DIR)/usr/include/python2.4/
 PYLIB=../../../../buildroot/project_build_armv5te/apf27/root/usr/lib/python$(PYTHON_VERS)
 
 .PHONY: all
