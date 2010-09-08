@@ -6,7 +6,7 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: buildroot/package/database/mysql_client/Config.in
 ===================================================================
 --- buildroot.orig/package/database/mysql_client/Config.in	2008-11-03 09:15:31.000000000 +0100
-+++ buildroot/package/database/mysql_client/Config.in	2010-09-06 10:22:50.000000000 +0200
++++ buildroot/package/database/mysql_client/Config.in	2010-09-08 14:05:00.000000000 +0200
 @@ -2,3 +2,21 @@
  	bool "MySQL 5.1 client"
  	help
@@ -32,14 +32,14 @@ Index: buildroot/package/database/mysql_client/Config.in
 Index: buildroot/package/database/mysql_client/mysql_client.mk
 ===================================================================
 --- buildroot.orig/package/database/mysql_client/mysql_client.mk	2008-11-03 09:15:31.000000000 +0100
-+++ buildroot/package/database/mysql_client/mysql_client.mk	2010-09-08 13:54:01.000000000 +0200
++++ buildroot/package/database/mysql_client/mysql_client.mk	2010-09-08 15:15:51.000000000 +0200
 @@ -28,3 +28,20 @@
  	$(ENABLE_DEBUG)
  
  $(eval $(call AUTOTARGETS,package/database,mysql_client))
 +
 +$(MYSQL_CLIENT_HOOK_POST_INSTALL):
-+	ln -s $(TARGET_DIR)/usr/lib/mysql/libmysqlclient.so.16 $(TARGET_DIR)/usr/lib/
++	cd $(TARGET_DIR)/usr/lib/;cp mysql/libmysqlclient.so.16.0.0 libmysqlclient.so.16
 +ifeq ($(BR2_PACKAGE_MYSQL_CLIENT_SHRINK),y)
 +	rm -rf $(TARGET_DIR)/usr/mysql-test/
 +	rm -rf $(TARGET_DIR)/usr/sql-bench/
