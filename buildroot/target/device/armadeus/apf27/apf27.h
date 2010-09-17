@@ -206,7 +206,7 @@
 		" ${serverpath}${board_name}-rootfs.arm.ubifs\0"	\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
-	"update_rootfs=run download_rootfs flash_rootfs\0"              \
+	"update_rootfs=run download_rootfs flash_rootfs\0"		\
 	"update_all=run download_kernel flash_kernel download_rootfs "	\
 		"flash_rootfs download_uboot flash_uboot\0"		\
 	"unlock_regs=mw 10000008 0; mw 10020008 0\0"			\
@@ -913,28 +913,3 @@
 
 #endif /* __CONFIG_H */
 
-/* Add a wrapper around the values Buildroot sets. */
-#ifndef __BR2_ADDED_CONFIG_H
-#define __BR2_ADDED_CONFIG_H
-#ifdef CONFIG_HOSTNAME
-#undef CONFIG_HOSTNAME
-#endif
-#define CONFIG_HOSTNAME  "apf27"
-#ifdef CONFIG_BOARD_NAME
-#undef CONFIG_BOARD_NAME
-#endif
-#define CONFIG_BOARD_NAME  apf27
-#endif /* __BR2_ADDED_CONFIG_H */
-
-/* Add a wrapper around the values Buildroot sets. */
-#ifndef __BR2_ADDED_CONFIG_H
-#define __BR2_ADDED_CONFIG_H
-#ifdef CONFIG_HOSTNAME
-#undef CONFIG_HOSTNAME
-#endif
-#define CONFIG_HOSTNAME  "apf27"
-#ifdef CONFIG_BOARD_NAME
-#undef CONFIG_BOARD_NAME
-#endif
-#define CONFIG_BOARD_NAME  apf27
-#endif /* __BR2_ADDED_CONFIG_H */
