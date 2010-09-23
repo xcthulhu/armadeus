@@ -53,18 +53,18 @@
 int writeBuffer(int aFile_handler, char *aValueWrite)
 {
     int ret;
+
     ret = write(aFile_handler, aValueWrite, strlen(aValueWrite));
-    if (ret < 0)
-    {
+    if (ret < 0) {
         ERROR("Can't write file ");
         return ret;
     }
-    ret = lseek(aFile_handler,0,SEEK_SET);
-    if (ret < 0)
-    {
+    ret = lseek(aFile_handler, 0, SEEK_SET);
+    if (ret < 0) {
         ERROR("lseek error ");
         return ret;
     }
+
     return ret;
 }
 
@@ -80,18 +80,18 @@ int writeBuffer(int aFile_handler, char *aValueWrite)
 int readBuffer(int aFile_handler, char *aValueRead)
 {
     int ret;
+
     ret = read(aFile_handler, aValueRead, SIZE_OF_BUFF);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         ERROR("Can't read file ");
         return ret;
     }
-    ret = lseek(aFile_handler,0,SEEK_SET);
-    if (ret < 0)
-    {
+    ret = lseek(aFile_handler, 0, SEEK_SET);
+    if (ret < 0) {
         ERROR("lseek error ");
         return ret;
     }
+
     return ret;
 }
 
@@ -103,34 +103,29 @@ struct as_pwm_device *as_pwm_open(int aPwmNumber)
     struct as_pwm_device *dev;
 
     dev = (struct as_pwm_device *)malloc(sizeof(struct as_pwm_device));
-    if (dev == NULL)
-    {
+    if (dev == NULL) {
         ERROR("Can't allocate memory for pwm device structure\n");
         return NULL;
     }
 
-    /* open pwm files management */
-    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,FREQUENCY_PATH);
-    if ((dev->fileFrequency = open(buffer,O_RDWR)) < 0)
-    {
+    /* open pwm management files */
+    snprintf(buffer, SIZE_OF_BUFF, "%s%d/%s", PWM_SYS_PATH, aPwmNumber, FREQUENCY_PATH);
+    if ((dev->fileFrequency = open(buffer, O_RDWR)) < 0) {
         ERROR("Can't open frequency files");
         return NULL;
     }
-    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,PERIOD_PATH);
-    if ((dev->filePeriod = open(buffer,O_RDWR)) < 0)
-    {
+    snprintf(buffer, SIZE_OF_BUFF, "%s%d/%s", PWM_SYS_PATH, aPwmNumber, PERIOD_PATH);
+    if ((dev->filePeriod = open(buffer, O_RDWR)) < 0) {
         ERROR("Can't open period files");
         return NULL;
     }
-    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,DUTY_PATH);
-    if((dev->fileDuty = open(buffer,O_RDWR)) < 0)
-    {
+    snprintf(buffer, SIZE_OF_BUFF, "%s%d/%s", PWM_SYS_PATH, aPwmNumber, DUTY_PATH);
+    if((dev->fileDuty = open(buffer, O_RDWR)) < 0) {
         ERROR("Can't open duty files");
         return NULL;
     }
-    snprintf(buffer,SIZE_OF_BUFF,"%s%d/%s",PWM_SYS_PATH,aPwmNumber,ACTIVE_PATH);
-    if((dev->fileActive = open(buffer,O_RDWR)) < 0)
-    {
+    snprintf(buffer, SIZE_OF_BUFF, "%s%d/%s", PWM_SYS_PATH, aPwmNumber, ACTIVE_PATH);
+    if((dev->fileActive = open(buffer, O_RDWR)) < 0) {
         ERROR("Can't open active files");
         return NULL;
     }
@@ -144,8 +139,9 @@ int32_t as_pwm_set_frequency(struct as_pwm_device *aDev, int aFrequency)
 {
     char buffer[SIZE_OF_BUFF];
 
-    snprintf(buffer,SIZE_OF_BUFF,"%d",aFrequency);
-    return writeBuffer(aDev->fileFrequency,buffer);
+    snprintf(buffer, SIZE_OF_BUFF, "%d", aFrequency);
+
+    return writeBuffer(aDev->fileFrequency, buffer);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -155,9 +151,8 @@ int32_t as_pwm_get_frequency(struct as_pwm_device *aDev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileFrequency,  buffer);
-    if (ret < 0)
-    {
+    ret = readBuffer(aDev->fileFrequency, buffer);
+    if (ret < 0) {
         ERROR("Can't read frequency\n");
         return ret;
     }
@@ -171,7 +166,8 @@ int32_t as_pwm_set_period(struct as_pwm_device *aDev, int aPeriod)
 {
     char buffer[SIZE_OF_BUFF];
 
-    snprintf(buffer,SIZE_OF_BUFF,"%d",aPeriod);
+    snprintf(buffer, SIZE_OF_BUFF, "%d", aPeriod);
+
     return writeBuffer(aDev->filePeriod, buffer);
 }
 
@@ -182,9 +178,8 @@ int32_t as_pwm_get_period(struct as_pwm_device *aDev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->filePeriod,  buffer);
-    if (ret < 0)
-    {
+    ret = readBuffer(aDev->filePeriod, buffer);
+    if (ret < 0) {
         ERROR("Can't read period\n");
         return ret;
     }
@@ -199,19 +194,19 @@ int32_t as_pwm_set_duty(struct as_pwm_device *aDev, int aDuty)
     char buffer[SIZE_OF_BUFF];
 
     snprintf(buffer, SIZE_OF_BUFF, "%d", aDuty);
-    return writeBuffer( aDev->fileDuty, buffer);
+
+    return writeBuffer(aDev->fileDuty, buffer);
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t  as_pwm_get_duty(struct as_pwm_device *aDev)
+int32_t as_pwm_get_duty(struct as_pwm_device *aDev)
 {
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileDuty,  buffer);
-    if (ret < 0)
-    {
+    ret = readBuffer(aDev->fileDuty, buffer);
+    if (ret < 0) {
         ERROR("Can't read duty\n");
         return ret;
     }
@@ -221,23 +216,21 @@ int32_t  as_pwm_get_duty(struct as_pwm_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_set_state(struct as_pwm_device *aDev, int aEnable)
+int32_t as_pwm_set_state(struct as_pwm_device *pwm_dev, int enable)
 {
     char one[] = "1";
     char zero[] = "0";
-    int ret=0;
+    int ret = 0;
 
-    if(aEnable)
-    {
-        ret = writeBuffer(aDev->fileActive,one);
-    }else{
-        ret = writeBuffer(aDev->fileActive,zero);
+    if (enable) {
+        ret = writeBuffer(pwm_dev->fileActive, one);
+    } else {
+        ret = writeBuffer(pwm_dev->fileActive, zero);
     }
-    if (ret < 0)
-    {
-        ERROR("Can't write file Active\n");
-        return ret;
+    if (ret < 0) {
+        ERROR("Can't write to pwmX/active\n");
     }
+
     return ret;
 }
 
@@ -248,9 +241,8 @@ int32_t as_pwm_get_state(struct as_pwm_device *aDev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileActive,  buffer);
-    if (ret < 0)
-    {
+    ret = readBuffer(aDev->fileActive, buffer);
+    if (ret < 0) {
         ERROR("Can't read state\n");
         return ret;
     }
@@ -264,32 +256,27 @@ int32_t as_pwm_close(struct as_pwm_device *aDev)
 {
     int ret = 0;
 
-    /* open pwm files management */
+    /* Close pwm management files */
     ret = close(aDev->fileFrequency);
-    if(ret < 0)
-    {
-        ERROR("Can't close frequency files");
+    if (ret < 0) {
+        ERROR("Can't close /frequency");
         return ret;
     }
     ret = close(aDev->filePeriod);
-    if(ret < 0)
-    {
-        ERROR("Can't close period files");
+    if (ret < 0) {
+        ERROR("Can't close /period");
         return ret;
     }
     ret = close(aDev->fileDuty);
-    if(ret < 0)
-    {
-        ERROR("Can't close duty files");
+    if (ret < 0) {
+        ERROR("Can't close /duty");
         return ret;
     }
     ret = close(aDev->fileActive);
-    if(ret < 0)
-    {
-        ERROR("Can't close active files");
+    if (ret < 0) {
+        ERROR("Can't close /active");
         return ret;
     }
 
     return ret;
-
 }

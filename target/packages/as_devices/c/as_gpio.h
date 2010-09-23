@@ -26,7 +26,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 #define GPIO_IRQ_MODE_NOINT    (0)
 #define GPIO_IRQ_MODE_RISING   (1)
@@ -159,12 +159,12 @@ int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev);
  *
  * @param aDev as_gpio_device pointer structure
  *
- * @return pin value if positive or null, error if negative
+ * @return error if negative
  */
 int32_t as_gpio_close(struct as_gpio_device *aDev);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
 
-#endif // __ASGPIO_H__
+#endif /* __ASGPIO_H__ */
