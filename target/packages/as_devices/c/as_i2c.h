@@ -61,43 +61,53 @@ int as_i2c_open(unsigned int i2c_id);
  */
 int as_i2c_close(int fd);
 
-/** @brief Set I2C slave address to be used.
+/** @brief Set chip's I2C slave address (to be used with read() & write() method)
  *
  * @return 0 on success, -1 on error.
  */
 int as_i2c_set_slave(int fd, uint8_t addr);
 
-/** @brief Read several bytes.
+/** @brief Read several bytes (ioctl() method) from given chip.
+ *
+ * @param addr I2C address of chip to access
  *
  * @return 0 on success, -1 on error.
  */
 int as_i2c_read(int fd, uint8_t addr, uint8_t *data, size_t n);
 
-/** @brief Write several bytes.
+/** @brief Write several bytes (ioctl() method) to given chip.
+ *
+ * @param addr I2C address of chip to access
  *
  * @return 0 on success, -1 on error.
  */
 int as_i2c_write(int fd, uint8_t addr, const uint8_t *data, size_t n);
 
-/** @brief Read at a given register address.
+/** @brief Read from given chip at a given register address (ioctl() method).
  *
  * Send the \e reg byte, then read bytes.
+ *
+ * @param addr I2C address of chip to access
  *
  * @return 0 on success, -1 on write error (\e reg byte), -2 on read error.
  */
 int as_i2c_read_reg(int fd, uint8_t addr, uint8_t reg, uint8_t *data, size_t n);
 
-/** @brief Write at a given register address.
+/** @brief Write to given chip at a given register address (ioctl() method).
  *
  * Send the \e reg byte followed by data.
+ *
+ * @param addr I2C address of chip to access
  *
  * @return 0 on success, -1 on error.
  */
 int as_i2c_write_reg(int fd, uint8_t addr, uint8_t reg, const uint8_t *data, size_t n);
 
-/** @brief Read a given register byte.
+/** @brief Read a byte from the given register.
  *
  * Send the \e reg byte, then read and return a single byte.
+ *
+ * @param addr I2C address of chip to access
  *
  * @return the read byte, -1 on write error (\e reg byte), -2 on read error.
  *
@@ -106,19 +116,21 @@ int as_i2c_write_reg(int fd, uint8_t addr, uint8_t reg, const uint8_t *data, siz
  */
 int as_i2c_read_reg_byte(int fd, uint8_t addr, uint8_t reg);
 
-/** @brief Write a given register byte.
+/** @brief Write a byte to the given register.
  *
  * Send the \e reg byte followed by the \e val byte.
  *
+ * @param addr I2C address of chip to access
+ *
  * @return 0 on success, -1 on error.
  *
- * @note Equivalent to \e as_i2c_write() with a 2-byte buffer.
+ * @note Equivalent to \e as_i2c_write() with a 2-byte buffer (reg + data).
  */
 int as_i2c_write_reg_byte(int fd, uint8_t addr, uint8_t reg, uint8_t val);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif /* __cplusplus */
 
-#endif // AS_I2C_H_
+#endif /* AS_I2C_H_ */
 
