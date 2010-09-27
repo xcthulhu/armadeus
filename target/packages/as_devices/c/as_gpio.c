@@ -28,7 +28,10 @@
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>
 
+/*#define DEBUG*/
+#include "helpers.h"
 #include "as_gpio.h"
+
 
 /* IOCTL */
 /* direction: 1 output, 0 input */
@@ -53,13 +56,6 @@
 #define GPIO_BASE_PIN  ("/dev/gpio/P")
 
 #define BUFF_SIZE (300)
-
-//#define DEBUG
-#ifdef DEBUG
-#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
-#else
-#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
-#endif
 
 /*------------------------------------------------------------------------------*/
 

@@ -1,5 +1,5 @@
 /*
-**    THE ARMadeus Systems
+** AsDevices - PWM access functions
 **
 **    Copyright (C) 2009-2010  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
@@ -18,20 +18,17 @@
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>  /* for open()   */
 #include <unistd.h> /* for write()  */
 
+/* #define DEBUG */
+#include "helpers.h"
 #include "as_pwm.h"
 
-//#define DEBUG
-#ifdef DEBUG
-#   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
-#else
-#   define ERROR(fmt, ...) /*fmt, ##__VA_ARGS__*/
-#endif
 
 #define PWM_SYS_PATH   "/sys/class/pwm/pwm"
 #define FREQUENCY_PATH "frequency"
@@ -41,59 +38,6 @@
 
 #define SIZE_OF_BUFF 50
 
-/*------------------------------------------------------------------------------*/
-
-/** @brief Write a string value in file
- *
- * @param aFile_handler: file handler
- * @param aValueWrite: string value
- *
- * @return number char wrote, negative value on error
- */
-int writeBuffer(int aFile_handler, char *aValueWrite)
-{
-    int ret;
-
-    ret = write(aFile_handler, aValueWrite, strlen(aValueWrite));
-    if (ret < 0) {
-        ERROR("Can't write file ");
-        return ret;
-    }
-    ret = lseek(aFile_handler, 0, SEEK_SET);
-    if (ret < 0) {
-        ERROR("lseek error ");
-        return ret;
-    }
-
-    return ret;
-}
-
-/*------------------------------------------------------------------------------*/
-
-/** @brief read a string value in file
- *
- * @param aFile_handler: file handler
- * @param aValueRead[SIZE_OF_BUFF]: char pointer to read buffer
- *
- * @return number char read, negative value on error
- */
-int readBuffer(int aFile_handler, char *aValueRead)
-{
-    int ret;
-
-    ret = read(aFile_handler, aValueRead, SIZE_OF_BUFF);
-    if (ret < 0) {
-        ERROR("Can't read file ");
-        return ret;
-    }
-    ret = lseek(aFile_handler, 0, SEEK_SET);
-    if (ret < 0) {
-        ERROR("lseek error ");
-        return ret;
-    }
-
-    return ret;
-}
 
 /*------------------------------------------------------------------------------*/
 
@@ -135,23 +79,19 @@ struct as_pwm_device *as_pwm_open(int aPwmNumber)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_set_frequency(struct as_pwm_device *aDev, int aFrequency)
+int32_t as_pwm_set_frequency(struct as_pwm_device *dev, int freq)
 {
-    char buffer[SIZE_OF_BUFF];
-
-    snprintf(buffer, SIZE_OF_BUFF, "%d", aFrequency);
-
-    return writeBuffer(aDev->fileFrequency, buffer);
+    return as_write_buffer(dev->fileFrequency, freq);
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_get_frequency(struct as_pwm_device *aDev)
+int32_t as_pwm_get_frequency(struct as_pwm_device *dev)
 {
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileFrequency, buffer);
+    ret = as_read_buffer(dev->fileFrequency, buffer);
     if (ret < 0) {
         ERROR("Can't read frequency\n");
         return ret;
@@ -162,23 +102,19 @@ int32_t as_pwm_get_frequency(struct as_pwm_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_set_period(struct as_pwm_device *aDev, int aPeriod)
+int32_t as_pwm_set_period(struct as_pwm_device *dev, int period)
 {
-    char buffer[SIZE_OF_BUFF];
-
-    snprintf(buffer, SIZE_OF_BUFF, "%d", aPeriod);
-
-    return writeBuffer(aDev->filePeriod, buffer);
+    return as_write_buffer(dev->filePeriod, period);
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_get_period(struct as_pwm_device *aDev)
+int32_t as_pwm_get_period(struct as_pwm_device *dev)
 {
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->filePeriod, buffer);
+    ret = as_read_buffer(dev->filePeriod, buffer);
     if (ret < 0) {
         ERROR("Can't read period\n");
         return ret;
@@ -189,23 +125,19 @@ int32_t as_pwm_get_period(struct as_pwm_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_set_duty(struct as_pwm_device *aDev, int aDuty)
+int32_t as_pwm_set_duty(struct as_pwm_device *dev, int duty)
 {
-    char buffer[SIZE_OF_BUFF];
-
-    snprintf(buffer, SIZE_OF_BUFF, "%d", aDuty);
-
-    return writeBuffer(aDev->fileDuty, buffer);
+    return as_write_buffer(dev->fileDuty, duty);
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_get_duty(struct as_pwm_device *aDev)
+int32_t as_pwm_get_duty(struct as_pwm_device *dev)
 {
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileDuty, buffer);
+    ret = as_read_buffer(dev->fileDuty, buffer);
     if (ret < 0) {
         ERROR("Can't read duty\n");
         return ret;
@@ -218,14 +150,12 @@ int32_t as_pwm_get_duty(struct as_pwm_device *aDev)
 
 int32_t as_pwm_set_state(struct as_pwm_device *pwm_dev, int enable)
 {
-    char one[] = "1";
-    char zero[] = "0";
     int ret = 0;
 
     if (enable) {
-        ret = writeBuffer(pwm_dev->fileActive, one);
+        ret = as_write_buffer(pwm_dev->fileActive, 1);
     } else {
-        ret = writeBuffer(pwm_dev->fileActive, zero);
+        ret = as_write_buffer(pwm_dev->fileActive, 0);
     }
     if (ret < 0) {
         ERROR("Can't write to pwmX/active\n");
@@ -236,12 +166,12 @@ int32_t as_pwm_set_state(struct as_pwm_device *pwm_dev, int enable)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_get_state(struct as_pwm_device *aDev)
+int32_t as_pwm_get_state(struct as_pwm_device *dev)
 {
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = readBuffer(aDev->fileActive, buffer);
+    ret = as_read_buffer(dev->fileActive, buffer);
     if (ret < 0) {
         ERROR("Can't read state\n");
         return ret;
@@ -252,27 +182,27 @@ int32_t as_pwm_get_state(struct as_pwm_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_pwm_close(struct as_pwm_device *aDev)
+int32_t as_pwm_close(struct as_pwm_device *dev)
 {
     int ret = 0;
 
     /* Close pwm management files */
-    ret = close(aDev->fileFrequency);
+    ret = close(dev->fileFrequency);
     if (ret < 0) {
         ERROR("Can't close /frequency");
         return ret;
     }
-    ret = close(aDev->filePeriod);
+    ret = close(dev->filePeriod);
     if (ret < 0) {
         ERROR("Can't close /period");
         return ret;
     }
-    ret = close(aDev->fileDuty);
+    ret = close(dev->fileDuty);
     if (ret < 0) {
         ERROR("Can't close /duty");
         return ret;
     }
-    ret = close(aDev->fileActive);
+    ret = close(dev->fileActive);
     if (ret < 0) {
         ERROR("Can't close /active");
         return ret;
@@ -280,3 +210,4 @@ int32_t as_pwm_close(struct as_pwm_device *aDev)
 
     return ret;
 }
+

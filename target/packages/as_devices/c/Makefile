@@ -13,13 +13,14 @@ CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 CFLAGS+=
 
-OBJ=as_pwm.o
-OBJ+= as_i2c.o
-OBJ+= as_gpio.o
-OBJ+= as_93lcxx.o
-OBJ+= as_spi.o
-OBJ+= as_max1027.o
-OBJ+= as_max5821.o
+OBJ = as_pwm.o
+OBJ += as_i2c.o
+OBJ += as_gpio.o
+OBJ += as_93lcxx.o
+OBJ += as_spi.o
+OBJ += as_max1027.o
+OBJ += as_max5821.o
+OBJ += helpers.o
 
 LIBRARY=as_devices
 LIB_VERS=1
