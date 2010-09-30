@@ -74,7 +74,7 @@
  #endif	/* CONFIG_MCAST_TFTP */
  
 +
-+
++#if defined(CONFIG_CMD_NAND)
 +int tftp_nand_write(nand_info_t *meminfo, uchar *src, unsigned long *offset   )
 +{
 +	size_t written;
@@ -161,7 +161,7 @@
 +		}
 +	}
 +}
-+
++#endif
 +
  static __inline__ void
  store_block (unsigned block, uchar * src, unsigned len)
