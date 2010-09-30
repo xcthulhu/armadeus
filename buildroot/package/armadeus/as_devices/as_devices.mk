@@ -6,7 +6,7 @@
 
 PYTHON:=python2.4
 
-AS_DEVICES_VER:=0.14
+AS_DEVICES_VER:=0.15
 AS_DEVICES_SOURCE:=$(TOPDIR)/../target/packages/as_devices
 AS_DEVICES_DIR:=$(BUILD_DIR)/as_devices-$(AS_DEVICES_VER)
 AS_DEVICES_CAT:=zcat
