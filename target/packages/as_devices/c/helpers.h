@@ -19,11 +19,11 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <string.h>
+#ifndef __ASHELPERS_H__
+#define __ASHELPERS_H__
+
 #include <stdio.h>
 #include <stdlib.h>
-//#include <fcntl.h>  /* for open()   */
-#include <unistd.h> /* for write()  */
 
 #ifdef DEBUG
 #   define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
@@ -44,8 +44,20 @@ int as_write_buffer(int fd, int value);
  *
  * @param fd: file handler
  * @param buf: char pointer to read buffer
+ * @param size: size of buffer
  *
  * @return number of chars read, negative value on error
  */
-int as_read_buffer(int fd, char *buf);
+int as_read_buffer(int fd, char *buf, int size);
+
+/** @brief read an int value stored as string in a /sys/ or /proc interface
+ *
+ * @param fd: file handler
+ * @param value_res: int pointer to store the value read
+ *
+ * @return negative value on error
+ */
+int as_read_int(int fd, int *value_res);
+
+#endif /* __ASHELPERS_H__ */
 

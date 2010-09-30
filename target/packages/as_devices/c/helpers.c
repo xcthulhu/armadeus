@@ -56,21 +56,36 @@ int as_write_buffer(int fd, int value)
     return buffer_len;
 }
 
-int readBuffer(int fd, char *buf)
+int as_read_buffer(int fd, char *buf, int size)
 {
-    int ret;
+    int ret, err;
 
-    ret = read(fd, buf, SIZE_OF_BUFF);
+    ret = read(fd, buf, size);
     if (ret < 0) {
         ERROR("Can't read file ");
         return ret;
     }
-    ret = lseek(fd, 0, SEEK_SET);
-    if (ret < 0) {
+    err = lseek(fd, 0, SEEK_SET);
+    if (err < 0) {
         ERROR("lseek error ");
-        return ret;
+        return err;
     }
 
     return ret;
+}
+
+int as_read_int(int fd, int *value_res)
+{
+    const int SIZEOFBUFF = 20;
+    ssize_t ret;
+    char buf[SIZEOFBUFF];
+    int value;
+
+    ret = as_read_buffer(fd, buf, SIZEOFBUFF);
+    buf[ret-1] = '\0';
+    value = strtol(buf, NULL, 10);
+    *value_res = value;
+
+    return 0;
 }
 
