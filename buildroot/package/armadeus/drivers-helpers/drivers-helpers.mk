@@ -8,8 +8,9 @@ ARMADEUS-DRIVERS_SOURCE_DIR:=$(TOPDIR)/../target/linux/modules
 ARMADEUS-DRIVERS-HELPERS_TARGET_DIR:=$(TARGET_DIR)/usr/bin
 
 
-$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadgpio.sh: $(ARMADEUS-DRIVERS_SOURCE_DIR)/gpio/loadgpio.sh
-	cp -f $^ $@
+# loadgpio.sh often needs to be overwritten by users
+$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadgpio.sh:
+	cp -f $(ARMADEUS-DRIVERS_SOURCE_DIR)/gpio/loadgpio.sh $@
 ARMADEUS-DRIVERS_TARGETS+=$(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/loadgpio.sh
 
 $(ARMADEUS-DRIVERS-HELPERS_TARGET_DIR)/gpio_helpers.sh: $(ARMADEUS-DRIVERS_SOURCE_DIR)/gpio/gpio_helpers.sh
