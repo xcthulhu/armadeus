@@ -1,0 +1,16 @@
+
+Without this modification, it's not possible to "#include <mach/gpio.h>" in
+different places that can be called from the same source file.
+
+Signed-off-by: Gwenhael Goavec-Merou <gwenhael.goavec-merou@armadeus.com>
+
+Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/gpio.h
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-imx/include/mach/gpio.h	2010-09-30 19:55:32.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/gpio.h	2010-09-30 19:55:51.000000000 +0200
+@@ -1,4 +1,5 @@
+ #ifndef _IMX_GPIO_H
++#define _IMX_GPIO_H
+ 
+ #include <linux/kernel.h>
+ #include <mach/imx-regs.h>

@@ -91,7 +91,7 @@ int32_t as_pwm_get_frequency(struct as_pwm_device *dev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = as_read_buffer(dev->fileFrequency, buffer);
+    ret = as_read_buffer(dev->fileFrequency, buffer, SIZE_OF_BUFF);
     if (ret < 0) {
         ERROR("Can't read frequency\n");
         return ret;
@@ -114,7 +114,7 @@ int32_t as_pwm_get_period(struct as_pwm_device *dev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = as_read_buffer(dev->filePeriod, buffer);
+    ret = as_read_buffer(dev->filePeriod, buffer, SIZE_OF_BUFF);
     if (ret < 0) {
         ERROR("Can't read period\n");
         return ret;
@@ -137,7 +137,7 @@ int32_t as_pwm_get_duty(struct as_pwm_device *dev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = as_read_buffer(dev->fileDuty, buffer);
+    ret = as_read_buffer(dev->fileDuty, buffer, SIZE_OF_BUFF);
     if (ret < 0) {
         ERROR("Can't read duty\n");
         return ret;
@@ -171,7 +171,7 @@ int32_t as_pwm_get_state(struct as_pwm_device *dev)
     char buffer[SIZE_OF_BUFF];
     int ret;
 
-    ret = as_read_buffer(dev->fileActive, buffer);
+    ret = as_read_buffer(dev->fileActive, buffer, SIZE_OF_BUFF);
     if (ret < 0) {
         ERROR("Can't read state\n");
         return ret;
