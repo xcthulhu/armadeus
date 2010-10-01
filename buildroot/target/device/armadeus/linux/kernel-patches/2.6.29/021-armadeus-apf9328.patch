@@ -3,8 +3,8 @@ DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
 (Take a look at armadeus/target/linux/ directory to know how to generate it)
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328.c	2010-03-25 12:26:47.000000000 +0100
+--- /dev/null
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 @@ -0,0 +1,627 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -346,7 +346,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +};
 +
 +static struct spi_imx_master imx_spi1_master_info = {
-+	.num_chipselect	= 1,
++	.num_chipselect	= 2,
 +	.enable_dma     = 0,
 +};
 +
@@ -635,8 +635,8 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328.c
 +MACHINE_END
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h	2010-03-25 11:50:57.000000000 +0100
+--- /dev/null
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 @@ -0,0 +1,301 @@
 +/*
 + *
@@ -941,8 +941,8 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328_lcd_config.h
 +#endif /* APF_LCD_CONFIG_H */
 Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h	2010-03-25 11:50:57.000000000 +0100
+--- /dev/null
++++ linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 @@ -0,0 +1,68 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
@@ -1014,9 +1014,9 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/include/mach/apf9328.h
 +#endif /* __ASM_ARCH_APF9328_H */
 Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c	2010-03-25 11:50:57.000000000 +0100
-@@ -0,0 +1,281 @@
+--- /dev/null
++++ linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
+@@ -0,0 +1,338 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328-dev.c
 + * Declares hardware present on APF9328_DevLight or DevFull boards
@@ -1044,6 +1044,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/spi/spi.h>
++#include <linux/spi/spidev.h>
 +#include <linux/spi/tsc2102.h>
 +#include "../../../drivers/net/can/mcp251x.h"
 +
@@ -1061,6 +1062,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +#include <mach/usb.h>
 +#include <mach/spi_imx.h>
 +#include <mach/imx-regs.h> /* imx_gpio_mode() */
++#include <mach/gpio.h>
 +#include <mach/imx-alsa.h>
 +#include <linux/usb/isp116x.h>
 +#include <mach/imx_ssi.h>
@@ -1077,6 +1079,10 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +#ifdef CONFIG_ARMADEUS_ISP1761_MODULE
 +#define CONFIG_ARMADEUS_ISP1761 1
 +#endif
++#ifdef CONFIG_SPI_SPIDEV_MODULE
++#define CONFIG_SPI_SPIDEV 1
++#endif
++
 +
 +
 +/*
@@ -1223,6 +1229,46 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +
 +#endif /* CONFIG_CAN_MCP251X */
 +
++/*
++ * APF9328 CONFIG SPIDEV
++ */
++#ifdef CONFIG_SPI_SPIDEV
++#define SPIDEV_CS_GPIOB 18
++
++static int spidev_init_gpio(void)
++{
++	/* SPI1 GPIOs */
++	imx_gpio_mode(PC14_PF_SPI1_SCLK);
++	imx_gpio_mode(PC16_PF_SPI1_MISO);
++	imx_gpio_mode(PC17_PF_SPI1_MOSI);
++
++	/* PortB 18 is used as chip select (in GPIO mode) */
++	DR(1) |= 1 << SPIDEV_CS_GPIOB; /* Initializes it High */
++	imx_gpio_mode(GPIO_PORTB | SPIDEV_CS_GPIOB | GPIO_OUT | GPIO_GIUS | GPIO_DR);
++
++	return 0;
++}
++
++/* Chip select command for spidev */
++static void spidev_cs(u32 command)
++{
++	/* PortB 18 is used as chip select */
++	if (command == SPI_CS_DEASSERT)
++		DR(1) |= 1<< SPIDEV_CS_GPIOB;
++	else
++		DR(1) &= ~(1<< SPIDEV_CS_GPIOB);
++}
++
++static struct spi_imx_chip spidev_hw = {
++	.cs_control     = spidev_cs,
++};
++
++static struct spidev_platform_data apf9328_spidev_config = {
++	.init = spidev_init_gpio,
++};
++
++#endif /* CONFIG_SPI_SPIDEV */
++
 +
 +static struct spi_board_info spi_dev_board_info[] __initdata = {
 +#ifdef CONFIG_SPI_TSC2102
@@ -1249,6 +1295,17 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +	.platform_data	= &apf9328_mcp251x_config,
 +},
 +#endif
++#ifdef CONFIG_SPI_SPIDEV
++{
++	.modalias          = "spidev",
++	.controller_data    = &spidev_hw,
++	.max_speed_hz      = 8000000, /* 8MHz */
++	.bus_num           = 1, /* SPI1 */
++	.mode              = SPI_MODE_0,
++	.chip_select       = 1, 
++	.platform_data     = &apf9328_spidev_config,
++},
++#endif /* CONFIG_SPI_SPIDEV */
 +};
 +
 +/*
@@ -1291,7 +1348,7 @@ Index: linux-2.6.29.6/arch/arm/mach-imx/apf9328-dev.c
 +#endif
 +	platform_add_devices(devices, ARRAY_SIZE(devices));
 +
-+#if defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X)
++#if defined (CONFIG_SPI_TSC2102) || defined (CONFIG_CAN_MCP251X) || defined(CONFIG_SPI_SPIDEV)
 +	spi_register_board_info(spi_dev_board_info, ARRAY_SIZE(spi_dev_board_info));
 +#endif
 +
