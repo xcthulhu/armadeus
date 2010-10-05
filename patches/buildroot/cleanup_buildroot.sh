@@ -47,3 +47,4 @@ rm -rf buildroot/package/cwiid/
 rm -rf buildroot/package/urg/
 rm -rf buildroot/package/joysticktest/
 rm -rf buildroot/package/pickit2/
+rm -rf buildroot/package/qwt/

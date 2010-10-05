@@ -1,0 +1,74 @@
+Add the possibility to build & install the Qt's demos and examples.
+This patch is still to be evolved toward Qt full integration in Buildroot.
+
+Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
+
+Index: buildroot/package/qtopia4/Config.in
+===================================================================
+--- buildroot.orig/package/qtopia4/Config.in	2010-10-04 15:36:08.000000000 +0200
++++ buildroot/package/qtopia4/Config.in	2010-10-04 15:36:39.000000000 +0200
+@@ -325,4 +325,14 @@
+ 	  Build the Qt Script Tools module.
+ 	  if unsure, say n.
+ 
++config BR2_PACKAGE_QT_DEMOS
++	bool "Demos"
++	help
++	  Build the Qt Demos.
++
++config BR2_PACKAGE_QT_EXAMPLES
++	bool "Examples"
++	help
++	  Build the Qt Examples.
++
+ endif # BR2_PACKAGE_QT
+Index: buildroot/package/qtopia4/qtopia4.mk
+===================================================================
+--- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-04 15:36:02.000000000 +0200
++++ buildroot/package/qtopia4/qtopia4.mk	2010-10-04 15:37:11.000000000 +0200
+@@ -345,6 +345,14 @@
+ QT_CONFIGURE+= -no-stl
+ endif
+ 
++ifneq ($(BR2_PACKAGE_QT_DEMOS),y)
++QT_CONFIGURE+= -nomake demos
++endif
++
++ifneq ($(BR2_PACKAGE_QT_EXAMPLES),y)
++QT_CONFIGURE+= -nomake examples
++endif
++
+ # ccache and precompiled headers don't play well together
+ ifeq ($(BR2_CCACHE),y)
+ QT_CONFIGURE += -no-pch
+@@ -482,12 +490,10 @@
+ 		-no-nis \
+ 		-no-accessibility \
+ 		-no-separate-debug-info \
+-		-prefix /usr \
++		-prefix $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm \
+ 		-hostprefix $(STAGING_DIR)/usr \
+ 		-fast \
+ 		-no-rpath \
+-		-nomake examples \
+-		-nomake demos \
+ 	)
+ 	touch $@
+ 
+@@ -560,8 +566,15 @@
+ 	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
+ endif
+ 
++demos: $(STAGING_DIR)/usr/lib/libQtCore.la
++	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos
++	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/
++
++examples: $(STAGING_DIR)/usr/lib/libQtCore.la
++	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples
++	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/
+ 
+-$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS)
++$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) demos examples
+ 	# Strip all installed libs
+ ifeq ($(BR2_PACKAGE_QT_SHARED),y)
+ 	cp -dpf $(STAGING_DIR)/usr/lib/libQtCore.so.* $(TARGET_DIR)/usr/lib/
