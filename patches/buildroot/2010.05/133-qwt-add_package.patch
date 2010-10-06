@@ -4,8 +4,8 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-10-04 16:17:20.000000000 +0200
-+++ buildroot/package/Config.in	2010-10-04 16:22:39.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-10-06 15:24:45.000000000 +0200
++++ buildroot/package/Config.in	2010-10-06 15:26:58.000000000 +0200
 @@ -126,6 +126,7 @@
  
  comment "other GUIs"
@@ -17,7 +17,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/qwt/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/qwt/Config.in	2010-10-04 16:23:25.000000000 +0200
++++ buildroot/package/qwt/Config.in	2010-10-06 15:26:58.000000000 +0200
 @@ -0,0 +1,20 @@
 +comment "Qwt requires Qt to be installed"
 +	depends on !BR2_PACKAGE_QT
@@ -42,7 +42,7 @@ Index: buildroot/package/qwt/Config.in
 Index: buildroot/package/qwt/qwt-5.2.1-change_install_dir_and_no_designer.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/qwt/qwt-5.2.1-change_install_dir_and_no_designer.patch	2010-10-04 16:24:24.000000000 +0200
++++ buildroot/package/qwt/qwt-5.2.1-change_install_dir_and_no_designer.patch	2010-10-06 15:26:58.000000000 +0200
 @@ -0,0 +1,30 @@
 +--- qwt-5.2.1/qwtconfig.pri.orig	2010-09-28 14:34:01.000000000 +0200
 ++++ qwt-5.2.1/qwtconfig.pri	2010-09-28 15:37:02.000000000 +0200
@@ -77,7 +77,7 @@ Index: buildroot/package/qwt/qwt-5.2.1-change_install_dir_and_no_designer.patch
 Index: buildroot/package/qwt/qwt.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/qwt/qwt.mk	2010-10-04 16:24:00.000000000 +0200
++++ buildroot/package/qwt/qwt.mk	2010-10-06 15:35:59.000000000 +0200
 @@ -0,0 +1,82 @@
 +######################################################################
 +#
@@ -120,10 +120,10 @@ Index: buildroot/package/qwt/qwt.mk
 +	(export INSTALL_ROOT=$(STAGING_DIR); $(MAKE) -C $(QWT_TARGET_DIR) install)
 +
 +$(TARGET_DIR)/usr/lib/libqwt.so: $(STAGING_DIR)/usr/lib/libqwt.so
-+	cp -dpf $(STAGING_DIR)/usr/lib/libqwt.so.* $(TARGET_DIR)/usr/lib/
-+	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/libqwt.so.*
++	cp -dpf $(STAGING_DIR)/usr/lib/libqwt.so* $(TARGET_DIR)/usr/lib/
++	-$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $(TARGET_DIR)/usr/lib/libqwt.so*
 +
-+$(QWT_TARGET_DIR)/examples/.configured: $(TARGET_DIR)/usr/lib/libqwt.so
++$(QWT_TARGET_DIR)/examples/.configured:
 +	-[ -f $(QWT_TARGET_DIR)/examples/Makefile ] && $(MAKE) -C $(QWT_TARGET_DIR)/examples distclean
 +	$(QT_DIR)/bin/qmake $(QWT_TARGET_DIR)/examples/$(QWT_EXAMPLES_CONFIG_FILE)
 +	touch $@

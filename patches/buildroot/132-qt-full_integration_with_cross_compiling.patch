@@ -5,8 +5,8 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/qtopia4/Config.in
 ===================================================================
---- buildroot.orig/package/qtopia4/Config.in	2010-10-04 15:36:08.000000000 +0200
-+++ buildroot/package/qtopia4/Config.in	2010-10-04 15:36:39.000000000 +0200
+--- buildroot.orig/package/qtopia4/Config.in	2010-10-06 15:02:23.000000000 +0200
++++ buildroot/package/qtopia4/Config.in	2010-10-06 15:02:24.000000000 +0200
 @@ -325,4 +325,14 @@
  	  Build the Qt Script Tools module.
  	  if unsure, say n.
@@ -24,8 +24,8 @@ Index: buildroot/package/qtopia4/Config.in
  endif # BR2_PACKAGE_QT
 Index: buildroot/package/qtopia4/qtopia4.mk
 ===================================================================
---- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-04 15:36:02.000000000 +0200
-+++ buildroot/package/qtopia4/qtopia4.mk	2010-10-04 15:37:11.000000000 +0200
+--- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-06 15:02:23.000000000 +0200
++++ buildroot/package/qtopia4/qtopia4.mk	2010-10-06 15:06:31.000000000 +0200
 @@ -345,6 +345,14 @@
  QT_CONFIGURE+= -no-stl
  endif
@@ -41,12 +41,12 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  # ccache and precompiled headers don't play well together
  ifeq ($(BR2_CCACHE),y)
  QT_CONFIGURE += -no-pch
-@@ -482,12 +490,10 @@
- 		-no-nis \
+@@ -483,11 +491,11 @@
  		-no-accessibility \
  		-no-separate-debug-info \
--		-prefix /usr \
-+		-prefix $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm \
+ 		-prefix /usr \
++		-examplesdir $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos \
++		-demosdir $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples \
  		-hostprefix $(STAGING_DIR)/usr \
  		-fast \
  		-no-rpath \
@@ -55,7 +55,7 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  	)
  	touch $@
  
-@@ -560,8 +566,15 @@
+@@ -560,8 +568,15 @@
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
  endif
  
