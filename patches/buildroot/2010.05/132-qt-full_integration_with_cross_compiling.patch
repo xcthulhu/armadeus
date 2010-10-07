@@ -6,7 +6,7 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 Index: buildroot/package/qt/Config.in
 ===================================================================
 --- buildroot.orig/package/qt/Config.in	2010-05-30 22:24:10.000000000 +0200
-+++ buildroot/package/qt/Config.in	2010-10-06 15:38:23.000000000 +0200
++++ buildroot/package/qt/Config.in	2010-10-06 16:56:09.000000000 +0200
 @@ -372,4 +372,14 @@
  	  Build the Qt Script Tools module.
  	  if unsure, say n.
@@ -25,7 +25,7 @@ Index: buildroot/package/qt/Config.in
 Index: buildroot/package/qt/qt.mk
 ===================================================================
 --- buildroot.orig/package/qt/qt.mk	2010-05-30 22:24:10.000000000 +0200
-+++ buildroot/package/qt/qt.mk	2010-10-06 16:53:11.000000000 +0200
++++ buildroot/package/qt/qt.mk	2010-10-07 11:44:13.000000000 +0200
 @@ -362,6 +362,14 @@
  QT_CONFIGURE+= -no-stl
  endif
@@ -55,20 +55,24 @@ Index: buildroot/package/qt/qt.mk
  	)
  	touch $@
  
-@@ -589,8 +597,15 @@
+@@ -589,8 +597,19 @@
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
  endif
  
-+demos: $(STAGING_DIR)/usr/lib/libQtCore.la
++$(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/demos/demos.pro:
++ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
 +	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/demos
 +	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/demos/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/demos/
++endif
 +
-+examples: $(STAGING_DIR)/usr/lib/libQtCore.la
++$(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/examples/examples.pro:
++ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
 +	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/examples
 +	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/examples/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/examples/
++endif
  
 -$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS)
-+$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) demos examples
++$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/demos/demos.pro $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.6.2-arm/examples/examples.pro
  	# Strip all installed libs
  ifeq ($(BR2_PACKAGE_QT_SHARED),y)
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtCore.so.* $(TARGET_DIR)/usr/lib/
