@@ -47,3 +47,4 @@ rm -rf buildroot/package/opentyrian/
 rm -rf buildroot/package/ipsec-tools/
 rm -rf buildroot/package/lbreakout2/
 rm -rf buildroot/package/ltris/
+rm -rf buildroot/package/qwt/
