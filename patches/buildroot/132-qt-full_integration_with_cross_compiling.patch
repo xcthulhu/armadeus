@@ -5,8 +5,8 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/qtopia4/Config.in
 ===================================================================
---- buildroot.orig/package/qtopia4/Config.in	2010-10-06 16:58:24.000000000 +0200
-+++ buildroot/package/qtopia4/Config.in	2010-10-06 16:58:24.000000000 +0200
+--- buildroot.orig/package/qtopia4/Config.in	2010-10-11 09:38:44.000000000 +0200
++++ buildroot/package/qtopia4/Config.in	2010-10-11 09:38:44.000000000 +0200
 @@ -325,4 +325,14 @@
  	  Build the Qt Script Tools module.
  	  if unsure, say n.
@@ -24,8 +24,8 @@ Index: buildroot/package/qtopia4/Config.in
  endif # BR2_PACKAGE_QT
 Index: buildroot/package/qtopia4/qtopia4.mk
 ===================================================================
---- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-06 16:58:24.000000000 +0200
-+++ buildroot/package/qtopia4/qtopia4.mk	2010-10-07 11:37:07.000000000 +0200
+--- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-11 09:38:44.000000000 +0200
++++ buildroot/package/qtopia4/qtopia4.mk	2010-10-11 09:46:39.000000000 +0200
 @@ -345,6 +345,14 @@
  QT_CONFIGURE+= -no-stl
  endif
@@ -45,8 +45,8 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  		-no-accessibility \
  		-no-separate-debug-info \
  		-prefix /usr \
-+		-examplesdir $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples \
-+		-demosdir $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos \
++		-examplesdir $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples \
++		-demosdir $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos \
  		-hostprefix $(STAGING_DIR)/usr \
  		-fast \
  		-no-rpath \
@@ -59,20 +59,20 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
  endif
  
-+$(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/demos.pro:
++$(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/demos.pro:
 +ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
-+	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos
-+	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/
++	mkdir -p $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos
++	cp -dpfR $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/* $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/
 +endif
 +
-+$(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/examples.pro:
++$(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/examples.pro:
 +ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
-+	mkdir -p $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples
-+	cp -dpfR $(STAGING_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/* $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/
++	mkdir -p $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples
++	cp -dpfR $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/* $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/
 +endif
  
 -$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS)
-+$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/demos/demos.pro $(TARGET_DIR)/usr/local/Trolltech/QtEmbedded-4.5.3-arm/examples/examples.pro
++$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/demos.pro $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/examples.pro
  	# Strip all installed libs
  ifeq ($(BR2_PACKAGE_QT_SHARED),y)
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtCore.so.* $(TARGET_DIR)/usr/lib/
