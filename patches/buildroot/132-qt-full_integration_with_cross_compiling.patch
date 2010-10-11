@@ -6,7 +6,7 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 Index: buildroot/package/qtopia4/Config.in
 ===================================================================
 --- buildroot.orig/package/qtopia4/Config.in	2010-10-11 09:38:44.000000000 +0200
-+++ buildroot/package/qtopia4/Config.in	2010-10-11 09:38:44.000000000 +0200
++++ buildroot/package/qtopia4/Config.in	2010-10-11 09:49:36.000000000 +0200
 @@ -325,4 +325,14 @@
  	  Build the Qt Script Tools module.
  	  if unsure, say n.
@@ -25,8 +25,16 @@ Index: buildroot/package/qtopia4/Config.in
 Index: buildroot/package/qtopia4/qtopia4.mk
 ===================================================================
 --- buildroot.orig/package/qtopia4/qtopia4.mk	2010-10-11 09:38:44.000000000 +0200
-+++ buildroot/package/qtopia4/qtopia4.mk	2010-10-11 09:46:39.000000000 +0200
-@@ -345,6 +345,14 @@
++++ buildroot/package/qtopia4/qtopia4.mk	2010-10-11 16:36:12.000000000 +0200
+@@ -17,6 +17,7 @@
+ QT_SITE:=http://get.qt.nokia.com/qt/source
+ QT_CAT:=$(ZCAT)
+ QT_TARGET_DIR:=$(BUILD_DIR)/qt-embedded-linux-opensource-src-$(QT_VERSION)
++QT_DEMOS_DIR:=/usr/local/qt-embedded-$(QT_VERSION)
+ 
+ QT_CONFIGURE:=#empty
+ 
+@@ -345,6 +346,14 @@
  QT_CONFIGURE+= -no-stl
  endif
  
@@ -41,12 +49,12 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  # ccache and precompiled headers don't play well together
  ifeq ($(BR2_CCACHE),y)
  QT_CONFIGURE += -no-pch
-@@ -483,11 +491,11 @@
+@@ -483,11 +492,11 @@
  		-no-accessibility \
  		-no-separate-debug-info \
  		-prefix /usr \
-+		-examplesdir $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples \
-+		-demosdir $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos \
++		-examplesdir $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/examples \
++		-demosdir $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/demos \
  		-hostprefix $(STAGING_DIR)/usr \
  		-fast \
  		-no-rpath \
@@ -55,24 +63,24 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  	)
  	touch $@
  
-@@ -560,8 +568,19 @@
+@@ -560,8 +569,19 @@
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
  endif
  
-+$(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/demos.pro:
++$(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/demos.pro:
 +ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
-+	mkdir -p $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos
-+	cp -dpfR $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/* $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/
++	mkdir -p $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos
++	cp -dpfR $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/demos/* $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/
 +endif
 +
-+$(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/examples.pro:
++$(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/examples.pro:
 +ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
-+	mkdir -p $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples
-+	cp -dpfR $(STAGING_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/* $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/
++	mkdir -p $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples
++	cp -dpfR $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/examples/* $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/
 +endif
  
 -$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS)
-+$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/demos/demos.pro $(TARGET_DIR)/usr/local/QtEmbedded-$(QT_VERSION)-arm/examples/examples.pro
++$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/demos.pro $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/examples.pro
  	# Strip all installed libs
  ifeq ($(BR2_PACKAGE_QT_SHARED),y)
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtCore.so.* $(TARGET_DIR)/usr/lib/
