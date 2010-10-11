@@ -31,11 +31,9 @@
 #include <linux/ppdev.h> 
 
 #ifdef apf9328
-#define LED_GPIO_PORT	"/dev/gpio/portD"
-#define LED_PIN		31
+#define LED_GPIO_PIN	"/dev/gpio/PD31"
 #elif apf27
-#define LED_GPIO_PORT   "/dev/gpio/portF"
-#define LED_PIN         14
+#define LED_GPIO_PIN   "/dev/gpio/PF14"
 #else
 #error Board not defined
 #endif
@@ -60,34 +58,31 @@ int main(int argc, char **argv)
 
 	printf("Toggling LED %d times \n", count);
 	
-	printf("Opening %s\n", LED_GPIO_PORT);
-	if ((fd = open(LED_GPIO_PORT, O_RDWR)) < 0) {
+	printf("Opening %s\n", LED_GPIO_PIN);
+	if ((fd = open(LED_GPIO_PIN, O_RDWR)) < 0) {
 		perror("Error");
 		exit(1);
 	}
 
 	/* Set LED PIN as GPIO; read/modify/write */
-	ioctl(fd, GPIORDMODE, &portval);
-	portval |= (1 << LED_PIN);
+	portval = 1;
 	ioctl(fd, GPIOWRMODE, &portval);
 
 	/* Set LED GPIO as output; read/modify/write */
-	ioctl(fd, GPIORDDIRECTION, &portval);
-	portval |= (1 << LED_PIN);
 	ioctl(fd, GPIOWRDIRECTION, &portval);
 
 	/* Blink the LED */
 	for (i = 0; i < count; i++) {
 		printf("Led ON\n"); /* pin <- 0 */
 		ioctl(fd, GPIORDDATA, &portval);
-		portval &= ~(1 << LED_PIN);
+		portval &= ~1;
 		ioctl(fd, GPIOWRDATA, &portval);
 
 		sleep(1);
 
 		printf("Led OFF\n"); /* pin <- 1 */
 		ioctl(fd, GPIORDDATA, &portval);
-		portval |= (1 << LED_PIN);
+		portval |= 1;
 		ioctl(fd, GPIOWRDATA, &portval);
 
 		sleep(1);
