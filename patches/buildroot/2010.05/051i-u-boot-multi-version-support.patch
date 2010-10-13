@@ -1,7 +1,7 @@
 Index: buildroot/target/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:46:56.000000000 +0200
-+++ buildroot/target/u-boot/Config.in	2010-06-17 16:47:04.000000000 +0200
+--- buildroot.orig/target/u-boot/Config.in	2010-10-13 13:40:12.000000000 +0200
++++ buildroot/target/u-boot/Config.in	2010-10-13 13:40:12.000000000 +0200
 @@ -13,7 +13,7 @@
  
  config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
@@ -13,14 +13,14 @@ Index: buildroot/target/u-boot/Config.in
  	  Mainly for people using boards not (yet) integrated in U-Boot's
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:47:02.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:47:04.000000000 +0200
+--- buildroot.orig/target/u-boot/Makefile.in	2010-10-13 13:40:12.000000000 +0200
++++ buildroot/target/u-boot/Makefile.in	2010-10-13 13:49:30.000000000 +0200
 @@ -96,7 +96,7 @@
  
  $(U_BOOT_DIR)/.config_header_copied: $(U_BOOT_DIR)/.patched
  ifneq ($(strip $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE)),)
 -	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/
-+	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/$(BR2_BOARD_NAME).h
++	cp -dpf $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE) $(U_BOOT_DIR)/include/configs/$(BR2_TARGET_UBOOT_BOARDNAME).h
  endif
  	touch $@
  
