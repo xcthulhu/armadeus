@@ -31,11 +31,15 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>		/* signal */
 #include <asm/types.h>          /* for videodev2.h */
 
 #include <linux/videodev2.h>
 #include <SDL/SDL.h>		/* TODO: make it compatible with Framebuffer only */
 
+#ifdef USE_VPU
+#include "vpu_codec.h"
+#endif
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
@@ -52,8 +56,9 @@ typedef enum {
 } io_method;
 
 struct buffer {
-        void *                  start;
-        size_t                  length;
+        void   *start;
+        size_t length;
+	size_t offset;
 };
 
 static char *           dev_name        = NULL;
@@ -61,6 +66,7 @@ static io_method	io		= IO_METHOD_MMAP;
 static int              fd              = -1;
 struct buffer *         buffers         = NULL;
 static unsigned int     n_buffers       = 0;
+int g_use_codec = 0;
 
 SDL_Surface *screen = NULL, *image = NULL;
 
@@ -140,7 +146,7 @@ static Uint16 inline YUV2B(int Y, int U, int V)
 
 	return B;
 }
-
+#if 0
 static void yuv422_to_greyscale(void *yuv, int size, void *grey)
 {
 	unsigned int Y, Y2, yuv32;
@@ -159,7 +165,7 @@ static void yuv422_to_greyscale(void *yuv, int size, void *grey)
 		*(dest++) = (Uint8)Y2;
 	}
 }
-
+#endif
 static void yuv422_to_rgb565(void *yuv, int size, void *rgb)
 {
 	unsigned int Y, Y2, U, V, yuv32, rgb32;
@@ -294,7 +300,12 @@ static int read_frame(void)
 
                 assert (buf.index < n_buffers);
 
-	        process_image(buffers[buf.index].start, buf.length);
+#ifdef USE_VPU
+		if (g_use_codec)
+			vpu_codec_encode_next_frame(buffers[buf.index].offset, buffers[buf.index].start);
+#endif
+// 		else
+		process_image(buffers[buf.index].start, buf.length);
 
 		if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 			errno_exit("VIDIOC_QBUF");
@@ -340,9 +351,11 @@ static int read_frame(void)
 	return 1;
 }
 
+static int go_on = 1;
+static int pause_capture = 0;
+
 static void mainloop(void)
 {
-	int go_on = 1;
 	SDL_Event event;
 
         while (go_on) {
@@ -372,7 +385,7 @@ static void mainloop(void)
                                 exit (EXIT_FAILURE);
                         }
 
-			if (read_frame ())
+			if (read_frame())
                     		break;
 	
 			/* EAGAIN - continue select loop. */
@@ -385,7 +398,8 @@ static void mainloop(void)
 					go_on = 0;
 			}
 		}
-// 		SDL_Delay(200);
+		while (pause_capture)
+			SDL_Delay(500);
         }
 }
 
@@ -553,13 +567,14 @@ static void init_mmap(void)
                         errno_exit ("VIDIOC_QUERYBUF");
 
                 buffers[n_buffers].length = buf.length;
+		buffers[n_buffers].offset = (size_t) buf.m.offset;
                 buffers[n_buffers].start =
                         mmap (NULL /* start anywhere */,
                               buf.length,
                               PROT_READ | PROT_WRITE /* required */,
                               MAP_SHARED /* recommended */,
                               fd, buf.m.offset);
-
+		/*printf("### start= 0x%08x offset=0x%08x\n", (unsigned int)(buffers[n_buffers].start), buffers[n_buffers].offset);*/
                 if (MAP_FAILED == buffers[n_buffers].start)
                         errno_exit ("mmap");
         }
@@ -653,7 +668,7 @@ static Uint32 get_a_supported_pix_fmt(void)
 	return 0;
 }
 
-static void init_device(unsigned int capt_width, unsigned int capt_height)
+static void init_capture_device(unsigned int capt_width, unsigned int capt_height)
 {
         struct v4l2_capability cap;
         struct v4l2_cropcap cropcap;
@@ -783,7 +798,7 @@ static void close_device(void)
         fd = -1;
 }
 
-static void open_device(void)
+static void open_capture_device(void)
 {
         struct stat st; 
 
@@ -809,20 +824,21 @@ static void open_device(void)
 
 static void usage(FILE *fp, int argc, char **argv)
 {
-        fprintf (fp,
-                 "Usage: %s [options]\n\n"
-                 "Options:\n"
-                 "-d | --device name   Video device name [/dev/video0]\n"
-                 "-h | --help          Print this message\n"
-                 "-m | --mmap          Use memory mapped buffers\n"
-                 "-r | --read          Use read() calls\n"
-                 "-u | --userp         Use application allocated buffers\n"
-                 "--width W            Use W as screen width (instead of %d)\n"
-                 "--height H           Use H as screen height (instead of %d)\n"
-                 "--camwidth W         Use W as camera picture width (instead of %d)\n"
-                 "--camheight H        Use H as camera picture height (instead of %d)\n"
-                 "",
-		 argv[0], SCREEN_WIDTH, SCREEN_HEIGHT, CAM_WIDTH, CAM_HEIGHT);
+	fprintf (fp,
+		"Usage: %s [options]\n\n"
+		"Options:\n"
+		"-d | --device name   Video device name [/dev/video0]\n"
+		"-h | --help          Print this message\n"
+		"-m | --mmap          Use memory mapped buffers\n"
+		"-r | --read          Use read() calls\n"
+		"-u | --userp         Use application allocated buffers\n"
+		"--width W            Use W as screen width (instead of %d)\n"
+		"--height H           Use H as screen height (instead of %d)\n"
+		"--cam_width W         Use W as camera picture width (instead of %d)\n"
+		"--cam_height H        Use H as camera picture height (instead of %d)\n"
+		"--use_vpu            Uses processor VPU to encode video (at camera size)\n"
+		"",
+		argv[0], SCREEN_WIDTH, SCREEN_HEIGHT, CAM_WIDTH, CAM_HEIGHT);
 }
 
 static const char short_options [] = "d:hmruwt";
@@ -835,10 +851,27 @@ static const struct option long_options [] = {
 	{ "userp",	no_argument,		NULL,	'u' },
 	{ "width",	required_argument,	NULL,	'w' },
 	{ "height",	required_argument,	NULL,	't' },
-	{ "camwidth",	required_argument,	NULL,	'y' },
-	{ "camheight",	required_argument,	NULL,	'z' },
+	{ "cam_width",	required_argument,	NULL,	'y' },
+	{ "cam_height",	required_argument,	NULL,	'z' },
+	{ "use_vpu",	no_argument,		NULL,	'v' },
 	{ 0, 0, 0, 0 }
 };
+
+static void signal_handler(int signal)
+{
+	printf("Caught signal %d\n", signal);
+	if (signal == SIGINT)
+		go_on = 0;
+
+	if (signal == SIGUSR1) {
+		printf("Starting capture\n");
+		pause_capture = 0;
+	}
+	if (signal == SIGUSR2) {
+		printf("Stopping capture\n");
+		pause_capture = 1;
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -851,6 +884,12 @@ int main(int argc, char **argv)
         dev_name = "/dev/video0";
 
 	atexit(SDL_Quit);
+
+	/* Do something when following signals are called */
+	signal(SIGINT, signal_handler);
+	signal(SIGUSR1, signal_handler);
+	signal(SIGUSR2, signal_handler);
+
         for (;;) {
                 int index;
                 int c;
@@ -886,6 +925,10 @@ int main(int argc, char **argv)
                         io = IO_METHOD_USERPTR;
 			break;
 
+		case 'v':
+			g_use_codec = 1;
+			break;
+
 		case 'w':
 			width = atoi(optarg);
 			break;
@@ -908,10 +951,8 @@ int main(int argc, char **argv)
                 }
         }
 
-	open_device();
 	camwidth = camwidth > width ? width : camwidth;
 	camheight = camheight > height ? height : camheight;
-	init_device(camwidth, camheight);
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
@@ -927,13 +968,23 @@ int main(int argc, char **argv)
 		ret = EXIT_FAILURE;
 		goto the_end;
 	}
+#ifdef USE_VPU
+	if (g_use_codec)
+		vpu_codec_init(2, camwidth, camheight, 0 /* bitrate */, 2);
+#endif
+
+	open_capture_device();
+	init_capture_device(camwidth, camheight);
 
 	image = SDL_CreateRGBSurface(/*SDL_HWSURFACE*/0, mycamera.width, mycamera.height, 16, 0, 0, 0, 0);
 // 	printf("image fmt: RGB%d%d%d\n", image->format->Rshift, image->format->Gshift, image->format->Bshift);
-
-        start_capturing();
-        mainloop();
-        stop_capturing();
+	start_capturing();
+	mainloop();
+#ifdef USE_VPU
+	if (g_use_codec)
+		vpu_SystemShutdown();
+#endif
+	stop_capturing();
 
 the_end:
 	uninit_device();

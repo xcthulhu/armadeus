@@ -1,5 +1,7 @@
 Compile me:
 * native:
-	$ make
+	$ make CC=gcc
 * cross-compilation:
-	$ make CC=/.../.../arm-linux-gcc
+	$ make
+* with i.MX27 VPU support:
+	$ make VPU=yes
