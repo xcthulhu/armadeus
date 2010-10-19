@@ -1,12 +1,14 @@
-Add BR2_BOARD_NAME to the jffs2 binary file name.
+Add "BR2_BOARD_NAME" prefix to the rootfs binary filename.
+
+Specific for Armadeus.
 
 Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/fs/common.mk
 ===================================================================
---- buildroot.orig/fs/common.mk	2010-10-15 11:31:26.000000000 +0200
-+++ buildroot/fs/common.mk	2010-10-15 11:33:23.000000000 +0200
-@@ -32,8 +32,8 @@
+--- buildroot.orig/fs/common.mk	2010-10-19 09:32:19.000000000 +0200
++++ buildroot/fs/common.mk	2010-10-19 09:33:11.000000000 +0200
+@@ -36,8 +36,8 @@
  
  define ROOTFS_TARGET_INTERNAL
  
@@ -17,12 +19,12 @@ Index: buildroot/fs/common.mk
  	$(foreach hook,$(ROOTFS_$(2)_PRE_GEN_HOOKS),$(call $(hook))$(sep))
  	rm -f $(FAKEROOT_SCRIPT)
  	touch $(BUILD_DIR)/.fakeroot.00000
-@@ -60,7 +60,7 @@
+@@ -64,7 +64,7 @@
  $(1)-root-show-depends:
  	@echo $(ROOTFS_$(2)_DEPENDENCIES) host-fakeroot host-makedevs $(if $(BR2_TARGET_ROOTFS_$(2)_LZMA),host-lzma)
  
--$(1)-root: $(BINARIES_DIR)/rootfs.$(1)
-+$(1)-root: $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.$(1)
+-$(1)-root: $(BINARIES_DIR)/rootfs.$(1) $(ROOTFS_$(2)_POST_TARGETS)
++$(1)-root: $(BINARIES_DIR)/$(BR2_BOARD_NAME)-rootfs.arm.$(1) $(ROOTFS_$(2)_POST_TARGETS)
  
  ifeq ($$(BR2_TARGET_ROOTFS_$(2)),y)
  TARGETS += $(1)-root

@@ -2,11 +2,11 @@ Implements (quite) the same as BR2_LINUX_COPYTO for U-Boot.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: buildroot/target/u-boot/Config.in
+Index: buildroot/boot/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:45:13.000000000 +0200
-+++ buildroot/target/u-boot/Config.in	2010-06-17 16:46:45.000000000 +0200
-@@ -129,6 +129,12 @@
+--- buildroot.orig/boot/u-boot/Config.in	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/boot/u-boot/Config.in	2010-06-17 16:46:45.000000000 +0200
+@@ -79,6 +79,12 @@
  	help
  	  Install fw_printenv / fw_setenv tools in target.
  
@@ -16,14 +16,14 @@ Index: buildroot/target/u-boot/Config.in
 +	help
 +	  Copy U-Boot binary image to secondary location.
 +
- menuconfig BR2_TARGET_UBOOT_DEFAULT_ENV
- 	bool "Generate a default environment"
- 	help
-Index: buildroot/target/u-boot/Makefile.in
+ menuconfig BR2_TARGET_UBOOT_NETWORK
+ 	bool "Network Settings"
+ 	default y
+Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:45:13.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:45.000000000 +0200
-@@ -46,6 +46,11 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-06-17 16:45:13.000000000 +0200
++++ buildroot/target/u-boot/u-boot.mk	2010-06-17 16:46:45.000000000 +0200
+@@ -54,6 +54,11 @@
  U_BOOT_TARGETS+=$(TARGET_DIR)/usr/sbin/fw_printenv
  endif
  
@@ -32,12 +32,12 @@ Index: buildroot/target/u-boot/Makefile.in
 +U_BOOT_TARGETS+=$(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN)
 +endif
 +
- U_BOOT_CONFIGURE_OPTS :=
+ U_BOOT_CONFIGURE_OPTS += CONFIG_NOSOFTFLOAT=1
  
- ifneq ($(BR2_TARGET_UBOOT_1_2_0_ATMEL),)
-@@ -167,6 +172,12 @@
- 	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)/$(U_BOOT_TARGET_BIN)
- 	(cd $(BINARIES_DIR); ln -s $(U_BOOT_TARGET_BIN) $(U_BOOT_BIN))
+ # Define a helper function
+@@ -138,6 +143,12 @@
+ 	rm -f $(BINARIES_DIR)/$(U_BOOT_BIN)
+ 	cp -dpf $(U_BOOT_DIR)/$(U_BOOT_BIN) $(BINARIES_DIR)/
  
 +ifneq ($(U_BOOT_COPYTO),)
 +$(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
@@ -45,13 +45,6 @@ Index: buildroot/target/u-boot/Makefile.in
 +	cp -dpf $< $@
 +endif
 +
- $(U_BOOT_TOOLS): $(U_BOOT_DIR)/$(U_BOOT_BIN)
- 	mkdir -p $(@D)
- 	cp -dpf $(U_BOOT_DIR)/tools/mkimage $@
-@@ -289,5 +300,6 @@
- 	@echo BR2_TARGET_UBOOT_ETH1ADDR = $(BR2_TARGET_UBOOT_ETH1ADDR)
- 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
- 	@echo UBOOT_BOARD_NAME=$(UBOOT_BOARD_NAME)
-+	@echo U_BOOT_COPYTO = $(U_BOOT_COPYTO)
- 	@exit 0
- 
+ # Build just mkimage for the host. It might have already been built by
+ # the U-Boot build procedure, but mkimage may also be needed even if
+ # U-Boot isn't selected in the configuration, to generate a kernel

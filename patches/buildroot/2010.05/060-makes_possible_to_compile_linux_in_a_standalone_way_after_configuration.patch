@@ -1,13 +1,13 @@
-Index: buildroot/target/linux/Makefile.in.advanced
+Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:47:06.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:15.000000000 +0200
-@@ -369,6 +369,8 @@
- 	echo "CONFIG_INITRAMFS_ROOT_GID=0" >> $(LINUX26_DIR)/.config
+--- buildroot.orig/linux/linux.mk	2010-10-19 09:43:24.000000000 +0200
++++ buildroot/linux/linux.mk	2010-10-19 09:48:32.000000000 +0200
+@@ -111,6 +111,8 @@
+ 	$(call KCONFIG_ENABLE_OPT,CONFIG_INITRAMFS_COMPRESSION_GZIP,$(@D)/.config)
  endif
  ifeq ($(strip $(BR2_TARGET_ARMADEUS)),y)
-+	$(SED) "s,^ARCH.*,ARCH=$(KERNEL_ARCH),g;" $(LINUX_DIR)/Makefile
-+	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
- 	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
++	$(SED) "s,^ARCH.*,ARCH=$(KERNEL_ARCH),g;" $(LINUX26_DIR)/Makefile
++	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX26_DIR)/Makefile
+ 	(cd $(LINUX26_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
  endif
- 	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) oldconfig
+ 	$(TARGET_MAKE_ENV) $(MAKE) $(LINUX26_MAKE_FLAGS) -C $(@D) oldconfig

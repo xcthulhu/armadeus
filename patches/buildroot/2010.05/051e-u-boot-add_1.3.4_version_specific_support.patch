@@ -1,34 +1,34 @@
 Specific for Armadeus boards.
 
-Index: buildroot/target/u-boot/Config.in
+Index: buildroot/boot/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:46:54.000000000 +0200
-+++ buildroot/target/u-boot/Config.in	2010-06-17 16:46:56.000000000 +0200
+--- buildroot.orig/boot/u-boot/Config.in	2010-10-18 18:01:07.000000000 +0200
++++ buildroot/boot/u-boot/Config.in	2010-10-18 18:01:16.000000000 +0200
 @@ -25,6 +25,9 @@
  	help
  	  Select the specific U-Boot version you want to use
  
 +config BR2_TARGET_UBOOT_1_3_4
-+	bool "u-boot-1.3.4"
++	bool "1.3.4"
 +
- config BR2_TARGET_UBOOT_2010_03
- 	bool "u-boot-2010.03"
+ config BR2_TARGET_UBOOT_2010_06
+ 	bool "2010.06"
  
-@@ -58,6 +61,7 @@
+@@ -51,6 +54,7 @@
  
- config BR2_UBOOT_VERSION
+ config BR2_TARGET_UBOOT_VERSION
  	string
 +	default "1.3.4"		if BR2_TARGET_UBOOT_1_3_4
+ 	default "2010.06"	if BR2_TARGET_UBOOT_2010_06
  	default "2010.03"	if BR2_TARGET_UBOOT_2010_03
  	default "2009.11"	if BR2_TARGET_UBOOT_2009_11
- 	default "2009.08"	if BR2_TARGET_UBOOT_2009_08
-Index: buildroot/target/u-boot/Makefile.in
+Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:54.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:56.000000000 +0200
-@@ -190,6 +190,11 @@
- 
- $(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/$(U_BOOT_BIN)
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:07.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:01:16.000000000 +0200
+@@ -167,6 +167,11 @@
+ # Build manually mkimage for the target
+ $(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/.configured
  	mkdir -p $(@D)
 +ifeq ($(U_BOOT_VERSION),1.3.4)
 +	$(TARGET_CC) -I$(U_BOOT_DIR)/include -DUSE_HOSTCC -o $@ \
@@ -38,12 +38,12 @@ Index: buildroot/target/u-boot/Makefile.in
  	$(TARGET_CC) -I$(U_BOOT_DIR)/include -I$(U_BOOT_DIR)/tools \
  		-DUSE_HOSTCC -o $@ \
  		$(U_BOOT_DIR)/common/image.c \
-@@ -198,7 +203,7 @@
- 		$(addprefix $(U_BOOT_DIR)/lib_generic/,crc32.c md5.c sha1.c) \
+@@ -175,7 +180,7 @@
+ 		$(addprefix $(U_BOOT_DIR)/lib*/,crc32.c md5.c sha1.c) \
  		$(U_BOOT_DIR)/tools/os_support.c \
- 		$(U_BOOT_DIR)/libfdt/fdt*.c
+ 		$(wildcard $(U_BOOT_DIR)/libfdt/fdt*.c $(U_BOOT_DIR)/lib/libfdt/fdt*.c)
 -
 +endif
  	$(STRIPCMD) $(STRIP_STRIP_UNNEEDED) $@
  
- $(TARGET_DIR)/usr/sbin/fw_printenv: $(U_BOOT_DIR)/$(U_BOOT_BIN)
+ # Build manually fw_printenv for the target

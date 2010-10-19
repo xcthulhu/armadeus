@@ -11,9 +11,9 @@ Index: buildroot/package/multimedia/Config.in
  source "package/multimedia/aumix/Config.in"
  source "package/multimedia/flac/Config.in"
 +source "package/multimedia/flite/Config.in"
+ source "package/multimedia/ffmpeg/Config.in"
  source "package/multimedia/gstreamer/Config.in"
- source "package/multimedia/gst-plugins-base/Config.in"
- source "package/multimedia/gst-plugins-good/Config.in"
+ source "package/multimedia/gst-ffmpeg/Config.in"
 Index: buildroot/package/multimedia/flite/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

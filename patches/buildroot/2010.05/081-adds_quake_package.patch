@@ -155,27 +155,16 @@ Index: buildroot/package/games/quake-pak/Config.in
 +	  This will install the shareware pak/wad data file for the Quake game.
 +
 +	  The file will be placed in the /usr/share/games/quake/ directory.
-Index: buildroot/package/games/Config.in
-===================================================================
---- buildroot.orig/package/games/Config.in	2010-06-23 14:06:27.000000000 +0200
-+++ buildroot/package/games/Config.in	2010-06-23 14:11:31.000000000 +0200
-@@ -5,5 +5,7 @@
- source "package/games/lxdoom/Config.in"
- source "package/games/magiccube4d/Config.in"
- source "package/games/prboom/Config.in"
-+source "package/games/quake-pak/Config.in"
- source "package/games/rubix/Config.in"
-+source "package/games/sdlquake/Config.in"
- endmenu
 Index: buildroot/package/Config.in
 ===================================================================
 --- buildroot.orig/package/Config.in	2010-06-23 14:11:22.000000000 +0200
 +++ buildroot/package/Config.in	2010-06-23 14:11:31.000000000 +0200
-@@ -83,7 +83,9 @@
- source "package/games/lxdoom/Config.in"
+@@ -82,8 +82,10 @@
+ source "package/games/gnuchess/Config.in"
  source "package/games/magiccube4d/Config.in"
  source "package/games/prboom/Config.in"
 +source "package/games/quake-pak/Config.in"
+ source "package/games/doom-wad/Config.in"
  source "package/games/rubix/Config.in"
 +source "package/games/sdlquake/Config.in"
  endmenu

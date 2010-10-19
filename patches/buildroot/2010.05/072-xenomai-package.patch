@@ -4,9 +4,9 @@ Signed-off-by: Gwenhael Goavec-Merou <gwenhael.goavec@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-23 14:11:14.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-23 14:11:22.000000000 +0200
-@@ -209,6 +209,7 @@
+--- buildroot.orig/package/Config.in	2010-10-19 09:22:13.000000000 +0200
++++ buildroot/package/Config.in	2010-10-19 09:23:59.000000000 +0200
+@@ -204,6 +204,7 @@
  source "package/usbmount/Config.in"
  source "package/usbutils/Config.in"
  source "package/wipe/Config.in"
@@ -14,24 +14,24 @@ Index: buildroot/package/Config.in
  source "package/xfsprogs/Config.in"
  endmenu
  
-Index: buildroot/target/linux/Makefile.in.advanced
+Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-23 14:11:21.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-23 14:11:22.000000000 +0200
-@@ -373,6 +373,9 @@
+--- buildroot.orig/linux/linux.mk	2010-10-19 09:22:36.000000000 +0200
++++ buildroot/linux/linux.mk	2010-10-19 09:24:54.000000000 +0200
+@@ -115,6 +115,9 @@
  	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
- 	(cd $(LINUX_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
+ 	(cd $(LINUX26_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
  endif
 +ifeq ($(BR2_PACKAGE_XENOMAI),y)
 +	make -C ../buildroot xenomai-patch-kernel
 +endif
- 	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) oldconfig
- 	touch $@
+ 	$(TARGET_MAKE_ENV) $(MAKE) $(LINUX26_MAKE_FLAGS) -C $(@D) oldconfig
+ 	$(Q)touch $@
  
 Index: buildroot/package/xenomai/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/Config.in	2010-06-23 14:11:22.000000000 +0200
++++ buildroot/package/xenomai/Config.in	2010-10-19 09:26:41.000000000 +0200
 @@ -0,0 +1,7 @@
 +config BR2_PACKAGE_XENOMAI
 +	bool "Xenomai"
@@ -43,7 +43,7 @@ Index: buildroot/package/xenomai/Config.in
 Index: buildroot/package/xenomai/xenomai.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/xenomai.mk	2010-06-23 14:11:22.000000000 +0200
++++ buildroot/package/xenomai/xenomai.mk	2010-10-19 09:26:41.000000000 +0200
 @@ -0,0 +1,99 @@
 +#############################################################
 +#
@@ -147,7 +147,7 @@ Index: buildroot/package/xenomai/xenomai.mk
 Index: buildroot/package/xenomai/xeno-kernel.config
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/xeno-kernel.config	2010-06-23 14:11:22.000000000 +0200
++++ buildroot/package/xenomai/xeno-kernel.config	2010-10-19 09:26:41.000000000 +0200
 @@ -0,0 +1,59 @@
 +CONFIG_XENOMAI=y
 +CONFIG_XENO_OPT_NUCLEUS=y
@@ -212,7 +212,7 @@ Index: buildroot/package/xenomai/xeno-kernel.config
 Index: buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch	2010-06-23 14:11:22.000000000 +0200
++++ buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.patch	2010-10-19 09:26:41.000000000 +0200
 @@ -0,0 +1,10 @@
 +--- a/arch/arm/mach-imx/include/mach/imxfb.h
 ++++ b/arch/arm/mach-imx/include/mach/imxfb.h
@@ -227,7 +227,7 @@ Index: buildroot/package/xenomai/00-before-adeos-compatibility_with_armadeus.pat
 Index: buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch	2010-06-23 14:11:22.000000000 +0200
++++ buildroot/package/xenomai/01-after-adeos-prevent_system_freeze_on_mxc_with_gpio_generated_interrupts.patch	2010-10-19 09:26:41.000000000 +0200
 @@ -0,0 +1,23 @@
 +Corrects Freeze problem with MX2 when Adeos is active and 
 +application/driver uses interruption on GPIO

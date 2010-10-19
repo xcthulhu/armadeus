@@ -7,13 +7,13 @@ Index: buildroot/package/Config.in
 --- buildroot.orig/package/Config.in	2010-07-14 19:25:49.000000000 +0200
 +++ buildroot/package/Config.in	2010-07-15 09:03:49.000000000 +0200
 @@ -81,6 +81,7 @@
- source "package/games/doom-wad/Config.in"
+ source "package/games/ace_of_penguins/Config.in"
  source "package/e-uae/Config.in"
  source "package/games/gnuchess/Config.in"
 +source "package/lbreakout2/Config.in"
- source "package/games/lxdoom/Config.in"
  source "package/games/magiccube4d/Config.in"
  source "package/opentyrian/Config.in"
+ source "package/games/prboom/Config.in"
 Index: buildroot/package/lbreakout2/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

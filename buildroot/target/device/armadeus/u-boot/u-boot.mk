@@ -9,8 +9,10 @@ BR2_TARGET_U_BOOT_CONFIG_BOARD=$(BR2_TARGET_UBOOT_BOARDNAME)_config
 ifndef BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
 BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE=$(BOARD_PATH)/$(BOARD_NAME).h
 endif
+ifeq ($(BR2_VERSION),"0.10.0-svn")
 MKIMAGE_BINLOC:=$(STAGING_DIR)/usr/bin/mkimage
 MKIMAGE:=$(KERNEL_CROSS)mkimage
+endif
 
 BR2_TARGET_UBOOT_ETH1ADDR=""
 BR2_TARGET_UBOOT_BOOTARGS=""
@@ -49,5 +51,7 @@ u-boot-patch: u-boot-distclean
 	echo ; echo -e u-boot patch generated!;echo ;)
 
 ifeq ($(BR2_PACKAGE_LINUX),y)
+ifeq ($(BR2_VERSION),"0.10.0-svn")
 TARGETS+=$(MKIMAGE)
+endif
 endif

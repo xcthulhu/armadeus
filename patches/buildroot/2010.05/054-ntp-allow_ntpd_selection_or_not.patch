@@ -8,40 +8,49 @@ Would BR be interested ?
 
 Index: buildroot/package/ntp/Config.in
 ===================================================================
---- buildroot.orig/package/ntp/Config.in	2010-06-17 16:45:12.000000000 +0200
-+++ buildroot/package/ntp/Config.in	2010-06-17 16:47:10.000000000 +0200
+--- buildroot.orig/package/ntp/Config.in	2010-10-18 22:30:51.000000000 +0200
++++ buildroot/package/ntp/Config.in	2010-10-18 22:33:33.000000000 +0200
 @@ -6,6 +6,12 @@
  
  	  http://www.ntp.org/
  
 +config BR2_PACKAGE_NTP_NTPD
-+        bool "ntpd daemon"
-+        depends on BR2_PACKAGE_NTP
-+        help
-+          Install ntpd daemon
++	bool "ntpd daemon"
++	depends on BR2_PACKAGE_NTP
++	help
++	  Install ntpd daemon
 +
  config BR2_PACKAGE_NTP_SNTP
  	bool "sntp"
  	depends on BR2_PACKAGE_NTP
 Index: buildroot/package/ntp/ntp.mk
 ===================================================================
---- buildroot.orig/package/ntp/ntp.mk	2010-06-17 16:45:12.000000000 +0200
-+++ buildroot/package/ntp/ntp.mk	2010-06-17 16:47:10.000000000 +0200
-@@ -61,12 +61,15 @@
- 	$(MAKE) -C $(NTP_DIR)
+--- buildroot.orig/package/ntp/ntp.mk	2010-10-18 22:31:00.000000000 +0200
++++ buildroot/package/ntp/ntp.mk	2010-10-18 22:39:43.000000000 +0200
+@@ -32,20 +32,22 @@
+ NTP_INSTALL_FILES_$(BR2_PACKAGE_NTP_TICKADJ) += util/tickadj
  
- $(TARGET_DIR)/$(NTP_TARGET_BINARY): $(NTP_DIR)/$(NTP_BINARY)
-+	install -m 755 $(NTP_DIR)/$(NTP_BINARY) $@
+ define NTP_INSTALL_TARGET_CMDS
+-	install -m 755 $(@D)/ntpd/ntpd $(TARGET_DIR)/usr/sbin/ntpd
+ 	test -z "$(NTP_INSTALL_FILES_y)" || install -m 755 $(addprefix $(@D)/,$(NTP_INSTALL_FILES_y)) $(TARGET_DIR)/usr/bin/
 +ifeq ($(BR2_PACKAGE_NTP_NTPD),y)
- 	install -m 755 $(NTP_DIR)/ntpd/ntpd $(TARGET_DIR)/usr/sbin/ntpd
--	install -m 755 $(NTP_DIR)/$(NTP_BINARY) $(TARGET_DIR)/$(NTP_TARGET_BINARY)
-+	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
-+endif
- ifeq ($(BR2_PACKAGE_NTP_SNTP),y)
- 	install -m 755 $(NTP_DIR)/sntp/sntp $(TARGET_DIR)/usr/bin/sntp
- endif
--	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
-+	touch $@
++	install -m 755 $(@D)/ntpd/ntpd $(TARGET_DIR)/usr/sbin/ntpd
+ 	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
  	@if [ ! -f $(TARGET_DIR)/etc/default/ntpd ]; then \
  		install -m 755 -d $(TARGET_DIR)/etc/default ; \
  		install -m 644 package/ntp/ntpd.etc.default $(TARGET_DIR)/etc/default/ntpd ; \
+ 	fi
++endif
+ endef
+ 
+ define NTP_UNINSTALL_TARGET_CMDS
+-	rm $(TARGET_DIR)/usr/sbin/ntpd
++	rm -f $(TARGET_DIR)/usr/sbin/ntpd
+ 	rm -f $(addprefix $(TARGET_DIR)/usr/bin/,$(NTP_INSTALL_FILES_y))
+-	rm $(TARGET_DIR)/etc/init.d/S49ntp
+-	rm $(TARGET_DIR)/etc/default/ntpd
++	rm -f $(TARGET_DIR)/etc/init.d/S49ntp
++	rm -f $(TARGET_DIR)/etc/default/ntpd
+ endef
+ 
+ NTP_POST_PATCH_HOOKS += NTP_PATCH_FIXUPS

@@ -1,15 +1,15 @@
-Specific for Armadeus (needed by quiltify script).
+Specific for Armadeus (needed by quiltify.sh script).
 
-Index: buildroot/target/u-boot/Makefile.in
+Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:58.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:47:00.000000000 +0200
-@@ -74,6 +74,8 @@
- 	mkdir -p $(U_BOOT_DIR)
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:30.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:29:27.000000000 +0200
+@@ -78,6 +78,8 @@
+ 		| tar $(TAR_STRIP_COMPONENTS)=1 -C $(@D) $(TAR_OPTIONS) -
  	touch $@
  
 +u-boot-src-unpacked: $(U_BOOT_DIR)/.unpacked
 +
  $(U_BOOT_DIR)/.patched: $(U_BOOT_DIR)/.unpacked
- 	toolchain/patch-kernel.sh $(U_BOOT_DIR) target/u-boot \
+ 	toolchain/patch-kernel.sh $(U_BOOT_DIR) boot/u-boot \
  		u-boot-$(U_BOOT_VERSION)-\*.patch \

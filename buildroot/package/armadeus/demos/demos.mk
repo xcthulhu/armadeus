@@ -77,7 +77,7 @@ $(ARMADEUS-DEMOS_DIR)/.compiled: $(ARMADEUS-DEMOS_DIR)/.unpacked
 		echo -e "\n   >>> Compiling $$dir demo <<<" ; \
 		dir=$(ARMADEUS-DEMOS_DIR)/$$dir ; \
                 if [ -d "$$dir" ]; then \
-                        (cd $$dir && $(MAKE) CC=$(TARGET_CC) SDL_DIR=$(SDL_DIR) STAGING_DIR=$(STAGING_DIR) ARMADEUS_BOARD_NAME=$(BR2_BOARD_NAME)) || exit 1 ; \
+                        (cd $$dir && $(MAKE) CC="$(TARGET_CC)" SDL_DIR=$(SDL_DIR) STAGING_DIR=$(STAGING_DIR) ARMADEUS_BOARD_NAME=$(BR2_BOARD_NAME)) || exit 1 ; \
                 fi \
         done
 	touch $@

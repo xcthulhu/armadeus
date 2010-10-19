@@ -1,86 +1,45 @@
-Add the possibility to build & install the Qt's demos and examples.
-This patch is still to be evolved toward Qt full integration in Buildroot.
+Add the possibility to build & install the Qt's demos and examples separately.
 
 Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/qt/Config.in
 ===================================================================
---- buildroot.orig/package/qt/Config.in	2010-05-30 22:24:10.000000000 +0200
-+++ buildroot/package/qt/Config.in	2010-10-11 10:58:47.000000000 +0200
-@@ -372,4 +372,14 @@
- 	  Build the Qt Script Tools module.
- 	  if unsure, say n.
+--- buildroot.orig/package/qt/Config.in	2010-10-19 14:08:55.000000000 +0200
++++ buildroot/package/qt/Config.in	2010-10-19 14:11:11.000000000 +0200
+@@ -17,7 +17,12 @@
+ 	  If unsure, say N.
  
-+config BR2_PACKAGE_QT_DEMOS
-+	bool "Demos"
+ config BR2_PACKAGE_QT_DEMOS
+-	bool "Compile and install demos and examples (with code)"
++	bool "Compile and install Qt demos (with code)"
 +	help
-+	  Build the Qt Demos.
++	  If unsure, say N.
 +
-+config BR2_PACKAGE_QT_EXAMPLES
-+	bool "Examples"
-+	help
-+	  Build the Qt Examples.
-+
- endif # BR2_PACKAGE_QT
++config BR2_PACKAGE_QT_INSTALL
++	bool "Compile and install Qt examples (with code)"
+ 	help
+ 	  If unsure, say N.
+ 
 Index: buildroot/package/qt/qt.mk
 ===================================================================
---- buildroot.orig/package/qt/qt.mk	2010-05-30 22:24:10.000000000 +0200
-+++ buildroot/package/qt/qt.mk	2010-10-11 17:11:18.000000000 +0200
-@@ -17,6 +17,7 @@
- QT_SITE:=http://get.qt.nokia.com/qt/source
- QT_CAT:=$(ZCAT)
- QT_TARGET_DIR:=$(BUILD_DIR)/qt-everywhere-opensource-src-$(QT_VERSION)
-+QT_DEMOS_DIR:=/usr/local/qt-embedded-$(QT_VERSION)
- 
- QT_CONFIGURE:=#empty
- 
-@@ -362,6 +363,14 @@
- QT_CONFIGURE+= -no-stl
+--- buildroot.orig/package/qt/qt.mk	2010-10-19 14:11:35.000000000 +0200
++++ buildroot/package/qt/qt.mk	2010-10-19 15:02:41.000000000 +0200
+@@ -49,10 +49,16 @@
  endif
  
-+ifneq ($(BR2_PACKAGE_QT_DEMOS),y)
+ ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
+-QT_CONFIGURE+= -examplesdir $(TARGET_DIR)/usr/share/qt/examples -demosdir $(TARGET_DIR)/usr/share/qt/demos
++QT_CONFIGURE+= -demosdir $(TARGET_DIR)/usr/share/qt/demos
+ else
+-QT_CONFIGURE+= -nomake examples -nomake demos
 +QT_CONFIGURE+= -nomake demos
-+endif
-+
-+ifneq ($(BR2_PACKAGE_QT_EXAMPLES),y)
+ endif
++ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
++QT_CONFIGURE+= -examplesdir $(TARGET_DIR)/usr/share/qt/examples
++else
 +QT_CONFIGURE+= -nomake examples
 +endif
 +
- # ccache and precompiled headers don't play well together
- ifeq ($(BR2_CCACHE),y)
- QT_CONFIGURE += -no-pch
-@@ -507,11 +516,11 @@
- 		-no-accessibility \
- 		-no-separate-debug-info \
- 		-prefix /usr \
-+		-examplesdir $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/examples \
-+		-demosdir $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/demos \
- 		-hostprefix $(STAGING_DIR)/usr \
- 		-fast \
- 		-no-rpath \
--		-nomake examples \
--		-nomake demos \
- 	)
- 	touch $@
  
-@@ -589,8 +598,19 @@
- 	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
- endif
- 
-+$(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/demos.pro:
-+ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
-+	mkdir -p $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos
-+	cp -dpfR $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/demos/* $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/
-+endif
-+
-+$(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/examples.pro:
-+ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
-+	mkdir -p $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples
-+	cp -dpfR $(STAGING_DIR)/$(QT_DEMOS_DIR)-arm/examples/* $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/
-+endif
- 
--$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS)
-+$(TARGET_DIR)/usr/lib/libQtCore.so.4: $(STAGING_DIR)/usr/lib/libQtCore.la $(QT_LIBS) $(TARGET_DIR)/$(QT_DEMOS_DIR)/demos/demos.pro $(TARGET_DIR)/$(QT_DEMOS_DIR)/examples/examples.pro
- 	# Strip all installed libs
- ifeq ($(BR2_PACKAGE_QT_SHARED),y)
- 	cp -dpf $(STAGING_DIR)/usr/lib/libQtCore.so.* $(TARGET_DIR)/usr/lib/
+ # ensure glib is built first if enabled for Qt's glib support
+ ifeq ($(BR2_PACKAGE_LIBGLIB2),y)

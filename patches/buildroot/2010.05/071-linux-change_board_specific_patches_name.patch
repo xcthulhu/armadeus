@@ -1,13 +1,13 @@
-Index: buildroot/target/linux/Makefile.in.advanced
+Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:47:15.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:19.000000000 +0200
-@@ -278,7 +278,7 @@
- ifneq ($(LINUX26_PATCH_DIR),)
- 	if [ -d $(LINUX26_PATCH_DIR) ] ; then \
- 	toolchain/patch-kernel.sh $(LINUX26_DIR) $(LINUX26_PATCH_DIR) \
--		linux-$(LINUX26_VERSION)\*.patch{,.gz,.bz2} ; \
-+		\*.patch{,.gz,.bz2} ; \
- 	fi
+--- buildroot.orig/linux/linux.mk	2010-10-19 10:13:07.000000000 +0200
++++ buildroot/linux/linux.mk	2010-10-19 10:29:21.000000000 +0200
+@@ -74,7 +74,7 @@
+ ifneq ($(filter ftp://% http://%,$(LINUX26_PATCH)),)
+ 	toolchain/patch-kernel.sh $(@D) $(DL_DIR) $(notdir $(LINUX26_PATCH))
+ else ifeq ($(shell test -d $(LINUX26_PATCH) && echo "dir"),dir)
+-	toolchain/patch-kernel.sh $(@D) $(LINUX26_PATCH) linux-\*.patch
++	toolchain/patch-kernel.sh $(@D) $(LINUX26_PATCH) \*.patch
+ else
+ 	toolchain/patch-kernel.sh $(@D) $(dir $(LINUX26_PATCH)) $(notdir $(LINUX26_PATCH))
  endif
- 	touch $@

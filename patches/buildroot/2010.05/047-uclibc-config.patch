@@ -1,8 +1,8 @@
 Index: buildroot/toolchain/uClibc/uclibc.mk
 ===================================================================
---- buildroot.orig/toolchain/uClibc/uclibc.mk	2010-06-17 16:45:13.000000000 +0200
-+++ buildroot/toolchain/uClibc/uclibc.mk	2010-06-17 16:46:32.000000000 +0200
-@@ -101,23 +101,6 @@
+--- buildroot.orig/toolchain/uClibc/uclibc.mk	2010-10-17 22:15:46.000000000 +0200
++++ buildroot/toolchain/uClibc/uclibc.mk	2010-10-18 17:55:22.000000000 +0200
+@@ -102,23 +102,6 @@
  		-e 's,^SHARED_LIB_LOADER_PREFIX=.*,SHARED_LIB_LOADER_PREFIX=\"/lib\",g' \
  		$(UCLIBC_DIR)/.oldconfig
  ifeq ($(UCLIBC_TARGET_ARCH),arm)

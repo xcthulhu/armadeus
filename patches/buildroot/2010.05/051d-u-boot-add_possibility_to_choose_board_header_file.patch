@@ -5,10 +5,10 @@ http://git.buildroot.net/buildroot/commit/?id=3bab463be4a42de790b745ab2e873e1c1c
 We need it because U-Boot's mainline doesn't have (yet?) our boards configs.
 So this patch reverts the removing + refines it.
 
-Index: buildroot/target/u-boot/Config.in
+Index: buildroot/boot/u-boot/Config.in
 ===================================================================
---- buildroot.orig/target/u-boot/Config.in	2010-06-17 16:46:48.000000000 +0200
-+++ buildroot/target/u-boot/Config.in	2010-06-17 16:46:54.000000000 +0200
+--- buildroot.orig/boot/u-boot/Config.in	2010-10-18 18:01:03.000000000 +0200
++++ buildroot/boot/u-boot/Config.in	2010-10-18 18:01:07.000000000 +0200
 @@ -11,6 +11,14 @@
  	  One of U-Boot supported boards to be built.
  	  This will be suffixed with _config to meet U-Boot standard naming.
@@ -23,12 +23,12 @@ Index: buildroot/target/u-boot/Config.in
 +
  choice
  	prompt "U-Boot Version"
- 	default BR2_TARGET_UBOOT_2010_03
-Index: buildroot/target/u-boot/Makefile.in
+ 	default BR2_TARGET_UBOOT_2010_06
+Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:50.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:54.000000000 +0200
-@@ -88,7 +88,13 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:06.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:01:07.000000000 +0200
+@@ -87,7 +87,13 @@
  endif
  	touch $@
  
@@ -40,14 +40,6 @@ Index: buildroot/target/u-boot/Makefile.in
 +	touch $@
 +
 +$(U_BOOT_DIR)/.configured: $(U_BOOT_DIR)/.config_header_copied
- 	$(TARGET_CONFIGURE_OPTS)		\
- 		CFLAGS="$(TARGET_CFLAGS)"	\
- 		LDFLAGS="$(TARGET_LDFLAGS)"	\
-@@ -292,6 +298,7 @@
- u-boot-status:
- 	@echo
- 	@echo U_BOOT_INC_CONF_FILE = $(U_BOOT_INC_CONF_FILE)
-+	@echo BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE = $(BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE)
- 	@echo BR2_UBOOT_VERSION = $(BR2_UBOOT_VERSION)
- 	@echo BR2_TARGET_UBOOT_SERVERIP = $(BR2_TARGET_UBOOT_SERVERIP)
- 	@echo BR2_TARGET_UBOOT_IPADDR = $(BR2_TARGET_UBOOT_IPADDR)
+ ifeq ($(U_BOOT_BOARD_NAME),)
+ 	$(error NO U-Boot board name set. Check your BR2_TARGET_UBOOT_BOARDNAME setting)
+ endif

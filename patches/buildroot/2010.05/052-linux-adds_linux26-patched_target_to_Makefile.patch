@@ -1,15 +1,14 @@
-Index: buildroot/target/linux/Makefile.in.advanced
+Specific for Armadeus (needed by script/quiltify.sh)
+
+Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/target/linux/Makefile.in.advanced	2010-06-17 16:46:38.000000000 +0200
-+++ buildroot/target/linux/Makefile.in.advanced	2010-06-17 16:47:06.000000000 +0200
-@@ -468,7 +468,9 @@
+--- buildroot.orig/linux/linux.mk	2010-10-19 15:51:03.000000000 +0200
++++ buildroot/linux/linux.mk	2010-10-19 15:55:06.000000000 +0200
+@@ -81,6 +81,7 @@
+ endif
+ 	$(Q)touch $@
  
- linux26-source: $(DL_DIR)/$(LINUX26_SOURCE) $(LINUX26_PATCH_SOURCE_FILE)
++linux26-patched: $(LINUX26_DIR)/.stamp_patched
  
--linux26-unpacked: $(LINUX26_DIR)/.patched
-+linux26-unpacked: $(LINUX26_DIR)/.unpacked
-+
-+linux26-patched: $(LINUX26_DIR)/.patched
- 
- linux26-config: host-sed $(LINUX26_DIR)/.configured
- 
+ # Configuration
+ $(LINUX26_DIR)/.stamp_configured: $(LINUX26_DIR)/.stamp_patched

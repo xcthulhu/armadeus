@@ -1,11 +1,13 @@
-Index: buildroot/target/u-boot/Makefile.in
+Armadeus APF modules require some special U-Boot config variables to be set.
+
+Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/target/u-boot/Makefile.in	2010-06-17 16:46:56.000000000 +0200
-+++ buildroot/target/u-boot/Makefile.in	2010-06-17 16:46:58.000000000 +0200
-@@ -162,6 +162,17 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:16.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:01:30.000000000 +0200
+@@ -133,6 +133,17 @@
  endif
  	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
- endif # BR2_TARGET_UBOOT_DEFAULT_ENV
+ endif # BR2_TARGET_UBOOT_NETWORK
 +ifneq ($(strip $(BOARD_NAME)),"")
 +	$(call insert_define, CONFIG_BOARD_NAME, $(BOARD_NAME))
 +endif
@@ -19,12 +21,4 @@ Index: buildroot/target/u-boot/Makefile.in
 +endif
  	touch $@
  
- $(U_BOOT_DIR)/$(U_BOOT_BIN): $(U_BOOT_DIR)/.header_modified
-@@ -314,5 +325,7 @@
- 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
- 	@echo UBOOT_BOARD_NAME=$(UBOOT_BOARD_NAME)
- 	@echo U_BOOT_COPYTO = $(U_BOOT_COPYTO)
-+	@echo BR2_TARGET_ARMADEUS_SDRAM_SIZE = $(BR2_TARGET_ARMADEUS_SDRAM_SIZE)
-+	@echo BR2_TARGET_ARMADEUS_NR_SDRAM = $(BR2_TARGET_ARMADEUS_NR_SDRAM)
- 	@exit 0
- 
+ # Build U-Boot itself

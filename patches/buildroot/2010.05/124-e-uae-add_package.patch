@@ -3,13 +3,13 @@ Index: buildroot/package/Config.in
 --- buildroot.orig/package/Config.in	2010-06-29 11:20:37.000000000 +0200
 +++ buildroot/package/Config.in	2010-07-04 18:03:11.000000000 +0200
 @@ -79,6 +79,7 @@
+ 
  menu "Games"
  source "package/games/ace_of_penguins/Config.in"
- source "package/games/doom-wad/Config.in"
 +source "package/e-uae/Config.in"
  source "package/games/gnuchess/Config.in"
- source "package/games/lxdoom/Config.in"
  source "package/games/magiccube4d/Config.in"
+ source "package/games/prboom/Config.in"
 Index: buildroot/package/e-uae/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

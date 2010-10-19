@@ -7,6 +7,11 @@ BOARD_NAME:=$(strip $(subst ",, $(BR2_BOARD_NAME)))
 BOARD_PATH:=$(strip $(subst ",, $(BR2_BOARD_PATH)))
 #"))
 
+ifeq ($(BR2_LINUX26_VERSION),)
+# New BR
+BR2_LINUX26_VERSION:=$(BR2_LINUX_KERNEL_VERSION)
+endif
+
 LINUX26_VERSION:=$(strip $(subst ",, $(BR2_LINUX26_VERSION)))
 #"))
 

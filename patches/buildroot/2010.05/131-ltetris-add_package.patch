@@ -11,9 +11,9 @@ Index: buildroot/package/Config.in
  source "package/games/gnuchess/Config.in"
  source "package/lbreakout2/Config.in"
 +source "package/ltris/Config.in"
- source "package/games/lxdoom/Config.in"
  source "package/games/magiccube4d/Config.in"
  source "package/opentyrian/Config.in"
+ source "package/games/prboom/Config.in"
 Index: buildroot/package/ltris/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

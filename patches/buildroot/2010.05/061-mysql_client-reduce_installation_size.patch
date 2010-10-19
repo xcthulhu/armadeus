@@ -5,12 +5,13 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: buildroot/package/mysql_client/Config.in
 ===================================================================
---- buildroot.orig/package/mysql_client/Config.in	2010-06-17 16:45:12.000000000 +0200
-+++ buildroot/package/mysql_client/Config.in	2010-06-17 16:47:17.000000000 +0200
-@@ -8,3 +8,19 @@
+--- buildroot.orig/package/mysql_client/Config.in	2010-10-18 23:01:17.000000000 +0200
++++ buildroot/package/mysql_client/Config.in	2010-10-18 23:03:16.000000000 +0200
+@@ -8,3 +8,20 @@
  
  comment "Mysql client requires a toolchain with C++ support enabled"
  	depends on !BR2_INSTALL_LIBSTDCPP
++
 +
 +if BR2_PACKAGE_MYSQL_CLIENT
 +config BR2_PACKAGE_MYSQL_CLIENT_SHRINK
@@ -29,11 +30,11 @@ Index: buildroot/package/mysql_client/Config.in
 +endif
 Index: buildroot/package/mysql_client/mysql_client.mk
 ===================================================================
---- buildroot.orig/package/mysql_client/mysql_client.mk	2010-06-17 16:45:12.000000000 +0200
-+++ buildroot/package/mysql_client/mysql_client.mk	2010-06-17 16:47:17.000000000 +0200
-@@ -28,4 +28,15 @@
+--- buildroot.orig/package/mysql_client/mysql_client.mk	2010-10-18 23:01:24.000000000 +0200
++++ buildroot/package/mysql_client/mysql_client.mk	2010-10-18 23:04:49.000000000 +0200
+@@ -34,6 +34,17 @@
  
- $(MYSQL_CLIENT_HOOK_POST_INSTALL):
+ define MYSQL_CLIENT_REMOVE_TEST_PROGS
  	rm -rf $(TARGET_DIR)/usr/mysql-test $(TARGET_DIR)/usr/sql-bench
 +ifeq ($(BR2_PACKAGE_MYSQL_CLIENT_SHRINK),y)
 +	rm -rf $(TARGET_DIR)/usr/bin/mysql_client_test
@@ -46,4 +47,6 @@ Index: buildroot/package/mysql_client/mysql_client.mk
 +	rm -rf $(TARGET_DIR)/usr/bin/myisamlog
 +	rm -rf $(TARGET_DIR)/usr/bin/my_print_defaults
 +endif
- 	touch $@
+ endef
+ 
+ MYSQL_CLIENT_POST_INSTALL_TARGET_HOOKS += MYSQL_CLIENT_REMOVE_TEST_PROGS

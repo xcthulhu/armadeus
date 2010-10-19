@@ -7,9 +7,9 @@ Index: buildroot/package/Config.in
 --- buildroot.orig/package/Config.in	2010-06-24 09:27:20.000000000 +0200
 +++ buildroot/package/Config.in	2010-06-24 09:27:55.000000000 +0200
 @@ -196,6 +196,7 @@
- # mdev
+ source "package/sshfs/Config.in"
+ source "package/sysstat/Config.in"
  source "package/udev/Config.in"
- endif
 +source "package/urg/Config.in"
  source "package/usb_modeswitch/Config.in"
  source "package/usbmount/Config.in"
