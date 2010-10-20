@@ -4,14 +4,17 @@
 #
 #############################################################
 
-U_BOOT_BIN=$(BOARD_NAME)-u-boot.bin
 BR2_TARGET_U_BOOT_CONFIG_BOARD=$(BR2_TARGET_UBOOT_BOARDNAME)_config
 ifndef BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
 BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE=$(BOARD_PATH)/$(BOARD_NAME).h
 endif
 ifeq ($(BR2_VERSION),"0.10.0-svn")
+U_BOOT_BIN=$(BOARD_NAME)-u-boot.bin
 MKIMAGE_BINLOC:=$(STAGING_DIR)/usr/bin/mkimage
 MKIMAGE:=$(KERNEL_CROSS)mkimage
+else
+# New BR:
+U_BOOT_TARGET_BIN=$(BOARD_NAME)-u-boot.bin
 endif
 
 BR2_TARGET_UBOOT_ETH1ADDR=""

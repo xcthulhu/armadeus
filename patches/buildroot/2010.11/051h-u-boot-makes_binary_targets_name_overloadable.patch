@@ -1,6 +1,8 @@
 Allow board custom Makefiles to choose the name of the U-Boot's resulting binary
 and the name it should take when copied to $(BINARIES_DIR).
 
+target/* Makefiles need to be sources before boot/* ones.
+
 Specific for Armadeus.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
@@ -8,7 +10,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
 --- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-20 13:42:17.000000000 +0200
-+++ buildroot/boot/u-boot/u-boot.mk	2010-10-20 13:42:20.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-20 14:01:39.000000000 +0200
 @@ -34,10 +34,13 @@
  else
  U_BOOT_BIN:=u-boot.bin
@@ -36,3 +38,17 @@ Index: buildroot/boot/u-boot/u-boot.mk
  
  ifneq ($(U_BOOT_COPYTO),)
  $(U_BOOT_COPYTO)/$(U_BOOT_TARGET_BIN): $(U_BOOT_DIR)/$(U_BOOT_BIN)
+Index: buildroot/Makefile
+===================================================================
+--- buildroot.orig/Makefile	2010-10-20 14:49:41.000000000 +0200
++++ buildroot/Makefile	2010-10-20 14:49:52.000000000 +0200
+@@ -304,8 +304,8 @@
+ TARGETS+=target-purgelocales
+ endif
+ 
+-include boot/common.mk
+ include target/Makefile.in
++include boot/common.mk
+ include linux/linux.mk
+ include fs/common.mk
+ 
