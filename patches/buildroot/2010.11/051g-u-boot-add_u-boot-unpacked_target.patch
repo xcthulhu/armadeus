@@ -2,9 +2,9 @@ Specific for Armadeus (needed by quiltify.sh script).
 
 Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:30.000000000 +0200
-+++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:29:27.000000000 +0200
-@@ -78,6 +78,8 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-20 13:42:14.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-20 13:42:17.000000000 +0200
+@@ -82,6 +82,8 @@
  		| tar $(TAR_STRIP_COMPONENTS)=1 -C $(@D) $(TAR_OPTIONS) -
  	touch $@
  

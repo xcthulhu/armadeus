@@ -2,8 +2,8 @@ Specific for Armadeus boards.
 
 Index: buildroot/boot/u-boot/Config.in
 ===================================================================
---- buildroot.orig/boot/u-boot/Config.in	2010-10-18 18:01:07.000000000 +0200
-+++ buildroot/boot/u-boot/Config.in	2010-10-18 18:01:16.000000000 +0200
+--- buildroot.orig/boot/u-boot/Config.in	2010-10-20 12:03:30.000000000 +0200
++++ buildroot/boot/u-boot/Config.in	2010-10-20 13:42:06.000000000 +0200
 @@ -25,6 +25,9 @@
  	help
  	  Select the specific U-Boot version you want to use
@@ -24,9 +24,9 @@ Index: buildroot/boot/u-boot/Config.in
  	default "2009.11"	if BR2_TARGET_UBOOT_2009_11
 Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:07.000000000 +0200
-+++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:01:16.000000000 +0200
-@@ -167,6 +167,11 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-20 12:09:50.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-20 13:42:06.000000000 +0200
+@@ -171,6 +171,11 @@
  # Build manually mkimage for the target
  $(TARGET_DIR)/usr/bin/mkimage: $(U_BOOT_DIR)/.configured
  	mkdir -p $(@D)
@@ -38,7 +38,7 @@ Index: buildroot/boot/u-boot/u-boot.mk
  	$(TARGET_CC) -I$(U_BOOT_DIR)/include -I$(U_BOOT_DIR)/tools \
  		-DUSE_HOSTCC -o $@ \
  		$(U_BOOT_DIR)/common/image.c \
-@@ -175,7 +180,7 @@
+@@ -179,7 +184,7 @@
  		$(addprefix $(U_BOOT_DIR)/lib*/,crc32.c md5.c sha1.c) \
  		$(U_BOOT_DIR)/tools/os_support.c \
  		$(wildcard $(U_BOOT_DIR)/libfdt/fdt*.c $(U_BOOT_DIR)/lib/libfdt/fdt*.c)

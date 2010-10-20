@@ -2,9 +2,9 @@ Armadeus APF modules require some special U-Boot config variables to be set.
 
 Index: buildroot/boot/u-boot/u-boot.mk
 ===================================================================
---- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-18 18:01:16.000000000 +0200
-+++ buildroot/boot/u-boot/u-boot.mk	2010-10-18 18:01:30.000000000 +0200
-@@ -133,6 +133,17 @@
+--- buildroot.orig/boot/u-boot/u-boot.mk	2010-10-20 13:42:06.000000000 +0200
++++ buildroot/boot/u-boot/u-boot.mk	2010-10-20 13:42:14.000000000 +0200
+@@ -137,6 +137,17 @@
  endif
  	@echo "#endif /* __BR2_ADDED_CONFIG_H */" >> $(U_BOOT_INC_CONF_FILE)
  endif # BR2_TARGET_UBOOT_NETWORK
