@@ -1,7 +1,7 @@
 Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/linux/linux.mk	2010-10-17 22:17:19.000000000 +0200
-+++ buildroot/linux/linux.mk	2010-10-19 09:43:24.000000000 +0200
+--- buildroot.orig/linux/linux.mk	2010-10-14 21:40:47.000000000 +0200
++++ buildroot/linux/linux.mk	2010-10-20 21:26:50.000000000 +0200
 @@ -29,7 +29,8 @@
  
  # Get the real Linux version, which tells us where kernel modules are
@@ -22,6 +22,15 @@ Index: buildroot/linux/linux.mk
  	$(TARGET_MAKE_ENV) $(MAKE) $(LINUX26_MAKE_FLAGS) -C $(@D) oldconfig
  	$(Q)touch $@
  
+@@ -125,7 +129,7 @@
+ # Installation
+ $(LINUX26_DIR)/.stamp_installed: $(LINUX26_DIR)/.stamp_compiled
+ 	@$(call MESSAGE,"Installing kernel")
+-	cp $(LINUX26_IMAGE_PATH) $(BINARIES_DIR)
++	cp $(LINUX26_IMAGE_PATH) $(BINARIES_DIR)/$(LINUX26_KERNEL_NAME)
+ 	# Install modules and remove symbolic links pointing to build
+ 	# directories, not relevant on the target
+ 	@if [ $(shell grep -c "CONFIG_MODULES=y" $(LINUX26_DIR)/.config) != 0 ] ; then 	\
 @@ -151,7 +155,7 @@
  	# Build the kernel.
  	$(TARGET_MAKE_ENV) $(MAKE) $(LINUX26_MAKE_FLAGS) -C $(@D) $(LINUX26_IMAGE_NAME)
