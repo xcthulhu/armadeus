@@ -4,11 +4,12 @@ Index: buildroot/linux/linux.mk
 ===================================================================
 --- buildroot.orig/linux/linux.mk	2010-10-19 15:51:03.000000000 +0200
 +++ buildroot/linux/linux.mk	2010-10-19 15:55:06.000000000 +0200
-@@ -81,6 +81,7 @@
+@@ -81,6 +81,8 @@
  endif
  	$(Q)touch $@
  
-+linux26-patched: $(LINUX26_DIR)/.stamp_patched
++linux26-patched: $(LINUX26_DIR)/.stamp_extracted
++	touch $(LINUX26_DIR)/.stamp_patched
  
  # Configuration
  $(LINUX26_DIR)/.stamp_configured: $(LINUX26_DIR)/.stamp_patched
