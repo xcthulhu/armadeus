@@ -1,43 +1,5 @@
 Never send to BR.
 
-Index: buildroot/target/u-boot/Config.in
-===================================================================
---- buildroot.orig/target/u-boot/Config.in	2008-11-03 09:15:09.000000000 +0100
-+++ buildroot/target/u-boot/Config.in	2010-01-06 22:23:02.000000000 +0100
-@@ -6,11 +6,18 @@
- if BR2_TARGET_UBOOT
- config BR2_TARGET_UBOOT_BOARDNAME
- 	string "board name"
--	default "$(BOARD_NAME)"
-+	default "$(BR2_BOARD_NAME)"
- 	help
- 	  One of U-Boot supported boards to be built.
- 	  This will be suffixed with _config to meet U-Boot standard naming.
- 
-+config BR2_TARGET_U_BOOT_CONFIG_HEADER_FILE
-+	string "U-Boot header file"
-+	depends on BR2_TARGET_UBOOT
-+	default "$(BR2_BOARD_PATH)/$(BR2_BOARD_NAME).h"
-+	help
-+	  U-Boot config Header file to use to build U-Boot for your target.
-+
- choice
- 	prompt "U-Boot Version"
- 	default BR2_TARGET_UBOOT_2009_11
-@@ -132,6 +139,13 @@
- 	bool "fw_printenv tool in target"
- 	help
- 	  Install fw_printenv / fw_setenv tools in target.
-+
-+config BR2_TARGET_UBOOT_COPYTO
-+	string "also copy the image to..."
-+	depends on BR2_TARGET_UBOOT
-+	default ""
-+	help
-+	  Copies the resulting image to a secondary location.
- 
- menuconfig BR2_TARGET_UBOOT_DEFAULT_ENV
- 	bool "Generate a default environment"
 Index: buildroot/target/u-boot/Makefile.in
 ===================================================================
 --- buildroot.orig/target/u-boot/Makefile.in	2008-11-03 09:15:09.000000000 +0100
@@ -141,11 +103,3 @@ Index: buildroot/target/u-boot/Makefile.in
  
  u-boot-dirclean:
  	rm -rf $(U_BOOT_DIR)
-@@ -173,5 +204,7 @@
- 	@echo BR2_TARGET_UBOOT_BOOTARGS = $(BR2_TARGET_UBOOT_BOOTARGS)
- 	@echo BR2_TARGET_UBOOT_BOOTCMD = $(BR2_TARGET_UBOOT_BOOTCMD)
- 	@echo BR2_TARGET_UBOOT_SILENT = $(BR2_TARGET_UBOOT_SILENT)
-+	@echo BR2_TARGET_ARMADEUS_SDRAM_SIZE = $(BR2_TARGET_ARMADEUS_SDRAM_SIZE)
-+	@echo BR2_TARGET_ARMADEUS_NR_SDRAM = $(BR2_TARGET_ARMADEUS_NR_SDRAM)
- 	@echo
- 	@exit 0
