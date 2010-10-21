@@ -1,0 +1,54 @@
+if BR2_TARGET_ARMADEUS_APF51
+choice
+	prompt "Number of DDR2 RAM chips on your APF"
+	default BR2_TARGET_ARMADEUS_APF51_NB_DDR2RAM_1
+	help
+	  Number of DDR2 RAM chips mounted on your APF51
+	  (Default: 1)
+
+config BR2_TARGET_ARMADEUS_APF51_NB_DDR2RAM_1
+	bool "1x DDR2 RAM"
+	help
+	  1 DDR2 RAM chip (Default).
+
+config BR2_TARGET_ARMADEUS_APF51_NB_DDR2RAM_2
+	bool "2x DDR2 RAMs"
+	help
+	  2 DDR2 RAM chips.
+
+endchoice
+
+config BR2_TARGET_ARMADEUS_NR_SDRAM
+	string
+	default 1		if BR2_TARGET_ARMADEUS_APF51_NB_DDR2RAM_1
+	default 2		if BR2_TARGET_ARMADEUS_APF51_NB_DDR2RAM_2
+
+choice
+	prompt "Single size of your DDR2 RAM chip(s)"
+	default BR2_TARGET_ARMADEUS_APF51_DDR2RAM_128
+	help
+	  DDR2 RAM size per chip (Default 128MB).
+
+config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_32
+	bool "32MB"
+	help
+	  32MB size per DDR2 RAM chip.
+
+config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_64
+	bool "64MB"
+	help
+	  64MB size per DDR2 RAM chip.
+
+config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_128
+	bool "128MB"
+	help
+	  128MB size per DDR2 RAM chip.
+
+config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_256
+	bool "256MB"
+	help
+	  256MB size per DDR2 RAM chip.
+
+endchoice
+
+endif

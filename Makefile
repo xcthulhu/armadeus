@@ -71,8 +71,9 @@ default: all
 
 help:
 	@echo 'First, choose the platform:'
-	@echo '  apf9328_defconfig  - must be launch before using apf9328 card'
-	@echo '  apf27_defconfig    - must be launch before using apf27 card'
+	@echo '  apf9328_defconfig  - get default config for an APF9328 board'
+	@echo '  apf27_defconfig    - get default config for an APF27 board'
+	@echo '  apf51_defconfig    - get default config for an APF51 board'
 	@echo ''
 	@echo 'Cleaning:'
 	@echo '  buildroot-clean    - delete all non-source files in buildroot'
