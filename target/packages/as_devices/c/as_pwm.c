@@ -26,7 +26,7 @@
 #include <unistd.h> /* for write()  */
 
 /* #define DEBUG */
-#include "helpers.h"
+#include "as_helpers.h"
 #include "as_pwm.h"
 
 
