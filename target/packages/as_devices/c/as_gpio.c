@@ -28,8 +28,7 @@
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>
 
-/*#define DEBUG*/
-#include "helpers.h"
+#include "as_helpers.h"
 #include "as_gpio.h"
 
 

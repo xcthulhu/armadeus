@@ -1,0 +1,75 @@
+Add support to generate UBI images from UBIFS one.
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/fs/ubi/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/fs/ubi/Config.in	2010-10-31 21:32:10.000000000 +0100
+@@ -0,0 +1,22 @@
++config BR2_TARGET_ROOTFS_UBI
++	depends on BR2_TARGET_ROOTFS_UBIFS
++	bool "UBI image"
++	help
++	  Build a UBI image of the UBIFS root filesystem.
++
++config BR2_TARGET_ROOTFS_UBI_PEBSIZE
++	hex "UBI physical erase block size"
++	depends on BR2_TARGET_ROOTFS_UBI
++	default 0x20000
++	help
++	  Tells ubinize that physical eraseblock size of the flash chip the UBI
++	  image is created for is 0x20000 (by default).
++
++config BR2_TARGET_ROOTFS_UBI_SUBSIZE
++	int "UBI sub-page size"
++	depends on BR2_TARGET_ROOTFS_UBI
++	default 512
++	help
++	  Tells ubinize that the flash supports sub-pages and sub-page size is
++	  512 bytes (by default).
++
+Index: buildroot/fs/ubi/ubi.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/fs/ubi/ubi.mk	2010-10-31 21:56:04.000000000 +0100
+@@ -0,0 +1,26 @@
++#############################################################
++#
++# Build the UBI root filesystem image
++#
++#############################################################
++
++UBI_UBINIZE_OPTS := -m $(BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE)
++UBI_UBINIZE_OPTS += -p $(BR2_TARGET_ROOTFS_UBI_PEBSIZE)
++ifneq ($(BR2_TARGET_ROOTFS_UBI_SUBSIZE),0)
++UBI_UBINIZE_OPTS += -s $(BR2_TARGET_ROOTFS_UBI_SUBSIZE)
++endif
++
++
++ROOTFS_UBI_DEPENDENCIES = ubifs-root
++
++#	$(HOST_DIR)/usr/sbin/mkfs.ubifs -d $(TARGET_DIR) $(UBIFS_OPTS) -o $$@
++
++define ROOTFS_UBI_CMD
++	cp fs/ubi/ubinize.cfg . ;\
++	echo "image=$$@fs" \
++		>> ./ubinize.cfg ;\
++	$(HOST_DIR)/usr/sbin/ubinize -o $$@ $(UBI_UBINIZE_OPTS) ubinize.cfg ;\
++	rm ubinize.cfg
++endef
++
++$(eval $(call ROOTFS_TARGET,ubi))
+Index: buildroot/fs/ubi/ubinize.cfg
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/fs/ubi/ubinize.cfg	2010-10-31 21:13:58.000000000 +0100
+@@ -0,0 +1,7 @@
++[ubifs]
++mode=ubi
++vol_id=0
++vol_type=dynamic
++vol_name=rootfs
++vol_alignment=1
++vol_flags=autoresize

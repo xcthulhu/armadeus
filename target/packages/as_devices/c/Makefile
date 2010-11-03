@@ -20,7 +20,7 @@ OBJ += as_93lcxx.o
 OBJ += as_spi.o
 OBJ += as_max1027.o
 OBJ += as_max5821.o
-OBJ += helpers.o
+OBJ += as_helpers.o
 
 LIBRARY=as_devices
 LIB_VERS=1
