@@ -28,4 +28,4 @@ iwconfig eth1 mode managed  essid armadeus key restricted 93d7-e853-22e8-8784-0b
 
 ifconfig eth1 192.168.0.251
 sleep 1
-echo -e "\nPour verifier le port wifi, veuiller browser sur 192.168.0.251\n"
+echo -e "\nTo check the wifi port, please browse on 192.168.0.251\n"
