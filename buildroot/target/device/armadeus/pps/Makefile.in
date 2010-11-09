@@ -1,0 +1,6 @@
+ifeq ($(BR2_VERSION),"0.10.0-svn")
+U_BOOT_BINLOC=u-boot-nand.bin
+else
+U_BOOT_BIN=u-boot-nand.bin
+U_BOOT_TARGET_BIN:=$(BOARD_NAME)-u-boot.bin
+endif

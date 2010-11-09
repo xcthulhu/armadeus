@@ -356,8 +356,9 @@ if __name__ == "__main__":
     SPEED = 115200
 
     print "\nAPF27 Bootstrap Tool\n"
-    print "!!! Do not forget to put the bootstrap jumper and to reset your board !!!"
+    print "/!\\ Do not forget to put the bootstrap jumper and to reset your board /!\\"
     print "(be sure to have a u-boot.bin file in current dir too)\n"
+    print("/!\\ U-Boot recover eat lot of CPU, be sure that no process trust your CPU\n")
     port = raw_input('Enter serial port number or name to use (/dev/ttySx under Linux and COMx under Windows): ')
     try:
         ser = serial.Serial(port, SPEED, timeout=3) 

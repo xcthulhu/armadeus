@@ -1,0 +1,66 @@
+if BR2_TARGET_ARMADEUS_APF27
+choice
+	prompt "Target DDR SDRAM chip size"
+	default BR2_TARGET_ARMADEUS_APF27_SDRAM_64 if BR2_TARGET_ARMADEUS_APF27
+	depends on BR2_TARGET_ARMADEUS_APF27
+	help
+	  Target DDR SDRAM size per chip (Default 64MB).
+
+config BR2_TARGET_ARMADEUS_APF27_SDRAM_16
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "16MB"
+	help
+	  Target 16MB DDR SDRAM size per chip.
+
+config BR2_TARGET_ARMADEUS_APF27_SDRAM_32
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "32MB"
+	help
+	  Target 32MB DDR SDRAM size per chip.
+
+config BR2_TARGET_ARMADEUS_APF27_SDRAM_64
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "64MB"
+	help
+	  Target 64MB DDR SDRAM size per chip (Default).
+
+config BR2_TARGET_ARMADEUS_APF27_SDRAM_128
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "128MB"
+	help
+	  Target 128MB DDR SDRAM size per chip).
+
+config BR2_TARGET_ARMADEUS_APF27_SDRAM_256
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "256MB"
+	help
+	  Target 256MB DDR SDRAM size per chip.
+
+endchoice
+
+choice
+	prompt "Target Number of DDR SDRAM chip"
+	default BR2_TARGET_ARMADEUS_NR_SDRAM_1
+	help
+	  Number of DDR SDRAM chip present on target (1 or 2)
+	  (Default 1 DDR SDRAM)
+
+config BR2_TARGET_ARMADEUS_NR_SDRAM_1
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "1 DDR SDRAM"
+	help
+	  1 DDR SDRAM on target (Default).
+config BR2_TARGET_ARMADEUS_NR_SDRAM_2
+	depends on BR2_TARGET_ARMADEUS_APF27
+	bool "2 DDR SDRAMs"
+	help
+	  2 DDR SDRAMs on target.
+
+endchoice
+
+config BR2_TARGET_ARMADEUS_NR_SDRAM
+	string
+	default 1		if BR2_TARGET_ARMADEUS_NR_SDRAM_1
+	default 2		if BR2_TARGET_ARMADEUS_NR_SDRAM_2
+
+endif
