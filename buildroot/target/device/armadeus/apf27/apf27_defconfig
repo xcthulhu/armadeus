@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Thu Sep  9 16:01:40 2010
+# Tue Nov  9 15:25:06 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -69,6 +69,7 @@ BR2_BANNER="Welcome to the Armadeus development environment."
 BR2_TARGET_ARMADEUS=y
 # BR2_TARGET_ARMADEUS_APF9328 is not set
 BR2_TARGET_ARMADEUS_APF27=y
+# BR2_TARGET_ARMADEUS_APF51 is not set
 BR2_BOARD_NAME="apf27"
 BR2_BOARD_PATH="target/device/armadeus/$(BR2_BOARD_NAME)"
 BR2_CPU_NAME="imx27"
@@ -658,6 +659,10 @@ BR2_PACKAGE_NCURSES=y
 # other GUIs
 #
 # BR2_PACKAGE_QT is not set
+
+#
+# Qwt requires Qt to be installed
+#
 
 #
 # X Window System server
