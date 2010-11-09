@@ -1,0 +1,56 @@
+Index: linux-2.6.36/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.36.orig/drivers/mtd/nand/mxc_nand.c	2010-11-08 22:12:19.000000000 +0100
++++ linux-2.6.36/drivers/mtd/nand/mxc_nand.c	2010-11-09 10:29:25.000000000 +0100
+@@ -211,6 +211,8 @@
+ 	}
+ };
+ 
++static u_char nand_verify_buf[2048];
++
+ #ifdef CONFIG_MTD_PARTITIONS
+ static const char *part_probes[] = { "RedBoot", "cmdlinepart", NULL };
+ #endif
+@@ -444,6 +446,7 @@
+ {
+ 	struct nand_chip *this = &host->nand;
+ 
++	DEBUG(MTD_DEBUG_LEVEL3, "send_read_id \n");
+ 	/* NANDFC buffer 0 is used for device ID output */
+ 	writew(0x0, NFC_V1_V2_BUF_ADDR);
+ 
+@@ -651,7 +654,15 @@
+ static int mxc_nand_verify_buf(struct mtd_info *mtd,
+ 				const u_char *buf, int len)
+ {
+-	return -EFAULT;
++	mxc_nand_read_buf(mtd, (u_char *)&nand_verify_buf[0], len);
++
++	if (!memcmp(buf, &nand_verify_buf[0], len)) {
++		DEBUG(MTD_DEBUG_LEVEL3,"verify_buf: the buffer is OK\n");
++		return 0;
++	} else {
++		DEBUG(MTD_DEBUG_LEVEL0,"verify_buf: the buffer is wrong\n");
++		return -EFAULT;
++	}
+ }
+ 
+ /* This function is used by upper layer for select and
+@@ -985,7 +996,7 @@
+ static struct nand_bbt_descr bbt_main_descr = {
+ 	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
+ 	    | NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
+-	.offs = 0,
++	.offs = 12,
+ 	.len = 4,
+ 	.veroffs = 4,
+ 	.maxblocks = 4,
+@@ -995,7 +1006,7 @@
+ static struct nand_bbt_descr bbt_mirror_descr = {
+ 	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
+ 	    | NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
+-	.offs = 0,
++	.offs = 12,
+ 	.len = 4,
+ 	.veroffs = 4,
+ 	.maxblocks = 4,

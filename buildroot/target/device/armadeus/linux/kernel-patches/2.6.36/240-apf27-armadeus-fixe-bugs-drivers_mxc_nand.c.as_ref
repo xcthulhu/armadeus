@@ -1,0 +1,160 @@
+Index: linux-2.6.29/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.29.orig/drivers/mtd/nand/mxc_nand.c	2009-03-24 00:12:14.000000000 +0100
++++ linux-2.6.29/drivers/mtd/nand/mxc_nand.c	2009-03-31 10:18:28.000000000 +0200
+@@ -130,17 +130,42 @@
+ 
+ /* OOB placement block for use with hardware ecc generation */
+ static struct nand_ecclayout nand_hw_eccoob_8 = {
+-	.eccbytes = 5,
+-	.eccpos = {6, 7, 8, 9, 10},
+-	.oobfree = {{0, 5}, {11, 5}, }
++	.eccbytes = 24,
++	.eccpos = {6, 7, 8, 9, 10, 5, 22, 23, 24, 25, 26, 21, 38, 39, 40, 41, 42, 37, 54, 55, 56, 57, 58, 53},
++	.oobfree = {{11, 10}, {27, 10}, {43, 10}, {59, 5}}
+ };
+ 
+ static struct nand_ecclayout nand_hw_eccoob_16 = {
+-	.eccbytes = 5,
+-	.eccpos = {6, 7, 8, 9, 10},
+-	.oobfree = {{0, 6}, {12, 4}, }
++	.eccbytes = 24,
++	.eccpos = {6, 7, 8, 9, 10, 11, 22, 23, 24, 25, 26, 27, 38, 39, 40, 41, 42, 43, 54, 55, 56, 57, 58, 59},
++	.oobfree = {{12, 10}, {28, 10}, {44, 10}, {60, 4}}
+ };
+ 
++static uint8_t bbt_pattern[] = {'B', 'b', 't', '0' };
++static uint8_t mirror_pattern[] = {'1', 't', 'b', 'B' };
++
++static struct nand_bbt_descr mxcnd_bbt_main_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	12,
++	.len = 4,
++	.veroffs = 4,
++	.maxblocks = 4,
++	.pattern = bbt_pattern
++};
++
++static struct nand_bbt_descr mxcnd_bbt_mirror_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_2BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	12,
++	.len = 4,
++	.veroffs = 4,
++	.maxblocks = 4,
++	.pattern = mirror_pattern
++};
++
++static u_char nand_verify_buf[2048];
++
+ #ifdef CONFIG_MTD_PARTITIONS
+ static const char *part_probes[] = { "RedBoot", "cmdlinepart", NULL };
+ #endif
+@@ -283,6 +308,7 @@
+ 	struct nand_chip *this = &host->nand;
+ 	uint16_t tmp;
+ 
++	DEBUG(MTD_DEBUG_LEVEL3, "send_read_id \n");
+ 	/* NANDFC buffer 0 is used for device ID output */
+ 	writew(0x0, host->regs + NFC_BUF_ADDR);
+ 
+@@ -299,11 +325,9 @@
+ 	if (this->options & NAND_BUSWIDTH_16) {
+ 		void __iomem *main_buf = host->regs + MAIN_AREA0;
+ 		/* compress the ID info */
+-		writeb(readb(main_buf + 2), main_buf + 1);
+-		writeb(readb(main_buf + 4), main_buf + 2);
+-		writeb(readb(main_buf + 6), main_buf + 3);
+-		writeb(readb(main_buf + 8), main_buf + 4);
+-		writeb(readb(main_buf + 10), main_buf + 5);
++		writew((readw(main_buf + 0) & 0xff) | ((readw(main_buf + 2)& 0xff) << 8), main_buf + 0);
++		writew((readw(main_buf + 4) & 0xff) | ((readw(main_buf + 6)& 0xff) << 8), main_buf + 2);
++		writew((readw(main_buf + 8) & 0xff) | ((readw(main_buf + 10)& 0xff) << 8), main_buf + 4);
+ 	}
+ }
+ 
+@@ -637,7 +661,22 @@
+ static int mxc_nand_verify_buf(struct mtd_info *mtd,
+ 				const u_char *buf, int len)
+ {
+-	return -EFAULT;
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++
++	DEBUG(MTD_DEBUG_LEVEL3,
++	      "mxc_nand_verify_buf(col = %d, len = %d)\n", host->col_addr,
++	      len);
++
++	mxc_nand_read_buf(mtd, (u_char *)&nand_verify_buf[0], len);
++
++	if (!memcmp(buf, &nand_verify_buf[0], len)) {
++		DEBUG(MTD_DEBUG_LEVEL3,"verify_buf: the buffer is OK\n");
++		return 0;
++	} else {
++		DEBUG(MTD_DEBUG_LEVEL0,"verify_buf: the buffer is wrong\n");
++		return -EFAULT;
++	}
+ }
+ 
+ /* This function is used by upper layer for select and
+@@ -700,6 +739,7 @@
+ 
+ 	/* Reset command state information */
+ 	host->status_request = false;
++	host->pagesize_2k = (mtd->writesize >= 2048)?1:0;
+ 
+ 	/* Command pre-processing step */
+ 	switch (command) {
+@@ -723,6 +763,10 @@
+ 			command = NAND_CMD_READ0; /* only READ0 is valid */
+ 		break;
+ 
++	case NAND_CMD_READID:
++		host->col_addr = column;
++		break;
++
+ 	case NAND_CMD_SEQIN:
+ 		if (column >= mtd->writesize) {
+ 			/*
+@@ -796,8 +840,8 @@
+ 
+ 		if (host->pagesize_2k) {
+ 			send_addr(host, (page_addr >> 8) & 0xFF, false);
+-			if (mtd->size >= 0x40000000)
+-				send_addr(host, (page_addr >> 16) & 0xff, true);
++			if (mtd->size >= 0x10000000)
++ 				send_addr(host, (page_addr >> 16) & 0xff, true);
+ 		} else {
+ 			/* One more address cycle for higher density devices */
+ 			if (mtd->size >= 0x4000000) {
+@@ -866,6 +910,7 @@
+ 	mtd = &host->mtd;
+ 	mtd->priv = this;
+ 	mtd->owner = THIS_MODULE;
++	mtd->name = pdev->dev.bus_id;
+ 
+ 	/* 50 us command delay time */
+ 	this->chip_delay = 5;
+@@ -880,6 +925,9 @@
+ 	this->read_buf = mxc_nand_read_buf;
+ 	this->verify_buf = mxc_nand_verify_buf;
+ 
++	this->bbt_td = &mxcnd_bbt_main_descr;
++	this->bbt_md = &mxcnd_bbt_mirror_descr;
++
+ 	host->clk = clk_get(&pdev->dev, "nfc_clk");
+ 	if (IS_ERR(host->clk))
+ 		goto eclk;
+@@ -948,8 +996,10 @@
+ 
+ 	/* NAND bus width determines access funtions used by upper layer */
+ 	if (pdata->width == 2) {
+-		this->options |= NAND_BUSWIDTH_16;
++		this->options |= NAND_BUSWIDTH_16 | NAND_USE_FLASH_BBT;
+ 		this->ecc.layout = &nand_hw_eccoob_16;
++	} else {
++		this->options |= NAND_USE_FLASH_BBT;
+ 	}
+ 
+ 	host->pagesize_2k = 0;
