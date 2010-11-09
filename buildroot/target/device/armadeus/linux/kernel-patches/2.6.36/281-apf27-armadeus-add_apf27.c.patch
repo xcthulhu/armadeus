@@ -9,14 +9,14 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2010-10-21 10:16:28.000000000 +0200
-@@ -0,0 +1,789 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2010-11-09 10:13:43.000000000 +0100
+@@ -0,0 +1,802 @@
 + /*
 + * apf27.c
 + *
 + * Support for the APF27 System On Module
 + *
-+ * Copyright (C) 2008 Armadeus Systems
++ * Copyright (C) 2008 - 2010 Armadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Eric Jarrige <eric.jarrige@armadeus.com>
 + *
@@ -38,9 +38,9 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
++#define IMX_NEEDS_DEPRECATED_SYMBOLS
++
 +#include <linux/platform_device.h>
-+#include <linux/mtd/physmap.h>
-+#include <asm/mach/flash.h>
 +#include <linux/i2c.h>
 +#include <linux/serial.h>
 +#include <linux/delay.h>
@@ -48,6 +48,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +#include <linux/cpufreq.h>
 +#include <linux/clk.h>
 +#include <linux/dma-mapping.h>
++
++#include <asm/mach/flash.h>
 +#include <asm/io.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach-types.h>
@@ -55,9 +57,9 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +// #include <asm/arch/clock.h>
 +#include <mach/common.h>
 +#include <mach/hardware.h>
-+#include <mach/iomux-mx1-mx2.h>
++#include <mach/iomux-mx27.h>
 +#include <mach/gpio.h>
-+#include <mach/imx_i2c.h>
++//#include <mach/imx_i2c.h>
 +#include <mach/imx-uart.h>
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
@@ -67,13 +69,16 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
 +#include "cpufreq_imx.h"
 +#endif
-+#include <mach/board-apf27.h>
++//#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
 +#ifdef CONFIG_MACH_APF27_FPGA
 +#include <mach/fpga.h>
 +#endif
++
++#include "devices-imx27.h"
 +#include "devices.h"
-+#include "crm_regs.h"
++//#include "crm_regs.h"
++
 +
 +extern void apf27_baseboard_init(void);
 +#ifdef CONFIG_PM
@@ -113,9 +118,10 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +
 +
 +/* APF27 has a Micron 128MiB 1,8V NAND flash, 16 bits width */
-+static struct mxc_nand_platform_data apf27_nand_board_info = {
++static struct mxc_nand_platform_data apf27_nand_board_info __initconst = {
 +	.width = 2,
 +	.hw_ecc = 1,
++	.flash_bbt = 1, /* we handle Bad Block Table */
 +};
 +
 +
@@ -138,8 +144,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	return 0;
 +}
 +
-+static struct imx_i2c_platform_data apf27_i2c_1_data = {
-+	.max_clk = 100000,
++static struct imxi2c_platform_data apf27_i2c_1_data __initconst = {
++	.bitrate = 100000,
 +	.init = apf27_i2c_1_init,
 +	.exit = apf27_i2c_1_exit,
 +};
@@ -242,7 +248,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +}
 +#endif /* CONFIG_FEC_OLD */
 +
-+
++#if 0
 +/* APF27 has an onboard PHY (ISP1504) on OTG USB port */
 +static int mxc_usbotg_pins[] = {
 +	PE0_PF_USBOTG_NXT,
@@ -423,7 +429,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	.operating_mode = FSL_USB2_DR_DEVICE,
 +	.phy_mode = FSL_USB2_PHY_ULPI,
 +};
-+
++#endif
 +
 +/* APF27 frequency scaling stuff */
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
@@ -645,9 +651,11 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	printk("___ %s\n", __func__);
 +
 +#ifdef CONFIG_USB_EHCI_MXC
-+	isp1504_suspend((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
++//	isp1504_suspend((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
 +#endif
++#ifdef CONFIG_MACH_APF27_HAS_BASEBOARD
 +	apf27_baseboard_suspend();
++#endif
 +#ifdef APF27_PM_DEBUG
 +	apf27_force_gpios();
 +	apf27_dump_clocks();
@@ -663,10 +671,11 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	printk("___ %s\n", __func__);
 +
 +#ifdef CONFIG_USB_EHCI_MXC
-+	isp1504_resume((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
++//	isp1504_resume((void __iomem *)(IO_ADDRESS(OTG_BASE_ADDR + 0x170)));
 +#endif
++#ifdef CONFIG_MACH_APF27_HAS_BASEBOARD
 +	apf27_baseboard_resume();
-+
++#endif
 +	return 0;
 +}
 +
@@ -718,6 +727,15 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	.name = "ocore_irq_mng",
 +	.id = 0,
 +};
++
++static struct map_desc apf27_fpga_io_desc[] __initdata = {
++	{
++		.virtual = CS5_BASE_ADDR_VIRT,
++		.pfn = __phys_to_pfn(CS5_BASE_ADDR),
++		.length = CS5_SIZE,
++		.type = MT_DEVICE,
++	},
++};
 +#endif /* CONFIG_MACH_APF27_FPGA */
 +
 +
@@ -726,17 +744,17 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	sysdev_class_register(&apf27_pm_sysclass);
 +	sysdev_register(&apf27_pm_sysdev);
 +
-+	/* Init apf27 power management related pins */
++	/* Init APF27 power management related pins */
 +	apf27_pwr_ctl_active();
 +
 +#ifdef CONFIG_FEC_OLD
 +	gpio_fec_active();
 +#endif
 +	/* UART1 and UART3 have "on module" transceivers */
-+	mxc_register_device(&mxc_uart_device0, &uart0_pdata); /* console */
-+	mxc_register_device(&mxc_uart_device2, &uart2_pdata);
++	imx27_add_imx_uart0(&uart0_pdata); /* console */
++	imx27_add_imx_uart2(&uart2_pdata);
 +
-+	mxc_register_device(&mxc_nand_device, &apf27_nand_board_info);
++	imx27_add_mxc_nand(&apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
 +	mxc_register_device(&mxc_pwm_device0, &apf27_pwm_0_data);
@@ -744,13 +762,15 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +#ifdef CONFIG_WATCHDOG
 +	mxc_register_device(&mxc_wdt, NULL);
 +#endif
++#if 0
 +	if (otg_mode_host) {
 +		mxc_register_device(&mxc_otg_host, &ehci0_pdata);
 +	} else {
 +		mxc_register_device(&mxc_otg_udc_device, &otg_device_pdata);
 +	}
++#endif
 +#ifdef CONFIG_I2C
-+	mxc_register_device(&imx_i2c_device1, &apf27_i2c_1_data);
++	imx27_add_i2c_imx1(&apf27_i2c_1_data);
 +	i2c_register_board_info(1, apf27_i2c_devices_bus1,
 +				ARRAY_SIZE(apf27_i2c_devices_bus1));
 +#endif
@@ -761,55 +781,48 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +#endif
 +
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
-+
++#ifdef CONFIG_MACH_APF27_HAS_BASEBOARD
 +	apf27_baseboard_init();
++#endif
 +}
 +
 +static void __init apf27_timer_init(void)
 +{
-+	mxc_clocks_init(26000000); /* ext ref even if not used */
-+	mxc_timer_init("gpt_clk.0");
++	mx27_clocks_init(26000000); /* init ext ref, even if not used */
 +}
 +
 +struct sys_timer apf27_timer = {
 +	.init = apf27_timer_init,
 +};
 +
-+static struct map_desc apf27_io_desc[] __initdata = {
-+	{
-+		.virtual = CS5_BASE_ADDR_VIRT,
-+		.pfn = __phys_to_pfn(CS5_BASE_ADDR),
-+		.length = CS5_SIZE,
-+		.type = MT_DEVICE,
-+	},
-+};
-+
 +void __init apf27_map_io(void)
 +{
-+	mxc_map_io();
-+	iotable_init(apf27_io_desc, ARRAY_SIZE(apf27_io_desc));
++	mx27_map_io();
++#ifdef CONFIG_MACH_APF27_FPGA
++	iotable_init(apf27_fpga_io_desc, ARRAY_SIZE(apf27_fpga_io_desc));
++#endif
 +}
 +
 +MACHINE_START(APF27, "Armadeus APF27")
 +	/* Maintainer: Julien Boibessot <julien.boibessot@armadeus.com> */
-+	.phys_io        = AIPI_BASE_ADDR,
-+	.io_pg_offst    = ((AIPI_BASE_ADDR_VIRT) >> 18) & 0xfffc,
-+	.boot_params    = PHYS_OFFSET + 0x100,
++	.phys_io        = MX27_AIPI_BASE_ADDR,
++	.io_pg_offst    = ((MX27_AIPI_BASE_ADDR_VIRT) >> 18) & 0xfffc,
++	.boot_params    = MX27_PHYS_OFFSET + 0x100,
 +	.map_io         = apf27_map_io,
-+	.init_irq       = mxc_init_irq,
++	.init_irq       = mx27_init_irq,
 +	.init_machine   = apf27_init,
 +	.timer          = &apf27_timer,
 +MACHINE_END
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2010-10-21 10:16:28.000000000 +0200
-@@ -0,0 +1,1139 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2010-11-08 16:15:38.000000000 +0100
+@@ -0,0 +1,1155 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
 + *
-+ * Copyright (C) 2009 Armadeus Systems
++ * Copyright (C) 2009-2010 Armadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Nicolas Colombain <nicolas.colombain@armadeus.com>
 + *
@@ -827,9 +840,9 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 + */
 +
++#define IMX_NEEDS_DEPRECATED_SYMBOLS
++
 +#include <linux/platform_device.h>
-+#include <linux/mtd/physmap.h>
-+#include <asm/mach/flash.h>
 +#include <linux/spi/spi.h>
 +#include <linux/spi/spidev.h>
 +#include <linux/i2c.h>
@@ -839,6 +852,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#include <linux/cpufreq.h>
 +#include <linux/clk.h>
 +#include <linux/dma-mapping.h>
++
 +#include <asm/io.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach-types.h>
@@ -846,11 +860,11 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +// #include <asm/arch/clock.h>
 +#include <mach/common.h>
 +#include <mach/hardware.h>
-+#include <mach/iomux-mx1-mx2.h>
++//#include <mach/iomux-mx1-mx2.h>
++#include <mach/iomux-mx27.h>
 +#include <mach/gpio.h>
-+#include <mach/imx_i2c.h>
 +//#include <mach/imx_spi.h>
-+#include <../mach-imx/include/mach/spi_imx.h>
++//#include <../mach-imx/include/mach/spi_imx.h>
 +#include <mach/imx-uart.h>
 +#include <mach/mmc.h>
 +#ifdef CONFIG_FB_MXC /* Freescale Framebuffer */
@@ -858,9 +872,10 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#include <mach/imxfb.h>
 +#endif
 +#include <linux/fb.h>
-+#include <mach/mxc_nand.h>
++//#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
++#if 0
 +#include <linux/spi/max1027.h>
 +#include <linux/spi/tsc2102.h>
 +#include "../../../drivers/net/can/mcp251x.h"
@@ -868,20 +883,25 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#include <media/ad9889.h>
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
-+#include <mach/imx_ssi.h>
 +#include <mach/imx-alsa.h>
 +#include <mach/imx_cam.h>
++#endif
++#include <mach/ssi.h>
++
 +#include <media/soc_camera.h>
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
 +#include "cpufreq_imx.h"
 +#endif
-+#include <mach/board-apf27.h>
++//#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
 +#ifdef CONFIG_MACH_APF27_FPGA
 +#include <mach/fpga.h>
 +#endif
++
++#include "devices-imx27.h"
 +#include "devices.h"
-+#include "crm_regs.h"
++//#include "crm_regs.h"
++
 +
 +#ifdef CONFIG_FB_MXC
 +extern void apf27_lcd_init(void);
@@ -942,8 +962,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +	return 0;
 +}
 +
-+static struct imx_i2c_platform_data apf27_i2c_0_data = {
-+	.max_clk = 400000,
++static struct imxi2c_platform_data apf27_i2c_0_data __initconst = {
++	.bitrate = 400000,
 +	.init = apf27_i2c_0_init,
 +	.exit = apf27_i2c_0_exit,
 +};
@@ -1307,6 +1327,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#endif /* CONFIG_SPI_MXC_SELECT3 */
 +
 +
++#if 0 /* TBDJB */
 +
 +/* APF27Dev has an optionnal 7 channels 10 bits ADC (SPI1) */
 +#ifdef CONFIG_ARMADEUS_MAX1027
@@ -1445,6 +1466,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +};
 +#endif /* CONFIG_CAN_MCP251X */
 +
++#endif /* TBDJB */
 +
 +/* SPI2 can be used as userspace general SPI bus (CS 2) */
 +#ifdef CONFIG_SPI_SPIDEV
@@ -1479,6 +1501,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#endif /* CONFIG_SPI_SPIDEV */
 +
 +static struct spi_board_info spi_board_info[] __initdata = {
++#if 0 /* TBDJB */
 +#ifdef CONFIG_ARMADEUS_MAX1027
 +	{
 +		.modalias		= "max1027",
@@ -1515,6 +1538,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +		.platform_data		= &apf27_mcp251x_config,
 +	},
 +#endif /* CONFIG_CAN_MCP251X */
++#endif /* TBDJB */
 +#ifdef CONFIG_SPI_SPIDEV
 +	{
 +		.modalias		= "spidev",
@@ -1528,16 +1552,16 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#endif /* CONFIG_SPI_SPIDEV */
 +};
 +
-+
++#if 0 /* TBDJB */
 +/* APF27Dev adds an USB PHY on i.MX27 USB_HOST port 2 */
 +#ifdef CONFIG_USB_EHCI_MXC
 +static int mxc_usbh1_pins[] = {
 +	PB22_PF_USBH1_SUSP,
 +	PB23_PF_USB_PWR,
-+	PB24_PF_USB_OC_B,
++	PB24_PF_USB_OC,
 +	PB25_PF_USBH1_RCV,
 +	PB26_PF_USBH1_FS,
-+	PB27_PF_USBH1_OE_B,
++	PB27_PF_USBH1_OE,
 +	PB28_PF_USBH1_TXDM,
 +	PB29_PF_USBH1_TXDP,
 +	PB30_PF_USBH1_RXDM,
@@ -1582,6 +1606,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +	.init = apf27_usbh1_init,
 +};
 +#endif /* CONFIG_USB_EHCI_MXC */
++#endif /* TBDJB */
 +
 +
 +#if defined(CONFIG_SND_IMX_TSC2102) || defined(CONFIG_SND_IMX_TSC2102_MODULE)
@@ -1623,6 +1648,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +	PC23_PF_SSI1_CLK,
 +};
 +
++/*
 +static int gpio_ssi1_active(struct platform_device *pdev)
 +{
 +	int err;
@@ -1640,15 +1666,17 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +	mxc_gpio_release_multiple_pins(mxc_ssi1_pins, ARRAY_SIZE(mxc_ssi1_pins));
 +	return 0;
 +}
++*/
 +
 +static struct imx_ssi_platform_data apf27_ssi0_pdata = {
++	.flags = 0, /* TBDJB
 +	.init = gpio_ssi1_active,
-+	.exit = gpio_ssi1_inactive
++	.exit = gpio_ssi1_inactive */
 +};
 +
 +static int apf27_late_init(void)
 +{
-+	mxc_register_device(&mxc_dam_device, NULL);
++//TBDJB	mxc_register_device(&mxc_dam_device, NULL);
 +	mxc_register_device(&imx_ssi_device0, &apf27_ssi0_pdata);
 +
 +	return 0;
@@ -1660,12 +1688,12 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +/* APF27Dev has a microSD connector */
 +#ifdef CONFIG_MMC_MXC
 +static int mxc_sdhc2_pins[] = {
-+	PB4_PF_SDHC2_D0,
-+	PB5_PF_SDHC2_D1,
-+	PB6_PF_SDHC2_D2,
-+	PB7_PF_SDHC2_D3,
-+	PB8_PF_SDHC2_CMD,
-+	PB9_PF_SDHC2_CLK,
++	PB4_PF_SD2_D0,
++	PB5_PF_SD2_D1,
++	PB6_PF_SD2_D2,
++	PB7_PF_SD2_D3,
++	PB8_PF_SD2_CMD,
++	PB9_PF_SD2_CLK,
 +};
 +
 +static int apf27_sdhc2_init(struct device *dev, irq_handler_t detect_irq, void *data)
@@ -1895,11 +1923,13 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#ifdef CONFIG_SERIAL_IMX_UART6
 +	mxc_register_device(&mxc_uart_device5, &uart5_pdata);
 +#endif
++#if 0
 +#ifdef CONFIG_USB_EHCI_MXC
 +	mxc_register_device(&mxc_ehci1, &ehci1_pdata);
 +#endif
++#endif
 +#ifdef CONFIG_I2C
-+	mxc_register_device(&imx_i2c_device0, &apf27_i2c_0_data);
++	imx27_add_i2c_imx0(&apf27_i2c_0_data);
 +	i2c_register_board_info(0, apf27dev_i2c_devices_bus0,
 +				ARRAY_SIZE(apf27dev_i2c_devices_bus0));
 +	i2c_register_board_info(1, apf27dev_i2c_devices_bus1,
@@ -1914,7 +1944,6 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#ifdef CONFIG_SPI_MXC_SELECT3
 +	mxc_register_device(&mxc_spi_device2, &imx_spi2_master_info);
 +#endif
-+
 +
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 +
@@ -1947,8 +1976,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2010-10-21 10:16:28.000000000 +0200
-@@ -0,0 +1,220 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2010-11-08 16:17:07.000000000 +0100
+@@ -0,0 +1,222 @@
 +/*
 + * apf27-lcd.c
 + *
@@ -1973,15 +2002,17 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 + */
 +
 +
-+#include <mach/iomux-mx1-mx2.h>
++#include <linux/fb.h>
++#include <linux/delay.h>
++
++#include <mach/iomux-mx27.h>
 +#include <mach/gpio.h>
 +#ifdef CONFIG_FB_MXC /* Freescale Framebuffer */
 +#include <mach/imx_fb.h>
 +#include <mach/imxfb.h>
 +#endif
-+#include <linux/fb.h>
-+#include <linux/delay.h>
 +#include <mach/common.h>
++
 +#include "devices.h"
 +
 +
@@ -2172,7 +2203,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2010-10-21 10:16:28.000000000 +0200
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2010-11-07 19:07:30.000000000 +0100
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2364,3 +2395,15 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +	printk("done\n");
 +}
 +
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-08 15:21:56.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-08 15:22:22.000000000 +0100
+@@ -81,6 +81,7 @@
+ 	case MACH_TYPE_MX21ADS:
+ 	case MACH_TYPE_PCA100:
+ 	case MACH_TYPE_MXT_TD60:
++	case MACH_TYPE_APF27:
+ 		uart_base = MX2X_UART1_BASE_ADDR;
+ 		break;
+ 	case MACH_TYPE_MX31LITE:

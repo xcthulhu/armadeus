@@ -1,0 +1,13 @@
+Index: linux-2.6.36/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.36.orig/drivers/mtd/nand/mxc_nand.c	2010-11-08 22:56:51.000000000 +0100
++++ linux-2.6.36/drivers/mtd/nand/mxc_nand.c	2010-11-09 09:21:24.000000000 +0100
+@@ -1038,7 +1038,7 @@
+ 	mtd->priv = this;
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->dev.parent = &pdev->dev;
+-	mtd->name = DRIVER_NAME;
++	mtd->name = dev_name(&pdev->dev);
+ 
+ 	/* 50 us command delay time */
+ 	this->chip_delay = 5;
