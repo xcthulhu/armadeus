@@ -1,5 +1,7 @@
---- buildrootref/target/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
-+++ buildroot/target/ubifs/Config.in	2009-10-03 17:07:32.000000000 +0200
+Index: buildroot/target/ubifs/Config.in
+===================================================================
+--- buildroot.orig/target/ubifs/Config.in	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/ubifs/Config.in	2010-11-09 16:42:27.000000000 +0100
 @@ -1,9 +1,15 @@
  config BR2_TARGET_ROOTFS_UBIFS
  	bool "ubifs root filesystem"
@@ -16,7 +18,7 @@
  config BR2_TARGET_ROOTFS_UBIFS_LEBSIZE
  	hex "UBI logical erase block size"
  	depends on BR2_TARGET_ROOTFS_UBIFS
-@@ -16,6 +22,13 @@ config BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE
+@@ -16,6 +22,13 @@
  	help
  	  Some comment required here
  
@@ -30,9 +32,11 @@
  config BR2_TARGET_ROOTFS_UBIFS_MAXLEBCNT
  	int "Maximum LEB count"
  	depends on BR2_TARGET_ROOTFS_UBIFS
---- buildrootref/target/ubifs/ubifsroot.mk	2009-10-03 17:55:26.000000000 +0200
-+++ buildroot/target/ubifs/ubifsroot.mk	2009-10-03 17:18:09.000000000 +0200
-@@ -76,7 +76,14 @@ else
+Index: buildroot/target/ubifs/ubifsroot.mk
+===================================================================
+--- buildroot.orig/target/ubifs/ubifsroot.mk	2008-11-03 09:15:09.000000000 +0100
++++ buildroot/target/ubifs/ubifsroot.mk	2010-11-09 16:53:33.000000000 +0100
+@@ -76,7 +76,14 @@
  UBIFS_TARGET := $(UBIFS_BASE)
  endif
  
@@ -48,7 +52,7 @@
  	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIPCMD) 2>/dev/null || true
  ifneq ($(BR2_HAVE_MANPAGES),y)
  	@rm -rf $(TARGET_DIR)/usr/man
-@@ -102,11 +109,18 @@ ifneq ($(TARGET_DEVICE_TABLE),)
+@@ -102,11 +109,18 @@
  		>> $(PROJECT_BUILD_DIR)/_fakeroot.$(notdir $(UBIFS_TARGET))
  endif
  	# Use fakeroot so mkfs.ubifs believes the previous fakery
@@ -62,7 +66,7 @@
 +	echo "image=$(UBIFS_BASE)" \
 +		>> ./ubinize.cfg
 +	$(UBINIZE) -o system_ubi.img $(UBIFS_UBINIZE_OPTS) ubinize.cfg
-+	cp -f system_ubi.img $(UBIFS_BASE)
++	cp -f system_ubi.img $(subst ubifs,ubi,$(UBIFS_BASE))
 +	rm system_ubi.img
 +	rm ubinize.cfg
  
