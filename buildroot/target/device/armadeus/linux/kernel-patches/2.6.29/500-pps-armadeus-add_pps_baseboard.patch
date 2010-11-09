@@ -346,11 +346,11 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
  	  version.
  
 +config MACH_PPS
-+	prompt "Md PPS"
++	prompt "Armadeus Systems APF27 PPS Secured Gateway"
 +	bool
 +	depends on MACH_APF27
 +	help
-+	  This selects the PPS as baseboard.
++	  This selects the APF27 PPS as baseboard.
 +
  endchoice
  
