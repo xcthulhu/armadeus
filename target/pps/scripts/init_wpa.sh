@@ -52,13 +52,13 @@ wpa_supplicant -ieth1 -c /etc/wpa_supplicant/wpa_supplicant.conf -Dwext -B dhcli
 
 ifconfig eth1 192.168.0.251
 sleep 1
-echo -e "\nPour verifier le port wifi, veuiller tester la commande \"ping 192.168.0.251\" sur le PC hote\n"
-echo -e "\nPour redemarrer le WPA Supplicant, avant de lancer la commande \"sh init_wpa.sh\", ou pour larreter, executer \"sh stop_wpa.sh\"\n"
+echo -e "\nTo check the wifi port (eth1), please enter the command \"ping 192.168.0.251\" on the host PC\n"
+echo -e "\nTo restart the WPA Supplicant, before entering the command \"sh init_wpa.sh\", or to stop it, run \"sh stop_wpa.sh\"\n"
 
 else #[ "$SSID" != "" -a "$PSK" != "" ]; print usage
 
-echo -e '\nLes variables $SSID et $PSK ne sont pas definies dans /etc/wpa_supplicant/networkConfig.
-Pour executer correctement le WPA Supplicant, vous devez renseigner ces variables de la facon suivante :
+echo -e '\nThe variables $SSID and $PSK are not initialized in /etc/wpa_supplicant/networkConfig.
+To correctly run WPA Supplicant, you must fill these variables in like this:
 export SSID=mon_ssid
 export PSK=ma_passphrase\n'
 
@@ -66,8 +66,8 @@ fi
 
 else #[ -f /etc/wpa_supplicant/networkConfig ]; print usage
 
-echo -e 'Le fichier /etc/wpa_supplicant/networkConfig nexiste pas.
-Pour executer correctement le WPA Supplicant, vous devez creer ce fichier et y definir les variables $SSID et $PSK de la facon suivante :
+echo -e '\nThe file /etc/wpa_supplicant/networkConfig doesnt exist.
+To correctly run WPA Supplicant, you have to create this file and declare the variables $SSID and $PSK like this:
 export SSID=mon_ssid
 export PSK=ma_passphrase\n'
 

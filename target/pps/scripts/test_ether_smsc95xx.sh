@@ -27,5 +27,5 @@ ifconfig eth1   down 2>/dev/null
 
 ifconfig usb0   192.168.0.251
 
-echo -e "\nPour verifier le port usb1 , veuiller browser sur 192.168.0.251\n"
+echo -e "\nTo check the port usb1, please browse on 192.168.0.251\n"
 
