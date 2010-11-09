@@ -76,6 +76,7 @@
 /dev/ttygserial	c	666	0	0	127	0	-	-	-
 /dev/fb		c	640	0	5	29	0	0	32	4
 /dev/ttySMX	c	666	0	0	204	41	0	1	6
+/dev/ttymxc	c	666	0	0	207	16	0	1	6
 #/dev/ttySA	c	666	0	0	204	5	0	1	3
 /dev/psaux	c	666	0	0	10	1	0	0	-
 #/dev/ppp	c	666	0	0	108	0	-	-	-
