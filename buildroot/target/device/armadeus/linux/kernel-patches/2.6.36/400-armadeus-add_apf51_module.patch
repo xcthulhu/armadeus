@@ -1,0 +1,148 @@
+Index: linux-2.6.36/arch/arm/mach-mx5/Kconfig
+===================================================================
+--- linux-2.6.36.orig/arch/arm/mach-mx5/Kconfig	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/mach-mx5/Kconfig	2010-11-11 11:32:41.000000000 +0100
+@@ -42,4 +42,10 @@
+ 
+ endchoice
+ 
++config MACH_ARMADEUS_APF51
++	bool "Support Armadeus APF51"
++	help
++	  Include support for Armadeus Systems APF51 System On Module. This
++	  includes specific configurations for the board and its peripherals.
++
+ endif
+Index: linux-2.6.36/arch/arm/mach-mx5/Makefile
+===================================================================
+--- linux-2.6.36.orig/arch/arm/mach-mx5/Makefile	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/mach-mx5/Makefile	2010-11-11 11:32:41.000000000 +0100
+@@ -9,3 +9,4 @@
+ obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
+ obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
+ obj-$(CONFIG_MACH_EUKREA_MBIMX51_BASEBOARD) += eukrea_mbimx51-baseboard.o
++obj-$(CONFIG_MACH_ARMADEUS_APF51) += board-apf51.o
+Index: linux-2.6.36/arch/arm/mach-mx5/board-apf51.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/mach-mx5/board-apf51.c	2010-11-11 11:32:41.000000000 +0100
+@@ -0,0 +1,97 @@
++/*
++ * Copyright 2010 Armadeus Systems
++ *
++ * Based on code which is:
++ * Copyright 2008-2009 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/gpio.h>
++
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/time.h>
++
++#include <mach/hardware.h>
++#include <mach/common.h>
++#include <mach/iomux-mx51.h>
++#include <mach/imx-uart.h>
++
++#include "devices.h"
++
++
++static struct pad_desc apf51_pads[] = {
++	/* UART2 (Console) */
++	MX51_PAD_UART2_RXD__UART2_RXD,
++	MX51_PAD_UART2_TXD__UART2_TXD,
++
++	/* Debug PINS */
++/*	MX51_PAD_GPIO_1_2__GPIO_1_2,
++	MX51_PAD_GPIO_1_3__GPIO_1_3,*/
++};
++
++/* Serial ports */
++#if defined(CONFIG_SERIAL_IMX) || defined(CONFIG_SERIAL_IMX_MODULE)
++static struct imxuart_platform_data uart_pdata = {
++// 	.flags = IMXUART_HAVE_RTSCTS,
++};
++
++static inline void apf51_init_imx_uart(void)
++{
++	mxc_register_device(&mxc_uart_device1, &uart_pdata);
++}
++#else /* !SERIAL_IMX */
++static inline void apf51_init_imx_uart(void)
++{
++}
++#endif /* SERIAL_IMX */
++
++
++#define DEBUG1_GPIO	(GPIO_PORTA | 2)
++#define DEBUG2_GPIO	(GPIO_PORTA | 3)
++/*
++ * Board specific initialization.
++ */
++static void __init apf51_board_init(void)
++{
++	mxc_iomux_v3_setup_multiple_pads(apf51_pads,
++					ARRAY_SIZE(apf51_pads));
++
++	gpio_request(DEBUG1_GPIO, "debug1");
++	gpio_request(DEBUG2_GPIO, "debug2");
++
++	gpio_set_value(DEBUG1_GPIO, 1);
++	gpio_set_value(DEBUG2_GPIO, 1);
++
++	apf51_init_imx_uart();
++#ifdef CONFIG_MACH_ARMADEUS_APF51_BASEBOARD
++	apf51_baseboard_init();
++#endif
++}
++
++static void __init apf51_timer_init(void)
++{
++//	mx51_clocks_init(32768, 0 /*24000000*/, 0 /*22579200*/, 0);
++}
++
++static struct sys_timer apf51_timer = {
++	.init   = apf51_timer_init,
++};
++
++MACHINE_START(APF51, "Armadeus APF51")
++	/* Maintainer: Armadeus Systems <support@armadeus.com> */
++	.phys_io = MX51_AIPS1_BASE_ADDR,
++	.io_pg_offst = ((MX51_AIPS1_BASE_ADDR_VIRT) >> 18) & 0xfffc,
++	.boot_params = PHYS_OFFSET + 0x100,
++	.map_io = mx51_map_io,
++	.init_irq = mx51_init_irq,
++	.init_machine = apf51_board_init,
++	.timer = &apf51_timer,
++MACHINE_END
++
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-11 12:22:51.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-11 12:23:44.000000000 +0100
+@@ -63,6 +63,7 @@
+ #define MX3X_UART1_BASE_ADDR	0x43F90000
+ #define MX3X_UART2_BASE_ADDR	0x43F94000
+ #define MX51_UART1_BASE_ADDR	0x73fbc000
++#define MX51_UART2_BASE_ADDR	0x73fc0000
+ 
+ static __inline__ void __arch_decomp_setup(unsigned long arch_id)
+ {
+@@ -101,6 +102,9 @@
+ 	case MACH_TYPE_MX51_BABBAGE:
+ 		uart_base = MX51_UART1_BASE_ADDR;
+ 		break;
++	case MACH_TYPE_APF51:
++		uart_base = MX51_UART2_BASE_ADDR;
++		break;
+ 	default:
+ 		break;
+ 	}
