@@ -106,7 +106,7 @@ Index: linux-2.6.36/arch/arm/mach-mx5/board-apf51.c
 +
 +static void __init apf51_timer_init(void)
 +{
-+//	mx51_clocks_init(32768, 0 /*24000000*/, 0 /*22579200*/, 0);
++	mx51_clocks_init(32768, 32768*1024, 0 /*22579200*/, 0);
 +}
 +
 +static struct sys_timer apf51_timer = {
