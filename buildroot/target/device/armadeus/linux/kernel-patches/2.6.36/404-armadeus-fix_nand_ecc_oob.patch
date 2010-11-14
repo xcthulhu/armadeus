@@ -1,0 +1,85 @@
+Index: linux-2.6.36/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- linux-2.6.36.orig/drivers/mtd/nand/mxc_nand.c	2010-11-14 12:33:43.000000000 +0100
++++ linux-2.6.36/drivers/mtd/mxc_nand.c	2010-11-14 12:16:17.000000000 +0100
+@@ -211,6 +211,18 @@ static struct nand_ecclayout nandv2_hw_e
+ 	}
+ };
+ 
++/* OOB description for V3 and 2048 byte pages with 64 byte OOB */
++static struct nand_ecclayout nandv3_hw_eccoob_largepage = {
++	.eccbytes = 4 * 8,
++	.eccpos = {
++		8, 9, 10, 11, 12, 13, 14, 15,
++		72, 73, 74, 75, 76, 77, 78, 79, 
++		136, 137, 138, 139, 140, 141, 142, 143,
++		200, 201, 202, 203, 204, 205, 206, 207
++	},
++	.oobfree = { {16, 56}, {80, 56}, {144, 56}, {208, 48} },
++};
++
+ static u_char nand_verify_buf[2048];
+ 
+ #ifdef CONFIG_MTD_PARTITIONS
+@@ -1013,6 +1025,28 @@ static struct nand_bbt_descr bbt_mirror_
+ 	.pattern = mirror_pattern,
+ };
+ 
++/* V3 BBT, use 4bit ECC */
++static struct nand_bbt_descr v3bbt_main_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++	    | NAND_BBT_4BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	2,
++	.len = 4,
++	.veroffs = 6,
++	.maxblocks = 4,
++	.pattern = bbt_pattern
++};
++
++/* V3 BBT, use 4bit ECC */
++static struct nand_bbt_descr v3bbt_mirror_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++	    | NAND_BBT_4BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	2,
++	.len = 4,
++	.veroffs = 6,
++	.maxblocks = 4,
++	.pattern = bbt_pattern
++};
++
+ static int __init mxcnd_probe(struct platform_device *pdev)
+ {
+ 	struct nand_chip *this;
+@@ -1029,6 +1063,7 @@ static int __init mxcnd_probe(struct pla
+ 	if (!host)
+ 		return -ENOMEM;
+ 
++
+ 	host->data_buf = (uint8_t *)(host + 1);
+ 
+ 	host->dev = &pdev->dev;
+@@ -1128,7 +1163,7 @@ static int __init mxcnd_probe(struct pla
+ 		host->get_dev_status = get_dev_status_v3;
+ 		host->irq_control = irq_control_v3;
+ 		oob_smallpage = &nandv2_hw_eccoob_smallpage;
+-		oob_largepage = &nandv2_hw_eccoob_largepage;
++		oob_largepage = &nandv3_hw_eccoob_largepage;
+ 	} else
+ 		BUG();
+ 
+@@ -1152,8 +1187,13 @@ static int __init mxcnd_probe(struct pla
+ 		this->options |= NAND_BUSWIDTH_16;
+ 
+ 	if (pdata->flash_bbt) {
+-		this->bbt_td = &bbt_main_descr;
+-		this->bbt_md = &bbt_mirror_descr;
++		if (nfc_is_v3_2()) {
++			this->bbt_td = &v3bbt_main_descr;
++			this->bbt_md = &v3bbt_mirror_descr;		
++		} else {
++			this->bbt_td = &bbt_main_descr;
++			this->bbt_md = &bbt_mirror_descr;
++		}
+ 		/* update flash based bbt */
+ 		this->options |= NAND_USE_FLASH_BBT;
+ 	}

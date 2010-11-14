@@ -1,0 +1,15 @@
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/debug-macro.S
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/debug-macro.S	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/debug-macro.S	2010-11-14 13:52:58.000000000 +0100
+@@ -50,8 +50,8 @@
+ #error "CONFIG_DEBUG_LL is incompatible with multiple archs"
+ #endif
+ #include <mach/mx51.h>
+-#define UART_PADDR	MX51_UART1_BASE_ADDR
+-#define UART_VADDR	MX51_AIPS1_IO_ADDRESS(MX51_UART1_BASE_ADDR)
++#define UART_PADDR	MX51_UART2_BASE_ADDR
++#define UART_VADDR	MX51_AIPS1_IO_ADDRESS(MX51_UART2_BASE_ADDR)
+ #endif
+ 
+ #ifdef CONFIG_ARCH_MXC91231

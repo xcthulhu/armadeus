@@ -1,0 +1,34 @@
+Index: linux-2.6.36/arch/arm/mach-mx5/clock-mx51.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/mach-mx5/clock-mx51.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/mach-mx5/clock-mx51.c	2010-11-14 15:36:39.000000000 +0100
+@@ -798,7 +798,7 @@ DEFINE_CLOCK(uart3_ipg_clk, 2, MXC_CCM_C
+ 
+ /* GPT */
+ DEFINE_CLOCK(gpt_clk, 0, MXC_CCM_CCGR2, MXC_CCM_CCGRx_CG9_OFFSET,
+-	NULL,  NULL, &ipg_clk, NULL);
++	NULL,  NULL, &ckil_clk, NULL);
+ DEFINE_CLOCK(gpt_ipg_clk, 0, MXC_CCM_CCGR2, MXC_CCM_CCGRx_CG10_OFFSET,
+ 	NULL,  NULL, &ipg_clk, NULL);
+
+Index: linux-2.6.36/arch/arm/plat-mxc/time.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/time.c	2010-11-14 16:55:16.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/time.c	2010-11-14 16:56:02.000000000 +0100
+@@ -56,6 +56,7 @@
+ /* MX31, MX35, MX25, MXC91231, MX5 */
+ #define V2_TCTL_WAITEN		(1 << 3) /* Wait enable mode */
+ #define V2_TCTL_CLK_IPG		(1 << 6)
++#define V2_TCTL_CLK_IPG_32k	(1 << 8)
+ #define V2_TCTL_FRR		(1 << 9)
+ #define V2_IR			0x0c
+ #define V2_TSTAT		0x08
+@@ -308,7 +309,7 @@ void __init mxc_timer_init(struct clk *t
+ 	__raw_writel(0, timer_base + MXC_TPRER); /* see datasheet note */
+ 
+ 	if (timer_is_v2())
+-		tctl_val = V2_TCTL_CLK_IPG | V2_TCTL_FRR | V2_TCTL_WAITEN | MXC_TCTL_TEN;
++		tctl_val = V2_TCTL_CLK_IPG_32k | V2_TCTL_FRR | V2_TCTL_WAITEN | MXC_TCTL_TEN;
+ 	else
+ 		tctl_val = MX1_2_TCTL_FRR | MX1_2_TCTL_CLK_PCLK1 | MXC_TCTL_TEN;
+ 
