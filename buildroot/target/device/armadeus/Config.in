@@ -16,17 +16,20 @@ choice
 
 config BR2_TARGET_ARMADEUS_APF9328
 	bool "apf9328"
-config BR2_TARGET_ARMADEUS_APF27
-	bool "apf27"
+config BR2_TARGET_ARMADEUS_APF27_DEV
+	bool "apf27 dev"
 config BR2_TARGET_ARMADEUS_APF51
 	bool "apf51"
+config BR2_TARGET_ARMADEUS_APF27_PPS
+	bool "apf27 pps"
 endchoice
 
 config BR2_BOARD_NAME
 	string
 	default "apf9328"	if BR2_TARGET_ARMADEUS_APF9328
-	default "apf27"		if BR2_TARGET_ARMADEUS_APF27
+	default "apf27"		if BR2_TARGET_ARMADEUS_APF27_DEV
 	default "apf51"		if BR2_TARGET_ARMADEUS_APF51
+	default "pps"		if BR2_TARGET_ARMADEUS_APF27_PPS
 
 config BR2_BOARD_PATH
 	string
@@ -35,7 +38,7 @@ config BR2_BOARD_PATH
 config BR2_CPU_NAME
 	string
 	default "imxl"		if BR2_TARGET_ARMADEUS_APF9328
-	default "imx27"		if BR2_TARGET_ARMADEUS_APF27
+	default "imx27"		if BR2_TARGET_ARMADEUS_APF27_DEV || BR2_TARGET_ARMADEUS_APF27_PPS
 	default "imx51"		if BR2_TARGET_ARMADEUS_APF51
 
 source "target/device/armadeus/apf9328/Config.in"
