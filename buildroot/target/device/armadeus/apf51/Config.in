@@ -29,11 +29,6 @@ choice
 	help
 	  DDR2 RAM size per chip (Default 128MB).
 
-config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_32
-	bool "32MB"
-	help
-	  32MB size per DDR2 RAM chip.
-
 config BR2_TARGET_ARMADEUS_APF51_DDR2RAM_64
 	bool "64MB"
 	help
