@@ -1,0 +1,1363 @@
+diff -purN u-boot-2010.03-ref/drivers/mtd/nand/Makefile u-boot-2010.03/drivers/mtd/nand/Makefile
+--- u-boot-2010.03-ref/drivers/mtd/nand/Makefile	2010-09-16 23:11:51.000000000 +0200
++++ u-boot-2010.03/drivers/mtd/nand/Makefile	2010-09-16 05:34:54.000000000 +0200
+@@ -43,6 +43,7 @@ COBJS-$(CONFIG_NAND_KIRKWOOD) += kirkwoo
+ COBJS-$(CONFIG_NAND_KMETER1) += kmeter1_nand.o
+ COBJS-$(CONFIG_NAND_MPC5121_NFC) += mpc5121_nfc.o
+ COBJS-$(CONFIG_NAND_MXC) += mxc_nand.o
++COBJS-$(CONFIG_NAND_MXC_V2) += mx51_nand.o
+ COBJS-$(CONFIG_NAND_NDFC) += ndfc.o
+ COBJS-$(CONFIG_NAND_NOMADIK) += nomadik.o
+ COBJS-$(CONFIG_NAND_S3C2410) += s3c2410_nand.o
+diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
+--- u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c	2010-09-16 23:11:51.000000000 +0200
++++ u-boot-2010.03/drivers/mtd/nand/mx51_nand.c	2010-09-16 05:34:54.000000000 +0200
+@@ -0,0 +1,976 @@
++/*
++ * Copyright (C) 2010 Eric Jarrige <jorasse@armadeus.org> 
++ * Copyright 2004-2007 Freescale Semiconductor, Inc.
++ * Copyright 2008 Sascha Hauer, kernel@pengutronix.de
++ * Copyright 2009 Ilya Yanok, <yanok@emcraft.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#include <common.h>
++#include <nand.h>
++#include <linux/err.h>
++#include <asm/io.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/mxc_nand.h>
++
++#define DRIVER_NAME "mxc_nand"
++
++
++#ifdef CONFIG_CMD_NAND_LOCK_UNLOCK
++/******************************************************************************
++ * Support for locking / unlocking feature of imx NFC controller
++ *****************************************************************************/
++
++#define NAND_CMD_LOCK		0x2a
++#define NAND_CMD_LOCK_TIGHT	0x2c
++#define NAND_CMD_UNLOCK1	0x23
++#define NAND_CMD_UNLOCK2	0x24
++#define NAND_CMD_LOCK_STATUS	0x7a
++
++/* NFC_WRPROT Control Register Bit Fields */
++#define NFC_WRPROT_UNLOCKBLK	(4<<0)		/* unlock block according to given address range */
++#define NFC_WRPROT_LOCKALL	(2<<0)		/* lock all */
++#define NFC_WRPROT_LOCKTIGHT	(1<<0)		/* lock-tight locked blocks */
++/* NFC_WRPR_STAT Status Register Bit Fields */
++#define NFC_WRPR_US 	        (1<<2)		/* Unlocked status	*/
++#define NFC_WRPR_LS 	        (1<<1)		/* Locked status */
++#define NFC_WRPR_LTS 	        (1<<0)		/* Lock-tight Status */
++
++#endif
++
++#define NAND_MXC_NR_BUFS		8
++#define NAND_MXC_SPARE_BUF_SIZE		64
++#define NAND_MXC_REG_OFFSET		0x1e00
++
++struct nfc_regs {
++	uint8_t main_area[NAND_MXC_NR_BUFS][0x200];
++	uint8_t spare_area[NAND_MXC_NR_BUFS][NAND_MXC_SPARE_BUF_SIZE];
++	/*
++	 * reserved size is offset of nfc registers
++	 * minus total main and spare sizes
++	 */
++	uint8_t reserved1[NAND_MXC_REG_OFFSET
++		- NAND_MXC_NR_BUFS * (512 + NAND_MXC_SPARE_BUF_SIZE)];
++	uint32_t nfc_flash_cmd;
++	uint32_t nfc_flash_addr;
++	uint32_t nfc_flash_addr1;
++	uint32_t nfc_flash_addr2;
++	uint32_t nfc_flash_addr3;
++	uint32_t nfc_flash_addr4;
++	uint32_t nfc_flash_addr5;
++	uint32_t nfc_flash_addr6;
++	uint32_t nfc_flash_addr7;
++	uint32_t nfc_flash_addr8;
++	uint32_t nfc_flash_addr9;
++	uint32_t nfc_flash_addr10;
++	uint32_t nfc_flash_addr11;
++	uint32_t nfc_config;
++	uint32_t nfc_ecc_status_result;
++	uint32_t nfc_status_sum;
++	uint32_t nfc_launch;
++};
++
++/*
++ * Set INT to 0, FCMD to 1, rest to 0 in NFC_CONFIG2 Register
++ * for Command operation
++ */
++#define NFC_CMD            0x1
++
++/*
++ * Set INT to 0, FADD to 1, rest to 0 in NFC_CONFIG2 Register
++ * for Address operation
++ */
++#define NFC_ADDR           0x2
++
++/*
++ * Set INT to 0, FDI to 1, rest to 0 in NFC_CONFIG2 Register
++ * for Input operation
++ */
++#define NFC_INPUT          0x4
++
++/*
++ * Set INT to 0, FDO to 001, rest to 0 in NFC_CONFIG2 Register
++ * for Data Output operation
++ */
++#define NFC_OUTPUT         0x8
++
++/*
++ * Set INT to 0, FD0 to 010, rest to 0 in NFC_CONFIG2 Register
++ * for Read ID operation
++ */
++#define NFC_ID             0x10
++
++/*
++ * Set INT to 0, FDO to 100, rest to 0 in NFC_CONFIG2 Register
++ * for Read Status operation
++ */
++#define NFC_STATUS         0x20
++
++#define NFC_AUTO_PROG 			0x40
++#define NFC_AUTO_READ           	0x80
++#define NFC_AUTO_ERASE          	0x200
++#define NFC_COPY_BACK_0			0x400
++#define NFC_COPY_BACK_1         	0x800
++#define NFC_AUTO_STATE          	0x1000
++
++#define NFC_4_8N_ECC	0
++
++typedef enum {false, true} bool;
++
++struct mxc_nand_host {
++	struct mtd_info		mtd;
++	struct nand_chip	*nand;
++
++	struct nfc_regs __iomem	*regs;
++	int			spare_only;
++	int			status_request;
++	int			pagesize_2k;
++	int			clk_act;
++	uint16_t		col_addr;
++	unsigned int		page_addr;
++};
++
++static struct mxc_nand_host mxc_host;
++static struct mxc_nand_host *host = &mxc_host;
++
++/* Define delays in microsec for NAND device operations */
++#define TROP_US_DELAY   2000
++/* Macros to get byte and bit positions of ECC */
++#define COLPOS(x)  ((x) >> 3)
++#define BITPOS(x) ((x) & 0xf)
++
++/* Define single bit Error positions in Main & Spare area */
++#define MAIN_SINGLEBIT_ERROR 0x4
++#define SPARE_SINGLEBIT_ERROR 0x1
++
++
++static struct nand_ecclayout nand_hw_eccoob2k = {
++	.eccbytes = 8,
++	.eccpos = {
++		8, 9, 10, 11, 12, 13, 14, 15,
++	},
++	.oobfree = {  {0, 8}, {16, 48} },
++};
++
++
++/* Generic flash bbt decriptors
++*/
++static uint8_t bbt_pattern[] = {'B', 'b', 't', '0' };
++static uint8_t mirror_pattern[] = {'1', 't', 'b', 'B' };
++
++static struct nand_bbt_descr bbt_main_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_4BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	2,
++	.len = 4,
++	.veroffs = 6,
++	.maxblocks = 4,
++	.pattern = bbt_pattern
++};
++
++static struct nand_bbt_descr bbt_mirror_descr = {
++	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE
++		| NAND_BBT_4BIT | NAND_BBT_VERSION | NAND_BBT_PERCHIP,
++	.offs =	2,
++	.len = 4,
++	.veroffs = 6,
++	.maxblocks = 4,
++	.pattern = mirror_pattern
++};
++
++
++
++static uint32_t *mxc_nand_memcpy32(uint32_t *dest, uint32_t *source, size_t size)
++{
++	uint32_t *d = dest;
++
++	size >>= 2;
++	while (size--)
++		__raw_writel(__raw_readl(source++), d++);
++	return dest;
++}
++
++/*
++ * This function polls the NANDFC to wait for the basic operation to
++ * complete by checking the INT bit of config2 register.
++ */
++static void wait_op_done(struct mxc_nand_host *host, int max_retries,
++				uint16_t param)
++{
++	while (/*max_retries-- > 0*/1) {
++		if (readl(NFC_IPC) & NFC_OPS_STAT) {
++			WRITE_NFC_IP_REG((readl(NFC_IPC) &
++					~NFC_OPS_STAT),
++					NFC_IPC);
++			break;
++		}
++		udelay(1);
++	}
++	if (max_retries < 0) {
++		MTDDEBUG(MTD_DEBUG_LEVEL0, "%s(%d): INT not set\n",
++				__func__, param);
++	}
++}
++
++/*
++ * This function issues the specified command to the NAND device and
++ * waits for completion.
++ */
++static void send_cmd(struct mxc_nand_host *host, uint16_t cmd)
++{
++	MTDDEBUG(MTD_DEBUG_LEVEL3, "send_cmd(host, 0x%x)\n", cmd);
++	/* fill command */
++	writel(cmd, REG_NFC_FLASH_CMD);
++
++	/* clear status */
++	ACK_OPS;
++
++	/* send out command */
++	writel(NFC_CMD, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, cmd);
++}
++
++/*
++ * This function sends an address (or partial address) to the
++ * NAND device. The address is used to select the source/destination for
++ * a NAND command.
++ */
++static void send_addr(struct mxc_nand_host *host, uint16_t addr)
++{
++	MTDDEBUG(MTD_DEBUG_LEVEL3, "send_addr(host, 0x%x)\n", addr);
++
++	/* fill address */
++	writel((addr << NFC_FLASH_ADDR_SHIFT), REG_NFC_FLASH_ADDR);
++
++	/* clear status */
++	ACK_OPS;
++
++	/* send out address */
++	writel(NFC_ADDR, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, addr);
++}
++
++/*
++ * This function requests the NANDFC to initate the transfer
++ * of data currently in the NANDFC RAM buffer to the NAND device.
++ */
++static void send_prog_page(struct mxc_nand_host *host, uint8_t buf_id,
++			int spare_only)
++{
++	if (spare_only)
++		MTDDEBUG(MTD_DEBUG_LEVEL1, "send_prog_page (%d)\n", spare_only);
++
++	/* set ram buffer id */
++	NFC_SET_RBA(buf_id);
++
++	/* clear status */
++	ACK_OPS;
++
++	/* transfer data from NFC ram to nand */
++	writel(NFC_INPUT, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, spare_only);
++}
++
++/*
++ * Requests NANDFC to initated the transfer of data from the
++ * NAND device into in the NANDFC ram buffer.
++ */
++static void send_read_page(struct mxc_nand_host *host, uint8_t buf_id,
++		int spare_only)
++{
++	MTDDEBUG(MTD_DEBUG_LEVEL3, "send_read_page (%d)\n", spare_only);
++
++	/* set ram buffer id */
++	NFC_SET_RBA(buf_id);
++
++	/* clear status */
++	ACK_OPS;
++
++	/* transfer data from nand to NFC ram */
++	writel(NFC_OUTPUT, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, spare_only);
++}
++
++/* Request the NANDFC to perform a read of the NAND device ID. */
++static void send_read_id(struct mxc_nand_host *host)
++{
++	/* Set RBA bits for BUFFER0 */
++	NFC_SET_RBA(0);
++
++	/* clear status */
++	ACK_OPS;
++
++	/* Read ID into main buffer */
++	writel(NFC_ID, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, 0);
++}
++
++/*
++ * This function requests the NANDFC to perform a read of the
++ * NAND device status and returns the current status.
++ */
++static uint16_t get_dev_status(struct mxc_nand_host *host)
++{
++	uint16_t ret;
++
++	/* clear status */
++	ACK_OPS;
++
++	/* Read status into main buffer */
++	writel(NFC_STATUS, REG_NFC_OPS);
++
++	/* Wait for operation to complete */
++	wait_op_done(host, TROP_US_DELAY, 0);
++
++	ret = (readl(&host->regs->nfc_config) >> 16 ) & 0xff;
++
++	return ret;
++}
++
++/* This function is used by upper layer to checks if device is ready */
++static int mxc_nand_dev_ready(struct mtd_info *mtd)
++{
++	/*
++	 * NFC handles R/B internally. Therefore, this function
++	 * always returns status as ready.
++	 */
++	return 1;
++}
++
++static void mxc_nand_enable_hwecc(struct mtd_info *mtd, int mode)
++{
++	/*
++	 * If HW ECC is enabled, we turn it on during init.  There is
++	 * no need to enable again here.
++	 */
++}
++
++static int mxc_nand_correct_data(struct mtd_info *mtd, u_char *dat,
++				 u_char *read_ecc, u_char *calc_ecc)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++
++	/*
++	 * 4-Bit errors are automatically corrected in HW.  No need for
++	 * additional correction.  5-Bit errors cannot be corrected by
++	 * HW ECC, so we need to return failure
++	 */
++	uint32_t ecc_sum_status = readl(&host->regs->nfc_status_sum) >> 8;
++
++	if (ecc_sum_status) {
++		MTDDEBUG(MTD_DEBUG_LEVEL0,
++		      "MXC_NAND: HWECC uncorrectable 2-bit ECC error\n");
++		return -1;
++	}
++
++	return 0;
++}
++
++static int mxc_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
++				  u_char *ecc_code)
++{
++	/*
++	 * Just return success.  HW ECC does not read/write the NFC spare
++	 * buffer.  Only the FLASH spare area contains the calcuated ECC.
++	 */
++	struct nand_chip *this = mtd->priv;
++	MTDDEBUG(MTD_DEBUG_LEVEL3, "mxc_nand_calculate_ecc: len = %d\n", this->ecc.bytes);
++	memset ((void*)ecc_code, 0xff, this->ecc.bytes);
++				
++	return 0;
++}
++
++static u_char mxc_nand_read_byte(struct mtd_info *mtd)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++	uint8_t ret = 0;
++	uint16_t col;
++	uint16_t __iomem *main_buf =
++		(uint16_t __iomem *)host->regs->main_area[0];
++	uint16_t __iomem *spare_buf =
++		(uint16_t __iomem *)host->regs->spare_area[0];
++	union {
++		uint16_t word;
++		uint8_t bytes[2];
++	} nfc_word;
++
++	/* Check for status request */
++	if (host->status_request)
++		return get_dev_status(host) & 0xFF;
++
++	/* Get column for 16-bit access */
++	col = host->col_addr >> 1;
++
++	/* If we are accessing the spare region */
++	if (host->spare_only)
++		nfc_word.word = readw(&spare_buf[col]);
++	else
++		nfc_word.word = readw(&main_buf[col]);
++
++	/* Pick upper/lower byte of word from RAM buffer */
++	ret = nfc_word.bytes[host->col_addr & 0x1];
++
++	/* Update saved column address */
++	if (nand_chip->options & NAND_BUSWIDTH_16)
++		host->col_addr += 2;
++	else
++		host->col_addr++;
++
++	return ret;
++}
++
++static uint16_t mxc_nand_read_word(struct mtd_info *mtd)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++	uint16_t col, ret;
++	uint16_t __iomem *p;
++
++	MTDDEBUG(MTD_DEBUG_LEVEL3,
++	      "mxc_nand_read_word(col = %d)\n", host->col_addr);
++
++	col = host->col_addr;
++	/* Adjust saved column address */
++	if (col < mtd->writesize && host->spare_only)
++		col += mtd->writesize;
++
++	if (col < mtd->writesize) {
++		p = (uint16_t __iomem *)(host->regs->main_area[0] +
++				(col >> 1));
++	} else {
++		p = (uint16_t __iomem *)(host->regs->spare_area[0] +
++				((col - mtd->writesize) >> 1));
++	}
++
++	if (col & 1) {
++		union {
++			uint16_t word;
++			uint8_t bytes[2];
++		} nfc_word[3];
++
++		nfc_word[0].word = readw(p);
++		nfc_word[1].word = readw(p + 1);
++
++		nfc_word[2].bytes[0] = nfc_word[0].bytes[1];
++		nfc_word[2].bytes[1] = nfc_word[1].bytes[0];
++
++		ret = nfc_word[2].word;
++	} else {
++		ret = readw(p);
++	}
++
++	/* Update saved column address */
++	host->col_addr = col + 2;
++
++	return ret;
++}
++
++/*
++ * Write data of length len to buffer buf. The data to be
++ * written on NAND Flash is first copied to RAMbuffer. After the Data Input
++ * Operation by the NFC, the data is written to NAND Flash
++ */
++static void mxc_nand_write_buf(struct mtd_info *mtd,
++				const u_char *buf, int len)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++	int n, col, i = 0;
++
++	MTDDEBUG(MTD_DEBUG_LEVEL3,
++	      "mxc_nand_write_buf(col = %d, len = %d)\n", host->col_addr,
++	      len);
++
++	col = host->col_addr;
++
++	/* Adjust saved column address */
++	if (col < mtd->writesize && host->spare_only)
++		col += mtd->writesize;
++
++	n = mtd->writesize + mtd->oobsize - col;
++	n = min(len, n);
++
++	MTDDEBUG(MTD_DEBUG_LEVEL3,
++	      "%s:%d: col = %d, n = %d\n", __func__, __LINE__, col, n);
++
++	while (n > 0) {
++		void __iomem *p;
++
++		if (col < mtd->writesize) {
++			p = host->regs->main_area[0] + (col & ~3);
++		} else {
++			p = host->regs->spare_area[0] -
++						mtd->writesize + (col & ~3);
++		}
++
++		MTDDEBUG(MTD_DEBUG_LEVEL3, "%s:%d: p = %p\n", __func__,
++		      __LINE__, p);
++
++		if (((col | (unsigned long)&buf[i]) & 3) || n < 4) {
++			union {
++				uint32_t word;
++				uint8_t bytes[4];
++			} nfc_word;
++
++			nfc_word.word = readl(p);
++			nfc_word.bytes[col & 3] = buf[i++];
++			n--;
++			col++;
++
++			writel(nfc_word.word, p);
++		} else {
++			int m = mtd->writesize - col;
++
++			if (col >= mtd->writesize)
++				m += mtd->oobsize;
++
++			m = min(n, m) & ~3;
++
++			MTDDEBUG(MTD_DEBUG_LEVEL3,
++			      "%s:%d: n = %d, m = %d, i = %d, col = %d\n",
++			      __func__,  __LINE__, n, m, i, col);
++
++			mxc_nand_memcpy32(p, (uint32_t *)&buf[i], m);
++			col += m;
++			i += m;
++			n -= m;
++		}
++	}
++	/* Update saved column address */
++	host->col_addr = col;
++}
++
++/*
++ * Read the data buffer from the NAND Flash. To read the data from NAND
++ * Flash first the data output cycle is initiated by the NFC, which copies
++ * the data to RAMbuffer. This data of length len is then copied to buffer buf.
++ */
++static void mxc_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++	int n, col, i = 0;
++
++	MTDDEBUG(MTD_DEBUG_LEVEL3,
++	      "mxc_nand_read_buf(col = %d, len = %d)\n", host->col_addr, len);
++
++	col = host->col_addr;
++
++	/* Adjust saved column address */
++	if (col < mtd->writesize && host->spare_only)
++		col += mtd->writesize;
++
++	n = mtd->writesize + mtd->oobsize - col;
++	n = min(len, n);
++
++	while (n > 0) {
++		void __iomem *p;
++
++		if (col < mtd->writesize) {
++			p = host->regs->main_area[0] + (col & ~3);
++		} else {
++			p = host->regs->spare_area[0] -
++					mtd->writesize + (col & ~3);
++		}
++
++		if (((col | (int)&buf[i]) & 3) || n < 4) {
++			union {
++				uint32_t word;
++				uint8_t bytes[4];
++			} nfc_word;
++
++			nfc_word.word = readl(p);
++			buf[i++] = nfc_word.bytes[col & 3];
++			n--;
++			col++;
++		} else {
++			int m = mtd->writesize - col;
++
++			if (col >= mtd->writesize)
++				m += mtd->oobsize;
++
++			m = min(n, m) & ~3;
++			mxc_nand_memcpy32((uint32_t *)&buf[i], p, m);
++
++			col += m;
++			i += m;
++			n -= m;
++		}
++	}
++	/* Update saved column address */
++	host->col_addr = col;
++}
++
++/*
++ * Used by the upper layer to verify the data in NAND Flash
++ * with the data in the buf.
++ */
++static int mxc_nand_verify_buf(struct mtd_info *mtd,
++				const u_char *buf, int len)
++{
++	u_char tmp[256];
++	uint bsize;
++
++	while (len) {
++		bsize = min(len, 256);
++		mxc_nand_read_buf(mtd, tmp, bsize);
++
++		if (memcmp(buf, tmp, bsize))
++			return 1;
++
++		buf += bsize;
++		len -= bsize;
++	}
++
++	return 0;
++}
++
++/*!
++ * mxc_nand_block_markbad - mark a block bad
++ *
++ * @param       mtd     MTD structure for the NAND Flash
++ * @param       buf     data to be verified
++ * @param       ofs     offset to the bad block 
++ *
++ * @return      -EFAULT if error else 0
++ *
++ * This function is used by the upper layer to mark bad blocks
++ * We overload the default function to support NAND SPL capabilities to detect
++ * badblocks without scanning the BBT. The first OOB location is filled with 0
++ *
++ */
++
++static int mxc_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++
++	struct nand_chip *this = mtd->priv;
++	uint8_t buf[2] = { 0, 0 };
++	int block, ret;
++
++	/* Get block number */
++	block = (int)(ofs >> this->bbt_erase_shift);
++	if (this->bbt)
++		this->bbt[block >> 2] |= 0x01 << ((block & 0x03) << 1);
++
++	/* Do we have a flash based bad block table ? */
++	if (this->options & NAND_USE_FLASH_BBT)
++		ret = nand_update_bbt(mtd, ofs);
++	/* We write two bytes, so we dont have to mess with 16 bit
++	 * access
++	 */
++	ofs += mtd->oobsize;
++	this->ops.len = this->ops.ooblen = 2;
++	this->ops.datbuf = NULL;
++	this->ops.oobbuf = buf;
++	this->ops.ooboffs = this->badblockpos & ~0x01;
++
++	ret= mtd->write_oob (mtd, ofs , &this->ops); 
++	if (!ret)
++		mtd->ecc_stats.badblocks++;
++
++	return ret;
++}
++
++/*
++ * This function is used by upper layer for select and
++ * deselect of the NAND chip
++ */
++static void mxc_nand_select_chip(struct mtd_info *mtd, int chip)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++
++	switch (chip) {
++	case -1:
++		/* TODO: Disable the NFC clock */
++		if (host->clk_act)
++			host->clk_act = 0;
++		break;
++	case 0 ... 7:
++		/* TODO: Enable the NFC clock */
++		if (!host->clk_act)
++			host->clk_act = 1;
++		NFC_SET_NFC_ACTIVE_CS(chip);
++		break;
++
++	default:
++		break;
++	}
++}
++
++/*
++ * Used by the upper layer to write command to NAND Flash for
++ * different operations to be carried out on NAND Flash
++ */
++void mxc_nand_command(struct mtd_info *mtd, unsigned command,
++				int column, int page_addr)
++{
++	struct nand_chip *nand_chip = mtd->priv;
++	struct mxc_nand_host *host = nand_chip->priv;
++
++	MTDDEBUG(MTD_DEBUG_LEVEL3,
++	      "mxc_nand_command (cmd = 0x%x, col = 0x%x, page = 0x%x)\n",
++	      command, column, page_addr);
++
++	/* Reset command state information */
++	host->status_request = false;
++
++	/* Command pre-processing step */
++	switch (command) {
++
++	case NAND_CMD_STATUS:
++		host->col_addr = 0;
++		host->status_request = true;
++		break;
++
++	case NAND_CMD_READ0:
++		host->page_addr = page_addr;
++		host->col_addr = column;
++		host->spare_only = false;
++		break;
++
++	case NAND_CMD_READOOB:
++		host->col_addr = column;
++		host->spare_only = true;
++		if (host->pagesize_2k)
++			command = NAND_CMD_READ0; /* only READ0 is valid */
++		break;
++
++	case NAND_CMD_SEQIN:
++		if (column >= mtd->writesize) {
++			/*
++			 * before sending SEQIN command for partial write,
++			 * we need read one page out. FSL NFC does not support
++			 * partial write. It alway send out 512+ecc+512+ecc ...
++			 * for large page nand flash. But for small page nand
++			 * flash, it does support SPARE ONLY operation.
++			 */
++			if (host->pagesize_2k) {
++				/* call ourself to read a page */
++				mxc_nand_command(mtd, NAND_CMD_READ0, 0, page_addr);
++			}
++
++			host->col_addr = column - mtd->writesize;
++			host->spare_only = true;
++
++			if (!host->pagesize_2k)
++				/* Set program pointer to spare region */
++				send_cmd(host, NAND_CMD_READOOB);
++		} else {
++			host->spare_only = false;
++			host->col_addr = column;
++
++			/* Set program pointer to page start */
++			if (!host->pagesize_2k)
++				send_cmd(host, NAND_CMD_READ0);
++		}
++		break;
++
++	case NAND_CMD_PAGEPROG:
++		send_prog_page(host, 0, host->spare_only);
++		break;
++
++#ifdef CONFIG_CMD_NAND_LOCK_UNLOCK
++   	case NAND_CMD_LOCK:
++		/* Lock Block whole NAND only supported */
++		writel(0x82 , NFC_WRPROT);
++		return;
++   	case NAND_CMD_LOCK_TIGHT:
++		/* Lock Tight whole NAND only supported */
++		writel(0x81 , NFC_WRPROT);
++		return;
++   	case NAND_CMD_UNLOCK1:
++		/*  64 pages per block only */
++		writel(page_addr>>6, NFC_WRPROT_UNLOCK_BLK_ADD0);
++		return;
++   	case NAND_CMD_UNLOCK2:{
++			int temp = readl(NFC_WRPROT_UNLOCK_BLK_ADD0) & 0x0000FFFF;
++			writel((page_addr>>6) & temp , NFC_WRPROT_UNLOCK_BLK_ADD0);
++			/* Unlock Block Command for given address range */
++			writel(0x84 , NFC_WRPROT);
++		}
++		return;
++   	case NAND_CMD_LOCK_STATUS:
++		host->col_addr = 0;
++		host->spare_only = false;
++		return;
++#endif
++	}
++
++	/* Write out the command to the device. */
++	send_cmd(host, command);
++
++	/* Write out column address, if necessary */
++	if (column != -1) {
++		/*
++		 * MXC NANDFC can only perform full page+spare or
++		 * spare-only read/write.  When the upper layers
++		 * layers perform a read/write buf operation,
++		 * we will used the saved column adress to index into
++		 * the full page.
++		 */
++		send_addr(host, 0);
++		send_addr(host, 0);
++	}
++
++	/* Write out page address, if necessary */
++	if (page_addr != -1) {
++		u32 page_mask = nand_chip->pagemask;
++		do {
++			send_addr(host, page_addr & 0xFF);
++			page_addr >>= 8;
++			page_mask >>= 8;
++		} while (page_mask);
++	}
++
++	/* Command post-processing step */
++	switch (command) {
++
++	case NAND_CMD_RESET:
++		break;
++
++	case NAND_CMD_READOOB:
++	case NAND_CMD_READ0:
++			/* send read confirm command */
++			send_cmd(host, NAND_CMD_READSTART);
++			/* read for each AREA */
++			send_read_page(host, 0, host->spare_only);
++		break;
++
++	case NAND_CMD_READID:
++		host->col_addr = 0;
++		send_read_id(host);
++		break;
++
++	case NAND_CMD_PAGEPROG:
++		break;
++
++	case NAND_CMD_STATUS:
++		break;
++
++	case NAND_CMD_ERASE2:
++		break;
++	}
++}
++
++static void mxc_setup_config1(void)
++{
++	if (host->pagesize_2k){
++		NFC_SET_SPAS(0x20); /* set spare to 64bytes */
++		writel(0x7020A139, NFC_CONFIG2); /* set 2k page and 64bytes spare */
++	}
++}
++
++
++static void mxc_nfc_init(void)
++{
++	/* Disable interrupt */
++	raw_write((raw_read(REG_NFC_INTRRUPT) | NFC_INT_MSK), REG_NFC_INTRRUPT);
++
++	/* disable spare enable */
++	raw_write(raw_read(REG_NFC_SP_EN) & ~NFC_SP_EN, REG_NFC_SP_EN);
++
++	/* Unlock the internal RAM Buffer */
++	raw_write(NFC_SET_BLS(NFC_BLS_UNLCOKED), REG_NFC_BLS);
++
++	/* Blocks to be unlocked */
++	UNLOCK_ADDR(0x0, 0xFFFF);
++
++	/* Unlock Block Command for given address range */
++	raw_write(NFC_SET_WPC(NFC_WPC_UNLOCK), REG_NFC_WPC);
++
++	/* Enable hw ecc */
++	raw_write((raw_read(REG_NFC_ECC_EN) | NFC_ECC_EN), REG_NFC_ECC_EN);
++}
++
++int board_nand_init(struct nand_chip *this)
++{
++	struct mtd_info *mtd;
++	uint16_t tmp;
++	int err = 0;
++
++	/* structures must be linked */
++	mtd = &host->mtd;
++	mtd->priv = this;
++	host->nand = this;
++
++	/* 5 us command delay time */
++	this->chip_delay = 5;
++
++	this->priv = host;
++	this->dev_ready = mxc_nand_dev_ready;
++	this->cmdfunc = mxc_nand_command;
++	this->select_chip = mxc_nand_select_chip;
++	this->read_byte = mxc_nand_read_byte;
++	this->read_word = mxc_nand_read_word;
++	this->write_buf = mxc_nand_write_buf;
++	this->read_buf = mxc_nand_read_buf;
++	this->verify_buf = mxc_nand_verify_buf;
++	this->block_markbad = mxc_nand_block_markbad;
++
++	host->regs = (struct nfc_regs __iomem *)CONFIG_MXC_NAND_REGS_BASE;
++	host->clk_act = 1;
++
++	/* init the nfc */
++	mxc_nfc_init();
++
++#ifdef CONFIG_MXC_NAND_HWECC
++	this->ecc.calculate = mxc_nand_calculate_ecc;
++	this->ecc.hwctl = mxc_nand_enable_hwecc;
++	this->ecc.correct = mxc_nand_correct_data;
++	this->ecc.mode = NAND_ECC_HW;
++	this->ecc.size = 2048;
++	this->ecc.bytes = 8;
++
++	tmp = readl(NFC_CONFIG2);
++	tmp |= NFC_ECC_EN;
++	writel(tmp, NFC_CONFIG2);
++#endif
++
++	this->options |= NAND_USE_FLASH_BBT;
++	this->bbt_td = &bbt_main_descr;
++	this->bbt_md = &bbt_mirror_descr;
++
++	/* Blocks to be unlocked */
++	writel(0xFFFF0000, NFC_WRPROT_UNLOCK_BLK_ADD0);
++	/* Unlock Block Command for given address range */
++	writel(0x84 , NFC_WRPROT);
++
++#ifndef CONFIG_SYS_NAND_LARGEPAGE
++	PRINT ONLY NAND LARGEPAGE SUPPORTED
++#else
++	host->pagesize_2k = 1;
++	this->ecc.layout = &nand_hw_eccoob2k;
++#endif
++	mxc_setup_config1();
++
++	/* Reset NAND */
++	this->cmdfunc(mtd, NAND_CMD_RESET, -1, -1);
++
++	return err;
++}
+diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/mxc_nand.h u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h
+--- u-boot-2010.03-ref/include/asm-arm/arch-mx51/mxc_nand.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h	2010-09-12 16:23:34.000000000 +0200
+@@ -0,0 +1,368 @@
++/*
++ * Copyright 2004-2009 Freescale Semiconductor, Inc. All Rights Reserved.
++ */
++
++/*
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/*!
++ * @file mxc_nand.h
++ *
++ * @brief This file contains the NAND Flash Controller register information.
++ *
++ *
++ * @ingroup NAND_MTD
++ */
++
++#ifndef __MXC_NAND_H__
++#define __MXC_NAND_H__
++
++#include <asm/arch/imx-regs.h>
++
++#define IS_2K_PAGE_NAND         ((mtd->writesize / info->num_of_intlv) \
++						== NAND_PAGESIZE_2KB)
++#define IS_4K_PAGE_NAND         ((mtd->writesize / info->num_of_intlv) \
++						== NAND_PAGESIZE_4KB)
++#define IS_LARGE_PAGE_NAND      ((mtd->writesize / info->num_of_intlv) > 512)
++
++#define GET_NAND_OOB_SIZE	(mtd->oobsize / info->num_of_intlv)
++
++#define NAND_PAGESIZE_2KB	2048
++#define NAND_PAGESIZE_4KB	4096
++
++#define NFC_AXI_BASE_ADDR		NFC_BASE_ADDR_AXI
++#define NFC_IP_BASE_ADDR		NFC_BASE_ADDR
++#define MXC_INT_NANDFC			MXC_INT_NFC
++#define CONFIG_MXC_NFC_SP_AUTO
++#define NFC_FLASH_CMD			(NFC_AXI_BASE_ADDR + 0x1E00)
++#define NFC_FLASH_ADDR0      		(NFC_AXI_BASE_ADDR + 0x1E04)
++#define NFC_FLASH_ADDR8			(NFC_AXI_BASE_ADDR + 0x1E24)
++#define NFC_CONFIG1         		(NFC_AXI_BASE_ADDR + 0x1E34)
++#define NFC_ECC_STATUS_RESULT		(NFC_AXI_BASE_ADDR + 0x1E38)
++#define NFC_ECC_STATUS_SUM		(NFC_AXI_BASE_ADDR + 0x1E3C)
++#define LAUNCH_NFC			(NFC_AXI_BASE_ADDR + 0x1E40)
++#define NFC_WRPROT			(NFC_IP_BASE_ADDR + 0x00)
++#define NFC_WRPROT_UNLOCK_BLK_ADD0	(NFC_IP_BASE_ADDR + 0x04)
++#define NFC_CONFIG2			(NFC_IP_BASE_ADDR + 0x24)
++#define NFC_CONFIG3			(NFC_IP_BASE_ADDR + 0x28)
++#define NFC_IPC				(NFC_IP_BASE_ADDR + 0x2C)
++
++/*!
++ * Addresses for NFC RAM BUFFER Main area 0
++ */
++#define MAIN_AREA0        		((u16 *)(NFC_AXI_BASE_ADDR + 0x000))
++#define MAIN_AREA1        		((u16 *)(NFC_AXI_BASE_ADDR + 0x200))
++
++/*!
++ * Addresses for NFC SPARE BUFFER Spare area 0
++ */
++#define SPARE_AREA0       		((u16 *)(NFC_AXI_BASE_ADDR + 0x1000))
++#define SPARE_LEN			64
++#define SPARE_COUNT			8
++#define SPARE_SIZE			(SPARE_LEN * SPARE_COUNT)
++
++#define NFC_SPAS_WIDTH 8
++#define NFC_SPAS_SHIFT 16
++
++#define IS_4BIT_ECC \
++( \
++	is_soc_rev(CHIP_REV_2_0) >= 0 ? \
++		!((raw_read(NFC_CONFIG2) & NFC_ECC_MODE_4) >> 6) : \
++		((raw_read(NFC_CONFIG2) & NFC_ECC_MODE_4) >> 6) \
++)
++
++#define NFC_SET_SPAS(v)			\
++	raw_write((((raw_read(NFC_CONFIG2) & \
++	NFC_FIELD_RESET(NFC_SPAS_WIDTH, NFC_SPAS_SHIFT)) | ((v) << 16))), \
++	NFC_CONFIG2)
++
++#define NFC_SET_ECC_MODE(v)		\
++do { \
++	if (is_soc_rev(CHIP_REV_2_0) >= 0) { \
++		if ((v) == NFC_SPAS_218 || (v) == NFC_SPAS_112) \
++			raw_write(((raw_read(NFC_CONFIG2) & \
++					NFC_ECC_MODE_MASK) | \
++					NFC_ECC_MODE_4), NFC_CONFIG2); \
++		else \
++			raw_write(((raw_read(NFC_CONFIG2) & \
++					NFC_ECC_MODE_MASK) & \
++					NFC_ECC_MODE_8), NFC_CONFIG2); \
++	} else { \
++		if ((v) == NFC_SPAS_218 || (v) == NFC_SPAS_112) \
++			raw_write(((raw_read(NFC_CONFIG2) & \
++					NFC_ECC_MODE_MASK) & \
++					NFC_ECC_MODE_8), NFC_CONFIG2); \
++		else \
++			raw_write(((raw_read(NFC_CONFIG2) & \
++					NFC_ECC_MODE_MASK) | \
++					NFC_ECC_MODE_4), NFC_CONFIG2); \
++	} \
++} while (0)
++
++#define WRITE_NFC_IP_REG(val, reg) 			\
++	do {	 					\
++		writel(NFC_IPC_CREQ, NFC_IPC);	\
++		while (!((readl(NFC_IPC) & NFC_IPC_ACK)>>1)) \
++			; \
++		writel(val, reg);			\
++		writel(0, NFC_IPC);			\
++	} while (0)
++
++#define GET_NFC_ECC_STATUS() raw_read(REG_NFC_ECC_STATUS_RESULT);
++
++/*!
++ * Set 1 to specific operation bit, rest to 0 in LAUNCH_NFC Register for
++ * Specific operation
++ */
++#define NFC_CMD            		0x1
++#define NFC_ADDR           		0x2
++#define NFC_INPUT          		0x4
++#define NFC_OUTPUT         		0x8
++#define NFC_ID             		0x10
++#define NFC_STATUS         		0x20
++#define NFC_AUTO_PROG 			0x40
++#define NFC_AUTO_READ           	0x80
++#define NFC_AUTO_ERASE          	0x200
++#define NFC_COPY_BACK_0			0x400
++#define NFC_COPY_BACK_1         	0x800
++#define NFC_AUTO_STATE          	0x1000
++
++/* Bit Definitions for NFC_IPC*/
++#define NFC_OPS_STAT			(1 << 31)
++#define NFC_OP_DONE			(1 << 30)
++#define NFC_RB				(1 << 28)
++#define NFC_PS_WIDTH 			2
++#define NFC_PS_SHIFT 			0
++#define NFC_PS_512	 		0
++#define NFC_PS_2K	 		1
++#define NFC_PS_4K    			2
++
++
++#define NFC_ONE_CYCLE			(1 << 2)
++#define NFC_INT_MSK			(1 << 15)
++#define NFC_AUTO_PROG_DONE_MSK 		(1 << 14)
++#define NFC_NUM_ADDR_PHASE1_WIDTH   	2
++#define NFC_NUM_ADDR_PHASE1_SHIFT  	12
++#define NFC_NUM_ADDR_PHASE0_WIDTH 	1
++#define NFC_NUM_ADDR_PHASE0_SHIFT  	5
++#define NFC_ONE_LESS_PHASE1 		0
++#define NFC_TWO_LESS_PHASE1 		1
++#define NFC_FLASH_ADDR_SHIFT		0
++#define NFC_UNLOCK_END_ADDR_SHIFT	16
++
++/* Bit definition for NFC_CONFIGRATION_1 */
++#define NFC_SP_EN			(1 << 0)
++#define NFC_CE				(1 << 1)
++#define NFC_RST				(1 << 2)
++#define NFC_ECC_EN			(1 << 3)
++
++#define NFC_FIELD_RESET(width, shift) (~(((1 << (width)) - 1) << (shift)))
++
++#define NFC_RBA_SHIFT       		4
++#define NFC_RBA_WIDTH			3
++
++#define NFC_ITERATION_SHIFT 8
++#define NFC_ITERATION_WIDTH 4
++#define NFC_ACTIVE_CS_SHIFT 12
++#define NFC_ACTIVE_CS_WIDTH 3
++/* bit definition for CONFIGRATION3 */
++#define NFC_NO_SDMA			(1 << 20)
++#define NFC_FMP_SHIFT 			16
++#define NFC_FMP_WIDTH			4
++#define NFC_RBB_MODE			(1 << 15)
++#define NFC_NUM_OF_DEVICES_SHIFT 	12
++#define NFC_NUM_OF_DEVICES_WIDTH 	4
++#define NFC_DMA_MODE_SHIFT 		11
++#define NFC_DMA_MODE_WIDTH  		1
++#define NFC_SBB_SHIFT 			8
++#define NFC_SBB_WIDTH 			3
++#define NFC_BIG				(1 << 7)
++#define NFC_SB2R_SHIFT 			4
++#define NFC_SB2R_WIDTH			3
++#define NFC_FW_SHIFT    		3
++#define NFC_FW_WIDTH 			1
++#define NFC_TOO				(1 << 2)
++#define NFC_ADD_OP_SHIFT 		0
++#define NFC_ADD_OP_WIDTH		2
++#define NFC_FW_8 			1
++#define NFC_FW_16			0
++#define NFC_ST_CMD_SHITF		24
++#define NFC_ST_CMD_WIDTH		8
++
++#define NFC_PPB_32			(0 << 7)
++#define NFC_PPB_64			(1 << 7)
++#define NFC_PPB_128			(2 << 7)
++#define NFC_PPB_256			(3 << 7)
++#define NFC_PPB_RESET			(~(3 << 7))
++
++#define NFC_BLS_LOCKED			(0 << 6)
++#define NFC_BLS_LOCKED_DEFAULT		(1 << 6)
++#define NFC_BLS_UNLCOKED		(2 << 6)
++#define NFC_BLS_RESET			(~(3 << 16))
++#define NFC_WPC_LOCK_TIGHT		1
++#define NFC_WPC_LOCK			(1 << 1)
++#define NFC_WPC_UNLOCK			(1 << 2)
++#define NFC_WPC_RESET			(~(7))
++#define NFC_ECC_MODE_4    		(1 << 6)
++#define NFC_ECC_MODE_8			(~(1 << 6))
++#define NFC_ECC_MODE_MASK 		(~(1 << 6))
++#define NFC_SPAS_16			8
++#define NFC_SPAS_64		 	32
++#define NFC_SPAS_128			64
++#define NFC_SPAS_112			56
++#define NFC_SPAS_218		 	109
++#define NFC_IPC_CREQ			(1 << 0)
++#define NFC_IPC_ACK			(1 << 1)
++
++#define REG_NFC_OPS_STAT		NFC_IPC
++#define REG_NFC_INTRRUPT		NFC_CONFIG2
++#define REG_NFC_FLASH_ADDR		NFC_FLASH_ADDR0
++#define REG_NFC_FLASH_CMD		NFC_FLASH_CMD
++#define REG_NFC_OPS			LAUNCH_NFC
++#define REG_NFC_SET_RBA			NFC_CONFIG1
++#define REG_NFC_RB			NFC_IPC
++#define REG_NFC_ECC_EN			NFC_CONFIG2
++#define REG_NFC_ECC_STATUS_RESULT	NFC_ECC_STATUS_RESULT
++#define REG_NFC_CE			NFC_CONFIG1
++#define REG_NFC_RST			NFC_CONFIG1
++#define REG_NFC_PPB			NFC_CONFIG2
++#define REG_NFC_SP_EN			NFC_CONFIG1
++#define REG_NFC_BLS			NFC_WRPROT
++#define REG_UNLOCK_BLK_ADD0		NFC_WRPROT_UNLOCK_BLK_ADD0
++#define REG_UNLOCK_BLK_ADD1		NFC_WRPROT_UNLOCK_BLK_ADD1
++#define REG_UNLOCK_BLK_ADD2		NFC_WRPROT_UNLOCK_BLK_ADD2
++#define REG_UNLOCK_BLK_ADD3		NFC_WRPROT_UNLOCK_BLK_ADD3
++#define REG_NFC_WPC			NFC_WRPROT
++#define REG_NFC_ONE_CYCLE		NFC_CONFIG2
++
++/* NFC V3 Specific MACRO functions definitions */
++#define raw_write(v, a)		__raw_writel(v, a)
++#define raw_read(a)		__raw_readl(a)
++
++/* Explcit ack ops status (if any), before issue of any command  */
++#define ACK_OPS	\
++	writel((readl(REG_NFC_OPS_STAT) & ~NFC_OPS_STAT), \
++	REG_NFC_OPS_STAT);
++
++/* Set RBA buffer id*/
++#define NFC_SET_RBA(val)       \
++	writel((readl(REG_NFC_SET_RBA) & \
++	(NFC_FIELD_RESET(NFC_RBA_WIDTH, NFC_RBA_SHIFT))) | \
++	((val) << NFC_RBA_SHIFT), REG_NFC_SET_RBA);
++
++#define NFC_SET_PS(val)       \
++	raw_write((raw_read(NFC_CONFIG2) & \
++	(NFC_FIELD_RESET(NFC_PS_WIDTH, NFC_PS_SHIFT))) | \
++	((val) << NFC_PS_SHIFT), NFC_CONFIG2);
++
++#define UNLOCK_ADDR(start_addr, end_addr)     \
++{ \
++	int i = 0; \
++	for (; i < NAND_MAX_CHIPS; i++)  \
++		raw_write(start_addr | \
++		(end_addr << NFC_UNLOCK_END_ADDR_SHIFT), \
++		REG_UNLOCK_BLK_ADD0 + (i << 2)); \
++}
++
++#define NFC_SET_NFC_ACTIVE_CS(val) \
++	raw_write((raw_read(NFC_CONFIG1) & \
++	(NFC_FIELD_RESET(NFC_ACTIVE_CS_WIDTH, NFC_ACTIVE_CS_SHIFT))) | \
++	((val) << NFC_ACTIVE_CS_SHIFT), NFC_CONFIG1);
++
++#define NFC_GET_MAXCHIP_SP() 		8
++
++#define NFC_SET_BLS(val) ((raw_read(REG_NFC_BLS) & NFC_BLS_RESET) | val)
++#define NFC_SET_WPC(val) ((raw_read(REG_NFC_WPC) & NFC_WPC_RESET) | val)
++#define CHECK_NFC_RB    (raw_read(REG_NFC_RB) & NFC_RB)
++
++#define NFC_SET_NFC_NUM_ADDR_PHASE1(val) \
++	raw_write((raw_read(NFC_CONFIG2) & \
++	(NFC_FIELD_RESET(NFC_NUM_ADDR_PHASE1_WIDTH, \
++	NFC_NUM_ADDR_PHASE1_SHIFT))) | \
++	((val) << NFC_NUM_ADDR_PHASE1_SHIFT), NFC_CONFIG2);
++
++#define NFC_SET_NFC_NUM_ADDR_PHASE0(val) \
++	raw_write((raw_read(NFC_CONFIG2) & \
++	(NFC_FIELD_RESET(NFC_NUM_ADDR_PHASE0_WIDTH, \
++	NFC_NUM_ADDR_PHASE0_SHIFT))) | \
++	((val) << NFC_NUM_ADDR_PHASE0_SHIFT), NFC_CONFIG2);
++
++#define NFC_SET_NFC_ITERATION(val) \
++	raw_write((raw_read(NFC_CONFIG1) & \
++	(NFC_FIELD_RESET(NFC_ITERATION_WIDTH, NFC_ITERATION_SHIFT))) | \
++	((val) << NFC_ITERATION_SHIFT), NFC_CONFIG1);
++
++#define NFC_SET_FW(val) \
++	raw_write((raw_read(NFC_CONFIG3) & \
++	(NFC_FIELD_RESET(NFC_FW_WIDTH, NFC_FW_SHIFT))) | \
++	((val) << NFC_FW_SHIFT), NFC_CONFIG3);
++
++#define NFC_SET_NUM_OF_DEVICE(val) \
++	raw_write((raw_read(NFC_CONFIG3) & \
++	(NFC_FIELD_RESET(NFC_NUM_OF_DEVICES_WIDTH, \
++	NFC_NUM_OF_DEVICES_SHIFT))) | \
++	((val) << NFC_NUM_OF_DEVICES_SHIFT), NFC_CONFIG3);
++
++#define NFC_SET_ADD_OP_MODE(val) \
++	 raw_write((raw_read(NFC_CONFIG3) & \
++	(NFC_FIELD_RESET(NFC_ADD_OP_WIDTH, NFC_ADD_OP_SHIFT))) | \
++	((val) << NFC_ADD_OP_SHIFT), NFC_CONFIG3);
++
++#define NFC_SET_ADD_CS_MODE(val) \
++{ \
++	NFC_SET_ADD_OP_MODE(val); \
++	NFC_SET_NUM_OF_DEVICE(this->numchips - 1); \
++}
++
++#define NFC_SET_ST_CMD(val) \
++	raw_write((raw_read(NFC_CONFIG2) & \
++	(NFC_FIELD_RESET(NFC_ST_CMD_WIDTH, \
++	NFC_ST_CMD_SHITF))) | \
++	((val) << NFC_ST_CMD_SHITF), NFC_CONFIG2);
++
++#define NFMS_NF_DWIDTH 0
++#define NFMS_NF_PG_SZ  1
++#define NFC_CMD_1_SHIFT 8
++
++#define NUM_OF_ADDR_CYCLE ((ffs(~(info->page_mask)) - 1) >> 3)
++
++/*should set the fw,ps,spas,ppb*/
++#define NFC_SET_NFMS(v)	\
++do {	\
++	if (!(v)) \
++		NFC_SET_FW(NFC_FW_8);   \
++	if (((v) & (1 << NFMS_NF_DWIDTH)))	\
++		NFC_SET_FW(NFC_FW_16);	\
++	if (((v) & (1 << NFMS_NF_PG_SZ))) {	\
++		if (IS_2K_PAGE_NAND) {	\
++			NFC_SET_PS(NFC_PS_2K);	\
++			NFC_SET_NFC_NUM_ADDR_PHASE1(NUM_OF_ADDR_CYCLE); \
++			NFC_SET_NFC_NUM_ADDR_PHASE0(NFC_TWO_LESS_PHASE1); \
++		} else if (IS_4K_PAGE_NAND) {       \
++			NFC_SET_PS(NFC_PS_4K);	\
++			NFC_SET_NFC_NUM_ADDR_PHASE1(NUM_OF_ADDR_CYCLE); \
++			NFC_SET_NFC_NUM_ADDR_PHASE0(NFC_TWO_LESS_PHASE1); \
++		} else {	\
++			NFC_SET_PS(NFC_PS_512);	\
++			NFC_SET_NFC_NUM_ADDR_PHASE1(NUM_OF_ADDR_CYCLE - 1); \
++			NFC_SET_NFC_NUM_ADDR_PHASE0(NFC_ONE_LESS_PHASE1); \
++		}	\
++		NFC_SET_ADD_CS_MODE(1); \
++		NFC_SET_SPAS(GET_NAND_OOB_SIZE >> 1);	\
++		NFC_SET_ECC_MODE(GET_NAND_OOB_SIZE >> 1); \
++		NFC_SET_ST_CMD(0x70); \
++		raw_write(raw_read(NFC_CONFIG3) | NFC_NO_SDMA, NFC_CONFIG3); \
++		raw_write(raw_read(NFC_CONFIG3) | NFC_RBB_MODE, NFC_CONFIG3); \
++	} \
++} while (0)
++
++#define READ_PAGE()	send_read_page(0)
++#define PROG_PAGE() 	send_prog_page(0)
++
++#endif				/* __MXC_NAND_H__ */

@@ -1,0 +1,533 @@
+diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/config.mk
+--- u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/config.mk	2010-10-30 22:21:00.000000000 +0200
+@@ -0,0 +1,43 @@
++#
++# (C) Copyright 2007
++# Stefan Roese, DENX Software Engineering, sr@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++#
++# This config file is used for compilation of armadeus apf27 board
++#
++
++#
++# TEXT_BASE for SPL:
++#
++#
++# This config file is used for compilation of armadeus sources
++#
++# You might change location of U-Boot in memory by setting right TEXT_BASE.
++# This allows for example having one copy located at the end of ram and stored
++# in flash device and later on while developing use other location to test
++# the code in RAM device only.
++#
++
++TEXT_BASE = 0x90000000
++
++# PAD_TO used to generate a 2kByte binary needed for the combined image
++# -> PAD_TO = TEXT_BASE + 0x0800
++#PAD_TO	= 0xa0000800
+diff -purN u-boot-2010.03-ori/nand_spl/board/armadeus/apf51/flash_header.S u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S
+--- u-boot-2010.03-ori/nand_spl/board/armadeus/apf51/flash_header.S	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S	2010-11-08 23:54:12.000000000 +0100
+@@ -0,0 +1,184 @@
++/*
++ *
++ * Copyright (c) 2010 Eric Jarrige, Armadeus Project
++ * Copyright 2009 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <config.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/asm-offsets.h>
++
++#ifdef	CONFIG_FLASH_HEADER
++#ifndef CONFIG_FLASH_HEADER_OFFSET
++# error "Must define the offset of flash header"
++#endif
++#define MXC_DCD_ITEM(i, type, addr, val)	\
++dcd_node_##i:					\
++	.word type			;	\
++	.word addr			;	\
++	.word val			;	\
++
++.globl _start
++_start:
++	b	_end
++	b	_end
++	.org	CONFIG_FLASH_HEADER_OFFSET
++app_code_jump_v:	.word	end
++app_code_code_barker:	.word	CONFIG_FLASH_HEADER_BARKER
++app_code_csf:		.word	0
++dcd_ptr_ptr:		.word	dcd_ptr
++super_root_key:		.word	0
++dcd_ptr:		.word	dcd_array_start
++app_dest_ptr:		.word	_start/*TEXT_BASE*/
++dcd_array_start:
++magic:			.word	0xB17219E9
++dcd_array_size:		.word	dcd_data_end - dcd_array_start - 8
++/* DCD */
++
++/* DDR2/mDDR IOMUX configuration */
++/* NOTE: we removed some entry to fit in the max 60 entries */
++
++MXC_DCD_ITEM(1, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_RAS,
++				CONFIG_IOMUX_PAD_DRAM_RAS)
++MXC_DCD_ITEM(2, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_CAS,
++				CONFIG_IOMUX_PAD_DRAM_CAS)
++MXC_DCD_ITEM(3, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDWE,
++				CONFIG_IOMUX_PAD_DRAM_SDWE)
++MXC_DCD_ITEM(4, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDCKE0,
++				CONFIG_IOMUX_PAD_DRAM_SDCKE0)
++MXC_DCD_ITEM(5, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDCKE1,
++				CONFIG_IOMUX_PAD_DRAM_SDCKE1)
++MXC_DCD_ITEM(6, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDCLK,
++				CONFIG_IOMUX_PAD_DRAM_SDCLK)
++MXC_DCD_ITEM(7, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDQS0,
++				CONFIG_IOMUX_PAD_DRAM_SDQS0)
++MXC_DCD_ITEM(8, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDQS1,
++				CONFIG_IOMUX_PAD_DRAM_SDQS1)
++MXC_DCD_ITEM(9, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDQS2,
++				CONFIG_IOMUX_PAD_DRAM_SDQS2)
++MXC_DCD_ITEM(10, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_SDQS3,
++				CONFIG_IOMUX_PAD_DRAM_SDQS3)
++MXC_DCD_ITEM(11, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_CS0,
++				CONFIG_IOMUX_PAD_DRAM_CS0)
++MXC_DCD_ITEM(12, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_CS1,
++				CONFIG_IOMUX_PAD_DRAM_CS1)
++MXC_DCD_ITEM(13, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_DQM0,
++				CONFIG_IOMUX_PAD_DRAM_DQM0)
++MXC_DCD_ITEM(14, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_DQM1,
++				CONFIG_IOMUX_PAD_DRAM_DQM1)
++MXC_DCD_ITEM(15, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_DQM2,
++				CONFIG_IOMUX_PAD_DRAM_DQM2)
++MXC_DCD_ITEM(16, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_DRAM_DQM3,
++				CONFIG_IOMUX_PAD_DRAM_DQM3)
++//MXC_DCD_ITEM(17, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_EIM_SDBA2,
++//				CONFIG_IOMUX_PAD_EIM_SDBA2)
++//MXC_DCD_ITEM(18, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_EIM_SDODT1,
++//				CONFIG_IOMUX_PAD_EIM_SDODT1)
++//MXC_DCD_ITEM(19, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_PAD_EIM_SDODT0,
++//				CONFIG_IOMUX_PAD_EIM_SDODT0)
++MXC_DCD_ITEM(20, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDRPKS,
++				CONFIG_IOMUX_GRP_DDRPKS)
++MXC_DCD_ITEM(21, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_B4,
++				CONFIG_IOMUX_GRP_DRAM_B4)
++//MXC_DCD_ITEM(22, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_INDDR,
++//				CONFIG_IOMUX_GRP_INDDR)
++MXC_DCD_ITEM(23, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_PKEDDR,
++				CONFIG_IOMUX_GRP_PKEDDR)
++MXC_DCD_ITEM(24, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDR_A0,
++				CONFIG_IOMUX_GRP_DDR_A0)
++MXC_DCD_ITEM(25, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDR_A1,
++				CONFIG_IOMUX_GRP_DDR_A1)
++//MXC_DCD_ITEM(26, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDRAPUS,
++//				CONFIG_IOMUX_GRP_DDRAPUS)
++//MXC_DCD_ITEM(27, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_HYSDDR0,
++//				CONFIG_IOMUX_GRP_HYSDDR0)
++//MXC_DCD_ITEM(28, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_HYSDDR1,
++//				CONFIG_IOMUX_GRP_HYSDDR1)
++//MXC_DCD_ITEM(29, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_HYSDDR2,
++//				CONFIG_IOMUX_GRP_HYSDDR2)
++//MXC_DCD_ITEM(30, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_HVDDR,
++//				CONFIG_IOMUX_GRP_HVDDR)
++//MXC_DCD_ITEM(31, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_HYSDDR3,
++//				CONFIG_IOMUX_GRP_HYSDDR3)
++MXC_DCD_ITEM(32, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_SR_B0,
++				CONFIG_IOMUX_GRP_DRAM_SR_B0)
++MXC_DCD_ITEM(33, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDRAPKS,
++				CONFIG_IOMUX_GRP_DDRAPKS)
++MXC_DCD_ITEM(34, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_SR_B1,
++				CONFIG_IOMUX_GRP_DRAM_SR_B1)
++MXC_DCD_ITEM(35, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDRPUS,
++				CONFIG_IOMUX_GRP_DDRPUS)
++MXC_DCD_ITEM(36, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_SR_B2,
++				CONFIG_IOMUX_GRP_DRAM_SR_B2)
++MXC_DCD_ITEM(37, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_PKEADDR,
++				CONFIG_IOMUX_GRP_PKEADDR)
++MXC_DCD_ITEM(38, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_SR_B4,
++				CONFIG_IOMUX_GRP_DRAM_SR_B4)
++//MXC_DCD_ITEM(39, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_INMODE1,
++//				CONFIG_IOMUX_GRP_INMODE1)
++MXC_DCD_ITEM(40, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_B0,
++				CONFIG_IOMUX_GRP_DRAM_B0)
++MXC_DCD_ITEM(41, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_B1,
++				CONFIG_IOMUX_GRP_DRAM_B1)
++MXC_DCD_ITEM(42, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDR_SR_A0,
++				CONFIG_IOMUX_GRP_DDR_SR_A0)
++MXC_DCD_ITEM(43, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DRAM_B2,
++				CONFIG_IOMUX_GRP_DRAM_B2)
++MXC_DCD_ITEM(44, 4, IOMUXC_BASE_ADDR + IOMUXC_SW_PAD_CTL_GRP_DDR_SR_A1,
++				CONFIG_IOMUX_GRP_DDR_SR_A1)
++
++/* DDR2/mDDR Configs */
++
++/* Init DDR on CS0 */
++MXC_DCD_ITEM(45, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCTL0, (CONFIG_SYS_SDRAM_ESDCTL_REGISTER_VAL&0x8FFFFFFF))
++MXC_DCD_ITEM(46, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_PRECHARGE_CMD(0, 0))
++MXC_DCD_ITEM(47, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_AUTOREFRESH_CMD(0))
++MXC_DCD_ITEM(48, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_AUTOREFRESH_CMD(0))
++MXC_DCD_ITEM(49, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_LMR_CMD(0, 0, CONFIG_SYS_DRR_MR_VAL))
++MXC_DCD_ITEM(50, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_LMR_CMD(0, 1, CONFIG_SYS_DRR_EMR_VAL))
++MXC_DCD_ITEM(51, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DDR_NOP_CMD(0))
++MXC_DCD_ITEM(52, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCTL0, CONFIG_SYS_SDRAM_ESDCTL_REGISTER_VAL)
++MXC_DCD_ITEM(53, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCFG0, CONFIG_SYS_SDRAM_ESDCFG_REGISTER_VAL)
++
++/* Init DDR on CS1 */
++#if (CONFIG_NR_DRAM_BANKS > 1)
++MXC_DCD_ITEM(54, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCTL1, (CONFIG_SYS_SDRAM_ESDCTL_REGISTER_VAL&0x8FFFFFFF))
++MXC_DCD_ITEM(55, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_PRECHARGE_CMD(1, 0))
++MXC_DCD_ITEM(56, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_AUTOREFRESH_CMD(1))
++MXC_DCD_ITEM(57, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_AUTOREFRESH_CMD(1))
++MXC_DCD_ITEM(58, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_LMR_CMD(1, 0, CONFIG_SYS_DRR_MR_VAL))
++MXC_DCD_ITEM(59, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DRR_LMR_CMD(1, 1, CONFIG_SYS_DRR_EMR_VAL))
++MXC_DCD_ITEM(60, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, CONFIG_SYS_DDR_NOP_CMD(1))
++MXC_DCD_ITEM(61, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCTL1, CONFIG_SYS_SDRAM_ESDCTL_REGISTER_VAL)
++MXC_DCD_ITEM(62, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCFG1, CONFIG_SYS_SDRAM_ESDCFG_REGISTER_VAL)
++#endif  /* CONFIG_NR_DRAM_BANKS > 1 */
++
++MXC_DCD_ITEM(63, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDMISC, CONFIG_SYS_SDRAM_ESDMISC_REGISTER_VAL)
++MXC_DCD_ITEM(64, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDSCR, 0x00000000)
++
++MXC_DCD_ITEM(65, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLYGD, CONFIG_SYS_SDRAM_ESDGPR_REGISTER_VAL)
++MXC_DCD_ITEM(66, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLY1, CONFIG_SYS_SDRAM_ESDCDLY1_REGISTER_VAL)
++MXC_DCD_ITEM(67, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLY2, CONFIG_SYS_SDRAM_ESDCDLY2_REGISTER_VAL)
++MXC_DCD_ITEM(68, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLY3, CONFIG_SYS_SDRAM_ESDCDLY3_REGISTER_VAL)
++MXC_DCD_ITEM(69, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLY4, CONFIG_SYS_SDRAM_ESDCDLY4_REGISTER_VAL)
++MXC_DCD_ITEM(70, 4, ESDCTL_BASE_ADDR + ESDCTL_ESDCDLY5, CONFIG_SYS_SDRAM_ESDCDLY5_REGISTER_VAL)
++
++dcd_data_end:
++image_len:		.word	CONFIG_SYS_MONITOR_LEN
++end:
++#endif
+diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/Makefile
+--- u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/Makefile	2010-10-30 21:51:48.000000000 +0200
+@@ -0,0 +1,77 @@
++#
++# (C) Copyright 2007
++# Stefan Roese, DENX Software Engineering, sr@denx.de.
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++include $(TOPDIR)/config.mk
++include $(TOPDIR)/nand_spl/board/$(BOARDDIR)/config.mk
++
++LDSCRIPT= $(TOPDIR)/nand_spl/board/$(BOARDDIR)/u-boot.lds
++LDFLAGS	= -Bstatic -T $(LDSCRIPT) -Ttext $(TEXT_BASE) $(PLATFORM_LDFLAGS)
++AFLAGS	+= -DCONFIG_NAND_SPL
++CFLAGS	+= -DCONFIG_NAND_SPL
++
++SOBJS	= flash_header.o mxc_nand_load.o
++COBJS	=
++
++SRCS	:= $(addprefix $(src),$(SOBJS:.o=.S) $(COBJS:.o=.c))
++OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
++__OBJS	:= $(SOBJS) $(COBJS)
++LNDIR	:= $(OBJTREE)/nand_spl/board/$(BOARDDIR)
++
++nandobj	:= $(OBJTREE)/nand_spl/
++
++ALL	= $(nandobj)u-boot-spl $(nandobj)u-boot-spl.bin $(nandobj)u-boot-spl-16k.bin \
++	$(nandobj)System.map
++
++all:	$(obj).depend $(ALL)
++
++$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl
++	$(OBJCOPY) ${OBJCFLAGS} --pad-to=$(PAD_TO) -O binary $< $@
++
++$(nandobj)u-boot-spl.bin:	$(nandobj)u-boot-spl
++	$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
++
++$(nandobj)u-boot-spl:	$(OBJS)
++	cd $(LNDIR) && $(LD) $(LDFLAGS) $$UNDEF_SYM $(__OBJS) \
++		-Map $(nandobj)u-boot-spl.map \
++		-o $(nandobj)u-boot-spl
++
++$(nandobj)System.map:	$(nandobj)u-boot-spl
++		@$(NM) $< | \
++		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
++		sort > $(nandobj)System.map
++
++
++#########################################################################
++
++$(obj)%.o:	%.S
++	$(CC) $(AFLAGS) -c -o $@ $<
++
++$(obj)%.o:	%.c
++	$(CC) $(CFLAGS) -c -o $@ $<
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S
+--- u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S	2010-09-16 19:04:44.000000000 +0200
+@@ -0,0 +1,170 @@
++/*
++ * (C) Copyright 2009 Freescale Semiconductor, Inc.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <config.h>
++//#include <asm/arch/mx51.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/asm-offsets.h>
++
++.macro do_wait_op_done
++1: 	ldr r7, [r3, #0x2C]
++	ands r7, r7, #0x80000000
++	beq 1b
++	mov r7, #0x0
++	str r7, [r3, #0x2C]
++.endm   // do_wait_op_done
++
++//.section ".text.load", "x"
++.globl mxc_nand_load
++/*
++ * R0:	NFC BUF base address
++ * R1:	NFC BUF data end address
++ * R2: RAM destination offset address
++ * R3: NFC IP control register base
++ * R4: NAND block address
++ * R5: RAM destination end address
++ * R6: NFC DATA register base
++ * R7 - r14: 8 working buffer registers
++ */
++mxc_nand_load:
++	ldr r0, =NFC_BASE_ADDR_AXI
++	add r1, r0, #NFC_BUF_SIZE
++
++	/* For non-nand-boot, directly quit */
++	cmp pc, r0
++	blo _end	//movlo pc, lr
++	cmp pc, r1
++	bhi _end	//movhi pc, lr
++
++	mov r4, #NFC_BUF_SIZE
++	/* Get NAND page size */
++	ldr r3, =NFC_BASE_ADDR
++	ldr r2, [r3, #0x24]
++	and r2, r2, #0x3
++	cmp r2, #1
++	moveq r2, #0x800
++	movlt r2, #0x200
++	adrls r5, NFC_PAGE_MODE
++	strls r2, [r5]
++	/* Get actually pre-loading size*/
++	subls r1, r1, #0x800
++	subls r4, r4, #0x800
++
++	/* r1 ~ r3, r12, lr(r14) must not change in relocated operation */
++	ldr r2, U_BOOT_NAND_START
++1:	ldmia r0!, {r5-r11, r13}
++	stmia r2!, {r5-r11, r13}
++	cmp r0, r1
++	blo 1b
++
++	ldr r0, CONST_0X0FFF
++	ldr r5, U_BOOT_NAND_START
++	and lr, lr, r0
++	add lr, lr, r5
++	and r12, r12, r0
++	add r12, r12, r5
++	add r5, r5, #0x8
++	and r0, pc, r0
++	add pc, r5, r0
++	nop
++	nop
++	nop
++	nop
++	nop
++	adr r0, SAVE_REGS	/* Save r12 & R14(lr) */
++	str r12, [r0]
++	str lr, [r0, #4]
++Copy_Main:
++	ldr r0, =NFC_BASE_ADDR_AXI
++
++	add r6, r0, #0x1E00
++	ldr r5, =_end		/* Try get right image size */
++	add r5, r2, #0x00040000 /* Fixme to get actual image size */
++
++	mov r7, #0xFF000000
++	add r7, r7, #0x00FF0000
++	str r7, [r3, #0x4]
++	str r7, [r3, #0x8]
++	str r7, [r3, #0xC]
++	str r7, [r3, #0x10]
++	str r7, [r3, #0x14]
++	str r7, [r3, #0x18]
++	str r7, [r3, #0x1C]
++	str r7, [r3, #0x20]
++	mov r8, #0x7
++	mov r7, #0x84
++1:	add r9, r7, r8, lsr #3
++	str r9, [r3, #0x0]
++	subs r8, r8, #0x01
++	bne 1b
++
++	mov r7, #0
++	str r7, [r3, #0x2C]
++
++	ldr r7, NFC_PAGE_MODE
++Read_Page:
++	/* start_nfc_addr_ops1(pg_no, pg_off) */
++	cmp r7, #0x800
++	movgt r7, r4, lsr #12	/* Get the page number for 4K page */
++	moveq r7, r4, lsr #11	/* Get the page number for 2K page */
++	mov r7, r7, lsl #16
++	str r7, [r6, #0x04]	/* Set the address */
++
++	/* writel((FLASH_Read_Mode1_LG << 8) | FLASH_Read_Mode1, NAND_CMD_REG)*/
++	mov r7, #0x3000
++	str r7, [r6,#0x0]
++
++	/* writel(0x00000000, NAND_CONFIGURATION1_REG) */
++	mov r7, #0x0
++	str r7, [r6, #0x34]
++
++	/* start auto-read
++    	 * writel(NAND_LAUNCH_AUTO_READ, NAND_LAUNCH_REG);
++	 */
++	mov r7, #0x80
++	str r7, [r6, #0x40]
++
++	do_wait_op_done
++
++Copy_Good_Blk:
++1:	ldmia r0!, {r7-r14}
++	stmia r2!, {r7-r14}
++	cmp r0, r1
++	blo 1b
++	cmp r2, r5
++	bge Copy_Main_done
++	ldr r7, NFC_PAGE_MODE
++	add r4, r4, r7
++	ldr r0, =NFC_BASE_ADDR_AXI
++	b	Read_Page
++
++Copy_Main_done:
++	adr r0, SAVE_REGS
++	ldr r12, [r0]
++	ldr lr,	[r0, #4]
++	mov pc, lr
++
++U_BOOT_NAND_START: .word TEXT_BASE
++CONST_0X0FFF:	.word 0x0FFF
++NFC_PAGE_MODE:	.word 0x1000
++SAVE_REGS:	.word 0x0
++		.word 0x0
+diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/u-boot.lds
+--- u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/u-boot.lds	2010-10-30 21:50:28.000000000 +0200
+@@ -0,0 +1,39 @@
++/*
++ * (C) Copyright 2007
++ * Stefan Roese, DENX Software Engineering, sr@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
++OUTPUT_ARCH(arm)
++ENTRY(_start)
++SECTIONS
++{
++	. = 0x00000000;
++
++	. = ALIGN(4);
++	.text      :
++	{
++		flash_header.o	(.text)
++		*(.text)
++
++		_end = .;
++	}
++}
