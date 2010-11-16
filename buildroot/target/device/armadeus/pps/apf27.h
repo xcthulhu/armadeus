@@ -203,7 +203,7 @@
 	"download_kernel=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-linux.bin\0"		\
 	"download_rootfs=tftpboot ${loadaddr} "				\
-		" ${serverpath}${board_name}-rootfs.arm.ubifs\0"	\
+		" ${serverpath}${board_name}-rootfs.arm.ubi\0"	\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
 	"update_rootfs=run download_rootfs flash_rootfs\0"		\
