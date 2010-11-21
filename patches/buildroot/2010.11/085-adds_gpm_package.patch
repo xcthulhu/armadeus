@@ -128,9 +128,9 @@ Index: buildroot/package/Config.in
  source "package/genext2fs/Config.in"
  source "package/genromfs/Config.in"
 +source "package/gpm/Config.in"
+ source "package/gpsd/Config.in"
  source "package/gvfs/Config.in"
  source "package/hal/Config.in"
- if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
 Index: buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000

@@ -8,7 +8,6 @@ rm -rf buildroot/package/games/quake-pak/
 rm -rf buildroot/package/games/sdlquake/
 rm -rf buildroot/package/gpm/
 rm -rf buildroot/package/pygame/
-rm -f  buildroot/package/proftpd/proftpd-1.3.2-fix-kernel-header-capability-version.patch
 rm -rf buildroot/package/uucp/
 rm -f  buildroot/package/multimedia/libsndfile/libsndfile-1.0.*-srconly.patch
 rm -rf buildroot/package/multimedia/flite/
@@ -21,7 +20,6 @@ rm -f  buildroot/toolchain/gcc/4.2.4/999-4.2.4-armeabi-aapcs-linux.patch
 rm -rf buildroot/package/games/wolf4sdl/
 rm -rf buildroot/package/ussp-push/
 rm -rf buildroot/package/openobex/
-rm -rf buildroot/package/gpsd/
 rm -rf buildroot/package/lmbench/
 rm -rf buildroot/package/tslib/
 rm -rf buildroot/package/openssh/

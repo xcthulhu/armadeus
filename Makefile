@@ -36,8 +36,8 @@ else
 #BUILDROOT_VERSION:=2010.11
 #BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads
 #BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/$(BUILDROOT_VERSION)
-BUILDROOT_VERSION:=20101015
-BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads/snapshots
+BUILDROOT_VERSION:=2010.11-rc1
+BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads
 BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/2010.11
 ARMADEUS_CONFIG_DIR:=$(BUILDROOT_DIR)/configs
 endif

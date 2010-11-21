@@ -1,5 +1,8 @@
 Adds gpsd package to BR.
 
+Integrated in latest BR. To do: check if some of our modifications are
+not also useful.
+
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
