@@ -108,7 +108,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	emi_podf = (emi_podf & MXC_CCM_CBCDR_EMI_PODF_MASK) >>
 +			MXC_CCM_CBCDR_EMI_PODF_OFFSET;
 +	/* if emi_clock_sel */
-+	if (__raw_readl(&mxc_ccm->cbcmr) & MXC_CCM_CBCDR_EMI_CLK_SEL)
++	if (__raw_readl(&mxc_ccm->cbcdr) & MXC_CCM_CBCDR_EMI_CLK_SEL)
 +		return get_ahb_clk()/ (emi_podf + 1);
 +	else
 +		return get_periph_clk() / (emi_podf + 1);
