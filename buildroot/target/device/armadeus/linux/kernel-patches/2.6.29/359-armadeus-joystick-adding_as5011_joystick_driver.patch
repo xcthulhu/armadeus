@@ -5,8 +5,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-08-02 17:22:53.000000000 +0200
-@@ -0,0 +1,429 @@
++++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-11-23 17:47:47.000000000 +0100
+@@ -0,0 +1,454 @@
 +/*
 + * Copyright (c) 2010 Fabien Marteau <fabien.marteau@armadeus.com>
 + *
@@ -70,7 +70,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +#define AS5011_FUZZ	8
 +#define AS5011_FLAT	40
 +
-+static int g_num = 0; /* device counter */
++static int g_num = 1; /* device counter */
 +
 +static signed char as5011_i2c_read(struct i2c_client *client,
 +			   uint8_t aRegAddr);
@@ -84,22 +84,25 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +
 +static irqreturn_t button_interrupt(int irq, void *dev_id)
 +{
-+	struct as5011_platform_data *plat_dat = (struct as5011_platform_data *)dev_id;
++	struct as5011_platform_data *plat_dat =
++		(struct as5011_platform_data *)dev_id;
 +	int ret;
 +
 +	ret = gpio_get_value(plat_dat->button_gpio);
-+	if (ret) {
++	if (ret)
 +		input_report_key(plat_dat->input_dev, BTN_JOYSTICK, 0);
-+	} else {
++	else
 +		input_report_key(plat_dat->input_dev, BTN_JOYSTICK, 1);
-+	}
 +	input_sync(plat_dat->input_dev);
 +	return IRQ_HANDLED;
 +}
 +
 +static void as5011_update_axes(struct work_struct *work)
 +{
-+	struct as5011_platform_data *plat_dat = container_of(work, struct as5011_platform_data, update_axes_work);
++	struct as5011_platform_data *plat_dat =
++		container_of(work,
++			     struct as5011_platform_data,
++			     update_axes_work);
 +	signed char x, y;
 +
 +	x = as5011_i2c_read(plat_dat->i2c_client, AS5011_X_RES_INT);
@@ -111,7 +114,8 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +
 +static irqreturn_t as5011_int_interrupt(int irq, void *dev_id)
 +{
-+	struct as5011_platform_data *plat_dat = (struct as5011_platform_data *)dev_id;
++	struct as5011_platform_data *plat_dat =
++		(struct as5011_platform_data *)dev_id;
 +
 +	queue_work(plat_dat->workqueue, &plat_dat->update_axes_work);
 +
@@ -128,12 +132,14 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +{
 +	int ret;
 +	uint8_t data[2] = { aRegAddr, aValue };
-+	struct i2c_msg msg = { client->addr, I2C_M_IGNORE_NAK, 2, (uint8_t *)data };
++	struct i2c_msg msg = {	client->addr,
++				I2C_M_IGNORE_NAK,
++				2,
++				(uint8_t *)data };
 +
 +	ret = i2c_transfer(client->adapter, &msg, 1);
-+	if (ret < 0) {
++	if (ret < 0)
 +		return -EINVAL;
-+	}
 +	return 1;
 +}
 +
@@ -143,26 +149,31 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	int ret;
 +	uint8_t data[2];
 +	struct i2c_msg msg_set[2];
-+	struct i2c_msg msg1 = {client->addr, I2C_M_REV_DIR_ADDR, 1, (uint8_t *)data};
-+	struct i2c_msg msg2 = {client->addr, I2C_M_RD|I2C_M_NOSTART, 1, (uint8_t *)data};
++	struct i2c_msg msg1 = {	client->addr,
++				I2C_M_REV_DIR_ADDR,
++				1,
++				(uint8_t *)data};
++	struct i2c_msg msg2 = {	client->addr,
++				I2C_M_RD|I2C_M_NOSTART,
++				1,
++				(uint8_t *)data};
 +
 +	data[0] = aRegAddr;
 +	msg_set[0] = msg1;
 +	msg_set[1] = msg2;
 +
 +	ret = i2c_transfer(client->adapter, msg_set, 2);
-+	if (ret < 0) {
++	if (ret < 0)
 +		return -EINVAL;
-+	}
 +
-+	if (data[0] & 0x80) {
-+		return (-1*(1+(~data[0])));
-+	} else {
++	if (data[0] & 0x80)
++		return -1*(1+(~data[0]));
++	else
 +		return data[0];
-+	}
 +}
 +
-+static int as5011_probe(struct i2c_client *client, const struct i2c_device_id *id)
++static int as5011_probe(struct i2c_client *client,
++			const struct i2c_device_id *id)
 +{
 +	struct as5011_platform_data *plat_dat = client->dev.platform_data;
 +	int retval = 0;
@@ -170,14 +181,16 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	plat_dat->num = g_num;
 +	g_num++;
 +
-+	retval = snprintf(plat_dat->workqueue_name, SIZE_NAME, "as5011_%d_workqueue", plat_dat->num);
-+	if (retval < 0)
-+	{
++	retval = snprintf(plat_dat->workqueue_name,
++			  SIZE_NAME,
++			  "as5011_%d_workqueue", plat_dat->num);
++	if (retval < 0) {
 +		dev_err(&client->dev, "as5011: Failed to give workqueue name\n");
 +		retval = -1;
 +		goto workqueue_name_error;
 +	}
-+	plat_dat->workqueue = create_singlethread_workqueue(plat_dat->workqueue_name);
++	plat_dat->workqueue =
++		create_singlethread_workqueue(plat_dat->workqueue_name);
 +	if (plat_dat->workqueue == NULL) {
 +		dev_err(&client->dev, "as5011: Failed to create workqueue\n");
 +		retval = -EINVAL;
@@ -186,7 +199,8 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +
 +	INIT_WORK(&plat_dat->update_axes_work, as5011_update_axes);
 +
-+	if (!i2c_check_functionality(client->adapter,I2C_FUNC_PROTOCOL_MANGLING)) {
++	if (!i2c_check_functionality(client->adapter,
++				     I2C_FUNC_PROTOCOL_MANGLING)) {
 +		dev_err(&client->dev,
 +		"i2c bus does not support protocol mangling, as5011 can't work\n");
 +		retval = -ENODEV;
@@ -203,22 +217,30 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	}
 +
 +	plat_dat->input_dev->name = "Austria Microsystem as5011 joystick";
-+	plat_dat->input_dev->uniq = "Austria0";//XXX
++	plat_dat->input_dev->uniq = "Austria0";
 +	plat_dat->input_dev->id.bustype = BUS_I2C;
-+	plat_dat->input_dev->phys = "/dev/input/event0";//XXX
++	plat_dat->input_dev->phys = "/dev/input/event0";
 +	plat_dat->input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-+	plat_dat->input_dev->keybit[BIT_WORD(BTN_JOYSTICK)] = BIT_MASK(BTN_JOYSTICK);
++	plat_dat->input_dev->keybit[BIT_WORD(BTN_JOYSTICK)] =
++					BIT_MASK(BTN_JOYSTICK);
 +
-+	input_set_abs_params(plat_dat->input_dev, ABS_X,
-+			     AS5011_MIN_AXIS, AS5011_MAX_AXIS, AS5011_FUZZ, AS5011_FLAT);
-+	input_set_abs_params(plat_dat->input_dev, ABS_Y,
-+			     AS5011_MIN_AXIS, AS5011_MAX_AXIS, AS5011_FUZZ, AS5011_FLAT);
++	input_set_abs_params(plat_dat->input_dev,
++			     ABS_X,
++			     AS5011_MIN_AXIS,
++			     AS5011_MAX_AXIS,
++			     AS5011_FUZZ,
++			     AS5011_FLAT);
++	input_set_abs_params(plat_dat->input_dev,
++			     ABS_Y,
++			     AS5011_MIN_AXIS,
++			     AS5011_MAX_AXIS,
++			     AS5011_FUZZ,
++			     AS5011_FLAT);
 +
 +	plat_dat->button_irq_name =
-+		(unsigned char *)kmalloc(sizeof(unsigned char)*SIZE_NAME,
++		kmalloc(sizeof(unsigned char)*SIZE_NAME,
 +					 GFP_KERNEL);
-+	if (plat_dat->button_irq_name == NULL)
-+	{
++	if (plat_dat->button_irq_name == NULL) {
 +		dev_err(&client->dev,
 +		"not enough memory for input devices irq name\n");
 +		retval = -ENOMEM;
@@ -226,9 +248,11 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	}
 +
 +
-+	retval = snprintf(plat_dat->button_irq_name, SIZE_NAME, "as5011_%d_button", plat_dat->num);
-+	if (retval < 0)
-+	{
++	retval = snprintf(plat_dat->button_irq_name,
++			  SIZE_NAME,
++			  "as5011_%d_button",
++			  plat_dat->num);
++	if (retval < 0) {
 +		dev_err(&client->dev, "as5011: Failed to give button irq name\n");
 +		retval = -EINVAL;
 +		goto button_irq_name_error;
@@ -243,19 +267,20 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	}
 +
 +	plat_dat->int_irq_name =
-+		(unsigned char *)kmalloc(sizeof(unsigned char)*SIZE_NAME,
++		kmalloc(sizeof(unsigned char)*SIZE_NAME,
 +					 GFP_KERNEL);
-+	if (plat_dat->int_irq_name == NULL)
-+	{
++	if (plat_dat->int_irq_name == NULL) {
 +		dev_err(&client->dev,
 +		"not enough memory for input devices int irq name\n");
 +		retval = -ENOMEM;
 +		goto input_allocate_int_device_name_error;
 +	}
 +
-+	retval = snprintf(plat_dat->int_irq_name, SIZE_NAME, "as5011_%d_int", plat_dat->num);
-+	if (retval < 0)
-+	{
++	retval = snprintf(plat_dat->int_irq_name,
++			  SIZE_NAME,
++			  "as5011_%d_int",
++			  plat_dat->num);
++	if (retval < 0) {
 +		dev_err(&client->dev, "as5011: Failed to give int irq name\n");
 +		retval = -EINVAL;
 +		goto int_irq_name_error;
@@ -439,7 +464,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 Index: linux-2.6.29.6/drivers/input/joystick/Kconfig
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/input/joystick/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/input/joystick/Kconfig	2010-08-02 15:30:09.000000000 +0200
++++ linux-2.6.29.6/drivers/input/joystick/Kconfig	2010-11-23 17:43:25.000000000 +0100
 @@ -254,6 +254,15 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called amijoy.
@@ -459,7 +484,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/Kconfig
 Index: linux-2.6.29.6/drivers/input/joystick/Makefile
 ===================================================================
 --- linux-2.6.29.6.orig/drivers/input/joystick/Makefile	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.29.6/drivers/input/joystick/Makefile	2010-08-02 15:30:09.000000000 +0200
++++ linux-2.6.29.6/drivers/input/joystick/Makefile	2010-11-23 17:43:25.000000000 +0100
 @@ -7,6 +7,7 @@
  obj-$(CONFIG_JOYSTICK_A3D)		+= a3d.o
  obj-$(CONFIG_JOYSTICK_ADI)		+= adi.o
@@ -471,7 +496,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/Makefile
 Index: linux-2.6.29.6/include/linux/as5011.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/include/linux/as5011.h	2010-08-02 16:41:21.000000000 +0200
++++ linux-2.6.29.6/include/linux/as5011.h	2010-11-23 17:43:25.000000000 +0100
 @@ -0,0 +1,72 @@
 +#ifndef _AS5011_H
 +#define _AS5011_H
