@@ -31,7 +31,7 @@
 #define __CONFIG_H
 
 #define CONFIG_VERSION_VARIABLE
-#define CONFIG_ENV_VERSION 	"1.7"
+#define CONFIG_ENV_VERSION 	"1.8"
 #define CONFIG_IDENT_STRING	" apf27 patch 2.5"
 
 #define CONFIG_ARM926EJS	1	/* this is an ARM926EJS CPU */
@@ -214,7 +214,7 @@
 	"download_kernel=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-linux.bin\0"		\
 	"download_rootfs=tftpboot ${loadaddr} "				\
-		" ${serverpath}${board_name}-rootfs.arm.jffs2\0"	\
+		" ${serverpath}${board_name}-rootfs.arm.ubi\0"		\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
 	"update_rootfs=run download_rootfs flash_rootfs\0"		\
@@ -222,7 +222,7 @@
 		"flash_rootfs download_uboot flash_uboot\0"		\
 	"unlock_regs=mw 10000008 0; mw 10020008 0\0"			\
 
-#define CONFIG_BOOTCOMMAND	"run jffsboot"
+#define CONFIG_BOOTCOMMAND	"run ubifsboot"
 #define CONFIG_SYS_AUTOLOAD		"no"
 
 #define CONFIG_MACH_TYPE MACH_TYPE_APF27
