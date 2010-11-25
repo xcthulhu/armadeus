@@ -9,8 +9,8 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2010-11-09 10:13:43.000000000 +0100
-@@ -0,0 +1,802 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2010-11-25 20:54:01.000000000 +0100
+@@ -0,0 +1,805 @@
 + /*
 + * apf27.c
 + *
@@ -220,7 +220,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +
 +
 +/* APF27 has an onboard Ethernet PHY */
-+#ifdef CONFIG_FEC_OLD
++#ifdef CONFIG_FEC
 +static int mxc_fec_pins[] = {
 +	PD0_AIN_FEC_TXD0,
 +	PD1_AIN_FEC_TXD1,
@@ -236,7 +236,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	PD11_AOUT_FEC_TX_CLK,
 +	PD12_AOUT_FEC_RXD0,
 +	PD13_AOUT_FEC_RX_DV,
-+	PD14_AOUT_FEC_CLR,
++	PD14_AOUT_FEC_RX_CLK,
 +	PD15_AOUT_FEC_COL,
 +	PD16_AIN_FEC_TX_ER,
 +	PF23_AIN_FEC_TX_EN
@@ -246,7 +246,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +{
 +	mxc_gpio_setup_multiple_pins(mxc_fec_pins, ARRAY_SIZE(mxc_fec_pins), "FEC");
 +}
-+#endif /* CONFIG_FEC_OLD */
++#endif /* CONFIG_FEC */
 +
 +#if 0
 +/* APF27 has an onboard PHY (ISP1504) on OTG USB port */
@@ -554,6 +554,9 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +#ifdef CONFIG_MXC_VPU
 +	&mxc_vpu_device,
 +#endif
++#ifdef CONFIG_FEC
++	&mxc_fec_device,
++#endif
 +};
 +
 +
@@ -747,7 +750,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +	/* Init APF27 power management related pins */
 +	apf27_pwr_ctl_active();
 +
-+#ifdef CONFIG_FEC_OLD
++#ifdef CONFIG_FEC
 +	gpio_fec_active();
 +#endif
 +	/* UART1 and UART3 have "on module" transceivers */
@@ -816,7 +819,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2010-11-08 16:15:38.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2010-11-25 19:29:57.000000000 +0100
 @@ -0,0 +1,1155 @@
 + /*
 + * apf27-dev.c
@@ -1976,7 +1979,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2010-11-08 16:17:07.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2010-11-25 19:29:57.000000000 +0100
 @@ -0,0 +1,222 @@
 +/*
 + * apf27-lcd.c
@@ -2203,7 +2206,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2010-11-07 19:07:30.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2010-11-25 19:29:57.000000000 +0100
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2397,8 +2400,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-08 15:21:56.000000000 +0100
-+++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-08 15:22:22.000000000 +0100
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2010-11-25 20:58:31.000000000 +0100
 @@ -81,6 +81,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
