@@ -1,0 +1,30 @@
+
+On i.MX2(1/7) color palette registers are 18 bits wide for TFT display's modes.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/drivers/video/imxfb.c
+===================================================================
+--- linux-2.6.36.orig/drivers/video/imxfb.c	2010-11-25 17:46:43.000000000 +0100
++++ linux-2.6.36/drivers/video/imxfb.c	2010-11-25 18:03:18.000000000 +0100
+@@ -244,12 +244,17 @@
+ {
+ 	struct imxfb_info *fbi = info->par;
+ 	u_int val, ret = 1;
++	unsigned int reg_size = 4;
+ 
+ #define CNVT_TOHW(val,width) ((((val)<<(width))+0x7FFF-(val))>>16)
+ 	if (regno < fbi->palette_size) {
+-		val = (CNVT_TOHW(red, 4) << 8) |
+-		      (CNVT_TOHW(green,4) << 4) |
+-		      CNVT_TOHW(blue,  4);
++#ifdef CONFIG_ARCH_MX2
++		if (fbi->pcr & PCR_TFT)
++			reg_size = 6;
++#endif
++		val = (CNVT_TOHW(red, reg_size) << (reg_size * 2)) |
++		      (CNVT_TOHW(green, reg_size) << reg_size) |
++		      CNVT_TOHW(blue, reg_size);
+ 
+ 		writel(val, fbi->regs + 0x800 + (regno << 2));
+ 		ret = 0;

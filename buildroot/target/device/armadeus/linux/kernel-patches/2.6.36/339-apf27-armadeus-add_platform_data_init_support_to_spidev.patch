@@ -1,0 +1,44 @@
+Add platform init call to spidev.
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+Signed-off-by: Gwenhaël Goavec-Merou <gwen@trabucayre.com>
+---
+
+Index: linux-2.6.36/drivers/spi/spidev.c
+===================================================================
+--- linux-2.6.36.orig/drivers/spi/spidev.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/spi/spidev.c	2010-11-25 19:22:06.000000000 +0100
+@@ -560,6 +560,7 @@
+ 
+ static int __devinit spidev_probe(struct spi_device *spi)
+ {
++	struct spidev_platform_data *pdata = spi->dev.platform_data;
+ 	struct spidev_data	*spidev;
+ 	int			status;
+ 	unsigned long		minor;
+@@ -597,6 +598,10 @@
+ 		set_bit(minor, minors);
+ 		list_add(&spidev->device_entry, &device_list);
+ 	}
++	/* allocate GPIO / IRQ if necessary */
++	if (pdata->init)
++		pdata->init();
++
+ 	mutex_unlock(&device_list_lock);
+ 
+ 	if (status == 0)
+Index: linux-2.6.36/include/linux/spi/spidev.h
+===================================================================
+--- linux-2.6.36.orig/include/linux/spi/spidev.h	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/include/linux/spi/spidev.h	2010-11-25 19:22:06.000000000 +0100
+@@ -103,6 +103,10 @@
+ 	 */
+ };
+ 
++struct spidev_platform_data {
++	int (*init)(void);
++};
++
+ /* not all platforms use <asm-generic/ioctl.h> or _IOC_TYPECHECK() ... */
+ #define SPI_MSGSIZE(N) \
+ 	((((N)*(sizeof (struct spi_ioc_transfer))) < (1 << _IOC_SIZEBITS)) \
