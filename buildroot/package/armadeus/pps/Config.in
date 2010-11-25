@@ -2,5 +2,5 @@ config BR2_PACKAGE_ARMADEUS_PPS_TEST_SCRIPTS
 	bool "PPS Test scripts"
 	default n
 	help
-	  Install PPS Test scripts to test ethernet, wifi & USB Gadget on PPS board.
-	  Test scripts will be installed on the APF in /usr/local/pps/scripts.
+	  Install PPS Test scripts to test Ethernet, WiFi & USB Gadget on
+	  PPS board. Test scripts will be installed in /usr/local/pps/scripts.
