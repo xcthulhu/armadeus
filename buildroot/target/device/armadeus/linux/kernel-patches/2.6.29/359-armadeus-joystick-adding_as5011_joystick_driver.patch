@@ -5,8 +5,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-11-25 11:06:56.000000000 +0100
-@@ -0,0 +1,429 @@
++++ linux-2.6.29.6/drivers/input/joystick/as5011.c	2010-11-25 12:28:08.000000000 +0100
+@@ -0,0 +1,427 @@
 +/*
 + * Copyright (c) 2010 Fabien Marteau <fabien.marteau@armadeus.com>
 + *
@@ -33,6 +33,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 + *
 + * TODO:
++ *	- Use threaded IRQ instead of Hard IRQ
 + *	- Manage power mode
 + */
 +
@@ -190,7 +191,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (plat_dat->workqueue == NULL) {
 +		dev_err(&client->dev, "Failed to create workqueue\n");
 +		retval = -EINVAL;
-+		goto workqueue_create_error;
++		goto err_out;
 +	}
 +
 +	INIT_WORK(&plat_dat->update_axes_work, as5011_update_axes);
@@ -200,7 +201,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev,
 +		"i2c bus does not support protocol mangling, as5011 can't work\n");
 +		retval = -ENODEV;
-+		goto i2c_protocol_error;
++		goto err_destroy_worqueue;
 +	}
 +	plat_dat->i2c_client = client;
 +
@@ -209,7 +210,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev,
 +		"not enough memory for input devices structure\n");
 +		retval = -ENOMEM;
-+		goto input_allocate_device_error;
++		goto err_destroy_worqueue;
 +	}
 +
 +	plat_dat->input_dev->name = "Austria Microsystem as5011 joystick";
@@ -238,7 +239,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev,
 +		"not enough memory for input devices irq name\n");
 +		retval = -ENOMEM;
-+		goto input_allocate_device_name_error;
++		goto err_input_free_device;
 +	}
 +
 +	scnprintf(plat_dat->button_irq_name,
@@ -255,7 +256,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev, "Can't allocate irq %d\n",
 +			plat_dat->button_irq);
 +		retval = -EBUSY;
-+		goto request_irq_error;
++		goto err_free_button_irq_name;
 +	}
 +
 +	plat_dat->int_irq_name = kmalloc(SIZE_NAME, GFP_KERNEL);
@@ -263,7 +264,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev,
 +		"not enough memory for input devices int irq name\n");
 +		retval = -ENOMEM;
-+		goto input_allocate_int_device_name_error;
++		goto err_free_irq_button_interrupt;
 +	}
 +
 +	scnprintf(plat_dat->int_irq_name,
@@ -276,7 +277,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		dev_err(&client->dev, "Can't allocate int irq %d\n",
 +			plat_dat->int_irq);
 +		retval = -EBUSY;
-+		goto request_int_irq_error;
++		goto err_free_int_irq_name;
 +	}
 +
 +
@@ -284,7 +285,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +		retval = plat_dat->init_gpio();
 +		if (retval < 0) {
 +			dev_err(&client->dev, "Failed to init gpios\n");
-+			goto init_gpio_error;
++			goto err_free_irq_int;
 +		}
 +	}
 +
@@ -295,7 +296,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Soft reset failed\n");
-+		goto soft_reset_error;
++		goto err_exit_gpio;
 +	}
 +
 +	retval = as5011_i2c_write(plat_dat->i2c_client,
@@ -307,7 +308,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Power config failed\n");
-+		goto soft_reset_error;
++		goto err_exit_gpio;
 +	}
 +
 +	retval = as5011_i2c_write(plat_dat->i2c_client,
@@ -316,7 +317,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Can't invert spinning\n");
-+		goto invert_spinning_error;
++		goto err_exit_gpio;
 +	}
 +
 +	/* write threshold */
@@ -326,7 +327,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Can't write threshold\n");
-+		goto threshold_error;
++		goto err_exit_gpio;
 +	}
 +
 +	retval = as5011_i2c_write(plat_dat->i2c_client,
@@ -335,7 +336,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Can't write threshold\n");
-+		goto threshold_error;
++		goto err_exit_gpio;
 +	}
 +
 +	retval = as5011_i2c_write(plat_dat->i2c_client,
@@ -344,7 +345,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Can't write threshold\n");
-+		goto threshold_error;
++		goto err_exit_gpio;
 +	}
 +
 +	retval = as5011_i2c_write(plat_dat->i2c_client,
@@ -353,7 +354,7 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	if (retval < 0) {
 +		dev_err(&plat_dat->i2c_client->dev,
 +			"Can't write threshold\n");
-+		goto threshold_error;
++		goto err_exit_gpio;
 +	}
 +
 +
@@ -363,33 +364,30 @@ Index: linux-2.6.29.6/drivers/input/joystick/as5011.c
 +	retval = input_register_device(plat_dat->input_dev);
 +	if (retval) {
 +		dev_err(&client->dev, "Failed to register device\n");
-+		goto input_register_device_error;
++		goto err_exit_gpio;
 +	}
 +
 +	return 0;
 +
 +	/* Error management */
-+threshold_error:
-+invert_spinning_error:
-+soft_reset_error:
++err_unregister_input_dev:
++	input_unregister_device(plat_dat->input_dev);
++err_exit_gpio:
 +	if (plat_dat->exit_gpio != NULL)
 +		plat_dat->exit_gpio();
-+init_gpio_error:
-+	input_unregister_device(plat_dat->input_dev);
-+input_register_device_error:
++err_free_irq_int:
 +	free_irq(plat_dat->int_irq, as5011_int_interrupt);
-+request_int_irq_error:
++err_free_int_irq_name:
 +	kfree(plat_dat->int_irq_name);
-+input_allocate_int_device_name_error:
++err_free_irq_button_interrupt:
 +	free_irq(plat_dat->button_irq, button_interrupt);
-+request_irq_error:
++err_free_button_irq_name:
 +	kfree(plat_dat->button_irq_name);
-+input_allocate_device_name_error:
++err_input_free_device:
 +	input_free_device(plat_dat->input_dev);
-+input_allocate_device_error:
-+i2c_protocol_error:
++err_destroy_worqueue:
 +	destroy_workqueue(plat_dat->workqueue);
-+workqueue_create_error:
++err_out:
 +	return retval;
 +}
 +static int as5011_remove(struct i2c_client *client)
