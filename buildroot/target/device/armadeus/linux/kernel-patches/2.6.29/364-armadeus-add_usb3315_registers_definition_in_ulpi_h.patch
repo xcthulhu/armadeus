@@ -1,0 +1,28 @@
+Add USB3315 registers definition to arch/arm/plat-mxc/include/mach/ulpi.h
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.29.6/arch/arm/plat-mxc/include/mach/ulpi.h
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/plat-mxc/include/mach/ulpi.h	2010-02-23 16:29:43.000000000 +0100
++++ linux-2.6.29.6/arch/arm/plat-mxc/include/mach/ulpi.h	2010-02-23 16:30:49.000000000 +0100
+@@ -18,6 +18,19 @@
+ #define ISP1504_REG_SET		0x01
+ #define ISP1504_REG_CLEAR	0x02
+ 
++/* USB3315 register addresses */
++#define USB3315_VID_LOW		0x00	/* Vendor ID low */
++#define USB3315_VID_HIGH	0x01	/* Vendor ID high */
++#define USB3315_PID_LOW		0x02	/* Product ID low */
++#define USB3315_PID_HIGH	0x03	/* Product ID high */
++#define USB3315_FCNCTL		0x04	/* Function Control */
++#define USB3315_ITFCTL		0x07	/* Interface Control */
++#define USB3315_OTGCTL		0x0A	/* OTG Control */
++
++/* Add to above register address to access Set/Clear functions */
++#define USB3315_REG_SET		0x01
++#define USB3315_REG_CLEAR	0x02
++
+ /* 1504 Function Control Register bits */
+ #define SUSPENDM		(1 << 6)		/* Suspend LOW */
+ #define RESET			(1 << 5)		/* Reset */

@@ -32,7 +32,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"1.9"
+#define CONFIG_ENV_VERSION 	"2.0"
 #define CONFIG_IDENT_STRING	" apf27 patch 2.2"
 
 #define CONFIG_ARM926EJS	1	/* this is an ARM926EJS CPU */
@@ -203,7 +203,7 @@
 	"download_kernel=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-linux.bin\0"		\
 	"download_rootfs=tftpboot ${loadaddr} "				\
-		" ${serverpath}${board_name}-rootfs.arm.ubifs\0"	\
+		" ${serverpath}${board_name}-rootfs.arm.ubi\0"		\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
 	"update_rootfs=run download_rootfs flash_rootfs\0"		\

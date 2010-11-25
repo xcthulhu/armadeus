@@ -1,0 +1,39 @@
+!! Temporary fix !!
+
+Make USB device working on APF27.
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.29.6/drivers/usb/gadget/fsl_udc_core.c
+===================================================================
+--- linux-2.6.29.6.orig/drivers/usb/gadget/fsl_udc_core.c	2010-04-22 14:49:58.000000000 +0200
++++ linux-2.6.29.6/drivers/usb/gadget/fsl_udc_core.c	2010-04-22 14:53:56.000000000 +0200
+@@ -1627,6 +1627,7 @@ static void reset_irq(struct fsl_udc *ud
+ {
+ 	u32 temp;
+ 	unsigned long timeout;
++	static int first = 1;
+ 
+ 	/* Clear the device address */
+ 	temp = fsl_readl(&dr_regs->deviceaddr);
+@@ -1664,7 +1665,19 @@ static void reset_irq(struct fsl_udc *ud
+ 	/* Write 1s to the flush register */
+ 	fsl_writel(0xffffffff, &dr_regs->endptflush);
+ 
+-	if (fsl_readl(&dr_regs->portsc1) & PORTSCX_PORT_RESET) {
++	if (first) {
++		dr_controller_setup(udc);
++
++		/* Reset all internal used Queues */
++		reset_queues(udc);
++
++		ep0_setup(udc);
++
++		/* Enable DR IRQ reg, Set Run bit, change udc state */
++		dr_controller_run(udc);
++		udc->usb_state = USB_STATE_ATTACHED;
++		first = 0;
++	} else if (fsl_readl(&dr_regs->portsc1) & PORTSCX_PORT_RESET) {
+ 		VDBG("Bus reset");
+ 		/* Reset all the queues, include XD, dTD, EP queue
+ 		 * head and TR Queue */
