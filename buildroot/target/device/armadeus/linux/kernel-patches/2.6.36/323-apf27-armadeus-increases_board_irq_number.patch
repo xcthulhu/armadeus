@@ -1,0 +1,17 @@
+Increases board reserved interrupts to 32. This is needed for the APF27 FPGA.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/irqs.h
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/irqs.h	2010-11-25 20:27:40.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/irqs.h	2010-11-25 20:28:54.000000000 +0100
+@@ -47,6 +47,8 @@
+ 
+ #ifdef CONFIG_MACH_MX31ADS_WM1133_EV1
+ #define MXC_BOARD_IRQS  80
++#elif defined CONFIG_MACH_APF27
++#define MXC_BOARD_IRQS  32
+ #else
+ #define MXC_BOARD_IRQS	16
+ #endif
