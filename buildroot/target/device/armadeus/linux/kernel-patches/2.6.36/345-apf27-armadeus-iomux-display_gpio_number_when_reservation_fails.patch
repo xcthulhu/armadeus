@@ -1,0 +1,30 @@
+Ease debugging when GPIO allocation fails.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/plat-mxc/iomux-v1.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/iomux-v1.c	2010-11-26 10:38:39.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/iomux-v1.c	2010-11-26 10:42:18.000000000 +0100
+@@ -174,9 +174,10 @@
+ {
+ 	size_t i;
+ 	int ret;
++	unsigned gpio;
+ 
+ 	for (i = 0; i < count; ++i) {
+-		unsigned gpio = pin_list[i] & (GPIO_PIN_MASK | GPIO_PORT_MASK);
++		gpio = pin_list[i] & (GPIO_PIN_MASK | GPIO_PORT_MASK);
+ 
+ 		ret = gpio_request(gpio, label);
+ 		if (ret)
+@@ -193,6 +194,9 @@
+ 	BUG_ON(i != count);
+ 
+ err_gpio_request:
++	printk("*** Failed to reserve GPIO %d (port %c pin %d)\n", gpio,
++		0x41 + ((gpio & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT),
++		gpio & GPIO_PIN_MASK);
+ 	mxc_gpio_release_multiple_pins(pin_list, i);
+ 
+ 	return ret;

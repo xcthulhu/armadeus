@@ -1,0 +1,77 @@
+On i.MX platforms UART controllers pins are multiplexed with other
+functionnalities, so it can be interesting to individually select them or not.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/drivers/serial/Kconfig
+===================================================================
+--- linux-2.6.36.orig/drivers/serial/Kconfig	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
+@@ -906,6 +906,67 @@
+ 	  your boot loader (lilo or loadlin) about how to pass options to the
+ 	  kernel at boot time.)
+ 
++config SERIAL_IMX_UART1
++	bool "UART1"
++	depends on SERIAL_IMX && (ARCH_MX1 || ARCH_MX2 || ARCH_MX3)
++	default y
++	help
++	  /dev/ttymxc0
++
++config SERIAL_IMX_UART1_USE_RTSCTS
++	bool "Uses UART1 RTS/CTS lines"
++	depends on SERIAL_IMX_UART1
++
++config SERIAL_IMX_UART2
++	bool "UART2"
++	depends on SERIAL_IMX && (ARCH_MX1 || ARCH_MX2 || ARCH_MX3)
++	help
++	  /dev/ttymxc1
++
++config SERIAL_IMX_UART2_USE_RTSCTS
++	bool "Uses UART2 RTS/CTS lines"
++	depends on SERIAL_IMX_UART2
++
++config SERIAL_IMX_UART3
++	bool "UART3"
++	depends on SERIAL_IMX && (ARCH_MX2 || ARCH_MX3)
++	help
++	  /dev/ttymxc2
++
++config SERIAL_IMX_UART3_USE_RTSCTS
++	bool "Uses UART3 RTS/CTS lines"
++	depends on SERIAL_IMX_UART3
++
++config SERIAL_IMX_UART4
++	bool "UART4"
++	depends on SERIAL_IMX && (MACH_MX21 || MACH_MX25 || MACH_MX27 || MACH_MX31)
++	help
++	  /dev/ttymxc3
++
++config SERIAL_IMX_UART4_USE_RTSCTS
++	bool "Uses UART4 RTS/CTS lines"
++	depends on SERIAL_IMX_UART4
++
++config SERIAL_IMX_UART5
++	bool "UART5"
++	depends on SERIAL_IMX && (MACH_MX25 || MACH_MX27 || MACH_MX31)
++	help
++	  /dev/ttymxc4
++
++config SERIAL_IMX_UART5_USE_RTSCTS
++	bool "Uses UART5 RTS/CTS lines"
++	depends on SERIAL_IMX_UART5
++
++config SERIAL_IMX_UART6
++	bool "UART6"
++	depends on SERIAL_IMX && (MACH_MX27)
++	help
++	  /dev/ttymxc5
++
++config SERIAL_IMX_UART6_USE_RTSCTS
++	bool "Uses UART6 RTS/CTS lines"
++	depends on SERIAL_IMX_UART6
++
+ config SERIAL_UARTLITE
+ 	tristate "Xilinx uartlite serial port support"
+ 	depends on PPC32 || MICROBLAZE || MFD_TIMBERDALE

@@ -1,0 +1,44 @@
+smsc95xx: Separe link and activity LEDs.
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+----
+
+Index: linux-2.6.36/drivers/net/usb/smsc95xx.c
+===================================================================
+--- linux-2.6.36.orig/drivers/net/usb/smsc95xx.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/net/usb/smsc95xx.c	2010-11-26 10:55:57.000000000 +0100
+@@ -933,8 +933,11 @@
+ 	netif_dbg(dev, ifup, dev->net, "ID_REV = 0x%08x\n", read_buf);
+ 
+ 	/* Configure GPIO pins as LED outputs */
+-	write_buf = LED_GPIO_CFG_SPD_LED | LED_GPIO_CFG_LNK_LED |
+-		LED_GPIO_CFG_FDX_LED;
++	write_buf = LED_GPIO_CFG_SPD_LED | LED_GPIO_CFG_SPD_POL |
++                LED_GPIO_CFG_LNK_LED | LED_GPIO_CFG_LNK_POL |
++		        LED_GPIO_CFG_FDX_LED | LED_GPIO_CFG_FDX_POL |
++                LED_GPIO_CFG_LED_SEL;
++
+ 	ret = smsc95xx_write_reg(dev, LED_GPIO_CFG, write_buf);
+ 	if (ret < 0) {
+ 		netdev_warn(dev->net, "Failed to write LED_GPIO_CFG register, ret=%d\n",
+Index: linux-2.6.36/drivers/net/usb/smsc95xx.h
+===================================================================
+--- linux-2.6.36.orig/drivers/net/usb/smsc95xx.h	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/net/usb/smsc95xx.h	2010-11-26 10:55:57.000000000 +0100
+@@ -99,10 +99,15 @@
+ #define PM_CTL_WUPS_MULTI_		(0x00000003)
+ 
+ #define LED_GPIO_CFG			(0x24)
++#define LED_GPIO_CFG_LED_SEL		(0x80000000)
+ #define LED_GPIO_CFG_SPD_LED		(0x01000000)
+ #define LED_GPIO_CFG_LNK_LED		(0x00100000)
+ #define LED_GPIO_CFG_FDX_LED		(0x00010000)
+ 
++#define LED_GPIO_CFG_SPD_POL		(0x00000004)
++#define LED_GPIO_CFG_LNK_POL		(0x00000002)
++#define LED_GPIO_CFG_FDX_POL		(0x00000001)
++
+ #define GPIO_CFG			(0x28)
+ 
+ #define AFC_CFG				(0x2C)

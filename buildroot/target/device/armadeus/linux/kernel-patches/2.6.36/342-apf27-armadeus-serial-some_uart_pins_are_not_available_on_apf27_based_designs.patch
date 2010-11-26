@@ -1,0 +1,35 @@
+On APF27 based designs some UART pins are missing:
+* UART1 RTS/CTS are not available on APF27Dev (used by MAX1027 and not at the
+  same voltage level as Rx/Tx (console)).
+* UART3 RTS/CTS are not available if an APW with GSM or WiFi is plugged in.
+* UART4 module is not available on APF27Dev (used as USBH1)
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/drivers/serial/Kconfig
+===================================================================
+--- linux-2.6.36.orig/drivers/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
++++ linux-2.6.36/drivers/serial/Kconfig	2010-11-26 10:31:53.000000000 +0100
+@@ -915,7 +915,7 @@
+ 
+ config SERIAL_IMX_UART1_USE_RTSCTS
+ 	bool "Uses UART1 RTS/CTS lines"
+-	depends on SERIAL_IMX_UART1
++	depends on SERIAL_IMX_UART1 && (!MACH_APF27_DEV)
+ 
+ config SERIAL_IMX_UART2
+ 	bool "UART2"
+@@ -935,11 +935,11 @@
+ 
+ config SERIAL_IMX_UART3_USE_RTSCTS
+ 	bool "Uses UART3 RTS/CTS lines"
+-	depends on SERIAL_IMX_UART3
++	depends on SERIAL_IMX_UART3 && (!MACH_APF27_DEV_EXT_WIRELESS_WIFI) && (!MACH_APF27_DEV_EXT_WIRELESS_GSM)
+ 
+ config SERIAL_IMX_UART4
+ 	bool "UART4"
+-	depends on SERIAL_IMX && (MACH_MX21 || MACH_MX25 || MACH_MX27 || MACH_MX31)
++	depends on SERIAL_IMX && (MACH_MX21 || MACH_MX25 || MACH_MX27 || MACH_MX31) && (!MACH_APF27_DEV)
+ 	help
+ 	  /dev/ttymxc3
+ 

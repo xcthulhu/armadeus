@@ -1,0 +1,21 @@
+Fix mxc_gpio_set() behaviour bug.
+
+This patch modify mxc_gpio_set() function to have the same behaviour as others
+platform *_gpio_set() function.
+When value=0 set pin to 0 in all other cases set pin to 1.
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/plat-mxc/gpio.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/gpio.c	2010-11-26 11:15:25.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/gpio.c	2010-11-26 11:15:52.000000000 +0100
+@@ -235,7 +235,7 @@
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+-	l = (__raw_readl(reg) & (~(1 << offset))) | (value << offset);
++	l = (__raw_readl(reg) & (~(1 << offset))) | ((value ? 1:0) << offset);
+ 	__raw_writel(l, reg);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ }
