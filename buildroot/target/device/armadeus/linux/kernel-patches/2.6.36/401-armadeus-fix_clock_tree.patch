@@ -1,3 +1,9 @@
+Change default clock source for the APF51.
+No external HCLK is required. 
+Patch has to be reworked to support selection from the platform
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
 Index: linux-2.6.36/arch/arm/mach-mx5/clock-mx51.c
 ===================================================================
 --- linux-2.6.36.orig/arch/arm/mach-mx5/clock-mx51.c	2010-10-20 22:30:22.000000000 +0200

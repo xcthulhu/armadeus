@@ -1,3 +1,7 @@
+Add NAND device to MX5 architecture
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
 Index: linux-2.6.36/arch/arm/mach-mx5/devices.h
 ===================================================================
 --- linux-2.6.36.orig/arch/arm/mach-mx5/devices.h	2010-10-20 22:30:22.000000000 +0200
