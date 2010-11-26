@@ -41,7 +41,7 @@
  * dependent initialization.
  */
 
-//#define CONFIG_MISC_INIT_R
+#define CONFIG_MISC_INIT_R
 
 /*
  * BOOTP options
@@ -569,9 +569,9 @@
 #define CONFIG_DISCOVER_PHY
 
 /*-----------------------------------------------------------------------
- * FPGA stuff TODO TODO TODO TODO TODO TODO TODO TODO 
+ * FPGA
  */
-//#define CONFIG_FPGA			CONFIG_SYS_SPARTAN3
+#define CONFIG_FPGA			CONFIG_SYS_SPARTAN3
 //#define FPGA_DEBUG
 #define CONFIG_FPGA_COUNT		1
 #define CONFIG_FPGA_XILINX
@@ -580,20 +580,15 @@
 #define CONFIG_SYS_FPGA_PROG_FEEDBACK
 #define CONFIG_SYS_FPGA_CHECK_CTRLC
 #define CONFIG_SYS_FPGA_CHECK_ERROR
-//#define CONFIG_SYS_FPGA_IS_PROTO /* to be defined with apf27 board prototype*/
 
 /* FPGA program pin configuration */
-#define CONFIG_SYS_FPGA_PWR	(GPIO_PORTF | 19)	/* FPGA prog pin  */
-#define CONFIG_SYS_FPGA_PRG	(GPIO_PORTF | 11)	/* FPGA prog pin  */
-#define CONFIG_SYS_FPGA_CLK	(GPIO_PORTF | 15)	/* FPGA clk pin   */
-#define CONFIG_SYS_FPGA_RDATA	0xD6000000		/* FPGA data addr  */
-#define CONFIG_SYS_FPGA_WDATA	0xD6000000		/* FPGA data addr  */
-#define CONFIG_SYS_FPGA_INIT	(GPIO_PORTF | 12)	/* FPGA init pin  */
-#define CONFIG_SYS_FPGA_DONE	(GPIO_PORTF | 9)	/* FPGA done pin  */
-#define CONFIG_SYS_FPGA_RW	(GPIO_PORTF | 21)	/* FPGA done pin  */
-#define CONFIG_SYS_FPGA_CS	(GPIO_PORTF | 22)	/* FPGA done pin  */
-#define CONFIG_SYS_FPGA_SUSPEND (GPIO_PORTF | 10)	/* FPGA done pin  */
-#define CONFIG_SYS_FPGA_RESET	(GPIO_PORTF | 7)	/* FPGA done pin  */
+#define CONFIG_SYS_FPGA_PWR	MX51_PIN_DI1_D0_CS
+#define CONFIG_SYS_FPGA_PRG	MX51_PIN_CSI2_D12
+#define CONFIG_SYS_FPGA_RDATA	CS1_BASE_ADDR
+#define CONFIG_SYS_FPGA_WDATA	CS1_BASE_ADDR
+#define CONFIG_SYS_FPGA_INIT	MX51_PIN_CSI2_D18
+#define CONFIG_SYS_FPGA_DONE	MX51_PIN_CSI2_D13
+#define CONFIG_SYS_FPGA_SUSPEND MX51_PIN_DISPB2_SER_DIO
 
 /**
  * I2C Configs TODO TODO TODO TODO
@@ -657,7 +652,7 @@
  */
 #define CONFIG_SYS_SDRAM_1_SIZE	(CONFIG_SYS_SDRAM_MBYTE_SYZE) * 1024 * 1024
 #define CONFIG_SYS_SDRAM_2_SIZE	(CONFIG_SYS_SDRAM_MBYTE_SYZE) * 1024 * 1024
-#define CONFIG_NR_DRAM_BANKS CONFIG_SYS_NR_DRAM_BANKS /* not an option anyway */
+#define CONFIG_NR_DRAM_BANKS 1
 
 #ifdef CONFIG_SYS_SDRAM_TYPE_MDDR
 #if (CONFIG_SYS_SDRAM_MBYTE_SYZE == 64) /* micron MT46H16M32LF -6 */
@@ -1017,3 +1012,7 @@
 
 #endif				/* __CONFIG_H */
 
+#ifdef CONFIG_BOARD_NAME
+#undef CONFIG_BOARD_NAME
+#endif
+#define CONFIG_BOARD_NAME apf51

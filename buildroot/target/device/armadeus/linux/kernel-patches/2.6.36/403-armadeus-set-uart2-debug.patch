@@ -1,3 +1,7 @@
+Change default debug UART for APF51
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
 Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/debug-macro.S
 ===================================================================
 --- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/debug-macro.S	2010-10-20 22:30:22.000000000 +0200

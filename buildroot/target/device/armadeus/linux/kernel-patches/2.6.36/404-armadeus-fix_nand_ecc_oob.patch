@@ -1,3 +1,7 @@
+Add OOB and bad block table management to the V3 mxc_nand driver
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
 Index: linux-2.6.36/drivers/mtd/nand/mxc_nand.c
 ===================================================================
 --- linux-2.6.36.orig/drivers/mtd/nand/mxc_nand.c	2010-11-14 12:33:43.000000000 +0100
