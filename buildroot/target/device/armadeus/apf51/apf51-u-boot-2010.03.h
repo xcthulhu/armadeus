@@ -84,6 +84,7 @@
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #undef  CONFIG_CMD_FLASH	/* flinfo, erase, protect	*/
 //#define CONFIG_CMD_I2C		/* I2C serial bus support	*/
+#define CONFIG_CMD_IIM		/* imx iim fuse			*/
 #undef CONFIG_CMD_IMLS		/* List all found images	*/
 #define CONFIG_CMD_IMMAP	/* IMMR dump support		*/
 #define CONFIG_CMD_JFFS2	/* JFFS2 Support		*/
@@ -642,6 +643,15 @@
 
 #define CONFIG_HW_WATCHDOG
 
+/**
+ * IIM fuse Config
+ */
+
+#define CONFIG_IMX_IIM
+#define IMX_IIM_BASE    IIM_BASE_ADDR
+#define CONFIG_IIM_MAC_BANK     1
+#define CONFIG_IIM_MAC_ROW      9
+
 /*
  * From here, there should not be any user configuration.
  * All Equations are automatic
@@ -1012,7 +1022,3 @@
 
 #endif				/* __CONFIG_H */
 
-#ifdef CONFIG_BOARD_NAME
-#undef CONFIG_BOARD_NAME
-#endif
-#define CONFIG_BOARD_NAME apf51
