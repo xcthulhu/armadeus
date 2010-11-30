@@ -227,7 +227,7 @@
 
 #define CONFIG_SHOW_BOOT_PROGRESS
 
-#define CONFIG_ETHADDR		00:04:F3:02:1C:8F /* to delete asap */
+#define CONFIG_ETHADDR
 #define CONFIG_NETMASK		255.255.255.0
 #define CONFIG_IPADDR		192.168.0.10
 #define CONFIG_BOARD_NAME	"apf51"
