@@ -1,0 +1,30 @@
+Some HOST1 registers bits seem to be misused. Corresponding comments seem also
+false. Correct that.
+
+Strange that with or without this changes HOST1 seems to work the same way...
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/plat-mxc/ehci.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/ehci.c	2010-12-01 16:49:46.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/ehci.c	2010-12-01 17:20:20.000000000 +0100
+@@ -292,14 +292,14 @@
+ 			/*Host ULPI */
+ 			v = __raw_readl(usbother_base + MXC_USBCTRL_OFFSET);
+ 			if (flags & MXC_EHCI_WAKEUP_ENABLED)
+-				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disable */
++				v |= (MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr enabled */
+ 			else
+-				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disable */
++				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disabled */
+ 
+ 			if (flags & MXC_EHCI_POWER_PINS_ENABLED)
+-				v &= ~MXC_H1_UCTRL_H1PM_BIT; /* HOST1 power mask used*/
++				v |= MXC_H1_UCTRL_H1PM_BIT; /* USBPWR pin used */
+ 			else
+-				v |= MXC_H1_UCTRL_H1PM_BIT; /* HOST1 power mask used*/
++				v &= ~MXC_H1_UCTRL_H1PM_BIT; /* USBPWR pin inactive */
+ 			__raw_writel(v, usbother_base + MXC_USBCTRL_OFFSET);
+ 
+ 			v = __raw_readl(usbother_base + MXC_USB_PHY_CTR_FUNC_OFFSET);
