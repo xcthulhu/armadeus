@@ -1,0 +1,76 @@
+#!/bin/sh
+# 
+# Script used to configure user space usable GPIOs on PPS 
+#
+# Julien Boibessot <julien.boibessot@armadeus.com>
+# Fabien Marteau   <fabien.marteau@armadeus.com>
+#
+
+GPIO_DEV_DIR=/dev/gpio
+
+setbit()
+{
+	PORT=$1
+	NB=$2
+	VAL=$3
+	cat $PORT | sed "s/[0-1]\([0-1]\{$NB\}\)$/$VAL\1/" > $PORT
+}
+
+gpio_set_value()
+{
+	GPIO=$1
+	VALUE=$2
+	if [ "$VALUE" == "1" ]; then
+		echo -ne "\x01" > $GPIO_DEV_DIR/$GPIO
+	else
+		echo -ne "\x00" > $GPIO_DEV_DIR/$GPIO
+	fi
+}
+
+# Sets $1 as GPIO; $2 == 1 -> outpout, 0 -> input
+gpio_mode()
+{
+	GPIO=`echo $1 | cut -c 3-4`
+	VALUE=$2
+	PORT=`echo $1 | cut -c 2`
+	PORT_DIR="/proc/driver/gpio/port"$PORT"dir"
+	PORT_MODE="/proc/driver/gpio/port"$PORT"mode"
+
+	setbit $PORT_MODE $GPIO 1
+	setbit $PORT_DIR $GPIO $VALUE
+}
+
+case "$1" in
+	start)
+		echo "Configuring PPS GPIOs"
+		/usr/bin/loadgpio.sh
+
+		# Status leds
+		gpio_mode PF16 1
+		gpio_set_value PF16 1	#STATUS_LED0 (green) on
+		# Status leds
+		gpio_mode PF17 1
+		gpio_set_value PF17 0	#STATUS_LED1 (red) off
+
+		# Second eth
+		gpio_mode PC15 1
+		gpio_set_value PC15 1	#LAN9500_RESETN
+
+	;;
+	stop)
+		gpio_set_value PF16 0	#STATUS_LED0 (green) off
+		gpio_set_value PF17 1	#STATUS_LED1 (red) off
+		gpio_set_value PC15 0	#LAN9500_RESETN
+	;;
+	restart)
+		$0 stop
+		$0 start
+	;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+	;;
+esac
+
+exit 0
+
