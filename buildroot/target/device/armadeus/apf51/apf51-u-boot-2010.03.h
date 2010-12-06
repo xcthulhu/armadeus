@@ -198,7 +198,7 @@
 			"then echo Flashing of kernel succeed;"		\
 			"else echo Flashing of kernel failed;"		\
 		"fi\0"							\
-	"flash_rootfs=nand erase clean ${rootfs_offset} ${rootfs_len};"	\
+	"flash_rootfs=nand erase ${rootfs_offset} ${rootfs_len};"	\
 		"if nand write.jffs2 ${fileaddr} ${rootfs_offset} ${filesize};"\
 			"then echo Flashing of rootfs succeed;"		\
 			"else echo Flashing of rootfs failed;"		\
@@ -508,7 +508,7 @@
 #define CONFIG_ENV_IS_IN_NAND		1
 #define	CONFIG_ENV_OFFSET		0x00100000 /* NAND offset address for now*/
 #define	CONFIG_ENV_SIZE			0x00020000 /* 128kB  */
-#define CONFIG_ENV_RANGE		0X00100000 /* 1MB ( 8 flash blocks )  */
+#define CONFIG_ENV_RANGE		0x00100000 /* 1MB ( 8 flash blocks )  */
 #define	CONFIG_ENV_OVERWRITE		1	   /* env is writable now   */
 #define	CONFIG_FIRMWARE_OFFSET		0x00200000
 #define	CONFIG_FIRMWARE_LEN		0x00100000 /* 1MB ( 8 flash blocks )  */
