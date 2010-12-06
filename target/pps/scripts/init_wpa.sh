@@ -38,7 +38,7 @@ psk=\"$PSK\"
 }" > /etc/wpa_supplicant/wpa_supplicant.conf
 
 #Hardware reset of wi2wi chip
-sh reset_wi2wi.sh
+sh /usr/local/pps/scripts/reset_wi2wi.sh
 
 #Load mmc and libertas modules
 modprobe mxcmmc
