@@ -1,0 +1,31 @@
+Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
+===================================================================
+--- linux-2.6.36.orig/drivers/i2c/busses/i2c-imx.c	2010-12-10 17:19:43.000000000 +0100
++++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2010-12-10 17:48:02.000000000 +0100
+@@ -309,7 +309,7 @@
+ 	if (result)
+ 		return result;
+ 	result = i2c_imx_acked(i2c_imx);
+-	if (result)
++	if ( (result != 0) && ((msgs[0].flags & I2C_M_IGNORE_NAK) == 0))
+ 		return result;
+ 	dev_dbg(&i2c_imx->adapter.dev, "<%s> write data\n", __func__);
+ 
+@@ -323,7 +323,7 @@
+ 		if (result)
+ 			return result;
+ 		result = i2c_imx_acked(i2c_imx);
+-		if (result)
++		if ( (result != 0) && ((msgs[i].flags & I2C_M_IGNORE_NAK) == 0))
+ 			return result;
+ 	}
+ 	return 0;
+@@ -344,7 +344,7 @@
+ 	if (result)
+ 		return result;
+ 	result = i2c_imx_acked(i2c_imx);
+-	if (result)
++	if ( (result != 0) && ((msgs[0].flags & I2C_M_IGNORE_NAK) == 0))
+ 		return result;
+ 
+ 	dev_dbg(&i2c_imx->adapter.dev, "<%s> setup bus\n", __func__);
