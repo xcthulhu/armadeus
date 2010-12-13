@@ -1,7 +1,7 @@
 Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
 ===================================================================
---- linux-2.6.36.orig/drivers/i2c/busses/i2c-imx.c	2010-12-10 17:19:43.000000000 +0100
-+++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2010-12-13 11:09:03.000000000 +0100
+--- linux-2.6.36.orig/drivers/i2c/busses/i2c-imx.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2010-12-13 11:34:17.000000000 +0100
 @@ -304,12 +304,15 @@
  		__func__, msgs->addr << 1);
  
@@ -72,3 +72,12 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  			dev_dbg(&i2c_imx->adapter.dev,
  				"<%s> repeated start\n", __func__);
  			temp = readb(i2c_imx->base + IMX_I2C_I2CR);
+@@ -454,7 +462,7 @@
+ 
+ static u32 i2c_imx_func(struct i2c_adapter *adapter)
+ {
+-	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL | I2C_FUNC_PROTOCOL_MANGLING;
+ }
+ 
+ static struct i2c_algorithm i2c_imx_algo = {
