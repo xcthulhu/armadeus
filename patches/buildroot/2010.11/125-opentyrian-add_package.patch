@@ -1,19 +1,19 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-29 11:21:25.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-29 11:21:25.000000000 +0200
+--- buildroot.orig/package/Config.in	2010-12-14 08:27:39.000000000 +0100
++++ buildroot/package/Config.in	2010-12-14 08:55:39.000000000 +0100
 @@ -83,6 +83,7 @@
+ source "package/e-uae/Config.in"
  source "package/games/gnuchess/Config.in"
- source "package/games/lxdoom/Config.in"
  source "package/games/magiccube4d/Config.in"
 +source "package/opentyrian/Config.in"
  source "package/games/prboom/Config.in"
  source "package/games/quake-pak/Config.in"
- source "package/games/rubix/Config.in"
+ source "package/games/doom-wad/Config.in"
 Index: buildroot/package/opentyrian/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/opentyrian/Config.in	2010-06-29 11:21:25.000000000 +0200
++++ buildroot/package/opentyrian/Config.in	2010-12-14 08:27:39.000000000 +0100
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_OPENTYRIAN
 +	bool "OpenTyrian"
@@ -29,7 +29,7 @@ Index: buildroot/package/opentyrian/Config.in
 Index: buildroot/package/opentyrian/opentyrian.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/opentyrian/opentyrian.mk	2010-07-04 18:03:01.000000000 +0200
++++ buildroot/package/opentyrian/opentyrian.mk	2010-12-14 08:47:18.000000000 +0100
 @@ -0,0 +1,50 @@
 +#############################################################
 +#
@@ -59,7 +59,7 @@ Index: buildroot/package/opentyrian/opentyrian.mk
 +
 +define OPENTYRIAN_BUILD_CMDS
 +        $(MAKE) PLATFORM=UNIX \
-+		CC=$(TARGET_CC) \
++		CC="$(TARGET_CC)" \
 +		STRIP="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" \
 +		SDL_CONFIG=$(STAGING_DIR)/usr/bin/sdl-config \
 +		-C $(OPENTYRIAN_DIR) \
