@@ -1,0 +1,44 @@
+#!/bin/sh
+# 
+# Script used to configure user space usable GPIOs on PPS 
+#
+# Julien Boibessot <julien.boibessot@armadeus.com>
+# Fabien Marteau   <fabien.marteau@armadeus.com>
+#
+
+source /usr/bin/gpio_helpers.sh
+
+case "$1" in
+	start)
+		echo "Configuring PPS GPIOs"
+		/usr/bin/loadgpio.sh
+
+		# Status leds
+		gpio_mode PF16 1
+		gpio_set_value PF16 1	#STATUS_LED0 (green) on
+		# Status leds
+		gpio_mode PF17 1
+		gpio_set_value PF17 0	#STATUS_LED1 (red) off
+
+		# Second eth
+		gpio_mode PC15 1
+		gpio_set_value PC15 1	#LAN9500_RESETN
+
+	;;
+	stop)
+		gpio_set_value PF16 0	#STATUS_LED0 (green) off
+		gpio_set_value PF17 1	#STATUS_LED1 (red) off
+		gpio_set_value PC15 0	#LAN9500_RESETN
+	;;
+	restart)
+		$0 stop
+		$0 start
+	;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+	;;
+esac
+
+exit 0
+

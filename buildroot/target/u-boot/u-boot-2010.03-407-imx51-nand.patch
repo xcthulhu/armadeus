@@ -12,7 +12,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/Makefile u-boot-2010.03/drivers/m
 diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
 --- u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c	2010-09-16 23:11:51.000000000 +0200
 +++ u-boot-2010.03/drivers/mtd/nand/mx51_nand.c	2010-09-16 05:34:54.000000000 +0200
-@@ -0,0 +1,976 @@
+@@ -0,0 +1,979 @@
 +/*
 + * Copyright (C) 2010 Eric Jarrige <jorasse@armadeus.org> 
 + * Copyright 2004-2007 Freescale Semiconductor, Inc.
@@ -177,7 +177,10 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +	.eccpos = {
 +		8, 9, 10, 11, 12, 13, 14, 15,
 +	},
-+	.oobfree = {  {0, 8}, {16, 48} },
++	.oobfree = {
++			{.offset = 2, .length = 5},
++			{.offset = 16, .length = 48} 
++	},
 +};
 +
 +
@@ -825,7 +828,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +		return;
 +   	case NAND_CMD_UNLOCK2:{
 +			int temp = readl(NFC_WRPROT_UNLOCK_BLK_ADD0) & 0x0000FFFF;
-+			writel((page_addr>>6) & temp , NFC_WRPROT_UNLOCK_BLK_ADD0);
++			writel(((page_addr>>6)<<16) | temp , NFC_WRPROT_UNLOCK_BLK_ADD0);
 +			/* Unlock Block Command for given address range */
 +			writel(0x84 , NFC_WRPROT);
 +		}
@@ -897,7 +900,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +{
 +	if (host->pagesize_2k){
 +		NFC_SET_SPAS(0x20); /* set spare to 64bytes */
-+		writel(0x7020A139, NFC_CONFIG2); /* set 2k page and 64bytes spare */
++		writel(0x7020A0B9, NFC_CONFIG2); /* set 2k page and 64bytes spare */
 +	}
 +}
 +

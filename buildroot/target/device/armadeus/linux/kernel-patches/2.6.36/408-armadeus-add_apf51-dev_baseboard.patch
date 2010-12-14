@@ -1,0 +1,99 @@
+Add APF51Dev baseboard support.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/mach-mx5/Kconfig
+===================================================================
+--- linux-2.6.36.orig/arch/arm/mach-mx5/Kconfig	2010-12-01 09:33:55.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-mx5/Kconfig	2010-12-01 09:37:01.000000000 +0100
+@@ -49,4 +49,21 @@
+ 	  Include support for Armadeus Systems APF51 System On Module. This
+ 	  includes specific configurations for the board and its peripherals.
+ 
++config MACH_APF51_HAS_BASEBOARD
++	bool
++
++choice
++	prompt "Baseboard"
++	depends on MACH_APF51
++	default MACH_APF51_DEV
++
++config MACH_APF51_DEV
++	prompt "Armadeus Systems APF51Dev development board"
++	bool
++	select MACH_APF51_HAS_BASEBOARD
++	help
++	  This selects the APF51Dev as baseboard and adds board's specific
++	  devices.
++endchoice
++
+ endif
+Index: linux-2.6.36/arch/arm/mach-mx5/Makefile
+===================================================================
+--- linux-2.6.36.orig/arch/arm/mach-mx5/Makefile	2010-12-01 09:35:33.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-mx5/Makefile	2010-12-01 09:37:44.000000000 +0100
+@@ -10,3 +10,4 @@
+ obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
+ obj-$(CONFIG_MACH_EUKREA_MBIMX51_BASEBOARD) += eukrea_mbimx51-baseboard.o
+ obj-$(CONFIG_MACH_APF51) += board-apf51.o
++obj-$(CONFIG_MACH_APF51_DEV) += apf51-dev-baseboard.o
+Index: linux-2.6.36/arch/arm/mach-mx5/apf51-dev-baseboard.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/mach-mx5/apf51-dev-baseboard.c	2010-12-01 14:35:46.000000000 +0100
+@@ -0,0 +1,55 @@
++ /*
++ * apf51-dev-baseboard.c
++ * Support for APF51's development baseboard
++ *
++ * Copyright (C) 2010 Armadeus Systems <support@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/gpio.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++
++#include <mach/iomux-mx51.h>
++
++#include "devices.h"
++
++static struct pad_desc apf51dev_pads[] = {
++	/* SD1 */
++	MX51_PAD_SD1_CMD__SD1_CMD,
++	MX51_PAD_SD1_CLK__SD1_CLK,
++	MX51_PAD_SD1_DATA0__SD1_DATA0,
++	MX51_PAD_SD1_DATA1__SD1_DATA1,
++	MX51_PAD_SD1_DATA2__SD1_DATA2,
++	MX51_PAD_SD1_DATA3__SD1_DATA3,
++
++	/* SD2 */
++	MX51_PAD_SD2_CMD__SD2_CMD,
++	MX51_PAD_SD2_CLK__SD2_CLK,
++	MX51_PAD_SD2_DATA0__SD2_DATA0,
++	MX51_PAD_SD2_DATA1__SD2_DATA1,
++	MX51_PAD_SD2_DATA2__SD2_DATA2,
++	MX51_PAD_SD2_DATA3__SD2_DATA3,
++};
++
++void __init apf51_baseboard_init(void)
++{
++	printk("    Registering APF51Dev ressources:");
++
++	mxc_iomux_v3_setup_multiple_pads(apf51dev_pads,
++					ARRAY_SIZE(apf51dev_pads));
++
++	printk(" done\n");
++}

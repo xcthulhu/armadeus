@@ -1,0 +1,56 @@
+Declare USBH2 pins in IOMUX.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/iomux-mx51.h
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/iomux-mx51.h	2010-11-30 18:13:14.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/iomux-mx51.h	2010-11-30 19:09:13.000000000 +0100
+@@ -43,6 +43,7 @@
+ #define MX51_USBH1_PAD_CTRL	(PAD_CTL_SRE_FAST | PAD_CTL_DSE_HIGH | \
+ 				PAD_CTL_PUS_100K_UP | PAD_CTL_PUE | \
+ 				PAD_CTL_PKE | PAD_CTL_HYS)
++#define MX51_USBH2_PAD_CTRL	MX51_USBH1_PAD_CTRL
+ #define MX51_GPIO_PAD_CTRL		(PAD_CTL_DSE_HIGH | PAD_CTL_PKE | \
+ 				PAD_CTL_SRE_FAST)
+ 
+@@ -70,17 +71,25 @@
+ #define MX51_PAD_EIM_DA14__EIM_DA14		IOMUX_PAD(0x7bc, 0x054, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_DA15__EIM_DA15		IOMUX_PAD(0x7bc, 0x058, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_D16__GPIO_2_0              IOMUX_PAD(0x3f0, 0x05c, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D16__USBH2_DATA0		IOMUX_PAD(0x3f0, 0x05c, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D16__I2C1_SDA		IOMUX_PAD(0x3f0, 0x05c, (4 | IOMUX_CONFIG_SION), \
+ 							0x09b4, 0, MX51_I2C_PAD_CTRL)
+ #define MX51_PAD_EIM_D17__GPIO_2_1              IOMUX_PAD(0x3f4, 0x060, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D17__USBH2_DATA1		IOMUX_PAD(0x3f4, 0x060, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D18__GPIO_2_2              IOMUX_PAD(0x3f8, 0x064, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D18__USBH2_DATA2		IOMUX_PAD(0x3f8, 0x064, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D19__GPIO_2_3              IOMUX_PAD(0x3fc, 0x068, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D19__USBH2_DATA3		IOMUX_PAD(0x3fc, 0x068, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D19__I2C1_SCL		IOMUX_PAD(0x3fc, 0x068, (4 | IOMUX_CONFIG_SION), \
+ 							0x09b0, 0, MX51_I2C_PAD_CTRL)
+ #define MX51_PAD_EIM_D20__GPIO_2_4              IOMUX_PAD(0x400, 0x06c, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D20__USBH2_DATA4		IOMUX_PAD(0x400, 0x06c, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D21__GPIO_2_5		IOMUX_PAD(0x404, 0x070, 1, 0x0,   0, MX51_GPIO_PAD_CTRL)
++#define MX51_PAD_EIM_D21__USBH2_DATA5		IOMUX_PAD(0x404, 0x070, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D22__GPIO_2_6              IOMUX_PAD(0x408, 0x074, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D22__USBH2_DATA6		IOMUX_PAD(0x408, 0x074, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D23__GPIO_2_7              IOMUX_PAD(0x40c, 0x078, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_D23__USBH2_DATA7		IOMUX_PAD(0x40c, 0x078, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D24__UART3_CTS             IOMUX_PAD(0x410, 0x07c, 3, 0x0,   0, MX51_UART3_PAD_CTRL)
+ #define MX51_PAD_EIM_D25__UART3_RXD             IOMUX_PAD(0x414, 0x080, 3, 0x9f4, 0, MX51_UART3_PAD_CTRL)
+ #define MX51_PAD_EIM_D25__UART2_CTS		IOMUX_PAD(0x414, 0x080, 4, 0x0,   0, MX51_UART2_PAD_CTRL)
+@@ -100,9 +109,13 @@
+ #define MX51_PAD_EIM_A22__GPIO_2_16             IOMUX_PAD(0x448, 0x0b4, 1, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_A23__GPIO_2_17             IOMUX_PAD(0x44c, 0x0b8, 1, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_A24__GPIO_2_18             IOMUX_PAD(0x450, 0x0bc, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_A24__USBH2_CLK		IOMUX_PAD(0x450, 0x0bc, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_A25__GPIO_2_19             IOMUX_PAD(0x454, 0x0c0, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_A25__USBH2_DIR		IOMUX_PAD(0x454, 0x0c0, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_A26__GPIO_2_20             IOMUX_PAD(0x458, 0x0c4, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_A26__USBH2_STP		IOMUX_PAD(0x458, 0x0c4, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_A27__GPIO_2_21             IOMUX_PAD(0x45c, 0x0c8, 1, 0x0,   0, NO_PAD_CTRL)
++#define MX51_PAD_EIM_A27__USBH2_NXT		IOMUX_PAD(0x45c, 0x0c8, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_EB0__EIM_EB0               IOMUX_PAD(0x460, 0x0cc, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_EB1__EIM_EB1               IOMUX_PAD(0x464, 0x0d0, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_EB2__GPIO_2_22             IOMUX_PAD(0x468, 0x0d4, 1, 0x0,   0, NO_PAD_CTRL)

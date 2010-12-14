@@ -31,8 +31,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-#ifdef IMX27
+#if defined(IMX27)
 #include "imx27regs.h"
+#elif defined(IMX51)
+#include "imx51regs.h"
 #else
 #include "imxregs.h"
 #endif

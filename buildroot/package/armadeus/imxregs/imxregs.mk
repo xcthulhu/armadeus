@@ -9,15 +9,7 @@ IMXREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/imxregs/
 IMXREGS_DIR:=$(BUILD_DIR)/imxregs-$(IMXREGS_VER)
 IMXREGS_CAT:=zcat
 CPU_NAME=$(call qstrip,$(BR2_CPU_NAME))
-ifeq ($(CPU_NAME),imx27)
-IMXREGS_BINARY:=imx27regs
-else
- ifeq ($(CPU_NAME),imxl)
- IMXREGS_BINARY:=imxregs
- else
- IMXREGS_BINARY:=unknown_arch
- endif
-endif
+IMXREGS_BINARY:=$(CPU_NAME)regs
 IMXREGS_TARGET_BINARY:=usr/bin/imxregs
 
 $(IMXREGS_DIR)/imxregs.c:
