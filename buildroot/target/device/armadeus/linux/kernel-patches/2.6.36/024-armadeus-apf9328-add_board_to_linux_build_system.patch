@@ -1,0 +1,77 @@
+--- a/arch/arm/mach-imx/Kconfig	2010-11-29 07:34:56.000000000 +0100
++++ b/arch/arm/mach-imx/Kconfig	2010-11-27 14:51:34.000000000 +0100
+@@ -13,6 +13,9 @@
+ config MACH_MXLADS
+ 	bool
+ 
++choice
++	prompt "Development board selection"
++
+ config ARCH_MX1ADS
+ 	bool "MX1ADS platform"
+ 	select MACH_MXLADS
+@@ -27,6 +30,53 @@
+ 	help
+ 	  Say Y here if you are using a Synertronixx scb9328 board
+ 
++config MACH_APF9328
++	bool "APF9328"
++	depends on ARCH_MX1
++	select IMX_HAVE_PLATFORM_IMX_UART
++	select IMX_HAVE_PLATFORM_IMX_I2C
++	select IMX_HAVE_PLATFORM_SPI_IMX
++	select HAVE_FB_IMX
++	select SERIAL_IMX_UART1
++	help
++	  Say Yes here if you are using the Armadeus APF9328 development board
++
++endchoice
++
++config MACH_APF9328_FPGA
++	bool "Board has a FPGA"
++	depends on MACH_APF9328
++	help
++	  Select this if your APF9328 has an onboard FPGA
++
++choice
++	prompt "Flash available on board"
++	depends on MACH_APF9328
++	default IMX_APF9328_FLASH_16MB
++
++config IMX_APF9328_FLASH_8MB
++	bool "8MB"
++
++config IMX_APF9328_FLASH_16MB
++	bool "16MB"
++
++endchoice
++
++choice
++	prompt "Baseboard"
++	depends on MACH_APF9328
++	default MACH_APF9328_DEV
++
++config MACH_APF9328_DEV
++	prompt "DevLight/DevFull"
++	bool
++	help
++	  This selects the APF9328_DevLight/DevFull as baseboard. You have
++	  to manually activates the devices you want to use if you have a
++	  DevFull.
++
++endchoice
++
+ endif
+ 
+ if ARCH_MX2
+--- a/arch/arm/mach-imx/Makefile	2010-11-29 07:34:56.000000000 +0100
++++ b/arch/arm/mach-imx/Makefile	2010-11-22 18:41:14.000000000 +0100
+@@ -18,6 +18,8 @@
+ obj-$(CONFIG_MX1_VIDEO)	+= mx1-camera-fiq.o mx1-camera-fiq-ksym.o
+ 
+ obj-$(CONFIG_ARCH_MX1ADS) += mach-mx1ads.o
++obj-$(CONFIG_MACH_APF9328) += apf9328.o
++obj-$(CONFIG_MACH_APF9328_DEV) += apf9328-dev.o
+ obj-$(CONFIG_MACH_SCB9328) += mach-scb9328.o
+ 
+ obj-$(CONFIG_MACH_MX21ADS) += mach-mx21ads.o

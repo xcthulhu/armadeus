@@ -6,7 +6,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/fs/ubi/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/fs/ubi/Config.in	2010-11-01 19:43:55.000000000 +0100
++++ buildroot/fs/ubi/Config.in	2010-12-14 08:27:38.000000000 +0100
 @@ -0,0 +1,22 @@
 +config BR2_TARGET_ROOTFS_UBI
 +	depends on BR2_TARGET_ROOTFS_UBIFS
@@ -33,7 +33,7 @@ Index: buildroot/fs/ubi/Config.in
 Index: buildroot/fs/ubi/ubi.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/fs/ubi/ubi.mk	2010-11-09 14:56:46.000000000 +0100
++++ buildroot/fs/ubi/ubi.mk	2010-12-14 08:44:21.000000000 +0100
 @@ -0,0 +1,24 @@
 +#############################################################
 +#
@@ -48,7 +48,7 @@ Index: buildroot/fs/ubi/ubi.mk
 +endif
 +
 +
-+ROOTFS_UBI_DEPENDENCIES = ubifs-root
++ROOTFS_UBI_DEPENDENCIES = rootfs-ubifs
 +
 +define ROOTFS_UBI_CMD
 +	cp fs/ubi/ubinize.cfg . ;\
@@ -62,7 +62,7 @@ Index: buildroot/fs/ubi/ubi.mk
 Index: buildroot/fs/ubi/ubinize.cfg
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/fs/ubi/ubinize.cfg	2010-11-01 19:43:55.000000000 +0100
++++ buildroot/fs/ubi/ubinize.cfg	2010-12-14 08:27:38.000000000 +0100
 @@ -0,0 +1,7 @@
 +[ubifs]
 +mode=ubi
@@ -73,8 +73,8 @@ Index: buildroot/fs/ubi/ubinize.cfg
 +vol_flags=autoresize
 Index: buildroot/fs/ubifs/Config.in
 ===================================================================
---- buildroot.orig/fs/ubifs/Config.in	2010-11-01 19:39:39.000000000 +0100
-+++ buildroot/fs/ubifs/Config.in	2010-11-01 19:43:55.000000000 +0100
+--- buildroot.orig/fs/ubifs/Config.in	2010-11-30 16:52:43.000000000 +0100
++++ buildroot/fs/ubifs/Config.in	2010-12-14 08:27:38.000000000 +0100
 @@ -77,3 +77,5 @@
  
  endchoice
