@@ -1,0 +1,27 @@
+--- a/drivers/spi/Kconfig	2010-12-07 13:15:03.000000000 +0100
++++ b/drivers/spi/Kconfig	2010-12-07 13:14:38.000000000 +0100
+@@ -379,6 +379,14 @@
+ 	  sysfs interface, with each line presented as a kind of GPIO
+ 	  exposing both switch control and diagnostic feedback.
+ 
++config SPI_TSC2102
++	depends on SPI_MASTER
++	depends on HWMON = n || HWMON
++	tristate "TSC2102 codec support"
++	---help---
++	  Say Y here if you want support for the TSC2102 chip.  It
++	  will be needed for the touchscreen driver on some boards.
++
+ #
+ # Add new SPI protocol masters in alphabetical order above this line
+ #
+--- a/drivers/spi/Makefile	2010-12-07 13:15:11.000000000 +0100
++++ b/drivers/spi/Makefile	2010-12-07 13:15:27.000000000 +0100
+@@ -57,6 +57,7 @@
+ # SPI protocol drivers (device/link on bus)
+ obj-$(CONFIG_SPI_SPIDEV)	+= spidev.o
+ obj-$(CONFIG_SPI_TLE62X0)	+= tle62x0.o
++obj-$(CONFIG_SPI_TSC2102)  += tsc2102.o
+ # 	... add above this line ...
+ 
+ # SPI slave controller drivers (upstream link)
