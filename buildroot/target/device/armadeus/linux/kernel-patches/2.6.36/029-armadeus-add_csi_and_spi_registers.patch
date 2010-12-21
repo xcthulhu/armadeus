@@ -1,0 +1,49 @@
+--- linux-2.6.36/drivers/spi/spi_imx.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36.new/drivers/spi/spi_imx.c	2010-11-29 08:00:31.000000000 +0100
+@@ -43,6 +43,9 @@
+ #define MXC_CSPITXDATA		0x04
+ #define MXC_CSPICTRL		0x08
+ #define MXC_CSPIINT		0x0c
++#define MXC_TEST		0x10
++#define MXC_PERIOD		0x14
++#define MXC_DMA			0x18
+ #define MXC_RESET		0x1c
+ 
+ #define MX3_CSPISTAT		0x14
+--- linux-2.6.36/drivers/media/video/mx1_camera.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36.new/drivers/media/video/mx1_camera.c	2010-11-29 08:04:20.000000000 +0100
+@@ -50,9 +50,13 @@
+  * CSI registers
+  */
+ #define CSICR1		0x00			/* CSI Control Register 1 */
++#define CSICR2		0x04			/* CSI Control Register 2 */
+ #define CSISR		0x08			/* CSI Status Register */
++#define CSISTATR	0x0C
+ #define CSIRXR		0x10			/* CSI RxFIFO Register */
+ 
++#define CSICR1_RXOR_INTEN	(1 << 24)
++#define CSICR1_RXFF_INTEN	(1 << 18)
+ #define CSICR1_RXFF_LEVEL(x)	(((x) & 0x3) << 19)
+ #define CSICR1_SOF_POL		(1 << 17)
+ #define CSICR1_SOF_INTEN	(1 << 16)
+@@ -60,8 +64,10 @@
+ #define CSICR1_MCLKEN		(1 << 9)
+ #define CSICR1_FCC		(1 << 8)
+ #define CSICR1_BIG_ENDIAN	(1 << 7)
++#define CSICR1_CLR_STATINFO	(1 << 6)
+ #define CSICR1_CLR_RXFIFO	(1 << 5)
+ #define CSICR1_GCLK_MODE	(1 << 4)
++#define CSICR1_INV_DATA		(1 << 3)
+ #define CSICR1_DATA_POL		(1 << 2)
+ #define CSICR1_REDGE		(1 << 1)
+ #define CSICR1_EN		(1 << 0)
+--- a/arch/arm/plat-mxc/include/mach/mx1.h	2010-11-29 09:20:02.000000000 +0100
++++ b/arch/arm/plat-mxc/include/mach/mx1.h	2010-11-29 09:20:19.000000000 +0100
+@@ -109,6 +109,7 @@
+ #define MX1_PWM_INT		34
+ #define MX1_SDHC_INT		35
+ #define MX1_INT_I2C		39
++#define MX1_SPI2_INT		40
+ #define MX1_CSPI_INT		41
+ #define MX1_SSI_TX_INT		42
+ #define MX1_SSI_TX_ERR_INT	43

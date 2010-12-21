@@ -1,0 +1,83 @@
+--- a/drivers/video/Kconfig	2010-10-20 22:30:22.000000000 +0200
++++ b/drivers/video/Kconfig	2010-12-16 12:46:56.000000000 +0100
+@@ -410,6 +410,80 @@
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT
+ 
++choice
++        depends on FB_IMX || FB_MXC
++        prompt "LCD Panel"
++        default FB_IMX_SHARP_LQ043_TFT
++
++# Please order LCDs by constructor alphabetical order !
++
++config FB_IMX_CHIMEI_LW700AT9003_TFT
++	bool "Chimei LW700AT9003"
++	depends on MACH_APF27
++	help
++	  Chimei LW700AT9003, a 7" 18 bits, TFT panel.
++	  The native resolution is 800x600.
++
++config FB_IMX_HITACHI_TX12D17VM1BDP_TFT
++	bool "Hitachi TX12D17VM1BDP"
++	depends on MACH_APF27
++	help
++	  HITACHI_TX12D17VM1BDP, a 5.7" 18 bits, TFT panel.
++	  The native resolution is 640x480.
++
++config FB_IMX_MICROTIPS_MTF_T035_TFT
++	bool "Microtips MTF-T035"
++	depends on MACH_APF9328
++	help
++	  Microtips MTF-T035, a 3.5" 24 bits color 320x240, TFT panel.
++	  The native resolution is 320x240.
++
++config FB_IMX_MOTOROLA_A910_TFT
++	bool "Motorola A910 TFT"
++	depends on MACH_APF9328
++	help
++	  Motorola A910 screen, a 1.2" color QVGA, TFT panel.
++	  The native resolution is 240x320.
++
++config FB_IMX_OPTREX_F51900_CSTN
++	bool "Optrex F-51900"
++	depends on MACH_APF9328
++	help
++	  Optrex 5.7" 8 bits color STN.
++	  The native resolution is 320x240.
++
++config FB_IMX_OPTREX_T51638D084_TFT
++	bool "Optrex T51638D084"
++	depends on MACH_APF27
++	help
++	  OPTREX_T51638D084, a 8.4" 18 bits, TFT panel.
++	  The native resolution is 640x480.
++
++config FB_IMX_SHARP_LQ043_TFT
++	bool "Sharp LQ043"
++	help
++	  Sharp LQ043, a 4.3" 24 bits color 480x272, TFT panel.
++	  The native resolution is 480x272.
++
++config FB_IMX_SHARP_LQ057_TFT
++	bool "Sharp LQ057"
++	help
++	  Sharp LQ057, a 3.5" 18 bits color QVGA, TFT panel.
++	  The native resolution is 320x240.
++
++# Please let the following entry always in last position:
++config FB_IMX_CUSTOM_LCD
++	bool "Custom LCD"
++	depends on MACH_APF27
++	help
++	  Freely hackable LCD. Modify its parameters directly in
++	  drivers/video/mxc/mxcfb_modedb.c.
++
++# Please let these
++# two lines here
++
++endchoice
++
+ config FB_CYBER2000
+ 	tristate "CyberPro 2000/2010/5000 support"
+ 	depends on FB && PCI && (BROKEN || !SPARC64)
