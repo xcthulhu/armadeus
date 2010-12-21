@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Fri Nov  5 16:15:18 2010
+# Wed Dec  8 16:35:18 2010
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="0.10.0-svn"
@@ -301,7 +301,8 @@ BR2_PACKAGE_BUSYBOX_HIDE_OTHERS=y
 #
 # The minimum needed to build a uClibc development system
 #
-# BR2_PACKAGE_FLEX is not set
+BR2_PACKAGE_FLEX=y
+BR2_PACKAGE_FLEX_LIBFL=y
 # BR2_PACKAGE_GCC_TARGET is not set
 # BR2_PACKAGE_MAKE is not set
 
@@ -401,7 +402,7 @@ BR2_PACKAGE_BOA=y
 #
 # bluez-utils not available (need dbus)
 #
-# BR2_PACKAGE_BRIDGE is not set
+BR2_PACKAGE_BRIDGE=y
 # BR2_PACKAGE_DNSMASQ is not set
 # BR2_PACKAGE_DROPBEAR is not set
 BR2_PACKAGE_ETHTOOL=y
@@ -410,11 +411,15 @@ BR2_PACKAGE_ETHTOOL=y
 # BR2_PACKAGE_IRDA_UTILS is not set
 # BR2_PACKAGE_IPERF is not set
 # BR2_PACKAGE_IPROUTE2 is not set
-
-#
-# ipsec-tools	- disabled (requires openssl, flex and the flex library (libfl.a) )
-#
-# BR2_PACKAGE_IPTABLES is not set
+BR2_PACKAGE_IPSEC_TOOLS=y
+BR2_PACKAGE_IPSEC_TOOLS_ADMINPORT=y
+# BR2_PACKAGE_IPSEC_TOOLS_NATT is not set
+BR2_PACKAGE_IPSEC_TOOLS_FRAG=y
+BR2_PACKAGE_IPSEC_TOOLS_STATS=y
+BR2_PACKAGE_IPSEC_TOOLS_IPV6=y
+# BR2_PACKAGE_IPSEC_TOOLS_READLINE is not set
+BR2_PACKAGE_IPSEC_TOOLS_LIBS=y
+BR2_PACKAGE_IPTABLES=y
 # BR2_PACKAGE_KISMET is not set
 # BR2_PACKAGE_L2TP is not set
 # BR2_PACKAGE_LIBCGI is not set
