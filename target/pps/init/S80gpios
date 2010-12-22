@@ -1,7 +1,9 @@
+#!/bin/sh
+
 #
 #	THE ARMADEUS PROJECT
 #
-#  Copyright (C) year  The armadeus systems team [Jérémie Scheer]
+#  Copyright (C) 2010  The armadeus systems team [Jérémie Scheer]
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +20,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-#!/bin/sh
 # 
 # Script used to configure user space usable GPIOs on PPS 
 #
