@@ -1,0 +1,26 @@
+Bump IPSec-Tools to version 0.8-alpha201022 to make it work with Linux Kernel 2.6.29 and
+disable security context.
+
+Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
+
+Index: buildroot/package/ipsec-tools/ipsec-tools.mk
+===================================================================
+--- buildroot.orig/package/ipsec-tools/ipsec-tools.mk	2010-12-10 16:51:06.000000000 +0100
++++ buildroot/package/ipsec-tools/ipsec-tools.mk	2010-12-10 16:51:38.000000000 +0100
+@@ -4,7 +4,7 @@
+ #
+ #############################################################
+ 
+-IPSEC_TOOLS_VERSION:=0.6.7
++IPSEC_TOOLS_VERSION:=0.8-alpha20101022
+ IPSEC_TOOLS_SOURCE:=ipsec-tools-$(IPSEC_TOOLS_VERSION).tar.bz2
+ IPSEC_TOOLS_CAT:=$(BZCAT)
+ IPSEC_TOOLS_DIR:=$(BUILD_DIR)/ipsec-tools-$(IPSEC_TOOLS_VERSION)
+@@ -81,6 +81,7 @@
+ 	  --without-libpam \
+ 	  --disable-gssapi \
+ 	  --with-kernel-headers=$(STAGING_DIR)/usr/include \
++	  --enable-security-context=no \
+ 	  $(IPSEC_TOOLS_CONFIG_FLAGS) \
+ 	)
+ 	# simpler than patching that cruft..

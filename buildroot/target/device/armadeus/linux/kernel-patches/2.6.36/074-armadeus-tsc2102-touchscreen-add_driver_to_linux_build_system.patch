@@ -1,8 +1,8 @@
 Index: linux-2.6.36/drivers/input/touchscreen/Kconfig
 ===================================================================
---- a/drivers/input/touchscreen/Kconfig	2009-03-24 00:12:14.000000000 +0100
-+++ b/drivers/input/touchscreen/Kconfig	2009-03-30 11:14:08.000000000 +0200
-@@ -242,6 +242,20 @@
+--- linux-2.6.36.orig/drivers/input/touchscreen/Kconfig	2010-12-22 14:32:51.000000000 +0100
++++ linux-2.6.36/drivers/input/touchscreen/Kconfig	2010-12-22 14:33:05.000000000 +0100
+@@ -364,6 +364,20 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called atmel_tsadcc.
  
@@ -25,9 +25,9 @@ Index: linux-2.6.36/drivers/input/touchscreen/Kconfig
  	depends on AC97_BUS
 Index: linux-2.6.36/drivers/input/touchscreen/Makefile
 ===================================================================
---- a/drivers/input/touchscreen/Makefile	2009-03-24 00:12:14.000000000 +0100
-+++ b/drivers/input/touchscreen/Makefile	2009-03-30 11:15:35.000000000 +0200
-@@ -25,6 +25,7 @@
+--- linux-2.6.36.orig/drivers/input/touchscreen/Makefile	2010-12-22 14:32:51.000000000 +0100
++++ linux-2.6.36/drivers/input/touchscreen/Makefile	2010-12-22 14:33:05.000000000 +0100
+@@ -40,6 +40,7 @@
  obj-$(CONFIG_TOUCHSCREEN_TOUCHIT213)	+= touchit213.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+= touchright.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
