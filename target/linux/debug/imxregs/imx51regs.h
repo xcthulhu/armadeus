@@ -72,4 +72,18 @@ static struct reg_info regs[] =
 { "GPTICR1_1",		0x73fa001c, 0, 0xffffffff, 'x', "GPT1 Input capture Register 1" },
 { "GPTICR2_1",		0x73fa0020, 0, 0xffffffff, 'x', "GPT1 Input capture Register 2" },
 { "GPTCNT_1",		0x73fa0024, 0, 0xffffffff, 'x', "GPT1 Counter Register" },
+/* I2C1 */
+{ "IADR_1",	0x83fc8000, 0, 0xffffffff, 'x', "I2C1 Address Register" },
+{ "IFDR_1",	0x83fc8004, 0, 0xffffffff, 'x', "I2C1 Frequency Divider Register" },
+{ "I2CR_1",	0x83fc8008, 0, 0xffffffff, 'x', "I2C1 Control Register" },
+{ "I2SR_1",	0x83fc800c, 0, 0xffffffff, 'x', "I2C1 Status Register" },
+{ "I2DR_1",	0x83fc8010, 0, 0xffffffff, 'x', "I2C1 Data I/O Register" },
+/* I2C2 */
+{ "IADR_2",	0x83fc4000, 0, 0xffffffff, 'x', "I2C2 Address Register" },
+{ "IFDR_2",	0x83fc4004, 0, 0xffffffff, 'x', "I2C2 Frequency Divider Register" },
+{ "I2CR_2",	0x83fc4008, 0, 0xffffffff, 'x', "I2C2 Control Register" },
+{ "I2SR_2",	0x83fc400c, 0, 0xffffffff, 'x', "I2C2 Status Register" },
+{ "I2DR_2",	0x83fc4010, 0, 0xffffffff, 'x', "I2C2 Data I/O Register" },
+/* FEC */
+{ "EIR",     0x83fec004, 0, 0xffffffff, 'x', "FEC Interrupt Event Register" },
 };
