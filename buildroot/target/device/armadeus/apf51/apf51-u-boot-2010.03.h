@@ -125,7 +125,7 @@
 	CONFIG_CONSOLE " root=/dev/mtdblock4 rootfstype=jffs2 " MTDPARTS_DEFAULT
 
 #define CONFIG_CONSOLE "console=ttymxc1,"MK_STR(CONFIG_BAUDRATE)
-#define CONFIG_MTDMAP   "mxc_nand.0"
+#define CONFIG_MTDMAP   "mxc_nand"
 #define MTDIDS_DEFAULT	"nand0=" CONFIG_MTDMAP
 #define MTDPARTS_DEFAULT "mtdparts=" CONFIG_MTDMAP ":1M(U-boot)ro,"	\
 			"1M(U-boot_env),1M(firmware),"			\
