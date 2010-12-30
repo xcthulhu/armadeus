@@ -46,3 +46,4 @@ rm -rf buildroot/package/lbreakout2/
 rm -rf buildroot/package/ltris/
 rm -rf buildroot/package/qwt/
 rm -rf buildroot/fs/ubi/
+rm -f buildroot/package/flex/flex-2.5.35-undefine_rpl_malloc_and_realloc.patch
