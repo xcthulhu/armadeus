@@ -1,0 +1,22 @@
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/iomux-mx51.h
+===================================================================
+--- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/iomux-mx51.h	2010-12-29 10:35:31.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/iomux-mx51.h	2010-12-29 10:35:55.000000000 +0100
+@@ -107,11 +107,15 @@
+ #define MX51_PAD_EIM_D23__GPIO_2_7              IOMUX_PAD(0x40c, 0x078, 1, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_D23__USBH2_DATA7		IOMUX_PAD(0x40c, 0x078, 2, 0x0,   0, MX51_USBH2_PAD_CTRL)
+ #define MX51_PAD_EIM_D24__UART3_CTS             IOMUX_PAD(0x410, 0x07c, 3, 0x0,   0, MX51_UART3_PAD_CTRL)
++#define MX51_PAD_EIM_D24__I2C2_SDA		IOMUX_PAD(0x410, 0x07c, (4 | IOMUX_CONFIG_SION), \
++							0x9bc, 0, MX51_I2C_PAD_CTRL)
+ #define MX51_PAD_EIM_D25__UART3_RXD             IOMUX_PAD(0x414, 0x080, 3, 0x9f4, 0, MX51_UART3_PAD_CTRL)
+ #define MX51_PAD_EIM_D25__UART2_CTS		IOMUX_PAD(0x414, 0x080, 4, 0x0,   0, MX51_UART2_PAD_CTRL)
+ #define MX51_PAD_EIM_D26__UART3_TXD             IOMUX_PAD(0x418, 0x084, 3, 0x0,   0, MX51_UART3_PAD_CTRL)
+ #define MX51_PAD_EIM_D26__UART2_RTS		IOMUX_PAD(0x418, 0x084, 4, 0x9e8, 3, MX51_UART2_PAD_CTRL)
+ #define MX51_PAD_EIM_D27__UART3_RTS             IOMUX_PAD(0x41c, 0x088, 3, 0x9f0, 3, MX51_UART3_PAD_CTRL)
++#define MX51_PAD_EIM_D27__I2C2_SCL		IOMUX_PAD(0x41c, 0x088, (4 | IOMUX_CONFIG_SION), \
++							0x9b8, 0, MX51_I2C_PAD_CTRL)
+ #define MX51_PAD_EIM_D28__EIM_D28               IOMUX_PAD(0x420, 0x08c, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_D29__EIM_D29               IOMUX_PAD(0x424, 0x090, 0, 0x0,   0, NO_PAD_CTRL)
+ #define MX51_PAD_EIM_D30__EIM_D30               IOMUX_PAD(0x428, 0x094, 0, 0x0,   0, NO_PAD_CTRL)

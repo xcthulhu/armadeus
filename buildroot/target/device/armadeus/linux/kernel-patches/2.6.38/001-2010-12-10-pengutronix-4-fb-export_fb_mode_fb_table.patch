@@ -1,0 +1,51 @@
+The different modes can be useful for drivers. Currently there is
+no way to expose the modes to sysfs, so export them.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ drivers/video/modedb.c |    7 ++++++-
+ include/linux/fb.h     |    3 +++
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/video/modedb.c b/drivers/video/modedb.c
+index 0a4dbdc..82122a9 100644
+--- a/drivers/video/modedb.c
++++ b/drivers/video/modedb.c
+@@ -36,7 +36,7 @@ EXPORT_SYMBOL_GPL(fb_mode_option);
+      *  Standard video mode definitions (taken from XFree86)
+      */
+ 
+-static const struct fb_videomode modedb[] = {
++const struct fb_videomode modedb[] = {
+     {
+ 	/* 640x400 @ 70 Hz, 31.5 kHz hsync */
+ 	NULL, 70, 640, 400, 39721, 40, 24, 39, 9, 96, 2,
+@@ -277,6 +277,11 @@ static const struct fb_videomode modedb[] = {
+     },
+ };
+ 
++const struct fb_videomode *fb_modes = modedb;
++EXPORT_SYMBOL(fb_modes);
++const int num_fb_modes = ARRAY_SIZE(modedb);
++EXPORT_SYMBOL(num_fb_modes);
++
+ #ifdef CONFIG_FB_MODE_HELPERS
+ const struct fb_videomode vesa_modes[] = {
+ 	/* 0 640x350-85 VESA */
+diff --git a/include/linux/fb.h b/include/linux/fb.h
+index d1631d3..e006172 100644
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -1151,6 +1151,9 @@ struct fb_videomode {
+ extern const char *fb_mode_option;
+ extern const struct fb_videomode vesa_modes[];
+ 
++extern const struct fb_videomode *fb_modes;
++extern const int num_fb_modes;
++
+ struct fb_modelist {
+ 	struct list_head list;
+ 	struct fb_videomode mode;
+-- 
+1.7.2.3
+
