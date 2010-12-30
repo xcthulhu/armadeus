@@ -1,69 +1,127 @@
 Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
 ===================================================================
 --- linux-2.6.36.orig/drivers/i2c/busses/i2c-imx.c	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2010-12-13 11:34:17.000000000 +0100
-@@ -304,12 +304,15 @@
- 		__func__, msgs->addr << 1);
++++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2010-12-29 18:36:16.000000000 +0100
+@@ -34,7 +34,6 @@
  
- 	/* write slave address */
+ /** Includes *******************************************************************
+ *******************************************************************************/
+-
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -214,10 +213,12 @@
+ static void i2c_imx_stop(struct imx_i2c_struct *i2c_imx)
+ {
+ 	unsigned int temp = 0;
++	int ret;
++
+ 
+ 	if (!i2c_imx->stopped) {
+ 		/* Stop I2C transaction */
+-		dev_dbg(&i2c_imx->adapter.dev, "<%s>\n", __func__);
++		dev_dbg(&i2c_imx->adapter.dev, "<%s>***\n", __func__);
+ 		temp = readb(i2c_imx->base + IMX_I2C_I2CR);
+ 		temp &= ~(I2CR_MSTA | I2CR_MTX);
+ 		writeb(temp, i2c_imx->base + IMX_I2C_I2CR);
+@@ -231,7 +232,9 @@
+ 	}
+ 
+ 	if (!i2c_imx->stopped) {
+-		i2c_imx_bus_busy(i2c_imx, 0);
++
++		ret = i2c_imx_bus_busy(i2c_imx, 0);
++
+ 		i2c_imx->stopped = 1;
+ 	}
+ 
+@@ -300,17 +303,27 @@
+ {
+ 	int i, result;
+ 
+-	dev_dbg(&i2c_imx->adapter.dev, "<%s> write slave address: addr=0x%x\n",
+-		__func__, msgs->addr << 1);
++	if ( (msgs->flags & I2C_M_NOSTART) == 0) {
++		/* write slave address */
++		if (msgs->flags & I2C_M_REV_DIR_ADDR) {
++			dev_dbg(&i2c_imx->adapter.dev,
++				"<%s> write slave address: addr=0x%x\n",
++				__func__, msgs->addr << 1 | 0x01);
++			writeb((msgs->addr << 1) | 0x01, i2c_imx->base + IMX_I2C_I2DR);
++		} else {
++			dev_dbg(&i2c_imx->adapter.dev,
++				"<%s> write slave address: addr=0x%x\n",
++				__func__, msgs->addr << 1);
++			writeb((msgs->addr << 1), i2c_imx->base + IMX_I2C_I2DR);
++		}
++		result = i2c_imx_trx_complete(i2c_imx);
++		if (result)
++			return result;
++		result = i2c_imx_acked(i2c_imx);
++		if (result != 0)
++			return result;
++	}
+ 
+-	/* write slave address */
 -	writeb(msgs->addr << 1, i2c_imx->base + IMX_I2C_I2DR);
-+	if (msgs->flags & I2C_M_REV_DIR_ADDR)
-+		writeb((msgs->addr << 1) | 0x01, i2c_imx->base + IMX_I2C_I2DR);
-+	else
-+		writeb((msgs->addr << 1), i2c_imx->base + IMX_I2C_I2DR);
- 	result = i2c_imx_trx_complete(i2c_imx);
- 	if (result)
- 		return result;
- 	result = i2c_imx_acked(i2c_imx);
+-	result = i2c_imx_trx_complete(i2c_imx);
 -	if (result)
-+	if ( (result != 0) && ((msgs[0].flags & I2C_M_IGNORE_NAK) == 0))
- 		return result;
+-		return result;
+-	result = i2c_imx_acked(i2c_imx);
+-	if (result)
+-		return result;
  	dev_dbg(&i2c_imx->adapter.dev, "<%s> write data\n", __func__);
  
-@@ -323,7 +326,7 @@
+ 	/* write data */
+@@ -323,7 +336,7 @@
  		if (result)
  			return result;
  		result = i2c_imx_acked(i2c_imx);
 -		if (result)
-+		if ( (result != 0) && ((msgs[i].flags & I2C_M_IGNORE_NAK) == 0))
++		if ( (result != 0) && ((msgs[0].flags & I2C_M_IGNORE_NAK) == 0))
  			return result;
  	}
  	return 0;
-@@ -339,12 +342,15 @@
- 		__func__, (msgs->addr << 1) | 0x01);
+@@ -334,18 +347,26 @@
+ 	int i, result;
+ 	unsigned int temp;
  
- 	/* write slave address */
+-	dev_dbg(&i2c_imx->adapter.dev,
+-		"<%s> write slave address: addr=0x%x\n",
+-		__func__, (msgs->addr << 1) | 0x01);
+-
+-	/* write slave address */
 -	writeb((msgs->addr << 1) | 0x01, i2c_imx->base + IMX_I2C_I2DR);
-+	if (msgs->flags & I2C_M_REV_DIR_ADDR)
-+		writeb((msgs->addr << 1), i2c_imx->base + IMX_I2C_I2DR);
-+	else
-+		writeb((msgs->addr << 1) | 0x01, i2c_imx->base + IMX_I2C_I2DR);
- 	result = i2c_imx_trx_complete(i2c_imx);
- 	if (result)
- 		return result;
- 	result = i2c_imx_acked(i2c_imx);
+-	result = i2c_imx_trx_complete(i2c_imx);
 -	if (result)
-+	if ( (result != 0) && ((msgs[0].flags & I2C_M_IGNORE_NAK) == 0))
- 		return result;
+-		return result;
+-	result = i2c_imx_acked(i2c_imx);
+-	if (result)
+-		return result;
++	if ( (msgs->flags & I2C_M_NOSTART) == 0) {
++		/* write slave address */
++		if (msgs->flags & I2C_M_REV_DIR_ADDR) {
++			dev_dbg(&i2c_imx->adapter.dev,
++			"<%s> write slave address: addr=0x%x\n",
++			__func__, (msgs->addr << 1));
++			writeb((msgs->addr << 1), i2c_imx->base + IMX_I2C_I2DR);
++		} else {
++			dev_dbg(&i2c_imx->adapter.dev,
++			"<%s> write slave address: addr=0x%x\n",
++			__func__, (msgs->addr << 1) | 0x01);
++			writeb((msgs->addr << 1) | 0x01, i2c_imx->base + IMX_I2C_I2DR);
++		}
++		result = i2c_imx_trx_complete(i2c_imx);
++		if (result)
++			return result;
++		result = i2c_imx_acked(i2c_imx);
++		if (result != 0)
++			return result;
++	}
  
  	dev_dbg(&i2c_imx->adapter.dev, "<%s> setup bus\n", __func__);
-@@ -354,6 +360,7 @@
- 	temp &= ~I2CR_MTX;
- 	if (msgs->len - 1)
- 		temp &= ~I2CR_TXAK;
-+	if (msgs->flags & I2C_M_NO_RD_ACK) temp |= I2CR_TXAK;
- 	writeb(temp, i2c_imx->base + IMX_I2C_I2CR);
- 	readb(i2c_imx->base + IMX_I2C_I2DR); /* dummy read */
  
-@@ -371,6 +378,7 @@
- 				"<%s> clear MSTA\n", __func__);
- 			temp = readb(i2c_imx->base + IMX_I2C_I2CR);
- 			temp &= ~(I2CR_MSTA | I2CR_MTX);
-+			if (msgs->flags & I2C_M_NO_RD_ACK) temp |= I2CR_TXAK;
- 			writeb(temp, i2c_imx->base + IMX_I2C_I2CR);
- 			i2c_imx_bus_busy(i2c_imx, 0);
- 			i2c_imx->stopped = 1;
-@@ -405,7 +413,7 @@
+@@ -405,7 +426,7 @@
  
  	/* read/write data */
  	for (i = 0; i < num; i++) {
@@ -72,7 +130,21 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  			dev_dbg(&i2c_imx->adapter.dev,
  				"<%s> repeated start\n", __func__);
  			temp = readb(i2c_imx->base + IMX_I2C_I2CR);
-@@ -454,7 +462,7 @@
+@@ -435,9 +456,13 @@
+ 			(temp & I2SR_RXAK ? 1 : 0));
+ #endif
+ 		if (msgs[i].flags & I2C_M_RD)
++		{
+ 			result = i2c_imx_read(i2c_imx, &msgs[i]);
++		}
+ 		else
++		{
+ 			result = i2c_imx_write(i2c_imx, &msgs[i]);
++		}
+ 		if (result)
+ 			goto fail0;
+ 	}
+@@ -454,7 +479,7 @@
  
  static u32 i2c_imx_func(struct i2c_adapter *adapter)
  {
