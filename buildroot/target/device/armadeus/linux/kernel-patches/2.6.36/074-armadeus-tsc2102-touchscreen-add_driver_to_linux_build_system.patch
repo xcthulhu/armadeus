@@ -1,0 +1,37 @@
+Index: linux-2.6.36/drivers/input/touchscreen/Kconfig
+===================================================================
+--- linux-2.6.36.orig/drivers/input/touchscreen/Kconfig	2010-12-22 14:32:51.000000000 +0100
++++ linux-2.6.36/drivers/input/touchscreen/Kconfig	2010-12-22 14:33:05.000000000 +0100
+@@ -364,6 +364,20 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called atmel_tsadcc.
+ 
++config TOUCHSCREEN_TSC2102
++	tristate "TSC 2102 based touchscreens"
++	depends on SPI_MASTER
++	select SPI_TSC2102
++	help
++	  Say Y here if you have a touchscreen interface using the
++	  TI TSC 2102 controller, and your board-specific initialization
++	  code includes that in its table of SPI devices.
++
++	  If unsure, say N (but it's safe to say "Y").
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called tsc2102_ts.
++
+ config TOUCHSCREEN_UCB1400
+ 	tristate "Philips UCB1400 touchscreen"
+ 	depends on AC97_BUS
+Index: linux-2.6.36/drivers/input/touchscreen/Makefile
+===================================================================
+--- linux-2.6.36.orig/drivers/input/touchscreen/Makefile	2010-12-22 14:32:51.000000000 +0100
++++ linux-2.6.36/drivers/input/touchscreen/Makefile	2010-12-22 14:33:05.000000000 +0100
+@@ -40,6 +40,7 @@
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHIT213)	+= touchit213.o
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+= touchright.o
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
++obj-$(CONFIG_TOUCHSCREEN_TSC2102)	+= tsc2102_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
+ obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o

@@ -1,0 +1,72 @@
+--- a/arch/arm/mach-imx/devices.h	2010-10-20 22:30:22.000000000 +0200
++++ b/arch/arm/mach-imx/devices.h	2010-11-22 18:44:10.000000000 +0100
+@@ -3,6 +3,7 @@
+ extern struct platform_device imx_rtc_device;
+ extern struct platform_device imx_wdt_device;
+ extern struct platform_device imx_usb_device;
++extern struct platform_device imx_mmc_device;
+ #endif
+ 
+ #if defined(CONFIG_MACH_MX21) || defined(CONFIG_MACH_MX27)
+--- a/arch/arm/mach-imx/devices.c	2010-10-20 22:30:22.000000000 +0200
++++ b/arch/arm/mach-imx/devices.c	2010-12-02 18:20:38.000000000 +0100
+@@ -45,6 +45,7 @@
+ #include "devices.h"
+ 
+ #if defined(CONFIG_ARCH_MX1)
++#include <mach/mx1.h>
+ static struct resource imx1_camera_resources[] = {
+ 	{
+ 		.start  = 0x00224000,
+@@ -184,6 +185,37 @@
+ {
+ 	return mxc_gpio_init(imx_gpio_ports, ARRAY_SIZE(imx_gpio_ports));
+ }
++
++static struct resource imx_mmc_resources[] = {
++	[0] = {
++		.start	= 0x00214000,
++		.end	= 0x002140FF,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= (MX1_SDHC_INT),
++		.end	= (MX1_SDHC_INT),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {	
++		.start	= MX1_DMA_REQ_SDHC,
++		.end	= MX1_DMA_REQ_SDHC,
++		.flags	= IORESOURCE_DMA,
++	},
++};
++static u64 imxmmmc_dmamask = 0xffffffffUL;
++
++struct platform_device imx_mmc_device = {
++	.name		= "imx-mmc",
++	.id			= 0,
++	.dev		= {
++		.dma_mask = &imxmmmc_dmamask,
++		.coherent_dma_mask = 0xffffffff,
++	},
++	.num_resources	= ARRAY_SIZE(imx_mmc_resources),
++	.resource		= imx_mmc_resources,
++};
++
+ #endif
+ 
+ #if defined(CONFIG_MACH_MX21) || defined(CONFIG_MACH_MX27)
+--- a/arch/arm/mach-imx/devices-imx1.h	2010-10-20 22:30:22.000000000 +0200
++++ b/arch/arm/mach-imx/devices-imx1.h	2010-11-22 18:41:14.000000000 +0100
+@@ -15,4 +15,10 @@
+ #define imx1_add_imx_uart0(pdata)	\
+ 	imx_add_imx_uart_3irq(0, MX1_UART1_BASE_ADDR, 0xd0, MX1_INT_UART1RX, MX1_INT_UART1TX, MX1_INT_UART1RTS, pdata)
+ #define imx1_add_imx_uart1(pdata)	\
+-	imx_add_imx_uart_3irq(0, MX1_UART2_BASE_ADDR, 0xd0, MX1_INT_UART2RX, MX1_INT_UART2TX, MX1_INT_UART2RTS, pdata)
++	imx_add_imx_uart_3irq(1, MX1_UART2_BASE_ADDR, 0xd0, MX1_INT_UART2RX, MX1_INT_UART2TX, MX1_INT_UART2RTS, pdata)
++
++#define imx1_add_spi_imx0(pdata)	\
++	imx_add_spi_imx(0, MX1_SPI1_BASE_ADDR, SZ_4K, MX1_CSPI_INT, pdata)
++#define imx1_add_spi_imx1(pdata)	\
++	imx_add_spi_imx(1, MX1_SPI2_BASE_ADDR, SZ_4K, MX1_SPI2_INT, pdata)
++

@@ -1,10 +1,10 @@
 CC=arm-linux-gcc
-EXECS:= imxregs imx27regs imx51regs
+EXECS:= imxlregs imx27regs imx51regs
 
 
 all: $(EXECS)
 
-imxregs: imxregs.c imxregs.h definitions.h
+imxlregs: imxregs.c imxregs.h definitions.h
 	$(CC) imxregs.c -o $@
 
 imx27regs: imxregs.c imx27regs.h definitions.h
