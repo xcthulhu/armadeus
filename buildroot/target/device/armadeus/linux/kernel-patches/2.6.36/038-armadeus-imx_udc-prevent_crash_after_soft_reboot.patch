@@ -1,0 +1,27 @@
+
+IRQ handler needs imx_usb->base to be valid when called.
+After a soft reboot irq handler get called during request_irq() (UDC INT bug ?).
+So this patch moves imx_usb->base definition at the right place.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/drivers/usb/gadget/imx_udc.c
+===================================================================
+--- linux-2.6.36.orig/drivers/usb/gadget/imx_udc.c	2009-06-26 21:31:29.000000000 +0200
++++ linux-2.6.36/drivers/usb/gadget/imx_udc.c	2009-06-26 21:32:24.000000000 +0200
+@@ -1467,6 +1467,7 @@
+ 		}
+ 	}
+ 
++	imx_usb->base = base;
+ 	for (i = 0; i < IMX_USB_NB_EP + 1; i++) {
+ 		ret = request_irq(imx_usb->usbd_int[i], intr_handler(i),
+ 				     IRQF_DISABLED, driver_name, imx_usb);
+@@ -1480,7 +1481,6 @@
+ 	}
+ 
+ 	imx_usb->res = res;
+-	imx_usb->base = base;
+ 	imx_usb->clk = clk;
+ 	imx_usb->dev = &pdev->dev;
+ 

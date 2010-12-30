@@ -1,0 +1,21 @@
+Bump IPSec-Tools to version 0.8-alpha201022 to make it work with Linux Kernel 2.6.29 and
+disable security context.
+
+Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
+
+Index: buildroot/package/ipsec-tools/ipsec-tools.mk
+===================================================================
+--- buildroot.orig/package/ipsec-tools/ipsec-tools.mk	2010-12-10 17:21:15.000000000 +0100
++++ buildroot/package/ipsec-tools/ipsec-tools.mk	2010-12-10 17:27:01.000000000 +0100
+@@ -4,9 +4,9 @@
+ #
+ #############################################################
+ 
+-IPSEC_TOOLS_VERSION = 0.7.3
++IPSEC_TOOLS_VERSION = 0.8-alpha20101022
+ IPSEC_TOOLS_SOURCE = ipsec-tools-$(IPSEC_TOOLS_VERSION).tar.bz2
+-IPSEC_TOOLS_SITE = http://ftp.sunet.se/pub/NetBSD/misc/ipsec-tools/0.7/
++IPSEC_TOOLS_SITE = http://$(BR2_SOURCEFORGE_MIRROR).dl.sourceforge.net/sourceforge/ipsec-tools/
+ IPSEC_TOOLS_INSTALL_STAGING = YES
+ IPSEC_TOOLS_MAKE = $(MAKE1)
+ IPSEC_TOOLS_DEPENDENCIES = openssl flex host-flex

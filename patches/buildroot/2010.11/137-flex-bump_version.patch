@@ -1,0 +1,45 @@
+Version 9.1 of Flex patch is no more available, so upgrade it.
+
+Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
+---
+
+Index: buildroot/package/flex/flex-2.5.35-undefine_rpl_malloc_and_realloc.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/flex/flex-2.5.35-undefine_rpl_malloc_and_realloc.patch	2010-11-26 17:50:52.000000000 +0100
+@@ -0,0 +1,22 @@
++This patch may be unnecessary depending on the toolchain used to compile flex.
++
++--- flex-2.5.35/configure.orig	2010-11-26 17:39:28.000000000 +0100
+++++ flex-2.5.35/configure	2010-11-26 17:40:00.000000000 +0100
++@@ -9169,7 +9169,7 @@
++
++
++ cat >>confdefs.h <<\_ACEOF
++-#define malloc rpl_malloc
+++/* #define malloc rpl_malloc */
++ _ACEOF
++
++ fi
++@@ -9399,7 +9399,7 @@
++
++
++ cat >>confdefs.h <<\_ACEOF
++-#define realloc rpl_realloc
+++/* #define realloc rpl_realloc */
++ _ACEOF
++
++ fi
+Index: buildroot/package/flex/flex.mk
+===================================================================
+--- buildroot.orig/package/flex/flex.mk	2010-11-26 17:22:56.000000000 +0100
++++ buildroot/package/flex/flex.mk	2010-11-26 17:34:09.000000000 +0100
+@@ -4,7 +4,7 @@
+ #
+ #############################################################
+ FLEX_VERSION:=2.5.35
+-FLEX_PATCH_VERSION:=9.1
++FLEX_PATCH_VERSION:=10
+ FLEX_SOURCE:=flex_$(FLEX_VERSION).orig.tar.gz
+ FLEX_PATCH:=flex_$(FLEX_VERSION)-$(FLEX_PATCH_VERSION).diff.gz
+ FLEX_SITE:=$(BR2_DEBIAN_MIRROR)/debian/pool/main/f/flex

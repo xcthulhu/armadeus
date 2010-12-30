@@ -1,0 +1,12 @@
+--- a/arch/arm/plat-mxc/include/mach/hardware.h	2010-10-20 22:30:22.000000000 +0200
++++ b/arch/arm/plat-mxc/include/mach/hardware.h	2010-11-15 08:07:52.000000000 +0100
+@@ -48,6 +48,9 @@
+ #endif
+ 
+ #ifdef CONFIG_ARCH_MX1
++/* the DMA code supports SG list chaining */
++#define ARCH_HAS_SG_CHAIN
++
+ # include <mach/mx1.h>
+ #endif
+ 

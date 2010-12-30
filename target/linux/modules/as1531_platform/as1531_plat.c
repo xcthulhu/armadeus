@@ -86,10 +86,9 @@ static struct spi_board_info spi_as1531_board[] = {
 };
 
 
-static int __init init_as1531_plat(void)
+static int __init as1531_plat_init(void)
 {
-	if (as1531_init_gpio() < 0)
-	{
+	if (as1531_init_gpio() < 0) {
 		printk(KERN_ERR "Can't initialize gpio CS for as1531 spi\n");
 		return -1;
 	}
@@ -107,14 +106,14 @@ register_error:
 	return -1;
 }
 
-static void __exit exit_as1531_plat(void)
+static void __exit as1531_plat_exit(void)
 {
 	spi_unregister_device(as1531_spi_dev);
 	as1531_exit_gpio();
 }
 
-module_init(init_as1531_plat);
-module_exit(exit_as1531_plat);
+module_init(as1531_plat_init);
+module_exit(as1531_plat_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");

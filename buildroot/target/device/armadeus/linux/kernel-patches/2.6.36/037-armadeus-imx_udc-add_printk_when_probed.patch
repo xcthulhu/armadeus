@@ -1,0 +1,16 @@
+Needed by Armadeus UDC test to know if driver is up or not.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.36/drivers/usb/gadget/imx_udc.c
+===================================================================
+--- linux-2.6.36.orig/drivers/usb/gadget/imx_udc.c	2009-05-18 16:42:45.000000000 +0200
++++ linux-2.6.36/drivers/usb/gadget/imx_udc.c	2009-05-18 16:42:51.000000000 +0200
+@@ -1498,6 +1498,7 @@
+ 	imx_usb->timer.function = handle_config;
+ 	imx_usb->timer.data = (unsigned long)imx_usb;
+ 
++	printk("%s probed\n", driver_name);
+ 	return 0;
+ 
+ fail3:

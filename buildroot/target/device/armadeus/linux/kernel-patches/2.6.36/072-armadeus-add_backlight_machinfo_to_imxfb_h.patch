@@ -1,0 +1,16 @@
+--- a/arch/arm/plat-mxc/include/mach/imxfb.h	2010-11-06 18:56:13.000000000 +0100
++++ b/arch/arm/plat-mxc/include/mach/imxfb.h	2010-11-06 18:56:47.000000000 +0100
+@@ -79,3 +79,13 @@
+ };
+ 
+ void set_imx_fb_info(struct imx_fb_platform_data *);
++
++/* --- Backlight handling --- */
++struct imxbl_machinfo {
++	int max_intensity;
++	int default_intensity;
++	int limit_mask; /* When battery is low */
++	void (*set_bl_intensity)(int intensity);
++};
++extern void imxbl_limit_intensity(int limit);
++
