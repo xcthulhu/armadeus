@@ -10,8 +10,8 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
  drivers/video/Kconfig  |   11 +
  drivers/video/Makefile |    1 +
- drivers/video/mx5fb.c  |  846 ++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 858 insertions(+), 0 deletions(-)
+ drivers/video/mx5fb.c  |  934 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 946 insertions(+), 0 deletions(-)
  create mode 100644 drivers/video/mx5fb.c
 
 diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
@@ -50,10 +50,10 @@ index 485e8ed..ad408d2 100644
  # the test framebuffer is last
 diff --git a/drivers/video/mx5fb.c b/drivers/video/mx5fb.c
 new file mode 100644
-index 0000000..fd9baf4
+index 0000000..f7824c9
 --- /dev/null
 +++ b/drivers/video/mx5fb.c
-@@ -0,0 +1,846 @@
+@@ -0,0 +1,934 @@
 +/*
 + * Copyright 2004-2009 Freescale Semiconductor, Inc. All Rights Reserved.
 + *
@@ -64,7 +64,7 @@ index 0000000..fd9baf4
 + * http://www.opensource.org/licenses/gpl-license.html
 + * http://www.gnu.org/copyleft/gpl.html
 + *
-+ * Framebuffer Framebuffer Driver for SDC and ADC.
++ * Framebuffer Framebuffer Driver for SDC
 + */
 +
 +#include <linux/module.h>
@@ -89,7 +89,7 @@ index 0000000..fd9baf4
 +	int			ipu_channel_num;
 +	struct ipu_channel	*ipu_ch;
 +	int			dc;
-+	int			ipu_di;
++	int			di_no;
 +	u32			ipu_di_pix_fmt;
 +	u32			ipu_in_pix_fmt;
 +
@@ -97,9 +97,14 @@ index 0000000..fd9baf4
 +
 +	struct ipu_dp		*dp;
 +	struct dmfc_channel	*dmfc;
++	struct ipu_di		*di;
 +	struct fb_info		*slave;
 +	struct fb_info		*master;
 +	bool			enabled;
++
++	/* overlay specific fields */
++	bool			blank_state;
++	int			ovlxres, ovlyres;
 +};
 +
 +static int imx_ipu_fb_set_fix(struct fb_info *info)
@@ -163,7 +168,7 @@ index 0000000..fd9baf4
 +	if (mxc_fbi->enabled)
 +		return;
 +
-+	ipu_di_enable(mxc_fbi->ipu_di);
++	ipu_di_enable(mxc_fbi->di);
 +	ipu_dmfc_enable_channel(mxc_fbi->dmfc);
 +	ipu_idmac_enable_channel(mxc_fbi->ipu_ch);
 +	ipu_dc_enable_channel(mxc_fbi->dc);
@@ -182,7 +187,7 @@ index 0000000..fd9baf4
 +	ipu_dc_disable_channel(mxc_fbi->dc);
 +	ipu_idmac_disable_channel(mxc_fbi->ipu_ch);
 +	ipu_dmfc_disable_channel(mxc_fbi->dmfc);
-+	ipu_di_disable(mxc_fbi->ipu_di);
++	ipu_di_disable(mxc_fbi->di);
 +
 +	mxc_fbi->enabled = 0;
 +}
@@ -222,8 +227,6 @@ index 0000000..fd9baf4
 +		imx_ipu_fb_disable(fbi);
 +
 +	fbi->fix.line_length = var->xres_virtual * var->bits_per_pixel / 8;
-+
-+	var->yres_virtual = var->yres;
 +
 +	ret = imx_ipu_fb_map_video_memory(fbi);
 +	if (ret)
@@ -279,7 +282,7 @@ index 0000000..fd9baf4
 +		}
 +	}
 +
-+	ret = ipu_dc_init_sync(mxc_fbi->dc, mxc_fbi->ipu_di, interlaced,
++	ret = ipu_dc_init_sync(mxc_fbi->dc, mxc_fbi->di_no, interlaced,
 +			out_pixel_fmt, fbi->var.xres);
 +	if (ret) {
 +		dev_dbg(fbi->device, "initializing display controller failed with %d\n",
@@ -287,7 +290,7 @@ index 0000000..fd9baf4
 +		return ret;
 +	}
 +
-+	ret = ipu_di_init_sync_panel(mxc_fbi->ipu_di,
++	ret = ipu_di_init_sync_panel(mxc_fbi->di,
 +				PICOS2KHZ(var->pixclock) * 1000UL,
 +				&sig_cfg);
 +	if (ret) {
@@ -469,8 +472,13 @@ index 0000000..fd9baf4
 +	return ret;
 +}
 +
++static void imx_ipu_fb_enable_overlay(struct fb_info *fbi);
++static void imx_ipu_fb_disable_overlay(struct fb_info *fbi);
++
 +static int imx_ipu_fb_blank(int blank, struct fb_info *info)
 +{
++	struct imx_ipu_fb_info *mxc_fbi = info->par;
++
 +	dev_dbg(info->device, "blank = %d\n", blank);
 +
 +	switch (blank) {
@@ -478,10 +486,14 @@ index 0000000..fd9baf4
 +	case FB_BLANK_VSYNC_SUSPEND:
 +	case FB_BLANK_HSYNC_SUSPEND:
 +	case FB_BLANK_NORMAL:
++		if (mxc_fbi->slave)
++			imx_ipu_fb_disable_overlay(mxc_fbi->slave);
 +		imx_ipu_fb_disable(info);
 +		break;
 +	case FB_BLANK_UNBLANK:
 +		imx_ipu_fb_enable(info);
++		if (mxc_fbi->slave)
++			imx_ipu_fb_enable_overlay(mxc_fbi->slave);
 +		break;
 +	}
 +
@@ -530,24 +542,67 @@ index 0000000..fd9baf4
 +/*
 + * Overlay functions
 + */
-+static int imx_ipu_fb_enable_overlay(struct fb_info *fbi)
++static void imx_ipu_fb_enable_overlay(struct fb_info *fbi)
 +{
 +	struct imx_ipu_fb_info *mxc_fbi = fbi->par;
++
++	/*
++	 * This function is called unconditionally from imx_ipu_fb_blank to
++	 * enable/disable the overlay when the background is (un)blanked. So
++	 * we decide upon blank_state whether we should actually enable the
++	 * overlay.
++	 */
++	if (!mxc_fbi->blank_state)
++		return;
++
++	if (mxc_fbi->enabled)
++		return;
 +
 +	ipu_dmfc_enable_channel(mxc_fbi->dmfc);
 +	ipu_idmac_enable_channel(mxc_fbi->ipu_ch);
 +	ipu_dp_enable_fg(mxc_fbi->dp);
-+
-+	return 0;
++	mxc_fbi->enabled = 1;
++	ipu_dp_set_color_key(mxc_fbi->dp, 1, 0x434343);
 +}
 +
-+static int imx_ipu_fb_disable_overlay(struct fb_info *fbi)
++static void imx_ipu_fb_disable_overlay(struct fb_info *fbi)
 +{
 +	struct imx_ipu_fb_info *mxc_fbi = fbi->par;
 +
++	if (!mxc_fbi->enabled)
++		return;
++
 +	ipu_dp_disable_fg(mxc_fbi->dp);
++	ipu_wait_for_interrupt(451, 100);
 +	ipu_idmac_disable_channel(mxc_fbi->ipu_ch);
 +	ipu_dmfc_disable_channel(mxc_fbi->dmfc);
++	mxc_fbi->enabled = 0;
++}
++
++#define NONSTD_TO_XPOS(x)	(((x) >> 0)  & 0xfff)
++#define NONSTD_TO_YPOS(x)	(((x) >> 12) & 0xfff)
++#define NONSTD_TO_ALPHA(x)	(((x) >> 24) & 0xff)
++
++static int imx_ipu_fb_check_var_overlay(struct fb_var_screeninfo *var,
++		struct fb_info *info)
++{
++	struct imx_ipu_fb_info *mxc_fbi = info->par;
++	struct fb_info *fbi_master = mxc_fbi->master;
++	struct fb_var_screeninfo *var_master = &fbi_master->var;
++	int ret;
++	static int xpos, ypos;
++
++	xpos = NONSTD_TO_XPOS(var->nonstd);
++	ypos = NONSTD_TO_YPOS(var->nonstd);
++
++	ret = imx_ipu_fb_check_var(var, info);
++	if (ret)
++		return ret;
++
++	if (var->xres + xpos > var_master->xres)
++		return -EINVAL;
++	if (var->yres + ypos > var_master->yres)
++		return -EINVAL;
 +
 +	return 0;
 +}
@@ -557,32 +612,49 @@ index 0000000..fd9baf4
 +	struct imx_ipu_fb_info *mxc_fbi = fbi->par;
 +	struct fb_var_screeninfo *var = &fbi->var;
 +	struct fb_info *fbi_master = mxc_fbi->master;
++	struct imx_ipu_fb_info *mxc_fbi_master = fbi_master->par;
 +	struct fb_var_screeninfo *var_master = &fbi_master->var;
 +	int ret;
 +	int interlaced = 0;
 +	int enabled = mxc_fbi->enabled;
++	int xpos, ypos, alpha;
++	int resolution_change;
 +
 +	dev_dbg(fbi->device, "Reconfiguring framebuffer %dx%d-%d\n",
 +		fbi->var.xres, fbi->var.yres, fbi->var.bits_per_pixel);
 +
-+	if (enabled)
++	resolution_change = mxc_fbi->ovlxres != var->xres ||
++		mxc_fbi->ovlyres != var->yres;
++
++	if (enabled && resolution_change)
 +		imx_ipu_fb_disable_overlay(fbi);
 +
 +	fbi->fix.line_length = var->xres_virtual *
 +                                  var->bits_per_pixel / 8;
 +
-+	ret = imx_ipu_fb_map_video_memory(fbi);
-+	if (ret)
-+		return ret;
++	xpos = NONSTD_TO_XPOS(var->nonstd);
++	ypos = NONSTD_TO_YPOS(var->nonstd);
++	alpha = NONSTD_TO_ALPHA(var->nonstd);
 +
-+	ipu_dp_set_window_pos(mxc_fbi->dp, 64, 64);
++	if (resolution_change) {
++		ret = imx_ipu_fb_map_video_memory(fbi);
++		if (ret)
++			return ret;
++	}
++
++	if (!resolution_change && enabled)
++		ipu_wait_for_interrupt(IPU_IRQ_EOF(mxc_fbi_master->ipu_channel_num), 100);
++
++	ipu_dp_set_window_pos(mxc_fbi->dp, xpos, ypos);
++	ipu_dp_set_global_alpha(mxc_fbi->dp, 1, alpha, 1);
 +
 +	var->xoffset = var->yoffset = 0;
 +
-+	if (var->vmode & FB_VMODE_INTERLACED)
-+		interlaced = 1;
++	if (resolution_change) {
++		if (var->vmode & FB_VMODE_INTERLACED)
++			interlaced = 1;
 +
-+	ret = ipu_idmac_init_channel_buffer(mxc_fbi->ipu_ch,
++		ret = ipu_idmac_init_channel_buffer(mxc_fbi->ipu_ch,
 +					mxc_fbi->ipu_in_pix_fmt,
 +					var->xres, var->yres,
 +					fbi->fix.line_length,
@@ -590,27 +662,30 @@ index 0000000..fd9baf4
 +					fbi->fix.smem_start,
 +					0,
 +					0, 0, interlaced);
-+	if (ret) {
-+		dev_dbg(fbi->device, "init channel buffer failed with %d\n",
++		if (ret) {
++			dev_dbg(fbi->device, "init channel buffer failed with %d\n",
 +				ret);
-+		return ret;
++			return ret;
++		}
++
++		ret = ipu_dmfc_init_channel(mxc_fbi->dmfc, var->xres);
++		if (ret) {
++			dev_dbg(fbi->device, "initializing dmfc channel failed with %d\n",
++				ret);
++			return ret;
++		}
++
++		ret = ipu_dmfc_alloc_bandwidth(mxc_fbi->dmfc, calc_bandwidth(var, calc_vref(var_master)));
++		if (ret) {
++			dev_dbg(fbi->device, "allocating dmfc bandwidth failed with %d\n",
++				ret);
++			return ret;
++		}
++		mxc_fbi->ovlxres = var->xres;
++		mxc_fbi->ovlyres = var->yres;
 +	}
 +
-+	ret = ipu_dmfc_init_channel(mxc_fbi->dmfc, var->xres);
-+	if (ret) {
-+		dev_dbg(fbi->device, "initializing dmfc channel failed with %d\n",
-+				ret);
-+		return ret;
-+	}
-+
-+	ret = ipu_dmfc_alloc_bandwidth(mxc_fbi->dmfc, calc_bandwidth(var, calc_vref(var_master)));
-+	if (ret) {
-+		dev_dbg(fbi->device, "allocating dmfc bandwidth failed with %d\n",
-+				ret);
-+		return ret;
-+	}
-+
-+	if (enabled)
++	if (enabled && resolution_change)
 +		imx_ipu_fb_enable_overlay(fbi);
 +
 +	return ret;
@@ -618,6 +693,8 @@ index 0000000..fd9baf4
 +
 +static int imx_ipu_fb_blank_overlay(int blank, struct fb_info *fbi)
 +{
++	struct imx_ipu_fb_info *mxc_fbi = fbi->par;
++
 +	dev_dbg(fbi->device, "blank = %d\n", blank);
 +
 +	switch (blank) {
@@ -625,9 +702,11 @@ index 0000000..fd9baf4
 +	case FB_BLANK_VSYNC_SUSPEND:
 +	case FB_BLANK_HSYNC_SUSPEND:
 +	case FB_BLANK_NORMAL:
++		mxc_fbi->blank_state = 0;
 +		imx_ipu_fb_disable_overlay(fbi);
 +		break;
 +	case FB_BLANK_UNBLANK:
++		mxc_fbi->blank_state = 1;
 +		imx_ipu_fb_enable_overlay(fbi);
 +		break;
 +	}
@@ -638,7 +717,7 @@ index 0000000..fd9baf4
 +static struct fb_ops imx_ipu_fb_overlay_ops = {
 +	.owner		= THIS_MODULE,
 +	.fb_set_par	= imx_ipu_fb_set_par_overlay,
-+	.fb_check_var	= imx_ipu_fb_check_var,
++	.fb_check_var	= imx_ipu_fb_check_var_overlay,
 +	.fb_setcolreg	= imx_ipu_fb_setcolreg,
 +	.fb_pan_display	= imx_ipu_fb_pan_display,
 +	.fb_fillrect	= cfb_fillrect,
@@ -685,7 +764,7 @@ index 0000000..fd9baf4
 +	ovl_mxc_fbi = ovlfbi->par;
 +	ovl_mxc_fbi->ipu_ch = ipu_idmac_get(ipu_channel);
 +	ovl_mxc_fbi->dmfc = ipu_dmfc_get(ipu_channel);
-+	ovl_mxc_fbi->ipu_di = -1;
++	ovl_mxc_fbi->di = NULL;
 +	ovl_mxc_fbi->dp = mxc_fbi_master->dp;
 +	ovl_mxc_fbi->master = fbi_master;
 +	mxc_fbi_master->slave = ovlfbi;
@@ -703,8 +782,8 @@ index 0000000..fd9baf4
 +		return ret;
 +	}
 +
-+	ipu_dp_set_global_alpha(ovl_mxc_fbi->dp, 1, 0x80, 1);
-+	ipu_dp_set_color_key(ovl_mxc_fbi->dp, 0, 0);
++	ipu_dp_set_global_alpha(ovl_mxc_fbi->dp, 0, 0, 1);
++	ipu_dp_set_color_key(ovl_mxc_fbi->dp, 1, 0x434343);
 +
 +	imx_ipu_fb_set_par_overlay(ovlfbi);
 +
@@ -780,7 +859,7 @@ index 0000000..fd9baf4
 +	mxc_fbi->ipu_channel_num = plat_data->ipu_channel_bg;
 +	mxc_fbi->dc = plat_data->dc_channel;
 +	mxc_fbi->ipu_di_pix_fmt = plat_data->interface_pix_fmt;
-+	mxc_fbi->ipu_di = pdev->id;
++	mxc_fbi->di_no = plat_data->display;
 +
 +	mxc_fbi->ipu_ch = ipu_idmac_get(plat_data->ipu_channel_bg);
 +	if (IS_ERR(mxc_fbi->ipu_ch)) {
@@ -800,6 +879,12 @@ index 0000000..fd9baf4
 +			ret = PTR_ERR(mxc_fbi->ipu_ch);
 +			goto failed_request_dp;
 +		}
++	}
++
++	mxc_fbi->di = ipu_di_get(plat_data->display);
++	if (IS_ERR(mxc_fbi->di)) {
++		ret = PTR_ERR(mxc_fbi->di);
++		goto failed_request_di;
 +	}
 +
 +	fbi->var.yres_virtual = fbi->var.yres;
@@ -832,6 +917,8 @@ index 0000000..fd9baf4
 +	return 0;
 +
 +failed_register:
++	ipu_di_put(mxc_fbi->di);
++failed_request_di:
 +	if (plat_data->dp_channel >= 0)
 +		ipu_dp_put(mxc_fbi->dp);
 +failed_request_dp:
@@ -868,6 +955,7 @@ index 0000000..fd9baf4
 +		ipu_dp_put(mxc_fbi->dp);
 +	ipu_dmfc_free_bandwidth(mxc_fbi->dmfc);
 +	ipu_dmfc_put(mxc_fbi->dmfc);
++	ipu_di_put(mxc_fbi->di);
 +	ipu_idmac_put(mxc_fbi->ipu_ch);
 +
 +	framebuffer_release(fbi);

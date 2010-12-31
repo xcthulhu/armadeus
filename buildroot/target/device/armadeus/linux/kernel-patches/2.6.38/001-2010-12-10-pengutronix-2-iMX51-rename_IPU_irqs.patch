@@ -1,4 +1,3 @@
-
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
  arch/arm/plat-mxc/include/mach/mx51.h |    4 ++--
@@ -19,6 +18,3 @@ index fa3a2a5..873807f 100644
  #define MX51_MXC_INT_GPU		12
  #define MX51_MXC_INT_RESV13		13
  #define MX51_MXC_INT_USB_H1		14
--- 
-1.7.2.3
-

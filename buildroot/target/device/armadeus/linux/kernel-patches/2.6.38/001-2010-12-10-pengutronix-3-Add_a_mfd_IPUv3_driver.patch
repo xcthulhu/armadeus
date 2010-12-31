@@ -28,19 +28,19 @@ So expect more files to come in this directory.
 
 Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
- arch/arm/plat-mxc/include/mach/ipu-v3.h |   48 +++
+ arch/arm/plat-mxc/include/mach/ipu-v3.h |   49 +++
  drivers/mfd/Kconfig                     |    7 +
  drivers/mfd/Makefile                    |    1 +
  drivers/mfd/imx-ipu-v3/Makefile         |    3 +
- drivers/mfd/imx-ipu-v3/ipu-common.c     |  661 +++++++++++++++++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-cpmem.c      |  608 ++++++++++++++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-dc.c         |  362 +++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-di.c         |  507 ++++++++++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-dmfc.c       |  343 ++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-dp.c         |  468 ++++++++++++++++++++++
- drivers/mfd/imx-ipu-v3/ipu-prv.h        |  214 ++++++++++
- include/linux/mfd/imx-ipu-v3.h          |  218 ++++++++++
- 12 files changed, 3440 insertions(+), 0 deletions(-)
+ drivers/mfd/imx-ipu-v3/ipu-common.c     |  708 +++++++++++++++++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-cpmem.c      |  612 ++++++++++++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-dc.c         |  364 ++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-di.c         |  550 ++++++++++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-dmfc.c       |  355 ++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-dp.c         |  476 +++++++++++++++++++++
+ drivers/mfd/imx-ipu-v3/ipu-prv.h        |  216 ++++++++++
+ include/linux/mfd/imx-ipu-v3.h          |  219 ++++++++++
+ 12 files changed, 3560 insertions(+), 0 deletions(-)
  create mode 100644 arch/arm/plat-mxc/include/mach/ipu-v3.h
  create mode 100644 drivers/mfd/imx-ipu-v3/Makefile
  create mode 100644 drivers/mfd/imx-ipu-v3/ipu-common.c
@@ -54,10 +54,10 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 
 diff --git a/arch/arm/plat-mxc/include/mach/ipu-v3.h b/arch/arm/plat-mxc/include/mach/ipu-v3.h
 new file mode 100644
-index 0000000..0a6c3e8
+index 0000000..f8900b9
 --- /dev/null
 +++ b/arch/arm/plat-mxc/include/mach/ipu-v3.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + *
@@ -97,12 +97,13 @@ index 0000000..0a6c3e8
 +	int				ipu_channel_fg;
 +	int				dc_channel;
 +	int				dp_channel;
++	int				display;
 +};
 +
 +struct imx_ipuv3_platform_data {
 +	int rev;
-+	struct ipuv3_fb_platform_data	*fb0_platform_data;
-+	struct ipuv3_fb_platform_data	*fb1_platform_data;
++	struct ipuv3_fb_platform_data	*fb_head0_platform_data;
++	struct ipuv3_fb_platform_data	*fb_head1_platform_data;
 +};
 +
 +#endif /* __MACH_IPU_V3_H_ */
@@ -128,7 +129,7 @@ diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
 index f54b365..7873b13 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -76,3 +76,4 @@ obj-$(CONFIG_MFD_JANZ_CMODIO)	+= janz-cmodio.o
+@@ -81,3 +81,4 @@ obj-$(CONFIG_MFD_JANZ_CMODIO)	+= janz-cmodio.o
  obj-$(CONFIG_MFD_JZ4740_ADC)	+= jz4740-adc.o
  obj-$(CONFIG_MFD_TPS6586X)	+= tps6586x.o
  obj-$(CONFIG_MFD_VX855)		+= vx855.o
@@ -144,10 +145,10 @@ index 0000000..ff70fe8
 +imx-ipu-v3-objs := ipu-common.o ipu-dc.o ipu-di.o ipu-dp.o ipu-dmfc.o ipu-cpmem.o
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-common.c b/drivers/mfd/imx-ipu-v3/ipu-common.c
 new file mode 100644
-index 0000000..e6edb88
+index 0000000..d96245f
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-common.c
-@@ -0,0 +1,661 @@
+@@ -0,0 +1,708 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -184,8 +185,11 @@ index 0000000..e6edb88
 +static struct device *ipu_dev;
 +
 +static DEFINE_SPINLOCK(ipu_lock);
++static DEFINE_MUTEX(ipu_channel_lock);
 +void __iomem *ipu_cm_reg;
 +void __iomem *ipu_idmac_reg;
++
++static int ipu_use_count;
 +
 +static struct ipu_channel channels[64];
 +
@@ -198,15 +202,20 @@ index 0000000..e6edb88
 +	if (num > 63)
 +		return ERR_PTR(-ENODEV);
 +
++	mutex_lock(&ipu_channel_lock);
++
 +	channel = &channels[num];
 +
-+	if (channel->busy)
-+		return ERR_PTR(-EBUSY);
++	if (channel->busy) {
++		channel = ERR_PTR(-EBUSY);
++		goto out;
++	}
 +
 +	channel->busy = 1;
 +	channel->num = num;
 +
-+	clk_enable(ipu_clk);
++out:
++	mutex_unlock(&ipu_channel_lock);
 +
 +	return channel;
 +}
@@ -216,8 +225,11 @@ index 0000000..e6edb88
 +{
 +	dev_dbg(ipu_dev, "%s %d\n", __func__, channel->num);
 +
-+	clk_disable(ipu_clk);
++	mutex_lock(&ipu_channel_lock);
++
 +	channel->busy = 0;
++
++	mutex_unlock(&ipu_channel_lock);
 +}
 +EXPORT_SYMBOL(ipu_idmac_put);
 +
@@ -238,31 +250,6 @@ index 0000000..e6edb88
 +	spin_unlock_irqrestore(&ipu_lock, flags);
 +}
 +EXPORT_SYMBOL(ipu_idmac_set_double_buffer);
-+
-+void ipu_uninit_channel(struct ipu_channel *channel)
-+{
-+	unsigned long lock_flags;
-+	u32 val;
-+
-+	/* Make sure channel is disabled */
-+
-+	if (idmac_idma_is_set(IDMAC_CHA_EN, channel->num)) {
-+		dev_err(ipu_dev,
-+			"Channel %d is not disabled, disable first\n",
-+			channel->num);
-+		return;
-+	}
-+
-+	spin_lock_irqsave(&ipu_lock, lock_flags);
-+
-+	/* Reset the double buffer */
-+	val = ipu_cm_read(IPU_CHA_DB_MODE_SEL(channel->num));
-+	val &= ~idma_mask(channel->num);
-+	ipu_cm_write(val, IPU_CHA_DB_MODE_SEL(channel->num));
-+
-+	spin_unlock_irqrestore(&ipu_lock, lock_flags);
-+}
-+EXPORT_SYMBOL(ipu_uninit_channel);
 +
 +int ipu_module_enable(u32 mask)
 +{
@@ -299,12 +286,17 @@ index 0000000..e6edb88
 +void ipu_idmac_select_buffer(struct ipu_channel *channel, u32 buf_num)
 +{
 +	unsigned int chno = channel->num;
++	unsigned long flags;
++
++	spin_lock_irqsave(&ipu_lock, flags);
 +
 +	/* Mark buffer as ready. */
 +	if (buf_num == 0)
 +		ipu_cm_write(idma_mask(chno), IPU_CHA_BUF0_RDY(chno));
 +	else
 +		ipu_cm_write(idma_mask(chno), IPU_CHA_BUF1_RDY(chno));
++
++	spin_unlock_irqrestore(&ipu_lock, flags);
 +}
 +EXPORT_SYMBOL(ipu_idmac_select_buffer);
 +
@@ -312,6 +304,8 @@ index 0000000..e6edb88
 +{
 +	u32 val;
 +	unsigned long flags;
++
++	ipu_get();
 +
 +	spin_lock_irqsave(&ipu_lock, flags);
 +
@@ -351,7 +345,14 @@ index 0000000..e6edb88
 +
 +	ipu_cm_write(0x0, IPU_GPR); /* write one to set */
 +
++	/* Reset the double buffer */
++	val = ipu_cm_read(IPU_CHA_DB_MODE_SEL(channel->num));
++	val &= ~idma_mask(channel->num);
++	ipu_cm_write(val, IPU_CHA_DB_MODE_SEL(channel->num));
++
 +	spin_unlock_irqrestore(&ipu_lock, flags);
++
++	ipu_put();
 +
 +	return 0;
 +}
@@ -434,6 +435,8 @@ index 0000000..e6edb88
 +	bitmap_zero(handler.ipu_irqs, IPU_IRQ_COUNT);
 +	bitmap_set(handler.ipu_irqs, interrupt, 1);
 +
++	ipu_cm_write(1 << (interrupt % 32), IPU_INT_STAT(interrupt / 32 + 1));
++
 +	handler.handler = ipu_completion_handler;
 +	handler.context = &completion;
 +	ipu_irq_add_handler(&handler);
@@ -445,6 +448,8 @@ index 0000000..e6edb88
 +
 +	if (ret > 0)
 +		ret = 0;
++	else
++		ret = -ETIMEDOUT;
 +
 +	return ret;
 +}
@@ -611,6 +616,35 @@ index 0000000..e6edb88
 +	return ret;
 +}
 +
++void ipu_get(void)
++{
++	mutex_lock(&ipu_channel_lock);
++
++	ipu_use_count++;
++
++	if (ipu_use_count == 1)
++		clk_enable(ipu_clk);
++
++	mutex_unlock(&ipu_channel_lock);
++}
++
++void ipu_put(void)
++{
++	mutex_lock(&ipu_channel_lock);
++
++	ipu_use_count--;
++
++	if (ipu_use_count == 0)
++		clk_disable(ipu_clk);
++
++	if (ipu_use_count < 0) {
++		dev_err(ipu_dev, "ipu use count < 0\n");
++		ipu_use_count = 0;
++	}
++
++	mutex_unlock(&ipu_channel_lock);
++}
++
 +static void ipu_submodules_exit(struct platform_device *pdev,
 +		unsigned long ipu_base)
 +{
@@ -638,30 +672,31 @@ index 0000000..e6edb88
 +static int ipu_add_client_devices(struct platform_device *pdev)
 +{
 +	struct imx_ipuv3_platform_data *plat_data = pdev->dev.platform_data;
++	struct ipuv3_fb_platform_data *fbdata;
 +
-+	if (plat_data->fb0_platform_data) {
-+		plat_data->fb0_platform_data->ipu_channel_bg =
++	fbdata = plat_data->fb_head0_platform_data;
++	if (fbdata) {
++		fbdata->ipu_channel_bg =
 +			MX51_IPU_CHANNEL_MEM_BG_SYNC;
-+		plat_data->fb0_platform_data->ipu_channel_fg =
++		fbdata->ipu_channel_fg =
 +			MX51_IPU_CHANNEL_MEM_FG_SYNC;
-+		plat_data->fb0_platform_data->dc_channel = 5;
-+		plat_data->fb0_platform_data->dp_channel = IPU_DP_FLOW_SYNC;
++		fbdata->dc_channel = 5;
++		fbdata->dp_channel = IPU_DP_FLOW_SYNC;
 +
 +		ipu_add_subdevice_pdata(pdev, "imx-ipuv3-fb", 0,
-+				plat_data->fb0_platform_data,
-+				sizeof(struct ipuv3_fb_platform_data));
++				fbdata, sizeof(*fbdata));
 +	}
 +
-+	if (plat_data->fb1_platform_data) {
-+		plat_data->fb1_platform_data->ipu_channel_bg =
++	fbdata = plat_data->fb_head1_platform_data;
++	if (fbdata) {
++		fbdata->ipu_channel_bg =
 +			MX51_IPU_CHANNEL_MEM_DC_SYNC;
-+		plat_data->fb1_platform_data->ipu_channel_fg = -1;
-+		plat_data->fb1_platform_data->dc_channel = 1;
-+		plat_data->fb1_platform_data->dp_channel = -1;
++		fbdata->ipu_channel_fg = -1;
++		fbdata->dc_channel = 1;
++		fbdata->dp_channel = -1;
 +
 +		ipu_add_subdevice_pdata(pdev, "imx-ipuv3-fb", 1,
-+				plat_data->fb1_platform_data,
-+				sizeof(struct ipuv3_fb_platform_data));
++				fbdata, sizeof(*fbdata));
 +	}
 +
 +	return 0;
@@ -672,6 +707,10 @@ index 0000000..e6edb88
 +	struct resource *res;
 +	unsigned long ipu_base;
 +	int ret, irq1, irq2;
++
++	/* There can be only one */
++	if (ipu_dev)
++		return -EBUSY;
 +
 +	spin_lock_init(&ipu_lock);
 +
@@ -709,7 +748,7 @@ index 0000000..e6edb88
 +		goto failed_clk_get;
 +	}
 +
-+	clk_enable(ipu_clk);
++	ipu_get();
 +
 +	ret = request_irq(irq1, ipu_irq_handler, IRQF_DISABLED, pdev->name,
 +			&pdev->dev);
@@ -740,6 +779,8 @@ index 0000000..e6edb88
 +		goto failed_add_clients;
 +        }
 +
++	ipu_put();
++
 +	return 0;
 +
 +failed_add_clients:
@@ -748,6 +789,7 @@ index 0000000..e6edb88
 +	free_irq(irq2, &pdev->dev);
 +failed_request_irq2:
 +	free_irq(irq1, &pdev->dev);
++	ipu_put();
 +failed_request_irq1:
 +	clk_put(ipu_clk);
 +failed_clk_get:
@@ -775,10 +817,16 @@ index 0000000..e6edb88
 +	ipu_submodules_exit(pdev, ipu_base);
 +	free_irq(irq2, &pdev->dev);
 +	free_irq(irq1, &pdev->dev);
-+	clk_disable(ipu_clk);
-+	clk_put(ipu_clk);
 +	iounmap(ipu_idmac_reg);
 +	iounmap(ipu_cm_reg);
++
++	if (ipu_use_count != 0) {
++		dev_err(ipu_dev, "unbalanced use count: %d\n", ipu_use_count);
++		clk_disable(ipu_clk);
++	}
++
++	clk_put(ipu_clk);
++	ipu_dev = NULL;
 +
 +	return 0;
 +}
@@ -811,10 +859,10 @@ index 0000000..e6edb88
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-cpmem.c b/drivers/mfd/imx-ipu-v3/ipu-cpmem.c
 new file mode 100644
-index 0000000..587b487
+index 0000000..faff5ee
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-cpmem.c
-@@ -0,0 +1,608 @@
+@@ -0,0 +1,612 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -1366,7 +1414,7 @@ index 0000000..587b487
 +				dma_addr_t phyaddr_0, dma_addr_t phyaddr_1,
 +				u32 u, u32 v, bool interlaced)
 +{
-+	int ret;
++	int ret = 0;
 +	u32 dma_chan = channel->num;
 +
 +	if (stride < width * ipu_bytes_per_pixel(pixel_fmt))
@@ -1378,11 +1426,13 @@ index 0000000..587b487
 +		return -EINVAL;
 +	}
 +
++	ipu_get();
++
 +	/* Build parameter memory data for DMA channel */
 +	ret = ipu_ch_param_init(dma_chan, pixel_fmt, width, height, stride, u, v, 0,
 +			   phyaddr_0, phyaddr_1);
 +	if (ret)
-+		return ret;
++		goto out;
 +
 +	if (rot_mode)
 +		ipu_ch_param_set_rotation(dma_chan, rot_mode);
@@ -1394,8 +1444,10 @@ index 0000000..587b487
 +		ipu_ch_param_set_high_priority(dma_chan);
 +
 +	ipu_ch_param_dump(dma_chan);
++out:
++	ipu_put();
 +
-+	return 0;
++	return ret;
 +}
 +EXPORT_SYMBOL(ipu_idmac_init_channel_buffer);
 +
@@ -1425,10 +1477,10 @@ index 0000000..587b487
 +}
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-dc.c b/drivers/mfd/imx-ipu-v3/ipu-dc.c
 new file mode 100644
-index 0000000..23ba5d7
+index 0000000..b8c601e
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-dc.c
-@@ -0,0 +1,362 @@
+@@ -0,0 +1,364 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -1447,10 +1499,8 @@ index 0000000..23ba5d7
 +#include <linux/types.h>
 +#include <linux/errno.h>
 +#include <linux/delay.h>
-+#include <linux/spinlock.h>
 +#include <linux/io.h>
 +#include <linux/mfd/imx-ipu-v3.h>
-+#include <asm/atomic.h>
 +
 +#include "ipu-prv.h"
 +
@@ -1576,6 +1626,8 @@ index 0000000..23ba5d7
 +		return -EINVAL;
 +	}
 +
++	ipu_get();
++
 +	if (interlaced) {
 +		ipu_dc_link_event(dc_chan, DC_EVT_NL, 0, 3);
 +		ipu_dc_link_event(dc_chan, DC_EVT_EOL, 0, 2);
@@ -1624,6 +1676,8 @@ index 0000000..23ba5d7
 +	__raw_writel(width, DC_DISP_CONF2(di));
 +
 +	ipu_module_enable(IPU_CONF_DC_EN);
++
++	ipu_put();
 +
 +	return 0;
 +}
@@ -1793,10 +1847,10 @@ index 0000000..23ba5d7
 +}
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-di.c b/drivers/mfd/imx-ipu-v3/ipu-di.c
 new file mode 100644
-index 0000000..73ebd51
+index 0000000..62e3d01
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-di.c
-@@ -0,0 +1,507 @@
+@@ -0,0 +1,550 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -1814,11 +1868,10 @@ index 0000000..73ebd51
 +
 +#include <linux/types.h>
 +#include <linux/errno.h>
-+#include <linux/delay.h>
 +#include <linux/io.h>
++#include <linux/err.h>
 +#include <linux/mfd/imx-ipu-v3.h>
 +#include <linux/platform_device.h>
-+#include <asm/atomic.h>
 +
 +#include "ipu-prv.h"
 +
@@ -1833,6 +1886,8 @@ index 0000000..73ebd51
 +	struct clk *clk;
 +	struct clk *ipu_clk;
 +	bool external_clk;
++	bool inuse;
++	bool initialized;
 +};
 +
 +static struct ipu_di dis[2];
@@ -2123,9 +2178,8 @@ index 0000000..73ebd51
 +	ipu_di_sync_config(di, cfg, ARRAY_SIZE(cfg));
 +}
 +
-+int ipu_di_init_sync_panel(int disp, u32 pixel_clk, struct ipu_di_signal_cfg *sig)
++int ipu_di_init_sync_panel(struct ipu_di *di, u32 pixel_clk, struct ipu_di_signal_cfg *sig)
 +{
-+	struct ipu_di *di = &dis[disp];
 +	u32 reg;
 +	u32 disp_gen, di_gen, vsync_cnt;
 +	u32 div;
@@ -2133,10 +2187,7 @@ index 0000000..73ebd51
 +	struct clk *di_clk;
 +
 +	dev_dbg(ipu_dev, "disp %d: panel size = %d x %d\n",
-+		disp, sig->width, sig->height);
-+
-+	if (disp > 1)
-+		return -EINVAL;
++		di->id, sig->width, sig->height);
 +
 +	if ((sig->v_sync_width == 0) || (sig->h_sync_width == 0))
 +		return -EINVAL;
@@ -2145,6 +2196,7 @@ index 0000000..73ebd51
 +	v_total = sig->height + sig->v_sync_width + sig->v_start_width + sig->v_end_width;
 +
 +	mutex_lock(&di_mutex);
++	ipu_get();
 +
 +	/* Init clocking */
 +	if (sig->ext_clk) {
@@ -2165,7 +2217,7 @@ index 0000000..73ebd51
 +		div = 0x10;
 +
 +	disp_gen = ipu_cm_read(IPU_DISP_GEN);
-+	disp_gen &= disp ? ~DI1_COUNTER_RELEASE : ~DI0_COUNTER_RELEASE;
++	disp_gen &= di->id ? ~DI1_COUNTER_RELEASE : ~DI0_COUNTER_RELEASE;
 +	ipu_cm_write(disp_gen, IPU_DISP_GEN);
 +
 +	ipu_di_write(di, div, DI_BS_CLKGEN0);
@@ -2222,19 +2274,20 @@ index 0000000..73ebd51
 +
 +	ipu_di_write(di, reg, DI_POL);
 +
++	ipu_put();
 +	mutex_unlock(&di_mutex);
 +
 +	return 0;
 +}
 +EXPORT_SYMBOL(ipu_di_init_sync_panel);
 +
-+int ipu_di_enable(int disp)
++int ipu_di_enable(struct ipu_di *di)
 +{
-+	struct ipu_di *di = &dis[disp];
 +	u32 reg;
 +
++	ipu_get();
 +	reg = ipu_cm_read(IPU_DISP_GEN);
-+	if (disp)
++	if (di->id)
 +		reg |= DI1_COUNTER_RELEASE;
 +	else
 +		reg |= DI0_COUNTER_RELEASE;
@@ -2249,18 +2302,18 @@ index 0000000..73ebd51
 +}
 +EXPORT_SYMBOL(ipu_di_enable);
 +
-+int ipu_di_disable(int disp)
++int ipu_di_disable(struct ipu_di *di)
 +{
-+	struct ipu_di *di = &dis[disp];
 +	u32 reg;
 +
 +	ipu_module_disable(di->module);
++	ipu_put();
 +
 +	if (di->external_clk)
 +		clk_disable(di->clk);
 +
 +	reg = ipu_cm_read(IPU_DISP_GEN);
-+	if (disp)
++	if (di->id)
 +		reg &= ~DI1_COUNTER_RELEASE;
 +	else
 +		reg &= ~DI0_COUNTER_RELEASE;
@@ -2269,6 +2322,47 @@ index 0000000..73ebd51
 +	return 0;
 +}
 +EXPORT_SYMBOL(ipu_di_disable);
++
++static DEFINE_MUTEX(ipu_di_lock);
++
++struct ipu_di *ipu_di_get(int disp)
++{
++	struct ipu_di *di;
++
++	if (disp > 1)
++		return ERR_PTR(-EINVAL);
++
++	di = &dis[disp];
++
++	mutex_lock(&ipu_di_lock);
++
++	if (!di->initialized) {
++		di = ERR_PTR(-ENOSYS);
++		goto out;
++	}
++
++	if (di->inuse) {
++		di = ERR_PTR(-EBUSY);
++		goto out;
++	}
++
++	di->inuse = true;
++out:
++	mutex_unlock(&ipu_di_lock);
++
++	return di;
++}
++EXPORT_SYMBOL(ipu_di_get);
++
++void ipu_di_put(struct ipu_di *di)
++{
++	mutex_lock(&ipu_di_lock);
++
++	di->inuse = false;
++
++	mutex_unlock(&ipu_di_lock);
++}
++EXPORT_SYMBOL(ipu_di_put);
 +
 +int ipu_di_init(struct platform_device *pdev, int id, unsigned long base,
 +		u32 module, struct clk *ipu_clk)
@@ -2290,6 +2384,8 @@ index 0000000..73ebd51
 +	dis[id].id = id;
 +	dis[id].ipu_clk = ipu_clk;
 +	dis[id].base = ioremap(base, PAGE_SIZE);
++	dis[id].initialized = true;
++	dis[id].inuse = false;
 +	if (!dis[id].base)
 +		return -ENOMEM;
 +
@@ -2303,13 +2399,14 @@ index 0000000..73ebd51
 +{
 +	clk_put(dis[id].clk);
 +	iounmap(dis[id].base);
++	dis[id].initialized = false;
 +}
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-dmfc.c b/drivers/mfd/imx-ipu-v3/ipu-dmfc.c
 new file mode 100644
-index 0000000..25782a7
+index 0000000..3d47a76
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-dmfc.c
-@@ -0,0 +1,343 @@
+@@ -0,0 +1,355 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -2327,7 +2424,6 @@ index 0000000..25782a7
 +
 +#include <linux/types.h>
 +#include <linux/errno.h>
-+#include <linux/delay.h>
 +#include <linux/io.h>
 +#include <linux/mfd/imx-ipu-v3.h>
 +
@@ -2421,6 +2517,7 @@ index 0000000..25782a7
 +int ipu_dmfc_enable_channel(struct dmfc_channel *dmfc)
 +{
 +	mutex_lock(&dmfc_mutex);
++	ipu_get();
 +
 +	if (!dmfc_use_count)
 +		ipu_module_enable(IPU_CONF_DMFC_EN);
@@ -2445,6 +2542,7 @@ index 0000000..25782a7
 +	if (dmfc_use_count < 0)
 +		dmfc_use_count = 0;
 +
++	ipu_put();
 +	mutex_unlock(&dmfc_mutex);
 +}
 +EXPORT_SYMBOL(ipu_dmfc_disable_channel);
@@ -2562,33 +2660,42 @@ index 0000000..25782a7
 +		unsigned long bandwidth_pixel_per_second)
 +{
 +	int slots = dmfc_bandwidth_to_slots(bandwidth_pixel_per_second);
-+	int segment = 0;
++	int segment = 0, ret = 0;
 +
 +	dev_dbg(ipu_dev, "dmfc: trying to allocate %ldMpixel/s for IPU channel %d\n",
 +			bandwidth_pixel_per_second / 1000000, dmfc->ipu_channel);
 +
 +	ipu_dmfc_free_bandwidth(dmfc);
 +
++	ipu_get();
 +	mutex_lock(&dmfc_mutex);
 +
-+	if (slots > 8)
-+		return -EBUSY;
++	if (slots > 8) {
++		ret = -EBUSY;
++		goto out;
++	}
 +
 +	segment = dmfc_find_slots(slots);
-+	if (segment < 0)
-+		return -EBUSY;
++	if (segment < 0) {
++		ret = -EBUSY;
++		goto out;
++	}
 +
 +	ipu_dmfc_setup_channel(dmfc, slots, segment);
 +
++out:
++	ipu_put();
 +	mutex_unlock(&dmfc_mutex);
 +
-+	return 0;
++	return ret;
 +}
 +EXPORT_SYMBOL(ipu_dmfc_alloc_bandwidth);
 +
 +int ipu_dmfc_init_channel(struct dmfc_channel *dmfc, int width)
 +{
 +	u32 dmfc_gen1;
++
++	ipu_get();
 +
 +	dmfc_gen1 = readl(dmfc_regs + DMFC_GENERAL1);
 +
@@ -2598,6 +2705,8 @@ index 0000000..25782a7
 +		dmfc_gen1 &= ~(1 << dmfc->eot_shift);
 +
 +	writel(dmfc_gen1, dmfc_regs + DMFC_GENERAL1);
++
++	ipu_put();
 +
 +	return 0;
 +}
@@ -2655,10 +2764,10 @@ index 0000000..25782a7
 +}
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-dp.c b/drivers/mfd/imx-ipu-v3/ipu-dp.c
 new file mode 100644
-index 0000000..505107d
+index 0000000..57a7fec
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-dp.c
-@@ -0,0 +1,468 @@
+@@ -0,0 +1,476 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -2676,11 +2785,9 @@ index 0000000..505107d
 +
 +#include <linux/types.h>
 +#include <linux/errno.h>
-+#include <linux/delay.h>
 +#include <linux/io.h>
 +#include <linux/mfd/imx-ipu-v3.h>
 +#include <linux/err.h>
-+#include <asm/atomic.h>
 +
 +#include "ipu-prv.h"
 +
@@ -2970,6 +3077,8 @@ index 0000000..505107d
 +	enum csc_type_t *csc_type;
 +	u32 reg;
 +
++	ipu_get();
++
 +	if (bg)
 +		csc_type = &bg_csc_type;
 +	else
@@ -3021,6 +3130,8 @@ index 0000000..505107d
 +
 +	__ipu_dp_csc_setup(dp->flow, dp_csc_array[bg_csc_type][fg_csc_type], true);
 +
++	ipu_put();
++
 +	return 0;
 +}
 +EXPORT_SYMBOL(ipu_dp_setup_channel);
@@ -3028,6 +3139,7 @@ index 0000000..505107d
 +int ipu_dp_enable_channel(struct ipu_dp *dp)
 +{
 +	mutex_lock(&dp_mutex);
++	ipu_get();
 +
 +	if (!dp_use_count)
 +		ipu_module_enable(IPU_CONF_DP_EN);
@@ -3052,6 +3164,7 @@ index 0000000..505107d
 +	if (dp_use_count < 0)
 +		dp_use_count = 0;
 +
++	ipu_put();
 +	mutex_unlock(&dp_mutex);
 +}
 +EXPORT_SYMBOL(ipu_dp_disable_channel);
@@ -3074,6 +3187,8 @@ index 0000000..505107d
 +{
 +	u32 reg, csc;
 +
++	ipu_get();
++
 +	reg = __raw_readl(DP_COM_CONF(DP_SYNC));
 +	csc = reg & DP_COM_CONF_CSC_DEF_MASK;
 +	if (csc == DP_COM_CONF_CSC_DEF_FG)
@@ -3084,6 +3199,8 @@ index 0000000..505107d
 +
 +	reg = ipu_cm_read(IPU_SRM_PRI2) | 0x8;
 +	ipu_cm_write(reg, IPU_SRM_PRI2);
++
++	ipu_put();
 +}
 +EXPORT_SYMBOL(ipu_dp_disable_fg);
 +
@@ -3129,10 +3246,10 @@ index 0000000..505107d
 +}
 diff --git a/drivers/mfd/imx-ipu-v3/ipu-prv.h b/drivers/mfd/imx-ipu-v3/ipu-prv.h
 new file mode 100644
-index 0000000..9d54ad0
+index 0000000..339b554
 --- /dev/null
 +++ b/drivers/mfd/imx-ipu-v3/ipu-prv.h
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,216 @@
 +/*
 + * Copyright (c) 2010 Sascha Hauer <s.hauer@pengutronix.de>
 + * Copyright (C) 2005-2009 Freescale Semiconductor, Inc.
@@ -3153,7 +3270,6 @@ index 0000000..9d54ad0
 +#include <linux/types.h>
 +#include <linux/device.h>
 +#include <linux/clk.h>
-+#include <linux/interrupt.h>
 +#include <linux/platform_device.h>
 +#include <mach/hardware.h>
 +
@@ -3346,13 +3462,16 @@ index 0000000..9d54ad0
 +int ipu_cpmem_init(struct platform_device *pdev, unsigned long base);
 +void ipu_cpmem_exit(struct platform_device *pdev);
 +
++void ipu_get(void);
++void ipu_put(void);
++
 +#endif				/* __IPU_PRV_H__ */
 diff --git a/include/linux/mfd/imx-ipu-v3.h b/include/linux/mfd/imx-ipu-v3.h
 new file mode 100644
-index 0000000..0288c51
+index 0000000..7243360
 --- /dev/null
 +++ b/include/linux/mfd/imx-ipu-v3.h
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,219 @@
 +/*
 + * Copyright 2005-2009 Freescale Semiconductor, Inc.
 + *
@@ -3367,10 +3486,8 @@ index 0000000..0288c51
 +#ifndef __ASM_ARCH_IPU_H__
 +#define __ASM_ARCH_IPU_H__
 +
-+#include <linux/slab.h>
 +#include <linux/types.h>
 +#include <linux/videodev2.h>
-+#include <linux/interrupt.h>
 +#include <linux/bitmap.h>
 +
 +/*
@@ -3533,9 +3650,12 @@ index 0000000..0288c51
 +/*
 + * IPU Display Interface (di) functions
 + */
-+int ipu_di_disable(int disp);
-+int ipu_di_enable(int disp);
-+int ipu_di_init_sync_panel(int disp, u32 pixel_clk,
++struct ipu_di;
++struct ipu_di *ipu_di_get(int disp);
++void ipu_di_put(struct ipu_di *);
++int ipu_di_disable(struct ipu_di *);
++int ipu_di_enable(struct ipu_di *);
++int ipu_di_init_sync_panel(struct ipu_di *, u32 pixel_clk,
 +		struct ipu_di_signal_cfg *sig);
 +
 +/*

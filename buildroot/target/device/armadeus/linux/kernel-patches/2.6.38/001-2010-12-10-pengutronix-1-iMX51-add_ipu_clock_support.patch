@@ -17,7 +17,7 @@ index 9fc65bb..f550d02 100644
  
  #define MAX_DPLL_WAIT_TRIES	1000 /* 1000 * udelay(1) = 1ms */
  
-@@ -679,6 +682,19 @@ static unsigned long clk_emi_slow_get_rate(struct clk *clk)
+@@ -688,6 +691,19 @@ static unsigned long clk_emi_slow_get_rate(struct clk *clk)
  	return clk_get_rate(clk->parent) / div;
  }
  
@@ -37,7 +37,7 @@ index 9fc65bb..f550d02 100644
  /* External high frequency clock */
  static struct clk ckih_clk = {
  	.get_rate = get_high_reference_clock_rate,
-@@ -819,6 +835,109 @@ static struct clk emi_slow_clk = {
+@@ -846,6 +862,109 @@ static struct clk emi_slow_clk = {
  	.get_rate = clk_emi_slow_get_rate,
  };
  
@@ -147,7 +147,7 @@ index 9fc65bb..f550d02 100644
  #define DEFINE_CLOCK_CCGR(name, i, er, es, pfx, p, s)	\
  	static struct clk name = {			\
  		.id		= i,			\
-@@ -1046,6 +1165,23 @@ DEFINE_CLOCK_FULL(esdhc2_ipg_clk, 1, MXC_CCM_CCGR3, MXC_CCM_CCGRx_CG2_OFFSET,
+@@ -1077,6 +1196,23 @@ DEFINE_CLOCK_FULL(esdhc2_ipg_clk, 1, MXC_CCM_CCGR3, MXC_CCM_CCGRx_CG2_OFFSET,
  DEFINE_CLOCK_MAX(esdhc2_clk, 1, MXC_CCM_CCGR3, MXC_CCM_CCGRx_CG3_OFFSET,
  	clk_esdhc2, &pll2_sw_clk, &esdhc2_ipg_clk);
  

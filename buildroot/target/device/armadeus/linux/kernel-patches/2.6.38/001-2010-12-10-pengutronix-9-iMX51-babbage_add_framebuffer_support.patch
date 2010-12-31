@@ -17,7 +17,7 @@ index 5011f42..2a936b7 100644
  	  Include support for MX51 Babbage platform, also known as MX51EVK in
  	  u-boot. This includes specific configurations for the board and its
 diff --git a/arch/arm/mach-mx5/board-mx51_babbage.c b/arch/arm/mach-mx5/board-mx51_babbage.c
-index a896f84..169c48c 100644
+index 368a315..6c1576c 100644
 --- a/arch/arm/mach-mx5/board-mx51_babbage.c
 +++ b/arch/arm/mach-mx5/board-mx51_babbage.c
 @@ -22,11 +22,13 @@
@@ -34,7 +34,7 @@ index a896f84..169c48c 100644
  
  #include <asm/irq.h>
  #include <asm/setup.h>
-@@ -147,6 +149,41 @@ static iomux_v3_cfg_t mx51babbage_pads[] = {
+@@ -158,6 +160,41 @@ static iomux_v3_cfg_t mx51babbage_pads[] = {
  	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
  	MX51_PAD_CSPI1_SS0__GPIO_4_24,
  	MX51_PAD_CSPI1_SS1__GPIO_4_25,
@@ -76,29 +76,31 @@ index a896f84..169c48c 100644
  };
  
  /* Serial ports */
-@@ -310,6 +347,21 @@ static const struct spi_imx_master mx51_babbage_spi_pdata __initconst = {
+@@ -346,6 +383,23 @@ static const struct spi_imx_master mx51_babbage_spi_pdata __initconst = {
  	.num_chipselect = ARRAY_SIZE(mx51_babbage_spi_cs),
  };
  
 +static struct ipuv3_fb_platform_data babbage_fb0_data = {
 +	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
 +	.flags = IMX_IPU_FB_USE_MODEDB | IMX_IPU_FB_USE_OVERLAY,
++	.display = 0,
 +};
 +
 +static struct ipuv3_fb_platform_data babbage_fb1_data = {
 +	.interface_pix_fmt = IPU_PIX_FMT_RGB565,
 +	.flags = IMX_IPU_FB_USE_MODEDB,
++	.display = 1,
 +};
 +
 +static struct imx_ipuv3_platform_data ipu_data = {
-+	.fb0_platform_data = &babbage_fb0_data,
-+	.fb1_platform_data = &babbage_fb1_data,
++	.fb_head0_platform_data = &babbage_fb0_data,
++	.fb_head1_platform_data = &babbage_fb1_data,
 +};
 +
  /*
   * Board specific initialization.
   */
-@@ -351,6 +403,28 @@ static void __init mxc_board_init(void)
+@@ -392,6 +446,26 @@ static void __init mxc_board_init(void)
  		ARRAY_SIZE(mx51_babbage_spi_board_info));
  	imx51_add_ecspi(0, &mx51_babbage_spi_pdata);
  	imx51_add_imx2_wdt(0, NULL);
@@ -113,12 +115,10 @@ index a896f84..169c48c 100644
 +	gpio_direction_input(GPIO_DVI_DETECT);
 +	/* DVI Reset - Assert for i2c disabled mode */
 +	gpio_request(GPIO_DVI_RESET, "dvi reset");
-+	gpio_set_value(GPIO_DVI_RESET, 0);
 +	gpio_direction_output(GPIO_DVI_RESET, 0);
 +	/* DVI Power-down */
 +	gpio_request(GPIO_DVI_PWRDN, "dvi pwdn");
-+	gpio_direction_output(GPIO_DVI_PWRDN, 0);
-+	gpio_set_value(GPIO_DVI_PWRDN, 1);
++	gpio_direction_output(GPIO_DVI_PWRDN, 1);
 +
 +	gpio_request(GPIO_DVI_I2C, "dvi i2c");
 +	gpio_direction_output(GPIO_DVI_I2C, 0);
