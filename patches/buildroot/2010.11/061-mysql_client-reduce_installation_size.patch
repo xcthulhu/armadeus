@@ -5,8 +5,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 
 Index: buildroot/package/mysql_client/Config.in
 ===================================================================
---- buildroot.orig/package/mysql_client/Config.in	2010-10-18 23:01:17.000000000 +0200
-+++ buildroot/package/mysql_client/Config.in	2010-10-18 23:03:16.000000000 +0200
+--- buildroot.orig/package/mysql_client/Config.in	2011-01-03 14:00:29.000000000 +0100
++++ buildroot/package/mysql_client/Config.in	2011-01-03 14:00:39.000000000 +0100
 @@ -8,3 +8,20 @@
  
  comment "Mysql client requires a toolchain with C++ support enabled"
@@ -30,12 +30,16 @@ Index: buildroot/package/mysql_client/Config.in
 +endif
 Index: buildroot/package/mysql_client/mysql_client.mk
 ===================================================================
---- buildroot.orig/package/mysql_client/mysql_client.mk	2010-10-18 23:01:24.000000000 +0200
-+++ buildroot/package/mysql_client/mysql_client.mk	2010-10-18 23:04:49.000000000 +0200
-@@ -34,6 +34,17 @@
+--- buildroot.orig/package/mysql_client/mysql_client.mk	2011-01-03 14:00:29.000000000 +0100
++++ buildroot/package/mysql_client/mysql_client.mk	2011-01-03 14:02:16.000000000 +0100
+@@ -32,10 +32,20 @@
+ 	--enable-thread-safe-client \
+ 	$(ENABLE_DEBUG)
  
- define MYSQL_CLIENT_REMOVE_TEST_PROGS
+-define MYSQL_CLIENT_REMOVE_TEST_PROGS
++$(MYSQL_CLIENT_HOOK_POST_INSTALL):
  	rm -rf $(TARGET_DIR)/usr/mysql-test $(TARGET_DIR)/usr/sql-bench
+-endef
 +ifeq ($(BR2_PACKAGE_MYSQL_CLIENT_SHRINK),y)
 +	rm -rf $(TARGET_DIR)/usr/bin/mysql_client_test
 +	rm -rf $(TARGET_DIR)/usr/bin/mysql_waitpid
@@ -47,6 +51,8 @@ Index: buildroot/package/mysql_client/mysql_client.mk
 +	rm -rf $(TARGET_DIR)/usr/bin/myisamlog
 +	rm -rf $(TARGET_DIR)/usr/bin/my_print_defaults
 +endif
- endef
++
  
- MYSQL_CLIENT_POST_INSTALL_TARGET_HOOKS += MYSQL_CLIENT_REMOVE_TEST_PROGS
+-MYSQL_CLIENT_POST_INSTALL_TARGET_HOOKS += MYSQL_CLIENT_REMOVE_TEST_PROGS
+ 
+ $(eval $(call AUTOTARGETS,package,mysql_client))
