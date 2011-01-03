@@ -4,9 +4,17 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2010-12-30 21:07:06.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2010-12-30 21:07:06.000000000 +0100
-@@ -114,4 +114,22 @@
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-03 15:49:17.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-03 15:56:12.000000000 +0100
+@@ -106,12 +106,30 @@
+ 	select SOC_IMX51
+ 	select IMX_HAVE_PLATFORM_IMX_UART
+ 	select IMX_HAVE_PLATFORM_IMX_I2C
+-	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
+ 	select IMX_HAVE_PLATFORM_MXC_NAND
+-	select IMX_HAVE_PLATFORM_SPI_IMX
+ 	select MXC_ULPI
+ 	help
  	  Include support for Armadeus Systems APF51 System On Module. This
  	  includes specific configurations for the board and its peripherals.
  
@@ -23,6 +31,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 +	bool
 +	select MACH_APF51_HAS_BASEBOARD
 +	select IMX_HAVE_PLATFORM_IMX_IPUV3
++	select IMX_HAVE_PLATFORM_SPI_IMX
++	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
 +	help
 +	  This selects the APF51Dev as baseboard and adds board's specific
 +	  devices.
@@ -31,8 +41,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2010-12-30 21:07:06.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2010-12-30 21:07:06.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-01-03 15:49:17.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-03 15:49:27.000000000 +0100
 @@ -7,6 +7,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -44,7 +54,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c	2010-12-31 16:23:43.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c	2011-01-03 15:49:27.000000000 +0100
 @@ -0,0 +1,184 @@
 + /*
 + * Support for APF51's PROTO development baseboard
