@@ -1,0 +1,18 @@
+Fix Qt configuration options for MySQL module ; Specifies the MySQL's libraries and headers directories.
+
+Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
+
+Index: buildroot/package/qtopia4/qtopia4.mk
+===================================================================
+--- buildroot.orig/package/qtopia4/qtopia4.mk	2011-01-03 17:25:36.000000000 +0100
++++ buildroot/package/qtopia4/qtopia4.mk	2011-01-03 17:25:51.000000000 +0100
+@@ -292,7 +292,8 @@
+ QT_CONFIGURE+= -qt-sql-ibase
+ endif
+ ifeq ($(BR2_PACKAGE_QT_MYSQL),y)
+-QT_CONFIGURE+= -qt-sql-mysql
++QT_CONFIGURE+= -qt-sql-mysql -mysql_config $(STAGING_DIR)/usr/bin/mysql_config
++QT_DEP_LIBS+=mysql_client
+ endif
+ ifeq ($(BR2_PACKAGE_QT_ODBC),y)
+ QT_CONFIGURE+= -qt-sql-odbc
