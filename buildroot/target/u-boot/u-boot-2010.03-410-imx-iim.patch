@@ -1,5 +1,7 @@
---- u-boot-2010.03/common/cmd_iim.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-fec/common/cmd_iim.c	2010-11-25 22:55:47.000000000 +0100
+Index: u-boot-2010.03/common/cmd_iim.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/common/cmd_iim.c	2011-01-05 18:11:58.000000000 +0100
 @@ -0,0 +1,95 @@
 +/*
 + * (C) Copyright 2008-2010 Freescale Semiconductor, Inc.
@@ -96,9 +98,11 @@
 +	"iim blow fecmac <0x##:0x##:0x##:0x##:0x##:0x##>"
 +	"- Blow FEC Mac address");
 +
---- u-boot-2010.03/common/Makefile	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03-fec/common/Makefile	2010-11-25 22:28:22.000000000 +0100
-@@ -99,6 +99,7 @@ COBJS-$(CONFIG_CMD_FLASH) += cmd_flash.o
+Index: u-boot-2010.03/common/Makefile
+===================================================================
+--- u-boot-2010.03.orig/common/Makefile	2011-01-05 18:05:11.000000000 +0100
++++ u-boot-2010.03/common/Makefile	2011-01-05 18:11:58.000000000 +0100
+@@ -99,6 +99,7 @@
  ifdef CONFIG_FPGA
  COBJS-$(CONFIG_CMD_FPGA) += cmd_fpga.o
  endif
@@ -106,8 +110,10 @@
  COBJS-$(CONFIG_CMD_I2C) += cmd_i2c.o
  COBJS-$(CONFIG_CMD_IDE) += cmd_ide.o
  COBJS-$(CONFIG_CMD_IMMAP) += cmd_immap.o
---- u-boot-2010.03/drivers/misc/imx_iim.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-fec/drivers/misc/imx_iim.c	2010-11-25 22:52:55.000000000 +0100
+Index: u-boot-2010.03/drivers/misc/imx_iim.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/drivers/misc/imx_iim.c	2011-01-05 18:11:58.000000000 +0100
 @@ -0,0 +1,344 @@
 +/*
 + * (C) Copyright 2008-2010 Freescale Semiconductor, Inc.
@@ -453,9 +459,11 @@
 +}
 +
 +
---- u-boot-2010.03/drivers/misc/Makefile	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03-fec/drivers/misc/Makefile	2010-11-25 22:26:33.000000000 +0100
-@@ -28,6 +28,7 @@ LIB	:= $(obj)libmisc.a
+Index: u-boot-2010.03/drivers/misc/Makefile
+===================================================================
+--- u-boot-2010.03.orig/drivers/misc/Makefile	2011-01-05 18:05:11.000000000 +0100
++++ u-boot-2010.03/drivers/misc/Makefile	2011-01-05 18:11:58.000000000 +0100
+@@ -28,6 +28,7 @@
  COBJS-$(CONFIG_ALI152X) += ali512x.o
  COBJS-$(CONFIG_DS4510)  += ds4510.o
  COBJS-$(CONFIG_FSL_LAW) += fsl_law.o
@@ -463,9 +471,11 @@
  COBJS-$(CONFIG_NS87308) += ns87308.o
  COBJS-$(CONFIG_STATUS_LED) += status_led.o
  COBJS-$(CONFIG_TWL4030_LED) += twl4030_led.o
---- u-boot-2010.03/drivers/net/fec_mxc.c	2010-11-29 23:16:52.000000000 +0100
-+++ u-boot-2010.03-fec/drivers/net/fec_mxc.c	2010-11-29 00:24:23.000000000 +0100
-@@ -333,12 +333,14 @@ static void fec_rbd_clean(int last, stru
+Index: u-boot-2010.03/drivers/net/fec_mxc.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/net/fec_mxc.c	2011-01-05 18:11:23.000000000 +0100
++++ u-boot-2010.03/drivers/net/fec_mxc.c	2011-01-05 18:11:58.000000000 +0100
+@@ -333,12 +333,14 @@
  
  static int fec_get_hwaddr(struct eth_device *dev, unsigned char *mac)
  {
@@ -485,8 +495,10 @@
  #else
  	struct iim_regs *iim = (struct iim_regs *)IMX_IIM_BASE;
  	int i;
---- u-boot-2010.03/include/asm-arm/arch-mx51/imx_iim.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-fec/include/asm-arm/arch-mx51/imx_iim.h	2010-11-28 23:21:41.000000000 +0100
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/imx_iim.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/include/asm-arm/arch-mx51/imx_iim.h	2011-01-05 18:11:58.000000000 +0100
 @@ -0,0 +1,43 @@
 +/*
 + * (C) Copyright 2009-2010 Freescale Semiconductor, Inc.
@@ -531,8 +543,10 @@
 +int iim_blow_func(char *func_name, char *func_val);
 +
 +#endif
---- u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2010-11-29 23:16:52.000000000 +0100
-+++ u-boot-2010.03-fec/include/asm-arm/arch-mx51/imx-regs.h	2010-11-29 00:21:06.000000000 +0100
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:11:20.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:11:58.000000000 +0100
 @@ -204,6 +204,8 @@
  #define BOARD_REV_1_0           0x0
  #define BOARD_REV_2_0           0x1
@@ -542,7 +556,7 @@
  
  /* DDR commands */
  /* cs ChipSelect in range of 0..1 */
-@@ -254,6 +256,49 @@ struct clkctl {
+@@ -254,6 +256,49 @@
  	u32	cmeor;
  };
  
@@ -592,4 +606,3 @@
  /* WEIM registers */
  struct weim {
  	u32	csgcr1;
-

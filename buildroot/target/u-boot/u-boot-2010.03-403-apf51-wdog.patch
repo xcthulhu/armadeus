@@ -1,7 +1,8 @@
-diff -purN u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h u-boot-2010.03-wdog/include/asm-arm/arch-mx51/imx-regs.h
---- u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2010-10-22 00:09:44.000000000 +0200
-+++ u-boot-2010.03-wdog/include/asm-arm/arch-mx51/imx-regs.h	2010-10-21 23:56:21.000000000 +0200
-@@ -263,6 +263,15 @@ struct weim {
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:10:42.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:11:20.000000000 +0100
+@@ -264,6 +264,15 @@
  	u32	cswcr2;
  };
  
@@ -17,9 +18,10 @@ diff -purN u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h u-boot-2010.03-wd
  #endif /* __ASSEMBLER__*/
  
  #endif				/*  __ASM_ARCH_MXC_MX51_H__ */
-diff -purN u-boot-2010.03-tstwdog/drivers/serial/serial_mxc.c u-boot-2010.03/drivers/serial/serial_mxc.c
---- u-boot-2010.03-tstwdog/drivers/serial/serial_mxc.c	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/drivers/serial/serial_mxc.c	2010-10-24 12:31:12.000000000 +0200
+Index: u-boot-2010.03/drivers/serial/serial_mxc.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/serial/serial_mxc.c	2011-01-05 18:05:11.000000000 +0100
++++ u-boot-2010.03/drivers/serial/serial_mxc.c	2011-01-05 18:11:20.000000000 +0100
 @@ -24,6 +24,7 @@
  #include <asm/arch/imx-regs.h>
  #include <asm/arch/clock.h>
@@ -28,7 +30,7 @@ diff -purN u-boot-2010.03-tstwdog/drivers/serial/serial_mxc.c u-boot-2010.03/dri
  
  #define __REG(x)     (*((volatile u32 *)(x)))
  
-@@ -189,7 +190,9 @@ void serial_setbrg (void)
+@@ -189,7 +190,9 @@
  
  int serial_getc (void)
  {
@@ -39,7 +41,7 @@ diff -purN u-boot-2010.03-tstwdog/drivers/serial/serial_mxc.c u-boot-2010.03/dri
  	return (__REG(UART_PHYS + URXD) & URXD_RX_DATA); /* mask out status from upper word */
  }
  
-@@ -198,7 +201,9 @@ void serial_putc (const char c)
+@@ -198,7 +201,9 @@
  	__REG(UART_PHYS + UTXD) = c;
  
  	/* wait for transmitter to be ready */

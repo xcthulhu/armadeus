@@ -1,6 +1,8 @@
---- u-boot-2010.03-rc1.ori/drivers/rtc/ds1374.c	2010-03-12 23:06:04.000000000 +0100
-+++ u-boot-2010.03-rc1/drivers/rtc/ds1374.c	2010-03-23 02:14:44.000000000 +0100
-@@ -113,6 +113,11 @@ int rtc_get (struct rtc_time *tm){
+Index: u-boot-2010.03/drivers/rtc/ds1374.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/rtc/ds1374.c	2011-01-05 18:05:14.000000000 +0100
++++ u-boot-2010.03/drivers/rtc/ds1374.c	2011-01-05 18:08:28.000000000 +0100
+@@ -113,6 +113,11 @@
  	unsigned int limit;
  	unsigned char tmp;
  	unsigned int i;
@@ -12,7 +14,7 @@
  
  	/*
  	 * Since the reads are being performed one byte at a time,
-@@ -154,6 +159,9 @@ int rtc_get (struct rtc_time *tm){
+@@ -154,6 +159,9 @@
  		tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday,
  		tm->tm_hour, tm->tm_min, tm->tm_sec);
  
@@ -22,7 +24,7 @@
  	return rel;
  }
  
-@@ -164,6 +172,11 @@ int rtc_set (struct rtc_time *tmp){
+@@ -164,6 +172,11 @@
  
  	unsigned long time;
  	unsigned i;
@@ -34,7 +36,7 @@
  
  	DEBUGR ("Set DATE: %4d-%02d-%02d (wday=%d)  TIME: %2d:%02d:%02d\n",
  		tmp->tm_year, tmp->tm_mon, tmp->tm_mday, tmp->tm_wday,
-@@ -187,6 +200,9 @@ int rtc_set (struct rtc_time *tmp){
+@@ -187,6 +200,9 @@
  	/* Start clock */
  	rtc_write(RTC_CTL_ADDR, RTC_CTL_BIT_EN_OSC, FALSE);
  
@@ -44,7 +46,7 @@
  	return 0;
  }
  
-@@ -200,6 +216,11 @@ int rtc_set (struct rtc_time *tmp){
+@@ -200,6 +216,11 @@
  void rtc_reset (void){
  
  	struct rtc_time tmp;
@@ -56,7 +58,7 @@
  
  	/* clear status flags */
  	rtc_write (RTC_SR_ADDR, (RTC_SR_BIT_AF|RTC_SR_BIT_OSF), FALSE); /* clearing OSF and AF */
-@@ -232,6 +253,9 @@ void rtc_reset (void){
+@@ -232,6 +253,9 @@
  	rtc_write(RTC_WD_ALM_CNT_BYTE2_ADDR,0xAC, TRUE);
  	rtc_write(RTC_WD_ALM_CNT_BYTE1_ADDR,0xDE, TRUE);
  	rtc_write(RTC_WD_ALM_CNT_BYTE2_ADDR,0xAD, TRUE);
