@@ -1,7 +1,8 @@
-diff -purN u-boot-2010.03-ref/drivers/mtd/nand/Makefile u-boot-2010.03/drivers/mtd/nand/Makefile
---- u-boot-2010.03-ref/drivers/mtd/nand/Makefile	2010-09-16 23:11:51.000000000 +0200
-+++ u-boot-2010.03/drivers/mtd/nand/Makefile	2010-09-16 05:34:54.000000000 +0200
-@@ -43,6 +43,7 @@ COBJS-$(CONFIG_NAND_KIRKWOOD) += kirkwoo
+Index: u-boot-2010.03/drivers/mtd/nand/Makefile
+===================================================================
+--- u-boot-2010.03.orig/drivers/mtd/nand/Makefile	2011-01-05 18:05:11.000000000 +0100
++++ u-boot-2010.03/drivers/mtd/nand/Makefile	2011-01-05 18:11:26.000000000 +0100
+@@ -43,6 +43,7 @@
  COBJS-$(CONFIG_NAND_KMETER1) += kmeter1_nand.o
  COBJS-$(CONFIG_NAND_MPC5121_NFC) += mpc5121_nfc.o
  COBJS-$(CONFIG_NAND_MXC) += mxc_nand.o
@@ -9,12 +10,13 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/Makefile u-boot-2010.03/drivers/m
  COBJS-$(CONFIG_NAND_NDFC) += ndfc.o
  COBJS-$(CONFIG_NAND_NOMADIK) += nomadik.o
  COBJS-$(CONFIG_NAND_S3C2410) += s3c2410_nand.o
-diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
---- u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c	2010-09-16 23:11:51.000000000 +0200
-+++ u-boot-2010.03/drivers/mtd/nand/mx51_nand.c	2010-09-16 05:34:54.000000000 +0200
+Index: u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/drivers/mtd/nand/mx51_nand.c	2011-01-05 18:11:47.000000000 +0100
 @@ -0,0 +1,979 @@
 +/*
-+ * Copyright (C) 2010 Eric Jarrige <jorasse@armadeus.org> 
++ * Copyright (C) 2010 Eric Jarrige <jorasse@armadeus.org>
 + * Copyright 2004-2007 Freescale Semiconductor, Inc.
 + * Copyright 2008 Sascha Hauer, kernel@pengutronix.de
 + * Copyright 2009 Ilya Yanok, <yanok@emcraft.com>
@@ -179,7 +181,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +	},
 +	.oobfree = {
 +			{.offset = 2, .length = 5},
-+			{.offset = 16, .length = 48} 
++			{.offset = 16, .length = 48}
 +	},
 +};
 +
@@ -418,7 +420,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +	struct nand_chip *this = mtd->priv;
 +	MTDDEBUG(MTD_DEBUG_LEVEL3, "mxc_nand_calculate_ecc: len = %d\n", this->ecc.bytes);
 +	memset ((void*)ecc_code, 0xff, this->ecc.bytes);
-+				
++
 +	return 0;
 +}
 +
@@ -673,7 +675,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 + *
 + * @param       mtd     MTD structure for the NAND Flash
 + * @param       buf     data to be verified
-+ * @param       ofs     offset to the bad block 
++ * @param       ofs     offset to the bad block
 + *
 + * @return      -EFAULT if error else 0
 + *
@@ -707,7 +709,7 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +	this->ops.oobbuf = buf;
 +	this->ops.ooboffs = this->badblockpos & ~0x01;
 +
-+	ret= mtd->write_oob (mtd, ofs , &this->ops); 
++	ret= mtd->write_oob (mtd, ofs , &this->ops);
 +	if (!ret)
 +		mtd->ecc_stats.badblocks++;
 +
@@ -992,9 +994,10 @@ diff -purN u-boot-2010.03-ref/drivers/mtd/nand/mx51_nand.c u-boot-2010.03/driver
 +
 +	return err;
 +}
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/mxc_nand.h u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/mxc_nand.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h	2010-09-12 16:23:34.000000000 +0200
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/include/asm-arm/arch-mx51/mxc_nand.h	2011-01-05 18:11:26.000000000 +0100
 @@ -0,0 +1,368 @@
 +/*
 + * Copyright 2004-2009 Freescale Semiconductor, Inc. All Rights Reserved.

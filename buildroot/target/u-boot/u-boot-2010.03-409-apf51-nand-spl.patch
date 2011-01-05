@@ -1,6 +1,7 @@
-diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/config.mk
---- u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/config.mk	2010-10-30 22:21:00.000000000 +0200
+Index: u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk	2011-01-05 18:11:55.000000000 +0100
 @@ -0,0 +1,43 @@
 +#
 +# (C) Copyright 2007
@@ -45,9 +46,10 @@ diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/config.mk u-boot-2010.03
 +# PAD_TO used to generate a 2kByte binary needed for the combined image
 +# -> PAD_TO = TEXT_BASE + 0x0800
 +#PAD_TO	= 0xa0000800
-diff -purN u-boot-2010.03-ori/nand_spl/board/armadeus/apf51/flash_header.S u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S
---- u-boot-2010.03-ori/nand_spl/board/armadeus/apf51/flash_header.S	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S	2010-11-08 23:54:12.000000000 +0100
+Index: u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/flash_header.S	2011-01-05 18:11:55.000000000 +0100
 @@ -0,0 +1,184 @@
 +/*
 + *
@@ -233,9 +235,10 @@ diff -purN u-boot-2010.03-ori/nand_spl/board/armadeus/apf51/flash_header.S u-boo
 +image_len:		.word	CONFIG_SYS_MONITOR_LEN
 +end:
 +#endif
-diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/Makefile
---- u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/Makefile	2010-10-30 21:51:48.000000000 +0200
+Index: u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile	2011-01-05 18:11:55.000000000 +0100
 @@ -0,0 +1,77 @@
 +#
 +# (C) Copyright 2007
@@ -314,9 +317,10 @@ diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/Makefile u-boot-2010.03-
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S
---- u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S	2010-09-16 19:04:44.000000000 +0200
+Index: u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S	2011-01-05 18:11:55.000000000 +0100
 @@ -0,0 +1,170 @@
 +/*
 + * (C) Copyright 2009 Freescale Semiconductor, Inc.
@@ -488,9 +492,10 @@ diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/mxc_nand_load.S u-boot-2
 +NFC_PAGE_MODE:	.word 0x1000
 +SAVE_REGS:	.word 0x0
 +		.word 0x0
-diff -purN u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/u-boot.lds
---- u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2010.03-NB/nand_spl/board/armadeus/apf51/u-boot.lds	2010-10-30 21:50:28.000000000 +0200
+Index: u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/nand_spl/board/armadeus/apf51/u-boot.lds	2011-01-05 18:11:55.000000000 +0100
 @@ -0,0 +1,39 @@
 +/*
 + * (C) Copyright 2007

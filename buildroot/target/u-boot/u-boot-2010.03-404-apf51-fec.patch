@@ -1,7 +1,8 @@
-diff -purN u-boot-2010.03-ref/drivers/net/fec_mxc.c u-boot-2010.03/drivers/net/fec_mxc.c
---- u-boot-2010.03-ref/drivers/net/fec_mxc.c	2010-10-22 00:43:19.000000000 +0200
-+++ u-boot-2010.03/drivers/net/fec_mxc.c	2010-10-24 12:30:19.000000000 +0200
-@@ -162,8 +162,8 @@ static int miiphy_restart_aneg(struct et
+Index: u-boot-2010.03/drivers/net/fec_mxc.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/net/fec_mxc.c	2011-01-05 18:10:35.000000000 +0100
++++ u-boot-2010.03/drivers/net/fec_mxc.c	2011-01-05 18:11:23.000000000 +0100
+@@ -162,8 +162,8 @@
  	 * Wake up from sleep if necessary
  	 * Reset PHY, then delay 300ns
  	 */
@@ -12,10 +13,7 @@ diff -purN u-boot-2010.03-ref/drivers/net/fec_mxc.c u-boot-2010.03/drivers/net/f
  #endif
  	miiphy_write(dev->name, CONFIG_FEC_MXC_PHYADDR, PHY_BMCR,
  			PHY_BMCR_RESET);
-diff -purN u-boot-2010.03/drivers/net/fec_mxc.c u-boot-2010.03-new/drivers/net/fec_mxc.c
---- u-boot-2010.03-ref/drivers/net/fec_mxc.c	2010-10-30 15:51:47.000000000 +0200
-+++ u-boot-2010.03-ref/drivers/net/fec_mxc.c	2010-10-30 16:11:38.000000000 +0200
-@@ -184,7 +184,9 @@ static int miiphy_restart_aneg(struct et
+@@ -184,7 +184,9 @@
  static int miiphy_wait_aneg(struct eth_device *dev)
  {
  	uint32_t start;
@@ -26,7 +24,7 @@ diff -purN u-boot-2010.03/drivers/net/fec_mxc.c u-boot-2010.03-new/drivers/net/f
  
  	/*
  	 * Wait for AN completion
-@@ -204,6 +206,25 @@ static int miiphy_wait_aneg(struct eth_d
+@@ -204,6 +206,25 @@
  		}
  	} while (!(status & PHY_BMSR_LS));
  

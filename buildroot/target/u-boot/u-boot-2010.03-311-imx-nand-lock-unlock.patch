@@ -1,5 +1,7 @@
---- u-boot-2010.03/drivers/mtd/nand/mxc_nand.c.ori	2010-04-10 19:42:00.000000000 +0200
-+++ u-boot-2010.03/drivers/mtd/nand/mxc_nand.c	2010-04-11 23:30:46.000000000 +0200
+Index: u-boot-2010.03/drivers/mtd/nand/mxc_nand.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/mtd/nand/mxc_nand.c	2011-01-05 18:09:13.000000000 +0100
++++ u-boot-2010.03/drivers/mtd/nand/mxc_nand.c	2011-01-05 18:10:09.000000000 +0100
 @@ -56,6 +56,28 @@
  #warning "MXC NFC version not defined"
  #endif
@@ -29,7 +31,7 @@
  #if defined(MXC_NFC_V1)
  #define NAND_MXC_NR_BUFS		4
  #define NAND_MXC_SPARE_BUF_SIZE		16
-@@ -1268,6 +1289,50 @@ void mxc_nand_command(struct mtd_info *m
+@@ -1268,6 +1290,50 @@
  		}
  
  		break;
@@ -65,8 +67,8 @@
 +
 +    		MTDDEBUG(MTD_DEBUG_LEVEL3,"get_lock_status %x\n", readw(&host->regs->nfc_nf_wrprst));
 +
-+		if ((readw(&host->regs->nfc_nf_wrprst) & NFC_WRPR_US) 
-+			&& !(readw(&host->regs->nfc_nf_wrprst) & NFC_WRPR_LTS) 
++		if ((readw(&host->regs->nfc_nf_wrprst) & NFC_WRPR_US)
++			&& !(readw(&host->regs->nfc_nf_wrprst) & NFC_WRPR_LTS)
 +			&& ((readw(&host->regs->nfc_unlockend_blkaddr) >= page_addr>>6)
 +			&& (readw(&host->regs->nfc_unlockstart_blkaddr) <= page_addr>>6))) {
 +			writeb(NFC_WRPR_US, &host->regs->main_area[0][0]);

@@ -1,6 +1,8 @@
---- u-boot-2010.03-rc1/drivers/net/dm9000x.c	2010-03-12 23:06:04.000000000 +0100
-+++ u-boot-2010.03-rc1.new/drivers/net/dm9000x.c	2010-03-23 01:24:07.000000000 +0100
-@@ -232,7 +232,7 @@ dm9000_probe(void)
+Index: u-boot-2010.03/drivers/net/dm9000x.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/net/dm9000x.c	2011-01-05 18:05:14.000000000 +0100
++++ u-boot-2010.03/drivers/net/dm9000x.c	2011-01-05 18:07:13.000000000 +0100
+@@ -232,7 +232,7 @@
  	id_val |= DM9000_ior(DM9000_PIDL) << 16;
  	id_val |= DM9000_ior(DM9000_PIDH) << 24;
  	if (id_val == DM9000_ID) {
@@ -9,7 +11,7 @@
  		       id_val);
  		return 0;
  	} else {
-@@ -298,19 +298,19 @@ static int dm9000_init(struct eth_device
+@@ -298,19 +298,19 @@
  
  	switch (io_mode) {
  	case 0x0:  /* 16-bit mode */
@@ -32,8 +34,10 @@
  		db->outblk    = dm9000_outblk_8bit;
  		db->inblk     = dm9000_inblk_8bit;
  		db->rx_status = dm9000_rx_status_8bit;
---- u-boot-2010.03-rc2/board/armadeus/apf9328/eeprom.c	2010-03-28 23:41:17.000000000 +0200
-+++ u-boot-2010.03-rc2/board/armadeus/apf9328/eeprom.c	2010-03-28 23:39:04.000000000 +0200
+Index: u-boot-2010.03/board/armadeus/apf9328/eeprom.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/eeprom.c	2011-01-05 18:07:13.000000000 +0100
 @@ -0,0 +1,85 @@
 +/*
 + * (C) Copyright 2007
@@ -120,9 +124,11 @@
 +	"\t\t\t03-07 : DM9000 Configuration\n"
 +	"\t\t\t08-63 : User data"
 +);
---- u-boot-2010.03-rc2/board/armadeus/apf9328/Makefile	2010-03-28 17:56:25.000000000 +0200
-+++ u-boot-2010.03-rc2/board/armadeus/apf9328/Makefile	2010-03-28 23:45:48.000000000 +0200
-@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
+Index: u-boot-2010.03/board/armadeus/apf9328/Makefile
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf9328/Makefile	2011-01-05 18:05:23.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf9328/Makefile	2011-01-05 18:07:13.000000000 +0100
+@@ -25,7 +25,7 @@
  
  LIB	= $(obj)lib$(BOARD).a
  

@@ -5,8 +5,8 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/qtopia4/Config.in
 ===================================================================
---- buildroot.orig/package/qtopia4/Config.in	2011-01-03 10:48:45.000000000 +0100
-+++ buildroot/package/qtopia4/Config.in	2011-01-03 10:48:45.000000000 +0100
+--- buildroot.orig/package/qtopia4/Config.in	2011-01-03 10:54:42.000000000 +0100
++++ buildroot/package/qtopia4/Config.in	2011-01-03 10:54:42.000000000 +0100
 @@ -325,4 +325,14 @@
  	  Build the Qt Script Tools module.
  	  if unsure, say n.
@@ -24,8 +24,8 @@ Index: buildroot/package/qtopia4/Config.in
  endif # BR2_PACKAGE_QT
 Index: buildroot/package/qtopia4/qtopia4.mk
 ===================================================================
---- buildroot.orig/package/qtopia4/qtopia4.mk	2011-01-03 10:48:45.000000000 +0100
-+++ buildroot/package/qtopia4/qtopia4.mk	2011-01-03 10:52:31.000000000 +0100
+--- buildroot.orig/package/qtopia4/qtopia4.mk	2011-01-03 10:54:42.000000000 +0100
++++ buildroot/package/qtopia4/qtopia4.mk	2011-01-03 17:22:36.000000000 +0100
 @@ -17,6 +17,7 @@
  QT_SITE:=http://get.qt.nokia.com/qt/source
  QT_CAT:=$(ZCAT)
@@ -34,17 +34,7 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  
  QT_CONFIGURE:=#empty
  
-@@ -291,7 +292,8 @@
- QT_CONFIGURE+= -qt-sql-ibase
- endif
- ifeq ($(BR2_PACKAGE_QT_MYSQL),y)
--QT_CONFIGURE+= -qt-sql-mysql
-+QT_CONFIGURE+= -qt-sql-mysql -mysql_config $(STAGING_DIR)/usr/bin/mysql_config
-+QT_DEP_LIBS+=mysql_client
- endif
- ifeq ($(BR2_PACKAGE_QT_ODBC),y)
- QT_CONFIGURE+= -qt-sql-odbc
-@@ -345,6 +347,14 @@
+@@ -345,6 +346,14 @@
  QT_CONFIGURE+= -no-stl
  endif
  
@@ -59,7 +49,7 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  # ccache and precompiled headers don't play well together
  ifeq ($(BR2_CCACHE),y)
  QT_CONFIGURE += -no-pch
-@@ -483,11 +493,11 @@
+@@ -483,11 +492,11 @@
  		-no-accessibility \
  		-no-separate-debug-info \
  		-prefix /usr \
@@ -73,7 +63,7 @@ Index: buildroot/package/qtopia4/qtopia4.mk
  	)
  	touch $@
  
-@@ -560,8 +570,19 @@
+@@ -560,8 +569,19 @@
  	cp -dpf $(STAGING_DIR)/usr/lib/libQtScriptTools.so.* $(TARGET_DIR)/usr/lib/
  endif
  
