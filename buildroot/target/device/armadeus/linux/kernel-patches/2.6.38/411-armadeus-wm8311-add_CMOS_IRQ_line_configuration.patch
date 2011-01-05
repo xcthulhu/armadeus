@@ -1,0 +1,18 @@
+Configure "IRQ" line as CMOS.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-alpha/drivers/mfd/wm831x-core.c
+===================================================================
+--- linux-2.6.38-alpha.orig/drivers/mfd/wm831x-core.c	2010-12-29 10:33:41.000000000 +0100
++++ linux-2.6.38-alpha/drivers/mfd/wm831x-core.c	2010-12-29 10:35:59.000000000 +0100
+@@ -1571,6 +1571,9 @@
+ 		}
+ 	}
+ 
++	/* Configure "IRQ" line as CMOS */
++	wm831x_reg_write(wm831x, WM831X_IRQ_CONFIG, 0);
++
+ 	ret = wm831x_irq_init(wm831x, irq);
+ 	if (ret != 0)
+ 		goto err;
