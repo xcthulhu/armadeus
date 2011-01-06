@@ -19,18 +19,23 @@
  *
  */
 
-#include <mach/iomux-mx1-mx2.h>
-#include <mach/gpio.h>
-#include <asm/io.h>
+#include <linux/version.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
-#include "xilinx-fpga-loader.h"
+#include <asm/io.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
+#include <mach/iomux-mx1-mx2.h>
+#else
+#include <mach/iomux-mx27.h>
+#endif
+#include <mach/gpio.h>
 #include <mach/fpga.h>
-#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
 #define mxc_gpio_setup_multiple_pins mxc_gpio_setup_multiple
 #define mxc_gpio_release_multiple_pins mxc_gpio_release_multiple
 #endif
+
+#include "xilinx-fpga-loader.h"
 
 #define CFG_FPGA_PWR		(GPIO_PORTF | 19)	/* FPGA prog pin  */
 #define CFG_FPGA_PRG		(GPIO_PORTF | 11)	/* FPGA prog pin  */
