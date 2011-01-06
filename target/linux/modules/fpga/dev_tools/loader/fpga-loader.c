@@ -33,10 +33,10 @@
 #include "xilinx-fpga-loader.h"
 
 
-#define DRIVER_VERSION "0.9"
-#define DRIVER_NAME    "fpgaloader"
-#define FPGA_PROC_DIRNAME   "driver/fpga"
-#define FPGA_PROC_FILENAME  FPGA_PROC_DIRNAME "/loader"
+#define DRIVER_VERSION		"0.91"
+#define DRIVER_NAME		"fpgaloader"
+#define FPGA_PROC_DIRNAME	"driver/fpga"
+#define FPGA_PROC_FILENAME	FPGA_PROC_DIRNAME "/loader"
 #define FPGA_IOCTL 0x10000000   /* !! TO BE BETTER DEFINED !! */
 
 /* global variables */
@@ -144,52 +144,10 @@ static int procfile_fpga_read(char *buffer, __attribute__ ((unused)) char **star
 	return ret;
 }
 
-static int procfile_fpga_write( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
+static int procfile_fpga_write( __attribute__ ((unused)) struct file *file,
+			        const char *buf, unsigned long count, void *data)
 {
 	return count;
-}
-
-/* Handling of IOCTL calls */
-int armadeus_fpga_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
-{
-	int err = 0; int ret = 0;
-	unsigned int minor;
-
-	/* PRINTF( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd ); */
-	/* Extract the type and number bitfields, and don't decode wrong cmds:
-	   return ENOTTY (inappropriate ioctl) before access_ok() */
-	if (_IOC_TYPE(cmd) != FPGA_IOCTL) return -ENOTTY;
-
-	/* The direction is a bitmask, and VERIFY_WRITE catches R/W transfers.
-	  `Type' is user-oriented, while access_ok is kernel-oriented,
-	   so the concept of "read" and "write" is reversed */
-	if (_IOC_DIR(cmd) & _IOC_READ)
-		err = !access_ok(VERIFY_WRITE, (void *)arg, _IOC_SIZE(cmd));
-	else if (_IOC_DIR(cmd) & _IOC_WRITE)
-		err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
-
-	if (err) return -EFAULT;
-
-	if (down_interruptible(&fpga_sema))
-		return -ERESTARTSYS;
-
-	/* Extract and test minor */
-	minor = MINOR(inode->i_rdev);
-/*	if( minor > FPGA_MAX_MINOR ) {
-		printk("Minor outside range: %d !\n", minor);
-		return -EFAULT;
-	}*/
-
-	switch (cmd)
-	{
-		default:
-			return -ENOTTY;
-		break;
-	}
-
-	up(&fpga_sema);
-
-	return ret;
 }
 
 /* Create /proc entries for direct access to FPGA config */
@@ -222,7 +180,6 @@ static struct file_operations fpga_fops = {
 	/*    .read    = armadeus_fpga_read, Configuration saving not supported yet */
 	.open    = armadeus_fpga_open,
 	.release = armadeus_fpga_release,
-	.ioctl   = armadeus_fpga_ioctl,
 };
 
 #ifdef CONFIG_PM
