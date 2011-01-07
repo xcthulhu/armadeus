@@ -30,9 +30,7 @@
 echo "Configuring guest user"
 chown guest:1001 /home/guest
 
-mkdir /home/guest/.ssh
 chown guest:1001 /home/guest/.ssh
 chmod 750 /home/guest/.ssh
 
-touch /home/guest/.ssh/authorized_keys
 chown guest:1001 /home/guest/.ssh/authorized_keys
