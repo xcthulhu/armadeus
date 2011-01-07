@@ -1,0 +1,334 @@
+Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf27/fpga.c	2011-01-06 11:44:48.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf27/fpga.c	2011-01-06 11:44:54.000000000 +0100
+@@ -33,6 +33,7 @@
+ #include <config.h>
+ #include "fpga.h"
+ #include <spartan3.h>
++#include <spartan6.h>
+ 
+ #define GPIO_PORT(x)  ((x & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT)
+ #define GPIO_SET(x)   writel(readl(&gpregs->port[GPIO_PORT(x)].dr) | (1 << (x & GPIO_PIN_MASK)), \
+@@ -67,21 +68,48 @@
+ 	fpga_wr_fn,
+ 	fpga_rdata_fn,
+ 	fpga_wdata_fn,
+-   fpga_busy_fn,
++	fpga_busy_fn,
+ 	fpga_abort_fn,
+ 	fpga_post_fn,
+ };
+ 
++Xilinx_Spartan6_Slave_SelectMap_fns fpga_second_fns= {
++	fpga_spartan6_pre_fn,
++	fpga_spartan6_pgm_fn,
++	fpga_spartan6_init_fn,
++	NULL,
++	fpga_spartan6_done_fn,
++	fpga_spartan6_clk_fn,
++	fpga_spartan6_cs_fn,
++	fpga_spartan6_wr_fn,
++	fpga_spartan6_rdata_fn,
++	fpga_spartan6_wdata_fn,
++	fpga_spartan6_busy_fn,
++	fpga_spartan6_abort_fn,
++	fpga_spartan6_post_fn,
++
++};
++
+ Xilinx_desc fpga[CONFIG_FPGA_COUNT] = {
+ 	{Xilinx_Spartan3,
+ 	 slave_parallel,
+ 	 1196128l/8,
+ 	 (void *) &fpga_fns,
+-	 0}
++	 0},
++	{Xilinx_Spartan6,
++	 slave_selectmap,
++	 XILINX_XC6SLX45_SIZE,
++	 (void *) &fpga_fns,
++	 0xD6000000l,
++	 0, 0,
++	 1}
+ };
+ 
++/*******************************************
++ *  SPARTAN3 APF27 configuration functions *
++ *******************************************/
+ /*
+- * nitialize GPIO port B before download
++ * Initialize GPIO port B before download
+  */
+ int
+ fpga_pre_fn (int cookie)
+@@ -264,4 +292,228 @@
+ 	return lout;
+ }
+ 
++/**********************************************
++*  SPARTAN6 sp_vision configuration functions *
++***********************************************/
++
++#define SELECTMAP_ID_REG	(desc->ip_addr)
++#define SELECTMAP_CONFIG_REG	(desc->ip_addr+2)
++#define SELECTMAP_STATUS_REG	(desc->ip_addr+4)
++#define SELECTMAP_DATA_REG	(desc->ip_addr+6)
++
++#define SELECTMAP_CONFIG_CLK		4
++#define SELECTMAP_CONFIG_CSI_N		2
++#define SELECTMAP_CONFIG_PROGRAM_N	1
++#define SELECTMAP_CONFIG_RDWR_N		0
++
++#define SELECTMAP_STATUS_INIT_N	2
++#define SELECTMAP_STATUS_BUSY	1
++#define SELECTMAP_STATUS_DONE	0
++
++/*
++ * Initialize FPGA before download
++ */
++int
++fpga_spartan6_pre_fn (int cookie)
++{
++	int config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++
++	config &= ~(1 << SELECTMAP_CONFIG_CLK);		/* IP in selectmap mode */
++	config |=  (1 << SELECTMAP_CONFIG_CSI_N);	/* CSI_n High */
++	config |=  (1 << SELECTMAP_CONFIG_PROGRAM_N);	/* PROGRAM_n High */
++	config |=  (1 << SELECTMAP_CONFIG_RDWR_N);	/* rdwr_n High */
++
++	*((ushort *)SELECTMAP_CONFIG_REG) = (ushort)config; /* write config */
++
++	udelay(1); /*wait until supply started*/
++	return cookie;
++}
++
++/*
++ * Set the FPGA's active-low program line to the specified level
++ */
++int
++fpga_spartan6_pgm_fn (int assert, int flush, int cookie)
++{
++	unsigned short config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++
++	PRINTF ("%s:%d: FPGA SET PROGRAM %s", __FUNCTION__, __LINE__,
++					assert?"high":"low");
++	PRINTF ("\n");
++
++	if (assert)
++		config &= ~(1 << SELECTMAP_CONFIG_PROGRAM_N);
++	else
++		config |=  (1 << SELECTMAP_CONFIG_PROGRAM_N);
++
++	*((unsigned short *)SELECTMAP_CONFIG_REG) = config; /* write config */
++
++	return assert;
++}
++
++/*
++ * Set the FPGA's active-high clock line to the specified level
++ */
++int
++fpga_spartan6_clk_fn (int assert_clk, int flush, int cookie)
++{
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	PRINTF ("%s:%d: FPGA SET CLOCK %s", __FUNCTION__, __LINE__,
++					assert_clk?"high":"low");
++	PRINTF ("\n");
++
++	/* clock pulse is generated when a data is wrote */
++
++	return assert_clk;
++}
++
++/*
++ * Test the state of the active-low FPGA INIT line.
++ */
++int
++fpga_spartan6_init_fn (int cookie)
++{
++	int value=0;
++	uint16_t status;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	status = *((volatile uint16_t *)SELECTMAP_STATUS_REG); /* read config */
++
++	PRINTF ("%s:%d: INIT check", __FUNCTION__, __LINE__);
++	PRINTF ("%d\n",(((status&(1<<SELECTMAP_STATUS_INIT_N))==0)?1:0));
++	PRINTF ("\n");
++
++	return (((status&(1<<SELECTMAP_STATUS_INIT_N))==0)?FPGA_SUCCESS:FPGA_FAIL);
++}
++
++/*
++ * Test the state of the active-high FPGA DONE pin
++ */
++int
++fpga_spartan6_done_fn (int cookie)
++{
++	uint16_t status;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	status = *((volatile uint16_t *)SELECTMAP_STATUS_REG); /* read config */
++	PRINTF ("%s:%d: DONE check %s\n", __FUNCTION__, __LINE__,
++			(((status&(1<<SELECTMAP_STATUS_DONE))==0)?0:1)?"high":"low");
++
++	return (((status&(1<<SELECTMAP_STATUS_DONE))==0)?FPGA_FAIL:FPGA_SUCCESS);
++}
++
++/*
++ * Set the FPGA's wr line to the specified level
++ */
++int
++fpga_spartan6_wr_fn (int assert_write, int flush, int cookie)
++{
++	unsigned short config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	PRINTF ("%s:%d: FPGA SET RW %s ", __FUNCTION__, __LINE__,
++					assert_write?"high":"low");
++	PRINTF ("\n");
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++	if (assert_write)
++		config &= ~(1 << SELECTMAP_CONFIG_RDWR_N);
++	else
++		config |=  (1 << SELECTMAP_CONFIG_RDWR_N);
++	*((unsigned short*)SELECTMAP_CONFIG_REG) = config; /* write config */
++
++	return assert_write;
++}
++
++int
++fpga_spartan6_cs_fn (int assert_cs, int flush, int cookie)
++{
++	int config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	PRINTF ("%s:%d: FPGA SET CS %s ", __FUNCTION__, __LINE__,
++					assert_cs?"high":"low");
++	PRINTF ("\n");
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++	if (assert_cs)
++		config &= ~(1 << SELECTMAP_CONFIG_CSI_N);
++	else
++		config |=  (1 << SELECTMAP_CONFIG_CSI_N);
++	*((ushort *)SELECTMAP_CONFIG_REG) = (ushort)config; /* write config */
++
++	return assert_cs;
++}
++
++/* TODO: read/write in 16bits mode */
++int
++fpga_spartan6_rdata_fn ( unsigned char *data, int cookie )
++{
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	*data = (unsigned char)((*((unsigned short*)SELECTMAP_DATA_REG))&0x00FF);
++	PRINTF(".");
++
++	return *data;
++}
++
++int
++fpga_spartan6_wdata_fn ( unsigned char data, int cookie )
++{
++	int config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	*((unsigned short*)SELECTMAP_DATA_REG) = data&0x00ff;
++
++	return data;
++}
++/* end of TODO */
++
++int
++fpga_spartan6_abort_fn ( int cookie )
++{
++	int config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++	config |=  (1 << SELECTMAP_CONFIG_CLK);		/* IP in clock mode */
++	*((ushort *)SELECTMAP_CONFIG_REG) = (ushort)config; /* write config */
++
++	return cookie;
++}
++
++int
++fpga_spartan6_busy_fn ( int cookie )
++{
++	uint16_t status;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++//	PRINTF ("%s:%d: DONE check %s", __FUNCTION__, __LINE__,
++//					GPIO_READ(CFG_FPGA_DONE)?"high":"low");
++	status = *((volatile uint16_t *)SELECTMAP_STATUS_REG); /* read config */
++
++	return (((status&(1<<SELECTMAP_STATUS_BUSY))!=0)?0:1);
++}
++
++int
++fpga_spartan6_post_fn (int cookie)
++{
++	int config;
++	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
++
++	config = *((volatile uint16_t *)SELECTMAP_CONFIG_REG); /* read config */
++	config |=  (1 << SELECTMAP_CONFIG_CLK);		/* IP in clock mode */
++	*((ushort *)SELECTMAP_CONFIG_REG) = (ushort)config; /* write config */
++
++	return cookie;
++}
++
++
+ #endif /* CONFIG_FPGA */
+Index: u-boot-2010.03/board/armadeus/apf27/fpga.h
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf27/fpga.h	2011-01-06 11:44:48.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf27/fpga.h	2011-01-06 11:44:54.000000000 +0100
+@@ -37,3 +37,20 @@
+ extern int fpga_abort_fn (int cookie);
+ extern int fpga_post_fn (int cookie);
+ extern int fpga_busy_fn (int cookie);
++
++#if defined(CONFIG_FPGA_SPARTAN6)
++extern int fpga_spartan6_check_fn(int ip_addr, int ip_id, int cookie);
++extern int fpga_spartan6_pre_fn (int cookie);
++extern int fpga_spartan6_pgm_fn (int assert_pgm, int flush, int cookie);
++extern int fpga_spartan6_cs_fn (int assert_cs, int flush, int cookie);
++extern int fpga_spartan6_init_fn (int cookie);
++extern int fpga_spartan6_done_fn (int cookie);
++extern int fpga_spartan6_clk_fn (int assert_clk, int flush, int cookie);
++extern int fpga_spartan6_wr_fn (int assert_write, int flush, int cookie);
++extern int fpga_spartan6_rdata_fn ( unsigned char *data, int cookie );
++extern int fpga_spartan6_wdata_fn ( unsigned char data, int cookie );
++extern int fpga_spartan6_abort_fn (int cookie);
++extern int fpga_spartan6_post_fn (int cookie);
++extern int fpga_spartan6_busy_fn (int cookie);
++#endif /* CONFIG_FPGA_SPARTAN3 */
++
+Index: u-boot-2010.03/include/xilinx.h
+===================================================================
+--- u-boot-2010.03.orig/include/xilinx.h	2011-01-06 11:44:59.000000000 +0100
++++ u-boot-2010.03/include/xilinx.h	2011-01-06 11:46:08.000000000 +0100
+@@ -77,6 +77,11 @@
+ typedef struct {		/* typedef Xilinx_desc */
+ 	Xilinx_Family family;	/* part type */
+ 	Xilinx_iface iface;	/* interface type */
++	/* XXX:for second fpga configuration (throught first fpga) */
++	uint32_t fpga_offset;	/* first fpga offset */
++	int ip_addr;		/* Address of spartan_selectmap IP */
++	int ip_id;		/* Idendifiant of spartan_selectmap IP */
++	/* end of XXX */
+ 	size_t size;		/* bytes of data part can accept */
+ 	void *iface_fns;	/* interface function table */
+ 	int cookie;		/* implementation specific cookie */

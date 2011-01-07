@@ -1,7 +1,7 @@
 Index: u-boot-2010.03/include/spartan6.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/include/spartan6.h	2011-01-06 10:12:44.000000000 +0100
++++ u-boot-2010.03/include/spartan6.h	2011-01-06 11:38:23.000000000 +0100
 @@ -0,0 +1,132 @@
 +/*
 + * (C) Copyright 2010-2011 Fabien Marteau <fabien.marteau@armadeus.com>
@@ -138,7 +138,7 @@ Index: u-boot-2010.03/include/spartan6.h
 Index: u-boot-2010.03/drivers/fpga/spartan6.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/drivers/fpga/spartan6.c	2011-01-06 10:14:43.000000000 +0100
++++ u-boot-2010.03/drivers/fpga/spartan6.c	2011-01-06 11:50:51.000000000 +0100
 @@ -0,0 +1,538 @@
 +/*
 + * (C) Copyright 2010 Fabien Marteau <fabien.marteau@armadeus.com>
@@ -178,8 +178,8 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +#define PRINTF(fmt,args...)
 +#endif
 +
-+#undef CFG_FPGA_CHECK_BUSY
-+#undef CFG_FPGA_PROG_FEEDBACK
++#undef CONFIG_SYS_FPGA_CHECK_BUSY
++#undef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +
 +/* Note: The assumption is that we cannot possibly run fast enough to
 + * overrun the device (the Slave Parallel mode can free run at 50MHz).
@@ -190,8 +190,8 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +#define CONFIG_FPGA_DELAY()
 +#endif
 +
-+#ifndef CFG_FPGA_WAIT
-+#define CFG_FPGA_WAIT CFG_HZ/100	/* 10 ms */
++#ifndef CONFIG_SYS_FPGA_WAIT
++#define CONFIG_SYS_FPGA_WAIT CONFIG_SYS_HZ/100	/* 10 ms */
 +#endif
 +
 +static int Spartan6_sp_load( Xilinx_desc *desc, void *buf, size_t bsize );
@@ -302,7 +302,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		 * Continuous Data Loading in Slave Parallel Mode for
 +		 * the Spartan-II Family.
 +		 */
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +		printf ("Loading FPGA Device %d...\n", cookie);
 +#endif
 +		/*
@@ -323,7 +323,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		/* Now wait for INIT and BUSY to go high */
 +		do {
 +			CONFIG_FPGA_DELAY ();
-+			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 +				puts ("** Timeout waiting for INIT to clear.\n");
 +				(*fn->abort) (cookie);	/* abort the burn */
 +				return FPGA_FAIL;
@@ -346,7 +346,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 +
 +			ts = get_timer (0);	/* get current time */
-+#ifdef CFG_FPGA_CHECK_BUSY
++#ifdef CONFIG_SYS_FPGA_CHECK_BUSY
 +			while ((*fn->busy) (cookie)) {
 +				/* XXX - we should have a check in here somewhere to
 +				 * make sure we aren't busy forever... */
@@ -356,20 +356,20 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +				CONFIG_FPGA_DELAY ();
 +				(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 +
-+				if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
++				if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 +					puts ("** Timeout waiting for BUSY to clear.\n");
 +					(*fn->abort) (cookie);	/* abort the burn */
 +					return FPGA_FAIL;
 +				}
 +			}
 +#endif
-+			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 +				puts ("** Timeout waiting for BUSY to clear.\n");
 +				(*fn->abort) (cookie);	/* abort the burn */
 +				return FPGA_FAIL;
 +			}
 +
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +			if (bytecount % (bsize / 40) == 0)
 +				putc ('.');		/* let them know we are alive */
 +#endif
@@ -379,7 +379,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		(*fn->cs) (FALSE, TRUE, cookie);	/* Deassert the chip select */
 +		(*fn->wr) (FALSE, TRUE, cookie);	/* Deassert the write pin */
 +
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +		putc ('\n');			/* terminate the dotted line */
 +#endif
 +
@@ -395,7 +395,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +			CONFIG_FPGA_DELAY ();
 +			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 +
-+			if (get_timer (ts) > CFG_FPGA_WAIT) {	/* check the time */
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 +				puts ("** Timeout waiting for DONE to clear.\n");
 +				(*fn->abort) (cookie);	/* abort the burn */
 +				ret_val = FPGA_FAIL;
@@ -404,7 +404,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		}
 +
 +		if (ret_val == FPGA_SUCCESS) {
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +			puts ("Done.\n");
 +#endif
 +		}
@@ -416,7 +416,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		}
 +
 +		else {
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +			puts ("Fail.\n");
 +#endif
 +		}
@@ -450,7 +450,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +			(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 +			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 +			(*fn->rdata) (&(data[bytecount++]), cookie);	/* read the data */
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +			if (bytecount % (bsize / 40) == 0)
 +				putc ('.');		/* let them know we are alive */
 +#endif
@@ -460,7 +460,7 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +		(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 +		(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 +
-+#ifdef CFG_FPGA_PROG_FEEDBACK
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 +		putc ('\n');			/* terminate the dotted line */
 +#endif
 +		puts ("Done.\n");
@@ -680,8 +680,8 @@ Index: u-boot-2010.03/drivers/fpga/spartan6.c
 +#endif
 Index: u-boot-2010.03/drivers/fpga/Makefile
 ===================================================================
---- u-boot-2010.03.orig/drivers/fpga/Makefile	2011-01-06 10:24:04.000000000 +0100
-+++ u-boot-2010.03/drivers/fpga/Makefile	2011-01-06 10:24:25.000000000 +0100
+--- u-boot-2010.03.orig/drivers/fpga/Makefile	2011-01-06 11:38:21.000000000 +0100
++++ u-boot-2010.03/drivers/fpga/Makefile	2011-01-06 11:38:23.000000000 +0100
 @@ -29,6 +29,7 @@
  COBJS-y += fpga.o
  COBJS-$(CONFIG_FPGA_SPARTAN2) += spartan2.o
@@ -692,8 +692,8 @@ Index: u-boot-2010.03/drivers/fpga/Makefile
  ifdef CONFIG_FPGA_ALTERA
 Index: u-boot-2010.03/include/xilinx.h
 ===================================================================
---- u-boot-2010.03.orig/include/xilinx.h	2011-01-06 10:25:46.000000000 +0100
-+++ u-boot-2010.03/include/xilinx.h	2011-01-06 10:26:34.000000000 +0100
+--- u-boot-2010.03.orig/include/xilinx.h	2011-01-06 11:38:21.000000000 +0100
++++ u-boot-2010.03/include/xilinx.h	2011-01-06 11:48:43.000000000 +0100
 @@ -33,10 +33,12 @@
  #define CONFIG_SYS_VIRTEX_E			CONFIG_SYS_FPGA_DEV( 0x2 )
  #define CONFIG_SYS_VIRTEX2			CONFIG_SYS_FPGA_DEV( 0x4 )
@@ -714,4 +714,17 @@ Index: u-boot-2010.03/include/xilinx.h
 +	Xilinx_Spartan6,	/* Spartan-VI Family */
  	max_xilinx_type		/* insert all new types before this */
  } Xilinx_Family;		/* end, typedef Xilinx_Family */
+ 
+Index: u-boot-2010.03/README
+===================================================================
+--- u-boot-2010.03.orig/README	2011-01-06 11:38:21.000000000 +0100
++++ u-boot-2010.03/README	2011-01-06 11:38:23.000000000 +0100
+@@ -1639,7 +1639,7 @@
+ 		CONFIG_FPGA_<family>
+ 
+ 		Enables support for FPGA family.
+-		(SPARTAN2, SPARTAN3, VIRTEX2, CYCLONE2, ACEX1K, ACEX)
++		(SPARTAN2, SPARTAN3,SPARTAN6, VIRTEX2, CYCLONE2, ACEX1K, ACEX)
+ 
+ 		CONFIG_FPGA_COUNT
  
