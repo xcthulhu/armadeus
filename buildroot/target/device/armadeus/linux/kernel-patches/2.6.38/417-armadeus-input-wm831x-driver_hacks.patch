@@ -1,0 +1,57 @@
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
+===================================================================
+--- linux-2.6.38-alpha.orig/drivers/input/touchscreen/wm831x-ts.c	2011-01-03 21:42:27.000000000 +0100
++++ linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c	2011-01-03 22:01:20.000000000 +0100
+@@ -218,6 +218,7 @@
+ 	struct input_dev *input_dev;
+ 	int ret;
+ 
++	printk("--- %s (%s %s)\n", __func__, __DATE__, __TIME__);
+ 	wm831x_ts = kzalloc(sizeof(struct wm831x_ts), GFP_KERNEL);
+ 	if (!wm831x_ts)
+ 		return -ENOMEM;
+@@ -248,7 +249,7 @@
+ 		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
+ 				WM831X_TCH_5WIRE, WM831X_TCH_5WIRE);
+ 
+-		/* Pressure measurments are not possible for five wire mode */
++		/* Pressure measurements are not possible for five wire mode */
+ 		WARN_ON(pdata->pressure && pdata->fivewire);
+ 		wm831x_ts->pressure = false;
+ 	} else {
+@@ -274,12 +275,13 @@
+ 		}
+ 	}
+ 
++	/* "Convert only when pen down" isn't working (yet) so don't use it */
+ 	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
+ 			WM831X_TCH_PDONLY, 0);
+ 
+-	/* Default to 112 samples/sec */
++	/* Default to 64 samples/sec */
+ 	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
+-			WM831X_TCH_RATE_MASK, 6);
++			WM831X_TCH_RATE_MASK, 4);
+ 
+ 	if (wm831x_ts->data_irq)
+ 		ret = request_threaded_irq(wm831x_ts->data_irq, NULL,
+@@ -318,6 +320,17 @@
+ 
+ 	platform_set_drvdata(pdev, wm831x_ts);
+ 
++	/* GPIO3 -> EOC */
++	wm831x_reg_write(wm831x, 0x4037 + 3, 0x0087);
++	/* GPIO7 -> EOC also (dbg) */
++	wm831x_reg_write(wm831x, 0x404c, 0x0000); /* LED1 off */
++	wm831x_reg_write(wm831x, 0x4037 + 7, 0x0087);
++	/* GPIO2 -> PD DETECT */
++	wm831x_reg_write(wm831x, 0x4037 + 2, 0x0086);
++	/* GPIO6 -> PD DETECT also (dbg) */
++	wm831x_reg_write(wm831x, 0x404d, 0x0000); /* LED2 off */
++	wm831x_reg_write(wm831x, 0x4037 + 6, 0x0086);
++
+ 	input_dev = input_allocate_device();
+ 	if (input_dev == NULL) {
+ 		ret = -ENOMEM;

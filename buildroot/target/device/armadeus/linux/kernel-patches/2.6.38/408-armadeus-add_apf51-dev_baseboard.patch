@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-03 15:49:17.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-03 15:56:12.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-06 15:53:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-06 19:51:04.000000000 +0100
 @@ -106,12 +106,30 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -41,25 +41,25 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-01-03 15:49:17.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-03 15:49:27.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-01-06 15:53:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-06 19:51:04.000000000 +0100
 @@ -7,6 +7,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
  obj-$(CONFIG_MACH_APF51) += board-apf51.o
-+obj-$(CONFIG_MACH_APF51_DEV) += apf51-dev-baseboard.o
++obj-$(CONFIG_MACH_APF51_DEV) += apf51dev-baseboard.o
  obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
  obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
  obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
+Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c	2011-01-03 15:49:27.000000000 +0100
-@@ -0,0 +1,184 @@
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-01-06 19:45:35.000000000 +0100
+@@ -0,0 +1,270 @@
 + /*
-+ * Support for APF51's PROTO development baseboard
++ * Support for APF51's official development baseboard (APF51Dev)
 + *
-+ * Copyright (C) 2010 Armadeus Systems <support@armadeus.com>
++ * Copyright (C) 2011 Armadeus Systems <support@armadeus.com>
 + *
 + * Based on code which is:
 + * Copyright 2009-2010 Freescale Semiconductor, Inc. All Rights Reserved.
@@ -79,6 +79,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +#include <linux/spi/spi.h>
 +#include <linux/fb.h>
 +#include <linux/mfd/imx-ipu-v3.h>
++#include <sound/wm8960.h>
 +
 +#include <mach/iomux-mx51.h>
 +#include <mach/ipu-v3.h>
@@ -86,7 +87,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +#include "devices-imx51.h"
 +#include "devices.h"
 +
-+static iomux_v3_cfg_t apf51proto_pads[] = {
++static iomux_v3_cfg_t apf51dev_pads[] = {
 +	/* SD1 */
 +	MX51_PAD_SD1_CMD__SD1_CMD,
 +	MX51_PAD_SD1_CLK__SD1_CLK,
@@ -95,7 +96,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +	MX51_PAD_SD1_DATA2__SD1_DATA2,
 +	MX51_PAD_SD1_DATA3__SD1_DATA3,
 +
-+	/* SD2 */
++	/* SD2 (WiFi) */
 +	MX51_PAD_SD2_CMD__SD2_CMD,
 +	MX51_PAD_SD2_CLK__SD2_CLK,
 +	MX51_PAD_SD2_DATA0__SD2_DATA0,
@@ -103,8 +104,22 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +	MX51_PAD_SD2_DATA2__SD2_DATA2,
 +	MX51_PAD_SD2_DATA3__SD2_DATA3,
 +
-+	/* I2C1 */
-+	/* TBD (depends on SD2 or SPI1) */
++	MX51_PAD_EIM_EB2__GPIO_2_22, /* PWRDN# */
++	MX51_PAD_EIM_EB3__GPIO_2_23, /* RESET# */
++
++	/* UART2 (Bluetooth) */
++	MX51_PAD_UART2_RXD__UART2_RXD,
++	MX51_PAD_UART2_TXD__UART2_TXD,
++	MX51_PAD_EIM_D25__UART2_CTS,
++	MX51_PAD_EIM_D26__UART2_RTS,
++
++	MX51_PAD_EIM_CS3__GPIO_2_28, /* RESET# */
++
++	/* UART1 */
++	MX51_PAD_UART1_RXD__UART1_RXD,
++	MX51_PAD_UART1_TXD__UART1_TXD,
++	MX51_PAD_UART1_RTS__UART1_RTS,
++	MX51_PAD_UART1_CTS__UART1_CTS,
 +
 +	/* eCSPI1 */
 +	MX51_PAD_CSPI1_MISO__ECSPI1_MISO,
@@ -112,6 +127,13 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
 +	MX51_PAD_CSPI1_SS0__GPIO_4_24,
 +	MX51_PAD_CSPI1_SS1__GPIO_4_25,
++
++	/* eCSPI2 */
++	MX51_PAD_NANDF_RB2__ECSPI2_SCLK,
++	MX51_PAD_NANDF_RB3__ECSPI2_MISO,
++	MX51_PAD_NANDF_D15__ECSPI2_MOSI,
++	MX51_PAD_NANDF_D12__GPIO_3_28, /* SS1 */
++	MX51_PAD_NANDF_D13__GPIO_3_27, /* SS2 */
 +
 +	/* Display */
 +	MX51_PAD_DISP1_DAT0__DISP1_DAT0,
@@ -142,18 +164,24 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +	MX51_PAD_DI1_PIN3__DI1_PIN3,	/* VSYNC */
 +	/* CLK and OE are not muxed */
 +
-+	/* Debug PINS */
-+/*	MX51_PAD_GPIO_1_2__GPIO_1_2,
-+	MX51_PAD_GPIO_1_3__GPIO_1_3,*/
++	/* JTAG */
++
++	/* ONEWIRE */
++
++	/* KEYPAD */
++
++	/* Other GPIOs ! TBDL ! */
++	/* HDMI_RST# */
++	/* HDMI_DETECT */
 +};
 +
-+static const struct imxi2c_platform_data apf51proto_i2c_data __initconst = {
++static const struct imxi2c_platform_data apf51dev_i2c_data __initconst = {
 +	.bitrate = 400000,
 +};
 +
 +/* APF51Proto has a LCD connector for a 18 bits 800x480 Chimei TFT LCD */
 +
-+static struct fb_videomode apf51proto_modes[] = {
++static struct fb_videomode apf51dev_modes[] = {
 +        {
 +		.name 		= "Chimei-LW700AT9003",
 +		.refresh 	= 60,
@@ -164,32 +192,27 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +		.upper_margin 	= 0x14, .lower_margin = 0x15,
 +		.hsync_len 	= 64, .vsync_len = 4,
 +		.sync 		= FB_SYNC_CLK_IDLE_EN,
-+// | FB_SYNC_CLK_LAT_FALL,// | FB_SYNC_OE_ACT_HIGH | FB_SYNC_CLK_INVERT,
 +		.vmode 		= FB_VMODE_NONINTERLACED,
 +		.flag 		= 0,
 +        },
 +};
 +
-+static struct ipuv3_fb_platform_data apf51proto_fb0_data = {
-+//	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
++static struct ipuv3_fb_platform_data apf51dev_fb0_data = {
 +	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-+	.modes = apf51proto_modes,
-+	.num_modes = ARRAY_SIZE(apf51proto_modes),
++	.modes = apf51dev_modes,
++	.num_modes = ARRAY_SIZE(apf51dev_modes),
 +	.display = 0,
 +};
 +
-+static struct imx_ipuv3_platform_data ipu_data = {
-+	.fb_head0_platform_data = &apf51proto_fb0_data,
++static struct imx_ipuv3_platform_data apf51dev_ipu_data = {
++	.fb_head0_platform_data = &apf51dev_fb0_data,
 +};
 +
-+#define DEBUG1_GPIO	(GPIO_PORTA | 2)
-+#define DEBUG2_GPIO	(GPIO_PORTA | 3)
++/* ECSPI1 */
++#define APF51DEV_ECSPI1_SS0	IMX_GPIO_NR(4, 24)
++#define APF51DEV_ECSPI1_SS1	IMX_GPIO_NR(4, 25)
 +
-+
-+#define APF51PROTO_ECSPI1_CS0	IMX_GPIO_NR(4, 24)
-+#define APF51PROTO_ECSPI1_CS1	IMX_GPIO_NR(4, 25)
-+
-+static struct spi_board_info apf51proto_spi_board_info[] __initdata = {
++static struct spi_board_info apf51dev_spi1_board_info[] __initdata = {
 +	{
 +		.modalias = "as1531",
 +		.max_speed_hz = 8000000,
@@ -199,7 +222,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +		.platform_data = NULL,
 +	},
 +	{
-+		.modalias = "spidev",
++		.modalias = "mcp4912",
 +		.max_speed_hz = 8000000,
 +		.bus_num = 0,
 +		.chip_select = 1,
@@ -208,35 +231,98 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51-dev-baseboard.c
 +	},
 +};
 +
-+static int apf51proto_spi_cs[] = {
-+	APF51PROTO_ECSPI1_CS0,
-+	APF51PROTO_ECSPI1_CS1,
++static int apf51dev_spi1_cs[] = {
++	APF51DEV_ECSPI1_SS0,
++	APF51DEV_ECSPI1_SS1,
 +};
 +
-+static const struct spi_imx_master apf51proto_spi_pdata __initconst = {
-+	.chipselect     = apf51proto_spi_cs,
-+	.num_chipselect = ARRAY_SIZE(apf51proto_spi_cs),
++static const struct spi_imx_master apf51dev_spi1_pdata __initconst = {
++	.chipselect     = apf51dev_spi1_cs,
++	.num_chipselect = ARRAY_SIZE(apf51dev_spi1_cs),
 +};
 +
++/* ECSPI2 */
++#define APF51DEV_ECSPI2_SS1	IMX_GPIO_NR(3, 28)
++#define APF51DEV_ECSPI2_SS2	IMX_GPIO_NR(3, 27)
++
++static struct spi_board_info apf51dev_spi2_board_info[] __initdata = {
++	{
++		.modalias = "mcp2515",
++		.max_speed_hz = 8000000,
++		.bus_num = 1,
++		.chip_select = 0,
++		.mode = SPI_MODE_0,
++		.platform_data = NULL,
++	},
++	{
++		.modalias = "spidev",
++		.max_speed_hz = 8000000,
++		.bus_num = 1,
++		.chip_select = 1,
++		.mode = SPI_MODE_0,
++		.platform_data = NULL,
++	},
++};
++
++static int apf51dev_spi2_cs[] = {
++	APF51DEV_ECSPI2_SS1,
++	APF51DEV_ECSPI2_SS2,
++};
++
++static const struct spi_imx_master apf51dev_spi2_pdata __initconst = {
++	.chipselect     = apf51dev_spi2_cs,
++	.num_chipselect = ARRAY_SIZE(apf51dev_spi2_cs),
++};
++
++
++/* Audio (Wolfson WM8960) */
++static struct wm8960_data apf51dev_wm8960_pdata = {
++	.capless = 0, /* Headphone outputs NOT configured in capless mode */
++//	.dres = ??;  /* Discharge resistance for headphone outputs */
++};
++
++
++/* I2C2 */
++static struct i2c_board_info apf51dev_i2c2_devices[] __initdata = {
++	{
++		I2C_BOARD_INFO("tfp410", 0x38),
++/*		.platform_data = &tfp410_pdata,
++		.irq = gpio_to_irq(APF51DEV_HDMI_DETECT),*/
++	},
++#if 0
++	{
++	/* EDID ? */
++	},
++#endif
++	{
++		I2C_BOARD_INFO("wm8960", 0x36),
++		.platform_data = &apf51dev_wm8960_pdata,
++	},
++#if 0
++	{
++	/* Camera */
++	},
++#endif
++};
 +
 +void __init apf51_baseboard_init(void)
 +{
-+	mxc_iomux_v3_setup_multiple_pads(apf51proto_pads,
-+					ARRAY_SIZE(apf51proto_pads));
-+
-+	gpio_request(DEBUG1_GPIO, "debug1");
-+	gpio_request(DEBUG2_GPIO, "debug2");
-+	gpio_set_value(DEBUG1_GPIO, 1);
-+	gpio_set_value(DEBUG2_GPIO, 1);
++	mxc_iomux_v3_setup_multiple_pads(apf51dev_pads,
++					ARRAY_SIZE(apf51dev_pads));
 +
 +	imx51_add_sdhci_esdhc_imx(0, NULL);
 +	imx51_add_sdhci_esdhc_imx(1, NULL);
 +
-+	spi_register_board_info(apf51proto_spi_board_info,
-+		ARRAY_SIZE(apf51proto_spi_board_info));
-+	imx51_add_ecspi(0, &apf51proto_spi_pdata);
++	spi_register_board_info(apf51dev_spi1_board_info,
++				ARRAY_SIZE(apf51dev_spi1_board_info));
++	imx51_add_ecspi(0, &apf51dev_spi1_pdata);
++	spi_register_board_info(apf51dev_spi2_board_info,
++				ARRAY_SIZE(apf51dev_spi2_board_info));
++	imx51_add_ecspi(1, &apf51dev_spi2_pdata);
 +
-+	imx51_add_imx_i2c(0, &apf51proto_i2c_data);
++	/* I2C2 already initialized by APF51, so just register devices */
++	i2c_register_board_info(1, apf51dev_i2c2_devices,
++				ARRAY_SIZE(apf51dev_i2c2_devices));
 +
-+	imx51_add_ipuv3(&ipu_data);
++	imx51_add_ipuv3(&apf51dev_ipu_data);
 +}
