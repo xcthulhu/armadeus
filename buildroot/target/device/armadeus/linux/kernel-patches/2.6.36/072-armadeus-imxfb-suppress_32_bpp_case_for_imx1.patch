@@ -1,0 +1,16 @@
+iMX1 cpu is unable to use 32bits per pixels.
+--- a/drivers/video/imxfb.c	2010-12-18 15:29:31.000000000 +0100
++++ b/drivers/video/imxfb.c	2010-12-18 15:30:27.000000000 +0100
+@@ -386,10 +386,12 @@
+ 	}
+ 
+ 	switch (var->bits_per_pixel) {
++#ifndef CONFIG_ARCH_MX1
+ 	case 32:
+ 		pcr |= PCR_BPIX_18;
+ 		rgb = &def_rgb_18;
+ 		break;
++#endif
+ 	case 16:
+ 	default:
+ 		if (cpu_is_mx1())
