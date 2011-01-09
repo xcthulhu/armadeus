@@ -1,0 +1,11 @@
+--- a/arch/arm/plat-mxc/include/mach/iomux-mx1.h	2010-12-19 11:11:37.000000000 +0100
++++ b/arch/arm/plat-mxc/include/mach/iomux-mx1.h	2010-12-19 11:11:55.000000000 +0100
+@@ -119,7 +119,7 @@
+ #define PD6_PF_LSCLK		(GPIO_PORTD | GPIO_PF | GPIO_OUT | 6)
+ #define PD7_PF_REV		(GPIO_PORTD | GPIO_PF | 7)
+ #define PD7_AF_UART2_DTR	(GPIO_PORTD | GPIO_AF | GPIO_IN | 7)
+-#define PD7_AIN_SPI2_SCLK	(GPIO_PORTD | GPIO_AIN | 7)
++#define PD7_AIN_SPI2_SCLK	(GPIO_PORTD | GPIO_AIN | GPIO_OUT | 7)
+ #define PD8_PF_CLS		(GPIO_PORTD | GPIO_PF | 8)
+ #define PD8_AF_UART2_DCD	(GPIO_PORTD | GPIO_AF | GPIO_OUT | 8)
+ #define PD8_AIN_SPI2_SS		(GPIO_PORTD | GPIO_AIN | 8)
