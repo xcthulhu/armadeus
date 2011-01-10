@@ -1,0 +1,18 @@
+The current mxc_decode_pll function provide wrong values on imx1 cpu.
+--- a/arch/arm/plat-mxc/clock.c	2010-10-20 22:30:22.000000000 +0200
++++ b/arch/arm/plat-mxc/clock.c	2010-12-05 11:14:32.000000000 +0100
+@@ -221,6 +222,14 @@
+ 	pd =  (reg_val >> 26) & 0xf;
+ 
+ 	mfi = mfi <= 5 ? 5 : mfi;
++	if (cpu_is_mx1()) {
++		ll = 2 * (unsigned long long)freq *
++		((mfi << 16) + (mfn << 16) / (mfd + 1));
++    	quot = (pd + 1) * (1 << 16);
++    	ll += quot / 2;
++    	do_div(ll, quot);
++		return (unsigned long)ll;
++	}
+ 
+ 	mfn_abs = mfn;
+ 

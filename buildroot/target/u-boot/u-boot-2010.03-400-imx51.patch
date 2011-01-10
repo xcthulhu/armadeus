@@ -1,6 +1,7 @@
-diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/arm_cortexa8/mx51/clock.c
---- u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/cpu/arm_cortexa8/mx51/clock.c	2010-07-04 14:04:18.000000000 +0200
+Index: u-boot-2010.03/cpu/arm_cortexa8/mx51/clock.c
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/mx51/clock.c	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/mx51/clock.c	2011-01-05 18:11:04.000000000 +0100
 @@ -3,6 +3,7 @@
   * Sascha Hauer, Pengutronix
   *
@@ -17,7 +18,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  #include <asm/io.h>
  #include <asm/errno.h>
  #include <asm/arch/imx-regs.h>
-@@ -59,7 +61,24 @@ static u32 decode_pll(struct mxc_pll_reg
+@@ -59,7 +61,24 @@
  	mfi = (mfi >> 4) & 0xF;
  	mfi = (mfi >= 5) ? mfi : 5;
  
@@ -43,7 +44,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  }
  
  /*
-@@ -93,24 +112,128 @@ static u32 get_periph_clk(void)
+@@ -93,24 +112,128 @@
  	case 1:
  		return decode_pll(mxc_plls[PLL3_CLOCK], CONFIG_MX51_HCLK_FREQ);
  	default:
@@ -179,7 +180,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  }
  
  /*
-@@ -131,61 +254,174 @@ static u32 get_ipg_per_clk(void)
+@@ -131,61 +254,174 @@
  	podf = (podf & MXC_CCM_CBCDR_PERCLK_PODF_MASK) >>
  		MXC_CCM_CBCDR_PERCLK_PODF_OFFSET;
  
@@ -255,7 +256,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	unsigned int freq, reg, pred, podf;
 +
 +	freq = get_cscmr1_sel_clk( MXC_CCM_CSCMR1_USBOH3_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR1_USBOH3_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR1_USBOH3_CLK_SEL_OFFSET);
  
  	reg = __raw_readl(&mxc_ccm->cscdr1);
  
@@ -289,7 +290,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 -	else
 -		ret_val = ((32768 * 1024));
 +	freq = get_cscmr1_sel_clk( MXC_CCM_CSCMR1_ESDHC1_MSHC1_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR1_ESDHC1_MSHC1_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR1_ESDHC1_MSHC1_CLK_SEL_OFFSET);
  
 -	return ret_val;
 +	reg = __raw_readl(&mxc_ccm->cscdr1);
@@ -309,7 +310,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	unsigned int freq, reg, pred, podf;
 +
 +	freq = get_cscmr1_sel_clk( MXC_CCM_CSCMR1_ESDHC2_MSHC2_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR1_ESDHC2_MSHC2_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR1_ESDHC2_MSHC2_CLK_SEL_OFFSET);
 +
 +	reg = __raw_readl(&mxc_ccm->cscdr1);
 +
@@ -328,7 +329,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	unsigned int freq, reg, pred, podf;
 +
 +	freq = get_cscmr2_sel_clk( MXC_CCM_CSCMR2_HSI2C_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR2_HSI2C_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR2_HSI2C_CLK_SEL_OFFSET);
 +
 +	reg = __raw_readl(&mxc_ccm->cscdr3);
 +
@@ -347,7 +348,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	unsigned int freq, reg, pred, podf;
 +
 +	freq = get_cscmr2_sel_clk( MXC_CCM_CSCMR2_CSI1_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR2_CSI1_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR2_CSI1_CLK_SEL_OFFSET);
 +
 +	reg = __raw_readl(&mxc_ccm->cscdr4);
 +
@@ -369,7 +370,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	unsigned int freq, reg, pred, podf;
 +
 +	freq = get_cscmr1_sel_clk( MXC_CCM_CSCMR1_UART_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR1_UART_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR1_UART_CLK_SEL_OFFSET);
 +
 +	reg = __raw_readl(&mxc_ccm->cscdr1);
 +
@@ -384,7 +385,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  }
  
  /*
-@@ -193,39 +429,18 @@ u32 get_lp_apm(void)
+@@ -193,39 +429,18 @@
   */
  u32 imx_get_cspiclk(void)
  {
@@ -394,7 +395,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  	u32 cscdr2 = __raw_readl(&mxc_ccm->cscdr2);
  
 +	freq = get_cscmr1_sel_clk( MXC_CCM_CSCMR1_CSPI_CLK_SEL_MASK,
-+			MXC_CCM_CSCMR1_CSPI_CLK_SEL_OFFSET);	
++			MXC_CCM_CSCMR1_CSPI_CLK_SEL_OFFSET);
 +
  	pre_pdf = (cscdr2 & MXC_CCM_CSCDR2_CSPI_CLK_PRED_MASK) \
  			>> MXC_CCM_CSCDR2_CSPI_CLK_PRED_OFFSET;
@@ -429,7 +430,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  }
  
  /*
-@@ -237,7 +452,7 @@ unsigned int mxc_get_clock(enum mxc_cloc
+@@ -237,7 +452,7 @@
  	case MXC_ARM_CLK:
  		return get_mcu_main_clk();
  	case MXC_AHB_CLK:
@@ -438,7 +439,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  	case MXC_IPG_CLK:
  		return get_ipg_clk();
  	case MXC_IPG_PERCLK:
-@@ -249,6 +464,38 @@ unsigned int mxc_get_clock(enum mxc_cloc
+@@ -249,6 +464,38 @@
  	case MXC_FEC_CLK:
  		return decode_pll(mxc_plls[PLL1_CLOCK],
  				    CONFIG_MX51_HCLK_FREQ);
@@ -455,13 +456,13 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
 +	case MXC_GPU_CLK:
 +		return get_cbcmr_sel_clk(MXC_CCM_CBCMR_GPU_CLK_SEL_MASK,
 +			MXC_CCM_CBCMR_GPU_CLK_SEL_OFFSET);
-+	case MXC_ARM_AXI_CLK:		
++	case MXC_ARM_AXI_CLK:
 +		return get_cbcmr_sel_clk(MXC_CCM_CBCMR_ARM_AXI_CLK_SEL_MASK,
 +			MXC_CCM_CBCMR_ARM_AXI_CLK_SEL_OFFSET);
-+	case MXC_IPU_CLK:		
++	case MXC_IPU_CLK:
 +		return get_cbcmr_sel_clk(MXC_CCM_CBCMR_IPU_HSP_CLK_SEL_MASK,
 +			MXC_CCM_CBCMR_IPU_HSP_CLK_SEL_OFFSET);
-+	case MXC_VPU_CLK:		
++	case MXC_VPU_CLK:
 +		return get_cbcmr_sel_clk(MXC_CCM_CBCMR_VPU_AXI_CLK_SEL_MASK,
 +			MXC_CCM_CBCMR_VPU_AXI_CLK_SEL_OFFSET);
 +	case MXC_USBOH3_CLK:
@@ -477,7 +478,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  	default:
  		break;
  	}
-@@ -274,13 +521,33 @@ int do_mx51_showclocks(cmd_tbl_t *cmdtp,
+@@ -274,13 +521,33 @@
  	u32 freq;
  
  	freq = decode_pll(mxc_plls[PLL1_CLOCK], CONFIG_MX51_HCLK_FREQ);
@@ -514,9 +515,10 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/clock.c u-boot-2010.03/cpu/a
  
  	return 0;
  }
-diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/iomux.c u-boot-2010.03/cpu/arm_cortexa8/mx51/iomux.c
---- u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/iomux.c	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/cpu/arm_cortexa8/mx51/iomux.c	2010-05-23 22:06:26.000000000 +0200
+Index: u-boot-2010.03/cpu/arm_cortexa8/mx51/iomux.c
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/mx51/iomux.c	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/mx51/iomux.c	2011-01-05 18:10:42.000000000 +0100
 @@ -1,5 +1,6 @@
  /*
   * (C) Copyright 2009 Freescale Semiconductor, Inc.
@@ -524,7 +526,7 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/iomux.c u-boot-2010.03/cpu/a
   *
   * See file CREDITS for list of people who contributed to this
   * project.
-@@ -164,3 +165,42 @@ unsigned int mxc_iomux_get_pad(iomux_pin
+@@ -164,3 +165,42 @@
  	u32 pad_reg = get_pad_reg(pin);
  	return readl(pad_reg);
  }
@@ -567,9 +569,10 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/iomux.c u-boot-2010.03/cpu/a
 +
 +	writel(config, reg);
 +}
-diff -pur u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S u-boot-2010.03-new/cpu/arm_cortexa8/mx51/lowlevel_init.S
---- u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03-new/cpu/arm_cortexa8/mx51/lowlevel_init.S	2010-11-14 11:19:04.000000000 +0100
+Index: u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/mx51/lowlevel_init.S	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S	2011-01-05 18:10:42.000000000 +0100
 @@ -2,6 +2,7 @@
   * Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
   *
@@ -825,7 +828,7 @@ diff -pur u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S u-boot-2010.03-ne
  	str r1, [r0, #CLKCTL_CSCDR1]
  
  	/* make sure divider effective */
-@@ -279,10 +373,3 @@ lowlevel_init:
+@@ -279,10 +373,3 @@
  	/* r12 saved upper lr*/
  	mov pc,lr
  
@@ -836,10 +839,11 @@ diff -pur u-boot-2010.03/cpu/arm_cortexa8/mx51/lowlevel_init.S u-boot-2010.03-ne
 -DDR_LMR_CMD:		.word 0xB2220000
 -DDR_TIMING_W:		.word 0xB02567A9
 -DDR_MISC_W:		.word 0x000A0104
-diff -purN u-boot-2010.03/cpu/arm_cortexa8/start.S u-boot-2010.03-new/cpu/arm_cortexa8/start.S
---- u-boot-2010.03/cpu/arm_cortexa8/start.S	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03-new/cpu/arm_cortexa8/start.S	2010-10-24 17:49:25.000000000 +0200
-@@ -173,8 +173,8 @@ clear_bss:
+Index: u-boot-2010.03/cpu/arm_cortexa8/start.S
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/start.S	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/start.S	2011-01-05 18:10:42.000000000 +0100
+@@ -173,8 +173,8 @@
  	mov	r2, #0x00000000		@ clear value
  clbss_l:
  	str	r2, [r0]		@ clear BSS location
@@ -849,10 +853,11 @@ diff -purN u-boot-2010.03/cpu/arm_cortexa8/start.S u-boot-2010.03-new/cpu/arm_co
  	bne	clbss_l			@ keep clearing till at end
  
  	ldr	pc, _start_armboot	@ jump to C code
-diff -purN u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c u-boot-2010.03-new/cpu/arm_cortexa8/mx51/timer.c
---- u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03-new/cpu/arm_cortexa8/mx51/timer.c	2010-10-28 23:46:31.000000000 +0200
-@@ -89,7 +89,7 @@ ulong get_timer_masked(void)
+Index: u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/mx51/timer.c	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c	2011-01-05 18:10:42.000000000 +0100
+@@ -89,7 +89,7 @@
  		timestamp += ((0xFFFFFFFF / (CONFIG_MX51_CLK32 / CONFIG_SYS_HZ))
  				- lastinc) + val;
  	lastinc = val;
@@ -861,7 +866,7 @@ diff -purN u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c u-boot-2010.03-new/cpu/a
  }
  
  ulong get_timer(ulong base)
-@@ -106,7 +106,7 @@ void set_timer(ulong t)
+@@ -106,7 +106,7 @@
  void __udelay(unsigned long usec)
  {
  	unsigned long now, start, tmo;
@@ -870,9 +875,10 @@ diff -purN u-boot-2010.03/cpu/arm_cortexa8/mx51/timer.c u-boot-2010.03-new/cpu/a
  
  	if (!tmo)
  		tmo = 1;
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/asm-offsets.h u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/asm-offsets.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h	2010-06-20 18:13:53.000000000 +0200
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/asm-offsets.h	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h	2011-01-05 18:10:42.000000000 +0100
 @@ -48,3 +48,135 @@
  #define PLL_DP_HFS_OP	0x1C
  #define PLL_DP_HFS_MFD	0x20
@@ -1009,9 +1015,10 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/asm-offsets.h u-boot-201
 +#define PAD_CTL_DRV_VOT_HIGH (0x1 << 13)/* High voltage mode */
 +
 +#endif /* __ASSEMBLY__ */
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/clock.h u-boot-2010.03/include/asm-arm/arch-mx51/clock.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/clock.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/clock.h	2010-06-29 00:28:50.000000000 +0200
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/clock.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/clock.h	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/clock.h	2011-01-05 18:10:42.000000000 +0100
 @@ -1,6 +1,7 @@
  /*
   * (C) Copyright 2009
@@ -1020,7 +1027,7 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/clock.h u-boot-2010.03/i
   *
   * See file CREDITS for list of people who contributed to this
   * project.
-@@ -32,6 +33,20 @@ enum mxc_clock {
+@@ -32,6 +33,20 @@
  	MXC_UART_CLK,
  	MXC_CSPI_CLK,
  	MXC_FEC_CLK,
@@ -1041,9 +1048,10 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/clock.h u-boot-2010.03/i
  };
  
  unsigned int imx_decode_pll(unsigned int pll, unsigned int f_ref);
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/crm_regs.h u-boot-2010.03/include/asm-arm/arch-mx51/crm_regs.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/crm_regs.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/crm_regs.h	2010-06-29 00:38:17.000000000 +0200
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/crm_regs.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/crm_regs.h	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/crm_regs.h	2011-01-05 18:10:42.000000000 +0100
 @@ -1,5 +1,6 @@
  /*
   * (C) Copyright 2009 Freescale Semiconductor, Inc.
@@ -1051,7 +1059,7 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/crm_regs.h u-boot-2010.0
   *
   * See file CREDITS for list of people who contributed to this
   * project.
-@@ -84,6 +85,9 @@ struct mxc_ccm_reg {
+@@ -84,6 +85,9 @@
  #define MXC_CCM_CACRR_ARM_PODF_MASK		0x7
  
  /* Define the bits in register CBCDR */
@@ -1061,7 +1069,7 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/crm_regs.h u-boot-2010.0
  #define MXC_CCM_CBCDR_EMI_CLK_SEL		(0x1 << 26)
  #define MXC_CCM_CBCDR_PERIPH_CLK_SEL		(0x1 << 25)
  #define MXC_CCM_CBCDR_EMI_PODF_OFFSET		22
-@@ -139,6 +143,48 @@ struct mxc_ccm_reg {
+@@ -139,6 +143,48 @@
  #define MXC_CCM_CSCMR1_SSI_EXT2_COM_CLK_SEL		(0x1 << 1)
  #define MXC_CCM_CSCMR1_SSI_EXT1_COM_CLK_SEL		0x1
  
@@ -1110,9 +1118,10 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/crm_regs.h u-boot-2010.0
  /* Define the bits in register CSCDR2 */
  #define MXC_CCM_CSCDR2_CSPI_CLK_PRED_OFFSET		25
  #define MXC_CCM_CSCDR2_CSPI_CLK_PRED_MASK		(0x7 << 25)
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/imx-regs.h u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/imx-regs.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2010-06-21 00:21:21.000000000 +0200
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/imx-regs.h	2011-01-05 18:10:42.000000000 +0100
 @@ -1,5 +1,6 @@
  /*
   * (C) Copyright 2009 Freescale Semiconductor, Inc.
@@ -1149,10 +1158,11 @@ diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/imx-regs.h u-boot-2010.0
  #ifndef __ASSEMBLY__
  
  struct clkctl {
-diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/soc.c u-boot-2010.03/cpu/arm_cortexa8/mx51/soc.c
---- u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/soc.c	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/cpu/arm_cortexa8/mx51/soc.c	2010-11-10 00:26:32.000000000 +0100
-@@ -69,7 +69,7 @@ int print_cpuinfo(void)
+Index: u-boot-2010.03/cpu/arm_cortexa8/mx51/soc.c
+===================================================================
+--- u-boot-2010.03.orig/cpu/arm_cortexa8/mx51/soc.c	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/cpu/arm_cortexa8/mx51/soc.c	2011-01-05 18:10:42.000000000 +0100
+@@ -69,7 +69,7 @@
  	cpurev = get_cpu_rev();
  	printf("CPU:   Freescale i.MX51 family %d.%dV at %d MHz\n",
  		(cpurev & 0xF0) >> 4,
@@ -1161,9 +1171,10 @@ diff -purN u-boot-2010.03-ref/cpu/arm_cortexa8/mx51/soc.c u-boot-2010.03/cpu/arm
  		mxc_get_clock(MXC_ARM_CLK) / 1000000);
  	return 0;
  }
-diff -purN u-boot-2010.03-ref/include/asm-arm/arch-mx51/sys_proto.h u-boot-2010.03/include/asm-arm/arch-mx51/sys_proto.h
---- u-boot-2010.03-ref/include/asm-arm/arch-mx51/sys_proto.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/arch-mx51/sys_proto.h	2010-11-10 00:14:33.000000000 +0100
+Index: u-boot-2010.03/include/asm-arm/arch-mx51/sys_proto.h
+===================================================================
+--- u-boot-2010.03.orig/include/asm-arm/arch-mx51/sys_proto.h	2011-01-05 18:05:12.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/sys_proto.h	2011-01-05 18:10:42.000000000 +0100
 @@ -25,6 +25,7 @@
  #define _SYS_PROTO_H_
  

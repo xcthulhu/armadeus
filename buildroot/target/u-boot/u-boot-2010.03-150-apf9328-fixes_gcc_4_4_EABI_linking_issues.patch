@@ -14,9 +14,11 @@ xxx/buildroot/output/build/staging_dir/usr/bin-ccache/../lib/gcc/arm-linux-uclib
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
---- u-boot-1.3.4/board/armadeus/apf9328/apf9328.c	2010-03-22 00:41:51.000000000 +0100
-+++ u-boot-1.3.4.new/board/armadeus/apf9328/apf9328.c	2010-03-22 00:31:05.000000000 +0100
-@@ -99,3 +99,12 @@ show_boot_progress (int status)
+Index: u-boot-2010.03/board/armadeus/apf9328/apf9328.c
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf9328/apf9328.c	2011-01-05 18:06:50.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf9328/apf9328.c	2011-01-05 18:08:34.000000000 +0100
+@@ -99,3 +99,12 @@
  {
  	return;
  }
@@ -29,17 +31,21 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 +#endif
 +
 +void abort() {}
---- u-boot-2010.03-rc1/board/armadeus/apf9328/config.mk	2010-03-28 00:59:04.000000000 +0100
-+++ u-boot-2010.03-rc1/board/armadeus/apf9328/config.mk	2010-03-28 01:16:28.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/config.mk
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf9328/config.mk	2011-01-05 18:05:23.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf9328/config.mk	2011-01-05 18:08:34.000000000 +0100
 @@ -8,3 +8,5 @@
  #
  
  TEXT_BASE = 0x0BF80000
 +
 +LDSCRIPT := $(SRCTREE)/board/$(BOARDDIR)/u-boot.lds
---- u-boot-1.3.4/board/armadeus/apf9328/u-boot.lds	2010-03-22 00:41:51.000000000 +0100
-+++ u-boot-1.3.4.new/board/armadeus/apf9328/u-boot.lds	2010-03-22 00:34:06.000000000 +0100
-@@ -38,6 +38,10 @@ SECTIONS
+Index: u-boot-2010.03/board/armadeus/apf9328/u-boot.lds
+===================================================================
+--- u-boot-2010.03.orig/board/armadeus/apf9328/u-boot.lds	2011-01-05 18:05:23.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf9328/u-boot.lds	2011-01-05 18:08:34.000000000 +0100
+@@ -38,6 +38,10 @@
  
  	. = ALIGN(4);
  	.rodata : { *(.rodata) }
@@ -50,9 +56,11 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
  
  	. = ALIGN(4);
  	.data : { *(.data) }
---- u-boot-2010.03-rc1/Makefile	2010-03-27 19:49:15.000000000 +0100
-+++ u-boot-2010.03-rc1/Makefile	2010-03-27 19:47:05.000000000 +0100
-@@ -262,7 +262,7 @@ else
+Index: u-boot-2010.03/Makefile
+===================================================================
+--- u-boot-2010.03.orig/Makefile	2011-01-05 18:07:33.000000000 +0100
++++ u-boot-2010.03/Makefile	2011-01-05 18:08:34.000000000 +0100
+@@ -262,7 +262,7 @@
  PLATFORM_LIBGCC = -L $(USE_PRIVATE_LIBGCC) -lgcc
  endif
  else

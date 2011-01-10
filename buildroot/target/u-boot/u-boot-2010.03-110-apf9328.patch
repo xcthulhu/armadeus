@@ -1,5 +1,7 @@
---- ref/u-boot/board/armadeus/apf9328/apf9328.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/apf9328.c	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/apf9328.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/apf9328.c	2011-01-05 18:06:50.000000000 +0100
 @@ -0,0 +1,101 @@
 +/*
 + * Copyright (C) 2004 Sascha Hauer, Synertronixx GmbH
@@ -67,7 +69,7 @@
 +misc_init_r (void)
 +{
 +	char *s;
-+	
++
 +#if (CONFIG_FPGA)
 +	apf9328_init_fpga ();
 +#endif
@@ -76,7 +78,7 @@
 +	imx_gpio_mode (GPIO_PORTB | GPIO_DR | GPIO_IN | 14);
 +#endif
 +
-+	/* adjust size of rootfs if needed */ 
++	/* adjust size of rootfs if needed */
 +#if (CONFIG_FLASH_CFI_DRIVER)
 +	s = getenv ("rootfs_len");
 +	if (( NULL == s ) || (0 == strcmp(s, ""))) {
@@ -87,7 +89,7 @@
 +	}
 +#endif
 +
-+	/* detect compatibility issue of environment version */ 
++	/* detect compatibility issue of environment version */
 +	s = getenv ("env_version");
 +	if (( NULL == s ) || (0 != strcmp(s, CONFIG_ENV_VERSION))) {
 +		printf("*** Warning - Environment version change suggests: "
@@ -102,8 +104,10 @@
 +{
 +	return;
 +}
---- ref/u-boot/board/armadeus/apf9328/apf9328fpga.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/apf9328fpga.c	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/apf9328fpga.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/apf9328fpga.c	2011-01-05 18:06:37.000000000 +0100
 @@ -0,0 +1,100 @@
 +/*
 + * (C) Copyright 2005
@@ -154,8 +158,8 @@
 +
 +/* Note that these are pointers to code that is in Flash.  They will be
 + * relocated at runtime.
-+ * Spartan3 code is used to download our Spartan 3 :) code is compatible. 
-+ * Just take care about the file size  
++ * Spartan3 code is used to download our Spartan 3 :) code is compatible.
++ * Just take care about the file size
 +*/
 +Xilinx_Spartan3_Slave_Serial_fns fpga_fns = {
 +	fpga_pre_fn,
@@ -195,7 +199,7 @@
 +	}
 +
 +	if (( autoload ) && (0 == strcmp(autoload, "1"))) {
-+		if (FPGA_SUCCESS != fpga_load( 0, (void *)CONFIG_FIRMWARE_ADDR, 
++		if (FPGA_SUCCESS != fpga_load( 0, (void *)CONFIG_FIRMWARE_ADDR,
 +				(size_t) CONFIG_FIRMWARE_LEN )) {
 +			lout = 0;
 +			printf("Firmware not loaded!\n");
@@ -205,8 +209,10 @@
 +}
 +
 +#endif /* CONFIG_FPGA */
---- ref/u-boot/board/armadeus/apf9328/apf9328fpga.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/apf9328fpga.h	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/apf9328fpga.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/apf9328fpga.h	2011-01-05 18:06:21.000000000 +0100
 @@ -0,0 +1,31 @@
 +/*
 + * (C) Copyright 2002
@@ -236,11 +242,13 @@
 +/*
 + * Spartan 3 FPGA configuration support for the APF9328 daughter board
 + */
-+ 
++
 +#include "fpga.h"
 +extern int apf9328_init_fpga (void);
---- ref/u-boot/board/armadeus/apf9328/config.mk	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/config.mk	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/config.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/config.mk	2011-01-05 18:05:23.000000000 +0100
 @@ -0,0 +1,10 @@
 +#
 +# This config file is used for compilation of armadeus sources
@@ -252,8 +260,10 @@
 +#
 +
 +TEXT_BASE = 0x0BF80000
---- ref/u-boot/board/armadeus/apf9328/fpga.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/fpga.c	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/fpga.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/fpga.c	2011-01-05 18:05:59.000000000 +0100
 @@ -0,0 +1,140 @@
 +/*
 + * (C) Copyright 2002
@@ -317,8 +327,8 @@
 +
 +/* Note that these are pointers to code that is in Flash.  They will be
 + * relocated at runtime.
-+ * Spartan2 code is used to download our Spartan 3 :) code is compatible. 
-+ * Just take care about the file size  
++ * Spartan2 code is used to download our Spartan 3 :) code is compatible.
++ * Just take care about the file size
 +*/
 +
 +/*
@@ -344,7 +354,7 @@
 +int
 +fpga_pgm_fn (int assert, int flush, int cookie)
 +{
-+	PRINTF ("%s:%d: FPGA PROGRAM %s", __FUNCTION__, __LINE__, 
++	PRINTF ("%s:%d: FPGA PROGRAM %s", __FUNCTION__, __LINE__,
 +					assert?"high":"low");
 +	GPIO_WRITE( FPGA_PROGRAM, !assert);
 +	return assert;
@@ -356,7 +366,7 @@
 +int
 +fpga_clk_fn (int assert_clk, int flush, int cookie)
 +{
-+	PRINTF ("%s:%d: FPGA CLOCK %s", __FUNCTION__, __LINE__, 
++	PRINTF ("%s:%d: FPGA CLOCK %s", __FUNCTION__, __LINE__,
 +					assert_clk?"high":"low");
 +	GPIO_WRITE( FPGA_CLOCK, assert_clk);
 +	return assert_clk;
@@ -395,8 +405,10 @@
 +}
 +
 +#endif /* CONFIG_FPGA */
---- ref/u-boot/board/armadeus/apf9328/fpga.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/fpga.h	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/fpga.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/fpga.h	2011-01-05 18:05:23.000000000 +0100
 @@ -0,0 +1,30 @@
 +/*
 + * (C) Copyright 2002
@@ -428,8 +440,10 @@
 +extern int fpga_done_fn (int cookie);
 +extern int fpga_clk_fn (int assert_clk, int flush, int cookie);
 +extern int fpga_wr_fn (int assert_write, int flush, int cookie);
---- ref/u-boot/board/armadeus/apf9328/i2c.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/i2c.c	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/i2c.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/i2c.c	2011-01-05 18:05:41.000000000 +0100
 @@ -0,0 +1,305 @@
 +/*
 + * Eric Jarrige <jorasse@users.sourceforge.net>
@@ -595,7 +609,7 @@
 +			tmpIC = i;
 +		}
 +	}
-+	
++
 +	IFDR = tmpIC;
 +	IADR = slaveaddr << 1;
 +
@@ -736,8 +750,10 @@
 +}
 +
 +#endif /* CONFIG_HARD_I2C */
---- ref/u-boot/board/armadeus/apf9328/lowlevel_init.S	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/lowlevel_init.S	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/lowlevel_init.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/lowlevel_init.S	2011-01-05 18:07:06.000000000 +0100
 @@ -0,0 +1,443 @@
 +/*
 + * Copyright (C) 2004 Sascha Hauer, Synertronixx GmbH
@@ -858,7 +874,7 @@
 +	ORR r0,r0,#0xC0000000
 +	MCR p15,0,r0,c1,c0,0
 +
-+/*	ldr		r0,	=GPR(0) 
++/*	ldr		r0,	=GPR(0)
 +	ldr		r1,	=CONFIG_SYS_GPR_A_VAL
 +	str		r1,	[r0]
 +*/
@@ -1177,13 +1193,15 @@
 +	ldr		r1, =CONFIG_SYS_SDRAM_1_BASE+CONFIG_SYS_SDRAM_MODE_REGISTER_VAL
 +	str		r2,	[r1]
 +
-+	ldr		r1, =CONFIG_SYS_NORMAL_RW_CMD 
++	ldr		r1, =CONFIG_SYS_NORMAL_RW_CMD
 +	str		r1,	[r0]
 +
 +endofmemsetup:
 +	mov	pc,r10
---- ref/u-boot/board/armadeus/apf9328/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/Makefile	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/Makefile	2011-01-05 18:05:23.000000000 +0100
 @@ -0,0 +1,50 @@
 +#
 +# (C) Copyright 2000-2004
@@ -1235,8 +1253,10 @@
 +sinclude $(obj).depend
 +
 +#########################################################################
---- ref/u-boot/board/armadeus/apf9328/u-boot.lds	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/board/armadeus/apf9328/u-boot.lds	2008-11-14 00:48:19.000000000 +0100
+Index: u-boot-2010.03/board/armadeus/apf9328/u-boot.lds
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-2010.03/board/armadeus/apf9328/u-boot.lds	2011-01-05 18:05:23.000000000 +0100
 @@ -0,0 +1,56 @@
 +/*
 + * (C) Copyright 2000-2004

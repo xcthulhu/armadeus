@@ -1,0 +1,235 @@
+Add APF51Proto baseboard support.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
+===================================================================
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-01-06 15:53:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-06 15:53:53.000000000 +0100
+@@ -8,6 +8,7 @@
+ obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
+ obj-$(CONFIG_MACH_APF51) += board-apf51.o
+ obj-$(CONFIG_MACH_APF51_DEV) += apf51dev-baseboard.o
++obj-$(CONFIG_MACH_APF51_PROTO) += apf51proto-baseboard.o
+ obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
+ obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
+ obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
+Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51proto-baseboard.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51proto-baseboard.c	2011-01-06 15:53:53.000000000 +0100
+@@ -0,0 +1,183 @@
++ /*
++ * Support for APF51's PROTO development baseboard
++ * (This board was never publicly released)
++ *
++ * Copyright (C) 2010-2011 Armadeus Systems <support@armadeus.com>
++ *
++ * Based on code which is:
++ * Copyright 2009-2010 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2009-2010 Amit Kucheria <amit.kucheria@canonical.com>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/gpio.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/spi/spi.h>
++#include <linux/fb.h>
++#include <linux/mfd/imx-ipu-v3.h>
++
++#include <mach/iomux-mx51.h>
++#include <mach/ipu-v3.h>
++
++#include "devices-imx51.h"
++#include "devices.h"
++
++static iomux_v3_cfg_t apf51proto_pads[] = {
++	/* SD1 */
++	MX51_PAD_SD1_CMD__SD1_CMD,
++	MX51_PAD_SD1_CLK__SD1_CLK,
++	MX51_PAD_SD1_DATA0__SD1_DATA0,
++	MX51_PAD_SD1_DATA1__SD1_DATA1,
++	MX51_PAD_SD1_DATA2__SD1_DATA2,
++	MX51_PAD_SD1_DATA3__SD1_DATA3,
++
++	/* SD2 */
++	MX51_PAD_SD2_CMD__SD2_CMD,
++	MX51_PAD_SD2_CLK__SD2_CLK,
++	MX51_PAD_SD2_DATA0__SD2_DATA0,
++	MX51_PAD_SD2_DATA1__SD2_DATA1,
++	MX51_PAD_SD2_DATA2__SD2_DATA2,
++	MX51_PAD_SD2_DATA3__SD2_DATA3,
++
++	/* I2C1 */
++	/* TBD (depends on SD2 or SPI1) */
++
++	/* eCSPI1 */
++	MX51_PAD_CSPI1_MISO__ECSPI1_MISO,
++	MX51_PAD_CSPI1_MOSI__ECSPI1_MOSI,
++	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
++	MX51_PAD_CSPI1_SS0__GPIO_4_24,
++	MX51_PAD_CSPI1_SS1__GPIO_4_25,
++
++	/* Display */
++	MX51_PAD_DISP1_DAT0__DISP1_DAT0,
++	MX51_PAD_DISP1_DAT1__DISP1_DAT1,
++	MX51_PAD_DISP1_DAT2__DISP1_DAT2,
++	MX51_PAD_DISP1_DAT3__DISP1_DAT3,
++	MX51_PAD_DISP1_DAT4__DISP1_DAT4,
++	MX51_PAD_DISP1_DAT5__DISP1_DAT5,
++	MX51_PAD_DISP1_DAT6__DISP1_DAT6,
++	MX51_PAD_DISP1_DAT7__DISP1_DAT7,
++	MX51_PAD_DISP1_DAT8__DISP1_DAT8,
++	MX51_PAD_DISP1_DAT9__DISP1_DAT9,
++	MX51_PAD_DISP1_DAT10__DISP1_DAT10,
++	MX51_PAD_DISP1_DAT11__DISP1_DAT11,
++	MX51_PAD_DISP1_DAT12__DISP1_DAT12,
++	MX51_PAD_DISP1_DAT13__DISP1_DAT13,
++	MX51_PAD_DISP1_DAT14__DISP1_DAT14,
++	MX51_PAD_DISP1_DAT15__DISP1_DAT15,
++	MX51_PAD_DISP1_DAT16__DISP1_DAT16,
++	MX51_PAD_DISP1_DAT17__DISP1_DAT17,
++	MX51_PAD_DISP1_DAT18__DISP1_DAT18,
++	MX51_PAD_DISP1_DAT19__DISP1_DAT19,
++	MX51_PAD_DISP1_DAT20__DISP1_DAT20,
++	MX51_PAD_DISP1_DAT21__DISP1_DAT21,
++	MX51_PAD_DISP1_DAT22__DISP1_DAT22,
++	MX51_PAD_DISP1_DAT23__DISP1_DAT23,
++	MX51_PAD_DI1_PIN2__DI1_PIN2,	/* HSYNC */
++	MX51_PAD_DI1_PIN3__DI1_PIN3,	/* VSYNC */
++	/* CLK and OE are not muxed */
++
++	/* Debug PINS */
++/*	MX51_PAD_GPIO_1_2__GPIO_1_2,
++	MX51_PAD_GPIO_1_3__GPIO_1_3,*/
++};
++
++static const struct imxi2c_platform_data apf51proto_i2c_data __initconst = {
++	.bitrate = 400000,
++};
++
++/* APF51Proto has a LCD connector for a 18 bits 800x480 Chimei TFT LCD */
++
++static struct fb_videomode apf51proto_modes[] = {
++        {
++		.name 		= "Chimei-LW700AT9003",
++		.refresh 	= 60,
++		.xres 		= 800,
++		.yres 		= 480,
++		.pixclock 	= 30303, /* picoS */
++		.left_margin 	= 96, .right_margin = 96,
++		.upper_margin 	= 0x14, .lower_margin = 0x15,
++		.hsync_len 	= 64, .vsync_len = 4,
++		.sync 		= FB_SYNC_CLK_IDLE_EN,
++		.vmode 		= FB_VMODE_NONINTERLACED,
++		.flag 		= 0,
++        },
++};
++
++static struct ipuv3_fb_platform_data apf51proto_fb0_data = {
++	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
++	.modes = apf51proto_modes,
++	.num_modes = ARRAY_SIZE(apf51proto_modes),
++	.display = 0,
++};
++
++static struct imx_ipuv3_platform_data ipu_data = {
++	.fb_head0_platform_data = &apf51proto_fb0_data,
++};
++
++#define DEBUG1_GPIO	(GPIO_PORTA | 2)
++#define DEBUG2_GPIO	(GPIO_PORTA | 3)
++
++
++#define APF51PROTO_ECSPI1_CS0	IMX_GPIO_NR(4, 24)
++#define APF51PROTO_ECSPI1_CS1	IMX_GPIO_NR(4, 25)
++
++static struct spi_board_info apf51proto_spi_board_info[] __initdata = {
++	{
++		.modalias = "as1531",
++		.max_speed_hz = 8000000,
++		.bus_num = 0,
++		.chip_select = 0,
++		.mode = SPI_MODE_0,
++		.platform_data = NULL,
++	},
++	{
++		.modalias = "spidev",
++		.max_speed_hz = 8000000,
++		.bus_num = 0,
++		.chip_select = 1,
++		.mode = SPI_MODE_0,
++		.platform_data = NULL,
++	},
++};
++
++static int apf51proto_spi_cs[] = {
++	APF51PROTO_ECSPI1_CS0,
++	APF51PROTO_ECSPI1_CS1,
++};
++
++static const struct spi_imx_master apf51proto_spi_pdata __initconst = {
++	.chipselect     = apf51proto_spi_cs,
++	.num_chipselect = ARRAY_SIZE(apf51proto_spi_cs),
++};
++
++
++void __init apf51_baseboard_init(void)
++{
++	mxc_iomux_v3_setup_multiple_pads(apf51proto_pads,
++					ARRAY_SIZE(apf51proto_pads));
++
++	gpio_request(DEBUG1_GPIO, "debug1");
++	gpio_request(DEBUG2_GPIO, "debug2");
++	gpio_set_value(DEBUG1_GPIO, 1);
++	gpio_set_value(DEBUG2_GPIO, 1);
++
++	imx51_add_sdhci_esdhc_imx(0, NULL);
++	imx51_add_sdhci_esdhc_imx(1, NULL);
++
++	spi_register_board_info(apf51proto_spi_board_info,
++		ARRAY_SIZE(apf51proto_spi_board_info));
++	imx51_add_ecspi(0, &apf51proto_spi_pdata);
++
++	imx51_add_imx_i2c(0, &apf51proto_i2c_data);
++
++	imx51_add_ipuv3(&ipu_data);
++}
+Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
+===================================================================
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-06 16:11:12.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-06 16:13:19.000000000 +0100
+@@ -118,7 +118,7 @@
+ choice
+ 	prompt "Baseboard"
+ 	depends on MACH_APF51
+-	default MACH_APF51_DEV
++	default MACH_APF51_PROTO
+ 
+ config MACH_APF51_DEV
+ 	prompt "Armadeus Systems APF51Dev development board"
+@@ -130,6 +130,17 @@
+ 	help
+ 	  This selects the APF51Dev as baseboard and adds board's specific
+ 	  devices.
++
++config MACH_APF51_PROTO
++	prompt "Armadeus Systems APF51Proto development board"
++	bool
++	select MACH_APF51_HAS_BASEBOARD
++	select IMX_HAVE_PLATFORM_IMX_IPUV3
++	select IMX_HAVE_PLATFORM_SPI_IMX
++	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
++	help
++	  This selects the APF51Proto as baseboard and adds board's specific
++	  devices. This board was never made publicly available !
+ endchoice
+ 
+ endif

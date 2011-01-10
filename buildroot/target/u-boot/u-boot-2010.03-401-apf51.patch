@@ -1,7 +1,7 @@
 Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2010-12-21 12:15:00.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,1102 @@
 +/*
 + * (C) Copyright 2010 Eric Jarrige, Armadeus Project
@@ -1108,14 +1108,14 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 Index: u-boot-2010.03/board/armadeus/apf51/config.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/config.mk	2010-12-20 17:49:14.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/config.mk	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,2 @@
 +LDSCRIPT := $(SRCTREE)/board/$(BOARDDIR)/u-boot.lds
 +TEXT_BASE = 0x9FF00000
 Index: u-boot-2010.03/board/armadeus/apf51/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/Makefile	2010-12-20 17:49:14.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/Makefile	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,50 @@
 +#
 +# Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
@@ -1170,7 +1170,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/Makefile
 Index: u-boot-2010.03/board/armadeus/apf51/u-boot.lds
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/u-boot.lds	2010-12-20 17:49:14.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/u-boot.lds	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,64 @@
 +/*
 + * January 2004 - Changed to support H4 device
@@ -1238,8 +1238,8 @@ Index: u-boot-2010.03/board/armadeus/apf51/u-boot.lds
 +}
 Index: u-boot-2010.03/include/asm-arm/mach-types.h
 ===================================================================
---- u-boot-2010.03.orig/include/asm-arm/mach-types.h	2010-03-31 23:54:39.000000000 +0200
-+++ u-boot-2010.03/include/asm-arm/mach-types.h	2010-12-20 17:49:14.000000000 +0100
+--- u-boot-2010.03.orig/include/asm-arm/mach-types.h	2011-01-05 18:05:11.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/mach-types.h	2011-01-05 18:11:15.000000000 +0100
 @@ -2699,6 +2699,7 @@
  #define MACH_TYPE_MX53_EVK             2716
  #define MACH_TYPE_IGEP0030             2717
@@ -1269,8 +1269,8 @@ Index: u-boot-2010.03/include/asm-arm/mach-types.h
   */
 Index: u-boot-2010.03/MAKEALL
 ===================================================================
---- u-boot-2010.03.orig/MAKEALL	2010-12-20 17:49:13.000000000 +0100
-+++ u-boot-2010.03/MAKEALL	2010-12-20 17:49:14.000000000 +0100
+--- u-boot-2010.03.orig/MAKEALL	2011-01-05 18:09:44.000000000 +0100
++++ u-boot-2010.03/MAKEALL	2011-01-05 18:11:15.000000000 +0100
 @@ -549,6 +549,7 @@
  	ap946es			\
  	ap966			\
@@ -1281,8 +1281,8 @@ Index: u-boot-2010.03/MAKEALL
  	cp926ejs		\
 Index: u-boot-2010.03/Makefile
 ===================================================================
---- u-boot-2010.03.orig/Makefile	2010-12-20 17:49:13.000000000 +0100
-+++ u-boot-2010.03/Makefile	2010-12-20 17:49:14.000000000 +0100
+--- u-boot-2010.03.orig/Makefile	2011-01-05 18:09:44.000000000 +0100
++++ u-boot-2010.03/Makefile	2011-01-05 18:11:15.000000000 +0100
 @@ -2735,6 +2735,9 @@
  apf27_config		:	unconfig
  	@$(MKCONFIG) $(@:_config=) arm arm926ejs apf27 armadeus mx27
@@ -1296,7 +1296,7 @@ Index: u-boot-2010.03/Makefile
 Index: u-boot-2010.03/board/armadeus/apf51/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/fpga.h	2010-12-21 14:20:49.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/fpga.h	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,39 @@
 +/*
 + * (C) Copyright 2002-2010
@@ -1340,7 +1340,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.h
 Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/fpga.c	2010-12-21 14:14:55.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/fpga.c	2011-01-05 18:11:15.000000000 +0100
 @@ -0,0 +1,270 @@
 +/*
 + * (C) Copyright 2002-2010

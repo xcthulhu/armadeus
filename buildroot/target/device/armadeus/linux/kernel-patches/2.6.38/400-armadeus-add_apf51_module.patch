@@ -1,7 +1,7 @@
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2010-12-30 21:07:06.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2010-12-31 17:35:40.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-06 15:53:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-06 19:58:51.000000000 +0100
 @@ -101,4 +101,17 @@
  	  Include support for Genesi Efika MX nettop. This includes specific
  	  configurations for the board and its peripherals.
@@ -22,8 +22,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2010-12-30 21:06:56.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2010-12-31 17:35:39.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2010-12-14 09:55:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-06 19:58:51.000000000 +0100
 @@ -6,6 +6,7 @@
  obj-y   := cpu.o mm.o clock-mx51-mx53.o devices.o
  
@@ -35,11 +35,11 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c	2010-12-31 16:14:49.000000000 +0100
-@@ -0,0 +1,522 @@
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c	2011-01-06 18:51:58.000000000 +0100
+@@ -0,0 +1,422 @@
 +/*
 + * Support for APF51 System On Module
-+ * Copyright (C) 2010 Armadeus Systems
++ * Copyright (C) 2010-2011 Armadeus Systems
 + *
 + * Based on code which is:
 + * Copyright 2009-2010 Freescale Semiconductor, Inc. All Rights Reserved.
@@ -215,115 +215,16 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	return 0;
 +}
 +
-+/* ULPI register addresses */
-+#define ULPI_VID_LOW         0x00    /* Vendor ID low */
-+#define ULPI_VID_HIGH        0x01    /* Vendor ID high */
-+#define ULPI_PID_LOW         0x02    /* Product ID low */
-+#define ULPI_PID_HIGH        0x03    /* Product ID high */
-+#define ULPI_FCNCTL          0x04    /* Function Control */
-+#define ULPI_ITFCTL          0x07    /* Interface Control */
-+#define ULPI_OTGCTL          0x0A    /* OTG Control */
-+
-+/* 1504 Function Control Register bits */
-+#define RESET                   (1 << 5)                /* Reset */
-+
-+/* 1504 OTG Control Register bits */
-+#define USE_EXT_VBUS_IND        (1 << 7)        /* Use ext. Vbus indicator */
-+#define DRV_VBUS_EXT            (1 << 6)        /* Drive Vbus external */
-+#define DRV_VBUS                (1 << 5)        /* Drive Vbus */
-+#define CHRG_VBUS               (1 << 4)        /* Charge Vbus */
-+#define DISCHRG_VBUS            (1 << 3)        /* Discharge Vbus */
-+#define DM_PULL_DOWN            (1 << 2)        /* enable DM Pull Down */
-+#define DP_PULL_DOWN            (1 << 1)        /* enable DP Pull Down */
-+#define ID_PULL_UP              (1 << 0)        /* enable ID Pull Up */
-+
-+
-+/* ?? Preferably use stuff from drivers/usb/otg/ulpi.c ?? */
-+static int usb3320_init(struct otg_transceiver *otg)
-+{
-+        int vid, pid;
-+
-+	printk("*** %s ***\n", __func__);
-+
-+	vid = otg->io_ops->read(otg, ULPI_VID_HIGH) << 8;
-+	vid = vid | otg->io_ops->read(otg, ULPI_VID_LOW);
-+
-+	pid = otg->io_ops->read(otg, ULPI_PID_HIGH) << 8;
-+	pid = pid | otg->io_ops->read(otg, ULPI_PID_LOW);
-+
-+        pr_info("ULPI OTG (%s) Vendor ID 0x%x    Product ID 0x%x\n", otg->label, vid, pid);
-+        if (vid != 0x424 || pid != 0x07) {
-+                pr_err("No USB3320 found\n");
-+                return -1;
-+        }
-+
-+        return 0;
-+}
-+
-+/* ?? Preferably use stuff from drivers/usb/otg/ulpi.c ?? */
-+static int usb3320_set_vbus(struct otg_transceiver *otg, bool enabled)
-+{
-+        int ret = 0;
-+	int reg;
-+
-+	printk("*** %s: %d\n", __func__, enabled);
-+
-+	if (enabled) {
-+		/* force disconnection of the DM/DP signals. This
-+		avoid powering the connected device through these lines */
-+		reg = otg->io_ops->read(otg, ULPI_FCNCTL);
-+		reg |= RESET;
-+		otg->io_ops->write(otg, reg, ULPI_FCNCTL);
-+		mdelay(10); /* wait until the supply is really down */
-+		reg = otg->io_ops->read(otg, ULPI_FCNCTL);
-+		reg &= ~RESET;
-+		otg->io_ops->write(otg, reg, ULPI_FCNCTL);
-+		mdelay(1);
-+
-+		reg = otg->io_ops->read(otg, ULPI_OTGCTL);
-+		reg |= DRV_VBUS_EXT |   /* enable external Vbus */
-+			DRV_VBUS |          /* enable internal Vbus */
-+			USE_EXT_VBUS_IND |  /* use external indicator */
-+			CHRG_VBUS;        /* charge Vbus */
-+		otg->io_ops->write(otg, reg, ULPI_OTGCTL);
-+	} else {
-+		reg = otg->io_ops->read(otg, ULPI_OTGCTL);
-+		reg &= ~(DRV_VBUS_EXT | /* disable external Vbus */
-+			DRV_VBUS);        /* disable internal Vbus */
-+		reg |= USE_EXT_VBUS_IND | /* use external indicator */
-+			DISCHRG_VBUS;          /* discharge Vbus */
-+		otg->io_ops->write(otg, reg, ULPI_OTGCTL);
-+	}
-+
-+	return ret;
-+}
-+
-+/* ?? Preferably use otg_ulpi_create from drivers/usb/otg/ulpi.c ?? */
-+struct otg_transceiver usb3320_1 = {
-+	.io_ops		= &mxc_ulpi_access_ops,
-+	.init		= usb3320_init,
-+	.set_vbus	= usb3320_set_vbus,
-+};
-+
 +static struct mxc_usbh_platform_data usbh1_config = {
 +	.init	= initialize_usbh1_port,
 +	.portsc	= MXC_EHCI_MODE_ULPI,
 +	.flags	= (MXC_EHCI_POWER_PINS_ENABLED | MXC_EHCI_ITC_NO_THRESHOLD),
-+	.otg	= &usb3320_1,
-+};
-+
-+/* ?? Preferably use otg_ulpi_create from drivers/usb/otg/ulpi.c ?? */
-+struct otg_transceiver usb3320_2 = {
-+	.io_ops		= &mxc_ulpi_access_ops,
-+	.init		= usb3320_init,
-+	.set_vbus	= usb3320_set_vbus,
 +};
 +
 +static struct mxc_usbh_platform_data usbh2_config = {
 +	.init	= initialize_usbh2_port,
 +	.portsc	= MXC_EHCI_MODE_ULPI,
 +	.flags	= (MXC_EHCI_POWER_PINS_ENABLED | MXC_EHCI_ITC_NO_THRESHOLD),
-+	.otg	= &usb3320_2,
 +};
 +
 +#define APF51_USBH1_STP			(0*32 + 27)	/* GPIO_1_27 */
@@ -364,9 +265,9 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	return 0;
 +}
 +
++
 +/* OTG port with i.MX51 internal PHY */
 +#define	MX51_USB_PLL_DIV_19_2_MHZ	0x01
-+#define MX51_USB_PLL_DIV_24_MHZ		0x02
 +
 +/* This function is board specific as the bit mask for the plldiv will also
 +be different for other Freescale SoCs, thus a common bitmask is not
@@ -386,10 +287,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	v = __raw_readl(usbother_base + MXC_USB_PHY_CTR_FUNC2_OFFSET);
 +	v &= ~MX5_USB_UTMI_PHYCTRL1_PLLDIV_MASK;
 +	v |= MX51_USB_PLL_DIV_19_2_MHZ;
-+//	v |= MX51_USB_PLL_DIV_24_MHZ;
 +	__raw_writel(v, usbother_base + MXC_USB_PHY_CTR_FUNC2_OFFSET);
 +	iounmap(usb_base);
-+	printk("**** initialize_otg_port 19,2\n");
 +
 +	return 0;
 +}
@@ -483,7 +382,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +
 +static struct wm831x_touch_pdata apf51_wm8311_touch_pdata = {
 +	.fivewire = 0,
-+	.pressure = 0,
++	.pressure = 1,
 +	.data_irq = gpio_to_irq(APF51_WM8311_TOUCH_EOC_GPIO),
 +	.pd_irq = gpio_to_irq(APF51_WM8311_TOUCH_DETECT_GPIO),
 +};
@@ -501,8 +400,9 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	.touch = &apf51_wm8311_touch_pdata,
 +};
 +
-+static struct i2c_board_info apf51_i2c_devices[] __initdata = {
-+	{ I2C_BOARD_INFO("wm8311", 0x34),
++static struct i2c_board_info apf51_i2c1_devices[] __initdata = {
++	{
++		I2C_BOARD_INFO("wm8311", 0x34),
 +		.platform_data = &apf51_wm8311_pdata,
 +		.irq = gpio_to_irq(APF51_WM8311_IRQ_GPIO),
 +	},
@@ -519,7 +419,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	apf51_init_imx_uart();
 +
 +	imx51_add_imx_i2c(1, &apf51_i2c_data);
-+	i2c_register_board_info(1, apf51_i2c_devices, ARRAY_SIZE(apf51_i2c_devices));
++	i2c_register_board_info(1, apf51_i2c1_devices, ARRAY_SIZE(apf51_i2c1_devices));
 +
 +	/* APF51 has an Ethernet PHY connected on internal FEC */
 +	imx51_add_fec(NULL);
@@ -561,8 +461,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +
 Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-12-30 21:06:56.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h	2010-12-30 21:07:06.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-12-14 09:55:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h	2011-01-06 15:53:53.000000000 +0100
 @@ -63,6 +63,7 @@
  #define MX3X_UART1_BASE_ADDR	0x43F90000
  #define MX3X_UART2_BASE_ADDR	0x43F94000
@@ -583,8 +483,8 @@ Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h
  	}
 Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/irqs.h
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/irqs.h	2010-12-30 21:06:56.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/irqs.h	2010-12-30 21:07:06.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/irqs.h	2010-12-14 09:55:53.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/irqs.h	2011-01-06 15:53:53.000000000 +0100
 @@ -47,6 +47,8 @@
  
  #ifdef CONFIG_MACH_MX31ADS_WM1133_EV1
