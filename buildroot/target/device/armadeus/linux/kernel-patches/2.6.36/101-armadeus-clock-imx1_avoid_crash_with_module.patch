@@ -1,0 +1,12 @@
+This patch suppress kernel oops when a driver, compiled as module, get a clock.
+--- a/arch/arm/mach-imx/clock-imx1.c	2011-01-09 16:11:35.000000000 +0100
++++ b/arch/arm/mach-imx/clock-imx1.c	2011-01-09 16:11:47.000000000 +0100
+@@ -582,7 +582,7 @@
+ 		.con_id = n, \
+ 		.clk = &c, \
+ 	},
+-static struct clk_lookup lookups[] __initdata = {
++static struct clk_lookup lookups[] = {
+ 	_REGISTER_CLOCK(NULL, "dma", dma_clk)
+ 	_REGISTER_CLOCK("mx1-camera.0", NULL, csi_clk)
+ 	_REGISTER_CLOCK(NULL, "mma", mma_clk)
