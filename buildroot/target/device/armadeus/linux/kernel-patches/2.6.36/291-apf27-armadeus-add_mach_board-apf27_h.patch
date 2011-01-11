@@ -3,7 +3,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h	2010-12-22 14:32:20.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h	2010-12-22 14:34:38.000000000 +0100
 @@ -0,0 +1,43 @@
 +/*
 + * Copyright (C) 2008-2010 Armadeus Systems
