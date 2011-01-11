@@ -1,7 +1,7 @@
 Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
 ===================================================================
---- u-boot-2010.03.orig/board/armadeus/apf27/fpga.c	2011-01-06 11:44:48.000000000 +0100
-+++ u-boot-2010.03/board/armadeus/apf27/fpga.c	2011-01-06 11:44:54.000000000 +0100
+--- u-boot-2010.03.orig/board/armadeus/apf27/fpga.c	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf27/fpga.c	2011-01-11 11:47:52.000000000 +0100
 @@ -33,6 +33,7 @@
  #include <config.h>
  #include "fpga.h"
@@ -10,7 +10,7 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
  
  #define GPIO_PORT(x)  ((x & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT)
  #define GPIO_SET(x)   writel(readl(&gpregs->port[GPIO_PORT(x)].dr) | (1 << (x & GPIO_PIN_MASK)), \
-@@ -67,21 +68,48 @@
+@@ -67,21 +68,79 @@
  	fpga_wr_fn,
  	fpga_rdata_fn,
  	fpga_wdata_fn,
@@ -20,6 +20,7 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
  	fpga_post_fn,
  };
  
++#if defined(CONFIG_FPGA_SPARTAN6)
 +Xilinx_Spartan6_Slave_SelectMap_fns fpga_second_fns= {
 +	fpga_spartan6_pre_fn,
 +	fpga_spartan6_pgm_fn,
@@ -34,8 +35,22 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
 +	fpga_spartan6_busy_fn,
 +	fpga_spartan6_abort_fn,
 +	fpga_spartan6_post_fn,
-+
 +};
++#endif /* CONFIG_FPGA_SPARTAN6 */
++
++#if defined(CONFIG_FPGA_SPARTAN6)
++struct sp_vision_struct {
++	uint32_t fpga_offset;
++	int ip_addr;
++	int ip_id;
++};
++
++static struct sp_vision_struct sp_vision = {
++	.fpga_offset = 0,
++	.ip_addr = 0,
++	.ip_id = 0,
++};
++#endif
 +
  Xilinx_desc fpga[CONFIG_FPGA_COUNT] = {
  	{Xilinx_Spartan3,
@@ -43,29 +58,46 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
  	 1196128l/8,
  	 (void *) &fpga_fns,
 -	 0}
-+	 0},
++	 0,NULL},
++#if defined(CONFIG_FPGA_SPARTAN6)
 +	{Xilinx_Spartan6,
 +	 slave_selectmap,
 +	 XILINX_XC6SLX45_SIZE,
-+	 (void *) &fpga_fns,
++	 (void *) &fpga_second_fns,
 +	 0xD6000000l,
-+	 0, 0,
-+	 1}
++	 0, 0, 1,
++	&sp_vision}
++#endif /* CONFIG_FPGA_SPARTAN6 */
  };
  
++/* get fpga descriptor in fpga[] tabular
++ * with cookie param */
++Xilinx_desc *apf27_fpga_get_desc ( int cookie)
++{
++	int i;
++	for(i=0; i<CONFIG_FPGA_COUNT; i++)
++	{
++		if (fpga[i].cookie == cookie)
++			return &fpga[i];
++	}
++	return NULL;
++}
++
 +/*******************************************
 + *  SPARTAN3 APF27 configuration functions *
 + *******************************************/
++
  /*
 - * nitialize GPIO port B before download
 + * Initialize GPIO port B before download
   */
  int
  fpga_pre_fn (int cookie)
-@@ -264,4 +292,228 @@
+@@ -264,4 +323,228 @@
  	return lout;
  }
  
++#if defined(CONFIG_FPGA_SPARTAN6)
 +/**********************************************
 +*  SPARTAN6 sp_vision configuration functions *
 +***********************************************/
@@ -244,7 +276,7 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
 +	int config;
 +	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
 +
-+	*((unsigned short*)SELECTMAP_DATA_REG) = data&0x00ff;
++	*((volatile unsigned short*)SELECTMAP_DATA_REG) = data&0x00ff;
 +
 +	return data;
 +}
@@ -269,8 +301,6 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
 +	uint16_t status;
 +	Xilinx_desc *desc = apf27_fpga_get_desc(cookie);
 +
-+//	PRINTF ("%s:%d: DONE check %s", __FUNCTION__, __LINE__,
-+//					GPIO_READ(CFG_FPGA_DONE)?"high":"low");
 +	status = *((volatile uint16_t *)SELECTMAP_STATUS_REG); /* read config */
 +
 +	return (((status&(1<<SELECTMAP_STATUS_BUSY))!=0)?0:1);
@@ -288,13 +318,14 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.c
 +
 +	return cookie;
 +}
++#endif /* CONFIG_FPGA_SPARTAN3 */
 +
 +
  #endif /* CONFIG_FPGA */
 Index: u-boot-2010.03/board/armadeus/apf27/fpga.h
 ===================================================================
---- u-boot-2010.03.orig/board/armadeus/apf27/fpga.h	2011-01-06 11:44:48.000000000 +0100
-+++ u-boot-2010.03/board/armadeus/apf27/fpga.h	2011-01-06 11:44:54.000000000 +0100
+--- u-boot-2010.03.orig/board/armadeus/apf27/fpga.h	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf27/fpga.h	2011-01-11 11:39:56.000000000 +0100
 @@ -37,3 +37,20 @@
  extern int fpga_abort_fn (int cookie);
  extern int fpga_post_fn (int cookie);
@@ -314,21 +345,471 @@ Index: u-boot-2010.03/board/armadeus/apf27/fpga.h
 +extern int fpga_spartan6_abort_fn (int cookie);
 +extern int fpga_spartan6_post_fn (int cookie);
 +extern int fpga_spartan6_busy_fn (int cookie);
-+#endif /* CONFIG_FPGA_SPARTAN3 */
++#endif /* CONFIG_FPGA_SPARTAN6 */
 +
 Index: u-boot-2010.03/include/xilinx.h
 ===================================================================
---- u-boot-2010.03.orig/include/xilinx.h	2011-01-06 11:44:59.000000000 +0100
-+++ u-boot-2010.03/include/xilinx.h	2011-01-06 11:46:08.000000000 +0100
-@@ -77,6 +77,11 @@
- typedef struct {		/* typedef Xilinx_desc */
- 	Xilinx_Family family;	/* part type */
+--- u-boot-2010.03.orig/include/xilinx.h	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/include/xilinx.h	2011-01-11 11:39:56.000000000 +0100
+@@ -79,6 +79,11 @@
  	Xilinx_iface iface;	/* interface type */
+ 	size_t size;		/* bytes of data part can accept */
+ 	void *iface_fns;	/* interface function table */
 +	/* XXX:for second fpga configuration (throught first fpga) */
 +	uint32_t fpga_offset;	/* first fpga offset */
 +	int ip_addr;		/* Address of spartan_selectmap IP */
 +	int ip_id;		/* Idendifiant of spartan_selectmap IP */
 +	/* end of XXX */
- 	size_t size;		/* bytes of data part can accept */
- 	void *iface_fns;	/* interface function table */
  	int cookie;		/* implementation specific cookie */
+ } Xilinx_desc;			/* end, typedef Xilinx_desc */
+ 
+Index: u-boot-2010.03/common/cmd_fpga.c
+===================================================================
+--- u-boot-2010.03.orig/common/cmd_fpga.c	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/common/cmd_fpga.c	2011-01-11 11:43:03.000000000 +0100
+@@ -48,12 +48,13 @@
+ static int fpga_get_op (char *opstr);
+ 
+ /* Local defines */
+-#define FPGA_NONE   -1
+-#define FPGA_INFO   0
+-#define FPGA_LOAD   1
+-#define FPGA_LOADB  2
+-#define FPGA_DUMP   3
+-#define FPGA_LOADMK 4
++#define FPGA_NONE	-1
++#define FPGA_INFO   	0
++#define FPGA_LOAD   	1
++#define FPGA_LOADB  	2
++#define FPGA_DUMP   	3
++#define FPGA_LOADMK 	4
++#define FPGA_LOADSECOND	5
+ 
+ /* Convert bitstream data and load into the fpga */
+ int fpga_loadbitstream(unsigned long dev, char* fpgadata, size_t size)
+@@ -150,7 +151,7 @@
+ 
+ /* ------------------------------------------------------------------------- */
+ /* command form:
+- *   fpga <op> <device number> <data addr> <datasize>
++ *   fpga <op> <device number> <data addr> <datasize> [offset] [id]
+  * where op is 'load', 'dump', or 'info'
+  * If there is no device number field, the fpga environment variable is used.
+  * If there is no data addr field, the fpgadata environment variable is used.
+@@ -160,6 +161,9 @@
+ {
+ 	int op, dev = FPGA_INVALID_DEVICE;
+ 	size_t data_size = 0;
++	int ipaddr;
++	int ipid;
++	fpga_desc *desc;
+ 	void *fpga_data = NULL;
+ 	char *devstr = getenv ("fpga");
+ 	char *datastr = getenv ("fpgadata");
+@@ -175,6 +179,9 @@
+ 		fpga_data = (void *) simple_strtoul (datastr, NULL, 16);
+ 
+ 	switch (argc) {
++	case 7:		/* fpga <op> <dev> <data> <datasize> <ipaddr> <ipid>*/
++		ipaddr = simple_strtoul(argv[5], NULL, 16);
++		ipid = simple_strtoul(argv[6], NULL, 16);
+ 	case 5:		/* fpga <op> <dev> <data> <datasize> */
+ 		data_size = simple_strtoul (argv[4], NULL, 16);
+ 
+@@ -243,6 +250,10 @@
+ 		rc = fpga_load (dev, fpga_data, data_size);
+ 		break;
+ 
++	case FPGA_LOADSECOND:
++		rc = fpga_loadsecond(dev, fpga_data, data_size, ipaddr, ipid);
++		break;
++
+ 	case FPGA_LOADB:
+ 		rc = fpga_loadbitstream(dev, fpga_data, data_size);
+ 		break;
+@@ -341,6 +352,8 @@
+ 		op = FPGA_LOADMK;
+ 	} else if (!strcmp ("dump", opstr)) {
+ 		op = FPGA_DUMP;
++	} else if (!strcmp ("loadsecond", opstr)) {
++		op = FPGA_LOADSECOND;
+ 	}
+ 
+ 	if (op == FPGA_NONE) {
+@@ -349,12 +362,13 @@
+ 	return op;
+ }
+ 
+-U_BOOT_CMD (fpga, 6, 1, do_fpga,
++U_BOOT_CMD (fpga, 8, 1, do_fpga,
+ 	    "loadable FPGA image support",
+-	    "fpga [operation type] [device number] [image address] [image size]\n"
++	    "fpga [operation type] [device number] [image address] [image size] [offset] [id]\n"
+ 	    "fpga operations:\n"
+ 	    "\tinfo\tlist known device information\n"
+ 	    "\tload\tLoad device from memory buffer\n"
++	    "\tloadsecond\tLoad second fpga throught first fpga\n"
+ 	    "\tloadb\tLoad device from bitstream buffer (Xilinx devices only)\n"
+ 	    "\tloadmk\tLoad device generated with mkimage\n"
+ 	    "\tdump\tLoad device to memory buffer"
+Index: u-boot-2010.03/drivers/fpga/fpga.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/fpga/fpga.c	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/drivers/fpga/fpga.c	2011-01-11 11:55:27.000000000 +0100
+@@ -56,8 +56,6 @@
+ static int fpga_dev_info( int devnum );
+ 
+ 
+-/* ------------------------------------------------------------------------- */
+-
+ /* fpga_no_sup
+  * 'no support' message function
+  */
+@@ -233,6 +231,35 @@
+ 	return ret_val;
+ }
+ 
++/*
++ *	Load second fpga
++ */
++int fpga_loadsecond( int devnum, void *buf, size_t bsize, int ip_addr, int ip_id )
++{
++	int ret_val = FPGA_FAIL;           /* assume failure */
++	fpga_desc * desc = fpga_validate( devnum, buf, bsize, (char *)__FUNCTION__ );
++
++	printf("load second fpga\n");
++	if ( desc ) {
++		switch ( desc->devtype ) {
++		case fpga_xilinx:
++			printf("xilinx\n");
++#if defined(CONFIG_FPGA_XILINX)
++			ret_val = xilinx_loadsecond( desc->devdesc, buf, bsize, ip_addr, ip_id );
++#else
++			fpga_no_sup( (char *)__FUNCTION__, "Xilinx devices" );
++#endif
++			break;
++		default:
++			printf( "%s: Invalid or unsupported device type %d\n",
++				__FUNCTION__, desc->devtype );
++		}
++	}
++
++	return ret_val;
++}
++
++
+ /* fpga_dump
+  *	generic multiplexing code
+  */
+Index: u-boot-2010.03/drivers/fpga/xilinx.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/fpga/xilinx.c	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/drivers/fpga/xilinx.c	2011-01-11 11:39:56.000000000 +0100
+@@ -89,6 +89,50 @@
+ 			break;
+ 
+ 		default:
++			printf ("%s: Unsupported family type (xilinx line %d), %d\n",
++					__FUNCTION__, __LINE__, desc->family);
++		}
++
++	return ret_val;
++}
++
++int xilinx_loadsecond (Xilinx_desc * desc, void *buf,
++		       size_t bsize, int ip_addr, int ip_id)
++{
++	int ret_val = FPGA_FAIL;	/* assume a failure */
++
++	if (!xilinx_validate (desc, (char *)__FUNCTION__)) {
++		printf ("%s: Invalid device descriptor\n", __FUNCTION__);
++	} else
++		switch (desc->family) {
++		case Xilinx_Spartan2:
++			printf ("%s: No support for Spartan-II devices.\n",
++					__FUNCTION__);
++			break;
++		case Xilinx_Spartan3:
++			printf ("%s: No support for Spartan-III devices.\n",
++					__FUNCTION__);
++			break;
++		case Xilinx_Spartan6:
++#if defined(CONFIG_FPGA_SPARTAN6)
++			PRINTF ("%s: Launching the Spartan-VI second Loader...\n",
++					__FUNCTION__);
++			ret_val = Spartan6_loadsecond (desc, buf, bsize, ip_addr, ip_id);
++#else
++			printf ("%s: No support for Spartan-VI devices.\n",
++					__FUNCTION__);
++#endif
++			break;
++
++		case Xilinx_Virtex2:
++			printf ("%s: No support for Virtex-II devices.\n",
++					__FUNCTION__);
++			break;
++
++		default:
++			printf ("%s: Unsupported family type (xilinx line %d), %d\n",
++					__FUNCTION__, __LINE__, desc->family);
++
+ 			printf ("%s: Unsupported family type, %d\n",
+ 					__FUNCTION__, desc->family);
+ 		}
+@@ -96,6 +140,8 @@
+ 	return ret_val;
+ }
+ 
++
++
+ int xilinx_dump (Xilinx_desc * desc, void *buf, size_t bsize)
+ {
+ 	int ret_val = FPGA_FAIL;	/* assume a failure */
+Index: u-boot-2010.03/include/fpga.h
+===================================================================
+--- u-boot-2010.03.orig/include/fpga.h	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/include/fpga.h	2011-01-11 11:39:56.000000000 +0100
+@@ -71,10 +71,12 @@
+ 
+ 
+ /* root function definitions */
++extern fpga_desc *get_fpga_desc(int devnum);
+ extern void fpga_init( void );
+ extern int fpga_add( fpga_type devtype, void *desc );
+ extern int fpga_count( void );
+ extern int fpga_load( int devnum, void *buf, size_t bsize );
++extern int fpga_loadsecond( int devnum, void *buf, size_t bsize, int ip_addr, int ip_id);
+ extern int fpga_dump( int devnum, void *buf, size_t bsize );
+ extern int fpga_info( int devnum );
+ 
+Index: u-boot-2010.03/include/spartan6.h
+===================================================================
+--- u-boot-2010.03.orig/include/spartan6.h	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/include/spartan6.h	2011-01-11 11:39:56.000000000 +0100
+@@ -30,6 +30,8 @@
+ #include <xilinx.h>
+ 
+ extern int Spartan6_load( Xilinx_desc *desc, void *image, size_t size );
++extern int Spartan6_loadsecond( Xilinx_desc *desc, void *image, size_t size,
++				int ip_addr, int ip_id);
+ extern int Spartan6_dump( Xilinx_desc *desc, void *buf, size_t bsize );
+ extern int Spartan6_info( Xilinx_desc *desc );
+ extern int Spartan6_reloc( Xilinx_desc *desc, ulong reloc_off );
+Index: u-boot-2010.03/drivers/fpga/spartan6.c
+===================================================================
+--- u-boot-2010.03.orig/drivers/fpga/spartan6.c	2011-01-11 11:38:53.000000000 +0100
++++ u-boot-2010.03/drivers/fpga/spartan6.c	2011-01-11 11:39:56.000000000 +0100
+@@ -61,6 +61,8 @@
+ static int Spartan6_ss_dump( Xilinx_desc *desc, void *buf, size_t bsize );
+ /* static int Spartan6_ss_info( Xilinx_desc *desc ); */
+ static int Spartan6_ss_reloc( Xilinx_desc *desc, ulong reloc_offset );
++static int Spartan6_ssm_loadsecond( Xilinx_desc *desc, void *buf, size_t bsize,
++				   int ip_addr, int ip_id);
+ static int Spartan6_ssm_reloc( Xilinx_desc *desc, ulong reloc_offset );
+ 
+ /* ------------------------------------------------------------------------- */
+@@ -74,6 +76,26 @@
+ 	return ret_val;
+ }
+ 
++int Spartan6_loadsecond (Xilinx_desc * desc, void *buf, size_t bsize,
++			 int ip_addr, int ip_id)
++{
++	int ret_val = FPGA_FAIL;
++
++	switch (desc->iface) {
++
++	case slave_selectmap:
++		PRINTF ("%s: Launching Slave Select map second Load\n", __FUNCTION__);
++		ret_val = Spartan6_ssm_loadsecond (desc, buf, bsize, ip_addr, ip_id);
++		break;
++
++	default:
++		PRINTF ("%s: Unsupported interface type (spartan6 line %d), %d\n",
++				__FUNCTION__, __LINE__, desc->iface);
++	}
++
++	return ret_val;
++}
++
+ /* ------------------------------------------------------------------------- */
+ /* Spartan-VI Generic Implementation */
+ int Spartan6_dump (Xilinx_desc * desc, void *buf, size_t bsize)
+@@ -120,6 +142,177 @@
+ 	return ret_val;
+ }
+ 
++static int Spartan6_ssm_loadsecond (Xilinx_desc * desc, void *buf, size_t bsize,
++				   int ip_addr, int ip_id)
++{
++	int ret_val = FPGA_FAIL;	/* assume the worst */
++
++	Xilinx_Spartan6_Slave_SelectMap_fns *fn = desc->iface_fns;
++
++	if (ip_addr < desc->fpga_offset)
++	{
++		printf ("Error: Ip address must be upper than %08x\n",desc->fpga_offset);
++		return ret_val;
++	} else if (ip_addr % 2 != 0)
++	{
++		printf ("Error: Ip address must be even\n");
++		return ret_val;
++
++	} else if (ip_id != *((volatile uint16_t *)ip_addr) )
++	{
++		printf ("Error: IP Identifiant wrong : %d instead of %d\n"
++			"is first fpga correctly loaded ?\n",
++			*((volatile uint16_t *)ip_addr),
++			ip_id);
++		return ret_val;
++	}
++	desc->ip_addr	= ip_addr;
++	desc->ip_id	= ip_id;
++
++	PRINTF ("%s: start with interface functions @ 0x%p\n",
++			__FUNCTION__, fn);
++	if (fn) {
++		int ret;
++		size_t bytecount = 0;
++		unsigned char *data = (unsigned char *) buf;
++		int cookie = desc->cookie;	/* make a local copy */
++		unsigned long ts;		/* timestamp */
++
++		PRINTF ("%s: Function Table:\n"
++				"ptr:\t0x%p\n"
++				"struct: 0x%p\n"
++				"pre: 0x%p\n"
++				"pgm:\t0x%p\n"
++				"init:\t0x%p\n"
++				"err:\t0x%p\n"
++				"clk:\t0x%p\n"
++				"cs:\t0x%p\n"
++				"wr:\t0x%p\n"
++				"read data:\t0x%p\n"
++				"write data:\t0x%p\n"
++				"busy:\t0x%p\n"
++				"abort:\t0x%p\n",
++				"post:\t0x%p\n\n",
++				__FUNCTION__, &fn, fn, fn->pre, fn->pgm, fn->init, fn->err,
++				fn->clk, fn->cs, fn->wr, fn->rdata, fn->wdata, fn->busy,
++				fn->abort, fn->post);
++
++		/*
++		 * This code is designed to emulate the "Express Style"
++		 * Continuous Data Loading in Slave Parallel Mode for
++		 * the Spartan-VI Family.
++		 */
++#ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
++		printf ("Loading FPGA Device %d...\n", cookie);
++#endif
++		/*
++		 * Run the pre configuration function if there is one.
++		 */
++		PRINTF("Run pre function\n");
++		if (*fn->pre) {
++			ret = (*fn->pre) (cookie);
++			if (ret < 0)
++				return FPGA_FAIL;
++		}
++
++		/* PROG_N low */
++		(*fn->pgm) (TRUE, TRUE, cookie);	/* Assert the program, commit */
++
++		CONFIG_FPGA_DELAY ();
++
++		/* PROG_N high */
++		(*fn->pgm) (FALSE, TRUE, cookie);	/* deAssert the program, commit */
++
++		/* Wait for INIT_N low */
++		ts = get_timer (0);		/* get current time */
++		/* Now wait for INIT and BUSY to go high */
++		PRINTF("/* Now wait for INIT and BUSY to go high */\n");
++		do {
++			CONFIG_FPGA_DELAY ();
++
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
++				puts ("** Timeout waiting for INIT to clear.\n");
++				(*fn->abort) (cookie);	/* abort the burn */
++				return FPGA_FAIL;
++			}
++		} while ((*fn->init) (cookie)==FPGA_SUCCESS);
++
++		PRINTF("Assert write\n");
++		(*fn->wr) (TRUE, TRUE, cookie); /* Assert write, commit */
++
++		PRINTF("ASSERT chip select\n");
++		(*fn->cs) (TRUE, TRUE, cookie); /* Assert chip select, commit */
++
++		/* Load the data */
++		PRINTF("/* Load the data */\n");
++		while ( (*fn->done) (cookie) == FPGA_FAIL){
++			/* XXX - do we check for an Ctrl-C press in here ??? */
++			/* XXX - Check the error bit? */
++			(*fn->wdata) (data[bytecount++], TRUE, cookie); /* write the data */
++
++			ts = get_timer (0);	/* get current time */
++
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
++				puts ("** Timeout waiting for BUSY to clear.\n");
++				(*fn->abort) (cookie);	/* abort the burn */
++				return FPGA_FAIL;
++			}
++
++			if (bytecount % (bsize / 40) == 0)
++				putc ('.');		/* let them know we are alive */
++		}
++
++		/* now check for done signal */
++		PRINTF("/* now check for done signal */\n");
++		ts = get_timer (0);		/* get current time */
++		ret_val = FPGA_SUCCESS;
++		while ((*fn->done) (cookie) == FPGA_FAIL) {
++			/* XXX - we should have a check in here somewhere to
++			 * make sure we aren't busy forever... */
++
++			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
++				puts ("** Timeout waiting for DONE to clear.\n");
++				(*fn->abort) (cookie);	/* abort the burn */
++				ret_val = FPGA_FAIL;
++				break;
++			}
++		}
++
++		CONFIG_FPGA_DELAY ();
++		PRINTF("Deassert chip select\n");
++		(*fn->cs) (FALSE, TRUE, cookie);	/* Deassert the chip select */
++		PRINTF("Deassert write pin\n");
++		(*fn->wr) (FALSE, TRUE, cookie);	/* Deassert the write pin */
++
++		putc ('\n');			/* terminate the dotted line */
++
++
++
++		if (ret_val == FPGA_SUCCESS) {
++			puts ("Done.\n");
++		}
++		/*
++		 * Run the post configuration function if there is one.
++		 */
++		if (*fn->post) {
++			(*fn->post) (cookie);
++		}
++
++		else {
++			puts ("Fail.\n");
++		}
++
++	} else {
++		PRINTF ("%s: NULL Interface function table!\n", __FUNCTION__);
++	}
++
++
++
++
++	return ret_val;
++}
++
++
+ /* ------------------------------------------------------------------------- */
+ /* Spartan-VI Slave Parallel Generic Implementation */
+ static int Spartan6_sp_load (Xilinx_desc * desc, void *buf, size_t bsize)
