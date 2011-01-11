@@ -1,0 +1,28 @@
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+
+Index: linux-2.6.36/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.36.orig/drivers/spi/Kconfig	2011-01-07 09:43:59.000000000 +0100
++++ linux-2.6.36/drivers/spi/Kconfig	2011-01-07 15:52:24.000000000 +0100
+@@ -151,6 +151,21 @@
+ 	  This enables using the Freescale i.MX SPI controllers in master
+ 	  mode.
+ 
++config SPI_MXC_SELECT1
++	bool "CSPI1"
++	depends on SPI_IMX && (ARCH_MX2 || ARCH_MX3)
++	default y
++
++config SPI_MXC_SELECT2
++	bool "CSPI2"
++	depends on SPI_IMX && (ARCH_MX2 || ARCH_MX3)
++	default n
++
++config SPI_MXC_SELECT3
++	bool "CSPI3"
++	depends on SPI_IMX && (MACH_MX27 || MACH_MX31)
++	default n
++
+ config SPI_LM70_LLP
+ 	tristate "Parallel port adapter for LM70 eval board (DEVELOPMENT)"
+ 	depends on PARPORT && EXPERIMENTAL

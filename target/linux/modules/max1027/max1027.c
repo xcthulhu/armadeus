@@ -49,7 +49,7 @@
 
 
 #define DRIVER_NAME    "max1027"
-#define DRIVER_VERSION "0.7"
+#define DRIVER_VERSION "0.71"
 
 
 /* Internal registers prefixes */
@@ -479,15 +479,6 @@ static int max1027_dev_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static int max1027_dev_ioctl( struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg )
-{
-	int ret = 0;
-
-	printk( DRIVER_NAME " ## IOCTL received: (0x%x) ##\n", cmd );
-
-	return ret;
-}
-
 static struct file_operations max1027_fops = {
 	.owner   = THIS_MODULE,
 	.llseek  = no_llseek,
@@ -495,7 +486,6 @@ static struct file_operations max1027_fops = {
 	.read    = max1027_dev_read,
 	.open    = max1027_dev_open,
 	.release = max1027_dev_release,
-	.ioctl   = max1027_dev_ioctl,
 };
 
 /* sysfs hook functions */

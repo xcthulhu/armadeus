@@ -1,0 +1,33 @@
+The current mxc_decode_pll function provide wrong values on imx1 cpu.
+(correction imported from 2.6.29 imx_decode_pll() )
+
+TO CHECK ! (FIX ?)
+
+Index: linux-2.6.36/arch/arm/plat-mxc/clock.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/clock.c	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/arch/arm/plat-mxc/clock.c	2011-01-11 09:50:52.000000000 +0100
+@@ -212,6 +212,7 @@
+ unsigned long mxc_decode_pll(unsigned int reg_val, u32 freq)
+ {
+ 	long long ll;
++	unsigned long quot;
+ 	int mfn_abs;
+ 	unsigned int mfi, mfn, mfd, pd;
+ 
+@@ -222,6 +223,15 @@
+ 
+ 	mfi = mfi <= 5 ? 5 : mfi;
+ 
++	if (cpu_is_mx1()) {
++		ll = 2 * (unsigned long long)freq *
++			((mfi << 16) + (mfn << 16) / (mfd + 1));
++		quot = (pd + 1) * (1 << 16);
++		ll += quot / 2;
++		do_div(ll, quot);
++		return (unsigned long)ll;
++	}
++
+ 	mfn_abs = mfn;
+ 
+ 	/* On all i.MXs except i.MX1 and i.MX21 mfn is a 10bit

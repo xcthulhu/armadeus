@@ -1,0 +1,10 @@
+--- a/arch/arm/mach-imx/clock-imx1.c	2011-01-09 16:09:00.000000000 +0100
++++ b/arch/arm/mach-imx/clock-imx1.c	2011-01-09 16:09:23.000000000 +0100
+@@ -593,6 +593,7 @@
+ 	_REGISTER_CLOCK("imx-uart.2", NULL, uart_clk)
+ 	_REGISTER_CLOCK("imx-i2c.0", NULL, i2c_clk)
+ 	_REGISTER_CLOCK("spi_imx.0", NULL, spi_clk)
++	_REGISTER_CLOCK("spi_imx.1", NULL, spi_clk)
+ 	_REGISTER_CLOCK("imx-mmc.0", NULL, sdhc_clk)
+ 	_REGISTER_CLOCK("imx-fb.0", NULL, lcdc_clk)
+ 	_REGISTER_CLOCK(NULL, "mshc", mshc_clk)
