@@ -1,10 +1,12 @@
---- /dev/null	2010-11-28 19:42:11.148000001 +0100
-+++ b/arch/arm/mach-imx/apf9328.c	2010-12-19 11:31:56.000000000 +0100
-@@ -0,0 +1,588 @@
+Index: linux-2.6.36/arch/arm/mach-imx/apf9328.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/mach-imx/apf9328.c	2011-01-11 19:33:04.000000000 +0100
+@@ -0,0 +1,587 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
 + *
-+ * Copyright (c) 2005-2009 Armadeus systems
++ * Copyright (c) 2005-2011 Armadeus systems
 + * This work is based on scb9328.c from Sascha Hauer
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -86,12 +88,11 @@
 +
 +
 +static int apf9328_pins[] = {
-+/* SPI0 */
++	/* SPI0 */
 +	PC14_PF_SPI1_SCLK,
 +	PC16_PF_SPI1_MISO,
 +	PC17_PF_SPI1_MOSI,
 +};
-+	
 +
 +/*
 + * APF9328 has a DM9000 Ethernet controller
@@ -283,35 +284,35 @@
 +
 +static int uart_mxc_port0_init(struct platform_device *pdev)
 +{
-+   return mxc_gpio_setup_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins), "UART1");
++	return mxc_gpio_setup_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins), "UART1");
 +}
 +
 +static void uart_mxc_port0_exit(struct platform_device *pdev)
 +{
-+   mxc_gpio_release_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins));
++	mxc_gpio_release_multiple_pins(mxc_uart0_pins, ARRAY_SIZE(mxc_uart0_pins));
 +}
 +
 +static struct imxuart_platform_data uart0_pdata = {
-+   .init = uart_mxc_port0_init,
-+   .exit = uart_mxc_port0_exit,
-+   .flags = 0,
++	.init = uart_mxc_port0_init,
++	.exit = uart_mxc_port0_exit,
++	.flags = 0,
 +};
 +
 +static int mxc_uart1_pins[] = {
 +	PB28_PF_UART2_CTS,
 +	PB29_PF_UART2_RTS,
 +	PB30_PF_UART2_TXD,
-+	PB31_PF_UART2_RXD  
++	PB31_PF_UART2_RXD
 +};
 +
 +static int uart_mxc_port1_init(struct platform_device *pdev)
 +{
-+   return mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART2");
++	return mxc_gpio_setup_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins), "UART2");
 +}
 +
 +static void uart_mxc_port1_exit(struct platform_device *pdev)
 +{
-+   mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins));
++	mxc_gpio_release_multiple_pins(mxc_uart1_pins, ARRAY_SIZE(mxc_uart1_pins));
 +}
 +
 +static struct imxuart_platform_data uart1_pdata = {
@@ -325,7 +326,7 @@
 +#define MAX1027_CS (GPIO_PORTC + 15)
 +
 +static int apf9328_spi1_cs[] = {
-+	MAX1027_CS, 
++	MAX1027_CS,
 +	SPIDEV_CS,
 +};
 +
@@ -338,7 +339,7 @@
 +#define TSC2102_CS (GPIO_PORTB + 17)
 +
 +static int apf9328_spi2_cs[] = {
-+	TSC2102_CS, 
++	TSC2102_CS,
 +	MCP251X_CS,
 +};
 +
@@ -474,7 +475,7 @@
 +
 +static int apf9328_i2c_init(struct platform_device *pdev)
 +{
-+	return mxc_gpio_setup_multiple_pins(mxc_i2c_pins, 
++	return mxc_gpio_setup_multiple_pins(mxc_i2c_pins,
 +					ARRAY_SIZE(mxc_i2c_pins), "I2C");
 +}
 +
@@ -485,7 +486,7 @@
 +}
 +
 +static const struct imxi2c_platform_data apf9328_i2c_data __initconst = {
-+    .bitrate = 100000,
++	.bitrate = 100000,
 +	.init = apf9328_i2c_init,
 +	.exit = apf9328_i2c_exit,
 +};
@@ -510,11 +511,8 @@
 +
 +static void __init apf9328_init(void)
 +{
-+	printk("--- Registering APF9328 ressources\n");
-+
 +	mxc_gpio_setup_multiple_pins(apf9328_pins,
 +		ARRAY_SIZE(apf9328_pins), "apf9328");
-+
 +
 +	imx1_add_imx_uart0(&uart0_pdata); /* console */
 +	imx1_add_imx_uart1(&uart1_pdata);
@@ -538,8 +536,6 @@
 +#endif
 +	platform_add_devices(devices, ARRAY_SIZE(devices));
 +	apf9328_baseboard_init();
-+
-+	printk("--- APF9328 ressources registered\n");
 +}
 +
 +/*
@@ -550,7 +546,12 @@
 +static struct map_desc apf9328_io_desc[] __initdata = {
 +#ifdef CONFIG_MACH_APF9328_FPGA
 +	/* FPGA Memory mapping */
-+	{.virtual = MX1_CS1_VIRT, .pfn = __phys_to_pfn(MX1_CS1_PHYS), .length = MX1_CS1_SIZE, .type = MT_DEVICE},
++	{
++		.virtual = MX1_CS1_VIRT,
++		.pfn = __phys_to_pfn(MX1_CS1_PHYS),
++		.length = MX1_CS1_SIZE,
++		.type = MT_DEVICE
++	},
 +#endif
 +};
 +
@@ -589,9 +590,11 @@
 +	.timer        = &apf9328_timer,
 +	.init_machine = apf9328_init,
 +MACHINE_END
---- /dev/null	2010-11-28 19:42:11.148000001 +0100
-+++ b/arch/arm/mach-imx/apf9328_lcd_config.h	2010-12-19 11:20:34.000000000 +0100
-@@ -0,0 +1,355 @@
+Index: linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h	2011-01-11 19:25:49.000000000 +0100
+@@ -0,0 +1,329 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -605,30 +608,34 @@
 +#ifndef APF_LCD_CONFIG_H
 +#define APF_LCD_CONFIG_H
 +
++#define IMX_NEEDS_DEPRECATED_SYMBOLS
 +
 +#ifdef CONFIG_FB_IMX
 +
 +#include <linux/delay.h>
-+#include <mach/gpio.h>
-+#include <linux/fb.h>
 +
++#include <mach/gpio.h>
++#include <mach/imxfb.h>
 +#ifdef CONFIG_ARCH_MX1
-+#include <mach/mx1.h>
-+#define LCDC_BASE_ADDR MX1_LCDC_BASE_ADDR
-+#define IO_ADDRESS	MX1_IO_ADDRESS
++# include <mach/mx1.h>
++# define LCDC_BASE_ADDR	MX1_LCDC_BASE_ADDR
++# define MXC_IO_ADDRESS	MX1_IO_ADDRESS
++#else
++# include <mach/mx2x.h>
++# define LCDC_BASE_ADDR		MX2x_LCDC_BASE_ADDR
++# define MXC_IO_ADDRESS(x)	(IMX_IO_ADDRESS(x, MX2x_AIPI))
 +#endif
++
 +#define LCDISR_EOF	(1 << 1)
 +
 +#ifdef CONFIG_MACH_APF9328
-+#define OPTREX_F51900_POWER_DOWN	(GPIO_PORTD | 7)	/* PD7_REV */
-+#define SHARP_LQ043_POWER_DOWN		(GPIO_PORTD | 12)	/* PD12_ACD_OE */
-+#define CONTRAST_LINE			(GPIO_PORTD | 11)	/* PD11_CONTRAST */
-+#endif
-+
-+#ifdef CONFIG_MACH_APF27
-+#define OPTREX_F51900_POWER_DOWN	(GPIO_PORTA | 24)	/* PA24_REV */
-+#define SHARP_LQ043_POWER_DOWN		(GPIO_PORTA | 31)	/* PA31_OE_ACD */
-+#define CONTRAST_LINE			(GPIO_PORTA | 30)	/* PA30_CONTRAST */
++# define OPTREX_F51900_POWER_DOWN	(GPIO_PORTD | 7)	/* PD7_REV */
++# define SHARP_LQ043_POWER_DOWN		(GPIO_PORTD | 12)	/* PD12_ACD_OE */
++# define CONTRAST_LINE			(GPIO_PORTD | 11)	/* PD11_CONTRAST */
++#elif defined(CONFIG_MACH_APF27)
++# define OPTREX_F51900_POWER_DOWN	(GPIO_PORTA | 24)	/* PA24_REV */
++# define SHARP_LQ043_POWER_DOWN		(GPIO_PORTA | 31)	/* PA31_OE_ACD */
++# define CONTRAST_LINE			(GPIO_PORTA | 30)	/* PA30_CONTRAST */
 +#endif
 +
 +#define DEFAULT_DMA_SETTINGS        (DMACR_BURST | DMACR_HM(8) | DMACR_TM(4))
@@ -644,8 +651,8 @@
 +static void apf_lcd_power(int on)
 +{
 +	u32 isr;
-+	printk("apf_lcd_power\n");
-+	pr_debug("%s: %s\n", __func__, on ? "on":"off");
++
++	printk(KERN_DEBUG "%s: %s\n", __func__, on ? "on":"off");
 +	isr = 0;
 +#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +	if (on)
@@ -659,10 +666,10 @@
 +		mdelay(200); /* at least ten frames have to be processed before
 +				enabling the display */
 +		/* Waits end of current frame */
-+		isr = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x40);
++		isr = readl(MXC_IO_ADDRESS(LCDC_BASE_ADDR) + 0x40);
 +		printk("isr %08x\n", isr);
 +		do {
-+			isr = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x40);
++			isr = readl(MXC_IO_ADDRESS(LCDC_BASE_ADDR) + 0x40);
 +			printk("isr %08x\n", isr);
 +			udelay(1000);
 +			pr_debug("%08x\n", isr);
@@ -675,13 +682,16 @@
 +		mdelay(200); /* needs to wait 10 frames after DISP goes down
 +				before shutting down LCDC (done in imxfb) */
 +	}
++#elif defined(CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT)
++	/* No LCD powerdown yet */
 +#else
++	/* All other cases: use CONTRAST as PWDN */
 +	if (on) {
 +		gpio_set_value(CONTRAST_LINE, 0);
 +	} else {
 +		gpio_set_value(CONTRAST_LINE, 1);
 +	}
-+#endif /* CONFIG_FB_IMX_OPTREX_F51900_CSTN */
++#endif
 +}
 +
 +/*
@@ -691,27 +701,22 @@
 +{
 +	u32 pwmr;
 +
-+	pr_debug("%s: %s\n", __func__, on ? "on":"off");
++	printk(KERN_DEBUG "%s: %s\n", __func__, on ? "on":"off");
 +
-+	pwmr = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
-+	printk("pwmr %08x\n", pwmr);
++	pwmr = readl(MXC_IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
++	printk(KERN_DEBUG "pwmr: %08x\n", pwmr);
 +
 +#ifdef CONFIG_MACH_APF9328
 +	if (pwmr)
 +		mxc_gpio_mode(PD11_PF_CONTRAST);
 +#endif
-+	if (on) {
-+		pwmr |= PWMR_CC_EN;
-+	} else {
-+		pwmr &= ~PWMR_CC_EN;
-+	}
-+	writel(pwmr, IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
 +}
-+static struct imx_fb_videomode mde[] = {
-+	[0]={
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
++
++
++static struct imx_fb_videomode apf_fb_modes[] = {
++	{	/* Default one */
 +		.mode = {
-+			.name       = "Sharp-LQ043",
++			.name		= "Sharp-LQ043",
 +			.refresh	= 60,
 +			.xres		= 480,
 +			.yres		= 272,
@@ -723,10 +728,12 @@
 +			.hsync_len	= 41,
 +			.vsync_len	= 10,
 +		},
-+		.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+				PCR_CLKPOL | PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(5),
-+		.bpp		= 16,
-+#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
++		.pcr = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 |
++			PCR_FLMPOL | PCR_LPPOL | PCR_CLKPOL | PCR_SCLKIDLE |
++			PCR_SCLK_SEL | PCR_PCD(5),
++		.bpp = 16,
++	},
++	{
 +		.mode = {
 +			.name		= "Microtips-T035",
 +			.refresh	= 60,
@@ -740,10 +747,12 @@
 +			.hsync_len	= 31,
 +			.vsync_len	= 3,
 +		},
-+		.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_FLMPOL | PCR_LPPOL |
-+				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(7),
-+		.bpp		= 16,
-+#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
++		.pcr = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 |
++			PCR_FLMPOL | PCR_LPPOL | PCR_SCLKIDLE | PCR_SCLK_SEL |
++			PCR_PCD(7),
++		.bpp = 16,
++	},
++	{
 +		.mode = {
 +			.name		= "Sharp-LQ057",
 +			.refresh	= 60,
@@ -757,10 +766,11 @@
 +			.hsync_len	= 9,
 +			.vsync_len	= 2,
 +		},
-+		.bpp		= 16,
-+		.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | /*PCR_CLKPOL |*/
-+				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
++		.bpp = 16,
++		.pcr = PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 |
++			PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
++	},
++	{
 +		.mode = {
 +			.name		= "Optrex-F51900",
 +			.refresh	= 60,
@@ -774,57 +784,49 @@
 +			.hsync_len	= 2,
 +			.vsync_len	= 2,
 +		},
-+		.bpp		= 8,
-+		.pcr		= PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
-+				PCR_END_BYTE_SWAP | PCR_PCD(3),
-+#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
++		.bpp = 8,
++		.pcr = PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_8 | PCR_ACD(5) |
++			PCR_END_BYTE_SWAP | PCR_PCD(3),
++	},
++	{
 +		.mode = {
-+			.name		= "Motorola-A910",
++			.name		= "Chimei-LW700AT9003",
 +			.refresh	= 60,
-+			.xres		= 240,
-+			.yres		= 320,
-+			.pixclock	= 158730, /* picoS -> ~6.3MHz */
-+			.left_margin	= 9,
-+			.upper_margin	= 2,
-+			.right_margin	= 27,
-+			.lower_margin	= 4,
-+			.hsync_len	= 9,
-+			.vsync_len	= 2,
++			.xres		= 800,
++			.yres		= 480,
++			.pixclock	= 30303, /* picoS */
++			.left_margin	= 96,
++			.right_margin	= 96, /* at least 3 & 1 */
++			.upper_margin	= 0x14,
++			.lower_margin	= 0x15,
++			.hsync_len	= 64,
++			.vsync_len	= 4,
 +		},
-+		.bpp		= 16,
-+		.pcr		= PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 | PCR_CLKPOL |
-+				PCR_SCLKIDLE | PCR_SCLK_SEL | PCR_PCD(9),
-+#endif
++		.bpp = 16,
++		.pcr = 0xfae80083, /*PCR_TFT | PCR_COLOR | PCR_PBSIZ_8 | PCR_BPIX_16 |
++			PCR_FLMPOL | PCR_LPPOL | PCR_SCLKIDLE | PCR_CLKPOL |
++			PCR_SCLK_SEL | PCR_PCD(3),*/
 +	},
 +};
 +
-+#ifdef CONFIG_MACH_APF9328
-+static struct imx_fb_platform_data apf9328_fb_info /*__initdata*/ = {
-+#endif
-+	.mode = mde,
-+	.num_modes = ARRAY_SIZE(mde),
++static struct imx_fb_platform_data apf_fb_data /*__initdata*/ = {
++	.mode		= apf_fb_modes,
++	.num_modes	= ARRAY_SIZE(apf_fb_modes),
++	.dmacr		= DEFAULT_DMA_SETTINGS,
++	.lcd_power	= apf_lcd_power,
++	.backlight_power= apf_lcd_backlight_power,
 +#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +	.pwmr		= 0x000003ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
-+	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.backlight_power= apf_lcd_backlight_power,
-+	.lcd_power	= apf_lcd_power,
-+#elif CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT
++#elif defined(CONFIG_FB_IMX_MICROTIPS_MTF_T035_TFT)
 +	.pwmr		= 0x00000150,    /* Contrast with PWM @ Line Pulse / 256, medium width by default */
-+	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.backlight_power= apf_lcd_backlight_power,
-+	.lcd_power	= apf_lcd_power,
-+#elif CONFIG_FB_IMX_SHARP_LQ057_TFT
++#elif defined(CONFIG_FB_IMX_SHARP_LQ057_TFT)
 +	.pwmr		= 0,    /* No contrast management */
-+	.dmacr		= DEFAULT_DMA_SETTINGS,
-+	.lcd_power	= apf_lcd_power,
-+#elif CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+	.dmacr		= DEFAULT_DMA_SETTINGS,
++#elif defined(CONFIG_FB_IMX_OPTREX_F51900_CSTN)
 +	.pwmr		= 0,    /* No contrast management */
-+	.lcd_power	= apf_lcd_power,
-+#elif CONFIG_FB_IMX_MOTOROLA_A910_TFT
-+	.dmacr		= DEFAULT_DMA_SETTINGS,
++#elif defined(CONFIG_FB_IMX_MOTOROLA_A910_TFT)
 +	.pwmr		= 0,    /* No contrast management */
-+	.lcd_power	= apf_lcd_power,
++#elif defined(CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT)
++	.pwmr		= 0x00a903ff,    /* Contrast with PWM @ Pixel clock / 256, max width by default */
 +#else
 +#error Please define a imx_fb_platform_data structure with your LCD parameters
 +#endif
@@ -836,55 +838,30 @@
 +	.exit		= apf27_fb_exit,
 +#endif
 +};
-+static struct resource imxfb_resources[] = {
-+    [0] = {
-+        .start  = MX1_LCDC_BASE_ADDR,
-+        .end    = MX1_LCDC_BASE_ADDR +0xFF,
-+        .flags  = IORESOURCE_MEM,
-+    },
-+    [1] = {
-+        .start  = MX1_LCDC_INT,
-+        .end    = MX1_LCDC_INT,
-+        .flags  = IORESOURCE_IRQ,
-+    },
-+};
 +
-+static u64 fb_dma_mask = ~(u64)0;
-+
-+static struct platform_device imxfb_device = {
-+    .name       = "imx-fb",
-+    .id     = 0,
-+    .dev        = {
-+        //.platform_data  = &apf9328_fb_info,
-+        .dma_mask   = &fb_dma_mask,
-+        .coherent_dma_mask = 0xffffffff,
-+    },
-+    .num_resources  = ARRAY_SIZE(imxfb_resources),
-+    .resource   = imxfb_resources,
-+};
 +/*
 + * Configure all GPIOs needed by LCDs
 + */
 +#ifdef CONFIG_MACH_APF9328
 +static int apf9328_fb_init(struct platform_device *pdev)
 +{
-+	struct imx_fb_platform_data *fb_inf = &apf9328_fb_info;
++	struct imx_fb_platform_data *fb_inf = &apf_fb_data;
 +	int width;
-+	printk("apf9328_fb_init\n");
++
 +	pr_debug("%s\n", __func__);
 +
-+#ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
++# ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
 +	gpio_set_value(OPTREX_F51900_POWER_DOWN, 1); /* Initializes it High */
 +	mxc_gpio_mode(OPTREX_F51900_POWER_DOWN | GPIO_OUT | GPIO_DR);
-+#endif
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
++# endif
++# ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
 +	/* ACD_OE (SHARP_LQ043_POWER_DOWN) used as power down signal */
 +	gpio_set_value(SHARP_LQ043_POWER_DOWN, 0); /* Initializes it Low */
 +	mxc_gpio_mode(SHARP_LQ043_POWER_DOWN | GPIO_OUT | GPIO_GPIO);//1<<16 | 3<<10);
-+#else
++# else
 +	/* otherwise use ACD_OE as standard LCD controller signal */
 +	mxc_gpio_mode(PD12_PF_ACD_OE);
-+#endif
++# endif
 +
 +	if (fb_inf->mode->pcr & PCR_TFT)
 +		width = 16;
@@ -940,15 +917,17 @@
 +}
 +static void apf9328_init_lcd(void)
 +{
-+	mxc_register_device(&imxfb_device, &apf9328_fb_info);
++	mxc_register_device(&mxc_fb_device, &apf_fb_data);
 +}
 +#endif /* CONFIG_MACH_APF9328 */
 +
 +#endif /* CONFIG_FB_IMX */
 +
 +#endif /* APF_LCD_CONFIG_H */
---- /dev/null	2010-11-28 19:42:11.148000001 +0100
-+++ b/arch/arm/plat-mxc/include/mach/board-apf9328.h	2010-12-19 11:20:34.000000000 +0100
+Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf9328.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf9328.h	2011-01-11 10:22:59.000000000 +0100
 @@ -0,0 +1,71 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
@@ -1021,14 +1000,16 @@
 +#endif
 +
 +#endif /* __ASM_ARCH_APF9328_H */
---- /dev/null	2010-11-28 19:42:11.148000001 +0100
-+++ b/arch/arm/mach-imx/apf9328-dev.c	2010-12-19 11:34:40.000000000 +0100
-@@ -0,0 +1,326 @@
+Index: linux-2.6.36/arch/arm/mach-imx/apf9328-dev.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.36/arch/arm/mach-imx/apf9328-dev.c	2011-01-11 19:37:25.000000000 +0100
+@@ -0,0 +1,325 @@
 +/*
-+ * linux/arch/arm/mach-imx/apf9328-dev.c
++ * apf9328-dev.c
 + * Declares hardware present on APF9328_DevLight or DevFull boards
 + *
-+ * Copyright (c) 2009 Armadeus systems
++ * Copyright (c) 2009-2011 Armadeus systems
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
@@ -1278,7 +1259,7 @@
 +	.max_speed_hz      = 8000000, /* 8MHz */
 +	.bus_num           = 0, /* SPI1 */
 +	.mode              = SPI_MODE_0,
-+	.chip_select       = 1, 
++	.chip_select       = 1,
 +	.platform_data     = &apf9328_spidev_config,
 +},
 +#endif /* CONFIG_SPI_SPIDEV */
@@ -1318,7 +1299,8 @@
 +
 +void __init apf9328_baseboard_init(void)
 +{
-+	printk("    Registering APF9328_Dev ressources:");
++	printk("    APF9328_Dev\n");
++
 +	/* Initializes serial port 2 GPIOs */
 +	mxc_gpio_mode(PB30_PF_UART2_TXD);
 +	mxc_gpio_mode(PB31_PF_UART2_RXD);
@@ -1346,7 +1328,5 @@
 +	mxc_gpio_mode(GPIO_PORTB | 17 | GPIO_GPIO | GPIO_OUT);
 +	spi_register_board_info(spi_dev_board_info, ARRAY_SIZE(spi_dev_board_info));
 +#endif
-+
-+	printk(" done\n");
 +}
 +

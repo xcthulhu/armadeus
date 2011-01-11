@@ -9,7 +9,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2011-01-10 17:50:27.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-imx/apf27.c	2011-01-11 10:24:01.000000000 +0100
 @@ -0,0 +1,752 @@
 + /*
 + * apf27.c
@@ -356,13 +356,13 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +__setup("otg_mode=", apf27_otg_mode);
 +*/
 +#if defined(CONFIG_USB_ULPI)
-+static struct mxc_usbh_platform_data otg_pdata = {
++static struct mxc_usbh_platform_data otg_pdata __initdata = {
 +	.portsc = MXC_EHCI_MODE_ULPI,
 +	.flags  = MXC_EHCI_INTERFACE_DIFF_UNI,
 +};
 +#endif
 +
-+static struct fsl_usb2_platform_data otg_device_pdata = {
++static struct fsl_usb2_platform_data otg_device_pdata __initconst = {
 +	.operating_mode = FSL_USB2_DR_DEVICE,
 +	.phy_mode = FSL_USB2_PHY_ULPI,
 +};
@@ -714,10 +714,10 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 +				ULPI_OTG_DRVVBUS | ULPI_OTG_DRVVBUS_EXT);
 +
 +		mxc_register_device(&mxc_otg_host, &otg_pdata);
-+	} else {
-+		mxc_register_device(&mxc_otg_udc_device, &otg_device_pdata);
 +	}
 +#endif
++	if (!otg_mode_host)
++		mxc_register_device(&mxc_otg_udc_device, &otg_device_pdata);
 +
 +#ifdef CONFIG_I2C
 +	imx27_add_i2c_imx1(&apf27_i2c_1_data);
@@ -766,8 +766,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2011-01-10 17:50:09.000000000 +0100
-@@ -0,0 +1,951 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev.c	2011-01-11 11:33:58.000000000 +0100
+@@ -0,0 +1,950 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -855,8 +855,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 +#include "devices.h"
 +//#include "crm_regs.h"
 +
-+
-+#ifdef CONFIG_FB_MXC
++#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +extern void apf27_lcd_init(void);
 +#endif
 +#ifdef CONFIG_MACH_APF27_DEV_EXT
@@ -1722,8 +1721,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2011-01-07 09:43:59.000000000 +0100
-@@ -0,0 +1,222 @@
++++ linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c	2011-01-11 16:56:16.000000000 +0100
+@@ -0,0 +1,227 @@
 +/*
 + * apf27-lcd.c
 + *
@@ -1837,7 +1836,7 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 +	PA24_PF_REV,
 +	PA25_PF_CLS,
 +#ifdef LCD_USES_PS_AS_GPIO
-+	(GPIO_PORTA | 26 | GPIO_OUT| GPIO_GPIO),
++	(GPIO_PORTA | 26 | GPIO_OUT | GPIO_GPIO),
 +#else
 +	PA26_PF_PS,
 +#endif
@@ -1845,12 +1844,12 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 +	PA28_PF_HSYNC,
 +	PA29_PF_VSYNC,
 +#ifdef LCD_USES_CONTRAST_AS_GPIO
-+	(GPIO_PORTA | 30 | GPIO_OUT| GPIO_GPIO),
++	(GPIO_PORTA | 30 | GPIO_OUT | GPIO_GPIO),
 +#else
 +	PA30_PF_CONTRAST,
 +#endif
 +#ifdef LCD_USES_OE_ACD_AS_GPIO
-+	(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO)
++	(GPIO_PORTA | 31 | GPIO_OUT | GPIO_GPIO)
 +#else
 +	PA31_PF_OE_ACD
 +#endif
@@ -1872,24 +1871,29 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 +	return mxc_gpio_setup_multiple_pins(mxc_lcd_pins, ARRAY_SIZE(mxc_lcd_pins), "LCD");
 +}
 +
-+static int apf27_fb_exit(struct platform_device *pdev)
++#ifdef CONFIG_FB_MXC
++static int
++#else
++static void
++#endif
++apf27_fb_exit(struct platform_device *pdev)
 +{
 +	mxc_gpio_release_multiple_pins(mxc_lcd_pins, ARRAY_SIZE(mxc_lcd_pins));
 +
++#ifdef CONFIG_FB_MXC
 +	return 0;
++#endif
 +}
 +
 +/* Freescale driver */
 +#ifdef CONFIG_FB_MXC
-+static struct mxc_fb_platform_data apf27_fb_data = {
++static struct mxc_fb_platform_data apf_fb_data = {
 +	.mode = LCD_NAME,
 +	.init = apf27_fb_init,
 +	.exit = apf27_fb_exit,
 +};
-+#endif
-+
 +/* Mainline driver */
-+#ifdef CONFIG_FB_IMX
++#elif CONFIG_FB_IMX
 +#include "../mach-imx/apf9328_lcd_config.h"
 +#endif
 +
@@ -1942,14 +1946,14 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-lcd.c
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 +#endif
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
-+	mxc_register_device(&mxc_fb_device, &apf27_fb_data);
++	mxc_register_device(&mxc_fb_device, &apf_fb_data);
 +#endif
 +}
 +
 Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-01-07 09:43:59.000000000 +0100
++++ linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-01-11 10:24:01.000000000 +0100
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2143,8 +2147,8 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2011-01-10 17:48:42.000000000 +0100
+--- linux-2.6.36.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-01-11 10:22:48.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/include/mach/uncompress.h	2011-01-11 19:26:54.000000000 +0100
 @@ -81,6 +81,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
