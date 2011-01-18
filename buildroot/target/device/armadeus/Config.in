@@ -1,57 +1,31 @@
 menuconfig BR2_TARGET_ARMADEUS
 	bool "Armadeus Device Support"
 	depends on BR2_arm
-	default n
 	help
-	  Armadeus arm based systems
+	  Armadeus ARM based systems
 
 if BR2_TARGET_ARMADEUS
 
-choice
-	prompt "Armadeus target device"
-	default BR2_TARGET_ARMADEUS_APF9328
-	depends on BR2_arm && BR2_TARGET_ARMADEUS
-	help
-	  Armadeus target device 
-
-config BR2_TARGET_ARMADEUS_APF9328
-	bool "apf9328"
-config BR2_TARGET_ARMADEUS_APF27_DEV
-	bool "apf27 dev"
-config BR2_TARGET_ARMADEUS_APF51
-	bool "apf51"
-config BR2_TARGET_ARMADEUS_APF27_PPS
-	bool "apf27 pps"
-endchoice
-
 config BR2_BOARD_NAME
-	string
-	default "apf9328"	if BR2_TARGET_ARMADEUS_APF9328
-	default "apf27"		if BR2_TARGET_ARMADEUS_APF27_DEV
-	default "apf51"		if BR2_TARGET_ARMADEUS_APF51
-	default "pps"		if BR2_TARGET_ARMADEUS_APF27_PPS
+	string "Board name"
+	default "apf"
 
 config BR2_BOARD_PATH
 	string
 	default "target/device/armadeus/$(BR2_BOARD_NAME)"
 
 config BR2_CPU_NAME
-	string
-	default "imxl"		if BR2_TARGET_ARMADEUS_APF9328
-	default "imx27"		if BR2_TARGET_ARMADEUS_APF27_DEV || BR2_TARGET_ARMADEUS_APF27_PPS
-	default "imx51"		if BR2_TARGET_ARMADEUS_APF51
+	string "CPU name"
+	default "imx"
 
-source "target/device/armadeus/apf9328/Config.in"
-source "target/device/armadeus/apf27/Config.in"
-source "target/device/armadeus/apf51/Config.in"
+config BR2_TARGET_ARMADEUS_NR_SDRAM
+	string "Number of RAM chips on your board"
+	default 1
 
 config BR2_TARGET_ARMADEUS_SDRAM_SIZE
-	string
-	default "8"		if BR2_TARGET_ARMADEUS_SDRAM_8
-	default "16"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_16 || BR2_TARGET_ARMADEUS_SDRAM_16
-	default "32"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_32 || BR2_TARGET_ARMADEUS_SDRAM_32
-	default "64"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_64 || BR2_TARGET_ARMADEUS_SDRAM_64
-	default "128"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_128
-	default "256"		if BR2_TARGET_ARMADEUS_APF27_SDRAM_256
+	string "Size of a single RAM chip (in MB)"
+	default "64"
+	help
+	  Size of a single RAM chip on your board.
 
 endif

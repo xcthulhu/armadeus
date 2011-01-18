@@ -8,7 +8,7 @@ FPGAREGS_VER:=1.0
 FPGAREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/fpgaregs/
 FPGAREGS_DIR:=$(BUILD_DIR)/fpgaregs-$(FPGAREGS_VER)
 FPGAREGS_CAT:=zcat
-ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
+ifeq ($(BR2_CPU_NAME),"imx27")
 FPGAREGS_BINARY:=fpga27regs
 else
 FPGAREGS_BINARY:=fpgaregs

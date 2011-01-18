@@ -11,12 +11,7 @@ IMXSSI_CAT:=zcat
 IMXSSI_BINARY:=imxssi
 IMXSSI_TARGET_BINARY:=usr/bin/imxssi
 
-ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
-IMXSSI_DEFINES += -DIMX27
-endif
-ifeq ($(BR2_TARGET_ARMADEUS_APF9328),y)
-IMXSSI_DEFINES += -DIMXL
-endif
+IMXSSI_DEFINES:=-D$(shell echo $(BR2_CPU_NAME) | tr '[:lower:]' '[:upper:]')
 
 $(IMXSSI_DIR)/imxssi.c:
 	mkdir -p $(IMXSSI_DIR)/
