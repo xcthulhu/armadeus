@@ -26,8 +26,8 @@
 #define __CONFIG_H
 
 #define CONFIG_VERSION_VARIABLE
-#define CONFIG_ENV_VERSION 	"0.2"
-#define CONFIG_IDENT_STRING	" apf51 patch 0.1"
+#define CONFIG_ENV_VERSION 	"0.3"
+#define CONFIG_IDENT_STRING	" apf51 patch 0.2"
 
  /* High Level Configuration Options */
 #define CONFIG_ARMV7		1	/* This is armv7 Cortex-A8 CPU	*/
@@ -164,7 +164,7 @@
 	"addmmcargs=setenv bootargs ${bootargs} "			\
 		"root=${mmcroot} rootfstype=${mmcrootfstype}\0"   	\
 	"addipargs=setenv bootargs ${bootargs} "			\
-		"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off \0"\
+		"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}:eth0:off \0"\
 	"nfsboot=setenv bootargs ${console} ${mtdparts};"		\
 		"run addnfsargs addipargs; setenv autostart yes;"	\
 		"nboot.jffs2 90800000 0 ${kernel_offset}\0"		\
