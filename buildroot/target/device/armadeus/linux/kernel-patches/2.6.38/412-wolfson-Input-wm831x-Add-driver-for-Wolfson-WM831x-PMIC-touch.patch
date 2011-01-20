@@ -1,6 +1,6 @@
->From 57539f6fc8ebd6c11373b750450d3f0526c8522f Mon Sep 17 00:00:00 2001
+>From a449c9de202f2a970a1e1e856da19fb9531f7ded Mon Sep 17 00:00:00 2001
 From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 10 Dec 2010 21:39:33 +0000
+Date: Fri, 14 Jan 2011 15:07:22 +0000
 Subject: [PATCH] Input: wm831x - Add driver for Wolfson WM831x PMIC touchscreen controllers
 
 Some of the WM831x series of PMICs from Wolfson Microelectronics include
@@ -9,8 +9,7 @@ within the input API.
 
 Platform data is supported to allow configuration of system parameters such
 as selection between four and five wire touchscreens and for specification
-of an optional direct to CPU IRQ to be used to report the availability of
-samples.
+of optional direct to CPU IRQs for sample availability and for pen down.
 
 THIS DRIVER HAS NOT BEEN TESTED. NO GUARANTEES ARE MADE REGARDING THE
 PERFORMANCE OR STABILITY OF THE DRIVER, IT IS EXPECTED THAT SOME DEBUGGING
@@ -20,12 +19,13 @@ Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
 ---
  drivers/input/touchscreen/Kconfig     |   10 +
  drivers/input/touchscreen/Makefile    |    1 +
- drivers/input/touchscreen/wm831x-ts.c |  340 +++++++++++++++++++++++++++++++++
- 3 files changed, 351 insertions(+), 0 deletions(-)
+ drivers/input/touchscreen/wm831x-ts.c |  399 +++++++++++++++++++++++++++++++++
+ include/linux/mfd/wm831x/pdata.h      |    1 +
+ 4 files changed, 411 insertions(+), 0 deletions(-)
  create mode 100644 drivers/input/touchscreen/wm831x-ts.c
 
 diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
-index 6675bd7..b3b7596 100644
+index 0c9f4b1..f29dab7 100644
 --- a/drivers/input/touchscreen/Kconfig
 +++ b/drivers/input/touchscreen/Kconfig
 @@ -423,6 +423,16 @@ config TOUCHSCREEN_UCB1400
@@ -46,10 +46,10 @@ index 6675bd7..b3b7596 100644
  	tristate "Support for WM97xx AC97 touchscreen controllers"
  	depends on AC97_BUS
 diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index 7cc1b4f..1a00395 100644
+index 718bcc8..e8dcfab 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -47,6 +47,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
+@@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
  obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
  obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
  obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o
@@ -59,10 +59,10 @@ index 7cc1b4f..1a00395 100644
  wm97xx-ts-$(CONFIG_TOUCHSCREEN_WM9712)	+= wm9712.o
 diff --git a/drivers/input/touchscreen/wm831x-ts.c b/drivers/input/touchscreen/wm831x-ts.c
 new file mode 100644
-index 0000000..51d1863
+index 0000000..a424a80
 --- /dev/null
 +++ b/drivers/input/touchscreen/wm831x-ts.c
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,399 @@
 +/*
 + * wm831x-ts.c - Touchscreen driver for WM831x PMICs
 + *
@@ -85,6 +85,7 @@ index 0000000..51d1863
 +#include <linux/interrupt.h>
 +#include <linux/io.h>
 +#include <linux/mfd/wm831x/core.h>
++#include <linux/mfd/wm831x/irq.h>
 +#include <linux/mfd/wm831x/pdata.h>
 +#include <linux/platform_device.h>
 +#include <linux/slab.h>
@@ -162,6 +163,8 @@ index 0000000..51d1863
 +	struct input_dev *input_dev;
 +	struct wm831x *wm831x;
 +	int data_irq;
++	int pd_irq;
++	int rate;
 +	bool pressure;
 +};
 +
@@ -173,6 +176,9 @@ index 0000000..51d1863
 +	u16 data[3];
 +	bool pen_down = true;
 +	int count, i, ret;
++
++	wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
++			WM831X_TCHDATA_EINT, WM831X_TCHDATA_EINT);
 +
 +	if (wm831x_ts->pressure)
 +		count = 3;
@@ -191,16 +197,28 @@ index 0000000..51d1863
 +	 * individual reading does so.
 +	 */
 +	for (i = 0; i < count; i++) {
++		if (!(data[i] & WM831X_TCH_PD)) {
++			pen_down = false;
++			continue;
++		}
 +		input_report_abs(wm831x_ts->input_dev, data_types[i],
 +				 data[i] & WM831X_TCH_DATA_MASK);
-+		if (!data[i] & WM831X_TCH_PD)
-+			pen_down = false;
 +	}
 +
-+	if (pen_down) {
-+		input_report_key(wm831x_ts->input_dev, BTN_TOUCH, 1);
-+	} else {
-+		input_report_abs(wm831x_ts->input_dev, ABS_PRESSURE, 0);
++	if (!pen_down) {
++		/* Don't need data any more */
++		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++				WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
++				WM831X_TCH_Z_ENA, 0);
++
++		/* Drop the conversion rate while pen is up */
++		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++				WM831X_TCH_RATE_MASK, 0);
++
++		if (wm831x_ts->pressure)
++			input_report_abs(wm831x_ts->input_dev,
++					 ABS_PRESSURE, 0);
++
 +		input_report_key(wm831x_ts->input_dev, BTN_TOUCH, 0);
 +	}
 +
@@ -209,22 +227,45 @@ index 0000000..51d1863
 +	return IRQ_HANDLED;
 +}
 +
++static irqreturn_t wm831x_ts_pen_down_irq(int irq, void *irq_data)
++{
++	struct wm831x_ts *wm831x_ts = irq_data;
++	struct wm831x *wm831x = wm831x_ts->wm831x;
++	int ena;
++
++	/* Raise conversion rate to normal rate */
++	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++			WM831X_TCH_RATE_MASK, wm831x_ts->rate);
++
++	/* Start collecting data */
++	if (wm831x_ts->pressure)
++		ena |= WM831X_TCH_Z_ENA;
++	else
++		ena = 0;
++
++	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA | WM831X_TCH_Z_ENA,
++			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA | ena);
++
++	input_report_key(wm831x_ts->input_dev, BTN_TOUCH, 1);
++	input_sync(wm831x_ts->input_dev);
++
++	wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
++			WM831X_TCHPD_EINT, WM831X_TCHPD_EINT);
++
++	return IRQ_HANDLED;
++}
++
 +static int wm831x_ts_input_open(struct input_dev *idev)
 +{
 +	struct wm831x_ts *wm831x_ts = input_get_drvdata(idev);
 +	struct wm831x *wm831x = wm831x_ts->wm831x;
-+	u16 ena = 0;
-+
-+	if (wm831x_ts->pressure)
-+		ena |= WM831X_TCH_Z_ENA;
 +
 +	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
-+			WM831X_TCH_ENA | WM831X_TCH_CVT_ENA |
-+			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
-+			WM831X_TCH_Z_ENA,
-+			WM831X_TCH_ENA | WM831X_TCH_CVT_ENA |
-+			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
-+			ena);
++			WM831X_TCH_ENA, WM831X_TCH_ENA);
++
++	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++			WM831X_TCH_CVT_ENA, WM831X_TCH_CVT_ENA);
 +
 +	return 0;
 +}
@@ -240,7 +281,7 @@ index 0000000..51d1863
 +			WM831X_TCH_Z_ENA, 0);
 +}
 +
-+static int wm831x_ts_probe(struct platform_device *pdev)
++static __devinit int wm831x_ts_probe(struct platform_device *pdev)
 +{
 +	struct wm831x_ts *wm831x_ts;
 +	struct wm831x *wm831x = dev_get_drvdata(pdev->dev.parent);
@@ -263,11 +304,17 @@ index 0000000..51d1863
 +	/* If we have a direct CPU data IRQ use it, otherwise use
 +	 * the interrupt through the WM831x IRQ controller.
 +	 */
-+	if (pdata)
++	if (pdata && pdata->data_irq)
 +		wm831x_ts->data_irq = pdata->data_irq;
 +	else
 +		wm831x_ts->data_irq = platform_get_irq_byname(pdev,
 +							      "TCHDATA");
++
++	if (pdata && pdata->pd_irq)
++		wm831x_ts->pd_irq = pdata->pd_irq;
++	else
++		wm831x_ts->data_irq = platform_get_irq_byname(pdev,
++							      "TCHPD");
 +
 +	if (pdata && pdata->pressure)
 +		wm831x_ts->pressure = true;
@@ -305,22 +352,31 @@ index 0000000..51d1863
 +		}
 +	}
 +
-+	/* Convert only when pen down */
 +	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
-+			WM831X_TCH_PDONLY, WM831X_TCH_PDONLY);
++			WM831X_TCH_PDONLY, 0);
 +
 +	/* Default to 192 samples/sec */
-+	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
-+			WM831X_TCH_RATE_MASK, 12);
++	wm831x_ts->rate = 12;
 +
 +	ret = request_threaded_irq(wm831x_ts->data_irq, NULL,
 +				   wm831x_ts_data_irq,
 +				   IRQF_ONESHOT, /* Trigger */
 +				   "Touchscreen data", wm831x_ts);
 +	if (ret < 0) {
-+		dev_err(&pdev->dev, "Failed to request IRQ %d: %d\n",
++		dev_err(&pdev->dev, "Failed to request data IRQ %d: %d\n",
 +			wm831x_ts->data_irq, ret);
 +		goto err_alloc;
++	}
++
++	ret = request_threaded_irq(wm831x_ts->pd_irq, NULL,
++				   wm831x_ts_pen_down_irq,
++				   IRQF_ONESHOT, /* Trigger */
++				   "Touchscreen pen down", wm831x_ts);
++
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Failed to request pen down IRQ %d: %d\n",
++			wm831x_ts->pd_irq, ret);
++		goto err_data_irq;
 +	}
 +
 +	platform_set_drvdata(pdev, wm831x_ts);
@@ -328,7 +384,7 @@ index 0000000..51d1863
 +	input_dev = input_allocate_device();
 +	if (input_dev == NULL) {
 +		ret = -ENOMEM;
-+		goto err_irq;
++		goto err_pd_irq;
 +	}
 +	wm831x_ts->input_dev = input_dev;
 +
@@ -358,7 +414,9 @@ index 0000000..51d1863
 +
 +err_dev_alloc:
 +	input_free_device(input_dev);
-+err_irq:
++err_pd_irq:
++	free_irq(wm831x_ts->pd_irq, wm831x_ts);
++err_data_irq:
 +	free_irq(wm831x_ts->data_irq, wm831x_ts);
 +err_alloc:
 +	kfree(wm831x_ts);
@@ -366,10 +424,11 @@ index 0000000..51d1863
 +	return ret;
 +}
 +
-+static int wm831x_ts_remove(struct platform_device *pdev)
++static __devexit int wm831x_ts_remove(struct platform_device *pdev)
 +{
 +	struct wm831x_ts *wm831x_ts = platform_get_drvdata(pdev);
 +
++	free_irq(wm831x_ts->pd_irq, wm831x_ts);
 +	free_irq(wm831x_ts->data_irq, wm831x_ts);
 +	input_unregister_device(wm831x_ts->input_dev);
 +	kfree(wm831x_ts);
@@ -403,6 +462,18 @@ index 0000000..51d1863
 +MODULE_DESCRIPTION("WM831x PMIC touchscreen driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:wm831x-touch");
+diff --git a/include/linux/mfd/wm831x/pdata.h b/include/linux/mfd/wm831x/pdata.h
+index 1ae8499..c6746e8 100644
+--- a/include/linux/mfd/wm831x/pdata.h
++++ b/include/linux/mfd/wm831x/pdata.h
+@@ -81,6 +81,7 @@ struct wm831x_touch_pdata {
+ 	int rpu;               /** Pen down sensitivity resistor divider */
+ 	int pressure;          /** Report pressure (boolean) */
+ 	int data_irq;          /** Touch data ready IRQ */
++	int pd_irq;            /** Touch pendown detect IRQ */
+ };
+ 
+ enum wm831x_watchdog_action {
 -- 
-1.7.1
+1.7.2.3
 

@@ -1,0 +1,31 @@
+>From c0ddb6e52161faaa4d88967fe955fd9df5bac477 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Mon, 10 Jan 2011 18:15:56 +0000
+Subject: [PATCH 2/2] mfd: Leave acknowledgement of WM831x touchscreen IRQs to the driver
+
+The WM831x touchscreen interrupts need acknowledgement even when using
+direct signals to the CPU (which don't go through the core) so leave
+the acknowledgement up to the touchscreen driver for simplicity.
+
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ drivers/mfd/wm831x-irq.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mfd/wm831x-irq.c b/drivers/mfd/wm831x-irq.c
+index 0d3cda4..2f26f80 100644
+--- a/drivers/mfd/wm831x-irq.c
++++ b/drivers/mfd/wm831x-irq.c
+@@ -481,6 +481,9 @@ static irqreturn_t wm831x_irq_thread(int irq, void *data)
+ 	}
+ 
+ out:
++	/* Touchscreen interrupts are handled specially in the driver */
++	status_regs[0] &= ~(WM831X_TCHDATA_EINT | WM831X_TCHPD_EINT);
++
+ 	for (i = 0; i < ARRAY_SIZE(status_regs); i++) {
+ 		if (status_regs[i])
+ 			wm831x_reg_write(wm831x, WM831X_INTERRUPT_STATUS_1 + i,
+-- 
+1.7.2.3
+
