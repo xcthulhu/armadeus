@@ -1,0 +1,84 @@
+Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
+===================================================================
+--- linux-2.6.38-alpha.orig/drivers/input/touchscreen/wm831x-ts.c	2011-01-20 20:29:00.000000000 +0100
++++ linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c	2011-01-20 20:29:10.000000000 +0100
+@@ -101,6 +101,7 @@
+ 	int pd_irq;
+ 	int rate;
+ 	bool pressure;
++	int pd_detected;
+ };
+ 
+ static irqreturn_t wm831x_ts_data_irq(int irq, void *irq_data)
+@@ -140,7 +141,7 @@
+ 				 data[i] & WM831X_TCH_DATA_MASK);
+ 	}
+ 
+-	if (!pen_down) {
++	if ((!pen_down) && (wm831x_ts->pd_detected)) {
+ 		/* Don't need data any more */
+ 		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
+ 				WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
+@@ -148,13 +149,14 @@
+ 
+ 		/* Drop the conversion rate while pen is up */
+ 		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
+-				WM831X_TCH_RATE_MASK, 0);
++				WM831X_TCH_RATE_MASK, 1);
+ 
+ 		if (wm831x_ts->pressure)
+ 			input_report_abs(wm831x_ts->input_dev,
+ 					 ABS_PRESSURE, 0);
+ 
+ 		input_report_key(wm831x_ts->input_dev, BTN_TOUCH, 0);
++		wm831x_ts->pd_detected = 0;
+ 	}
+ 
+ 	input_sync(wm831x_ts->input_dev);
+@@ -166,7 +168,7 @@
+ {
+ 	struct wm831x_ts *wm831x_ts = irq_data;
+ 	struct wm831x *wm831x = wm831x_ts->wm831x;
+-	int ena;
++	int ena = 0;
+ 
+ 	/* Raise conversion rate to normal rate */
+ 	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
+@@ -175,8 +177,6 @@
+ 	/* Start collecting data */
+ 	if (wm831x_ts->pressure)
+ 		ena |= WM831X_TCH_Z_ENA;
+-	else
+-		ena = 0;
+ 
+ 	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
+ 			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA | WM831X_TCH_Z_ENA,
+@@ -185,6 +185,7 @@
+ 	input_report_key(wm831x_ts->input_dev, BTN_TOUCH, 1);
+ 	input_sync(wm831x_ts->input_dev);
+ 
++	wm831x_ts->pd_detected = 1;
+ 	wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
+ 			WM831X_TCHPD_EINT, WM831X_TCHPD_EINT);
+ 
+@@ -248,7 +249,7 @@
+ 	if (pdata && pdata->pd_irq)
+ 		wm831x_ts->pd_irq = pdata->pd_irq;
+ 	else
+-		wm831x_ts->data_irq = platform_get_irq_byname(pdev,
++		wm831x_ts->pd_irq = platform_get_irq_byname(pdev,
+ 							      "TCHPD");
+ 
+ 	if (pdata && pdata->pressure)
+@@ -290,8 +291,10 @@
+ 	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
+ 			WM831X_TCH_PDONLY, 0);
+ 
+-	/* Default to 192 samples/sec */
++	/* Default to 192 samples/sec when active and 16/sec when inactive */
+ 	wm831x_ts->rate = 12;
++	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++			WM831X_TCH_RATE_MASK, 1);
+ 
+ 	ret = request_threaded_irq(wm831x_ts->data_irq, NULL,
+ 				   wm831x_ts_data_irq,

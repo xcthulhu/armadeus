@@ -71,10 +71,10 @@ Index: buildroot/package/xenomai/xenomai.mk
 +XENOMAI_BINARY:=xeno-load
 +XENOMAI_TARGET_BINARY:=usr/xenomai/bin/$(XENOMAI_BINARY)
 +
-+ifeq ($(BR2_TARGET_ARMADEUS_APF27),y)
++ifeq ($(BR2_CPU_NAME),"imx27")
 +	CPU_TYPE:=mx2
 +else
-+ifeq ($(BR2_TARGET_ARMADEUS_APF9328),y)
++ifeq ($(BR2_CPU_NAME),"imxl")
 +	CPU_TYPE:=imx
 +endif
 +endif
