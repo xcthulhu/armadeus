@@ -2,9 +2,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
 ===================================================================
---- linux-2.6.38-alpha.orig/drivers/input/touchscreen/wm831x-ts.c	2011-01-20 20:29:10.000000000 +0100
-+++ linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c	2011-01-20 20:29:22.000000000 +0100
-@@ -226,6 +226,7 @@
+--- linux-2.6.38-alpha.orig/drivers/input/touchscreen/wm831x-ts.c	2011-01-21 09:27:14.000000000 +0100
++++ linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c	2011-01-21 09:27:14.000000000 +0100
+@@ -225,6 +225,7 @@
  	struct input_dev *input_dev;
  	int ret;
  
@@ -12,7 +12,7 @@ Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
  	wm831x_ts = kzalloc(sizeof(struct wm831x_ts), GFP_KERNEL);
  	if (!wm831x_ts)
  		return -ENOMEM;
-@@ -262,7 +263,7 @@
+@@ -259,7 +260,7 @@
  		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
  				WM831X_TCH_5WIRE, WM831X_TCH_5WIRE);
  
@@ -21,7 +21,7 @@ Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
  		WARN_ON(pdata->pressure && pdata->fivewire);
  		wm831x_ts->pressure = false;
  	} else {
-@@ -319,6 +320,17 @@
+@@ -316,6 +317,17 @@
  
  	platform_set_drvdata(pdev, wm831x_ts);
  

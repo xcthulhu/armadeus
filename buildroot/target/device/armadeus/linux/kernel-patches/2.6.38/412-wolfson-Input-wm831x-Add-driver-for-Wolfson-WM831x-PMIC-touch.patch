@@ -1,4 +1,4 @@
->From a449c9de202f2a970a1e1e856da19fb9531f7ded Mon Sep 17 00:00:00 2001
+>From a1ae1fa080f0d352f044c97f9c469e3275235402 Mon Sep 17 00:00:00 2001
 From: Mark Brown <broonie@opensource.wolfsonmicro.com>
 Date: Fri, 14 Jan 2011 15:07:22 +0000
 Subject: [PATCH] Input: wm831x - Add driver for Wolfson WM831x PMIC touchscreen controllers
@@ -59,7 +59,7 @@ index 718bcc8..e8dcfab 100644
  wm97xx-ts-$(CONFIG_TOUCHSCREEN_WM9712)	+= wm9712.o
 diff --git a/drivers/input/touchscreen/wm831x-ts.c b/drivers/input/touchscreen/wm831x-ts.c
 new file mode 100644
-index 0000000..a424a80
+index 0000000..9a58a11
 --- /dev/null
 +++ b/drivers/input/touchscreen/wm831x-ts.c
 @@ -0,0 +1,399 @@
@@ -164,8 +164,8 @@ index 0000000..a424a80
 +	struct wm831x *wm831x;
 +	int data_irq;
 +	int pd_irq;
-+	int rate;
 +	bool pressure;
++	bool pen_down;
 +};
 +
 +static irqreturn_t wm831x_ts_data_irq(int irq, void *irq_data)
@@ -174,7 +174,6 @@ index 0000000..a424a80
 +	struct wm831x *wm831x = wm831x_ts->wm831x;
 +	static int data_types[] = { ABS_X, ABS_Y, ABS_PRESSURE };
 +	u16 data[3];
-+	bool pen_down = true;
 +	int count, i, ret;
 +
 +	wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
@@ -196,24 +195,23 @@ index 0000000..a424a80
 +	/* We get a pen down reading on every reading, report pen up if any
 +	 * individual reading does so.
 +	 */
++	wm831x_ts->pen_down = true;
 +	for (i = 0; i < count; i++) {
 +		if (!(data[i] & WM831X_TCH_PD)) {
-+			pen_down = false;
++			wm831x_ts->pen_down = false;
 +			continue;
 +		}
 +		input_report_abs(wm831x_ts->input_dev, data_types[i],
 +				 data[i] & WM831X_TCH_DATA_MASK);
 +	}
 +
-+	if (!pen_down) {
++	if (!wm831x_ts->pen_down) {
++		disable_irq_nosync(wm831x_ts->data_irq);
++
 +		/* Don't need data any more */
 +		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
 +				WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
 +				WM831X_TCH_Z_ENA, 0);
-+
-+		/* Drop the conversion rate while pen is up */
-+		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
-+				WM831X_TCH_RATE_MASK, 0);
 +
 +		if (wm831x_ts->pressure)
 +			input_report_abs(wm831x_ts->input_dev,
@@ -233,13 +231,9 @@ index 0000000..a424a80
 +	struct wm831x *wm831x = wm831x_ts->wm831x;
 +	int ena;
 +
-+	/* Raise conversion rate to normal rate */
-+	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
-+			WM831X_TCH_RATE_MASK, wm831x_ts->rate);
-+
 +	/* Start collecting data */
 +	if (wm831x_ts->pressure)
-+		ena |= WM831X_TCH_Z_ENA;
++		ena = WM831X_TCH_Z_ENA;
 +	else
 +		ena = 0;
 +
@@ -252,6 +246,9 @@ index 0000000..a424a80
 +
 +	wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
 +			WM831X_TCHPD_EINT, WM831X_TCHPD_EINT);
++
++	wm831x_ts->pen_down = true;
++	enable_irq(wm831x_ts->data_irq);
 +
 +	return IRQ_HANDLED;
 +}
@@ -279,6 +276,9 @@ index 0000000..a424a80
 +			WM831X_TCH_ENA | WM831X_TCH_CVT_ENA |
 +			WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
 +			WM831X_TCH_Z_ENA, 0);
++
++	if (wm831x_ts->pen_down)
++		disable_irq_nosync(wm831x_ts->pen_down);
 +}
 +
 +static __devinit int wm831x_ts_probe(struct platform_device *pdev)
@@ -307,14 +307,12 @@ index 0000000..a424a80
 +	if (pdata && pdata->data_irq)
 +		wm831x_ts->data_irq = pdata->data_irq;
 +	else
-+		wm831x_ts->data_irq = platform_get_irq_byname(pdev,
-+							      "TCHDATA");
++		wm831x_ts->data_irq = platform_get_irq_byname(pdev, "TCHDATA");
 +
 +	if (pdata && pdata->pd_irq)
 +		wm831x_ts->pd_irq = pdata->pd_irq;
 +	else
-+		wm831x_ts->data_irq = platform_get_irq_byname(pdev,
-+							      "TCHPD");
++		wm831x_ts->pd_irq = platform_get_irq_byname(pdev, "TCHPD");
 +
 +	if (pdata && pdata->pressure)
 +		wm831x_ts->pressure = true;
@@ -355,22 +353,24 @@ index 0000000..a424a80
 +	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_2,
 +			WM831X_TCH_PDONLY, 0);
 +
-+	/* Default to 192 samples/sec */
-+	wm831x_ts->rate = 12;
++	/* Default to 96 samples/sec */
++	wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
++			WM831X_TCH_RATE_MASK, 6);
 +
 +	ret = request_threaded_irq(wm831x_ts->data_irq, NULL,
 +				   wm831x_ts_data_irq,
-+				   IRQF_ONESHOT, /* Trigger */
++				   IRQF_ONESHOT,
 +				   "Touchscreen data", wm831x_ts);
 +	if (ret < 0) {
 +		dev_err(&pdev->dev, "Failed to request data IRQ %d: %d\n",
 +			wm831x_ts->data_irq, ret);
 +		goto err_alloc;
 +	}
++	disable_irq(wm831x_ts->data_irq);
 +
 +	ret = request_threaded_irq(wm831x_ts->pd_irq, NULL,
 +				   wm831x_ts_pen_down_irq,
-+				   IRQF_ONESHOT, /* Trigger */
++				   IRQF_SAMPLE_RANDOM | IRQF_ONESHOT,
 +				   "Touchscreen pen down", wm831x_ts);
 +
 +	if (ret < 0) {

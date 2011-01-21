@@ -1,0 +1,51 @@
+>From 25d95db8096f73f3c7d277f44c8daf7642142e2f Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@opensource.wolfsonmciro.com>
+Date: Thu, 6 Jan 2011 13:08:25 +0000
+Subject: [PATCH] mfd: Support configuration of WM831x /IRQ output in CMOS mode
+
+Provide platform data allowing the system to set the /IRQ pin into
+CMOS mode rather than the default open drain. The default value of
+this platform data reflects the default hardware configuration so
+there should be no change to existing users.
+
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmciro.com>
+---
+ drivers/mfd/wm831x-irq.c         |    7 +++++++
+ include/linux/mfd/wm831x/pdata.h |    3 +++
+ 2 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mfd/wm831x-irq.c b/drivers/mfd/wm831x-irq.c
+index f7192d4..0d3cda4 100644
+--- a/drivers/mfd/wm831x-irq.c
++++ b/drivers/mfd/wm831x-irq.c
+@@ -515,6 +515,13 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
+ 		return 0;
+ 	}
+ 
++	if (pdata->irq_cmos)
++		i = 0;
++	else
++		i = WM831X_IRQ_OD;
++	wm831x_set_bits(wm831x, WM831X_IRQ_CONFIG,
++			WM831X_IRQ_OD, i);
++
+ 	wm831x->irq = irq;
+ 	wm831x->irq_base = pdata->irq_base;
+ 
+diff --git a/include/linux/mfd/wm831x/pdata.h b/include/linux/mfd/wm831x/pdata.h
+index fd322ac..1ae8499 100644
+--- a/include/linux/mfd/wm831x/pdata.h
++++ b/include/linux/mfd/wm831x/pdata.h
+@@ -109,6 +109,9 @@ struct wm831x_pdata {
+ 	/** Called after subdevices are set up */
+ 	int (*post_init)(struct wm831x *wm831x);
+ 
++	/** Put the /IRQ line into CMOS mode */
++	bool irq_cmos;
++
+ 	int irq_base;
+ 	int gpio_base;
+ 	struct wm831x_backlight_pdata *backlight;
+-- 
+1.7.2.3
+
