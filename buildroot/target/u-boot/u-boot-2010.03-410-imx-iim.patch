@@ -495,6 +495,15 @@ Index: u-boot-2010.03/drivers/net/fec_mxc.c
  #else
  	struct iim_regs *iim = (struct iim_regs *)IMX_IIM_BASE;
  	int i;
+@@ -777,6 +777,8 @@ static int fec_probe(bd_t *bd)
+ 		memcpy(edev->enetaddr, ethaddr, 6);
+ 	}
+ 
++	fec_set_hwaddr(edev);
++
+ 	return 0;
+ }
+ 
 Index: u-boot-2010.03/include/asm-arm/arch-mx51/imx_iim.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
