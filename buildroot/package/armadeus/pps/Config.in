@@ -1,18 +1,16 @@
 config BR2_PACKAGE_ARMADEUS_PPS_UTILITIES
 	bool "PPS Utilities"
-	default n
 	help
-	  Install PPS Utilities & Initialization files to make PPS' fonctionalities work:
-	    - GPIOs initialization file
+	  Install PPS utilities & initialization scripts needed for:
+	    - GPIOs initialization
 	    - Guest user creation to connect to PPS via SSH
 
 if BR2_PACKAGE_ARMADEUS_PPS_UTILITIES
 
 config BR2_PACKAGE_ARMADEUS_PPS_TEST_SCRIPTS
 	bool "PPS Test scripts"
-	default n
 	help
-	  Install PPS Test scripts to test Ethernet, WiFi & USB Gadget on
-	  PPS board. Test scripts will be installed in /usr/local/pps/scripts.
+	  Install PPS test scripts for Ethernet, WiFi & USB Gadget.
+	  Scripts will be installed in /usr/local/pps/scripts.
 
-endif #BR2_PACKAGE_ARMADEUS_PPS_UTILITIES
+endif
