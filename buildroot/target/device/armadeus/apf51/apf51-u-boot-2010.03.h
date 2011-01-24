@@ -26,8 +26,8 @@
 #define __CONFIG_H
 
 #define CONFIG_VERSION_VARIABLE
-#define CONFIG_ENV_VERSION 	"0.3"
-#define CONFIG_IDENT_STRING	" apf51 patch 0.2"
+#define CONFIG_ENV_VERSION 	"0.4"
+#define CONFIG_IDENT_STRING	" apf51 patch 0.4"
 
  /* High Level Configuration Options */
 #define CONFIG_ARMV7		1	/* This is armv7 Cortex-A8 CPU	*/
@@ -211,7 +211,7 @@
 	"download_kernel=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-linux.bin\0"		\
 	"download_rootfs=tftpboot ${loadaddr} "				\
-		" ${serverpath}${board_name}-rootfs.arm.ubi\0"	\
+		" ${serverpath}${board_name}-rootfs.ubi\0"	\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
 	"update_rootfs=run download_rootfs flash_rootfs\0"		\
