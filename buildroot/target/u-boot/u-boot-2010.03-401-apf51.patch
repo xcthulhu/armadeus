@@ -2,7 +2,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-01-05 18:11:15.000000000 +0100
-@@ -0,0 +1,1102 @@
+@@ -0,0 +1,1109 @@
 +/*
 + * (C) Copyright 2010 Eric Jarrige, Armadeus Project
 + *
@@ -915,6 +915,13 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	}*/
 +	APF51_init_fpga (firmware_buffer, size);
 +#endif
++
++	/* detect compatibility issue of environment version */
++	s = getenv ("env_version");
++	if (( NULL == s ) || (0 != strcmp(s, CONFIG_ENV_VERSION))) {
++		printf("*** Warning - Environment version change suggests: "
++			"run flash_reset_env; reset\n");
++	}
 +
 +	return 0;
 +}

@@ -1,0 +1,24 @@
+Support CONFIG_SYS prefix for macros as define and requested in U-Boot 2010.xx
+coding rules
+
+Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+
+Index: buildroot/boot/u-boot/u-boot.mk
+===================================================================
+--- buildroot.orig/boot/u-boot/u-boot.mk	2011-01-20 23:21:24.000000000 +0100
++++ buildroot/boot/u-boot/u-boot.mk	2011-01-25 22:41:46.000000000 +0100
+@@ -151,10 +151,14 @@ endif
+ ifneq ($(BR2_TARGET_ARMADEUS_SDRAM_SIZE),)
+ 	$(SED) "s,^#define CFG_SDRAM_MBYTE_SYZE.*,#define CFG_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
+ 		$(U_BOOT_INC_CONF_FILE)
++	$(SED) "s,^#define CONFIG_SYS_SDRAM_MBYTE_SYZE.*,#define CONFIG_SYS_SDRAM_MBYTE_SYZE $(BR2_TARGET_ARMADEUS_SDRAM_SIZE),g;"\
++		$(U_BOOT_INC_CONF_FILE)
+ endif
+ ifneq ($(BR2_TARGET_ARMADEUS_NR_SDRAM),)
+ 	$(SED) "s,^#define CONFIG_NR_DRAM_BANKS.*,#define CONFIG_NR_DRAM_BANKS $(BR2_TARGET_ARMADEUS_NR_SDRAM),g;"\
+ 		$(U_BOOT_INC_CONF_FILE)
++	$(SED) "s,^#define CONFIG_SYS_NR_DRAM_BANKS.*,#define CONFIG_SYS_NR_DRAM_BANKS $(BR2_TARGET_ARMADEUS_NR_SDRAM),g;"\
++		$(U_BOOT_INC_CONF_FILE)
+ endif
+ 	touch $@
+ 
