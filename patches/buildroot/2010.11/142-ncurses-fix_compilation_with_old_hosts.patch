@@ -1,0 +1,25 @@
+Old ncurses Host installation complains if tic is launched with -x option, so
+remove it.
+
+Bug & correction reporter: Loic Bartel.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: buildroot/package/ncurses/ncurses-5.7-allows_build_with_old_ncurses_host_installation.patch
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/ncurses/ncurses-5.7-allows_build_with_old_ncurses_host_installation.patch	2011-01-26 14:27:29.000000000 +0100
+@@ -0,0 +1,13 @@
++Index: ncurses-5.7/misc/run_tic.in
++===================================================================
++--- ncurses-5.7.org/misc/run_tic.in	2011-01-26 13:34:27.000000000 +0100
+++++ ncurses-5.7/misc/run_tic.in	2011-01-26 13:34:44.000000000 +0100
++@@ -110,7 +110,7 @@
++ 	document, and install the terminfo without the -x option.
++ 
++ EOF
++-if ( $SHLIB tic$suffix -x -s -o $TERMINFO $source )
+++if ( $SHLIB tic$suffix -s -o $TERMINFO $source )
++ then
++ 	echo '** built new '$TERMINFO
++ else
