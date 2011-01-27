@@ -15,7 +15,7 @@ Index: buildroot/package/qt/Config.in
 +	help
 +	  If unsure, say N.
 +
-+config BR2_PACKAGE_QT_INSTALL
++config BR2_PACKAGE_QT_EXAMPLES
 +	bool "Compile and install Qt examples (with code)"
  	help
  	  If unsure, say N.
