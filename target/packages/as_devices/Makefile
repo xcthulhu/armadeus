@@ -1,14 +1,13 @@
 # Default values for local compiling:
 ARMADEUS_BASE_DIR=../../../
-include $(ARMADEUS_BASE_DIR)/Makefile.in
-
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
 CFLAGS=-Wall -g -O0
-
 LDFLAGS=
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 CXX:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-g++
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 INSTALL_DIR:=$(ARMADEUS_STAGING_DIR)
+
 
 C_BINARY=test_cdevices
 C_LIBNAME=libas_devices.so
