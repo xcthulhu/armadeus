@@ -1,8 +1,8 @@
 Index: buildroot/package/multimedia/Config.in
 ===================================================================
---- buildroot.orig/package/multimedia/Config.in	2010-06-27 18:58:38.000000000 +0200
-+++ buildroot/package/multimedia/Config.in	2010-06-29 09:30:18.000000000 +0200
-@@ -23,6 +23,7 @@
+--- buildroot.orig/package/multimedia/Config.in	2011-01-27 15:24:49.000000000 +0100
++++ buildroot/package/multimedia/Config.in	2011-01-27 15:25:10.000000000 +0100
+@@ -26,6 +26,7 @@
  source "package/multimedia/madplay/Config.in"
  source "package/multimedia/mpg123/Config.in"
  source "package/multimedia/mplayer/Config.in"
@@ -13,7 +13,7 @@ Index: buildroot/package/multimedia/Config.in
 Index: buildroot/package/pywebradio/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pywebradio/Config.in	2010-06-29 09:30:18.000000000 +0200
++++ buildroot/package/pywebradio/Config.in	2011-01-27 15:25:10.000000000 +0100
 @@ -0,0 +1,6 @@
 +config BR2_PACKAGE_PYWEBRADIO
 +	bool "pywebradio"
@@ -24,7 +24,7 @@ Index: buildroot/package/pywebradio/Config.in
 Index: buildroot/package/pywebradio/pywebradio.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/pywebradio/pywebradio.mk	2010-07-04 18:13:38.000000000 +0200
++++ buildroot/package/pywebradio/pywebradio.mk	2011-01-27 15:25:10.000000000 +0100
 @@ -0,0 +1,28 @@
 +#############################################################
 +#

@@ -8,8 +8,8 @@ Would BR be interested ?
 
 Index: buildroot/package/ntp/Config.in
 ===================================================================
---- buildroot.orig/package/ntp/Config.in	2010-10-19 15:50:05.000000000 +0200
-+++ buildroot/package/ntp/Config.in	2010-10-19 15:59:45.000000000 +0200
+--- buildroot.orig/package/ntp/Config.in	2011-01-27 15:22:57.000000000 +0100
++++ buildroot/package/ntp/Config.in	2011-01-27 15:24:27.000000000 +0100
 @@ -6,6 +6,12 @@
  
  	  http://www.ntp.org/
@@ -25,9 +25,9 @@ Index: buildroot/package/ntp/Config.in
  	depends on BR2_PACKAGE_NTP
 Index: buildroot/package/ntp/ntp.mk
 ===================================================================
---- buildroot.orig/package/ntp/ntp.mk	2010-10-19 15:50:05.000000000 +0200
-+++ buildroot/package/ntp/ntp.mk	2010-10-19 22:28:50.000000000 +0200
-@@ -32,20 +32,20 @@
+--- buildroot.orig/package/ntp/ntp.mk	2011-01-27 15:22:57.000000000 +0100
++++ buildroot/package/ntp/ntp.mk	2011-01-27 15:24:27.000000000 +0100
+@@ -33,20 +33,20 @@
  NTP_INSTALL_FILES_$(BR2_PACKAGE_NTP_TICKADJ) += util/tickadj
  
  define NTP_INSTALL_TARGET_CMDS

@@ -3,11 +3,11 @@ Fix Qt configuration options for MySQL module ; Specifies the MySQL's libraries 
 Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 ===================================================================
-diff --git a/package/qt/qt.mk b/package/qt/qt.mk
-index 2b5b31b..6eb31bc 100644
---- a/package/qt/qt.mk
-+++ b/package/qt/qt.mk
-@@ -283,8 +283,7 @@ ifeq ($(BR2_PACKAGE_QT_IBASE),y)
+Index: buildroot/package/qt/qt.mk
+===================================================================
+--- buildroot.orig/package/qt/qt.mk	2011-01-27 15:25:19.000000000 +0100
++++ buildroot/package/qt/qt.mk	2011-01-27 15:25:26.000000000 +0100
+@@ -285,8 +285,7 @@
  QT_CONFIGURE+= -qt-sql-ibase
  endif
  ifeq ($(BR2_PACKAGE_QT_MYSQL),y)

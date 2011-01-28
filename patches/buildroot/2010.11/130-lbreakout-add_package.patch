@@ -4,9 +4,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-07-14 19:25:49.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-15 09:03:49.000000000 +0200
-@@ -81,6 +81,7 @@
+--- buildroot.orig/package/Config.in	2011-01-27 15:25:13.000000000 +0100
++++ buildroot/package/Config.in	2011-01-27 15:25:16.000000000 +0100
+@@ -82,6 +82,7 @@
  source "package/games/ace_of_penguins/Config.in"
  source "package/e-uae/Config.in"
  source "package/games/gnuchess/Config.in"
@@ -17,7 +17,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/lbreakout2/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/lbreakout2/Config.in	2010-07-14 23:27:44.000000000 +0200
++++ buildroot/package/lbreakout2/Config.in	2011-01-27 15:25:16.000000000 +0100
 @@ -0,0 +1,26 @@
 +config BR2_PACKAGE_LBREAKOUT2
 +	bool "LBreakout2"
@@ -48,7 +48,7 @@ Index: buildroot/package/lbreakout2/Config.in
 Index: buildroot/package/lbreakout2/lbreakout2.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/lbreakout2/lbreakout2.mk	2010-07-15 09:04:51.000000000 +0200
++++ buildroot/package/lbreakout2/lbreakout2.mk	2011-01-27 15:25:16.000000000 +0100
 @@ -0,0 +1,29 @@
 +#############################################################
 +#
