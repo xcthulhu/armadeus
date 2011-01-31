@@ -5,16 +5,8 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
 ===================================================================
 --- linux-2.6.36.orig/drivers/i2c/busses/i2c-imx.c	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2011-01-31 16:13:32.000000000 +0100
-@@ -34,7 +34,6 @@
- 
- /** Includes *******************************************************************
- *******************************************************************************/
--
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/module.h>
-@@ -300,17 +299,28 @@
++++ linux-2.6.36/drivers/i2c/busses/i2c-imx.c	2011-01-31 16:23:34.000000000 +0100
+@@ -300,17 +300,28 @@
  {
  	int i, result;
  
@@ -53,7 +45,7 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  	dev_dbg(&i2c_imx->adapter.dev, "<%s> write data\n", __func__);
  
  	/* write data */
-@@ -323,7 +333,7 @@
+@@ -323,7 +334,7 @@
  		if (result)
  			return result;
  		result = i2c_imx_acked(i2c_imx);
@@ -62,7 +54,7 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  			return result;
  	}
  	return 0;
-@@ -334,18 +344,27 @@
+@@ -334,18 +345,27 @@
  	int i, result;
  	unsigned int temp;
  
@@ -102,7 +94,7 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  
  	dev_dbg(&i2c_imx->adapter.dev, "<%s> setup bus\n", __func__);
  
-@@ -405,7 +424,7 @@
+@@ -405,7 +425,7 @@
  
  	/* read/write data */
  	for (i = 0; i < num; i++) {
@@ -111,7 +103,7 @@ Index: linux-2.6.36/drivers/i2c/busses/i2c-imx.c
  			dev_dbg(&i2c_imx->adapter.dev,
  				"<%s> repeated start\n", __func__);
  			temp = readb(i2c_imx->base + IMX_I2C_I2CR);
-@@ -454,7 +473,7 @@
+@@ -454,7 +474,7 @@
  
  static u32 i2c_imx_func(struct i2c_adapter *adapter)
  {
