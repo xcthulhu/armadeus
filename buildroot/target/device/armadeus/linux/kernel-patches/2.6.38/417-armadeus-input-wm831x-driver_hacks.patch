@@ -21,7 +21,7 @@ Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
  		WARN_ON(pdata->pressure && pdata->fivewire);
  		wm831x_ts->pressure = false;
  	} else {
-@@ -316,6 +317,17 @@
+@@ -294,6 +295,17 @@
  
  	platform_set_drvdata(pdev, wm831x_ts);
  
@@ -36,6 +36,6 @@ Index: linux-2.6.38-alpha/drivers/input/touchscreen/wm831x-ts.c
 +	wm831x_reg_write(wm831x, 0x404d, 0x0000); /* LED2 off */
 +	wm831x_reg_write(wm831x, 0x4037 + 6, 0x0086);
 +
- 	input_dev = input_allocate_device();
- 	if (input_dev == NULL) {
- 		ret = -ENOMEM;
+ 	/* set up touch configuration */
+ 	input_dev->name = "WM831x touchscreen";
+ 	input_dev->phys = "wm831x";
