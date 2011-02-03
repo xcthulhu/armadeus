@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-06 15:53:53.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-06 19:51:04.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-02-02 15:24:30.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-02-03 09:20:56.000000000 +0100
 @@ -106,12 +106,30 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -41,8 +41,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-01-06 15:53:53.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-06 19:51:04.000000000 +0100
+--- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-02-02 15:24:30.000000000 +0100
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-02-03 09:20:56.000000000 +0100
 @@ -7,6 +7,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -54,8 +54,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-01-06 19:45:35.000000000 +0100
-@@ -0,0 +1,270 @@
++++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-03 09:11:40.000000000 +0100
+@@ -0,0 +1,272 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -104,8 +104,8 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_SD2_DATA2__SD2_DATA2,
 +	MX51_PAD_SD2_DATA3__SD2_DATA3,
 +
-+	MX51_PAD_EIM_EB2__GPIO_2_22, /* PWRDN# */
-+	MX51_PAD_EIM_EB3__GPIO_2_23, /* RESET# */
++	MX51_PAD_EIM_EB2__GPIO_2_22, /* WIFI_PWRDN# */
++	MX51_PAD_EIM_EB3__GPIO_2_23, /* WIFI_RESET# */
 +
 +	/* UART2 (Bluetooth) */
 +	MX51_PAD_UART2_RXD__UART2_RXD,
@@ -113,7 +113,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_EIM_D25__UART2_CTS,
 +	MX51_PAD_EIM_D26__UART2_RTS,
 +
-+	MX51_PAD_EIM_CS3__GPIO_2_28, /* RESET# */
++	MX51_PAD_EIM_CS3__GPIO_2_28, /* BT_RESET# */
 +
 +	/* UART1 */
 +	MX51_PAD_UART1_RXD__UART1_RXD,
@@ -128,12 +128,16 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_CSPI1_SS0__GPIO_4_24,
 +	MX51_PAD_CSPI1_SS1__GPIO_4_25,
 +
++	MX51_PAD_NANDF_D14__GPIO_3_26,	/* ADC_SSTRB */
++
 +	/* eCSPI2 */
 +	MX51_PAD_NANDF_RB2__ECSPI2_SCLK,
 +	MX51_PAD_NANDF_RB3__ECSPI2_MISO,
 +	MX51_PAD_NANDF_D15__ECSPI2_MOSI,
-+	MX51_PAD_NANDF_D12__GPIO_3_28, /* SS1 */
-+	MX51_PAD_NANDF_D13__GPIO_3_27, /* SS2 */
++	MX51_PAD_NANDF_D12__GPIO_3_28,	/* SS1 */
++	MX51_PAD_NANDF_D13__GPIO_3_27,	/* SS2 */
++
++	MX51_PAD_NANDF_RB1__GPIO_3_9,	/* CAN_INT# */
 +
 +	/* Display */
 +	MX51_PAD_DISP1_DAT0__DISP1_DAT0,
@@ -164,15 +168,13 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_DI1_PIN3__DI1_PIN3,	/* VSYNC */
 +	/* CLK and OE are not muxed */
 +
-+	/* JTAG */
-+
 +	/* ONEWIRE */
 +
 +	/* KEYPAD */
 +
 +	/* Other GPIOs ! TBDL ! */
-+	/* HDMI_RST# */
-+	/* HDMI_DETECT */
++	MX51_PAD_I2C1_CLK__GPIO_4_16,	/* HDMI_RST# */
++	MX51_PAD_I2C1_DAT__GPIO_4_17,	/* HDMI_DETECT */
 +};
 +
 +static const struct imxi2c_platform_data apf51dev_i2c_data __initconst = {

@@ -1,7 +1,9 @@
->From a1ae1fa080f0d352f044c97f9c469e3275235402 Mon Sep 17 00:00:00 2001
 From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 14 Jan 2011 15:07:22 +0000
-Subject: [PATCH] Input: wm831x - Add driver for Wolfson WM831x PMIC touchscreen controllers
+Date: Mon, 24 Jan 2011 16:16:22 +0000 (+0000)
+Subject: Input: wm831x - Add driver for Wolfson WM831x PMIC touchscreen controllers
+X-Git-Url: http://opensource.wolfsonmicro.com/cgi-bin/gitweb.cgi?p=linux-2.6-audioplus.git;a=commitdiff_plain;h=477af4e45ba2d6315eebb8c45d1fc1ee1edc9ac4
+
+Input: wm831x - Add driver for Wolfson WM831x PMIC touchscreen controllers
 
 Some of the WM831x series of PMICs from Wolfson Microelectronics include
 a resistive touchscreen controller. Implement support for these controllers
@@ -10,22 +12,16 @@ within the input API.
 Platform data is supported to allow configuration of system parameters such
 as selection between four and five wire touchscreens and for specification
 of optional direct to CPU IRQs for sample availability and for pen down.
+Use of this feature for at least the data IRQ is strongly recommended.
 
-THIS DRIVER HAS NOT BEEN TESTED. NO GUARANTEES ARE MADE REGARDING THE
-PERFORMANCE OR STABILITY OF THE DRIVER, IT IS EXPECTED THAT SOME DEBUGGING
-WILL BE REQUIRED IN ORDER TO MAKE THE DRIVER USABLE.
+Thanks to Julien Boibessot for extensive testing and detailed feedback.
 
 Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Tested-by: Julien Boibessot <julien.boibessot@armadeus.com>
 ---
- drivers/input/touchscreen/Kconfig     |   10 +
- drivers/input/touchscreen/Makefile    |    1 +
- drivers/input/touchscreen/wm831x-ts.c |  399 +++++++++++++++++++++++++++++++++
- include/linux/mfd/wm831x/pdata.h      |    1 +
- 4 files changed, 411 insertions(+), 0 deletions(-)
- create mode 100644 drivers/input/touchscreen/wm831x-ts.c
 
 diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
-index 0c9f4b1..f29dab7 100644
+index 06ea8da..d445ce7 100644
 --- a/drivers/input/touchscreen/Kconfig
 +++ b/drivers/input/touchscreen/Kconfig
 @@ -423,6 +423,16 @@ config TOUCHSCREEN_UCB1400
@@ -40,16 +36,16 @@ index 0c9f4b1..f29dab7 100644
 +	  series of PMICs.
 +
 +	  To compile this driver as a module, choose M here: the
-+	  module will be called wm831x-touch.
++	  module will be called wm831x-ts.
 +
  config TOUCHSCREEN_WM97XX
  	tristate "Support for WM97xx AC97 touchscreen controllers"
  	depends on AC97_BUS
 diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index 718bcc8..e8dcfab 100644
+index 7cc1b4f..1a00395 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
+@@ -47,6 +47,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
  obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
  obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
  obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o
@@ -59,10 +55,10 @@ index 718bcc8..e8dcfab 100644
  wm97xx-ts-$(CONFIG_TOUCHSCREEN_WM9712)	+= wm9712.o
 diff --git a/drivers/input/touchscreen/wm831x-ts.c b/drivers/input/touchscreen/wm831x-ts.c
 new file mode 100644
-index 0000000..9a58a11
+index 0000000..3e8256d
 --- /dev/null
 +++ b/drivers/input/touchscreen/wm831x-ts.c
-@@ -0,0 +1,399 @@
+@@ -0,0 +1,372 @@
 +/*
 + * wm831x-ts.c - Touchscreen driver for WM831x PMICs
 + *
@@ -95,29 +91,11 @@ index 0000000..9a58a11
 + * R16424 (0x4028) - Touch Control 1
 + */
 +#define WM831X_TCH_ENA                          0x8000  /* TCH_ENA */
-+#define WM831X_TCH_ENA_MASK                     0x8000  /* TCH_ENA */
-+#define WM831X_TCH_ENA_SHIFT                        15  /* TCH_ENA */
-+#define WM831X_TCH_ENA_WIDTH                         1  /* TCH_ENA */
 +#define WM831X_TCH_CVT_ENA                      0x4000  /* TCH_CVT_ENA */
-+#define WM831X_TCH_CVT_ENA_MASK                 0x4000  /* TCH_CVT_ENA */
-+#define WM831X_TCH_CVT_ENA_SHIFT                    14  /* TCH_CVT_ENA */
-+#define WM831X_TCH_CVT_ENA_WIDTH                     1  /* TCH_CVT_ENA */
 +#define WM831X_TCH_SLPENA                       0x1000  /* TCH_SLPENA */
-+#define WM831X_TCH_SLPENA_MASK                  0x1000  /* TCH_SLPENA */
-+#define WM831X_TCH_SLPENA_SHIFT                     12  /* TCH_SLPENA */
-+#define WM831X_TCH_SLPENA_WIDTH                      1  /* TCH_SLPENA */
 +#define WM831X_TCH_Z_ENA                        0x0400  /* TCH_Z_ENA */
-+#define WM831X_TCH_Z_ENA_MASK                   0x0400  /* TCH_Z_ENA */
-+#define WM831X_TCH_Z_ENA_SHIFT                      10  /* TCH_Z_ENA */
-+#define WM831X_TCH_Z_ENA_WIDTH                       1  /* TCH_Z_ENA */
 +#define WM831X_TCH_Y_ENA                        0x0200  /* TCH_Y_ENA */
-+#define WM831X_TCH_Y_ENA_MASK                   0x0200  /* TCH_Y_ENA */
-+#define WM831X_TCH_Y_ENA_SHIFT                       9  /* TCH_Y_ENA */
-+#define WM831X_TCH_Y_ENA_WIDTH                       1  /* TCH_Y_ENA */
 +#define WM831X_TCH_X_ENA                        0x0100  /* TCH_X_ENA */
-+#define WM831X_TCH_X_ENA_MASK                   0x0100  /* TCH_X_ENA */
-+#define WM831X_TCH_X_ENA_SHIFT                       8  /* TCH_X_ENA */
-+#define WM831X_TCH_X_ENA_WIDTH                       1  /* TCH_X_ENA */
 +#define WM831X_TCH_DELAY_MASK                   0x00E0  /* TCH_DELAY - [7:5] */
 +#define WM831X_TCH_DELAY_SHIFT                       5  /* TCH_DELAY - [7:5] */
 +#define WM831X_TCH_DELAY_WIDTH                       3  /* TCH_DELAY - [7:5] */
@@ -129,21 +107,9 @@ index 0000000..9a58a11
 + * R16425 (0x4029) - Touch Control 2
 + */
 +#define WM831X_TCH_PD_WK                        0x2000  /* TCH_PD_WK */
-+#define WM831X_TCH_PD_WK_MASK                   0x2000  /* TCH_PD_WK */
-+#define WM831X_TCH_PD_WK_SHIFT                      13  /* TCH_PD_WK */
-+#define WM831X_TCH_PD_WK_WIDTH                       1  /* TCH_PD_WK */
 +#define WM831X_TCH_5WIRE                        0x1000  /* TCH_5WIRE */
-+#define WM831X_TCH_5WIRE_MASK                   0x1000  /* TCH_5WIRE */
-+#define WM831X_TCH_5WIRE_SHIFT                      12  /* TCH_5WIRE */
-+#define WM831X_TCH_5WIRE_WIDTH                       1  /* TCH_5WIRE */
 +#define WM831X_TCH_PDONLY                       0x0800  /* TCH_PDONLY */
-+#define WM831X_TCH_PDONLY_MASK                  0x0800  /* TCH_PDONLY */
-+#define WM831X_TCH_PDONLY_SHIFT                     11  /* TCH_PDONLY */
-+#define WM831X_TCH_PDONLY_WIDTH                      1  /* TCH_PDONLY */
 +#define WM831X_TCH_ISEL                         0x0100  /* TCH_ISEL */
-+#define WM831X_TCH_ISEL_MASK                    0x0100  /* TCH_ISEL */
-+#define WM831X_TCH_ISEL_SHIFT                        8  /* TCH_ISEL */
-+#define WM831X_TCH_ISEL_WIDTH                        1  /* TCH_ISEL */
 +#define WM831X_TCH_RPU_MASK                     0x000F  /* TCH_RPU - [3:0] */
 +#define WM831X_TCH_RPU_SHIFT                         0  /* TCH_RPU - [3:0] */
 +#define WM831X_TCH_RPU_WIDTH                         4  /* TCH_RPU - [3:0] */
@@ -152,9 +118,6 @@ index 0000000..9a58a11
 + * R16426-8 (0x402A-C) - Touch Data X/Y/X
 + */
 +#define WM831X_TCH_PD                           0x8000  /* TCH_PD1 */
-+#define WM831X_TCH_PD_MASK                      0x8000  /* TCH_PD1 */
-+#define WM831X_TCH_PD_SHIFT                         15  /* TCH_PD1 */
-+#define WM831X_TCH_PD_WIDTH                          1  /* TCH_PD1 */
 +#define WM831X_TCH_DATA_MASK                    0x0FFF  /* TCH_DATA - [11:0] */
 +#define WM831X_TCH_DATA_SHIFT                        0  /* TCH_DATA - [11:0] */
 +#define WM831X_TCH_DATA_WIDTH                       12  /* TCH_DATA - [11:0] */
@@ -212,6 +175,12 @@ index 0000000..9a58a11
 +		wm831x_set_bits(wm831x, WM831X_TOUCH_CONTROL_1,
 +				WM831X_TCH_X_ENA | WM831X_TCH_Y_ENA |
 +				WM831X_TCH_Z_ENA, 0);
++
++		/* Flush any final samples that arrived while reading */
++		wm831x_set_bits(wm831x, WM831X_INTERRUPT_STATUS_1,
++				WM831X_TCHDATA_EINT, WM831X_TCHDATA_EINT);
++
++		wm831x_bulk_read(wm831x, WM831X_TOUCH_DATA_X, count, data);
 +
 +		if (wm831x_ts->pressure)
 +			input_report_abs(wm831x_ts->input_dev,
@@ -278,7 +247,7 @@ index 0000000..9a58a11
 +			WM831X_TCH_Z_ENA, 0);
 +
 +	if (wm831x_ts->pen_down)
-+		disable_irq_nosync(wm831x_ts->pen_down);
++		disable_irq_nosync(wm831x_ts->data_irq);
 +}
 +
 +static __devinit int wm831x_ts_probe(struct platform_device *pdev)
@@ -474,6 +443,3 @@ index 1ae8499..c6746e8 100644
  };
  
  enum wm831x_watchdog_action {
--- 
-1.7.2.3
-
