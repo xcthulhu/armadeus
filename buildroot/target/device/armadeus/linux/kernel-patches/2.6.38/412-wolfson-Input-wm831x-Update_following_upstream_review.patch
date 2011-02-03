@@ -1,0 +1,133 @@
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Tue, 25 Jan 2011 19:51:38 +0000 (+0000)
+Subject: Input: wm831x-ts - Update following upstream review
+X-Git-Url: http://opensource.wolfsonmicro.com/cgi-bin/gitweb.cgi?p=linux-2.6-audioplus.git;a=commitdiff_plain;h=279eb03e2bf2b3360d89311cb5535b54c4a25f3c
+
+Input: wm831x-ts - Update following upstream review
+
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+
+diff --git a/drivers/input/touchscreen/wm831x-ts.c b/drivers/input/touchscreen/wm831x-ts.c
+index 3e8256d..155da5d 100644
+--- a/drivers/input/touchscreen/wm831x-ts.c
++++ b/drivers/input/touchscreen/wm831x-ts.c
+@@ -1,7 +1,7 @@
+ /*
+  * wm831x-ts.c - Touchscreen driver for WM831x PMICs
+  *
+- * Copyright 2010 Wolfson Microelectronics plc.
++ * Copyright 2011 Wolfson Microelectronics plc.
+  * Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+  *
+  *  This program is free software; you can redistribute  it and/or modify it
+@@ -64,8 +64,8 @@
+ struct wm831x_ts {
+ 	struct input_dev *input_dev;
+ 	struct wm831x *wm831x;
+-	int data_irq;
+-	int pd_irq;
++	unsigned int data_irq;
++	unsigned int pd_irq;
+ 	bool pressure;
+ 	bool pen_down;
+ };
+@@ -186,7 +186,7 @@ static void wm831x_ts_input_close(struct input_dev *idev)
+ 			WM831X_TCH_Z_ENA, 0);
+ 
+ 	if (wm831x_ts->pen_down)
+-		disable_irq_nosync(wm831x_ts->data_irq);
++		disable_irq(wm831x_ts->data_irq);
+ }
+ 
+ static __devinit int wm831x_ts_probe(struct platform_device *pdev)
+@@ -204,13 +204,20 @@ static __devinit int wm831x_ts_probe(struct platform_device *pdev)
+ 
+ 	wm831x_ts->wm831x = wm831x;
+ 
++	input_dev = input_allocate_device();
++	if (input_dev == NULL) {
++		ret = -ENOMEM;
++		goto err_alloc;
++	}
++	wm831x_ts->input_dev = input_dev;
++
+ 	if (core_pdata && core_pdata->touch)
+ 		pdata = core_pdata->touch;
+ 	else
+ 		pdata = NULL;
+ 
+-	/* If we have a direct CPU data IRQ use it, otherwise use
+-	 * the interrupt through the WM831x IRQ controller.
++	/* If we have a direct IRQ use it, otherwise use the interrupt
++	 * from the WM831x IRQ controller.
+ 	 */
+ 	if (pdata && pdata->data_irq)
+ 		wm831x_ts->data_irq = pdata->data_irq;
+@@ -272,15 +279,13 @@ static __devinit int wm831x_ts_probe(struct platform_device *pdev)
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "Failed to request data IRQ %d: %d\n",
+ 			wm831x_ts->data_irq, ret);
+-		goto err_alloc;
++		goto err_dev_alloc;
+ 	}
+ 	disable_irq(wm831x_ts->data_irq);
+ 
+ 	ret = request_threaded_irq(wm831x_ts->pd_irq, NULL,
+-				   wm831x_ts_pen_down_irq,
+-				   IRQF_SAMPLE_RANDOM | IRQF_ONESHOT,
++				   wm831x_ts_pen_down_irq, IRQF_ONESHOT,
+ 				   "Touchscreen pen down", wm831x_ts);
+-
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "Failed to request pen down IRQ %d: %d\n",
+ 			wm831x_ts->pd_irq, ret);
+@@ -289,13 +294,6 @@ static __devinit int wm831x_ts_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, wm831x_ts);
+ 
+-	input_dev = input_allocate_device();
+-	if (input_dev == NULL) {
+-		ret = -ENOMEM;
+-		goto err_pd_irq;
+-	}
+-	wm831x_ts->input_dev = input_dev;
+-
+ 	/* set up touch configuration */
+ 	input_dev->name = "WM831x touchscreen";
+ 	input_dev->phys = "wm831x";
+@@ -316,16 +314,16 @@ static __devinit int wm831x_ts_probe(struct platform_device *pdev)
+ 
+ 	ret = input_register_device(input_dev);
+ 	if (ret < 0)
+-		goto err_dev_alloc;
++		goto err_pd_irq;
+ 
+ 	return ret;
+ 
+-err_dev_alloc:
+-	input_free_device(input_dev);
+ err_pd_irq:
+ 	free_irq(wm831x_ts->pd_irq, wm831x_ts);
+ err_data_irq:
+ 	free_irq(wm831x_ts->data_irq, wm831x_ts);
++err_dev_alloc:
++	input_free_device(input_dev);
+ err_alloc:
+ 	kfree(wm831x_ts);
+ 
+diff --git a/include/linux/mfd/wm831x/pdata.h b/include/linux/mfd/wm831x/pdata.h
+index c6746e8..ac3aa73 100644
+--- a/include/linux/mfd/wm831x/pdata.h
++++ b/include/linux/mfd/wm831x/pdata.h
+@@ -80,8 +80,8 @@ struct wm831x_touch_pdata {
+ 	int isel;              /** Current for pen down (uA) */
+ 	int rpu;               /** Pen down sensitivity resistor divider */
+ 	int pressure;          /** Report pressure (boolean) */
+-	int data_irq;          /** Touch data ready IRQ */
+-	int pd_irq;            /** Touch pendown detect IRQ */
++	unsigned int data_irq; /** Touch data ready IRQ */
++	unsigned int pd_irq;   /** Touch pendown detect IRQ */
+ };
+ 
+ enum wm831x_watchdog_action {

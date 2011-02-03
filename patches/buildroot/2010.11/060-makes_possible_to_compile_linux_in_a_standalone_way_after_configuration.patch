@@ -1,8 +1,8 @@
 Index: buildroot/linux/linux.mk
 ===================================================================
---- buildroot.orig/linux/linux.mk	2010-10-19 09:43:24.000000000 +0200
-+++ buildroot/linux/linux.mk	2010-10-19 09:48:32.000000000 +0200
-@@ -111,6 +111,8 @@
+--- buildroot.orig/linux/linux.mk	2011-01-27 15:24:26.000000000 +0100
++++ buildroot/linux/linux.mk	2011-01-27 15:24:32.000000000 +0100
+@@ -113,6 +113,8 @@
  	$(call KCONFIG_ENABLE_OPT,CONFIG_INITRAMFS_COMPRESSION_GZIP,$(@D)/.config)
  endif
  ifeq ($(strip $(BR2_TARGET_ARMADEUS)),y)

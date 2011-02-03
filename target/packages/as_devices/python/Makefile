@@ -1,6 +1,6 @@
 # Default values for local compiling:
 ARMADEUS_BASE_DIR=../../../../
-include $(ARMADEUS_BASE_DIR)/Makefile.in
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
 
 CFLAGS=-Wall -g -O0
 

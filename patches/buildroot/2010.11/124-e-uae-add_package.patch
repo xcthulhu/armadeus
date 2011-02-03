@@ -1,8 +1,8 @@
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-29 11:20:37.000000000 +0200
-+++ buildroot/package/Config.in	2010-07-04 18:03:11.000000000 +0200
-@@ -79,6 +79,7 @@
+--- buildroot.orig/package/Config.in	2011-01-27 15:25:09.000000000 +0100
++++ buildroot/package/Config.in	2011-01-27 15:25:12.000000000 +0100
+@@ -80,6 +80,7 @@
  
  menu "Games"
  source "package/games/ace_of_penguins/Config.in"
@@ -13,7 +13,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/e-uae/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/e-uae/Config.in	2010-07-04 18:05:06.000000000 +0200
++++ buildroot/package/e-uae/Config.in	2011-01-27 15:25:12.000000000 +0100
 @@ -0,0 +1,9 @@
 +config BR2_PACKAGE_E_UAE
 +	bool "e-uae"
@@ -27,7 +27,7 @@ Index: buildroot/package/e-uae/Config.in
 Index: buildroot/package/e-uae/e-uae.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/e-uae/e-uae.mk	2010-07-04 18:06:43.000000000 +0200
++++ buildroot/package/e-uae/e-uae.mk	2011-01-27 15:25:12.000000000 +0100
 @@ -0,0 +1,23 @@
 +#############################################################
 +#

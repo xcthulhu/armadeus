@@ -4,9 +4,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-23 14:13:28.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-23 14:13:31.000000000 +0200
-@@ -102,6 +102,7 @@
+--- buildroot.orig/package/Config.in	2011-01-27 15:25:01.000000000 +0100
++++ buildroot/package/Config.in	2011-01-27 15:25:03.000000000 +0100
+@@ -106,6 +106,7 @@
  if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
  source "package/fbset/Config.in"
  endif
@@ -17,7 +17,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/fbtest/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/fbtest/Config.in	2010-06-23 14:13:31.000000000 +0200
++++ buildroot/package/fbtest/Config.in	2011-01-27 15:25:03.000000000 +0100
 @@ -0,0 +1,7 @@
 +config BR2_PACKAGE_FBTEST
 +	bool "fbtest"
@@ -29,7 +29,7 @@ Index: buildroot/package/fbtest/Config.in
 Index: buildroot/package/fbtest/fbtest.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/fbtest/fbtest.mk	2010-06-23 14:13:31.000000000 +0200
++++ buildroot/package/fbtest/fbtest.mk	2011-01-27 15:25:03.000000000 +0100
 @@ -0,0 +1,51 @@
 +#############################################################
 +#
@@ -85,7 +85,7 @@ Index: buildroot/package/fbtest/fbtest.mk
 Index: buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch	2010-06-23 14:13:31.000000000 +0200
++++ buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch	2011-01-27 15:25:03.000000000 +0100
 @@ -0,0 +1,36 @@
 +--- fbtest-20041102-1.org/fb.c	2003-04-04 14:07:55.000000000 +0200
 ++++ fbtest-20041102-1/fb.c	2009-05-20 10:32:32.000000000 +0200
@@ -126,7 +126,7 @@ Index: buildroot/package/fbtest/fbtest-20041102-1-page-mask.patch
 Index: buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch	2010-06-23 14:13:31.000000000 +0200
++++ buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch	2011-01-27 15:25:03.000000000 +0100
 @@ -0,0 +1,11 @@
 +--- fbtest-20041102-1.org/Makefile	2009-05-21 10:16:05.000000000 +0200
 ++++ fbtest-20041102-1/Makefile	2009-05-21 10:17:47.000000000 +0200
@@ -142,7 +142,7 @@ Index: buildroot/package/fbtest/fbtest-20041102-1-exe-target-name-change.patch
 Index: buildroot/package/fbtest/fbtest-20041102-1-pnmtohex-libs-depends.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/fbtest/fbtest-20041102-1-pnmtohex-libs-depends.patch	2010-06-23 14:13:31.000000000 +0200
++++ buildroot/package/fbtest/fbtest-20041102-1-pnmtohex-libs-depends.patch	2011-01-27 15:25:03.000000000 +0100
 @@ -0,0 +1,11 @@
 +--- fbtest-20041102-1.org/pnmtohex/Makefile	2004-11-02 09:43:02.000000000 +0100
 ++++ fbtest-20041102-1/pnmtohex/Makefile	2005-11-16 22:24:08.406157582 +0100

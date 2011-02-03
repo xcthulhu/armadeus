@@ -31,10 +31,22 @@
 ///XXX: find where u8 is defined under linux
 typedef unsigned char u8;
 
-#include <linux/spi/max1027.h>
 #include "as_max1027.h"
 
-//#define ERROR_MSG
+/* Redundant with <linux/spi/max1027.h>, but... */
+/* 00 : Scans channels 0 through N.
+ * 01 : Scans channels N through the highest numbered channel.
+ * 10 : Scans channel N repeatedly. The averaging register sets the number of results
+ * 11 : No scan. Converts channel N once only. */
+#define SCAN_MODE_00		0
+#define SCAN_MODE_01		1
+#define SCAN_MODE_10		2
+#define SCAN_MODE_11		3
+#define MAX1027_CONV		0x80
+#define MAX1027_CONV_TEMP	0x01
+#define MAX1027_SETUP		0x40
+#define MAX1027_AVG		0x20
+
 
 #define BUFFER_SIZE     (70)
 #define PATH_SIZE       (50)
