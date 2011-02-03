@@ -5,7 +5,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/gpm/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/Config.in	2010-06-23 14:11:42.000000000 +0200
++++ buildroot/package/gpm/Config.in	2011-01-27 15:24:45.000000000 +0100
 @@ -0,0 +1,7 @@
 +config BR2_PACKAGE_GPM
 +	bool "gpm mouse server"
@@ -17,7 +17,7 @@ Index: buildroot/package/gpm/Config.in
 Index: buildroot/package/gpm/gpm.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/gpm.mk	2010-06-23 14:11:42.000000000 +0200
++++ buildroot/package/gpm/gpm.mk	2011-01-27 15:24:45.000000000 +0100
 @@ -0,0 +1,18 @@
 +#############################################################
 +#
@@ -40,7 +40,7 @@ Index: buildroot/package/gpm/gpm.mk
 Index: buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch	2010-06-23 14:11:42.000000000 +0200
++++ buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch	2011-01-27 15:24:45.000000000 +0100
 @@ -0,0 +1,77 @@
 +
 +Replaces all "obsolete" functions (at least to compile for uClibc).
@@ -121,8 +121,8 @@ Index: buildroot/package/gpm/gpm-1.20.6-removes_obsolete_functions.patch
 + 		gpm_report (GPM_PR_WARN,"Flag value (%s) for parameter %s is invalid",
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2010-06-23 14:11:36.000000000 +0200
-+++ buildroot/package/Config.in	2010-06-23 14:11:42.000000000 +0200
+--- buildroot.orig/package/Config.in	2011-01-27 15:24:42.000000000 +0100
++++ buildroot/package/Config.in	2011-01-27 15:24:45.000000000 +0100
 @@ -173,6 +173,7 @@
  source "package/gadgetfs-test/Config.in"
  source "package/genext2fs/Config.in"
@@ -134,7 +134,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch	2010-06-23 14:11:42.000000000 +0200
++++ buildroot/package/gpm/gpm-1.20.6-removes_strip_from_install.patch	2011-01-27 15:24:45.000000000 +0100
 @@ -0,0 +1,30 @@
 +GPM asks "install" to strip the executables while installing it.
 +This doesn't seems cross-compiling friendly, so remove the option (-s) and let

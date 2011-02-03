@@ -6,11 +6,11 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/fs/common.mk
 ===================================================================
---- buildroot.orig/fs/common.mk	2010-10-19 09:32:19.000000000 +0200
-+++ buildroot/fs/common.mk	2010-10-19 09:33:11.000000000 +0200
-@@ -36,8 +36,8 @@
- 
- define ROOTFS_TARGET_INTERNAL
+--- buildroot.orig/fs/common.mk	2011-01-27 15:22:52.000000000 +0100
++++ buildroot/fs/common.mk	2011-01-27 15:25:22.000000000 +0100
+@@ -39,8 +39,8 @@
+ # extra deps
+ $(eval ROOTFS_$(2)_DEPENDENCIES += host-fakeroot host-makedevs $(if $(BR2_TARGET_ROOTFS_$(2)_LZMA),host-lzma))
  
 -$(BINARIES_DIR)/rootfs.$(1): $(ROOTFS_$(2)_DEPENDENCIES)
 -	@$(call MESSAGE,"Generating root filesystem image rootfs.$(1)")
@@ -19,7 +19,7 @@ Index: buildroot/fs/common.mk
  	$(foreach hook,$(ROOTFS_$(2)_PRE_GEN_HOOKS),$(call $(hook))$(sep))
  	rm -f $(FAKEROOT_SCRIPT)
  	touch $(BUILD_DIR)/.fakeroot.00000
-@@ -64,7 +64,7 @@
+@@ -67,7 +67,7 @@
  rootfs-$(1)-show-depends:
  	@echo $(ROOTFS_$(2)_DEPENDENCIES)
  
