@@ -1,0 +1,93 @@
+diff -purN u-boot-2010.03.ori/board/armadeus/apf51/apf51.c u-boot-2010.03/board/armadeus/apf51/apf51.c
+--- u-boot-2010.03.ori/board/armadeus/apf51/apf51.c	2011-01-25 22:43:23.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-02-04 00:21:21.000000000 +0100
+@@ -513,22 +513,61 @@ void setup_nfc(void)
+ 	/*
+ 	 * Configure iomux for NFC interface
+ 	 */
++#define NAND_PAD47K_CFG		(PAD_CTL_DRV_VOT_HIGH | PAD_CTL_HYS_NONE |	\
++				 PAD_CTL_PKE_ENABLE | PAD_CTL_47K_PU | 		\
++				 PAD_CTL_DRV_HIGH)
++
++#define NAND_PAD100K_CFG	(PAD_CTL_DRV_VOT_HIGH | PAD_CTL_HYS_NONE |	\
++				 PAD_CTL_PKE_ENABLE | PAD_CTL_100K_PU | 	\
++				 PAD_CTL_DRV_HIGH)
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_WE_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_WE_B, NAND_PAD47K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_RE_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_RE_B, NAND_PAD47K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_ALE , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_ALE , NAND_PAD47K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_CLE , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_CLE , NAND_PAD47K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_WP_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_WP_B, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_RB0 , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_RB0 , PAD_CTL_DRV_VOT_HIGH | 
++					PAD_CTL_HYS_NONE | PAD_CTL_PKE_ENABLE |
++					PAD_CTL_PUE_PULL | PAD_CTL_100K_PU);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_CS0, IOMUX_CONFIG_ALT0);
+ 
++	/* MX51_PIN_NANDF_RDY_INT */
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D0, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D0, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D1, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D1, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D2, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D2, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D3, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D3, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D4, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D4, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D5, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D5, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D6, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D6, NAND_PAD100K_CFG);
++
+ 	mxc_request_iomux(MX51_PIN_NANDF_D7, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D7, NAND_PAD100K_CFG);
+ 
+ 	writel(0, NFC_IPC);
+ 	NFC_SET_FW(1);
+diff -purN u-boot-2010.03.ori/include/asm-arm/arch-mx51/asm-offsets.h u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h
+--- u-boot-2010.03.ori/include/asm-arm/arch-mx51/asm-offsets.h	2011-01-25 22:43:22.000000000 +0100
++++ u-boot-2010.03/include/asm-arm/arch-mx51/asm-offsets.h	2011-02-03 23:08:33.000000000 +0100
+@@ -176,7 +176,7 @@
+ #define PAD_CTL_HYS_ENABLE (0x1 << 8)	/* Hysteresis enabled */
+ #define PAD_CTL_DDR_INPUT_CMOS (0x0 << 9)/* DDR input CMOS */
+ #define PAD_CTL_DDR_INPUT_DDR (0x1 << 9)/* DDR input DDR */
+-#define PAD_CTL_DRV_VOT_LOW (0x0 << 13) /* Low voltage mode */
+-#define PAD_CTL_DRV_VOT_HIGH (0x1 << 13)/* High voltage mode */
++#define PAD_CTL_DRV_VOT_HIGH (0x0 << 13) /* High voltage mode */
++#define PAD_CTL_DRV_VOT_LOW (0x1 << 13)/* Low voltage mode */
+ 
+ #endif /* __ASSEMBLY__ */
+diff -purN u-boot-2010.03.ori/include/asm-arm/arch-mx51/iomux.h u-boot-2010.03/include/asm-arm/arch-mx51/iomux.h
+--- u-boot-2010.03.ori/include/asm-arm/arch-mx51/iomux.h	2010-03-31 23:54:39.000000000 +0200
++++ u-boot-2010.03/include/asm-arm/arch-mx51/iomux.h	2011-02-03 23:08:48.000000000 +0100
+@@ -66,8 +66,8 @@ typedef enum iomux_pad_config {
+ 	PAD_CTL_HYS_ENABLE = 0x1 << 8,	/* Hysteresis enabled */
+ 	PAD_CTL_DDR_INPUT_CMOS = 0x0 << 9,/* DDR input CMOS */
+ 	PAD_CTL_DDR_INPUT_DDR = 0x1 << 9,/* DDR input DDR */
+-	PAD_CTL_DRV_VOT_LOW = 0x0 << 13, /* Low voltage mode */
+-	PAD_CTL_DRV_VOT_HIGH = 0x1 << 13,/* High voltage mode */
++	PAD_CTL_DRV_VOT_HIGH = 0x0 << 13, /* High voltage mode */
++	PAD_CTL_DRV_VOT_LOW = 0x1 << 13,/* Low voltage mode */
+ } iomux_pad_config_t;
+ 
+ /* various IOMUX input select register index */
+
