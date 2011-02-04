@@ -17,11 +17,11 @@ index 0a4dbdc..82122a9 100644
  
 -static const struct fb_videomode modedb[] = {
 +const struct fb_videomode modedb[] = {
-     {
+ 
  	/* 640x400 @ 70 Hz, 31.5 kHz hsync */
- 	NULL, 70, 640, 400, 39721, 40, 24, 39, 9, 96, 2,
-@@ -277,6 +277,11 @@ static const struct fb_videomode modedb[] = {
-     },
+ 	{ NULL, 70, 640, 400, 39721, 40, 24, 39, 9, 96, 2, 0,
+@@ -291,6 +291,11 @@ static const struct fb_videomode modedb[] = {
+ 		0, FB_VMODE_NONINTERLACED },
  };
  
 +const struct fb_videomode *fb_modes = modedb;
@@ -30,15 +30,15 @@ index 0a4dbdc..82122a9 100644
 +EXPORT_SYMBOL(num_fb_modes);
 +
  #ifdef CONFIG_FB_MODE_HELPERS
- const struct fb_videomode vesa_modes[] = {
- 	/* 0 640x350-85 VESA */
+ const struct fb_videomode cea_modes[64] = {
+ 	/* #1: 640x480p@59.94/60Hz */
 diff --git a/include/linux/fb.h b/include/linux/fb.h
 index d1631d3..e006172 100644
 --- a/include/linux/fb.h
 +++ b/include/linux/fb.h
-@@ -1151,6 +1151,9 @@ struct fb_videomode {
- extern const char *fb_mode_option;
+@@ -1154,6 +1154,9 @@ struct fb_videomode {
  extern const struct fb_videomode vesa_modes[];
+ extern const struct fb_videomode cea_modes[64];
  
 +extern const struct fb_videomode *fb_modes;
 +extern const int num_fb_modes;

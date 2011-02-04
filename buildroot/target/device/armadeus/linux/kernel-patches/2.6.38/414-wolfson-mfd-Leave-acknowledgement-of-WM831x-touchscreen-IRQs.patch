@@ -16,7 +16,7 @@ diff --git a/drivers/mfd/wm831x-irq.c b/drivers/mfd/wm831x-irq.c
 index 7a24c66..46db25b 100644
 --- a/drivers/mfd/wm831x-irq.c
 +++ b/drivers/mfd/wm831x-irq.c
-@@ -470,6 +470,9 @@ static irqreturn_t wm831x_irq_thread(int irq, void *data)
+@@ -481,6 +481,9 @@ static irqreturn_t wm831x_irq_thread(int irq, void *data)
  	}
  
  out:

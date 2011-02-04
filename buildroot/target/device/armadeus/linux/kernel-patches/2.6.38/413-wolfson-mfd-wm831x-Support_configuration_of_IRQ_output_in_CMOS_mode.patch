@@ -17,7 +17,7 @@ diff --git a/drivers/mfd/wm831x-irq.c b/drivers/mfd/wm831x-irq.c
 index 299437d..7a24c66 100644
 --- a/drivers/mfd/wm831x-irq.c
 +++ b/drivers/mfd/wm831x-irq.c
-@@ -506,6 +506,14 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
+@@ -517,6 +517,14 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
  		return 0;
  	}
  
@@ -36,7 +36,7 @@ diff --git a/include/linux/mfd/wm831x/pdata.h b/include/linux/mfd/wm831x/pdata.h
 index fd322ac..1ae8499 100644
 --- a/include/linux/mfd/wm831x/pdata.h
 +++ b/include/linux/mfd/wm831x/pdata.h
-@@ -108,6 +108,9 @@ struct wm831x_pdata {
+@@ -109,6 +109,9 @@ struct wm831x_pdata {
  	/** Called after subdevices are set up */
  	int (*post_init)(struct wm831x *wm831x);
  

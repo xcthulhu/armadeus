@@ -1,10 +1,10 @@
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-01-21 09:27:13.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-01-21 09:58:04.000000000 +0100
-@@ -101,4 +101,17 @@
- 	  Include support for Genesi Efika MX nettop. This includes specific
- 	  configurations for the board and its peripherals.
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-03 17:17:35.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-04 09:33:17.000000000 +0100
+@@ -162,4 +162,17 @@
+ 	  Include support for MX50 reference design platform (RDP) board. This
+ 	  includes specific configurations for the board and its peripherals.
  
 +config MACH_APF51
 +	bool "Support Armadeus APF51"
@@ -20,23 +20,23 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 +	  includes specific configurations for the board and its peripherals.
 +
  endif
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2010-12-14 09:55:53.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-01-21 09:58:04.000000000 +0100
-@@ -6,6 +6,7 @@
- obj-y   := cpu.o mm.o clock-mx51-mx53.o devices.o
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-04 09:33:17.000000000 +0100
+@@ -7,6 +7,7 @@
+ obj-$(CONFIG_SOC_IMX50) += mm-mx50.o
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
 +obj-$(CONFIG_MACH_APF51) += board-apf51.o
  obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
  obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
- obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
+ obj-$(CONFIG_MACH_MX53_EVK) += board-mx53_evk.o
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c	2011-01-21 09:43:53.000000000 +0100
-@@ -0,0 +1,423 @@
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c	2011-02-04 09:23:58.000000000 +0100
+@@ -0,0 +1,418 @@
 +/*
 + * Support for APF51 System On Module
 + * Copyright (C) 2010-2011 Armadeus Systems
@@ -121,54 +121,45 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	MX51_PAD_EIM_D23__USBH2_DATA7,
 +
 +	/* FEC */
-+	MX51_PAD_EIM_EB2__FEC_MDIO,
-+	MX51_PAD_EIM_EB3__FEC_RDAT1,
-+	MX51_PAD_EIM_CS2__FEC_RDAT2,
-+	MX51_PAD_EIM_CS3__FEC_RDAT3,
-+	MX51_PAD_EIM_CS4__FEC_RX_ER,
-+	MX51_PAD_EIM_CS5__FEC_CRS,
-+	MX51_PAD_NANDF_RB2__FEC_COL,
-+	MX51_PAD_NANDF_RB3__FEC_RXCLK,
-+	MX51_PAD_NANDF_RB6__FEC_RDAT0,
-+	MX51_PAD_NANDF_RB7__FEC_TDAT0,
-+	MX51_PAD_NANDF_CS2__FEC_TX_ER,
-+	MX51_PAD_NANDF_CS3__FEC_MDC,
-+	MX51_PAD_NANDF_CS4__FEC_TDAT1,
-+	MX51_PAD_NANDF_CS5__FEC_TDAT2,
-+	MX51_PAD_NANDF_CS6__FEC_TDAT3,
-+	MX51_PAD_NANDF_CS7__FEC_TX_EN,
-+	MX51_PAD_NANDF_RDY_INT__FEC_TX_CLK,
++	MX51_PAD_DI_GP3__FEC_TX_ER,
++	MX51_PAD_DI2_PIN4__FEC_CRS,
++	MX51_PAD_DI2_PIN2__FEC_MDC,
++	MX51_PAD_DI2_PIN3__FEC_MDIO,
++	MX51_PAD_DI2_DISP_CLK__FEC_RDATA1,
++	MX51_PAD_DI_GP4__FEC_RDATA2,
++	MX51_PAD_DISP2_DAT0__FEC_RDATA3,
++	MX51_PAD_DISP2_DAT1__FEC_RX_ER,
++	MX51_PAD_DISP2_DAT6__FEC_TDATA1,
++	MX51_PAD_DISP2_DAT7__FEC_TDATA2,
++	MX51_PAD_DISP2_DAT8__FEC_TDATA3,
++	MX51_PAD_DISP2_DAT9__FEC_TX_EN,
++	MX51_PAD_DISP2_DAT10__FEC_COL,
++	MX51_PAD_DISP2_DAT11__FEC_RX_CLK,
++	MX51_PAD_DISP2_DAT12__FEC_RX_DV,
++	MX51_PAD_DISP2_DAT13__FEC_TX_CLK,
++	MX51_PAD_DISP2_DAT14__FEC_RDATA0,
++	MX51_PAD_DISP2_DAT15__FEC_TDATA0,
 +
 +	/* FEC PHY reset line */
-+	MX51_PAD_DI1_PIN11__GPIO_3_0,
++	MX51_PAD_DI1_PIN11__GPIO3_0,
 +
 +	/* I2C2 */
 +	MX51_PAD_EIM_D24__I2C2_SDA,
 +	MX51_PAD_EIM_D27__I2C2_SCL,
 +
 +	/* WM8311 IRQ */
-+	MX51_PAD_GPIO_1_7__GPIO_1_7,
++	MX51_PAD_GPIO1_7__GPIO1_7,
 +	/* WM8311 TOUCH_DETECT */
-+	MX51_PAD_GPIO_1_4__GPIO_1_4,
++	MX51_PAD_GPIO1_4__GPIO1_4,
 +	/* WM8311 TOUCH_EOC */
-+	MX51_PAD_GPIO_1_6__GPIO_1_6,
++	MX51_PAD_GPIO1_6__GPIO1_6,
 +};
++
 +
 +/* Serial ports */
-+#if defined(CONFIG_SERIAL_IMX) || defined(CONFIG_SERIAL_IMX_MODULE)
 +static struct imxuart_platform_data uart_pdata = {
-+// 	.flags = IMXUART_HAVE_RTSCTS,
++	.flags = 0, /*IMXUART_HAVE_RTSCTS,*/
 +};
-+
-+static inline void apf51_init_imx_uart(void)
-+{
-+	imx51_add_imx_uart(1, &uart_pdata);
-+}
-+#else /* !SERIAL_IMX */
-+static inline void apf51_init_imx_uart(void)
-+{
-+}
-+#endif /* SERIAL_IMX */
 +
 +
 +/* APF51 has a 512MB+ 3,3V Micron NAND flash, 8 bits width */
@@ -232,17 +223,17 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +
 +static int apf51_usbh1_usbh2_active(void)
 +{
-+	iomux_v3_cfg_t phyreset_gpio = MX51_PAD_DI1_PIN12__GPIO_3_1;
++	iomux_v3_cfg_t phyreset_gpio = MX51_PAD_DI1_PIN12__GPIO3_1;
 +	int ret;
 +#if 0
-+	iomux_v3_cfg_t usbh1stp_gpio = MX51_PAD_USBH1_STP__GPIO_1_27;
++	iomux_v3_cfg_t usbh1stp_gpio = MX51_PAD_USBH1_STP__GPIO1_27;
 +
 +	/* Set USBH1_STP to GPIO and toggle it */
 +	mxc_iomux_v3_setup_pad(&usbh1stp_gpio);
 +	ret = gpio_request(APF51_USBH1_STP, "usbh1_stp");
 +
 +	if (ret) {
-+		pr_debug("failed to get MX51_PAD_USBH1_STP__GPIO_1_27: %d\n", ret);
++		pr_debug("failed to get MX51_PAD_USBH1_STP__GPIO1_27: %d\n", ret);
 +		return ret;
 +	}
 +	gpio_direction_output(APF51_USBH1_STP, 0);
@@ -252,11 +243,11 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +#endif
 +
 +	/* De-assert USB PHY RESETB */
-+	mxc_iomux_v3_setup_pad(&phyreset_gpio);
++	mxc_iomux_v3_setup_pad(phyreset_gpio);
 +	ret = gpio_request(APF51_USB_HOST_PHY_RESET, "phy_reset");
 +
 +	if (ret) {
-+		pr_debug("failed to get MX51_PAD_DI1_PIN12__GPIO_3_1: %d\n", ret);
++		pr_debug("failed to get MX51_PAD_DI1_PIN12__GPIO3_1: %d\n", ret);
 +		return ret;
 +	}
 +	gpio_direction_output(APF51_USB_HOST_PHY_RESET, 1);
@@ -290,6 +281,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	__raw_writel(v, usbother_base + MXC_USB_PHY_CTR_FUNC2_OFFSET);
 +	iounmap(usb_base);
 +
++	printk("--- initialize_otg_port\n");
 +	return 0;
 +}
 +
@@ -321,7 +313,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +
 +#if 0
 +/* Done in U-Boot, kept here just in case... ;-) */
-+#define APF51_FEC_PHY_RESET (2*32+0)	/* GPIO_3_0 */
++#define APF51_FEC_PHY_RESET (2*32+0)	/* GPIO3_0 */
 +static inline void apf51_fec_reset(void)
 +{
 +	int ret;
@@ -344,9 +336,9 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	.bitrate = 400000,
 +};
 +
-+#define APF51_WM8311_IRQ_GPIO		(0*32 + 7)	/* GPIO_1_7 */
-+#define APF51_WM8311_TOUCH_DETECT_GPIO	(0*32 + 4)	/* GPIO_1_4 */
-+#define APF51_WM8311_TOUCH_EOC_GPIO	(0*32 + 6)	/* GPIO_1_6 */
++#define APF51_WM8311_IRQ_GPIO		(0*32 + 7)	/* GPIO1_7 */
++#define APF51_WM8311_TOUCH_DETECT_GPIO	(0*32 + 4)	/* GPIO1_4 */
++#define APF51_WM8311_TOUCH_EOC_GPIO	(0*32 + 6)	/* GPIO1_6 */
 +
 +static int apf51_wm8311_pre_init(struct wm831x *wm831x)
 +{
@@ -417,7 +409,7 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	mxc_iomux_v3_setup_multiple_pads(apf51_pads,
 +					ARRAY_SIZE(apf51_pads));
 +
-+	apf51_init_imx_uart();
++	imx51_add_imx_uart(1, &uart_pdata);
 +
 +	imx51_add_imx_i2c(1, &apf51_i2c_data);
 +	i2c_register_board_info(1, apf51_i2c1_devices, ARRAY_SIZE(apf51_i2c1_devices));
@@ -430,12 +422,15 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	apf51_usbh1_usbh2_active();
 +	mxc_register_device(&mxc_usbh1_device, &usbh1_config);
 +	mxc_register_device(&mxc_usbh2_device, &usbh2_config);
++#if 0
++	/* Currently system boot freezes when OTG is activated :-( */
 +	if (otg_mode_host)
 +		mxc_register_device(&mxc_usbdr_host_device, &apf51_usbdr_host_config);
 +	else {
 +		initialize_otg_port(NULL);
 +		mxc_register_device(&mxc_usbdr_udc_device, &apf51_usbdr_device_pdata);
 +	}
++#endif
 +
 +#ifdef CONFIG_MACH_APF51_HAS_BASEBOARD
 +	apf51_baseboard_init();
@@ -460,21 +455,21 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/board-apf51.c
 +	.timer = &apf51_timer,
 +MACHINE_END
 +
-Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2010-12-14 09:55:53.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h	2011-01-21 09:27:13.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-03 17:17:35.000000000 +0100
 @@ -63,6 +63,7 @@
  #define MX3X_UART1_BASE_ADDR	0x43F90000
  #define MX3X_UART2_BASE_ADDR	0x43F94000
  #define MX51_UART1_BASE_ADDR	0x73fbc000
 +#define MX51_UART2_BASE_ADDR	0x73fc0000
+ #define MX50_UART1_BASE_ADDR	0x53fbc000
+ #define MX53_UART1_BASE_ADDR	0x53fbc000
  
- static __inline__ void __arch_decomp_setup(unsigned long arch_id)
- {
-@@ -102,6 +103,9 @@
- 	case MACH_TYPE_EUKREA_CPUIMX51SD:
- 		uart_base = MX51_UART1_BASE_ADDR;
+@@ -110,6 +111,9 @@
+ 	case MACH_TYPE_MX53_EVK:
+ 		uart_base = MX53_UART1_BASE_ADDR;
  		break;
 +	case MACH_TYPE_APF51:
 +		uart_base = MX51_UART2_BASE_ADDR;
@@ -482,11 +477,11 @@ Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/uncompress.h
  	default:
  		break;
  	}
-Index: linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/irqs.h
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/include/mach/irqs.h	2010-12-14 09:55:53.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/plat-mxc/include/mach/irqs.h	2011-01-21 09:27:13.000000000 +0100
-@@ -47,6 +47,8 @@
+--- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-03 17:17:35.000000000 +0100
+@@ -51,6 +51,8 @@
  
  #ifdef CONFIG_MACH_MX31ADS_WM1133_EV1
  #define MXC_BOARD_IRQS  80

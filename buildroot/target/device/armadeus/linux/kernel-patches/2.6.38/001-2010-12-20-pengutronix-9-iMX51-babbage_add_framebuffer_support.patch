@@ -8,7 +8,7 @@ diff --git a/arch/arm/mach-mx5/Kconfig b/arch/arm/mach-mx5/Kconfig
 index 5011f42..2a936b7 100644
 --- a/arch/arm/mach-mx5/Kconfig
 +++ b/arch/arm/mach-mx5/Kconfig
-@@ -22,6 +22,7 @@ config MACH_MX51_BABBAGE
+@@ -42,6 +42,7 @@ config MACH_MX51_BABBAGE
  	select IMX_HAVE_PLATFORM_IMX_UART
  	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
  	select IMX_HAVE_PLATFORM_SPI_IMX
@@ -36,8 +36,8 @@ index 368a315..6c1576c 100644
  #include <asm/setup.h>
 @@ -158,6 +160,41 @@ static iomux_v3_cfg_t mx51babbage_pads[] = {
  	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
- 	MX51_PAD_CSPI1_SS0__GPIO_4_24,
- 	MX51_PAD_CSPI1_SS1__GPIO_4_25,
+ 	MX51_PAD_CSPI1_SS0__GPIO4_24,
+ 	MX51_PAD_CSPI1_SS1__GPIO4_25,
 +
 +	/* Display */
 +	MX51_PAD_DISPB2_SER_DIN__GPIO_3_5,

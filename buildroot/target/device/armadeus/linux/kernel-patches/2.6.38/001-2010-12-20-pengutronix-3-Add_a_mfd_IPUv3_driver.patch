@@ -111,9 +111,9 @@ diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
 index 3a1493b..3c81879 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -606,6 +606,13 @@ config MFD_VX855
- 	  VIA VX855/VX875 south bridge. You will need to enable the vx855_spi
- 	  and/or vx855_gpio drivers for this to do anything useful.
+@@ -624,6 +624,13 @@ config MFD_VX855
+ 	  driver connects the radio-wl1273 V4L2 module and the wl1273
+ 	  audio codec.
  
 +config MFD_IMX_IPU_V3
 +	tristate "Support the Image Processing Unit (IPU) found on the i.MX51"
@@ -129,10 +129,10 @@ diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
 index f54b365..7873b13 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -81,3 +81,4 @@ obj-$(CONFIG_MFD_JANZ_CMODIO)	+= janz-cmodio.o
- obj-$(CONFIG_MFD_JZ4740_ADC)	+= jz4740-adc.o
- obj-$(CONFIG_MFD_TPS6586X)	+= tps6586x.o
+@@ -83,3 +83,4 @@ obj-$(CONFIG_MFD_JANZ_CMODIO)	+= janz-cmodio.o
  obj-$(CONFIG_MFD_VX855)		+= vx855.o
+ obj-$(CONFIG_MFD_WL1273_CORE)	+= wl1273-core.o
+ obj-$(CONFIG_MFD_CS5535)	+= cs5535-mfd.o
 +obj-$(CONFIG_MFD_IMX_IPU_V3)	+= imx-ipu-v3/
 diff --git a/drivers/mfd/imx-ipu-v3/Makefile b/drivers/mfd/imx-ipu-v3/Makefile
 new file mode 100644

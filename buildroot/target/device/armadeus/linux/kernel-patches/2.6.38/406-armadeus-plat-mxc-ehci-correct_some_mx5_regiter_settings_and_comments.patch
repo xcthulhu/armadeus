@@ -5,19 +5,12 @@ Strange that with or without this changes HOST1 seems to work the same way...
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.38-alpha/arch/arm/plat-mxc/ehci.c
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/ehci.c
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/plat-mxc/ehci.c	2010-12-29 10:33:52.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/plat-mxc/ehci.c	2010-12-29 10:35:35.000000000 +0100
-@@ -296,14 +296,14 @@
- 			/*Host ULPI */
- 			v = __raw_readl(usbother_base + MXC_USBCTRL_OFFSET);
- 			if (flags & MXC_EHCI_WAKEUP_ENABLED)
--				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disable */
-+				v |= (MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr enabled */
- 			else
--				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disable */
-+				v &= ~(MXC_H1_UCTRL_H1WIE_BIT | MXC_H1_UCTRL_H1UIE_BIT);/* HOST1 wakeup/ULPI intr disabled */
+--- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/ehci.c	2011-02-03 17:38:54.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/ehci.c	2011-02-03 17:39:20.000000000 +0100
+@@ -320,9 +320,9 @@
+ 			}
  
  			if (flags & MXC_EHCI_POWER_PINS_ENABLED)
 -				v &= ~MXC_H1_UCTRL_H1PM_BIT; /* HOST1 power mask used*/

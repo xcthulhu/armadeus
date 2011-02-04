@@ -7,7 +7,7 @@ diff --git a/arch/arm/plat-mxc/include/mach/memory.h b/arch/arm/plat-mxc/include
 index 9a9a000..987b42a 100644
 --- a/arch/arm/plat-mxc/include/mach/memory.h
 +++ b/arch/arm/plat-mxc/include/mach/memory.h
-@@ -40,7 +40,8 @@
+@@ -43,7 +43,8 @@
  # endif
  #endif
  

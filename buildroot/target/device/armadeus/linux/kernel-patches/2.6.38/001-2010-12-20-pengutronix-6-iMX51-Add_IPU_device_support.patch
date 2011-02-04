@@ -12,10 +12,10 @@ diff --git a/arch/arm/mach-mx5/devices-imx51.h b/arch/arm/mach-mx5/devices-imx51
 index 6302e46..851c114 100644
 --- a/arch/arm/mach-mx5/devices-imx51.h
 +++ b/arch/arm/mach-mx5/devices-imx51.h
-@@ -47,3 +47,7 @@ extern const struct imx_spi_imx_data imx51_ecspi_data[] __initconst;
- extern const struct imx_imx2_wdt_data imx51_imx2_wdt_data[] __initconst;
- #define imx51_add_imx2_wdt(id, pdata)	\
- 	imx_add_imx2_wdt(&imx51_imx2_wdt_data[id])
+@@ -55,3 +55,7 @@ extern const struct imx_spi_imx_data imx51_ecspi_data[] __initconst;
+ extern const struct imx_imx_keypad_data imx51_imx_keypad_data __initconst;
+ #define imx51_add_imx_keypad(pdata)	\
+ 	imx_add_imx_keypad(&imx51_imx_keypad_data, pdata)
 +
 +extern const struct imx_ipuv3_data imx51_ipuv3_data __initconst;
 +#define imx51_add_ipuv3(pdata)	\

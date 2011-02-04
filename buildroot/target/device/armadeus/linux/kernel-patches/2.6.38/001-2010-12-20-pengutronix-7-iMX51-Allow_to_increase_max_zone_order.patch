@@ -12,7 +12,7 @@ diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
 index db524e7..b3e070e 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1410,8 +1410,8 @@ config SPARSE_IRQ
+@@ -1451,8 +1451,8 @@ config SPARSE_IRQ
  source "mm/Kconfig"
  
  config FORCE_MAX_ZONEORDER

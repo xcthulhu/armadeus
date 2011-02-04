@@ -2,11 +2,11 @@ Add APF51Dev baseboard support.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Kconfig	2011-02-02 15:24:30.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig	2011-02-03 09:20:56.000000000 +0100
-@@ -106,12 +106,30 @@
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-03 17:38:54.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-03 17:39:23.000000000 +0100
+@@ -167,12 +167,30 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
  	select IMX_HAVE_PLATFORM_IMX_I2C
@@ -39,22 +39,22 @@ Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Kconfig
 +endchoice
 +
  endif
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-alpha.orig/arch/arm/mach-mx5/Makefile	2011-02-02 15:24:30.000000000 +0100
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/Makefile	2011-02-03 09:20:56.000000000 +0100
-@@ -7,6 +7,7 @@
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-03 17:38:54.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-03 17:39:23.000000000 +0100
+@@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
  obj-$(CONFIG_MACH_APF51) += board-apf51.o
 +obj-$(CONFIG_MACH_APF51_DEV) += apf51dev-baseboard.o
  obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
  obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
- obj-$(CONFIG_MACH_EUKREA_CPUIMX51) += board-cpuimx51.o
-Index: linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c
+ obj-$(CONFIG_MACH_MX53_EVK) += board-mx53_evk.o
+Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-alpha/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-03 09:11:40.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-03 17:39:23.000000000 +0100
 @@ -0,0 +1,272 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
