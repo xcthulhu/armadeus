@@ -1,0 +1,39 @@
+From 250d2222baa74f5f5833a83716824f668fb7b958 Mon Sep 17 00:00:00 2001
+From: Daniel Nyström <daniel.nystrom@timeterminal.se>
+Date: Tue, 21 Dec 2010 18:06:56 +0000
+Subject: tslib: Enable raw module in ts.conf
+
+By default there is no module activated in ts.conf. According to the
+ts.conf previously attached in the tslib package dir (which was never
+installed) the default module of choice was the raw module.
+
+This patch enables the raw module in the ts.conf file in the tslib
+source tree, which will be installed in the target.
+
+Signed-off-by: Daniel Nyström <daniel.nystrom@timeterminal.se>
+Acked-by: Paulius Zaleckas <paulius.zaleckas@gmail.com>
+Acked-by: Luca Ceresoli <luca@lucaceresoli.net>
+Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
+---
+diff --git a/package/tslib/tslib-enable_raw_module.patch b/package/tslib/tslib-enable_raw_module.patch
+new file mode 100644
+index 0000000..cb89338
+--- a/dev/null
++++ b/package/tslib/tslib-enable_raw_module.patch
+@@ -0,0 +1,14 @@
++Enable raw module by default
++
++Signed-off-by: Daniel Nyström <daniel.nystrom@timeterminal.se>
++
++diff -Naur tslib-e000d35a.orig/etc/ts.conf tslib-e000d35a/etc/ts.conf
++--- tslib-e000d35a.orig/etc/ts.conf	2010-12-21 18:54:45.000000000 +0100
+++++ tslib-e000d35a/etc/ts.conf	2010-12-21 18:55:03.000000000 +0100
++@@ -1,5 +1,5 @@
++ # Uncomment if you wish to use the linux input layer event interface
++-# module_raw input
+++module_raw input
++ 
++ # Uncomment if you're using a Sharp Zaurus SL-5500/SL-5000d
++ # module_raw collie
+--
+cgit v0.8.2.1
