@@ -6,11 +6,11 @@ On APF27 based designs some UART pins are missing:
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.36/drivers/serial/Kconfig
+Index: linux-2.6.36/drivers/tty/serial/Kconfig
 ===================================================================
---- linux-2.6.36.orig/drivers/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
-+++ linux-2.6.36/drivers/serial/Kconfig	2010-11-26 10:31:53.000000000 +0100
-@@ -915,7 +915,7 @@
+--- linux-2.6.36.orig/drivers/tty/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
++++ linux-2.6.36/drivers/tty/serial/Kconfig	2010-11-26 10:31:53.000000000 +0100
+@@ -847,7 +847,7 @@
  
  config SERIAL_IMX_UART1_USE_RTSCTS
  	bool "Uses UART1 RTS/CTS lines"
@@ -19,7 +19,7 @@ Index: linux-2.6.36/drivers/serial/Kconfig
  
  config SERIAL_IMX_UART2
  	bool "UART2"
-@@ -935,11 +935,11 @@
+@@ -867,11 +867,11 @@
  
  config SERIAL_IMX_UART3_USE_RTSCTS
  	bool "Uses UART3 RTS/CTS lines"

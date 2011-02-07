@@ -1,6 +1,6 @@
 --- a/arch/arm/plat-mxc/include/mach/imxfb.h	2010-11-06 18:56:13.000000000 +0100
 +++ b/arch/arm/plat-mxc/include/mach/imxfb.h	2010-11-06 18:56:47.000000000 +0100
-@@ -79,3 +79,13 @@
+@@ -81,4 +81,14 @@
  };
  
  void set_imx_fb_info(struct imx_fb_platform_data *);
@@ -14,3 +14,4 @@
 +};
 +extern void imxbl_limit_intensity(int limit);
 +
+ #endif /* ifndef __MACH_IMXFB_H__ */

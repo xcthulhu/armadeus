@@ -1,16 +1,19 @@
-Index: linux-2.6.36/arch/arm/mach-imx/Kconfig
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
 ===================================================================
---- linux-2.6.36.orig/arch/arm/mach-imx/Kconfig	2010-12-22 14:33:04.000000000 +0100
-+++ linux-2.6.36/arch/arm/mach-imx/Kconfig	2010-12-22 14:33:05.000000000 +0100
-@@ -241,4 +241,115 @@
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Kconfig	2011-02-07 09:30:20.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig	2011-02-07 11:17:54.000000000 +0100
+@@ -350,4 +350,121 @@
  	  Include support for i-MXT (aka td60) platform. This
  	  includes specific configurations for the module and its peripherals.
  
 +config MACH_APF27
 +	bool "Armadeus Systems APF27"
-+	depends on MACH_MX27
++	select SOC_IMX27
++	select IMX_HAVE_PLATFORM_IMX2_WDT
++	select IMX_HAVE_PLATFORM_IMX_FB
 +	select IMX_HAVE_PLATFORM_IMX_I2C
 +	select IMX_HAVE_PLATFORM_IMX_UART
++	select IMX_HAVE_PLATFORM_MXC_EHCI
 +	select IMX_HAVE_PLATFORM_MXC_NAND
 +	select IMX_HAVE_PLATFORM_SPI_IMX
 +	select MXC_ULPI if USB_ULPI
@@ -39,6 +42,9 @@ Index: linux-2.6.36/arch/arm/mach-imx/Kconfig
 +	depends on MACH_APF27
 +	select SERIAL_IMX_UART3
 +	select MACH_APF27_HAS_BASEBOARD
++	select IMX_HAVE_PLATFORM_IMX_FB
++	select IMX_HAVE_PLATFORM_MXC_MMC
++	select IMX_HAVE_PLATFORM_IMX_SSI
 +	help
 +	  This selects the APF27Dev as baseboard. You have to manually
 +	  activates the devices you want to use if you have the "Full"
@@ -118,11 +124,11 @@ Index: linux-2.6.36/arch/arm/mach-imx/Kconfig
 +	depends on MACH_APF27_DEV_EXT_WIRELESS_GPS
 +
  endif
-Index: linux-2.6.36/arch/arm/mach-imx/Makefile
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/Makefile
 ===================================================================
---- linux-2.6.36.orig/arch/arm/mach-imx/Makefile	2010-12-22 14:33:04.000000000 +0100
-+++ linux-2.6.36/arch/arm/mach-imx/Makefile	2010-12-22 14:33:05.000000000 +0100
-@@ -33,3 +33,7 @@
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Makefile	2011-02-07 09:30:20.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Makefile	2011-02-07 09:30:21.000000000 +0100
+@@ -38,3 +38,7 @@
  obj-$(CONFIG_MACH_EUKREA_MBIMX27_BASEBOARD) += eukrea_mbimx27-baseboard.o
  obj-$(CONFIG_MACH_PCA100) += mach-pca100.o
  obj-$(CONFIG_MACH_MXT_TD60) += mach-mxt_td60.o

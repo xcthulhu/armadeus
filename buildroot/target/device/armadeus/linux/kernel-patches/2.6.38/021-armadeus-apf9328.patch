@@ -1,7 +1,7 @@
-Index: linux-2.6.36/arch/arm/mach-imx/apf9328.c
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf9328.c	2011-01-11 19:33:04.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf9328.c	2011-02-07 09:30:20.000000000 +0100
 @@ -0,0 +1,587 @@
 +/*
 + * linux/arch/arm/mach-imx/apf9328.c
@@ -590,10 +590,10 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf9328.c
 +	.timer        = &apf9328_timer,
 +	.init_machine = apf9328_init,
 +MACHINE_END
-Index: linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h	2011-01-11 19:25:49.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h	2011-02-07 11:01:05.000000000 +0100
 @@ -0,0 +1,329 @@
 +/*
 + *
@@ -618,12 +618,12 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h
 +#include <mach/imxfb.h>
 +#ifdef CONFIG_ARCH_MX1
 +# include <mach/mx1.h>
-+# define LCDC_BASE_ADDR	MX1_LCDC_BASE_ADDR
-+# define MXC_IO_ADDRESS	MX1_IO_ADDRESS
++# define LCDC_BASE_ADDR		MX1_LCDC_BASE_ADDR
++# define MXC_IO_ADDRESS		MX1_IO_ADDRESS
 +#else
 +# include <mach/mx2x.h>
-+# define LCDC_BASE_ADDR		MX2x_LCDC_BASE_ADDR
-+# define MXC_IO_ADDRESS(x)	(IMX_IO_ADDRESS(x, MX2x_AIPI))
++# define LCDC_BASE_ADDR		MX27_LCDC_BASE_ADDR
++# define MXC_IO_ADDRESS		MX27_IO_ADDRESS
 +#endif
 +
 +#define LCDISR_EOF	(1 << 1)
@@ -924,10 +924,10 @@ Index: linux-2.6.36/arch/arm/mach-imx/apf9328_lcd_config.h
 +#endif /* CONFIG_FB_IMX */
 +
 +#endif /* APF_LCD_CONFIG_H */
-Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf9328.h
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/board-apf9328.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf9328.h	2011-01-11 10:22:59.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/board-apf9328.h	2011-02-07 09:30:20.000000000 +0100
 @@ -0,0 +1,71 @@
 +/*
 + * linux/include/asm-arm/arch-imx/apf9328.h
@@ -1000,10 +1000,10 @@ Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf9328.h
 +#endif
 +
 +#endif /* __ASM_ARCH_APF9328_H */
-Index: linux-2.6.36/arch/arm/mach-imx/apf9328-dev.c
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/mach-imx/apf9328-dev.c	2011-01-11 19:37:25.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf9328-dev.c	2011-02-07 09:30:20.000000000 +0100
 @@ -0,0 +1,325 @@
 +/*
 + * apf9328-dev.c

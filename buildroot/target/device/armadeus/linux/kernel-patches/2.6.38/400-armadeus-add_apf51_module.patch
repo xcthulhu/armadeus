@@ -481,10 +481,10 @@ Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h
 ===================================================================
 --- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-01 04:05:49.000000000 +0100
 +++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-03 17:17:35.000000000 +0100
-@@ -51,6 +51,8 @@
- 
- #ifdef CONFIG_MACH_MX31ADS_WM1133_EV1
+@@ -53,6 +53,8 @@
  #define MXC_BOARD_IRQS  80
+ #elif defined CONFIG_MACH_APF27
+ #define MXC_BOARD_IRQS  32
 +#elif defined CONFIG_MACH_APF51
 +#define MXC_BOARD_IRQS	70	/* WM8311 eats a lot of them */
  #else

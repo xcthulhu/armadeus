@@ -3,11 +3,11 @@ functionnalities, so it can be interesting to individually select them or not.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.36/drivers/serial/Kconfig
+Index: linux-2.6.36/drivers/tty/serial/Kconfig
 ===================================================================
---- linux-2.6.36.orig/drivers/serial/Kconfig	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/drivers/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
-@@ -906,6 +906,67 @@
+--- linux-2.6.36.orig/drivers/tty/serial/Kconfig	2010-10-20 22:30:22.000000000 +0200
++++ linux-2.6.36/drivers/tty/serial/Kconfig	2010-11-26 10:16:02.000000000 +0100
+@@ -838,6 +838,67 @@
  	  your boot loader (lilo or loadlin) about how to pass options to the
  	  kernel at boot time.)
  
