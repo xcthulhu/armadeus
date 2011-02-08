@@ -193,7 +193,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		.left_margin 	= 96, .right_margin = 96,
 +		.upper_margin 	= 0x14, .lower_margin = 0x15,
 +		.hsync_len 	= 64, .vsync_len = 4,
-+		.sync 		= FB_SYNC_CLK_IDLE_EN,
++		.sync 		= FB_SYNC_CLK_IDLE_EN | FB_SYNC_CLK_LAT_FALL,
 +		.vmode 		= FB_VMODE_NONINTERLACED,
 +		.flag 		= 0,
 +        },
