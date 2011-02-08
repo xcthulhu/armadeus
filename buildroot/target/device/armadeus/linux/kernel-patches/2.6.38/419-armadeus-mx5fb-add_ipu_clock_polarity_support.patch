@@ -1,0 +1,25 @@
+Add clock polarity support for non interlaced mode to ipu.
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.38-rc3/drivers/mfd/imx-ipu-v3/ipu-di.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/mfd/imx-ipu-v3/ipu-di.orig	2011-02-08 14:49:41.000000000 +0100
++++ linux-2.6.38-rc3/drivers/mfd/imx-ipu-v3/ipu-di.c	2011-02-08 15:09:30.000000000 +0100
+@@ -113,6 +113,7 @@ enum di_sync_wave {
+ #define DI_DW_GEN_COMPONENT_SIZE_OFFSET		16
+ 
+ #define DI_GEN_DI_CLK_EXT			(1 << 20)
++#define DI_GEN_DI_CLK_POL			(1 << 17)
+ #define DI_GEN_POLARITY_1			(1 << 0)
+ #define DI_GEN_POLARITY_2			(1 << 1)
+ #define DI_GEN_POLARITY_3			(1 << 2)
+@@ -405,6 +406,8 @@ int ipu_di_init_sync_panel(struct ipu_di
+ 			di_gen |= DI_GEN_POLARITY_2;
+ 		if (sig->Vsync_pol)
+ 			di_gen |= DI_GEN_POLARITY_3;
++		if (sig->clk_pol)
++			di_gen |= DI_GEN_DI_CLK_POL;
+ 	}
+ 
+ 	ipu_di_write(di, di_gen, DI_GENERAL);
