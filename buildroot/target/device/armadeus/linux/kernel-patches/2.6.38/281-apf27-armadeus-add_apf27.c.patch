@@ -154,8 +154,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +
 +    int rc = phy_read(phydev, LAN87xx_SPECIAL_REG);
 +
-+    phy_write(phydev,LAN87xx_SPECIAL_REG, rc | 0xE0);
-+    phy_write(phydev,MII_BMCR, BMCR_RESET);
++    phy_write(phydev, LAN87xx_SPECIAL_REG, rc | 0xE0);
++    phy_write(phydev, MII_BMCR, BMCR_RESET);
 +    udelay(1000);
 +    return 0;
 +}
@@ -693,7 +693,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +	/* APF27 has an onboard Ethernet PHY */
 +#ifdef CONFIG_FEC
 +	/* bring lan8700 out of power down mode */
-+	phy_register_fixup_for_id("1:1f", lan8700_wakeup );
++	phy_register_fixup_for_id("1:1f", lan8700_wakeup);
 +	imx27_add_fec(NULL);
 +#endif
 +
@@ -760,8 +760,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-02-07 16:56:02.000000000 +0100
-@@ -0,0 +1,935 @@
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-02-08 09:46:00.000000000 +0100
+@@ -0,0 +1,933 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -1630,10 +1630,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +
 +	imx27_add_imx_ssi(0, &apf27_ssi0_pdata);
 +
-+#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +	/* APF27Dev has an LCD connector */
 +	apf27_lcd_init();
-+#endif
 +
 +	apf27dev_pwr_ctrl_gpio_active();
 +
@@ -1700,14 +1698,14 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-02-07 16:56:02.000000000 +0100
-@@ -0,0 +1,226 @@
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-02-08 17:38:31.000000000 +0100
+@@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
 + *
 + * Handle support of multiple LCDs on the APF27Dev
 + *
-+ * Copyright (C) 2009 Armadeus Systems
++ * Copyright (C) 2009-2011 Armadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Nicolas Colombain <nicolas.colombain@armadeus.com>
 + *
@@ -1739,58 +1737,36 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 +
 +#include "devices-imx27.h"
 +
-+#ifdef CONFIG_IMX_BACKLIGHT_MODULE
-+#define CONFIG_IMX_BACKLIGHT
-+#endif
++static int apf27_fb_init(struct platform_device*);
 +
-+#ifdef CONFIG_FB_IMX_OPTREX_T51638D084_TFT
-+# define LCD_NAME	"Optrex-T51638D084"
-+/* PS is used as LCD Display ON/OFF */
-+# define LCD_USES_PS_AS_GPIO
-+/* activates LCD at startup */
-+# define LCD_POWER_GPIO	(GPIO_PORTA | 26)
-+# define LCD_POWER_ON	(1)
-+#endif
++static void apf_lcd_custom_init(const char *name)
++{
++	if (!name)
++		return;
 +
-+#ifdef CONFIG_FB_IMX_SHARP_LQ057_TFT
-+# define LCD_NAME	"Sharp-LQ057"
-+/* CONTRAST is used as backlight's ON/OFF */
-+# define LCD_USES_CONTRAST_AS_GPIO
-+/* activates backlight at startup */
-+# define LCD_BACKLIGHT_GPIO	(GPIO_PORTA | 30)
-+# define LCD_BACKLIGHT_ON	(0)
-+#endif
-+
-+#ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+# define LCD_NAME	"Sharp-LQ043"
-+/* OE_ACD is used as LCD Display ON/OFF */
-+# define LCD_USES_OE_ACD_AS_GPIO
-+/* activates LCD at startup */
-+# define LCD_POWER_GPIO (GPIO_PORTA | 31)
-+# define LCD_POWER_ON	(1)
-+#endif
-+
-+#ifdef CONFIG_FB_IMX_CHIMEI_LW700AT9003_TFT
-+# define LCD_NAME	"Chimei-LW700AT9003"
-+#endif
-+
-+#ifdef CONFIG_FB_IMX_HITACHI_TX12D17VM1BDP_TFT
-+# define LCD_NAME	"Hitachi-TX12D17VM1BDP"
-+#endif
-+
-+/* Please always let the custom LCD in this (last) position: */
-+#ifdef CONFIG_FB_IMX_CUSTOM_LCD
-+# define LCD_NAME	"Custom" /* Clone of LQ043 by default */
-+/* OE_ACD is used as LCD Display ON/OFF */
-+# define LCD_USES_OE_ACD_AS_GPIO
-+/* activates LCD at startup */
-+# define LCD_POWER_GPIO (GPIO_PORTA | 31)
-+# define LCD_POWER_ON	(1)
-+#endif
++	if (!strcmp("Optrex-T51638D084", name)) {
++		/* Activates LCD at startup: PS is used as LCD Display ON/OFF */
++		gpio_set_value((GPIO_PORTA | 26), 1);
++		mxc_gpio_mode(GPIO_PORTA | 26 | GPIO_OUT | GPIO_GPIO);
++	} else if (!strcmp("Sharp-LQ057", name)) {
++		/* Activates backlight at startup: CONTRAST is used as backlight's ON/OFF */
++		gpio_set_value((GPIO_PORTA | 30), 0);
++		mxc_gpio_mode(GPIO_PORTA | 30 | GPIO_OUT | GPIO_GPIO);
++	} else if (!strcmp("Sharp-LQ043", name)) {
++		/* Activates LCD at startup: OE_ACD is used as LCD Display ON/OFF */
++		gpio_set_value((GPIO_PORTA | 31), 1);
++		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT | GPIO_GPIO);
++	} else if (!strcmp("Custom", name)) {
++		/* Please always let the custom LCD in this (last) position: */
++		;
++	} else {
++		/* "Chimei-LW700AT9003" / "Hitachi-TX12D17VM1BDP" */
++		;
++	}
 +/* Please let these 2 lines here
 +*/
++}
 +
-+#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +static int mxc_lcd_pins[] = {
 +	PA5_PF_LSCLK,
 +	PA6_PF_LD0,
@@ -1813,95 +1789,40 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 +	PA23_PF_LD17,
 +	PA24_PF_REV,
 +	PA25_PF_CLS,
-+#ifdef LCD_USES_PS_AS_GPIO
-+	(GPIO_PORTA | 26 | GPIO_OUT | GPIO_GPIO),
-+#else
 +	PA26_PF_PS,
-+#endif
 +	PA27_PF_SPL_SPR,
 +	PA28_PF_HSYNC,
 +	PA29_PF_VSYNC,
-+#ifdef LCD_USES_CONTRAST_AS_GPIO
-+	(GPIO_PORTA | 30 | GPIO_OUT | GPIO_GPIO),
-+#else
 +	PA30_PF_CONTRAST,
-+#endif
-+#ifdef LCD_USES_OE_ACD_AS_GPIO
-+	(GPIO_PORTA | 31 | GPIO_OUT | GPIO_GPIO)
-+#else
 +	PA31_PF_OE_ACD
-+#endif
 +};
-+
-+static int apf27_fb_init(struct platform_device *pdev)
-+{
-+#ifdef CONFIG_FB_MXC
-+# ifdef LCD_POWER_GPIO
-+	/* activates LCD power at startup */
-+	gpio_set_value(LCD_POWER_GPIO, LCD_POWER_ON);
-+# endif
-+# ifdef LCD_BACKLIGHT_GPIO
-+	/* activates backlight at startup */
-+	gpio_set_value(LCD_BACKLIGHT_GPIO, LCD_BACKLIGHT_ON);
-+# endif
-+#endif
-+
-+	return mxc_gpio_setup_multiple_pins(mxc_lcd_pins, ARRAY_SIZE(mxc_lcd_pins), "LCD");
-+}
-+
-+#ifdef CONFIG_FB_MXC
-+static int
-+#else
-+static void
-+#endif
-+apf27_fb_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_lcd_pins, ARRAY_SIZE(mxc_lcd_pins));
-+
-+#ifdef CONFIG_FB_MXC
-+	return 0;
-+#endif
-+}
 +
 +/* Freescale driver */
 +#ifdef CONFIG_FB_MXC
 +static struct mxc_fb_platform_data apf_fb_data = {
 +	.mode = LCD_NAME,
 +	.init = apf27_fb_init,
-+	.exit = apf27_fb_exit,
 +};
 +/* Mainline driver */
 +#elif CONFIG_FB_IMX
 +#include "../mach-imx/apf9328_lcd_config.h"
 +#endif
 +
-+# ifdef CONFIG_IMX_BACKLIGHT
-+static struct imxbl_machinfo imx_bl_machinfo = {
-+	.max_intensity      = 0xff,
-+	.default_intensity  = 0x90,
-+	.limit_mask         = 0x7f, /* when battery is low */
-+	/* set_bl_intensity = put a function here if you want to overload default one, */
-+};
++static int apf27_fb_init(struct platform_device *pdev)
++{
++	int ret;
 +
-+static struct platform_device imxbl_device = {
-+	.name       = "imx-bl",
-+	.dev        = {
-+		/* .parent = &imxfb_device.dev, crash kernel even if EXPORT_SYMBOL() is done in generic.c */
-+		.platform_data  = &imx_bl_machinfo,
-+	},
-+	.id        = 0,
-+};
-+# endif /* CONFIG_IMX_BACKLIGHT */
++	ret = mxc_gpio_setup_multiple_pins(mxc_lcd_pins,
++						ARRAY_SIZE(mxc_lcd_pins), "LCD");
++	if (ret)
++		return ret;
 +
-+#endif /* CONFIG_FB_MXC || CONFIG_FB_IMX */
++	apf_lcd_custom_init(lcd_name);
 +
++	return 0;
++}
 +
-+#ifdef CONFIG_IMX_BACKLIGHT
-+static struct platform_device *platform_devices[] __initdata = {
-+	&imxbl_device,
-+};
-+#endif
-+
++#ifdef CONFIG_FB_MXC
 +void apf27_lcd_startup(void)
 +{
 +	int i;
@@ -1917,15 +1838,34 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 +	/* wait a few milli */
 +	mdelay(100);
 +}
++#endif
 +
 +void apf27_lcd_init(void)
 +{
-+#ifdef CONFIG_IMX_BACKLIGHT
-+	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
++	char *opt, *name = NULL, *options = NULL;
++
++	if (fb_get_options("imxfb", &options))
++		goto end;
++
++	if (!options || !*options)
++		goto end;
++
++	while ((opt = strsep(&options, ",")) != NULL) {
++		if (!*opt)
++			continue;
++		else
++			name = opt;
++	}
++
++#ifdef CONFIG_FB_MXC
++	apf27_lcd_startup();
 +#endif
-+#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
++	apf_set_lcd_name(name);
++	apf_fb_set_default_contrast();
++
 +	imx27_add_imx_fb(&apf_fb_data);
-+#endif
++end:
++	return;
 +}
 +
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
@@ -2126,7 +2066,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-07 17:05:16.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-08 18:23:26.000000000 +0100
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
