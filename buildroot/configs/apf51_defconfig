@@ -1,9 +1,9 @@
 #
 # Automatically generated make config: don't edit
-# Thu Feb  3 14:38:43 2011
+# Buildroot version: 2010.11-00288-g974fb11-dirty
+# Tue Feb  8 18:54:12 2011
 #
 BR2_HAVE_DOT_CONFIG=y
-BR2_VERSION="2010.11-git"
 BR2_arm=y
 # BR2_armeb is not set
 # BR2_avr32 is not set
@@ -132,11 +132,6 @@ BR2_OPTIMIZE_S=y
 # BR2_PREFER_STATIC_LIB is not set
 # BR2_HAVE_DOCUMENTATION is not set
 # BR2_HAVE_DEVFILES is not set
-
-#
-# Advanced
-#
-BR2_CONFIG_CACHE=y
 
 #
 # Toolchain
@@ -592,6 +587,7 @@ BR2_PACKAGE_ZLIB=y
 # BR2_PACKAGE_FREETYPE is not set
 # BR2_PACKAGE_JPEG is not set
 # BR2_PACKAGE_LIBART is not set
+# BR2_PACKAGE_GDK_PIXBUF is not set
 # BR2_PACKAGE_LIBPNG is not set
 # BR2_PACKAGE_LIBSVGTINY is not set
 # BR2_PACKAGE_LIBUNGIF is not set
@@ -786,6 +782,8 @@ BR2_PACKAGE_NANO=y
 #
 BR2_ROOTFS_POST_BUILD_SCRIPT=""
 BR2_ROOTFS_DEVICE_TABLE="target/device/armadeus/rootfs/device_table.txt"
+BR2_ROOTFS_SKELETON_DEFAULT=y
+# BR2_ROOTFS_SKELETON_CUSTOM is not set
 # BR2_TARGET_ROOTFS_CRAMFS is not set
 # BR2_TARGET_ROOTFS_CLOOP is not set
 # BR2_TARGET_ROOTFS_EXT2 is not set
