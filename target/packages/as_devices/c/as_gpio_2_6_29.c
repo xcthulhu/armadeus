@@ -31,7 +31,6 @@
 #include "as_helpers.h"
 #include "as_gpio.h"
 
-
 /* IOCTL */
 /* direction: 1 output, 0 input */
 #define GPIORDDIRECTION	_IOR(PP_IOCTL, 0xF0, int)
@@ -89,7 +88,7 @@ struct as_gpio_device *as_gpio_open(char aPortChar, int aPinNum)
 
     dev->port_letter = aPortChar;
     dev->fpin = file;
-    dev->pin_num = aPinNum;
+    dev->pin_number = aPinNum;
 
     value = 1;
     ret = ioctl(dev->fpin, GPIOWRMODE, &value); /* set pin on gpio mode */
@@ -221,44 +220,6 @@ int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev)
-{
-    int ret = 0;
-    int portval;
-
-    ret = ioctl(aDev->fpin, GPIORDPULLUP, &portval);
-    if (ret < 0) {
-        ERROR("can't get pullup value\n");
-        return ret;
-    }
-
-    if (portval != 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-/*------------------------------------------------------------------------------*/
-
-int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev, int aValue)
-{
-    int ret = 0;
-    int portval;
-
-    portval = (aValue != 0)?1:0;
-
-    ret = ioctl(aDev->fpin, GPIOWRPULLUP, &portval);
-    if (ret < 0) {
-        ERROR("Can't set pullup value\n");
-        return ret;
-    }
-
-    return 0;
-}
-
-/*------------------------------------------------------------------------------*/
-
 int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev)
 {
     int ret = 0;
@@ -310,7 +271,7 @@ int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev, int aMode)
 
 int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev)
 {
-    return aDev->pin_num;
+    return aDev->pin_number;
 }
 
 /*------------------------------------------------------------------------------*/
