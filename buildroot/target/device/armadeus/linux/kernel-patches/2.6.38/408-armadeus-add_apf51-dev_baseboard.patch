@@ -55,7 +55,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-03 17:39:23.000000000 +0100
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,280 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -87,6 +87,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#include "devices-imx51.h"
 +#include "devices.h"
 +
++#define APF51_GPIO_SPECIAL_PAD_CTRL (PAD_CTL_DSE_HIGH | PAD_CTL_PKE | PAD_CTL_SRE_FAST | PAD_CTL_PUE)
++
 +static iomux_v3_cfg_t apf51dev_pads[] = {
 +	/* SD1 */
 +	MX51_PAD_SD1_CMD__SD1_CMD,
@@ -95,6 +97,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_SD1_DATA1__SD1_DATA1,
 +	MX51_PAD_SD1_DATA2__SD1_DATA2,
 +	MX51_PAD_SD1_DATA3__SD1_DATA3,
++	(_MX51_PAD_EIM_D16__GPIO2_0 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +
 +	/* SD2 (WiFi) */
 +	MX51_PAD_SD2_CMD__SD2_CMD,
@@ -307,12 +310,17 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#endif
 +};
 +
++static struct esdhc_platform_data edshc0_pdata = {
++	.wp_gpio = 0,	/* write protect pin */
++	.cd_gpio = (GPIO_PORTB | 0),	/* card detect pin */
++};
++
 +void __init apf51_baseboard_init(void)
 +{
 +	mxc_iomux_v3_setup_multiple_pads(apf51dev_pads,
 +					ARRAY_SIZE(apf51dev_pads));
 +
-+	imx51_add_sdhci_esdhc_imx(0, NULL);
++	imx51_add_sdhci_esdhc_imx(0, &edshc0_pdata);
 +	imx51_add_sdhci_esdhc_imx(1, NULL);
 +
 +	spi_register_board_info(apf51dev_spi1_board_info,
