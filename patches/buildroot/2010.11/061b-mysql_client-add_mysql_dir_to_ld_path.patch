@@ -1,0 +1,16 @@
+Index: buildroot/package/mysql_client/mysql_client.mk
+===================================================================
+--- buildroot.orig/package/mysql_client/mysql_client.mk	2011-02-10 10:31:06.000000000 +0100
++++ buildroot/package/mysql_client/mysql_client.mk	2011-02-10 10:40:44.000000000 +0100
+@@ -36,6 +36,11 @@
+ 	rm -rf $(TARGET_DIR)/usr/mysql-test $(TARGET_DIR)/usr/sql-bench
+ endef
+ 
++define MYSQL_CLIENT_ADD_MYSQL_LIB_PATH
++	echo "/usr/lib/mysql" >> $(TARGET_DIR)/etc/ld.so.conf
++endef
++
+ MYSQL_CLIENT_POST_INSTALL_TARGET_HOOKS += MYSQL_CLIENT_REMOVE_TEST_PROGS
++MYSQL_CLIENT_POST_INSTALL_TARGET_HOOKS += MYSQL_CLIENT_ADD_MYSQL_LIB_PATH
+ 
+ $(eval $(call AUTOTARGETS,package,mysql_client))
