@@ -9,7 +9,11 @@ STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 OBJ = as_pwm.o
 OBJ += as_i2c.o
+ifeq ($(ARMADEUS_LINUX_VERSION),"2.6.29.6")
+OBJ += as_gpio_2_6_29.o
+else
 OBJ += as_gpio.o
+endif
 OBJ += as_93lcxx.o
 OBJ += as_spi.o
 #OBJ += as_max1027.o

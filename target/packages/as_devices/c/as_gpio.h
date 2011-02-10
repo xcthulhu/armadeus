@@ -39,9 +39,10 @@ extern "C" {
  * Store gpio parameters
  */
 struct as_gpio_device {
-    unsigned char port_letter;
-    int pin_num;
-    int fpin;       /* pin file */
+    int port_num;
+    char port_letter;
+    int pin_number;
+    int fpin;       /* pin file for 2.6.29 interface*/
     int irq_mode;
 };
 
@@ -101,25 +102,6 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev);
 int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
                                        int aDelay_s,
                                        int aDelay_us);
-
-/** @brief Get pin pull-up value
- *
- * @param aDev as_gpio_device pointer structure
- * @param aPinNum pin number
- *
- * @return pin pull up value if positive or null, error if negative
- */
-int32_t as_gpio_get_pullup_value(struct as_gpio_device *aDev);
-
-/** @brief Set pin pull-up value
- *
- * @param aDev as_gpio_device pointer structure
- * @param aValue value of pin (1 or 0)
- *
- * @return error if negative
- */
-int32_t as_gpio_set_pullup_value(struct as_gpio_device *aDev,
-                                 int aValue);
 
 /** @brief Set pin irq mode
  *
