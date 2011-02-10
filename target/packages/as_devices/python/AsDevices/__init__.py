@@ -36,3 +36,4 @@ __author__ = "Fabien Marteau <fabien.marteau@armadeus.com>"
 
 import wrappers
 from AsGpio import *
+from AsAdc  import *
