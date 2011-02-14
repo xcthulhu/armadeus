@@ -1,0 +1,93 @@
+Add better support for SDIO cards to MX2/MX3 SDHC driver:
+* correct a bug (?) in DMA for SDIO CMD53 Multi-Blocks transfers
+* activate or not INT_DAT0 (why ?)
+ 
+To do: split in 2 and rebase with 2.6.3x before eventually sending upstream.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-rc3/drivers/mmc/host/mxcmmc.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/mmc/host/mxcmmc.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/mmc/host/mxcmmc.c	2011-02-14 17:54:39.000000000 +0100
+@@ -132,6 +132,7 @@
+ 	unsigned int		dma_nents;
+ 	unsigned int		datasize;
+ 	unsigned int		dma_dir;
++	unsigned int		blen;
+ 
+ 	u16			rev_no;
+ 	unsigned int		cmdat;
+@@ -216,6 +217,7 @@
+ 	struct scatterlist *sg;
+ 	int i;
+ 	int ret;
++	unsigned int blen;
+ #endif
+ 	if (data->flags & MMC_DATA_STREAM)
+ 		nob = 0xffff;
+@@ -227,6 +229,9 @@
+ 	writew(blksz, host->base + MMC_REG_BLK_LEN);
+ 	host->datasize = datasize;
+ 
++	/*printk(KERN_DEBUG "transfer data(%s): size=%d (%dx%d)\n",
++			data->flags & MMC_DATA_READ ? "read" : "write",
++			datasize, nob, blksz);*/
+ #ifdef HAS_DMA
+ 	for_each_sg(data->sg, sg, data->sg_len, i) {
+ 		if (sg->offset & 3 || sg->length & 3) {
+@@ -235,6 +240,26 @@
+ 		}
+ 	}
+ 
++	/*
++	 * When block size is smaller than buffer size (for example during
++	 * Multi-Block transfers with CMD53 on some SDIO cards), SDHC seems
++	 * to wipe some data out if DMA burst length == buffer size.
++	 * So adapt burst length dynamically.
++	 */
++	if (host->cmdat & CMD_DAT_CONT_BUS_WIDTH_4) { /* 4 bits mode */
++		blen = min(blksz, (unsigned int)64);
++		if (blen==64)
++			blen = 0; /* (64 bytes --> reg value  0) */
++	} else { /* 1 bit mode */
++		blen = min(blksz, (unsigned int)16);
++	}
++	if (blen != host->blen) {
++		imx_dma_config_burstlen(host->dma, blen);
++		host->blen = blen;
++		dev_dbg(mmc_dev(host->mmc), "changing DMA burst len to %d\n",
++				blen);
++	}
++
+ 	if (data->flags & MMC_DATA_READ) {
+ 		host->dma_dir = DMA_FROM_DEVICE;
+ 		host->dma_nents = dma_map_sg(mmc_dev(host->mmc), data->sg,
+@@ -701,6 +726,7 @@
+ static void mxcmci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct mxcmci_host *host = mmc_priv(mmc);
++	u32 reg;
+ #ifdef HAS_DMA
+ 	unsigned int blen;
+ 	/*
+@@ -713,11 +739,17 @@
+ 		blen = 16;
+ 
+ 	imx_dma_config_burstlen(host->dma, blen);
++	host->blen = blen;
+ #endif
+-	if (ios->bus_width == MMC_BUS_WIDTH_4)
++	reg = readl(host->base + MMC_REG_INT_CNTR);
++	if (ios->bus_width == MMC_BUS_WIDTH_4) {
+ 		host->cmdat |= CMD_DAT_CONT_BUS_WIDTH_4;
+-	else
++		reg |= INT_DAT0_EN;
++	} else {
+ 		host->cmdat &= ~CMD_DAT_CONT_BUS_WIDTH_4;
++		reg &= ~INT_DAT0_EN;
++	}
++	writel(reg, host->base + MMC_REG_INT_CNTR);
+ 
+ 	if (host->power_mode != ios->power_mode) {
+ 		mxcmci_set_power(host, ios->power_mode, ios->vdd);
