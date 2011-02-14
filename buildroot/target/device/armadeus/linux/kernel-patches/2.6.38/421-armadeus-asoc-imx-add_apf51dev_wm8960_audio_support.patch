@@ -1,0 +1,192 @@
+Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c	2011-02-11 17:23:17.000000000 +0100
+@@ -0,0 +1,151 @@
++/*
++ * ASoC audio for APF51Dev (i.MX51 using Wolfson's WM8960)
++ *
++ * Copyright (C) 2011 Armadeus Systems
++ *
++ * Based on code which is:
++ * Copyright 2009 Sascha Hauer, Pengutronix <s.hauer@pengutronix.de>
++ *
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/device.h>
++#include <linux/i2c.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++#include <asm/mach-types.h>
++
++#include "../codecs/wm8960.h"
++#include "imx-ssi.h"
++
++
++#define FMT_PLAYBACK (SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | \
++		SND_SOC_DAIFMT_CBM_CFM)
++#define FMT_CAPTURE (SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_NB_NF | \
++		SND_SOC_DAIFMT_CBM_CFM)
++
++static int apf51dev_sound_hifi_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	struct snd_soc_dai *codec_dai = rtd->codec_dai;
++	int ret;
++
++	/* TO BE CHECKED !! */
++
++	/* set cpu DAI configuration */
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		ret = snd_soc_dai_set_fmt(codec_dai, FMT_PLAYBACK);
++		if (ret)
++			return ret;
++		ret = snd_soc_dai_set_fmt(cpu_dai, FMT_PLAYBACK);
++		if (ret)
++			return ret;
++	} else {
++		ret = snd_soc_dai_set_fmt(codec_dai, FMT_CAPTURE);
++		if (ret)
++			return ret;
++		ret = snd_soc_dai_set_fmt(cpu_dai, FMT_CAPTURE);
++		if (ret)
++			return ret;
++		ret = snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, 4, 32);
++		if (ret)
++			return ret;
++	}
++
++	ret = snd_soc_dai_set_tdm_slot(cpu_dai, 0x0, 0xfffffffc, 4, 32);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static int apf51dev_sound_hifi_hw_free(struct snd_pcm_substream *substream)
++{
++	return 0;
++}
++
++static struct snd_soc_ops apf51dev_sound_hifi_ops = {
++	.hw_params = apf51dev_sound_hifi_hw_params,
++	.hw_free = apf51dev_sound_hifi_hw_free,
++};
++
++static int apf51dev_sound_probe(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static int apf51dev_sound_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static struct snd_soc_dai_link apf51dev_dai_wm8960[] = {
++	{
++		.name = "WM8960 Playback",
++		.stream_name	= "Playback",
++		.codec_dai_name	= "wm8960-hifi",
++		.cpu_dai_name	= "imx-ssi-dai.0",
++		.ops		= &apf51dev_sound_hifi_ops,
++	}, {
++		.name = "WM8960 Capture",
++		.stream_name	= "Capture",
++		.codec_dai_name	= "wm8960-hifi",
++		.cpu_dai_name	= "imx-ssi-dai.0",
++		.ops		= &apf51dev_sound_hifi_ops,
++	},
++};
++
++static struct snd_soc_card apf51dev_soc_card = {
++	.name		= "APF51Dev-WM8960-audio",
++	.probe		= apf51dev_sound_probe,
++	.remove		= apf51dev_sound_remove,
++	.dai_link	= apf51dev_dai_wm8960,
++	.num_links	= ARRAY_SIZE(apf51dev_dai_wm8960),
++};
++
++static struct platform_device *apf51dev_snd_device;
++
++static int __init apf51dev_sound_init(void)
++{
++	int ret;
++
++	if (!machine_is_apf51())
++		/* return happy. We might run on a totally different machine */
++		return 0;
++
++	apf51dev_snd_device = platform_device_alloc("soc-audio", -1);
++	if (!apf51dev_snd_device)
++		return -ENOMEM;
++
++	platform_set_drvdata(apf51dev_snd_device, &apf51dev_soc_card);
++	ret = platform_device_add(apf51dev_snd_device);
++
++	if (ret) {
++		printk(KERN_ERR "ASoC: APF51Dev platform device allocation failed\n");
++		platform_device_put(apf51dev_snd_device);
++	}
++
++	return ret;
++}
++
++static void __exit apf51dev_sound_exit(void)
++{
++	platform_device_unregister(apf51dev_snd_device);
++}
++
++late_initcall(apf51dev_sound_init);
++module_exit(apf51dev_sound_exit);
++
++MODULE_AUTHOR("Julien Boibessot <julien.boibessot@armadeus.com>");
++MODULE_DESCRIPTION("APF51Dev ALSA SoC driver");
++MODULE_LICENSE("GPL");
+Index: linux-2.6.38-rc3/sound/soc/imx/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/sound/soc/imx/Kconfig	2011-02-11 16:53:17.000000000 +0100
++++ linux-2.6.38-rc3/sound/soc/imx/Kconfig	2011-02-11 17:01:12.000000000 +0100
+@@ -52,4 +52,14 @@
+ 	  Enable I2S based access to the TLV320AIC23B codec attached
+ 	  to the SSI interface
+ 
++config SND_SOC_APF51_DEV_WM8960
++	tristate "Soc Audio support for Armadeus Systems APF51Dev board"
++	depends on MACH_APF51_DEV
++	select SND_SOC_WM8960
++	select SND_MXC_SOC_SSI
++	select SND_MXC_SOC_FIQ
++	help
++	  Say Y if you want to add support for SoC audio on APF51 + APF51Dev
++	  combo
++
+ endif	# SND_IMX_SOC
+Index: linux-2.6.38-rc3/sound/soc/imx/Makefile
+===================================================================
+--- linux-2.6.38-rc3.orig/sound/soc/imx/Makefile	2011-02-11 16:57:38.000000000 +0100
++++ linux-2.6.38-rc3/sound/soc/imx/Makefile	2011-02-11 17:01:26.000000000 +0100
+@@ -8,10 +8,12 @@
+ obj-$(CONFIG_SND_MXC_SOC_MX2) += snd-soc-imx-mx2.o
+ 
+ # i.MX Machine Support
++snd-soc-apf51dev-wm8960-objs := apf51dev-wm8960.o
+ snd-soc-eukrea-tlv320-objs := eukrea-tlv320.o
+ snd-soc-phycore-ac97-objs := phycore-ac97.o
+ snd-soc-wm1133-ev1-objs := wm1133-ev1.o
+ 
++obj-$(CONFIG_SND_SOC_APF51_DEV_WM8960) += snd-soc-apf51dev-wm8960.o
+ obj-$(CONFIG_SND_SOC_EUKREA_TLV320) += snd-soc-eukrea-tlv320.o
+ obj-$(CONFIG_SND_SOC_PHYCORE_AC97) += snd-soc-phycore-ac97.o
+ obj-$(CONFIG_SND_MXC_SOC_WM1133_EV1) += snd-soc-wm1133-ev1.o

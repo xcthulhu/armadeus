@@ -40,6 +40,15 @@
  */
 int as_write_buffer(int fd, int value);
 
+/** @brief Write an int value as string in a /sys/ or /proc interface
+ *
+ * @param fd: file handler
+ * @param string: char pointer to string to write
+ *
+ * @return number of chars written, negative value on error
+ */
+int as_write_buffer_string(int fd, char *string);
+
 /** @brief read a string value in file
  *
  * @param fd: file handler

@@ -1,7 +1,7 @@
 /*
 **    THE ARMadeus Systems
 **
-**    Copyright (C) 2010, 2011  The armadeus systems team
+**    Copyright (C) 2011  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
 **
 ** This library is free software; you can redistribute it and/or
@@ -22,22 +22,11 @@
 #include <Python.h>
 
 /* Init module */
-void initAsGpio_wrap();
+void initAsAdc_wrap();
 
 /*********************/
 /* Functions wrapped */
 /*********************/
-static PyObject * gpio_open(PyObject *self, PyObject *args);
-
-static PyObject * setPinDirection(PyObject *self, PyObject *args);
-static PyObject * getPinDirection(PyObject *self, PyObject *args);
-static PyObject * setPinValue(PyObject *self, PyObject *args);
-static PyObject * getPinValue(PyObject *self, PyObject *args);
-
-static PyObject * blockingGetPinValue(PyObject *self, PyObject *args);
-static PyObject * getIrqMode(PyObject *self, PyObject *args);
-static PyObject * setIrqMode(PyObject *self, PyObject *args);
-static PyObject * getPinNumber(PyObject *self, PyObject *args);
-static PyObject * getPortLetter(PyObject *self, PyObject *args);
-
-static PyObject * gpio_close(PyObject *self, PyObject *args);
+static PyObject * adc_open(PyObject *self, PyObject *args);
+static PyObject * getValueInMillivolts(PyObject *self, PyObject *args);
+static PyObject * adc_close(PyObject *self, PyObject *args);

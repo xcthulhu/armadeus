@@ -30,6 +30,9 @@
 
 #define SIZE_OF_BUFF 50
 
+#undef ERROR
+#define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
+
 
 int as_write_buffer(int fd, int value)
 {
@@ -37,12 +40,33 @@ int as_write_buffer(int fd, int value)
     char buffer[16];
     int buffer_len;
 
-    ret = snprintf(buffer, 16, "%d", value);
+    ret = snprintf(buffer, 16, "%d\n", value);
     if (ret < 0)
         return ret;
 
     buffer_len = strlen(buffer);
     ret = write(fd, buffer, buffer_len);
+//XXX    if (ret < 0) {
+//XXX        ERROR("Can't write file, buffer lenght %d $>%s<$\n", buffer_len, buffer);
+//XXX        return ret;
+//XXX    }
+    ret = lseek(fd, 0, SEEK_SET);
+    if (ret < 0) {
+        ERROR("lseek error\n");
+        return ret;
+    }
+
+    return buffer_len;
+}
+
+int as_write_buffer_string(int fd, char *string)
+{
+    int ret;
+    char buffer[SIZE_OF_BUFF];
+    int string_len;
+
+    string_len = strlen(string);
+    ret = write(fd, string, string_len);
     if (ret < 0) {
         ERROR("Can't write file ");
         return ret;
@@ -53,7 +77,7 @@ int as_write_buffer(int fd, int value)
         return ret;
     }
 
-    return buffer_len;
+    return string_len;
 }
 
 int as_read_buffer(int fd, char *buf, int size)

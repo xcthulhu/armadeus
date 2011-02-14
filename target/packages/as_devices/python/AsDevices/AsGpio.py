@@ -70,6 +70,15 @@ class AsGpio:
             except Exception, e:
                 raise AsGpioError(str(e))
 
+        def getPinDirection(self):
+            """ Set period in us
+                \param aDirection pin direction 0:input 1:output
+            """
+            try:
+                return wrapper.getPinDirection(self.__device)
+            except Exception, e:
+                raise AsGpioError(str(e))
+
         def setPinValue(self, aValue):
             """ Set pin value
                 \param aValue value to write
@@ -96,24 +105,6 @@ class AsGpio:
                 return wrapper.blockingGetPinValue(self.__device,
                                                 aDelay_s,
                                                 aDelay_us)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def getPullupValue(self):
-            """ Get pullup value
-                \param return pin value
-            """
-            try:
-                return wrapper.getPullupValue(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def setPullupValue(self, aValue):
-            """ Set pullup value
-                \param aValue value 0:no pullup 1:pullup
-            """
-            try:
-                return wrapper.setPullupValue(self.__device, aValue)
             except Exception, e:
                 raise AsGpioError(str(e))
 

@@ -1,19 +1,19 @@
 /*
 **    The ARMadeus Project
-** 
-**    Copyright (C) 2010  The armadeus systems team 
+**
+**    Copyright (C) 2010  The armadeus systems team
 **    Fabien Marteau <fabien.marteau@armadeus.com>
-** 
+**
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
 ** License as published by the Free Software Foundation; either
 ** version 2.1 of the License, or (at your option) any later version.
-** 
+**
 ** This library is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ** Lesser General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -26,11 +26,10 @@
 static PyMethodDef AsGpio_wrap_methods[] = {
     {"gpio_open", gpio_open, METH_VARARGS, "Initialize gpio"},
     {"setPinDirection", setPinDirection, METH_VARARGS, "Set pin direction"},
+    {"getPinDirection", getPinDirection, METH_VARARGS, "Get pin direction"},
     {"setPinValue", setPinValue, METH_VARARGS, "Set pin value"},
     {"getPinValue", getPinValue, METH_VARARGS, "Get pin value"},
     {"blockingGetPinValue", blockingGetPinValue, METH_VARARGS, "Blocking read pin value"},
-    {"setPullupValue", setPullupValue, METH_VARARGS, "Set pull up value"},
-    {"getPullupValue", getPullupValue, METH_VARARGS, "Get pull up value"},
     {"getIrqMode", getIrqMode, METH_VARARGS, "Get IRQ Mode"},
     {"setIrqMode", setIrqMode, METH_VARARGS, "Set IRQ Mode"},
     {"getPortLetter", getPortLetter, METH_VARARGS, "Get port letter"},
@@ -48,7 +47,7 @@ void initAsGpio_wrap() /* called on first import */
 /** @brief Initialize pin port access
  * @param aPortChar character port in UPPER case
  * @param aPinNum pin number on port
- * @return PyObject 
+ * @return PyObject
  */
 static PyObject * gpio_open(PyObject *self, PyObject *args)
 {
@@ -66,17 +65,17 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-    
+
     dev = as_gpio_open(aPortChar, aPinNum);
     if (dev == NULL)
     {
-        snprintf(buff, 300, 
+        snprintf(buff, 300,
                 "Initialization error P%c%d. Is kernel module loaded ?",
                 aPortChar, aPinNum);
         PyErr_SetString(PyExc_IOError,buff);
         return NULL;
     }
-    
+
     ret = Py_BuildValue("l", (long)dev);
 
     return ret;
@@ -87,7 +86,7 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
  * @param aFdev as_gpio_device structure pointer
  * @param aDirection direction 0:input 1:output
  *
- * @return error if negative value 
+ * @return error if negative value
  */
 static PyObject * setPinDirection(PyObject *self, PyObject *args)
 {
@@ -98,7 +97,7 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "li", 
+    if (!PyArg_ParseTuple(args, "li",
                           (long *)&aFdev,
                           &aDirection))
     {
@@ -118,12 +117,38 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
     return Py_BuildValue("i", ret);
 }
 
-/** @brief Set pin value 
+static PyObject * getPinDirection(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_gpio_device *aFdev;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+
+    ret = as_gpio_get_pin_direction(aFdev);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't get pin direction");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", ret);
+}
+
+/** @brief Set pin value
  *
  * @param aFdev as_gpio_device structure pointer
  * @param aValue value of pin (1 or 0)
  *
- * @return error if negative 
+ * @return error if negative
  */
 static PyObject * setPinValue(PyObject *self, PyObject *args)
 {
@@ -140,7 +165,7 @@ static PyObject * setPinValue(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_set_pin_value(aFdev, aValue);
     if (ret < 0)
     {
@@ -174,7 +199,7 @@ static PyObject * getPinValue(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_get_pin_value(aFdev);
     if (ret < 0)
     {
@@ -213,79 +238,13 @@ static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_blocking_get_pin_value(aFdev, aDelay_s, aDelay_us);
     if (ret == -10)
     {
         PyErr_SetString(PyExc_IOError, "TIMEOUT");
         return NULL;
     }
-    if (ret < 0)
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "Can't get pin value");
-        return NULL;
-    }
-
-    return Py_BuildValue("i", ret);
-}
-
-/** @brief Get pin pull-up value
- *
- * @param aFdev as_gpio_device structure pointer
- *
- * @return pin value if positive or null, error if negative
- */
-static PyObject * getPullupValue(PyObject *self, PyObject *args)
-{
-    /* parameters */
-    struct as_gpio_device *aFdev;
-
-    int ret;
-
-    /* Get arguments */
-    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "Wrong parameters.");
-        return NULL;
-    }
-   
-    ret = as_gpio_get_pullup_value(aFdev);
-    if (ret < 0)
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "Can't get pin value");
-        return NULL;
-    }
-
-    return Py_BuildValue("i", ret);
-}
-
-/** @brief Set pin pull-up value
- *
- * @param aFdev as_gpio_device structure pointer
- * @param aValue pull-up value 0:off 1:on
- *
- * @return pin value if positive or null, error if negative
- */
-static PyObject * setPullupValue(PyObject *self, PyObject *args)
-{
-    /* parameters */
-    struct as_gpio_device *aFdev;
-    int aValue;
-
-    int ret;
-
-    /* Get arguments */
-    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aValue))
-    {
-        PyErr_SetString(PyExc_IOError,
-                        "Wrong parameters.");
-        return NULL;
-    }
-   
-    ret = as_gpio_set_pullup_value(aFdev, aValue);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,
@@ -318,7 +277,7 @@ static PyObject * setIrqMode(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_set_irq_mode(aFdev, aMode);
     if (ret < 0)
     {
@@ -350,7 +309,7 @@ static PyObject * getIrqMode(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_get_irq_mode(aFdev);
     if (ret < 0)
     {
@@ -382,7 +341,7 @@ static PyObject * getPinNumber(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_get_pin_num(aFdev);
     if (ret < 0)
     {
@@ -415,7 +374,7 @@ static PyObject * getPortLetter(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_get_port_letter(aFdev);
     if (ret < 0)
     {
@@ -450,7 +409,7 @@ static PyObject * gpio_close(PyObject *self, PyObject *args)
                         "Wrong parameters.");
         return NULL;
     }
-   
+
     ret = as_gpio_close(aFdev);
     if (ret < 0)
     {

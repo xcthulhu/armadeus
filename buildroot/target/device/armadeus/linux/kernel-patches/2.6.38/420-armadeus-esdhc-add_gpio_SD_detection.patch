@@ -1,0 +1,148 @@
+Add support for GPIO SD detection
+
+Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+
+Index: linux-2.6.38-rc3/drivers/mmc/host/sdhci-esdhc-imx.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/mmc/host/sdhci-esdhc-imx.c	2011-02-08 14:49:41.000000000 +0100
++++ linux-2.6.38-rc3/drivers/mmc/host/sdhci-esdhc-imx.c	2011-02-08 15:09:30.000000000 +0100
+@@ -15,13 +15,40 @@
+ #include <linux/delay.h>
+ #include <linux/err.h>
+ #include <linux/clk.h>
++#include <linux/gpio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sdhci-pltfm.h>
++#include <linux/platform_device.h>
++#include <mach/esdhc.h>
+ #include <mach/hardware.h>
+ #include "sdhci.h"
+ #include "sdhci-pltfm.h"
+ #include "sdhci-esdhc.h"
+ 
++static u32 esdhc_readl(struct sdhci_host *host, int reg)
++{
++	u32 val;
++
++	if (unlikely(reg == SDHCI_PRESENT_STATE)) {
++		/* simulate card presence*/
++		val = readl(host->ioaddr + reg);
++		return val | SDHCI_CARD_PRESENT;
++	}
++
++	return readl(host->ioaddr + reg);
++}
++
++static void esdhc_writel(struct sdhci_host *host, u32 val, int reg)
++{
++	if (unlikely(reg == SDHCI_INT_ENABLE)) {
++		if (! ((val & SDHCI_INT_CARD_REMOVE) || (val & SDHCI_INT_CARD_INSERT)))
++			writel(val, host->ioaddr + reg);
++	}
++	else
++		writel(val, host->ioaddr + reg);
++}
++
++
+ static inline void esdhc_clrset_le(struct sdhci_host *host, u32 mask, u32 val, int reg)
+ {
+ 	void __iomem *base = host->ioaddr + (reg & ~0x3);
+@@ -86,6 +113,13 @@ static void esdhc_writeb_le(struct sdhci
+ 	esdhc_clrset_le(host, 0xff, val, reg);
+ }
+ 
++static irqreturn_t carddetect_irq(int irq, void *data)
++{
++	struct sdhci_host *sdhost = (struct sdhci_host *)data;
++	tasklet_schedule(&sdhost->card_tasklet);
++	return IRQ_HANDLED;
++}
++
+ static unsigned int esdhc_pltfm_get_max_clock(struct sdhci_host *host)
+ {
+ 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
+@@ -103,7 +137,39 @@ static unsigned int esdhc_pltfm_get_min_
+ static int esdhc_pltfm_init(struct sdhci_host *host, struct sdhci_pltfm_data *pdata)
+ {
+ 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
++	struct platform_device *pdev = to_platform_device(mmc_dev(host->mmc));
+ 	struct clk *clk;
++	struct esdhc_platform_data *plat;
++	int rc;
++
++	plat = pdev->dev.platform_data;
++
++	if ((plat != NULL) && gpio_is_valid(plat->cd_gpio)) {
++		host->quirks &= ~SDHCI_QUIRK_BROKEN_CARD_DETECTION;
++
++		rc = gpio_request(plat->cd_gpio, "sdhci_cd");
++		if (rc) {
++			dev_err(mmc_dev(host->mmc),
++				"failed to allocate cd gpio\n");
++			goto out;
++		}
++		gpio_direction_input(plat->cd_gpio);
++
++		rc = request_irq(gpio_to_irq(plat->cd_gpio), carddetect_irq,
++				 IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
++				 mmc_hostname(host->mmc), host);
++
++		if (rc)	{
++			dev_err(mmc_dev(host->mmc), "request irq error\n");
++			goto out_cd;
++		}
++	}
++	else {
++		if (plat != NULL) {
++			dev_err(mmc_dev(host->mmc), "wrong cd gpio in platform data\n");
++			return -ENXIO;
++		}
++	}
+ 
+ 	clk = clk_get(mmc_dev(host->mmc), NULL);
+ 	if (IS_ERR(clk)) {
+@@ -121,17 +187,33 @@ static int esdhc_pltfm_init(struct sdhci
+ 		host->quirks |= SDHCI_QUIRK_NO_MULTIBLOCK;
+ 
+ 	return 0;
++
++out_cd:
++	if (gpio_is_valid(plat->cd_gpio))
++		gpio_free(plat->cd_gpio);
++
++out:
++	return rc;
+ }
+ 
+ static void esdhc_pltfm_exit(struct sdhci_host *host)
+ {
+ 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
++	struct platform_device *pdev = to_platform_device(mmc_dev(host->mmc));
++	struct esdhc_platform_data *plat;
++
++	plat = pdev->dev.platform_data;
++
++	if (gpio_is_valid(plat->cd_gpio))
++		gpio_free(plat->cd_gpio);
+ 
+ 	clk_disable(pltfm_host->clk);
+ 	clk_put(pltfm_host->clk);
+ }
+ 
+ static struct sdhci_ops sdhci_esdhc_ops = {
++	.read_l = esdhc_readl,
++	.write_l = esdhc_writel,
+ 	.read_w = esdhc_readw_le,
+ 	.write_w = esdhc_writew_le,
+ 	.write_b = esdhc_writeb_le,
+Index: linux-2.6.38-rc3/drivers/mmc/host/sdhci-esdhc-imx.c
+===================================================================
+--- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/esdhc.h	2011-02-08 14:49:41.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/esdhc.h	2011-02-08 15:09:30.000000000 +0100
+@@ -12,5 +12,6 @@
+ 
+ struct esdhc_platform_data {
+ 	unsigned int wp_gpio;	/* write protect pin */
++	unsigned int cd_gpio;	/* card detect pin */
+ };
+ #endif /* __ASM_ARCH_IMX_ESDHC_H */
