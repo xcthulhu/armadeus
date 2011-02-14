@@ -61,7 +61,7 @@ Index: linux-2.6.38-rc3/drivers/mmc/host/sdhci-esdhc-imx.c
  static unsigned int esdhc_pltfm_get_max_clock(struct sdhci_host *host)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -103,7 +137,37 @@ static unsigned int esdhc_pltfm_get_min_
+@@ -103,7 +137,39 @@ static unsigned int esdhc_pltfm_get_min_
  static int esdhc_pltfm_init(struct sdhci_host *host, struct sdhci_pltfm_data *pdata)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
@@ -93,13 +93,15 @@ Index: linux-2.6.38-rc3/drivers/mmc/host/sdhci-esdhc-imx.c
 +		}
 +	}
 +	else {
-+		dev_err(mmc_dev(host->mmc), "wrong cd gpio in platform data\n");
-+		return -ENXIO;
++		if (plat != NULL) {
++			dev_err(mmc_dev(host->mmc), "wrong cd gpio in platform data\n");
++			return -ENXIO;
++		}
 +	}
  
  	clk = clk_get(mmc_dev(host->mmc), NULL);
  	if (IS_ERR(clk)) {
-@@ -121,17 +185,33 @@ static int esdhc_pltfm_init(struct sdhci
+@@ -121,17 +187,33 @@ static int esdhc_pltfm_init(struct sdhci
  		host->quirks |= SDHCI_QUIRK_NO_MULTIBLOCK;
  
  	return 0;
