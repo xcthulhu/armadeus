@@ -1,6 +1,7 @@
 menu "Armadeus specific tools/utilities"
 
 source package/armadeus/ad9889ctrl/Config.in
+source package/armadeus/tfp410ctrl/Config.in
 source package/armadeus/as_devices/Config.in
 source package/armadeus/ch7024ctrl/Config.in
 source package/armadeus/demos/Config.in
