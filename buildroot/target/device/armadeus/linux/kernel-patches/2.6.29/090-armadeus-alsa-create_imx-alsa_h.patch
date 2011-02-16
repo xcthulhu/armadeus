@@ -1,6 +1,3 @@
-PATCH AUTOMATICALLY GENERATED
-DON'T EDIT IT OR YOUR MODIFICATIONS WILL BE LOST
-(Take a look at armadeus/target/linux/ directory to know how to generate it)
 --- linux-2.6.27.13.original/arch/arm/mach-imx/include/mach/imx-alsa.h	
 +++ linux-2.6.27.13.mod/arch/arm/mach-imx/include/mach/imx-alsa.h	
 @@ -0,0 +1,152 @@
