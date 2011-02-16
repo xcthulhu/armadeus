@@ -221,34 +221,34 @@ void dump(int fd, FILE* destFile)
  */
 void load(int fd, char* fileName)
 {
-    char line[MAX_DUMP_LINE];
-    char tempFileName[MAX_DUMP_LINE];
-    FILE *fd_conf = NULL;
-    unsigned int regAddr, val;
+	char line[MAX_DUMP_LINE];
+	char tempFileName[MAX_DUMP_LINE];
+	FILE *fd_conf = NULL;
+	unsigned int regAddr, val;
 
-    if (strlen(fileName) == 0) {
-        printf("Enter file name: ");
-        fgets(tempFileName, sizeof(tempFileName), stdin);
-        tempFileName[strlen(tempFileName)-1] = '\0'; /* suppress \n */
-    }
-    else {
-        strcpy(tempFileName, fileName);
-    }
- 
-    if ((fd_conf = fopen(tempFileName, "r")) == NULL) {
-        perror("Open error: ");
-        exit (1);
-    }
-    while (fgets(line, MAX_DUMP_LINE, fd_conf) != NULL) {
-        sscanf(line,"%2X%*c%4X", &regAddr, &val);
-	printf("reg %02x, value %04x\n", regAddr, val);
-	if (regAddr > DE_TOP_REG)
-	            write_word (fd, TFP410_I2C_SLAVE_ADDR, regAddr, val);
-	else
-	            write_byte (fd, TFP410_I2C_SLAVE_ADDR, regAddr, val);
-    }
-    if (fd_conf != NULL)
-        fclose(fd_conf);
+	if (strlen(fileName) == 0) {
+		printf("Enter file name: ");
+		fgets(tempFileName, sizeof(tempFileName), stdin);
+		tempFileName[strlen(tempFileName)-1] = '\0'; /* suppress \n */
+	}
+	else {
+		strcpy(tempFileName, fileName);
+	}
+
+	if ((fd_conf = fopen(tempFileName, "r")) == NULL) {
+		perror("Open error: ");
+		exit (1);
+	}
+	while (fgets(line, MAX_DUMP_LINE, fd_conf) != NULL) {
+        	sscanf(line,"%2X%*c%4X", &regAddr, &val);
+		printf("reg %02x, value %04x\n", regAddr, val);
+		if (regAddr > DE_TOP_REG
+			write_word (fd, TFP410_I2C_SLAVE_ADDR, regAddr, val);
+		else
+			write_byte (fd, TFP410_I2C_SLAVE_ADDR, regAddr, val);
+    	}
+	if (fd_conf != NULL)
+        	fclose(fd_conf);
 }
 
 void modifyRegister(int fd, int regAddr)

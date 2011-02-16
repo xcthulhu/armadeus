@@ -1,7 +1,6 @@
 menu "Armadeus specific tools/utilities"
 
 source package/armadeus/ad9889ctrl/Config.in
-source package/armadeus/tfp410ctrl/Config.in
 source package/armadeus/as_devices/Config.in
 source package/armadeus/ch7024ctrl/Config.in
 source package/armadeus/demos/Config.in
@@ -11,5 +10,6 @@ source package/armadeus/imxssi/Config.in
 source package/armadeus/max5821ctrl/Config.in
 source package/armadeus/pps/Config.in
 source package/armadeus/testsuite/Config.in
+source package/armadeus/tfp410ctrl/Config.in
 
 endmenu
