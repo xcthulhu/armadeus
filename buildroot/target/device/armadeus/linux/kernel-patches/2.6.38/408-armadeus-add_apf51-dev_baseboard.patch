@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-10 16:30:51.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-11 16:31:20.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-16 14:46:00.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-16 19:00:56.000000000 +0100
 @@ -167,12 +167,31 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -42,8 +42,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-10 16:30:51.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-11 16:31:20.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-16 14:46:00.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-16 19:00:56.000000000 +0100
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -55,8 +55,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-11 16:26:31.000000000 +0100
-@@ -0,0 +1,370 @@
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-16 16:47:21.000000000 +0100
+@@ -0,0 +1,378 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -202,6 +202,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	/* Other GPIOs ! TBDL ! */
 +	(_MX51_PAD_I2C1_CLK__GPIO4_16 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* HDMI_RST# */
 +	(_MX51_PAD_I2C1_DAT__GPIO4_17 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* HDMI_DETECT */
++};
++
++/* Serial ports */
++static struct imxuart_platform_data apf51dev_uart_pdata = {
++	.flags = IMXUART_HAVE_RTSCTS,
 +};
 +
 +static const struct imxi2c_platform_data apf51dev_i2c_data __initconst = {
@@ -407,6 +412,9 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +{
 +	mxc_iomux_v3_setup_multiple_pads(apf51dev_pads,
 +					ARRAY_SIZE(apf51dev_pads));
++
++	imx51_add_imx_uart(0, &apf51dev_uart_pdata);
++/*	imx51_add_imx_uart(1, &apf51dev_uart_pdata);*/
 +
 +	initGPIO();
 +
