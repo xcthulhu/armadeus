@@ -79,12 +79,12 @@ class AsAdc:
     @classmethod
     def getInstance(cls, aAdcType, aDeviceNum, aVRef):
         try:
-            return AsAdc.__adc["%d:%d"%(aAdcType, aDeviceNum)]
+            return AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)]
         except KeyError:
-            AsAdc.__adc["%d:%d"%(aAdcType, aDeviceNum)] =\
+            AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)] =\
                                     cls.__impl(aAdcType, aDeviceNum, aVRef)
 
-        return AsAdc.__adc["%d:%d"%(aAdcType, aDeviceNum)]
+        return AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)]
 
     def  __init__(self):
         """ Initialize adc

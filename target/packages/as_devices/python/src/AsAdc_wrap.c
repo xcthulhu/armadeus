@@ -42,26 +42,25 @@ void initAsAdc_wrap() /* called on first import */
 static PyObject * adc_open(PyObject *self, PyObject *args)
 {
     /* parameters */
+    char *aAdcType;
     int aDeviceNum;
-    int aAdcType;
     int aVref;
 
     struct as_adc_device *dev;
     PyObject *ret;
     char buff[300];
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "iii", &aDeviceNum, &aAdcType, &aVref))
+    if (!PyArg_ParseTuple(args, "sii", &aAdcType, &aDeviceNum, &aVref))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
-
-    dev = as_adc_open(aDeviceNum, aAdcType, aVref);
+    dev = as_adc_open(aAdcType, aDeviceNum, aVref);
     if (dev == NULL)
     {
         snprintf(buff, 300,
-                "Initialization error for ADC type %d bus %d. Is kernel module loaded ?",
+                "Initialization error for ADC type %s bus %d. Is kernel module loaded ?",
                 aAdcType, aDeviceNum);
         PyErr_SetString(PyExc_IOError,buff);
         return NULL;
