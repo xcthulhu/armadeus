@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-03 17:39:23.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-03 17:39:26.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-10 18:27:01.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-11 15:15:57.000000000 +0100
 @@ -9,6 +9,7 @@
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
  obj-$(CONFIG_MACH_APF51) += board-apf51.o
@@ -17,7 +17,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51proto-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51proto-baseboard.c	2011-02-03 17:40:34.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51proto-baseboard.c	2011-02-11 15:15:57.000000000 +0100
 @@ -0,0 +1,197 @@
 + /*
 + * Support for APF51's PROTO development baseboard
@@ -132,7 +132,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51proto-baseboard.c
 +		.left_margin 	= 96, .right_margin = 96,
 +		.upper_margin 	= 0x14, .lower_margin = 0x15,
 +		.hsync_len 	= 64, .vsync_len = 4,
-+		.sync 		= FB_SYNC_CLK_IDLE_EN | FB_SYNC_CLK_LAT_FALL,
++		.sync 		= FB_SYNC_CLK_IDLE_EN,
 +		.vmode 		= FB_VMODE_NONINTERLACED,
 +		.flag 		= 0,
 +        },
@@ -218,8 +218,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51proto-baseboard.c
 +}
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-03 17:39:23.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-03 17:39:26.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-10 18:29:43.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-11 15:15:57.000000000 +0100
 @@ -179,7 +179,7 @@
  choice
  	prompt "Baseboard"
@@ -229,7 +229,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
  
  config MACH_APF51_DEV
  	prompt "Armadeus Systems APF51Dev development board"
-@@ -191,6 +191,17 @@
+@@ -192,6 +192,17 @@
  	help
  	  This selects the APF51Dev as baseboard and adds board's specific
  	  devices.

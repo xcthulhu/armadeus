@@ -1,7 +1,7 @@
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Kconfig	2011-02-07 09:30:20.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig	2011-02-07 11:17:54.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Kconfig	2011-02-09 14:47:30.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig	2011-02-14 16:09:34.000000000 +0100
 @@ -350,4 +350,121 @@
  	  Include support for i-MXT (aka td60) platform. This
  	  includes specific configurations for the module and its peripherals.
@@ -93,7 +93,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
 +
 +config MACH_APF27_DEV_EXT_WIRELESS_WIFI
 +	bool "WiFi"
-+	depends on MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI
++	depends on MACH_APF27_DEV_EXT_WIRELESS_BT_WIFI && (!SPI_MXC_SELECT3)
 +	default y
 +	help
 +	  Only activates WiFi part of the module.
@@ -126,8 +126,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
  endif
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Makefile	2011-02-07 09:30:20.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/Makefile	2011-02-07 09:30:21.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Makefile	2011-02-09 14:47:30.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Makefile	2011-02-09 14:47:31.000000000 +0100
 @@ -38,3 +38,7 @@
  obj-$(CONFIG_MACH_EUKREA_MBIMX27_BASEBOARD) += eukrea_mbimx27-baseboard.o
  obj-$(CONFIG_MACH_PCA100) += mach-pca100.o

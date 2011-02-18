@@ -4,9 +4,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-03 17:38:54.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-03 17:39:23.000000000 +0100
-@@ -167,12 +167,30 @@
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-18 10:13:10.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-18 10:33:41.000000000 +0100
+@@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
  	select IMX_HAVE_PLATFORM_IMX_I2C
@@ -33,6 +33,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 +	select IMX_HAVE_PLATFORM_IMX_IPUV3
 +	select IMX_HAVE_PLATFORM_SPI_IMX
 +	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
++	select IMX_HAVE_PLATFORM_IMX_SSI
++	select IMX_HAVE_PLATFORM_IMX_KEYPAD
 +	help
 +	  This selects the APF51Dev as baseboard and adds board's specific
 +	  devices.
@@ -41,8 +43,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-03 17:38:54.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-03 17:39:23.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-18 10:13:10.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-18 10:33:03.000000000 +0100
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -54,8 +56,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-03 17:39:23.000000000 +0100
-@@ -0,0 +1,280 @@
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-18 10:13:10.000000000 +0100
+@@ -0,0 +1,430 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -80,35 +82,45 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#include <linux/fb.h>
 +#include <linux/mfd/imx-ipu-v3.h>
 +#include <sound/wm8960.h>
-+
++#include <linux/delay.h>
 +#include <mach/iomux-mx51.h>
 +#include <mach/ipu-v3.h>
++#include <mach/i2c.h>
++#include <mach/audmux.h>
++#include <mach/ssi.h>
++#include <linux/can/platform/mcp251x.h>
 +
 +#include "devices-imx51.h"
 +#include "devices.h"
 +
 +#define APF51_GPIO_SPECIAL_PAD_CTRL (PAD_CTL_DSE_HIGH | PAD_CTL_PKE | PAD_CTL_SRE_FAST | PAD_CTL_PUE)
 +
++#define APF51_SDHCI_PAD_CTRL	(PAD_CTL_PKE | PAD_CTL_DSE_MED | \
++				PAD_CTL_PUS_47K_UP | PAD_CTL_PUE | \
++				PAD_CTL_SRE_FAST | PAD_CTL_DVS)
++
++#define APF51_LCD_PAD_CTRL (PAD_CTL_SRE_SLOW | PAD_CTL_DSE_MED)
++
 +static iomux_v3_cfg_t apf51dev_pads[] = {
 +	/* SD1 */
-+	MX51_PAD_SD1_CMD__SD1_CMD,
-+	MX51_PAD_SD1_CLK__SD1_CLK,
-+	MX51_PAD_SD1_DATA0__SD1_DATA0,
-+	MX51_PAD_SD1_DATA1__SD1_DATA1,
-+	MX51_PAD_SD1_DATA2__SD1_DATA2,
-+	MX51_PAD_SD1_DATA3__SD1_DATA3,
-+	(_MX51_PAD_EIM_D16__GPIO2_0 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
++	(_MX51_PAD_SD1_CMD__SD1_CMD | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD1_CLK__SD1_CLK | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD1_DATA0__SD1_DATA0 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD1_DATA1__SD1_DATA1 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD1_DATA2__SD1_DATA2 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD1_DATA3__SD1_DATA3 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_EIM_CS4__GPIO2_29 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +
 +	/* SD2 (WiFi) */
-+	MX51_PAD_SD2_CMD__SD2_CMD,
-+	MX51_PAD_SD2_CLK__SD2_CLK,
-+	MX51_PAD_SD2_DATA0__SD2_DATA0,
-+	MX51_PAD_SD2_DATA1__SD2_DATA1,
-+	MX51_PAD_SD2_DATA2__SD2_DATA2,
-+	MX51_PAD_SD2_DATA3__SD2_DATA3,
++	(_MX51_PAD_SD2_CMD__SD2_CMD | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD2_CLK__SD2_CLK | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD2_DATA0__SD2_DATA0 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD2_DATA1__SD2_DATA1 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD2_DATA2__SD2_DATA2 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
++	(_MX51_PAD_SD2_DATA3__SD2_DATA3 | MUX_PAD_CTRL(APF51_SDHCI_PAD_CTRL)),
 +
-+	MX51_PAD_EIM_EB2__GPIO_2_22, /* WIFI_PWRDN# */
-+	MX51_PAD_EIM_EB3__GPIO_2_23, /* WIFI_RESET# */
++	(_MX51_PAD_EIM_EB2__GPIO2_22 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_PWRDN# */
++	(_MX51_PAD_EIM_EB3__GPIO2_23 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_RESET# */
 +
 +	/* UART2 (Bluetooth) */
 +	MX51_PAD_UART2_RXD__UART2_RXD,
@@ -116,7 +128,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_EIM_D25__UART2_CTS,
 +	MX51_PAD_EIM_D26__UART2_RTS,
 +
-+	MX51_PAD_EIM_CS3__GPIO_2_28, /* BT_RESET# */
++	(_MX51_PAD_EIM_CS3__GPIO2_28 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* BT_RESET# */
 +
 +	/* UART1 */
 +	MX51_PAD_UART1_RXD__UART1_RXD,
@@ -128,56 +140,85 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_CSPI1_MISO__ECSPI1_MISO,
 +	MX51_PAD_CSPI1_MOSI__ECSPI1_MOSI,
 +	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
-+	MX51_PAD_CSPI1_SS0__GPIO_4_24,
-+	MX51_PAD_CSPI1_SS1__GPIO_4_25,
++	(_MX51_PAD_CSPI1_SS0__GPIO4_24 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
++	(_MX51_PAD_CSPI1_SS1__GPIO4_25 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +
-+	MX51_PAD_NANDF_D14__GPIO_3_26,	/* ADC_SSTRB */
++	(_MX51_PAD_NANDF_D14__GPIO3_26 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* ADC_SSTRB */
 +
 +	/* eCSPI2 */
 +	MX51_PAD_NANDF_RB2__ECSPI2_SCLK,
 +	MX51_PAD_NANDF_RB3__ECSPI2_MISO,
 +	MX51_PAD_NANDF_D15__ECSPI2_MOSI,
-+	MX51_PAD_NANDF_D12__GPIO_3_28,	/* SS1 */
-+	MX51_PAD_NANDF_D13__GPIO_3_27,	/* SS2 */
++	(_MX51_PAD_NANDF_D12__GPIO3_28 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* SS1 */
++	(_MX51_PAD_NANDF_D13__GPIO3_27 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* SS2 */
 +
-+	MX51_PAD_NANDF_RB1__GPIO_3_9,	/* CAN_INT# */
++	(_MX51_PAD_NANDF_RB1__GPIO3_9 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* CAN_INT# */
 +
 +	/* Display */
-+	MX51_PAD_DISP1_DAT0__DISP1_DAT0,
-+	MX51_PAD_DISP1_DAT1__DISP1_DAT1,
-+	MX51_PAD_DISP1_DAT2__DISP1_DAT2,
-+	MX51_PAD_DISP1_DAT3__DISP1_DAT3,
-+	MX51_PAD_DISP1_DAT4__DISP1_DAT4,
-+	MX51_PAD_DISP1_DAT5__DISP1_DAT5,
-+	MX51_PAD_DISP1_DAT6__DISP1_DAT6,
-+	MX51_PAD_DISP1_DAT7__DISP1_DAT7,
-+	MX51_PAD_DISP1_DAT8__DISP1_DAT8,
-+	MX51_PAD_DISP1_DAT9__DISP1_DAT9,
-+	MX51_PAD_DISP1_DAT10__DISP1_DAT10,
-+	MX51_PAD_DISP1_DAT11__DISP1_DAT11,
-+	MX51_PAD_DISP1_DAT12__DISP1_DAT12,
-+	MX51_PAD_DISP1_DAT13__DISP1_DAT13,
-+	MX51_PAD_DISP1_DAT14__DISP1_DAT14,
-+	MX51_PAD_DISP1_DAT15__DISP1_DAT15,
-+	MX51_PAD_DISP1_DAT16__DISP1_DAT16,
-+	MX51_PAD_DISP1_DAT17__DISP1_DAT17,
-+	MX51_PAD_DISP1_DAT18__DISP1_DAT18,
-+	MX51_PAD_DISP1_DAT19__DISP1_DAT19,
-+	MX51_PAD_DISP1_DAT20__DISP1_DAT20,
-+	MX51_PAD_DISP1_DAT21__DISP1_DAT21,
-+	MX51_PAD_DISP1_DAT22__DISP1_DAT22,
-+	MX51_PAD_DISP1_DAT23__DISP1_DAT23,
-+	MX51_PAD_DI1_PIN2__DI1_PIN2,	/* HSYNC */
-+	MX51_PAD_DI1_PIN3__DI1_PIN3,	/* VSYNC */
-+	/* CLK and OE are not muxed */
++	(_MX51_PAD_DISP1_DAT0__DISP1_DAT0 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT1__DISP1_DAT1 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT2__DISP1_DAT2 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT3__DISP1_DAT3 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT4__DISP1_DAT4 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT5__DISP1_DAT5 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT6__DISP1_DAT6 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT7__DISP1_DAT7 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT8__DISP1_DAT8 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT9__DISP1_DAT9 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT10__DISP1_DAT10 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT11__DISP1_DAT11 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT12__DISP1_DAT12 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT13__DISP1_DAT13 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT14__DISP1_DAT14 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT15__DISP1_DAT15 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT16__DISP1_DAT16 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT17__DISP1_DAT17 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT18__DISP1_DAT18 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT19__DISP1_DAT19 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT20__DISP1_DAT20 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT21__DISP1_DAT21 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT22__DISP1_DAT22 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DISP1_DAT23__DISP1_DAT23 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
++	(_MX51_PAD_DI1_PIN2__DI1_PIN2 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),	/* HSYNC */
++	(_MX51_PAD_DI1_PIN3__DI1_PIN3 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),	/* VSYNC */
++
++	/* SSI */
++	MX51_PAD_AUD3_BB_TXD__AUD3_TXD,
++	MX51_PAD_AUD3_BB_RXD__AUD3_RXD,
++	MX51_PAD_AUD3_BB_CK__AUD3_TXC,
++	MX51_PAD_AUD3_BB_FS__AUD3_TXFS,
++
++	/* KEYPAD */
++	MX51_PAD_KEY_ROW0__KEY_ROW0,
++	MX51_PAD_KEY_ROW1__KEY_ROW1,
++	MX51_PAD_KEY_ROW2__KEY_ROW2,
++	MX51_PAD_KEY_ROW3__KEY_ROW3,
++	MX51_PAD_KEY_COL0__KEY_COL0,
++	MX51_PAD_KEY_COL1__KEY_COL1,
++	MX51_PAD_KEY_COL2__KEY_COL2,
++	MX51_PAD_KEY_COL3__KEY_COL3,
++	MX51_PAD_KEY_COL4__KEY_COL4,
++	MX51_PAD_KEY_COL5__KEY_COL5,
 +
 +	/* ONEWIRE */
 +
 +	/* KEYPAD */
 +
++	/* led */
++	(_MX51_PAD_GPIO1_2__GPIO1_2 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
++
++	/* user switch */
++	(_MX51_PAD_GPIO1_3__GPIO1_3 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
++
++
 +	/* Other GPIOs ! TBDL ! */
-+	MX51_PAD_I2C1_CLK__GPIO_4_16,	/* HDMI_RST# */
-+	MX51_PAD_I2C1_DAT__GPIO_4_17,	/* HDMI_DETECT */
++	(_MX51_PAD_I2C1_CLK__GPIO4_16 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* HDMI_RST# */
++	(_MX51_PAD_I2C1_DAT__GPIO4_17 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* HDMI_DETECT */
++};
++
++/* Serial ports */
++static struct imxuart_platform_data apf51dev_uart_pdata = {
++	.flags = IMXUART_HAVE_RTSCTS,
 +};
 +
 +static const struct imxi2c_platform_data apf51dev_i2c_data __initconst = {
@@ -196,7 +237,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		.left_margin 	= 96, .right_margin = 96,
 +		.upper_margin 	= 0x14, .lower_margin = 0x15,
 +		.hsync_len 	= 64, .vsync_len = 4,
-+		.sync 		= FB_SYNC_CLK_IDLE_EN | FB_SYNC_CLK_LAT_FALL,
++		.sync 		= FB_SYNC_CLK_IDLE_EN,
 +		.vmode 		= FB_VMODE_NONINTERLACED,
 +		.flag 		= 0,
 +        },
@@ -246,6 +287,17 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	.num_chipselect = ARRAY_SIZE(apf51dev_spi1_cs),
 +};
 +
++
++/* CAN */
++#define CAN_MCP251X_INT IMX_GPIO_NR(3, 9)
++
++static struct mcp251x_platform_data mcp251x_info = {
++         .oscillator_frequency =  16000000,
++         .board_specific_setup =NULL,
++         .power_enable = NULL,
++         .transceiver_enable = NULL,
++};
++
 +/* ECSPI2 */
 +#define APF51DEV_ECSPI2_SS1	IMX_GPIO_NR(3, 28)
 +#define APF51DEV_ECSPI2_SS2	IMX_GPIO_NR(3, 27)
@@ -257,7 +309,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		.bus_num = 1,
 +		.chip_select = 0,
 +		.mode = SPI_MODE_0,
-+		.platform_data = NULL,
++		.platform_data = &mcp251x_info,
++		.irq = gpio_to_irq(CAN_MCP251X_INT),
 +	},
 +	{
 +		.modalias = "spidev",
@@ -280,25 +333,25 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +};
 +
 +
-+/* Audio (Wolfson WM8960) */
++/* Audio (Wolfson WM8960 connected to I2C & SSI) */
 +static struct wm8960_data apf51dev_wm8960_pdata = {
 +	.capless = 0, /* Headphone outputs NOT configured in capless mode */
 +//	.dres = ??;  /* Discharge resistance for headphone outputs */
 +};
 +
++static struct imx_ssi_platform_data apf27dev_ssi_pdata = {
++	.flags = IMX_SSI_DMA,
++};
 +
 +/* I2C2 */
 +static struct i2c_board_info apf51dev_i2c2_devices[] __initdata = {
 +	{
 +		I2C_BOARD_INFO("tfp410", 0x38),
-+/*		.platform_data = &tfp410_pdata,
-+		.irq = gpio_to_irq(APF51DEV_HDMI_DETECT),*/
 +	},
-+#if 0
 +	{
-+	/* EDID ? */
++	/* EDID */
++		I2C_BOARD_INFO("eeprom", 0x50),
 +	},
-+#endif
 +	{
 +		I2C_BOARD_INFO("wm8960", 0x36),
 +		.platform_data = &apf51dev_wm8960_pdata,
@@ -310,15 +363,109 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#endif
 +};
 +
++#define ESDHC_CARD_DETECT	(GPIO_PORTB | 29)
 +static struct esdhc_platform_data edshc0_pdata = {
 +	.wp_gpio = 0,	/* write protect pin */
-+	.cd_gpio = (GPIO_PORTB | 0),	/* card detect pin */
++	.cd_gpio = ESDHC_CARD_DETECT,	/* card detect pin */
 +};
++
++static int initGPIO(void)
++{
++#define WIFI_PWRDN 		(GPIO_PORTB | 22)
++#define WIFI_RESET 		(GPIO_PORTB | 23)
++#define USER_LED_GPIO		(GPIO_PORTA | 2)
++#define USER_SWITCH_GPIO	(GPIO_PORTA | 3)
++#define HDMI_DETECT_GPIO	(GPIO_PORTD | 17)
++
++	int rc;
++
++	/* WIFI */
++	rc = gpio_request(WIFI_PWRDN, "WIFI");
++	if (rc){
++		pr_debug("failed to get WIFI_PWRDN GPIO: %d\n", rc);
++		return rc;
++	}
++	rc = gpio_request(WIFI_RESET, "WIFI");
++	if (rc){
++		pr_debug("failed to get WIFI_RESET GPIO: %d\n", rc);
++		return rc;
++	}
++	gpio_direction_output(WIFI_PWRDN, 1);
++	udelay(1000);
++	gpio_direction_output(WIFI_RESET, 1);
++
++	/* USER */
++	gpio_request(USER_LED_GPIO, "USER_LED_GPIO");
++	if (rc){
++		pr_debug("failed to get User LED GPIO: %d\n", rc);
++		return rc;
++	}
++	gpio_direction_output(USER_LED_GPIO, 1);
++
++	gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
++	if (rc){
++		pr_debug("failed to get User Switch GPIO: %d\n", rc);
++		return rc;
++	}
++	gpio_direction_input(USER_SWITCH_GPIO);
++
++	/* HDMI */
++	gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
++	if (rc){
++		pr_debug("failed to get HDMI detect GPIO: %d\n", rc);
++		return rc;
++	}
++	gpio_direction_input(HDMI_DETECT_GPIO);
++
++	return 0;
++}
++
++#if defined(CONFIG_KEYBOARD_IMX) || defined(CONFIG_KEYBOARD_IMX_MODULE)
++static int apf51dev_keymap[] = {
++	KEY(0, 0, KEY_1),
++	KEY(0, 1, KEY_2),
++	KEY(0, 2, KEY_3),
++	KEY(0, 3, KEY_F1),
++	KEY(0, 4, KEY_UP),
++	KEY(0, 5, KEY_F2),
++
++	KEY(1, 0, KEY_4),
++	KEY(1, 1, KEY_5),
++	KEY(1, 2, KEY_6),
++	KEY(1, 3, KEY_LEFT),
++	KEY(1, 4, KEY_SELECT),
++	KEY(1, 5, KEY_RIGHT),
++
++	KEY(2, 0, KEY_7),
++	KEY(2, 1, KEY_8),
++	KEY(2, 2, KEY_9),
++	KEY(2, 3, KEY_F3),
++	KEY(2, 4, KEY_DOWN),
++	KEY(2, 5, KEY_F4),
++
++	KEY(3, 0, KEY_0),
++	KEY(3, 1, KEY_OK),
++	KEY(3, 2, KEY_ESC),
++	KEY(3, 3, KEY_ENTER),
++	KEY(3, 4, KEY_MENU),
++	KEY(3, 5, KEY_BACK)
++};
++
++static const struct matrix_keymap_data apf51dev_keymap_data __initconst = {
++	.keymap		= apf51dev_keymap,
++	.keymap_size	= ARRAY_SIZE(apf51dev_keymap),
++};
++#endif
 +
 +void __init apf51_baseboard_init(void)
 +{
 +	mxc_iomux_v3_setup_multiple_pads(apf51dev_pads,
 +					ARRAY_SIZE(apf51dev_pads));
++
++	imx51_add_imx_uart(0, &apf51dev_uart_pdata);
++/*	imx51_add_imx_uart(1, &apf51dev_uart_pdata);*/
++
++	initGPIO();
 +
 +	imx51_add_sdhci_esdhc_imx(0, &edshc0_pdata);
 +	imx51_add_sdhci_esdhc_imx(1, NULL);
@@ -335,4 +482,9 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +				ARRAY_SIZE(apf51dev_i2c2_devices));
 +
 +	imx51_add_ipuv3(&apf51dev_ipu_data);
++	imx51_add_imx_ssi(0, &apf27dev_ssi_pdata);
++
++#if defined(CONFIG_KEYBOARD_IMX) || defined(CONFIG_KEYBOARD_IMX_MODULE)
++	imx51_add_imx_keypad(&apf51dev_keymap_data);
++#endif
 +}

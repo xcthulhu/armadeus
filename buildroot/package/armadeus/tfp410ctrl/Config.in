@@ -1,0 +1,7 @@
+config BR2_PACKAGE_TFP410CTRL
+	bool "tfp410ctrl"
+	depends on BR2_TARGET_ARMADEUS
+	help
+	  Build TFP410 control tool. It allows you to configure the HDMI/DVI
+	  output of the APF51Dev directly from Linux userspace (command tfp410ctrl).
+

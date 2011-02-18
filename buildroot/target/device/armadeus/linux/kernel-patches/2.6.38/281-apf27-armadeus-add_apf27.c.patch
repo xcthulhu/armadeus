@@ -10,7 +10,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c	2011-02-07 17:09:41.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c	2011-02-09 14:47:31.000000000 +0100
 @@ -0,0 +1,745 @@
 + /*
 + * apf27.c
@@ -760,7 +760,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-02-08 09:46:00.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-02-09 14:47:31.000000000 +0100
 @@ -0,0 +1,933 @@
 + /*
 + * apf27-dev.c
@@ -1698,7 +1698,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-02-08 17:38:31.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-02-09 14:47:31.000000000 +0100
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1871,13 +1871,13 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-02-07 16:56:02.000000000 +0100
-@@ -0,0 +1,190 @@
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-02-14 13:40:41.000000000 +0100
+@@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
 + * Support for AFP27Dev's wireless extension board (APW).
 + *
-+ * Copyright (C) 2009-2010 Armadeus Systems
++ * Copyright (C) 2009-2011 Armadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Nicolas Colombain <nicolas.colombain@armadeus.com>
 + *
@@ -1897,12 +1897,13 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 +#include <linux/platform_device.h>
 +#include <linux/delay.h>
++
 +#include <mach/common.h>
-+#include <mach/iomux-mx1-mx2.h>
++#include <mach/iomux-mx27.h>
 +#include <mach/gpio.h>
 +#include <mach/mmc.h>
-+#include "devices.h"
 +
++#include "devices-imx27.h"
 +
 +/* An optional GSM module can be added to wireless extension board */
 +#ifdef CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM
@@ -1923,15 +1924,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 +	return res;
 +}
-+#if 0
-+static int apw_gsm_exit(void)
-+{
-+	mxc_gpio_release_multiple_pins(apw_gsm_pins, ARRAY_SIZE(apw_gsm_pins));
-+
-+	return 0;
-+}
 +#endif
-+#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GSM */
 +
 +
 +/* An optionnal GPS module can be mounted on wireless extension board */
@@ -1953,15 +1946,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 +	return res;
 +}
-+#if 0
-+static int apw_gps_exit(void)
-+{
-+	mxc_gpio_release_multiple_pins(apw_gps_pins, ARRAY_SIZE(apw_gps_pins));
-+
-+	return 0;
-+}
 +#endif
-+#endif /* CONFIG_MACH_APF27_DEV_EXT_WIRELESS_GPS */
 +
 +
 +/* An optional Bluetooth + WiFi module (Wi2Wi) can be mounted on wireless
@@ -1978,12 +1963,12 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +
 +/* SDHC1 is used for WiFi */
 +static int mxc_sdhc1_pins[] = {
-+	PE18_PF_SDHC1_D0,
-+	PE19_PF_SDHC1_D1,
-+	PE20_PF_SDHC1_D2,
-+	PE21_PF_SDHC1_D3,
-+	PE22_PF_SDHC1_CMD,
-+	PE22_PF_SDHC1_CLK,
++	PE18_PF_SD1_D0,
++	PE19_PF_SD1_D1,
++	PE20_PF_SD1_D2,
++	PE21_PF_SD1_D3,
++	PE22_PF_SD1_CMD,
++	PE23_PF_SD1_CLK,
 +};
 +
 +static int apw_sdhc1_init(struct device *dev, irq_handler_t handler, void *data)
@@ -2014,7 +1999,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +	res = mxc_gpio_setup_multiple_pins(apw_bt_wifi_pins,
 +			ARRAY_SIZE(apw_bt_wifi_pins), "BT_WIFI");
 +	if (!res)
-+		mxc_register_device(&mxc_sdhc_device0, &apw_sdhc1_pdata);
++		imx27_add_mxc_mmc(0, &apw_sdhc1_pdata);
 +
 +	return res;
 +}
@@ -2066,7 +2051,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-08 18:23:26.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-14 16:29:30.000000000 +0100
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
