@@ -15,24 +15,12 @@
  *
  *
  * Copyright (C) 2009  Benoît Ryder <benoit@ryder.fr>
+ * Copyright (C) 2010, 2011  Fabien Marteau <fabien.marteau@armadeus.com> 
  *
  */
 
 #ifndef AS_I2C_H_
 #define AS_I2C_H_
-
-/** @file
- * @brief Provide access to I2C devices.
- *
- * Once opened with as_i2c_open(), the I2C slave address to talk with should be
- * set using as_i2c_set_slave(). Then, standard \e read(), \e write() and
- * close() can be used. Otherwise, methods provided by this module can be used.
- * These methods does not use standard <em>read()/write</em> methods nor
- * combined transactions (several read/write messages in the same transaction).
- *
- * @note All methods will leave \e errno unchanged on system call errors, which
- * will happen when -1 is returned.
- */
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,92 +29,59 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/types.h>
 
-/* Number of I2C busses on system */
-#define AS_I2C_DEV_COUNT 2
+/**
+ * Store i2c parameters
+ */
+struct as_i2c_device {
+    int i2c_id;
+    int fi2c;
+    uint8_t slave_addr;
+};
 
 /** @brief Open an I2C bus.
- *
- * \e i2c_id is the ID of the I2C bus to open, it should be strictly lower than
- * \e AS_I2C_DEV_COUNT.
- *
- * @return the file descriptor of the opened device, -1 on error.
  */
-int as_i2c_open(unsigned int i2c_id);
+struct as_i2c_device *as_i2c_open(int aBusNumber);
 
 /** @brief Close an I2C device.
- *
- * @return 0 on success, -1 on error.
- *
- * @note This is an alias of the standard \e close() system call.
  */
-int as_i2c_close(int fd);
+int32_t as_i2c_close(struct as_i2c_device *aDev);
 
-/** @brief Set chip's I2C slave address (to be used with read() & write() method)
- *
- * @return 0 on success, -1 on error.
+/** @brief Set chip's I2C slave address 
  */
-int as_i2c_set_slave(int fd, uint8_t addr);
+int32_t as_i2c_set_slave_addr(struct as_i2c_device *aDev, uint8_t aAddr);
+
+/** @brief Set chip's I2C slave address 
+ */
+int32_t as_i2c_get_slave_addr(struct as_i2c_device *aDev);
 
 /** @brief Read several bytes (ioctl() method) from given chip.
- *
- * @param addr I2C address of chip to access
- *
- * @return 0 on success, -1 on error.
  */
-int as_i2c_read(int fd, uint8_t addr, uint8_t *data, size_t n);
+int32_t as_i2c_read(struct as_i2c_device *aDev,
+                    uint8_t *aData, size_t n);
 
 /** @brief Write several bytes (ioctl() method) to given chip.
- *
- * @param addr I2C address of chip to access
- *
- * @return 0 on success, -1 on error.
  */
-int as_i2c_write(int fd, uint8_t addr, const uint8_t *data, size_t n);
+int32_t as_i2c_write(struct as_i2c_device *aDev,
+                     uint8_t *aData, size_t n);
 
 /** @brief Read from given chip at a given register address (ioctl() method).
- *
- * Send the \e reg byte, then read bytes.
- *
- * @param addr I2C address of chip to access
- *
- * @return 0 on success, -1 on write error (\e reg byte), -2 on read error.
  */
-int as_i2c_read_reg(int fd, uint8_t addr, uint8_t reg, uint8_t *data, size_t n);
+int32_t as_i2c_read_reg(struct as_i2c_device *aDev,
+                        uint8_t aReg, uint8_t *aData, size_t n);
 
 /** @brief Write to given chip at a given register address (ioctl() method).
- *
- * Send the \e reg byte followed by data.
- *
- * @param addr I2C address of chip to access
- *
- * @return 0 on success, -1 on error.
  */
-int as_i2c_write_reg(int fd, uint8_t addr, uint8_t reg, const uint8_t *data, size_t n);
+int32_t as_i2c_write_reg(struct as_i2c_device *aDev,
+                         uint8_t aReg, const uint8_t *aData, size_t n);
 
 /** @brief Read a byte from the given register.
- *
- * Send the \e reg byte, then read and return a single byte.
- *
- * @param addr I2C address of chip to access
- *
- * @return the read byte, -1 on write error (\e reg byte), -2 on read error.
- *
- * @note Equivalent to \e as_i2c_read_reg() with a 1-byte buffer, but return
- * the read byte.
  */
-int as_i2c_read_reg_byte(int fd, uint8_t addr, uint8_t reg);
+int32_t as_i2c_read_reg_byte(struct as_i2c_device *aDev, uint8_t aReg);
 
 /** @brief Write a byte to the given register.
- *
- * Send the \e reg byte followed by the \e val byte.
- *
- * @param addr I2C address of chip to access
- *
- * @return 0 on success, -1 on error.
- *
- * @note Equivalent to \e as_i2c_write() with a 2-byte buffer (reg + data).
  */
-int as_i2c_write_reg_byte(int fd, uint8_t addr, uint8_t reg, uint8_t val);
+int32_t as_i2c_write_reg_byte(struct as_i2c_device *aDev,
+                              uint8_t aReg, uint8_t aVal);
 
 #ifdef __cplusplus
 }

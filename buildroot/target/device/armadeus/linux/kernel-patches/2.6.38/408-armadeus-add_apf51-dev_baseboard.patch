@@ -57,7 +57,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-18 10:13:10.000000000 +0100
-@@ -0,0 +1,430 @@
+@@ -0,0 +1,431 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -181,6 +181,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	(_MX51_PAD_DISP1_DAT23__DISP1_DAT23 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),
 +	(_MX51_PAD_DI1_PIN2__DI1_PIN2 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),	/* HSYNC */
 +	(_MX51_PAD_DI1_PIN3__DI1_PIN3 | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),	/* VSYNC */
++	(_MX51_PAD_DI1_D1_CS__DI1_D1_CS | MUX_PAD_CTRL(APF51_LCD_PAD_CTRL)),	/* CONTRAST */
 +
 +	/* SSI */
 +	MX51_PAD_AUD3_BB_TXD__AUD3_TXD,
@@ -395,14 +396,14 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	gpio_direction_output(WIFI_RESET, 1);
 +
 +	/* USER */
-+	gpio_request(USER_LED_GPIO, "USER_LED_GPIO");
++	rc = gpio_request(USER_LED_GPIO, "USER_LED_GPIO");
 +	if (rc){
 +		pr_debug("failed to get User LED GPIO: %d\n", rc);
 +		return rc;
 +	}
 +	gpio_direction_output(USER_LED_GPIO, 1);
 +
-+	gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
++	rc = gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
 +	if (rc){
 +		pr_debug("failed to get User Switch GPIO: %d\n", rc);
 +		return rc;
@@ -410,7 +411,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	gpio_direction_input(USER_SWITCH_GPIO);
 +
 +	/* HDMI */
-+	gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
++	rc = gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
 +	if (rc){
 +		pr_debug("failed to get HDMI detect GPIO: %d\n", rc);
 +		return rc;

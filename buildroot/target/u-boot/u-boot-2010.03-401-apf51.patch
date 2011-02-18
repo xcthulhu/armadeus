@@ -481,7 +481,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/*
 +	 * Configure iomux for display 1 interface
 +	 */
-+	mxc_request_iomux(MX51_PIN_DI1_D1_CS, IOMUX_CONFIG_ALT0);
++	mxc_request_iomux(MX51_PIN_DI1_D1_CS, IOMUX_CONFIG_ALT4);
 +// missing in DS	mxc_request_iomux(MX51_PIN_DI1_DISP_CLK, IOMUX_CONFIG_ALT0);
 +	mxc_request_iomux(MX51_PIN_DI1_PIN2, IOMUX_CONFIG_ALT0);
 +	mxc_request_iomux(MX51_PIN_DI1_PIN3, IOMUX_CONFIG_ALT0);
