@@ -1,7 +1,7 @@
 #
 #  APF27 bootloader recovering tool
 #
-#  Copyright (2008)  ARMADEUS
+#  Copyright (C) 2008-2009  ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,6 +118,7 @@ class apf27Bootloader:
     def __displayProgress(self, text):
         sys.stdout.write(chr(13))
         print text,
+	sys.stdout.flush()
 
 # addr: address to read
 # count: number of bytes to read 
@@ -203,10 +204,10 @@ class apf27Bootloader:
             self.port.write(data)
 
             count = count + 16
-            if (count % 512) == 0:
-                self.__displayProgress( "%d bytes            " % count )
+            if (count % 1024) == 0:
+                self.__displayProgress("%06d bytes" % count)
             data = f.read(16)
-        self.__displayProgress( "%d bytes transfered" % count )
+        self.__displayProgress("%d bytes transfered" % count)
         print ""
         f.close()
         self.getstatus()
@@ -327,7 +328,7 @@ class UBoot:
         if not os.path.exists(BINARY):
             raise Error("file "+BINARY+" doesn't exit",0)
         fsize = "%08x" % os.path.getsize(BINARY) #os.stat(filesize)[6]
-        self.bootstrap.download("A0000000",BINARY, fsize)
+        self.bootstrap.download("A0000000", BINARY, fsize)
 
     def resetenv(self):
         self.serial.write("run flash_reset_env\n")
@@ -382,7 +383,4 @@ if __name__ == "__main__":
     print "U-Boot successfully recovered !"
 
     del ser
-
-
-
 
