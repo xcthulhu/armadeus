@@ -106,6 +106,7 @@ int as_read_int(int fd, int *value_res)
     int value;
 
     ret = as_read_buffer(fd, buf, SIZEOFBUFF);
+    if (ret < 0) return ret;
     buf[ret-1] = '\0';
     value = strtol(buf, NULL, 10);
     *value_res = value;
