@@ -1,5 +1,7 @@
---- linux-2.6.36/drivers/spi/spi_imx.c	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36.new/drivers/spi/spi_imx.c	2010-11-29 08:00:31.000000000 +0100
+Index: linux-2.6.38-rc3/drivers/spi/spi_imx.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/spi/spi_imx.c
++++ linux-2.6.38-rc3/drivers/spi/spi_imx.c
 @@ -43,6 +43,9 @@
  #define MXC_CSPITXDATA		0x04
  #define MXC_CSPICTRL		0x08
@@ -10,8 +12,10 @@
  #define MXC_RESET		0x1c
  
  #define MX3_CSPISTAT		0x14
---- linux-2.6.36/drivers/media/video/mx1_camera.c	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36.new/drivers/media/video/mx1_camera.c	2010-11-29 08:04:20.000000000 +0100
+Index: linux-2.6.38-rc3/drivers/media/video/mx1_camera.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/media/video/mx1_camera.c
++++ linux-2.6.38-rc3/drivers/media/video/mx1_camera.c
 @@ -50,9 +50,13 @@
   * CSI registers
   */
@@ -37,13 +41,33 @@
  #define CSICR1_DATA_POL		(1 << 2)
  #define CSICR1_REDGE		(1 << 1)
  #define CSICR1_EN		(1 << 0)
---- a/arch/arm/plat-mxc/include/mach/mx1.h	2010-11-29 09:20:02.000000000 +0100
-+++ b/arch/arm/plat-mxc/include/mach/mx1.h	2010-11-29 09:20:19.000000000 +0100
-@@ -109,6 +109,7 @@
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/mx1.h
+===================================================================
+--- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/mx1.h
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/mx1.h
+@@ -54,13 +54,13 @@
+ #define MX1_AIPI2_BASE_ADDR		(0x10000 + MX1_IO_BASE_ADDR)
+ #define MX1_SIM_BASE_ADDR		(0x11000 + MX1_IO_BASE_ADDR)
+ #define MX1_USBD_BASE_ADDR		(0x12000 + MX1_IO_BASE_ADDR)
+-#define MX1_SPI1_BASE_ADDR		(0x13000 + MX1_IO_BASE_ADDR)
++#define MX1_CSPI1_BASE_ADDR		(0x13000 + MX1_IO_BASE_ADDR)
+ #define MX1_MMC_BASE_ADDR		(0x14000 + MX1_IO_BASE_ADDR)
+ #define MX1_ASP_BASE_ADDR		(0x15000 + MX1_IO_BASE_ADDR)
+ #define MX1_BTA_BASE_ADDR		(0x16000 + MX1_IO_BASE_ADDR)
+ #define MX1_I2C_BASE_ADDR		(0x17000 + MX1_IO_BASE_ADDR)
+ #define MX1_SSI_BASE_ADDR		(0x18000 + MX1_IO_BASE_ADDR)
+-#define MX1_SPI2_BASE_ADDR		(0x19000 + MX1_IO_BASE_ADDR)
++#define MX1_CSPI2_BASE_ADDR		(0x19000 + MX1_IO_BASE_ADDR)
+ #define MX1_MSHC_BASE_ADDR		(0x1A000 + MX1_IO_BASE_ADDR)
+ #define MX1_CCM_BASE_ADDR		(0x1B000 + MX1_IO_BASE_ADDR)
+ #define MX1_SCM_BASE_ADDR		(0x1B804 + MX1_IO_BASE_ADDR)
+@@ -112,7 +112,8 @@
  #define MX1_PWM_INT		34
  #define MX1_SDHC_INT		35
  #define MX1_INT_I2C		39
-+#define MX1_SPI2_INT		40
- #define MX1_CSPI_INT		41
+-#define MX1_CSPI_INT		41
++#define MX1_INT_CSPI2		40
++#define MX1_INT_CSPI1		41
  #define MX1_SSI_TX_INT		42
  #define MX1_SSI_TX_ERR_INT	43
+ #define MX1_SSI_RX_INT		44
