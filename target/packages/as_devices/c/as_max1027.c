@@ -204,7 +204,7 @@ int32_t as_adc_get_value_in_millivolts_max1027(struct as_adc_device *aDev, int a
     file = open(buffer, O_WRONLY);
     if (file < 0) {
         ERROR("Can't open conversion file\n");
-        return NULL;
+        return -1;
     }
     ret = as_write_buffer(file, MAX1027_CONV |
                                 MAX1027_CONV_CHSEL(aChannel) |

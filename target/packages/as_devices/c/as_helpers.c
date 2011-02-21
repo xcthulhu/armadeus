@@ -62,7 +62,6 @@ int as_write_buffer(int fd, int value)
 int as_write_buffer_string(int fd, char *string)
 {
     int ret;
-    char buffer[SIZE_OF_BUFF];
     int string_len;
 
     string_len = strlen(string);
