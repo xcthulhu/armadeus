@@ -28,5 +28,5 @@ void initAsDac_wrap();
 /* Functions wrapped */
 /*********************/
 static PyObject * dac_open(PyObject *self, PyObject *args);
-static PyObject * dac_set_value(PyObject *self, PyObject *args);
+static PyObject * dac_setValueInMillivolts(PyObject *self, PyObject *args);
 static PyObject * dac_close(PyObject *self, PyObject *args);

@@ -24,7 +24,7 @@
 /* Methods definitions */
 static PyMethodDef AsDac_wrap_methods[] = {
     {"dac_open", dac_open, METH_VARARGS, "Initialize dac"},
-    {"setValueInMillivolts", dac_set_value, METH_VARARGS, "Set Channel value in millivolts"},
+    {"dac_setValueInMillivolts", dac_setValueInMillivolts, METH_VARARGS, "Set Channel value in millivolts"},
     {"dac_close", dac_close, METH_VARARGS, "Close dac"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
@@ -72,7 +72,7 @@ static PyObject * dac_open(PyObject *self, PyObject *args)
     return ret;
 }
 
-static PyObject * setValueInMillivolts(PyObject *self, PyObject *args)
+static PyObject * dac_setValueInMillivolts(PyObject *self, PyObject *args)
 {
     /* parameters */
     struct as_dac_device *aDev;
