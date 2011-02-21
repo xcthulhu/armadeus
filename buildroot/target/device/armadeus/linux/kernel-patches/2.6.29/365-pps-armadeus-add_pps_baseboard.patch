@@ -1,0 +1,369 @@
+
+Adds support for APF27's PPS baseboard.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.29.6/arch/arm/mach-mx2/pps.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.29.6/arch/arm/mach-mx2/pps.c	2010-10-28 15:25:13.000000000 +0200
+@@ -0,0 +1,329 @@
++ /*
++ * pps.c
++ * Support of PPS baseboard
++ *
++ * Copyright (C) 2009 Armadeus Systems
++ * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
++ *          Nicolas Colombain <nicolas.colombain@armadeus.com>
++ *          Fabien Marteau <fabien.marteau@armadeus.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++#include <linux/i2c.h>
++#include <linux/serial.h>
++#include <linux/delay.h>
++#include <linux/irq.h>
++#include <linux/clk.h>
++#include <linux/dma-mapping.h>
++#include <asm/io.h>
++#include <asm/mach/arch.h>
++#include <asm/mach-types.h>
++#include <asm/mach/time.h>
++#include <mach/common.h>
++#include <mach/hardware.h>
++#include <mach/iomux-mx1-mx2.h>
++#include <mach/gpio.h>
++#include <mach/imx_i2c.h>
++#include <../mach-imx/include/mach/spi_imx.h>
++#include <mach/imx-uart.h>
++#include <mach/board-apf27.h>
++#include <asm/mach/map.h>
++#include <mach/mxc_nand.h>
++#include <mach/mxc_ehci.h>
++#include <mach/ulpi.h>
++#include <mach/mmc.h>
++
++#include "devices.h"
++#include "crm_regs.h"
++
++/*********/
++/* Wi2Wi */
++/*********/
++
++#define BT_RESETn	(GPIO_PORTE | 11)	/* UART3_RTS */
++#define WIFI_PWRDNn	(GPIO_PORTE | 10)	/* UART3_CTS */
++
++static int bt_wifi_pins[] = {
++	(BT_RESETn | GPIO_OUT | GPIO_GPIO),
++	(WIFI_PWRDNn | GPIO_OUT | GPIO_GPIO),
++};
++
++/* SDHC2 is used for WiFi */
++static int mxc_sdhc2_pins[] = {
++	PB4_PF_SDHC2_D0,
++	PB5_PF_SDHC2_D1,
++	PB6_PF_SDHC2_D2,
++	PB7_PF_SDHC2_D3,
++	PB8_PF_SDHC2_CMD,
++	PB9_PF_SDHC2_CLK,
++};
++
++static int sdhc2_init(struct device *dev, irq_handler_t handler, void *data)
++{
++	return mxc_gpio_setup_multiple_pins(mxc_sdhc2_pins,
++				ARRAY_SIZE(mxc_sdhc2_pins),
++				"SDHC2");
++}
++
++static void sdhc2_exit(struct device *pdev, void *data)
++{
++	mxc_gpio_release_multiple_pins(mxc_sdhc2_pins, ARRAY_SIZE(mxc_sdhc2_pins));
++}
++
++static struct imxmmc_platform_data sdhc2_pdata = {
++	.init = sdhc2_init,
++	.exit = sdhc2_exit,
++};
++
++static int bt_wifi_init(void)
++{
++	int res=0;
++
++	res = mxc_gpio_setup_multiple_pins(bt_wifi_pins,
++			ARRAY_SIZE(bt_wifi_pins), "BT_WIFI");
++    if(!res){
++    	mxc_register_device(&mxc_sdhc_device1, &sdhc2_pdata);
++	gpio_set_value(WIFI_PWRDNn, 1);	/* WiFi on */
++	gpio_set_value(BT_RESETn, 1);	/* Bluetooth on */
++    }
++
++	mxc_gpio_release_multiple_pins(bt_wifi_pins, ARRAY_SIZE(bt_wifi_pins));
++
++	return res;
++}
++
++/***********/
++/*  USBH1  */
++/***********/
++
++/* Adds an USB PHY ISP1105 on i.MX27 USB_HOST port 2 (pps schematic page 2) */
++static int mxc_usbh1_pins[] = {
++	PB22_PF_USBH1_SUSP,
++	PB23_PF_USB_PWR,
++	PB24_PF_USB_OC_B,
++	PB25_PF_USBH1_RCV,
++	PB26_PF_USBH1_FS,
++	PB27_PF_USBH1_OE_B,
++	PB28_PF_USBH1_TXDM,
++	PB29_PF_USBH1_TXDP,
++	PB30_PF_USBH1_RXDM,
++	PB31_PF_USBH1_RXDP
++};
++
++static int apf27_usbh1_init(struct platform_device *pdev)
++{
++	int ret;
++	uint32_t temp;
++
++	ret = mxc_gpio_setup_multiple_pins(mxc_usbh1_pins,
++			ARRAY_SIZE(mxc_usbh1_pins), "usbh1");
++	if (ret)
++		return ret;
++
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x600);
++	pr_debug("USB_CTRL before: 0x%08x\n", temp);
++	temp &= ~( (3 << 13) | (1 << 8) |  1 );
++	temp |=  (1 << 4) | (1 << 11) ;
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x600);
++	pr_debug("USB_CTRL after: 0x%08x\n", temp);
++
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x384);
++	pr_debug("PORTSC1 before: 0x%08x\n", temp);
++	temp &= ~(3 << 30);
++	temp |= 3 << 30;
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x384);
++	pr_debug("PORTSC1 after: 0x%08x\n", temp);
++	mdelay(10);
++
++	temp = readl(IO_ADDRESS(OTG_BASE_ADDR) + 0x340);
++	temp |= 0x02; /* reset controller */
++	writel(temp, IO_ADDRESS(OTG_BASE_ADDR) + 0x340);
++	pr_debug("reset controller: 0x%08x\n", temp);
++	mdelay(10);
++
++	return ret;
++}
++
++struct mxc_usb2_platform_data ehci1_pdata = {
++	.init = apf27_usbh1_init,
++};
++
++/***********/
++/*  USBH2  */
++/***********/
++/* define USB registers XXX */
++#define USB_CTRL	(IO_ADDRESS(OTG_BASE_ADDR) + 0x600)
++#define UOG_PORTSC1	(IO_ADDRESS(OTG_BASE_ADDR) + 0x184)
++#define UOG_USBCMD 	(IO_ADDRESS(OTG_BASE_ADDR) + 0x140)
++#define UOG_ULPIVIEW	(IO_ADDRESS(OTG_BASE_ADDR) + 0x170)
++#define UH2_PORTSC1	(IO_ADDRESS(OTG_BASE_ADDR) + 0x584)
++#define UH2_USBCMD	(IO_ADDRESS(OTG_BASE_ADDR) + 0x540)
++#define UH2_ULPIVIEW	(IO_ADDRESS(OTG_BASE_ADDR) + 0x570)
++
++#define USBH2_RST_n_GPIO (GPIO_PORTB | 10)
++#define USBH2_RST_n	(USBH2_RST_n_GPIO | GPIO_GPIO | GPIO_OUT)
++
++static int mxc_usbh2_reset_pin[] = {
++	USBH2_RST_n,
++};
++
++/* CONFIG EHCI2  USBH2  */
++static int mxc_usbh2_pins[] = {
++	PA0_PF_USBH2_CLK,
++	PA1_PF_USBH2_DIR,
++	PA3_PF_USBH2_NXT,
++	PA4_PF_USBH2_STP,
++	PD22_AF_USBH2_DATA0,
++	PD24_AF_USBH2_DATA1,
++	PD23_AF_USBH2_DATA2,
++	PD20_AF_USBH2_DATA3,
++	PD19_AF_USBH2_DATA4,
++	PD26_AF_USBH2_DATA5,
++	PD21_AF_USBH2_DATA6,
++	PA2_PF_USBH2_DATA7,
++
++};
++
++static int usb3315_set_vbus_power(void __iomem *view, int on)
++{
++	int vid, pid, ret = 0;
++
++	vid = (ulpi_read(USB3315_VID_HIGH, view) << 8) |
++		 ulpi_read(USB3315_VID_LOW, view);
++	pid = (ulpi_read(USB3315_PID_HIGH, view) << 8) |
++		 ulpi_read(USB3315_PID_LOW, view);
++
++	pr_info("ULPI h2 Vendor ID 0x%x    Product ID 0x%x\n", vid, pid);
++	if (vid != 0x424  || pid != 0x6) { //XXX
++		pr_err("No USB3315 found\n");
++		return -1;
++	}
++
++	if (on) {
++		/* force disconnection of the DM/DP signals. This
++			avoid powering the connected device through these lines */
++		ulpi_set(RESET, USB3315_FCNCTL, view);
++		mdelay(10); /*wait until the supply is really down*/
++		ulpi_clear(RESET, USB3315_FCNCTL, view);
++		mdelay(1);
++
++		ret = ulpi_set(DRV_VBUS_EXT |	/* enable external Vbus */
++			    DRV_VBUS |		/* enable internal Vbus */
++			    USE_EXT_VBUS_IND |	/* use external indicator */
++			    CHRG_VBUS,		/* charge Vbus */
++			    USB3315_OTGCTL, view);
++	} else {
++		ret = ulpi_clear(DRV_VBUS_EXT |	/* disable external Vbus */
++			      DRV_VBUS,		/* disable internal Vbus */
++			      USB3315_OTGCTL, view);
++
++		ret |= ulpi_set(USE_EXT_VBUS_IND | /* use external indicator */
++			    DISCHRG_VBUS,	   /* discharge Vbus */
++			    USB3315_OTGCTL, view);
++	}
++
++	return ret;
++}
++
++static void usb3315_suspend(void __iomem *view)
++{
++	/* usb3315_set_vbus_power(view, 0); needed ? */
++	ulpi_clear(SUSPENDM, USB3315_FCNCTL, view);
++}
++
++static int apf27_usbh2_init(struct platform_device *pdev)
++{
++	int ret;
++	uint32_t temp;
++
++	gpio_set_value(USBH2_RST_n_GPIO, 1);	/* reset off */
++
++	ret = mxc_gpio_setup_multiple_pins(mxc_usbh2_reset_pin,
++			ARRAY_SIZE(mxc_usbh2_reset_pin), "USBH2_RESET");
++
++	ret = mxc_gpio_setup_multiple_pins(mxc_usbh2_pins,
++			ARRAY_SIZE(mxc_usbh2_pins), "USBH2");
++	if (ret)
++		return ret;
++
++	temp = readl(USB_CTRL);
++
++	pr_debug("USB_CTRL before: 0x%08x\n", temp);
++	/* H2SIC = 3 */
++	temp &= ~( (3 << 21) | 1 );
++	/* H2PM=1, H2WIE=1, H2UIE=1 */
++	temp |= (1 << 16) | (1 << 19) | (1 << 20);
++	writel(temp, USB_CTRL);
++	pr_debug("USB_CTRL after: 0x%08x\n", temp);
++
++	temp = readl(UH2_PORTSC1);
++	pr_debug("PORTSC1 before: 0x%08x\n", temp);
++	/* XXX: ? */
++	temp &= ~(3 << 30);
++	temp |= 2 << 30;
++	writel(temp, UH2_PORTSC1);
++	pr_debug("PORTSC1 after: 0x%08x\n", temp);
++
++	mdelay(10);
++
++	temp = readl(UH2_USBCMD);
++	temp |= 0x02; /* reset controller */
++	writel(temp, UH2_USBCMD);
++	pr_debug("reset controller: 0x%08x\n", temp);
++	mdelay(50);
++
++	if (ret)
++		mxc_gpio_release_multiple_pins(mxc_usbh2_pins,
++			ARRAY_SIZE(mxc_usbh2_pins));
++
++	ret = usb3315_set_vbus_power(
++		(void __iomem *)UH2_ULPIVIEW, 1);
++
++	return ret;
++}
++
++struct mxc_usb2_platform_data ehci2_pdata = {
++    .init = apf27_usbh2_init,
++};
++
++/******************/
++/* Baseboard init */
++/******************/
++void apf27_baseboard_resume(void)
++{
++    /* TO BE DONE */
++}
++
++void apf27_baseboard_suspend(void)
++{
++    /* TO BE DONE */
++}
++
++void __init apf27_baseboard_init(void)
++{
++    printk("\n** Registering PPS ressources: **\n");
++
++    /* Init USB */
++    mxc_register_device(&mxc_ehci1, &ehci1_pdata);
++    mxc_register_device(&mxc_ehci2, &ehci2_pdata);
++
++	/* init Wi2Wi */
++	bt_wifi_init();
++
++	printk("done\n");
++}
++
+Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2010-10-28 15:15:50.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2010-10-28 15:15:53.000000000 +0200
+@@ -63,6 +63,13 @@
+ 	  activates the devices you want to use if you have the "Full"
+ 	  version.
+ 
++config MACH_PPS
++	prompt "Armadeus Systems APF27 PPS Secured Gateway"
++	bool
++	depends on MACH_APF27
++	help
++	  This selects the APF27 PPS as baseboard.
++
+ endchoice
+ 
+ config MACH_APF27_DEV_EXT
+Index: linux-2.6.29.6/arch/arm/mach-mx2/Makefile
+===================================================================
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2010-10-28 15:15:51.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2010-10-28 15:15:53.000000000 +0200
+@@ -15,6 +15,7 @@
+ obj-$(CONFIG_MACH_APF27_DEV) += apf27-dev.o
+ obj-$(CONFIG_MACH_APF27_DEV) += apf27-lcd.o
+ obj-$(CONFIG_MACH_APF27_DEV_EXT_WIRELESS) += apf27-dev-ext-apw.o
++obj-$(CONFIG_MACH_PPS) += pps.o
+ obj-$(CONFIG_MACH_MX27ADS) += mx27ads.o
+ obj-$(CONFIG_MACH_PCM038) += pcm038.o
+ obj-$(CONFIG_MACH_PCM970_BASEBOARD) += pcm970-baseboard.o
