@@ -64,9 +64,9 @@ struct as_dac_device *as_dac_open(const char *aDacType, int aBusNumber,
  *
  * @return negative value on error
  */
-int32_t as_dac_set_value(struct as_dac_device *aDev,
-                        int aChannel,
-                        int aValue);
+int32_t as_dac_set_value_in_millivolts(struct as_dac_device *aDev,
+                                       int aChannel,
+                                       int aValue);
 
 /** @brief close device
  *

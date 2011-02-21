@@ -40,9 +40,9 @@ struct as_dac_device *as_dac_open(const char *aDacType, int aBusNumber,
     return NULL;
 }
 
-int32_t as_dac_set_value(struct as_dac_device *aDev,
-                        int aChannel,
-                        int aValue)
+int32_t as_dac_set_value_in_millivolts(struct as_dac_device *aDev,
+                                       int aChannel,
+                                       int aValue)
 {
     if (strncmp(AS_MAX5821_TYPE, aDev->device_type, strlen(AS_MAX5821_TYPE)) == 0)
         return as_dac_set_value_max5821(aDev, aChannel, aValue);
