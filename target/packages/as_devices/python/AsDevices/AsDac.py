@@ -78,7 +78,7 @@ class AsDac:
             AsDac.__dac["%s:%d-0x%02x"%(aDacType, aBusNumber, aAddress)] =\
                                     cls.__impl(aDacType, aBusNumber, aAddress, aVRef)
 
-        return AsDac.__dac["%s:%d-0x%02x"%(aDacType, aDeviceNum, aAddress)]
+        return AsDac.__dac["%s:%d-0x%02x"%(aDacType, aBusNumber, aAddress)]
 
     def  __init__(self):
         """ Initialize dac

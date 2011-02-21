@@ -44,8 +44,14 @@ int32_t as_dac_set_value_in_millivolts(struct as_dac_device *aDev,
                                        int aChannel,
                                        int aValue)
 {
-    if (strncmp(AS_MAX5821_TYPE, aDev->device_type, strlen(AS_MAX5821_TYPE)) == 0)
-        return as_dac_set_value_max5821(aDev, aChannel, aValue);
+    if (strncmp(AS_MAX5821_TYPE, aDev->device_type, strlen(AS_MAX5821_TYPE)) == 0) {
+        if ((aChannel == 0) || (aChannel == 1))
+            return as_dac_set_value_max5821(aDev, aChannel + 'A', aValue);
+        else {
+            ERROR("Wrong channel number %d\n",aChannel);
+            return -1;
+        }
+    }
 
     ERROR("Undefined DAC type '%s'\n", aDev->device_type);
     return -1;
@@ -60,3 +66,4 @@ int32_t as_dac_close(struct as_dac_device *aDev)
     free(aDev);
     return 0;
 }
+

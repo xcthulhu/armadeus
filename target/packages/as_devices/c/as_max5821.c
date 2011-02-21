@@ -75,7 +75,7 @@ struct as_dac_device *as_dac_open_max5821(int aI2cBus, int aI2cAddress, int aVRe
         goto free_dev_err;
     }
 
-    /* TODO: power channels */
+    
 
     max5821_dev->i2c_dev = i2c_dev;
 
@@ -85,9 +85,20 @@ struct as_dac_device *as_dac_open_max5821(int aI2cBus, int aI2cAddress, int aVRe
     dev->vref = aVRef;
     dev->chip_param = (void *)max5821_dev;
 
+    ret = as_dac_max5821_power(dev, 'A', MAX5821_POWER_UP);
+    if (ret < 0) {
+        ERROR("Can't power up MAX5821 channel A\n");
+        goto free_max5821_dev_err;
+    }
+    ret = as_dac_max5821_power(dev, 'B', MAX5821_POWER_UP);
+    if (ret < 0) {
+        ERROR("Can't power up MAX5821 channel B\n");
+        goto free_max5821_dev_err;
+    }
+
     return dev;
 
-/*free_max5821_dev_err: */
+free_max5821_dev_err:
     free(max5821_dev);
 free_dev_err:
     free(dev);
