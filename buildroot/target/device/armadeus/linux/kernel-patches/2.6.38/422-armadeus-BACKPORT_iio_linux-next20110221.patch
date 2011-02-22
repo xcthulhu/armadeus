@@ -1,0 +1,4519 @@
+Backport all drivers from iio staging directory
+
+Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
+Index: linux-2.6.38-rc3/drivers/staging/iio/accel/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/accel/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/accel/Kconfig	2011-02-21 18:29:49.000000000 +0100
+@@ -66,12 +66,33 @@
+ 	tristate "ST Microelectronics LIS3L02DQ Accelerometer Driver"
+ 	depends on SPI
+ 	select IIO_TRIGGER if IIO_RING_BUFFER
+-	select IIO_SW_RING if IIO_RING_BUFFER
++	depends on !IIO_RING_BUFFER || IIO_KFIFO_BUF || IIO_SW_RING
+ 	help
+ 	  Say yes here to build SPI support for the ST microelectronics
+ 	  accelerometer. The driver supplies direct access via sysfs files
+ 	  and an event interface via a character device.
+ 
++choice
++	prompt "Buffer type"
++       	depends on LIS3L02DQ && IIO_RING_BUFFER
++
++config LIS3L02DQ_BUF_KFIFO
++       depends on IIO_KFIFO_BUF
++       bool "Simple FIFO"
++       help
++         Kfifo based FIFO.  Does not provide any events so it is up
++	 to userspace to ensure it reads often enough that data is not
++	 lost.
++
++config LIS3L02DQ_BUF_RING_SW
++       depends on IIO_SW_RING
++       bool "IIO Software Ring"
++       help
++         Original IIO ring buffer implementation.  Provides simple
++	 buffer events, half full etc.
++
++endchoice
++
+ config SCA3000
+ 	depends on IIO_RING_BUFFER
+ 	depends on SPI
+Index: linux-2.6.38-rc3/drivers/staging/iio/accel/lis3l02dq.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/accel/lis3l02dq.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/accel/lis3l02dq.h	2011-02-21 18:29:49.000000000 +0100
+@@ -196,6 +196,16 @@
+ int lis3l02dq_configure_ring(struct iio_dev *indio_dev);
+ void lis3l02dq_unconfigure_ring(struct iio_dev *indio_dev);
+ 
++#ifdef CONFIG_LIS3L02DQ_BUF_RING_SW
++#define lis3l02dq_free_buf iio_sw_rb_free
++#define lis3l02dq_alloc_buf iio_sw_rb_allocate
++#define lis3l02dq_register_buf_funcs iio_ring_sw_register_funcs
++#endif
++#ifdef CONFIG_LIS3L02DQ_BUF_KFIFO
++#define lis3l02dq_free_buf iio_kfifo_free
++#define lis3l02dq_alloc_buf iio_kfifo_allocate
++#define lis3l02dq_register_buf_funcs iio_kfifo_register_funcs
++#endif
+ #else /* CONFIG_IIO_RING_BUFFER */
+ 
+ static inline void lis3l02dq_remove_trigger(struct iio_dev *indio_dev)
+Index: linux-2.6.38-rc3/drivers/staging/iio/accel/lis3l02dq_ring.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/accel/lis3l02dq_ring.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/accel/lis3l02dq_ring.c	2011-02-21 18:29:49.000000000 +0100
+@@ -13,6 +13,7 @@
+ #include "../iio.h"
+ #include "../sysfs.h"
+ #include "../ring_sw.h"
++#include "../kfifo_buf.h"
+ #include "accel.h"
+ #include "../trigger.h"
+ #include "lis3l02dq.h"
+@@ -484,7 +485,7 @@
+ void lis3l02dq_unconfigure_ring(struct iio_dev *indio_dev)
+ {
+ 	kfree(indio_dev->pollfunc);
+-	iio_sw_rb_free(indio_dev->ring);
++	lis3l02dq_free_buf(indio_dev->ring);
+ }
+ 
+ int lis3l02dq_configure_ring(struct iio_dev *indio_dev)
+@@ -495,13 +496,13 @@
+ 	INIT_WORK(&h->work_trigger_to_ring, lis3l02dq_trigger_bh_to_ring);
+ 	h->get_ring_element = &lis3l02dq_get_ring_element;
+ 
+-	ring = iio_sw_rb_allocate(indio_dev);
++	ring = lis3l02dq_alloc_buf(indio_dev);
+ 	if (!ring)
+ 		return -ENOMEM;
+ 
+ 	indio_dev->ring = ring;
+ 	/* Effectively select the ring buffer implementation */
+-	iio_ring_sw_register_funcs(&ring->access);
++	lis3l02dq_register_buf_funcs(&ring->access);
+ 	ring->bpe = 2;
+ 	ring->scan_el_attrs = &lis3l02dq_scan_el_group;
+ 	ring->scan_timestamp = true;
+@@ -522,6 +523,6 @@
+ 	return 0;
+ 
+ error_iio_sw_rb_free:
+-	iio_sw_rb_free(indio_dev->ring);
++	lis3l02dq_free_buf(indio_dev->ring);
+ 	return ret;
+ }
+Index: linux-2.6.38-rc3/drivers/staging/iio/adc/ad7476_core.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/adc/ad7476_core.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/adc/ad7476_core.c	2011-02-21 18:29:49.000000000 +0100
+@@ -190,7 +190,7 @@
+ 		goto error_disable_reg;
+ 	}
+ 
+-	/* Estabilish that the iio_dev is a child of the i2c device */
++	/* Establish that the iio_dev is a child of the spi device */
+ 	st->indio_dev->dev.parent = &spi->dev;
+ 	st->indio_dev->attrs = &ad7476_attribute_group;
+ 	st->indio_dev->dev_data = (void *)(st);
+Index: linux-2.6.38-rc3/drivers/staging/iio/dac/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/dac/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/dac/Kconfig	2011-02-21 18:29:49.000000000 +0100
+@@ -19,3 +19,13 @@
+ 
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called ad5446.
++
++config MAX517
++	tristate "Maxim MAX517/518/519 DAC driver"
++	depends on I2C && EXPERIMENTAL
++	help
++	  If you say yes here you get support for the Maxim chips MAX517,
++	  MAX518 and MAX519 (I2C 8-Bit DACs with rail-to-rail outputs).
++
++	  This driver can also be built as a module.  If so, the module
++	  will be called max517.
+Index: linux-2.6.38-rc3/drivers/staging/iio/dac/Makefile
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/dac/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/dac/Makefile	2011-02-21 18:29:49.000000000 +0100
+@@ -4,3 +4,4 @@
+ 
+ obj-$(CONFIG_AD5624R_SPI) += ad5624r_spi.o
+ obj-$(CONFIG_AD5446) += ad5446.o
++obj-$(CONFIG_MAX517) += max517.o
+Index: linux-2.6.38-rc3/drivers/staging/iio/dac/max517.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/dac/max517.c	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,298 @@
++/*
++ *  max517.c - Support for Maxim MAX517, MAX518 and MAX519
++ *
++ *  Copyright (C) 2010, 2011 Roland Stigge <stigge@antcom.de>
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/jiffies.h>
++#include <linux/i2c.h>
++#include <linux/err.h>
++
++#include "../iio.h"
++#include "dac.h"
++
++#include "max517.h"
++
++#define MAX517_DRV_NAME	"max517"
++
++/* Commands */
++#define COMMAND_CHANNEL0	0x00
++#define COMMAND_CHANNEL1	0x01 /* for MAX518 and MAX519 */
++#define COMMAND_PD		0x08 /* Power Down */
++
++enum max517_device_ids {
++	ID_MAX517,
++	ID_MAX518,
++	ID_MAX519,
++};
++
++struct max517_data {
++	struct iio_dev		*indio_dev;
++	struct i2c_client	*client;
++	unsigned short		vref_mv[2];
++};
++
++/*
++ * channel: bit 0: channel 1
++ *          bit 1: channel 2
++ * (this way, it's possible to set both channels at once)
++ */
++static ssize_t max517_set_value(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count, int channel)
++{
++	struct iio_dev *dev_info = dev_get_drvdata(dev);
++	struct max517_data *data = iio_dev_get_devdata(dev_info);
++	struct i2c_client *client = data->client;
++	u8 outbuf[4]; /* 1x or 2x command + value */
++	int outbuf_size = 0;
++	int res;
++	long val;
++
++	res = strict_strtol(buf, 10, &val);
++
++	if (res)
++		return res;
++
++	if (val < 0 || val > 255)
++		return -EINVAL;
++
++	if (channel & 1) {
++		outbuf[outbuf_size++] = COMMAND_CHANNEL0;
++		outbuf[outbuf_size++] = val;
++	}
++	if (channel & 2) {
++		outbuf[outbuf_size++] = COMMAND_CHANNEL1;
++		outbuf[outbuf_size++] = val;
++	}
++
++	/*
++	 * At this point, there are always 1 or 2 two-byte commands in
++	 * outbuf. With 2 commands, the device can set two outputs
++	 * simultaneously, latching the values upon the end of the I2C
++	 * transfer.
++	 */
++
++	res = i2c_master_send(client, outbuf, outbuf_size);
++	if (res < 0)
++		return res;
++
++	return count;
++}
++
++static ssize_t max517_set_value_1(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	return max517_set_value(dev, attr, buf, count, 1);
++}
++static IIO_DEV_ATTR_OUT_RAW(1, max517_set_value_1, 0);
++
++static ssize_t max517_set_value_2(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	return max517_set_value(dev, attr, buf, count, 2);
++}
++static IIO_DEV_ATTR_OUT_RAW(2, max517_set_value_2, 1);
++
++static ssize_t max517_set_value_both(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	return max517_set_value(dev, attr, buf, count, 3);
++}
++static IIO_DEVICE_ATTR_NAMED(out1and2_raw, out1&2_raw, S_IWUSR, NULL,
++		max517_set_value_both, -1);
++
++static ssize_t max517_show_scale(struct device *dev,
++				struct device_attribute *attr,
++				char *buf, int channel)
++{
++	struct iio_dev *dev_info = dev_get_drvdata(dev);
++	struct max517_data *data = iio_dev_get_devdata(dev_info);
++	/* Corresponds to Vref / 2^(bits) */
++	unsigned int scale_uv = (data->vref_mv[channel - 1] * 1000) >> 8;
++
++	return sprintf(buf, "%d.%03d\n", scale_uv / 1000, scale_uv % 1000);
++}
++
++static ssize_t max517_show_scale1(struct device *dev,
++				struct device_attribute *attr,
++				char *buf)
++{
++	return max517_show_scale(dev, attr, buf, 1);
++}
++static IIO_DEVICE_ATTR(out1_scale, S_IRUGO, max517_show_scale1, NULL, 0);
++
++static ssize_t max517_show_scale2(struct device *dev,
++				struct device_attribute *attr,
++				char *buf)
++{
++	return max517_show_scale(dev, attr, buf, 2);
++}
++static IIO_DEVICE_ATTR(out2_scale, S_IRUGO, max517_show_scale2, NULL, 0);
++
++/* On MAX517 variant, we have one output */
++static struct attribute *max517_attributes[] = {
++	&iio_dev_attr_out1_raw.dev_attr.attr,
++	&iio_dev_attr_out1_scale.dev_attr.attr,
++	NULL
++};
++
++static struct attribute_group max517_attribute_group = {
++	.attrs = max517_attributes,
++};
++
++/* On MAX518 and MAX519 variant, we have two outputs */
++static struct attribute *max518_attributes[] = {
++	&iio_dev_attr_out1_raw.dev_attr.attr,
++	&iio_dev_attr_out1_scale.dev_attr.attr,
++	&iio_dev_attr_out2_raw.dev_attr.attr,
++	&iio_dev_attr_out2_scale.dev_attr.attr,
++	&iio_dev_attr_out1and2_raw.dev_attr.attr,
++	NULL
++};
++
++static struct attribute_group max518_attribute_group = {
++	.attrs = max518_attributes,
++};
++
++static int max517_suspend(struct i2c_client *client, pm_message_t mesg)
++{
++	u8 outbuf = COMMAND_PD;
++
++	return i2c_master_send(client, &outbuf, 1);
++}
++
++static int max517_resume(struct i2c_client *client)
++{
++	u8 outbuf = 0;
++
++	return i2c_master_send(client, &outbuf, 1);
++}
++
++static int max517_probe(struct i2c_client *client,
++			const struct i2c_device_id *id)
++{
++	struct max517_data *data;
++	struct max517_platform_data *platform_data = client->dev.platform_data;
++	int err;
++
++	data = kzalloc(sizeof(struct max517_data), GFP_KERNEL);
++	if (!data) {
++		err = -ENOMEM;
++		goto exit;
++	}
++
++	i2c_set_clientdata(client, data);
++
++	data->client = client;
++
++	data->indio_dev = iio_allocate_device();
++	if (data->indio_dev == NULL) {
++		err = -ENOMEM;
++		goto exit_free_data;
++	}
++
++	/* establish that the iio_dev is a child of the i2c device */
++	data->indio_dev->dev.parent = &client->dev;
++
++	/* reduced attribute set for MAX517 */
++	if (id->driver_data == ID_MAX517)
++		data->indio_dev->attrs = &max517_attribute_group;
++	else
++		data->indio_dev->attrs = &max518_attribute_group;
++	data->indio_dev->dev_data = (void *)(data);
++	data->indio_dev->driver_module = THIS_MODULE;
++	data->indio_dev->modes = INDIO_DIRECT_MODE;
++
++	/*
++	 * Reference voltage on MAX518 and default is 5V, else take vref_mv
++	 * from platform_data
++	 */
++	if (id->driver_data == ID_MAX518 || !platform_data) {
++		data->vref_mv[0] = data->vref_mv[1] = 5000; /* mV */
++	} else {
++		data->vref_mv[0] = platform_data->vref_mv[0];
++		data->vref_mv[1] = platform_data->vref_mv[1];
++	}
++
++	err = iio_device_register(data->indio_dev);
++	if (err)
++		goto exit_free_device;
++
++	dev_info(&client->dev, "DAC registered\n");
++
++	return 0;
++
++exit_free_device:
++	iio_free_device(data->indio_dev);
++exit_free_data:
++	kfree(data);
++exit:
++	return err;
++}
++
++static int max517_remove(struct i2c_client *client)
++{
++	struct max517_data *data = i2c_get_clientdata(client);
++
++	iio_free_device(data->indio_dev);
++	kfree(data);
++
++	return 0;
++}
++
++static const struct i2c_device_id max517_id[] = {
++	{ "max517", ID_MAX517 },
++	{ "max518", ID_MAX518 },
++	{ "max519", ID_MAX519 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, max517_id);
++
++static struct i2c_driver max517_driver = {
++	.driver = {
++		.name	= MAX517_DRV_NAME,
++	},
++	.probe		= max517_probe,
++	.remove		= max517_remove,
++	.suspend	= max517_suspend,
++	.resume		= max517_resume,
++	.id_table	= max517_id,
++};
++
++static int __init max517_init(void)
++{
++	return i2c_add_driver(&max517_driver);
++}
++
++static void __exit max517_exit(void)
++{
++	i2c_del_driver(&max517_driver);
++}
++
++MODULE_AUTHOR("Roland Stigge <stigge@antcom.de>");
++MODULE_DESCRIPTION("MAX517/MAX518/MAX519 8-bit DAC");
++MODULE_LICENSE("GPL");
++
++module_init(max517_init);
++module_exit(max517_exit);
+Index: linux-2.6.38-rc3/drivers/staging/iio/dac/max517.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/dac/max517.h	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,19 @@
++/*
++ * MAX517 DAC driver
++ *
++ * Copyright 2011 Roland Stigge <stigge@antcom.de>
++ *
++ * Licensed under the GPL-2 or later.
++ */
++#ifndef IIO_DAC_MAX517_H_
++#define IIO_DAC_MAX517_H_
++
++/*
++ * TODO: struct max517_platform_data needs to go into include/linux/iio
++ */
++
++struct max517_platform_data {
++	u16				vref_mv[2];
++};
++
++#endif /* IIO_DAC_MAX517_H_ */
+Index: linux-2.6.38-rc3/drivers/staging/iio/dds/ad9832.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/dds/ad9832.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/dds/ad9832.c	2011-02-21 18:29:49.000000000 +0100
+@@ -1,228 +1,336 @@
+ /*
+- * Driver for ADI Direct Digital Synthesis ad9832
++ * AD9832 SPI DDS driver
+  *
+- * Copyright (c) 2010 Analog Devices Inc.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
++ * Copyright 2011 Analog Devices Inc.
+  *
++ * Licensed under the GPL-2.
+  */
+-#include <linux/types.h>
+-#include <linux/mutex.h>
++
+ #include <linux/device.h>
+-#include <linux/spi/spi.h>
++#include <linux/kernel.h>
+ #include <linux/slab.h>
+ #include <linux/sysfs.h>
++#include <linux/spi/spi.h>
++#include <linux/regulator/consumer.h>
++#include <linux/err.h>
++#include <asm/div64.h>
+ 
+ #include "../iio.h"
+ #include "../sysfs.h"
++#include "dds.h"
+ 
+-#define DRV_NAME "ad9832"
+-
+-#define value_mask (u16)0xf000
+-#define cmd_shift 12
+-#define add_shift 8
+-#define AD9832_SYNC (1 << 13)
+-#define AD9832_SELSRC (1 << 12)
+-#define AD9832_SLEEP (1 << 13)
+-#define AD9832_RESET (1 << 12)
+-#define AD9832_CLR (1 << 11)
+-
+-#define ADD_FREQ0LL 0x0
+-#define ADD_FREQ0HL 0x1
+-#define ADD_FREQ0LM 0x2
+-#define ADD_FREQ0HM 0x3
+-#define ADD_FREQ1LL 0x4
+-#define ADD_FREQ1HL 0x5
+-#define ADD_FREQ1LM 0x6
+-#define ADD_FREQ1HM 0x7
+-#define ADD_PHASE0L 0x8
+-#define ADD_PHASE0H 0x9
+-#define ADD_PHASE1L 0xa
+-#define ADD_PHASE1H 0xb
+-#define ADD_PHASE2L 0xc
+-#define ADD_PHASE2H 0xd
+-#define ADD_PHASE3L 0xe
+-#define ADD_PHASE3H 0xf
+-
+-#define CMD_PHA8BITSW 0x1
+-#define CMD_PHA16BITSW 0x0
+-#define CMD_FRE8BITSW 0x3
+-#define CMD_FRE16BITSW 0x2
+-#define CMD_SELBITSCTL 0x6
+-
+-struct ad9832_setting {
+-	u16 freq0[4];
+-	u16 freq1[4];
+-	u16 phase0[2];
+-	u16 phase1[2];
+-	u16 phase2[2];
+-	u16 phase3[2];
+-};
++#include "ad9832.h"
+ 
+-struct ad9832_state {
+-	struct mutex lock;
+-	struct iio_dev *idev;
+-	struct spi_device *sdev;
+-};
++static unsigned long ad9832_calc_freqreg(unsigned long mclk, unsigned long fout)
++{
++	unsigned long long freqreg = (u64) fout *
++				     (u64) ((u64) 1L << AD9832_FREQ_BITS);
++	do_div(freqreg, mclk);
++	return freqreg;
++}
+ 
+-static ssize_t ad9832_set_parameter(struct device *dev,
+-					struct device_attribute *attr,
+-					const char *buf,
+-					size_t len)
++static int ad9832_write_frequency(struct ad9832_state *st,
++				  unsigned addr, unsigned long fout)
+ {
+-	struct spi_message msg;
+-	struct spi_transfer xfer;
+-	int ret;
+-	struct ad9832_setting config;
+-	struct iio_dev *idev = dev_get_drvdata(dev);
+-	struct ad9832_state *st = idev->dev_data;
+-
+-	config.freq0[0] = (CMD_FRE8BITSW << add_shift | ADD_FREQ0LL << add_shift | buf[0]);
+-	config.freq0[1] = (CMD_FRE16BITSW << add_shift | ADD_FREQ0HL << add_shift | buf[1]);
+-	config.freq0[2] = (CMD_FRE8BITSW << add_shift | ADD_FREQ0LM << add_shift | buf[2]);
+-	config.freq0[3] = (CMD_FRE16BITSW << add_shift | ADD_FREQ0HM << add_shift | buf[3]);
+-	config.freq1[0] = (CMD_FRE8BITSW << add_shift | ADD_FREQ1LL << add_shift | buf[4]);
+-	config.freq1[1] = (CMD_FRE16BITSW << add_shift | ADD_FREQ1HL << add_shift | buf[5]);
+-	config.freq1[2] = (CMD_FRE8BITSW << add_shift | ADD_FREQ1LM << add_shift | buf[6]);
+-	config.freq1[3] = (CMD_FRE16BITSW << add_shift | ADD_FREQ1HM << add_shift | buf[7]);
+-
+-	config.phase0[0] = (CMD_PHA8BITSW << add_shift | ADD_PHASE0L << add_shift | buf[9]);
+-	config.phase0[1] = (CMD_PHA16BITSW << add_shift | ADD_PHASE0H << add_shift | buf[10]);
+-	config.phase1[0] = (CMD_PHA8BITSW << add_shift | ADD_PHASE1L << add_shift | buf[11]);
+-	config.phase1[1] = (CMD_PHA16BITSW << add_shift | ADD_PHASE1H << add_shift | buf[12]);
+-	config.phase2[0] = (CMD_PHA8BITSW << add_shift | ADD_PHASE2L << add_shift | buf[13]);
+-	config.phase2[1] = (CMD_PHA16BITSW << add_shift | ADD_PHASE2H << add_shift | buf[14]);
+-	config.phase3[0] = (CMD_PHA8BITSW << add_shift | ADD_PHASE3L << add_shift | buf[15]);
+-	config.phase3[1] = (CMD_PHA16BITSW << add_shift | ADD_PHASE3H << add_shift | buf[16]);
+-
+-	xfer.len = 2 * len;
+-	xfer.tx_buf = &config;
+-	mutex_lock(&st->lock);
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(&xfer, &msg);
+-	ret = spi_sync(st->sdev, &msg);
+-	if (ret)
+-		goto error_ret;
+-error_ret:
+-	mutex_unlock(&st->lock);
++	unsigned long regval;
+ 
+-	return ret ? ret : len;
+-}
++	if (fout > (st->mclk / 2))
++		return -EINVAL;
+ 
+-static IIO_DEVICE_ATTR(dds, S_IWUSR, NULL, ad9832_set_parameter, 0);
++	regval = ad9832_calc_freqreg(st->mclk, fout);
+ 
+-static struct attribute *ad9832_attributes[] = {
+-	&iio_dev_attr_dds.dev_attr.attr,
+-	NULL,
+-};
++	st->freq_data[0] = cpu_to_be16((AD9832_CMD_FRE8BITSW << CMD_SHIFT) |
++					(addr << ADD_SHIFT) |
++					((regval >> 24) & 0xFF));
++	st->freq_data[1] = cpu_to_be16((AD9832_CMD_FRE16BITSW << CMD_SHIFT) |
++					((addr - 1) << ADD_SHIFT) |
++					((regval >> 16) & 0xFF));
++	st->freq_data[2] = cpu_to_be16((AD9832_CMD_FRE8BITSW << CMD_SHIFT) |
++					((addr - 2) << ADD_SHIFT) |
++					((regval >> 8) & 0xFF));
++	st->freq_data[3] = cpu_to_be16((AD9832_CMD_FRE16BITSW << CMD_SHIFT) |
++					((addr - 3) << ADD_SHIFT) |
++					((regval >> 0) & 0xFF));
+ 
+-static const struct attribute_group ad9832_attribute_group = {
+-	.name = DRV_NAME,
+-	.attrs = ad9832_attributes,
+-};
++	return spi_sync(st->spi, &st->freq_msg);;
++}
+ 
+-static void ad9832_init(struct ad9832_state *st)
++static int ad9832_write_phase(struct ad9832_state *st,
++				  unsigned long addr, unsigned long phase)
+ {
+-	struct spi_message msg;
+-	struct spi_transfer xfer;
+-	int ret;
+-	u16 config = 0;
++	if (phase > (1 << AD9832_PHASE_BITS))
++		return -EINVAL;
+ 
+-	config = 0x3 << 14 | AD9832_SLEEP | AD9832_RESET | AD9832_CLR;
++	st->phase_data[0] = cpu_to_be16((AD9832_CMD_PHA8BITSW << CMD_SHIFT) |
++					(addr << ADD_SHIFT) |
++					((phase >> 8) & 0xFF));
++	st->phase_data[1] = cpu_to_be16((AD9832_CMD_PHA16BITSW << CMD_SHIFT) |
++					((addr - 1) << ADD_SHIFT) |
++					(phase & 0xFF));
+ 
+-	mutex_lock(&st->lock);
++	return spi_sync(st->spi, &st->phase_msg);
++}
+ 
+-	xfer.len = 2;
+-	xfer.tx_buf = &config;
++static ssize_t ad9832_write(struct device *dev,
++		struct device_attribute *attr,
++		const char *buf,
++		size_t len)
++{
++	struct iio_dev *dev_info = dev_get_drvdata(dev);
++	struct ad9832_state *st = dev_info->dev_data;
++	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
++	int ret;
++	long val;
+ 
+-	spi_message_init(&msg);
+-	spi_message_add_tail(&xfer, &msg);
+-	ret = spi_sync(st->sdev, &msg);
++	ret = strict_strtoul(buf, 10, &val);
+ 	if (ret)
+ 		goto error_ret;
+ 
+-	config = 0x2 << 14 | AD9832_SYNC | AD9832_SELSRC;
+-	xfer.len = 2;
+-	xfer.tx_buf = &config;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(&xfer, &msg);
+-	ret = spi_sync(st->sdev, &msg);
+-	if (ret)
+-		goto error_ret;
++	mutex_lock(&dev_info->mlock);
++	switch (this_attr->address) {
++	case AD9832_FREQ0HM:
++	case AD9832_FREQ1HM:
++		ret = ad9832_write_frequency(st, this_attr->address, val);
++		break;
++	case AD9832_PHASE0H:
++	case AD9832_PHASE1H:
++	case AD9832_PHASE2H:
++	case AD9832_PHASE3H:
++		ret = ad9832_write_phase(st, this_attr->address, val);
++		break;
++	case AD9832_PINCTRL_EN:
++		if (val)
++			st->ctrl_ss &= ~AD9832_SELSRC;
++		else
++			st->ctrl_ss |= AD9832_SELSRC;
++		st->data = cpu_to_be16((AD9832_CMD_SYNCSELSRC << CMD_SHIFT) |
++					st->ctrl_ss);
++		ret = spi_sync(st->spi, &st->msg);
++		break;
++	case AD9832_FREQ_SYM:
++		if (val == 1)
++			st->ctrl_fp |= AD9832_FREQ;
++		else if (val == 0)
++			st->ctrl_fp &= ~AD9832_FREQ;
++		else {
++			ret = -EINVAL;
++			break;
++		}
++		st->data = cpu_to_be16((AD9832_CMD_FPSELECT << CMD_SHIFT) |
++					st->ctrl_fp);
++		ret = spi_sync(st->spi, &st->msg);
++		break;
++	case AD9832_PHASE_SYM:
++		if (val < 0 || val > 3) {
++			ret = -EINVAL;
++			break;
++		}
++
++		st->ctrl_fp &= ~AD9832_PHASE(3);
++		st->ctrl_fp |= AD9832_PHASE(val);
++
++		st->data = cpu_to_be16((AD9832_CMD_FPSELECT << CMD_SHIFT) |
++					st->ctrl_fp);
++		ret = spi_sync(st->spi, &st->msg);
++		break;
++	case AD9832_OUTPUT_EN:
++		if (val)
++			st->ctrl_src &= ~(AD9832_RESET | AD9832_SLEEP |
++					AD9832_CLR);
++		else
++			st->ctrl_src |= AD9832_RESET;
++
++		st->data = cpu_to_be16((AD9832_CMD_SLEEPRESCLR << CMD_SHIFT) |
++					st->ctrl_src);
++		ret = spi_sync(st->spi, &st->msg);
++		break;
++	default:
++		ret = -ENODEV;
++	}
++	mutex_unlock(&dev_info->mlock);
+ 
+-	config = CMD_SELBITSCTL << cmd_shift;
+-	xfer.len = 2;
+-	xfer.tx_buf = &config;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(&xfer, &msg);
+-	ret = spi_sync(st->sdev, &msg);
+-	if (ret)
+-		goto error_ret;
++error_ret:
++	return ret ? ret : len;
++}
+ 
+-	config = 0x3 << 14;
++static ssize_t ad9832_show_name(struct device *dev,
++				 struct device_attribute *attr,
++				 char *buf)
++{
++	struct iio_dev *dev_info = dev_get_drvdata(dev);
++	struct ad9832_state *st = iio_dev_get_devdata(dev_info);
+ 
+-	xfer.len = 2;
+-	xfer.tx_buf = &config;
++	return sprintf(buf, "%s\n", spi_get_device_id(st->spi)->name);
++}
++static IIO_DEVICE_ATTR(name, S_IRUGO, ad9832_show_name, NULL, 0);
+ 
+-	spi_message_init(&msg);
+-	spi_message_add_tail(&xfer, &msg);
+-	ret = spi_sync(st->sdev, &msg);
+-	if (ret)
+-		goto error_ret;
+-error_ret:
+-	mutex_unlock(&st->lock);
++/**
++ * see dds.h for further information
++ */
+ 
++static IIO_DEV_ATTR_FREQ(0, 0, S_IWUSR, NULL, ad9832_write, AD9832_FREQ0HM);
++static IIO_DEV_ATTR_FREQ(0, 1, S_IWUSR, NULL, ad9832_write, AD9832_FREQ1HM);
++static IIO_DEV_ATTR_FREQSYMBOL(0, S_IWUSR, NULL, ad9832_write, AD9832_FREQ_SYM);
++static IIO_CONST_ATTR_FREQ_SCALE(0, "1"); /* 1Hz */
++
++static IIO_DEV_ATTR_PHASE(0, 0, S_IWUSR, NULL, ad9832_write, AD9832_PHASE0H);
++static IIO_DEV_ATTR_PHASE(0, 1, S_IWUSR, NULL, ad9832_write, AD9832_PHASE1H);
++static IIO_DEV_ATTR_PHASE(0, 2, S_IWUSR, NULL, ad9832_write, AD9832_PHASE2H);
++static IIO_DEV_ATTR_PHASE(0, 3, S_IWUSR, NULL, ad9832_write, AD9832_PHASE3H);
++static IIO_DEV_ATTR_PHASESYMBOL(0, S_IWUSR, NULL,
++				ad9832_write, AD9832_PHASE_SYM);
++static IIO_CONST_ATTR_PHASE_SCALE(0, "0.0015339808"); /* 2PI/2^12 rad*/
++
++static IIO_DEV_ATTR_PINCONTROL_EN(0, S_IWUSR, NULL,
++				ad9832_write, AD9832_PINCTRL_EN);
++static IIO_DEV_ATTR_OUT_ENABLE(0, S_IWUSR, NULL,
++				ad9832_write, AD9832_OUTPUT_EN);
+ 
++static struct attribute *ad9832_attributes[] = {
++	&iio_dev_attr_dds0_freq0.dev_attr.attr,
++	&iio_dev_attr_dds0_freq1.dev_attr.attr,
++	&iio_const_attr_dds0_freq_scale.dev_attr.attr,
++	&iio_dev_attr_dds0_phase0.dev_attr.attr,
++	&iio_dev_attr_dds0_phase1.dev_attr.attr,
++	&iio_dev_attr_dds0_phase2.dev_attr.attr,
++	&iio_dev_attr_dds0_phase3.dev_attr.attr,
++	&iio_const_attr_dds0_phase_scale.dev_attr.attr,
++	&iio_dev_attr_dds0_pincontrol_en.dev_attr.attr,
++	&iio_dev_attr_dds0_freqsymbol.dev_attr.attr,
++	&iio_dev_attr_dds0_phasesymbol.dev_attr.attr,
++	&iio_dev_attr_dds0_out_enable.dev_attr.attr,
++	&iio_dev_attr_name.dev_attr.attr,
++	NULL,
++};
+ 
+-}
++static const struct attribute_group ad9832_attribute_group = {
++	.attrs = ad9832_attributes,
++};
+ 
+ static int __devinit ad9832_probe(struct spi_device *spi)
+ {
++	struct ad9832_platform_data *pdata = spi->dev.platform_data;
+ 	struct ad9832_state *st;
+-	int ret = 0;
++	int ret;
++
++	if (!pdata) {
++		dev_dbg(&spi->dev, "no platform data?\n");
++		return -ENODEV;
++	}
+ 
+ 	st = kzalloc(sizeof(*st), GFP_KERNEL);
+ 	if (st == NULL) {
+ 		ret = -ENOMEM;
+ 		goto error_ret;
+ 	}
+-	spi_set_drvdata(spi, st);
+ 
+-	mutex_init(&st->lock);
+-	st->sdev = spi;
++	st->reg = regulator_get(&spi->dev, "vcc");
++	if (!IS_ERR(st->reg)) {
++		ret = regulator_enable(st->reg);
++		if (ret)
++			goto error_put_reg;
++	}
+ 
+-	st->idev = iio_allocate_device();
+-	if (st->idev == NULL) {
++	st->mclk = pdata->mclk;
++
++	spi_set_drvdata(spi, st);
++	st->spi = spi;
++
++	st->indio_dev = iio_allocate_device();
++	if (st->indio_dev == NULL) {
+ 		ret = -ENOMEM;
+-		goto error_free_st;
++		goto error_disable_reg;
+ 	}
+-	st->idev->dev.parent = &spi->dev;
+-	st->idev->num_interrupt_lines = 0;
+-	st->idev->event_attrs = NULL;
+-
+-	st->idev->attrs = &ad9832_attribute_group;
+-	st->idev->dev_data = (void *)(st);
+-	st->idev->driver_module = THIS_MODULE;
+-	st->idev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = iio_device_register(st->idev);
++	st->indio_dev->dev.parent = &spi->dev;
++	st->indio_dev->attrs = &ad9832_attribute_group;
++	st->indio_dev->dev_data = (void *) st;
++	st->indio_dev->driver_module = THIS_MODULE;
++	st->indio_dev->modes = INDIO_DIRECT_MODE;
++
++	/* Setup default messages */
++
++	st->xfer.tx_buf = &st->data;
++	st->xfer.len = 2;
++
++	spi_message_init(&st->msg);
++	spi_message_add_tail(&st->xfer, &st->msg);
++
++	st->freq_xfer[0].tx_buf = &st->freq_data[0];
++	st->freq_xfer[0].len = 2;
++	st->freq_xfer[0].cs_change = 1;
++	st->freq_xfer[1].tx_buf = &st->freq_data[1];
++	st->freq_xfer[1].len = 2;
++	st->freq_xfer[1].cs_change = 1;
++	st->freq_xfer[2].tx_buf = &st->freq_data[2];
++	st->freq_xfer[2].len = 2;
++	st->freq_xfer[2].cs_change = 1;
++	st->freq_xfer[3].tx_buf = &st->freq_data[3];
++	st->freq_xfer[3].len = 2;
++
++	spi_message_init(&st->freq_msg);
++	spi_message_add_tail(&st->freq_xfer[0], &st->freq_msg);
++	spi_message_add_tail(&st->freq_xfer[1], &st->freq_msg);
++	spi_message_add_tail(&st->freq_xfer[2], &st->freq_msg);
++	spi_message_add_tail(&st->freq_xfer[3], &st->freq_msg);
++
++	st->phase_xfer[0].tx_buf = &st->phase_data[0];
++	st->phase_xfer[0].len = 2;
++	st->phase_xfer[0].cs_change = 1;
++	st->phase_xfer[1].tx_buf = &st->phase_data[1];
++	st->phase_xfer[1].len = 2;
++
++	spi_message_init(&st->phase_msg);
++	spi_message_add_tail(&st->phase_xfer[0], &st->phase_msg);
++	spi_message_add_tail(&st->phase_xfer[1], &st->phase_msg);
++
++	st->ctrl_src = AD9832_SLEEP | AD9832_RESET | AD9832_CLR;
++	st->data = cpu_to_be16((AD9832_CMD_SLEEPRESCLR << CMD_SHIFT) |
++					st->ctrl_src);
++	ret = spi_sync(st->spi, &st->msg);
++	if (ret) {
++		dev_err(&spi->dev, "device init failed\n");
++		goto error_free_device;
++	}
++
++	ret = ad9832_write_frequency(st, AD9832_FREQ0HM, pdata->freq0);
++	if (ret)
++		goto error_free_device;
++
++	ret = ad9832_write_frequency(st, AD9832_FREQ1HM, pdata->freq1);
++	if (ret)
++		goto error_free_device;
++
++	ret = ad9832_write_phase(st, AD9832_PHASE0H, pdata->phase0);
++	if (ret)
++		goto error_free_device;
++
++	ret = ad9832_write_phase(st, AD9832_PHASE1H, pdata->phase1);
++	if (ret)
++		goto error_free_device;
++
++	ret = ad9832_write_phase(st, AD9832_PHASE2H, pdata->phase2);
+ 	if (ret)
+-		goto error_free_dev;
+-	spi->max_speed_hz = 2000000;
+-	spi->mode = SPI_MODE_3;
+-	spi->bits_per_word = 16;
+-	spi_setup(spi);
+-	ad9832_init(st);
++		goto error_free_device;
++
++	ret = ad9832_write_phase(st, AD9832_PHASE3H, pdata->phase3);
++	if (ret)
++		goto error_free_device;
++
++	ret = iio_device_register(st->indio_dev);
++	if (ret)
++		goto error_free_device;
++
+ 	return 0;
+ 
+-error_free_dev:
+-	iio_free_device(st->idev);
+-error_free_st:
++error_free_device:
++	iio_free_device(st->indio_dev);
++error_disable_reg:
++	if (!IS_ERR(st->reg))
++		regulator_disable(st->reg);
++error_put_reg:
++	if (!IS_ERR(st->reg))
++		regulator_put(st->reg);
+ 	kfree(st);
+ error_ret:
+ 	return ret;
+@@ -232,33 +340,45 @@
+ {
+ 	struct ad9832_state *st = spi_get_drvdata(spi);
+ 
+-	iio_device_unregister(st->idev);
++	iio_device_unregister(st->indio_dev);
++	if (!IS_ERR(st->reg)) {
++		regulator_disable(st->reg);
++		regulator_put(st->reg);
++	}
+ 	kfree(st);
+-
+ 	return 0;
+ }
+ 
++static const struct spi_device_id ad9832_id[] = {
++	{"ad9832", 0},
++	{"ad9835", 0},
++	{}
++};
++
+ static struct spi_driver ad9832_driver = {
+ 	.driver = {
+-		.name = DRV_NAME,
+-		.owner = THIS_MODULE,
++		.name	= "ad9832",
++		.bus	= &spi_bus_type,
++		.owner	= THIS_MODULE,
+ 	},
+-	.probe = ad9832_probe,
+-	.remove = __devexit_p(ad9832_remove),
++	.probe		= ad9832_probe,
++	.remove		= __devexit_p(ad9832_remove),
++	.id_table	= ad9832_id,
+ };
+ 
+-static __init int ad9832_spi_init(void)
++static int __init ad9832_init(void)
+ {
+ 	return spi_register_driver(&ad9832_driver);
+ }
+-module_init(ad9832_spi_init);
++module_init(ad9832_init);
+ 
+-static __exit void ad9832_spi_exit(void)
++static void __exit ad9832_exit(void)
+ {
+ 	spi_unregister_driver(&ad9832_driver);
+ }
+-module_exit(ad9832_spi_exit);
++module_exit(ad9832_exit);
+ 
+-MODULE_AUTHOR("Cliff Cai");
+-MODULE_DESCRIPTION("Analog Devices ad9832 driver");
++MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
++MODULE_DESCRIPTION("Analog Devices AD9832/AD9835 DDS");
+ MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("spi:ad9832");
+Index: linux-2.6.38-rc3/drivers/staging/iio/dds/ad9832.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/dds/ad9832.h	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,128 @@
++/*
++ * AD9832 SPI DDS driver
++ *
++ * Copyright 2011 Analog Devices Inc.
++ *
++ * Licensed under the GPL-2 or later.
++ */
++#ifndef IIO_DDS_AD9832_H_
++#define IIO_DDS_AD9832_H_
++
++/* Registers */
++
++#define AD9832_FREQ0LL		0x0
++#define AD9832_FREQ0HL		0x1
++#define AD9832_FREQ0LM		0x2
++#define AD9832_FREQ0HM		0x3
++#define AD9832_FREQ1LL		0x4
++#define AD9832_FREQ1HL		0x5
++#define AD9832_FREQ1LM		0x6
++#define AD9832_FREQ1HM		0x7
++#define AD9832_PHASE0L		0x8
++#define AD9832_PHASE0H		0x9
++#define AD9832_PHASE1L		0xA
++#define AD9832_PHASE1H		0xB
++#define AD9832_PHASE2L		0xC
++#define AD9832_PHASE2H		0xD
++#define AD9832_PHASE3L		0xE
++#define AD9832_PHASE3H		0xF
++
++#define AD9832_PHASE_SYM	0x10
++#define AD9832_FREQ_SYM		0x11
++#define AD9832_PINCTRL_EN	0x12
++#define AD9832_OUTPUT_EN	0x13
++
++/* Command Control Bits */
++
++#define AD9832_CMD_PHA8BITSW	0x1
++#define AD9832_CMD_PHA16BITSW	0x0
++#define AD9832_CMD_FRE8BITSW	0x3
++#define AD9832_CMD_FRE16BITSW	0x2
++#define AD9832_CMD_FPSELECT	0x6
++#define AD9832_CMD_SYNCSELSRC	0x8
++#define AD9832_CMD_SLEEPRESCLR	0xC
++
++#define AD9832_FREQ		(1 << 11)
++#define AD9832_PHASE(x)		(((x) & 3) << 9)
++#define AD9832_SYNC		(1 << 13)
++#define AD9832_SELSRC		(1 << 12)
++#define AD9832_SLEEP		(1 << 13)
++#define AD9832_RESET		(1 << 12)
++#define AD9832_CLR		(1 << 11)
++#define CMD_SHIFT		12
++#define ADD_SHIFT		8
++#define AD9832_FREQ_BITS	32
++#define AD9832_PHASE_BITS	12
++#define RES_MASK(bits)		((1 << (bits)) - 1)
++
++/**
++ * struct ad9832_state - driver instance specific data
++ * @indio_dev:		the industrial I/O device
++ * @spi:		spi_device
++ * @reg:		supply regulator
++ * @mclk:		external master clock
++ * @ctrl_fp:		cached frequency/phase control word
++ * @ctrl_ss:		cached sync/selsrc control word
++ * @ctrl_src:		cached sleep/reset/clr word
++ * @xfer:		default spi transfer
++ * @msg:		default spi message
++ * @freq_xfer:		tuning word spi transfer
++ * @freq_msg:		tuning word spi message
++ * @phase_xfer:		tuning word spi transfer
++ * @phase_msg:		tuning word spi message
++ * @data:		spi transmit buffer
++ * @phase_data:		tuning word spi transmit buffer
++ * @freq_data:		tuning word spi transmit buffer
++ */
++
++struct ad9832_state {
++	struct iio_dev			*indio_dev;
++	struct spi_device		*spi;
++	struct regulator		*reg;
++	unsigned long			mclk;
++	unsigned short			ctrl_fp;
++	unsigned short			ctrl_ss;
++	unsigned short			ctrl_src;
++	struct spi_transfer		xfer;
++	struct spi_message		msg;
++	struct spi_transfer		freq_xfer[4];
++	struct spi_message		freq_msg;
++	struct spi_transfer		phase_xfer[2];
++	struct spi_message		phase_msg;
++	/*
++	 * DMA (thus cache coherency maintenance) requires the
++	 * transfer buffers to live in their own cache lines.
++	 */
++	union {
++		unsigned short		freq_data[4]____cacheline_aligned;
++		unsigned short		phase_data[2];
++		unsigned short		data;
++	};
++};
++
++/*
++ * TODO: struct ad9832_platform_data needs to go into include/linux/iio
++ */
++
++/**
++ * struct ad9832_platform_data - platform specific information
++ * @mclk:		master clock in Hz
++ * @freq0:		power up freq0 tuning word in Hz
++ * @freq1:		power up freq1 tuning word in Hz
++ * @phase0:		power up phase0 value [0..4095] correlates with 0..2PI
++ * @phase1:		power up phase1 value [0..4095] correlates with 0..2PI
++ * @phase2:		power up phase2 value [0..4095] correlates with 0..2PI
++ * @phase3:		power up phase3 value [0..4095] correlates with 0..2PI
++ */
++
++struct ad9832_platform_data {
++	unsigned long		mclk;
++	unsigned long		freq0;
++	unsigned long		freq1;
++	unsigned short		phase0;
++	unsigned short		phase1;
++	unsigned short		phase2;
++	unsigned short		phase3;
++};
++
++#endif /* IIO_DDS_AD9832_H_ */
+Index: linux-2.6.38-rc3/drivers/staging/iio/dds/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/dds/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/dds/Kconfig	2011-02-21 18:29:49.000000000 +0100
+@@ -15,7 +15,10 @@
+ 	depends on SPI
+ 	help
+ 	  Say yes here to build support for Analog Devices DDS chip
+-	  ad9832 and ad9835, provides direct access via sysfs.
++	  AD9832 and AD9835, provides direct access via sysfs.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ad9832.
+ 
+ config AD9834
+ 	tristate "Analog Devices ad9833/4/ driver"
+Index: linux-2.6.38-rc3/drivers/staging/iio/Documentation/dac/max517
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/Documentation/dac/max517	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,41 @@
++Kernel driver max517
++====================
++
++Supported chips:
++  * Maxim MAX517, MAX518, MAX519
++    Prefix: 'max517'
++    Datasheet: Publicly available at the Maxim website
++               http://www.maxim-ic.com/
++
++Author:
++        Roland Stigge <stigge@antcom.de>
++
++Description
++-----------
++
++The Maxim MAX517/518/519 is an 8-bit DAC on the I2C bus. The following table
++shows the different feature sets of the variants MAX517, MAX518 and MAX519:
++
++Feature                              MAX517 MAX518 MAX519
++--------------------------------------------------------------------------
++One output channel                   X
++Two output channels                         X      X
++Simultaneous output updates                 X      X
++Supply voltage as reference                 X
++Separate reference input             X
++Reference input for each DAC                       X
++
++Via the iio sysfs interface, there are three attributes available: out1_raw,
++out2_raw and out12_raw. With out1_raw and out2_raw, the current output values
++(0..255) of the DACs can be written to the device. out12_raw can be used to set
++both output channel values simultaneously.
++
++With MAX517, only out1_raw is available.
++
++Via out1_scale (and where appropriate, out2_scale), the current scaling factor
++in mV can be read.
++
++When the operating system goes to a power down state, the Power Down function
++of the chip is activated, reducing the supply current to 4uA.
++
++On power-up, the device is in 0V-output state.
+Index: linux-2.6.38-rc3/drivers/staging/iio/Documentation/generic_buffer.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/Documentation/generic_buffer.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/Documentation/generic_buffer.c	2011-02-21 18:29:49.000000000 +0100
+@@ -26,11 +26,9 @@
+ #include <sys/stat.h>
+ #include <sys/dir.h>
+ #include <linux/types.h>
++#include <string.h>
+ #include "iio_utils.h"
+ 
+-const int buf_len = 128;
+-const int num_loops = 2;
+-
+ /**
+  * size_from_channelarray() - calculate the storage size of a scan
+  * @channels: the channel info array
+@@ -118,6 +116,11 @@
+ 
+ int main(int argc, char **argv)
+ {
++	unsigned long num_loops = 2;
++	unsigned long timedelay = 1000000;
++	unsigned long buf_len = 128;
++
++
+ 	int ret, c, i, j, toread;
+ 
+ 	FILE *fp_ev;
+@@ -134,10 +137,12 @@
+ 	int dev_num, trig_num;
+ 	char *buffer_access, *buffer_event;
+ 	int scan_size;
++	int noevents = 0;
++	char *dummy;
+ 
+ 	struct iio_channel_info *infoarray;
+ 
+-	while ((c = getopt(argc, argv, "t:n:")) != -1) {
++	while ((c = getopt(argc, argv, "l:w:c:et:n:")) != -1) {
+ 		switch (c) {
+ 		case 'n':
+ 			device_name = optarg;
+@@ -146,6 +151,18 @@
+ 			trigger_name = optarg;
+ 			datardytrigger = 0;
+ 			break;
++		case 'e':
++			noevents = 1;
++			break;
++		case 'c':
++			num_loops = strtoul(optarg, &dummy, 10);
++			break;
++		case 'w':
++			timedelay = strtoul(optarg, &dummy, 10);
++			break;
++		case 'l':
++			buf_len = strtoul(optarg, &dummy, 10);
++			break;
+ 		case '?':
+ 			return -1;
+ 		}
+@@ -260,22 +277,30 @@
+ 
+ 	/* Wait for events 10 times */
+ 	for (j = 0; j < num_loops; j++) {
+-		read_size = fread(&dat, 1, sizeof(struct iio_event_data),
+-				  fp_ev);
+-		switch (dat.id) {
+-		case IIO_EVENT_CODE_RING_100_FULL:
+-			toread = buf_len;
+-			break;
+-		case IIO_EVENT_CODE_RING_75_FULL:
+-			toread = buf_len*3/4;
+-			break;
+-		case IIO_EVENT_CODE_RING_50_FULL:
+-			toread = buf_len/2;
+-			break;
+-		default:
+-			printf("Unexpecteded event code\n");
+-			continue;
++		if (!noevents) {
++			read_size = fread(&dat,
++					1,
++					sizeof(struct iio_event_data),
++					fp_ev);
++			switch (dat.id) {
++			case IIO_EVENT_CODE_RING_100_FULL:
++				toread = buf_len;
++				break;
++			case IIO_EVENT_CODE_RING_75_FULL:
++				toread = buf_len*3/4;
++				break;
++			case IIO_EVENT_CODE_RING_50_FULL:
++				toread = buf_len/2;
++				break;
++			default:
++				printf("Unexpecteded event code\n");
++				continue;
++			}
++		} else {
++			usleep(timedelay);
++			toread = 64;
+ 		}
++
+ 		read_size = read(fp,
+ 				 data,
+ 				 toread*scan_size);
+Index: linux-2.6.38-rc3/drivers/staging/iio/Documentation/iio_utils.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/Documentation/iio_utils.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/Documentation/iio_utils.h	2011-02-21 18:29:49.000000000 +0100
+@@ -398,7 +398,7 @@
+ 	return 0;
+ 
+ error_cleanup_array:
+-	for (i = count - 1;  i >= 0; i++)
++	for (i = count - 1;  i >= 0; i--)
+ 		free((*ci_array)[i].name);
+ 	free(*ci_array);
+ error_close_dir:
+Index: linux-2.6.38-rc3/drivers/staging/iio/Documentation/sysfs-bus-iio
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/Documentation/sysfs-bus-iio	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/Documentation/sysfs-bus-iio	2011-02-21 18:29:49.000000000 +0100
+@@ -168,6 +168,7 @@
+ What:		/sys/bus/iio/devices/deviceX/inY_scale
+ What:		/sys/bus/iio/devices/deviceX/inY_supply_scale
+ What:		/sys/bus/iio/devices/deviceX/in_scale
++What:		/sys/bus/iio/devices/deviceX/outY_scale
+ What:		/sys/bus/iio/devices/deviceX/accel_scale
+ What:		/sys/bus/iio/devices/deviceX/accel_peak_scale
+ What:		/sys/bus/iio/devices/deviceX/gyro_scale
+@@ -222,6 +223,23 @@
+ 		If a discrete set of scale values are available, they
+ 		are listed in this attribute.
+ 
++What:		/sys/bus/iio/devices/deviceX/outY_raw
++KernelVersion:	2.6.37
++Contact:	linux-iio@vger.kernel.org
++Description:
++		Raw (unscaled, no bias etc.) output voltage for
++		channel Y.  The number must always be specified and
++		unique if the output corresponds to a single channel.
++
++What:		/sys/bus/iio/devices/deviceX/outY&Z_raw
++KernelVersion:	2.6.37
++Contact:	linux-iio@vger.kernel.org
++Description:
++		Raw (unscaled, no bias etc.) output voltage for an aggregate of
++		channel Y, channel Z, etc.  This interface is available in cases
++		where a single output sets the value for multiple channels
++		simultaneously.
++
+ What:		/sys/bus/iio/devices/deviceX/deviceX:eventY
+ KernelVersion:	2.6.35
+ Contact:	linux-iio@vger.kernel.org
+Index: linux-2.6.38-rc3/drivers/staging/iio/Documentation/sysfs-bus-iio-trigger-sysfs
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/Documentation/sysfs-bus-iio-trigger-sysfs	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,11 @@
++What:		/sys/bus/iio/devices/triggerX/trigger_now
++KernelVersion:	2.6.38
++Contact:	linux-iio@vger.kernel.org
++Description:
++		This file is provided by the iio-trig-sysfs stand-alone trigger
++		driver. Writing this file with any value triggers an event
++		driven driver, associated with this trigger, to capture data
++		into an in kernel buffer. This approach can be valuable during
++		automated testing or in situations, where other trigger methods
++		are not applicable. For example no RTC or spare GPIOs.
++		X is the IIO index of the trigger.
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16060_core.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16060_core.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16060_core.c	2011-02-21 18:29:49.000000000 +0100
+@@ -25,11 +25,9 @@
+ 
+ #include "adis16060.h"
+ 
+-#define DRIVER_NAME		"adis16060"
++static struct adis16060_state *adis16060_st;
+ 
+-struct adis16060_state *adis16060_st;
+-
+-int adis16060_spi_write(struct device *dev,
++static int adis16060_spi_write(struct device *dev,
+ 		u8 val)
+ {
+ 	int ret;
+@@ -47,7 +45,7 @@
+ 	return ret;
+ }
+ 
+-int adis16060_spi_read(struct device *dev,
++static int adis16060_spi_read(struct device *dev,
+ 		u16 *val)
+ {
+ 	int ret;
+@@ -58,12 +56,15 @@
+ 
+ 	ret = spi_read(st->us_r, st->rx, 3);
+ 
+-	/* The internal successive approximation ADC begins the conversion process
+-	 * on the falling edge of MSEL1 and starts to place data MSB first on the
+-	 * DOUT line at the 6th falling edge of SCLK
++	/* The internal successive approximation ADC begins the
++	 * conversion process on the falling edge of MSEL1 and
++	 * starts to place data MSB first on the DOUT line at
++	 * the 6th falling edge of SCLK
+ 	 */
+ 	if (ret == 0)
+-		*val = ((st->rx[0] & 0x3) << 12) | (st->rx[1] << 4) | ((st->rx[2] >> 4) & 0xF);
++		*val = ((st->rx[0] & 0x3) << 12) |
++			(st->rx[1] << 4) |
++			((st->rx[2] >> 4) & 0xF);
+ 	mutex_unlock(&st->buf_lock);
+ 
+ 	return ret;
+@@ -74,7 +75,7 @@
+ 		char *buf)
+ {
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+-	u16 val;
++	u16 val = 0;
+ 	ssize_t ret;
+ 
+ 	/* Take the iio_dev status lock */
+@@ -174,45 +175,14 @@
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = adis16060_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
++		goto error_free_dev;
+ 	regdone = 1;
+ 
+-	ret = adis16060_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_RISING,
+-				"adis16060");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = adis16060_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
+-
+ 	adis16060_st = st;
+ 	return 0;
+ 
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	adis16060_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	adis16060_unconfigure_ring(st->indio_dev);
+ error_free_dev:
+ 	if (regdone)
+ 		iio_device_unregister(st->indio_dev);
+@@ -236,12 +206,9 @@
+ 
+ 	flush_scheduled_work();
+ 
+-	adis16060_remove_trigger(indio_dev);
+ 	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0)
+ 		iio_unregister_interrupt_line(indio_dev, 0);
+ 
+-	adis16060_uninitialize_ring(indio_dev->ring);
+-	adis16060_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+@@ -315,5 +282,5 @@
+ module_exit(adis16060_exit);
+ 
+ MODULE_AUTHOR("Barry Song <21cnbao@gmail.com>");
+-MODULE_DESCRIPTION("Analog Devices ADIS16060 Yaw Rate Gyroscope with SPI driver");
++MODULE_DESCRIPTION("Analog Devices ADIS16060 Yaw Rate Gyroscope Driver");
+ MODULE_LICENSE("GPL v2");
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16060.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16060.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16060.h	2011-02-21 18:29:49.000000000 +0100
+@@ -14,11 +14,7 @@
+ /**
+  * struct adis16060_state - device instance specific data
+  * @us_w:			actual spi_device to write data
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+@@ -26,76 +22,10 @@
+ struct adis16060_state {
+ 	struct spi_device		*us_w;
+ 	struct spi_device		*us_r;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	struct mutex			buf_lock;
+ };
+ 
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum adis16060_scan {
+-	ADIS16060_SCAN_GYRO,
+-	ADIS16060_SCAN_TEMP,
+-	ADIS16060_SCAN_ADC_1,
+-	ADIS16060_SCAN_ADC_2,
+-};
+-
+-void adis16060_remove_trigger(struct iio_dev *indio_dev);
+-int adis16060_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t adis16060_read_data_from_ring(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf);
+-
+-
+-int adis16060_configure_ring(struct iio_dev *indio_dev);
+-void adis16060_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int adis16060_initialize_ring(struct iio_ring_buffer *ring);
+-void adis16060_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void adis16060_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16060_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-adis16060_read_data_from_ring(struct device *dev,
+-			      struct device_attribute *attr,
+-			      char *buf)
+-{
+-	return 0;
+-}
+-
+-static int adis16060_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16060_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16060_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16060_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ #endif /* SPI_ADIS16060_H_ */
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16080_core.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16080_core.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16080_core.c	2011-02-21 18:29:49.000000000 +0100
+@@ -25,11 +25,7 @@
+ 
+ #include "adis16080.h"
+ 
+-#define DRIVER_NAME		"adis16080"
+-
+-struct adis16080_state *adis16080_st;
+-
+-int adis16080_spi_write(struct device *dev,
++static int adis16080_spi_write(struct device *dev,
+ 		u16 val)
+ {
+ 	int ret;
+@@ -46,7 +42,7 @@
+ 	return ret;
+ }
+ 
+-int adis16080_spi_read(struct device *dev,
++static int adis16080_spi_read(struct device *dev,
+ 		u16 *val)
+ {
+ 	int ret;
+@@ -69,7 +65,7 @@
+ 		char *buf)
+ {
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+-	u16 val;
++	u16 val = 0;
+ 	ssize_t ret;
+ 
+ 	/* Take the iio_dev status lock */
+@@ -169,45 +165,13 @@
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = adis16080_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
++		goto error_free_dev;
+ 	regdone = 1;
+ 
+-	ret = adis16080_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_RISING,
+-				"adis16080");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = adis16080_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
+-
+-	adis16080_st = st;
+ 	return 0;
+ 
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	adis16080_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	adis16080_unconfigure_ring(st->indio_dev);
+ error_free_dev:
+ 	if (regdone)
+ 		iio_device_unregister(st->indio_dev);
+@@ -229,14 +193,6 @@
+ 	struct adis16080_state *st = spi_get_drvdata(spi);
+ 	struct iio_dev *indio_dev = st->indio_dev;
+ 
+-	flush_scheduled_work();
+-
+-	adis16080_remove_trigger(indio_dev);
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	adis16080_uninitialize_ring(indio_dev->ring);
+-	adis16080_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+@@ -267,5 +223,5 @@
+ module_exit(adis16080_exit);
+ 
+ MODULE_AUTHOR("Barry Song <21cnbao@gmail.com>");
+-MODULE_DESCRIPTION("Analog Devices ADIS16080/100 Yaw Rate Gyroscope with SPI driver");
++MODULE_DESCRIPTION("Analog Devices ADIS16080/100 Yaw Rate Gyroscope Driver");
+ MODULE_LICENSE("GPL v2");
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16080.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16080.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16080.h	2011-02-21 18:29:49.000000000 +0100
+@@ -1,14 +1,19 @@
+ #ifndef SPI_ADIS16080_H_
+ #define SPI_ADIS16080_H_
+ 
+-#define ADIS16080_DIN_CODE   4 /* Output data format setting. 0: Twos complement. 1: Offset binary. */
++/* Output data format setting. 0: Twos complement. 1: Offset binary. */
++#define ADIS16080_DIN_CODE   4
+ #define ADIS16080_DIN_GYRO   (0 << 10) /* Gyroscope output */
+ #define ADIS16080_DIN_TEMP   (1 << 10) /* Temperature output */
+ #define ADIS16080_DIN_AIN1   (2 << 10)
+ #define ADIS16080_DIN_AIN2   (3 << 10)
+-#define ADIS16080_DIN_WRITE  (1 << 15) /* 1: Write contents on DIN to control register.
+-					* 0: No changes to control register.
+-					*/
++
++/*
++ * 1: Write contents on DIN to control register.
++ * 0: No changes to control register.
++ */
++
++#define ADIS16080_DIN_WRITE  (1 << 15)
+ 
+ #define ADIS16080_MAX_TX     2
+ #define ADIS16080_MAX_RX     2
+@@ -16,87 +21,16 @@
+ /**
+  * struct adis16080_state - device instance specific data
+  * @us:			actual spi_device to write data
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+  **/
+ struct adis16080_state {
+ 	struct spi_device		*us;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	struct mutex			buf_lock;
+ };
+-
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum adis16080_scan {
+-	ADIS16080_SCAN_GYRO,
+-	ADIS16080_SCAN_TEMP,
+-	ADIS16080_SCAN_ADC_1,
+-	ADIS16080_SCAN_ADC_2,
+-};
+-
+-void adis16080_remove_trigger(struct iio_dev *indio_dev);
+-int adis16080_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t adis16080_read_data_from_ring(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf);
+-
+-
+-int adis16080_configure_ring(struct iio_dev *indio_dev);
+-void adis16080_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int adis16080_initialize_ring(struct iio_ring_buffer *ring);
+-void adis16080_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void adis16080_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16080_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-adis16080_read_data_from_ring(struct device *dev,
+-			      struct device_attribute *attr,
+-			      char *buf)
+-{
+-	return 0;
+-}
+-
+-static int adis16080_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16080_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16080_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16080_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ #endif /* SPI_ADIS16080_H_ */
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16130_core.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16130_core.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16130_core.c	2011-02-21 18:29:49.000000000 +0100
+@@ -25,11 +25,7 @@
+ 
+ #include "adis16130.h"
+ 
+-#define DRIVER_NAME		"adis16130"
+-
+-struct adis16130_state *adis16130_st;
+-
+-int adis16130_spi_write(struct device *dev, u8 reg_addr,
++static int adis16130_spi_write(struct device *dev, u8 reg_addr,
+ 		u8 val)
+ {
+ 	int ret;
+@@ -46,7 +42,7 @@
+ 	return ret;
+ }
+ 
+-int adis16130_spi_read(struct device *dev, u8 reg_addr,
++static int adis16130_spi_read(struct device *dev, u8 reg_addr,
+ 		u32 *val)
+ {
+ 	int ret;
+@@ -148,7 +144,8 @@
+ #define IIO_DEV_ATTR_BITS_MODE(_mode, _show, _store, _addr)	\
+ 	IIO_DEVICE_ATTR(bits_mode, _mode, _show, _store, _addr)
+ 
+-static IIO_DEV_ATTR_BITS_MODE(S_IWUSR | S_IRUGO, adis16130_bitsmode_read, adis16130_bitsmode_write,
++static IIO_DEV_ATTR_BITS_MODE(S_IWUSR | S_IRUGO, adis16130_bitsmode_read,
++			adis16130_bitsmode_write,
+ 			ADIS16130_MODE);
+ 
+ static struct attribute *adis16130_event_attributes[] = {
+@@ -173,7 +170,7 @@
+ 
+ static int __devinit adis16130_probe(struct spi_device *spi)
+ {
+-	int ret, regdone = 0;
++	int ret;
+ 	struct adis16130_state *st = kzalloc(sizeof *st, GFP_KERNEL);
+ 	if (!st) {
+ 		ret =  -ENOMEM;
+@@ -211,50 +208,14 @@
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 	st->mode = 1;
+ 
+-	ret = adis16130_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
+-	regdone = 1;
+-
+-	ret = adis16130_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_RISING,
+-				"adis16130");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = adis16130_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
++		goto error_free_dev;
+ 
+-	adis16130_st = st;
+ 	return 0;
+ 
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	adis16130_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	adis16130_unconfigure_ring(st->indio_dev);
+ error_free_dev:
+-	if (regdone)
+-		iio_device_unregister(st->indio_dev);
+-	else
+-		iio_free_device(st->indio_dev);
++	iio_free_device(st->indio_dev);
+ error_free_tx:
+ 	kfree(st->tx);
+ error_free_rx:
+@@ -271,14 +232,6 @@
+ 	struct adis16130_state *st = spi_get_drvdata(spi);
+ 	struct iio_dev *indio_dev = st->indio_dev;
+ 
+-	flush_scheduled_work();
+-
+-	adis16130_remove_trigger(indio_dev);
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	adis16130_uninitialize_ring(indio_dev->ring);
+-	adis16130_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+Index: linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16130.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/gyro/adis16130.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/gyro/adis16130.h	2011-02-21 18:29:49.000000000 +0100
+@@ -4,7 +4,9 @@
+ #define ADIS16130_CON         0x0
+ #define ADIS16130_CON_RD      (1 << 6)
+ #define ADIS16130_IOP         0x1
+-#define ADIS16130_IOP_ALL_RDY (1 << 3) /* 1 = data-ready signal low when unread data on all channels; */
++
++/* 1 = data-ready signal low when unread data on all channels; */
++#define ADIS16130_IOP_ALL_RDY (1 << 3)
+ #define ADIS16130_IOP_SYNC    (1 << 0) /* 1 = synchronization enabled */
+ #define ADIS16130_RATEDATA    0x8 /* Gyroscope output, rate of rotation */
+ #define ADIS16130_TEMPDATA    0xA /* Temperature output */
+@@ -23,86 +25,18 @@
+ /**
+  * struct adis16130_state - device instance specific data
+  * @us:			actual spi_device to write data
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+  **/
+ struct adis16130_state {
+ 	struct spi_device		*us;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	u32                             mode; /* 1: 24bits mode 0:16bits mode */
+ 	struct mutex			buf_lock;
+ };
+ 
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum adis16130_scan {
+-	ADIS16130_SCAN_GYRO,
+-	ADIS16130_SCAN_TEMP,
+-};
+-
+-void adis16130_remove_trigger(struct iio_dev *indio_dev);
+-int adis16130_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t adis16130_read_data_from_ring(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf);
+-
+-
+-int adis16130_configure_ring(struct iio_dev *indio_dev);
+-void adis16130_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int adis16130_initialize_ring(struct iio_ring_buffer *ring);
+-void adis16130_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void adis16130_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16130_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-adis16130_read_data_from_ring(struct device *dev,
+-			      struct device_attribute *attr,
+-			      char *buf)
+-{
+-	return 0;
+-}
+-
+-static int adis16130_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16130_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-
+-static inline int adis16130_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-
+-static inline void adis16130_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ #endif /* SPI_ADIS16130_H_ */
+Index: linux-2.6.38-rc3/drivers/staging/iio/industrialio-ring.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/industrialio-ring.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/industrialio-ring.c	2011-02-21 18:29:49.000000000 +0100
+@@ -16,7 +16,6 @@
+ #include <linux/kernel.h>
+ #include <linux/device.h>
+ #include <linux/fs.h>
+-#include <linux/poll.h>
+ #include <linux/cdev.h>
+ #include <linux/slab.h>
+ 
+@@ -98,31 +97,13 @@
+ 				  size_t count, loff_t *f_ps)
+ {
+ 	struct iio_ring_buffer *rb = filp->private_data;
+-	int ret, dead_offset, copied;
+-	u8 *data;
++	int ret, dead_offset;
++
+ 	/* rip lots must exist. */
+ 	if (!rb->access.rip_lots)
+ 		return -EINVAL;
+-	copied = rb->access.rip_lots(rb, count, &data, &dead_offset);
++	ret = rb->access.rip_lots(rb, count, buf, &dead_offset);
+ 
+-	if (copied <= 0) {
+-		ret = copied;
+-		goto error_ret;
+-	}
+-	if (copy_to_user(buf, data + dead_offset, copied))  {
+-		ret =  -EFAULT;
+-		goto error_free_data_cpy;
+-	}
+-	/* In clever ring buffer designs this may not need to be freed.
+-	 * When such a design exists I'll add this to ring access funcs.
+-	 */
+-	kfree(data);
+-
+-	return copied;
+-
+-error_free_data_cpy:
+-	kfree(data);
+-error_ret:
+ 	return ret;
+ }
+ 
+Index: linux-2.6.38-rc3/drivers/staging/iio/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/Kconfig	2011-02-21 18:29:49.000000000 +0100
+@@ -29,6 +29,15 @@
+ 	  with the intention that some devices would be able to write
+ 	  in interrupt context.
+ 
++config IIO_KFIFO_BUF
++	select IIO_TRIGGER
++	tristate "Industrial I/O buffering based on kfifo"
++	help
++	  A simple fifo based on kfifo.  Use this if you want a fifo
++	  rather than a ring buffer. Note that this currently provides
++	  no buffer events so it is up to userspace to work out how
++	  often to read from the buffer.
++
+ endif # IIO_RINGBUFFER
+ 
+ config IIO_TRIGGER
+Index: linux-2.6.38-rc3/drivers/staging/iio/kfifo_buf.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/kfifo_buf.c	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,196 @@
++#include <linux/slab.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/workqueue.h>
++#include <linux/kfifo.h>
++#include <linux/mutex.h>
++
++#include "kfifo_buf.h"
++
++static inline int __iio_allocate_kfifo(struct iio_kfifo *buf,
++				int bytes_per_datum, int length)
++{
++	if ((length == 0) || (bytes_per_datum == 0))
++		return -EINVAL;
++
++	__iio_update_ring_buffer(&buf->ring, bytes_per_datum, length);
++	return kfifo_alloc(&buf->kf, bytes_per_datum*length, GFP_KERNEL);
++}
++
++int iio_request_update_kfifo(struct iio_ring_buffer *r)
++{
++	int ret = 0;
++	struct iio_kfifo *buf = iio_to_kfifo(r);
++
++	mutex_lock(&buf->use_lock);
++	if (!buf->update_needed)
++		goto error_ret;
++	if (buf->use_count) {
++		ret = -EAGAIN;
++		goto error_ret;
++	}
++	kfifo_free(&buf->kf);
++	ret = __iio_allocate_kfifo(buf, buf->ring.bytes_per_datum,
++				buf->ring.length);
++error_ret:
++	mutex_unlock(&buf->use_lock);
++	return ret;
++}
++EXPORT_SYMBOL(iio_request_update_kfifo);
++
++void iio_mark_kfifo_in_use(struct iio_ring_buffer *r)
++{
++	struct iio_kfifo *buf = iio_to_kfifo(r);
++	mutex_lock(&buf->use_lock);
++	buf->use_count++;
++	mutex_unlock(&buf->use_lock);
++}
++EXPORT_SYMBOL(iio_mark_kfifo_in_use);
++
++void iio_unmark_kfifo_in_use(struct iio_ring_buffer *r)
++{
++	struct iio_kfifo *buf = iio_to_kfifo(r);
++	mutex_lock(&buf->use_lock);
++	buf->use_count--;
++	mutex_unlock(&buf->use_lock);
++}
++EXPORT_SYMBOL(iio_unmark_kfifo_in_use);
++
++int iio_get_length_kfifo(struct iio_ring_buffer *r)
++{
++	return r->length;
++}
++EXPORT_SYMBOL(iio_get_length_kfifo);
++
++static inline void __iio_init_kfifo(struct iio_kfifo *kf)
++{
++	mutex_init(&kf->use_lock);
++}
++
++static IIO_RING_ENABLE_ATTR;
++static IIO_RING_BYTES_PER_DATUM_ATTR;
++static IIO_RING_LENGTH_ATTR;
++
++static struct attribute *iio_kfifo_attributes[] = {
++	&dev_attr_length.attr,
++	&dev_attr_bytes_per_datum.attr,
++	&dev_attr_enable.attr,
++	NULL,
++};
++
++static struct attribute_group iio_kfifo_attribute_group = {
++	.attrs = iio_kfifo_attributes,
++};
++
++static const struct attribute_group *iio_kfifo_attribute_groups[] = {
++	&iio_kfifo_attribute_group,
++	NULL
++};
++
++static void iio_kfifo_release(struct device *dev)
++{
++	struct iio_ring_buffer *r = to_iio_ring_buffer(dev);
++	struct iio_kfifo *kf = iio_to_kfifo(r);
++	kfifo_free(&kf->kf);
++	kfree(kf);
++}
++
++static struct device_type iio_kfifo_type = {
++	.release = iio_kfifo_release,
++	.groups = iio_kfifo_attribute_groups,
++};
++
++struct iio_ring_buffer *iio_kfifo_allocate(struct iio_dev *indio_dev)
++{
++	struct iio_kfifo *kf;
++
++	kf = kzalloc(sizeof *kf, GFP_KERNEL);
++	if (!kf)
++		return NULL;
++	iio_ring_buffer_init(&kf->ring, indio_dev);
++	__iio_init_kfifo(kf);
++	kf->ring.dev.type = &iio_kfifo_type;
++	device_initialize(&kf->ring.dev);
++	kf->ring.dev.parent = &indio_dev->dev;
++	kf->ring.dev.bus = &iio_bus_type;
++	dev_set_drvdata(&kf->ring.dev, (void *)&(kf->ring));
++
++	return &kf->ring;
++}
++EXPORT_SYMBOL(iio_kfifo_allocate);
++
++int iio_get_bytes_per_datum_kfifo(struct iio_ring_buffer *r)
++{
++	return r->bytes_per_datum;
++}
++EXPORT_SYMBOL(iio_get_bytes_per_datum_kfifo);
++
++int iio_set_bytes_per_datum_kfifo(struct iio_ring_buffer *r, size_t bpd)
++{
++	if (r->bytes_per_datum != bpd) {
++		r->bytes_per_datum = bpd;
++		if (r->access.mark_param_change)
++			r->access.mark_param_change(r);
++	}
++	return 0;
++}
++EXPORT_SYMBOL(iio_set_bytes_per_datum_kfifo);
++
++int iio_mark_update_needed_kfifo(struct iio_ring_buffer *r)
++{
++	struct iio_kfifo *kf = iio_to_kfifo(r);
++	kf->update_needed = true;
++	return 0;
++}
++EXPORT_SYMBOL(iio_mark_update_needed_kfifo);
++
++int iio_set_length_kfifo(struct iio_ring_buffer *r, int length)
++{
++	if (r->length != length) {
++		r->length = length;
++		if (r->access.mark_param_change)
++			r->access.mark_param_change(r);
++	}
++	return 0;
++}
++EXPORT_SYMBOL(iio_set_length_kfifo);
++
++void iio_kfifo_free(struct iio_ring_buffer *r)
++{
++	if (r)
++		iio_put_ring_buffer(r);
++}
++EXPORT_SYMBOL(iio_kfifo_free);
++
++int iio_store_to_kfifo(struct iio_ring_buffer *r, u8 *data, s64 timestamp)
++{
++	int ret;
++	struct iio_kfifo *kf = iio_to_kfifo(r);
++	u8 *datal = kmalloc(r->bytes_per_datum, GFP_KERNEL);
++	memcpy(datal, data, r->bytes_per_datum - sizeof(timestamp));
++	memcpy(datal + r->bytes_per_datum - sizeof(timestamp),
++		&timestamp, sizeof(timestamp));
++	ret = kfifo_in(&kf->kf, data, r->bytes_per_datum);
++	if (ret != r->bytes_per_datum) {
++		kfree(datal);
++		return -EBUSY;
++	}
++	kfree(datal);
++	return 0;
++}
++EXPORT_SYMBOL(iio_store_to_kfifo);
++
++int iio_rip_kfifo(struct iio_ring_buffer *r,
++		size_t count, char __user *buf, int *deadoffset)
++{
++	int ret, copied;
++	struct iio_kfifo *kf = iio_to_kfifo(r);
++
++	*deadoffset = 0;
++	ret = kfifo_to_user(&kf->kf, buf, r->bytes_per_datum*count, &copied);
++
++	return copied;
++}
++EXPORT_SYMBOL(iio_rip_kfifo);
++MODULE_LICENSE("GPL");
+Index: linux-2.6.38-rc3/drivers/staging/iio/kfifo_buf.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/kfifo_buf.h	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,56 @@
++
++#include <linux/kfifo.h>
++#include "iio.h"
++#include "ring_generic.h"
++
++struct iio_kfifo {
++	struct iio_ring_buffer ring;
++	struct kfifo kf;
++	int use_count;
++	int update_needed;
++	struct mutex use_lock;
++};
++
++#define iio_to_kfifo(r) container_of(r, struct iio_kfifo, ring)
++
++int iio_create_kfifo(struct iio_ring_buffer **r);
++int iio_init_kfifo(struct iio_ring_buffer *r, struct iio_dev *indio_dev);
++void iio_exit_kfifo(struct iio_ring_buffer *r);
++void iio_free_kfifo(struct iio_ring_buffer *r);
++void iio_mark_kfifo_in_use(struct iio_ring_buffer *r);
++void iio_unmark_kfifo_in_use(struct iio_ring_buffer *r);
++
++int iio_store_to_kfifo(struct iio_ring_buffer *r, u8 *data, s64 timestamp);
++int iio_rip_kfifo(struct iio_ring_buffer *r,
++		size_t count,
++		char __user *buf,
++		int *dead_offset);
++
++int iio_request_update_kfifo(struct iio_ring_buffer *r);
++int iio_mark_update_needed_kfifo(struct iio_ring_buffer *r);
++
++int iio_get_bytes_per_datum_kfifo(struct iio_ring_buffer *r);
++int iio_set_bytes_per_datum_kfifo(struct iio_ring_buffer *r, size_t bpd);
++int iio_get_length_kfifo(struct iio_ring_buffer *r);
++int iio_set_length_kfifo(struct iio_ring_buffer *r, int length);
++
++static inline void iio_kfifo_register_funcs(struct iio_ring_access_funcs *ra)
++{
++	ra->mark_in_use = &iio_mark_kfifo_in_use;
++	ra->unmark_in_use = &iio_unmark_kfifo_in_use;
++
++	ra->store_to = &iio_store_to_kfifo;
++	ra->rip_lots = &iio_rip_kfifo;
++
++	ra->mark_param_change = &iio_mark_update_needed_kfifo;
++	ra->request_update = &iio_request_update_kfifo;
++
++	ra->get_bytes_per_datum = &iio_get_bytes_per_datum_kfifo;
++	ra->set_bytes_per_datum = &iio_set_bytes_per_datum_kfifo;
++	ra->get_length = &iio_get_length_kfifo;
++	ra->set_length = &iio_set_length_kfifo;
++};
++
++struct iio_ring_buffer *iio_kfifo_allocate(struct iio_dev *indio_dev);
++void iio_kfifo_free(struct iio_ring_buffer *r);
++
+Index: linux-2.6.38-rc3/drivers/staging/iio/magnetometer/ak8975.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/magnetometer/ak8975.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/magnetometer/ak8975.c	2011-02-21 18:29:49.000000000 +0100
+@@ -29,6 +29,7 @@
+ #include <linux/delay.h>
+ 
+ #include <linux/gpio.h>
++#include <linux/input/ak8975.h>
+ 
+ #include "../iio.h"
+ #include "magnet.h"
+@@ -435,6 +436,7 @@
+ 			const struct i2c_device_id *id)
+ {
+ 	struct ak8975_data *data;
++	struct ak8975_platform_data *pdata;
+ 	int err;
+ 
+ 	/* Allocate our device context. */
+@@ -452,7 +454,11 @@
+ 
+ 	/* Grab and set up the supplied GPIO. */
+ 	data->eoc_irq = client->irq;
+-	data->eoc_gpio = irq_to_gpio(client->irq);
++	pdata = client->dev.platform_data;
++	if (pdata)
++		data->eoc_gpio = pdata->gpio;
++	else
++		data->eoc_gpio = irq_to_gpio(client->irq);
+ 
+ 	if (!data->eoc_gpio) {
+ 		dev_err(&client->dev, "failed, no valid GPIO\n");
+Index: linux-2.6.38-rc3/drivers/staging/iio/Makefile
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/Makefile	2011-02-21 18:29:49.000000000 +0100
+@@ -8,6 +8,7 @@
+ industrialio-$(CONFIG_IIO_TRIGGER) += industrialio-trigger.o
+ 
+ obj-$(CONFIG_IIO_SW_RING) += ring_sw.o
++obj-$(CONFIG_IIO_KFIFO_BUF) += kfifo_buf.o
+ 
+ obj-y += accel/
+ obj-y += adc/
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7753.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7753.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7753.c	2011-02-21 18:29:49.000000000 +0100
+@@ -1,5 +1,5 @@
+ /*
+- * ADE7753 Single-Phase Multifunction Metering IC with di/dt Sensor Interface Driver
++ * ADE7753 Single-Phase Multifunction Metering IC with di/dt Sensor Interface
+  *
+  * Copyright 2010 Analog Devices Inc.
+  *
+@@ -23,9 +23,9 @@
+ #include "meter.h"
+ #include "ade7753.h"
+ 
+-int ade7753_spi_write_reg_8(struct device *dev,
+-		u8 reg_address,
+-		u8 val)
++static int ade7753_spi_write_reg_8(struct device *dev,
++				   u8 reg_address,
++				   u8 val)
+ {
+ 	int ret;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+@@ -46,25 +46,14 @@
+ 		u16 value)
+ {
+ 	int ret;
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7753_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		}
+-	};
+ 
+ 	mutex_lock(&st->buf_lock);
+ 	st->tx[0] = ADE7753_WRITE_REG(reg_address);
+ 	st->tx[1] = (value >> 8) & 0xFF;
+ 	st->tx[2] = value & 0xFF;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
++	ret = spi_write(st->us, st->tx, 3);
+ 	mutex_unlock(&st->buf_lock);
+ 
+ 	return ret;
+@@ -74,73 +63,40 @@
+ 		u8 reg_address,
+ 		u8 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7753_state *st = iio_dev_get_devdata(indio_dev);
+-	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 2,
+-		},
+-	};
+-
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7753_READ_REG(reg_address);
+-	st->tx[1] = 0;
++	ssize_t ret;
+ 
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r8(st->us, ADE7753_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 8 bit register 0x%02X",
+ 				reg_address);
+-		goto error_ret;
++		return ret;
+ 	}
+-	*val = st->rx[1];
++	*val = ret;
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	return 0;
+ }
+ 
+ static int ade7753_spi_read_reg_16(struct device *dev,
+ 		u8 reg_address,
+ 		u16 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7753_state *st = iio_dev_get_devdata(indio_dev);
+-	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		},
+-	};
+-
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7753_READ_REG(reg_address);
+-	st->tx[1] = 0;
+-	st->tx[2] = 0;
++	ssize_t ret;
+ 
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r16(st->us, ADE7753_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 16 bit register 0x%02X",
+-				reg_address);
+-		goto error_ret;
++			reg_address);
++		return ret;
+ 	}
+-	*val = (st->rx[1] << 8) | st->rx[2];
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	*val = ret;
++	*val = be16_to_cpup(val);
++
++	return 0;
+ }
+ 
+ static int ade7753_spi_read_reg_24(struct device *dev,
+@@ -154,27 +110,28 @@
+ 	struct spi_transfer xfers[] = {
+ 		{
+ 			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+ 			.bits_per_word = 8,
+-			.len = 4,
+-		},
++			.len = 1,
++		}, {
++			.rx_buf = st->tx,
++			.bits_per_word = 8,
++			.len = 3,
++		}
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+ 	st->tx[0] = ADE7753_READ_REG(reg_address);
+-	st->tx[1] = 0;
+-	st->tx[2] = 0;
+-	st->tx[3] = 0;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfers[0], &msg);
++	spi_message_add_tail(&xfers[1], &msg);
+ 	ret = spi_sync(st->us, &msg);
+ 	if (ret) {
+ 		dev_err(&st->us->dev, "problem when reading 24 bit register 0x%02X",
+ 				reg_address);
+ 		goto error_ret;
+ 	}
+-	*val = (st->rx[1] << 16) | (st->rx[2] << 8) | st->rx[3];
++	*val = (st->rx[0] << 16) | (st->rx[1] << 8) | st->rx[2];
+ 
+ error_ret:
+ 	mutex_unlock(&st->buf_lock);
+@@ -186,7 +143,7 @@
+ 		char *buf)
+ {
+ 	int ret;
+-	u8 val = 0;
++	u8 val;
+ 	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+ 
+ 	ret = ade7753_spi_read_reg_8(dev, this_attr->address, &val);
+@@ -201,7 +158,7 @@
+ 		char *buf)
+ {
+ 	int ret;
+-	u16 val = 0;
++	u16 val;
+ 	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+ 
+ 	ret = ade7753_spi_read_reg_16(dev, this_attr->address, &val);
+@@ -216,14 +173,14 @@
+ 		char *buf)
+ {
+ 	int ret;
+-	u32 val = 0;
++	u32 val;
+ 	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+ 
+ 	ret = ade7753_spi_read_reg_24(dev, this_attr->address, &val);
+ 	if (ret)
+ 		return ret;
+ 
+-	return sprintf(buf, "%u\n", val & 0xFFFFFF);
++	return sprintf(buf, "%u\n", val);
+ }
+ 
+ static ssize_t ade7753_write_8bit(struct device *dev,
+@@ -264,17 +221,12 @@
+ 
+ static int ade7753_reset(struct device *dev)
+ {
+-	int ret;
+ 	u16 val;
+-	ade7753_spi_read_reg_16(dev,
+-			ADE7753_MODE,
+-			&val);
++
++	ade7753_spi_read_reg_16(dev, ADE7753_MODE, &val);
+ 	val |= 1 << 6; /* Software Chip Reset */
+-	ret = ade7753_spi_write_reg_16(dev,
+-			ADE7753_MODE,
+-			val);
+ 
+-	return ret;
++	return ade7753_spi_write_reg_16(dev, ADE7753_MODE, val);
+ }
+ 
+ static ssize_t ade7753_write_reset(struct device *dev,
+@@ -401,27 +353,20 @@
+ 		irqen &= ~(1 << 3);
+ 
+ 	ret = ade7753_spi_write_reg_8(dev, ADE7753_IRQEN, irqen);
+-	if (ret)
+-		goto error_ret;
+ 
+ error_ret:
+ 	return ret;
+ }
+ 
+ /* Power down the device */
+-int ade7753_stop_device(struct device *dev)
++static int ade7753_stop_device(struct device *dev)
+ {
+-	int ret;
+ 	u16 val;
+-	ade7753_spi_read_reg_16(dev,
+-			ADE7753_MODE,
+-			&val);
++
++	ade7753_spi_read_reg_16(dev, ADE7753_MODE, &val);
+ 	val |= 1 << 4;  /* AD converters can be turned off */
+-	ret = ade7753_spi_write_reg_16(dev,
+-			ADE7753_MODE,
+-			val);
+ 
+-	return ret;
++	return ade7753_spi_write_reg_16(dev, ADE7753_MODE, val);
+ }
+ 
+ static int ade7753_initial_setup(struct ade7753_state *st)
+@@ -454,16 +399,14 @@
+ 	int ret, len = 0;
+ 	u8 t;
+ 	int sps;
+-	ret = ade7753_spi_read_reg_8(dev,
+-			ADE7753_MODE,
+-			&t);
++	ret = ade7753_spi_read_reg_8(dev, ADE7753_MODE,	&t);
+ 	if (ret)
+ 		return ret;
+ 
+ 	t = (t >> 11) & 0x3;
+ 	sps = 27900 / (1 + t);
+ 
+-	len = sprintf(buf, "%d SPS\n", sps);
++	len = sprintf(buf, "%d\n", sps);
+ 	return len;
+ }
+ 
+@@ -493,24 +436,21 @@
+ 	else
+ 		st->us->max_speed_hz = ADE7753_SPI_FAST;
+ 
+-	ret = ade7753_spi_read_reg_16(dev,
+-			ADE7753_MODE,
+-			&reg);
++	ret = ade7753_spi_read_reg_16(dev, ADE7753_MODE, &reg);
+ 	if (ret)
+ 		goto out;
+ 
+ 	reg &= ~(3 << 11);
+ 	reg |= t << 11;
+ 
+-	ret = ade7753_spi_write_reg_16(dev,
+-			ADE7753_MODE,
+-			reg);
++	ret = ade7753_spi_write_reg_16(dev, ADE7753_MODE, reg);
+ 
+ out:
+ 	mutex_unlock(&indio_dev->mlock);
+ 
+ 	return ret ? ret : len;
+ }
++
+ static IIO_DEV_ATTR_TEMP_RAW(ade7753_read_8bit);
+ static IIO_CONST_ATTR(temp_offset, "-25 C");
+ static IIO_CONST_ATTR(temp_scale, "0.67 C");
+@@ -525,14 +465,6 @@
+ 
+ static IIO_CONST_ATTR(name, "ade7753");
+ 
+-static struct attribute *ade7753_event_attributes[] = {
+-	NULL
+-};
+-
+-static struct attribute_group ade7753_event_attribute_group = {
+-	.attrs = ade7753_event_attributes,
+-};
+-
+ static struct attribute *ade7753_attributes[] = {
+ 	&iio_dev_attr_temp_raw.dev_attr.attr,
+ 	&iio_const_attr_temp_offset.dev_attr.attr,
+@@ -607,58 +539,22 @@
+ 	}
+ 
+ 	st->indio_dev->dev.parent = &spi->dev;
+-	st->indio_dev->num_interrupt_lines = 1;
+-	st->indio_dev->event_attrs = &ade7753_event_attribute_group;
+ 	st->indio_dev->attrs = &ade7753_attribute_group;
+ 	st->indio_dev->dev_data = (void *)(st);
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = ade7753_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
++		goto error_free_dev;
+ 	regdone = 1;
+ 
+-	ret = ade7753_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_FALLING,
+-				"ade7753");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = ade7753_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
+-
+ 	/* Get the device into a sane initial state */
+ 	ret = ade7753_initial_setup(st);
+ 	if (ret)
+-		goto error_remove_trigger;
++		goto error_free_dev;
+ 	return 0;
+ 
+-error_remove_trigger:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		ade7753_remove_trigger(st->indio_dev);
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	ade7753_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	ade7753_unconfigure_ring(st->indio_dev);
+ error_free_dev:
+ 	if (regdone)
+ 		iio_device_unregister(st->indio_dev);
+@@ -685,14 +581,6 @@
+ 	if (ret)
+ 		goto err_ret;
+ 
+-	flush_scheduled_work();
+-
+-	ade7753_remove_trigger(indio_dev);
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	ade7753_uninitialize_ring(indio_dev->ring);
+-	ade7753_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+@@ -726,5 +614,5 @@
+ module_exit(ade7753_exit);
+ 
+ MODULE_AUTHOR("Barry Song <21cnbao@gmail.com>");
+-MODULE_DESCRIPTION("Analog Devices ADE7753/6 Single-Phase Multifunction Metering IC Driver");
++MODULE_DESCRIPTION("Analog Devices ADE7753/6 Single-Phase Multifunction Meter");
+ MODULE_LICENSE("GPL v2");
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7753.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7753.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7753.h	2011-02-21 18:29:49.000000000 +0100
+@@ -60,81 +60,17 @@
+ /**
+  * struct ade7753_state - device instance specific data
+  * @us:			actual spi_device
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+  **/
+ struct ade7753_state {
+ 	struct spi_device		*us;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	struct mutex			buf_lock;
+ };
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum ade7753_scan {
+-	ADE7753_SCAN_ACTIVE_POWER,
+-	ADE7753_SCAN_CH1,
+-	ADE7753_SCAN_CH2,
+-};
+-
+-void ade7753_remove_trigger(struct iio_dev *indio_dev);
+-int ade7753_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t ade7753_read_data_from_ring(struct device *dev,
+-		struct device_attribute *attr,
+-		char *buf);
+-
+-
+-int ade7753_configure_ring(struct iio_dev *indio_dev);
+-void ade7753_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int ade7753_initialize_ring(struct iio_ring_buffer *ring);
+-void ade7753_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void ade7753_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7753_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-ade7753_read_data_from_ring(struct device *dev,
+-		struct device_attribute *attr,
+-		char *buf)
+-{
+-	return 0;
+-}
+-
+-static int ade7753_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-static inline void ade7753_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7753_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-static inline void ade7753_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ 
+ #endif
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7754.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7754.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7754.c	2011-02-21 18:29:49.000000000 +0100
+@@ -46,25 +46,14 @@
+ 		u16 value)
+ {
+ 	int ret;
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7754_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		}
+-	};
+ 
+ 	mutex_lock(&st->buf_lock);
+ 	st->tx[0] = ADE7754_WRITE_REG(reg_address);
+ 	st->tx[1] = (value >> 8) & 0xFF;
+ 	st->tx[2] = value & 0xFF;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
++	ret = spi_write(st->us, st->tx, 3);
+ 	mutex_unlock(&st->buf_lock);
+ 
+ 	return ret;
+@@ -74,73 +63,40 @@
+ 		u8 reg_address,
+ 		u8 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7754_state *st = iio_dev_get_devdata(indio_dev);
+ 	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 2,
+-		},
+-	};
+-
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7754_READ_REG(reg_address);
+-	st->tx[1] = 0;
+ 
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r8(st->us, ADE7754_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 8 bit register 0x%02X",
+ 				reg_address);
+-		goto error_ret;
++		return ret;
+ 	}
+-	*val = st->rx[1];
++	*val = ret;
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	return 0;
+ }
+ 
+ static int ade7754_spi_read_reg_16(struct device *dev,
+ 		u8 reg_address,
+ 		u16 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7754_state *st = iio_dev_get_devdata(indio_dev);
+ 	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		},
+-	};
+ 
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7754_READ_REG(reg_address);
+-	st->tx[1] = 0;
+-	st->tx[2] = 0;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r16(st->us, ADE7754_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 16 bit register 0x%02X",
+-				reg_address);
+-		goto error_ret;
++			reg_address);
++		return ret;
+ 	}
+-	*val = (st->rx[1] << 8) | st->rx[2];
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	*val = ret;
++	*val = be16_to_cpup(val);
++
++	return 0;
+ }
+ 
+ static int ade7754_spi_read_reg_24(struct device *dev,
+@@ -264,17 +220,11 @@
+ 
+ static int ade7754_reset(struct device *dev)
+ {
+-	int ret;
+ 	u8 val;
+-	ade7754_spi_read_reg_8(dev,
+-			ADE7754_OPMODE,
+-			&val);
+-	val |= 1 << 6; /* Software Chip Reset */
+-	ret = ade7754_spi_write_reg_8(dev,
+-			ADE7754_OPMODE,
+-			val);
+ 
+-	return ret;
++	ade7754_spi_read_reg_8(dev, ADE7754_OPMODE, &val);
++	val |= 1 << 6; /* Software Chip Reset */
++	return ade7754_spi_write_reg_8(dev, ADE7754_OPMODE, val);
+ }
+ 
+ 
+@@ -431,17 +381,11 @@
+ /* Power down the device */
+ static int ade7754_stop_device(struct device *dev)
+ {
+-	int ret;
+ 	u8 val;
+-	ade7754_spi_read_reg_8(dev,
+-			ADE7754_OPMODE,
+-			&val);
+-	val |= 7 << 3;  /* ADE7754 powered down */
+-	ret = ade7754_spi_write_reg_8(dev,
+-			ADE7754_OPMODE,
+-			val);
+ 
+-	return ret;
++	ade7754_spi_read_reg_8(dev, ADE7754_OPMODE, &val);
++	val |= 7 << 3;  /* ADE7754 powered down */
++	return ade7754_spi_write_reg_8(dev, ADE7754_OPMODE, val);
+ }
+ 
+ static int ade7754_initial_setup(struct ade7754_state *st)
+@@ -471,7 +415,7 @@
+ 		struct device_attribute *attr,
+ 		char *buf)
+ {
+-	int ret, len = 0;
++	int ret;
+ 	u8 t;
+ 	int sps;
+ 	ret = ade7754_spi_read_reg_8(dev,
+@@ -483,8 +427,7 @@
+ 	t = (t >> 3) & 0x3;
+ 	sps = 26000 / (1 + t);
+ 
+-	len = sprintf(buf, "%d SPS\n", sps);
+-	return len;
++	return sprintf(buf, "%d\n", sps);
+ }
+ 
+ static ssize_t ade7754_write_frequency(struct device *dev,
+@@ -513,18 +456,14 @@
+ 	else
+ 		st->us->max_speed_hz = ADE7754_SPI_FAST;
+ 
+-	ret = ade7754_spi_read_reg_8(dev,
+-			ADE7754_WAVMODE,
+-			&reg);
++	ret = ade7754_spi_read_reg_8(dev, ADE7754_WAVMODE, &reg);
+ 	if (ret)
+ 		goto out;
+ 
+ 	reg &= ~(3 << 3);
+ 	reg |= t << 3;
+ 
+-	ret = ade7754_spi_write_reg_8(dev,
+-			ADE7754_WAVMODE,
+-			reg);
++	ret = ade7754_spi_write_reg_8(dev, ADE7754_WAVMODE, reg);
+ 
+ out:
+ 	mutex_unlock(&indio_dev->mlock);
+@@ -545,14 +484,6 @@
+ 
+ static IIO_CONST_ATTR(name, "ade7754");
+ 
+-static struct attribute *ade7754_event_attributes[] = {
+-	NULL
+-};
+-
+-static struct attribute_group ade7754_event_attribute_group = {
+-	.attrs = ade7754_event_attributes,
+-};
+-
+ static struct attribute *ade7754_attributes[] = {
+ 	&iio_dev_attr_temp_raw.dev_attr.attr,
+ 	&iio_const_attr_temp_offset.dev_attr.attr,
+@@ -633,58 +564,22 @@
+ 	}
+ 
+ 	st->indio_dev->dev.parent = &spi->dev;
+-	st->indio_dev->num_interrupt_lines = 1;
+-	st->indio_dev->event_attrs = &ade7754_event_attribute_group;
+ 	st->indio_dev->attrs = &ade7754_attribute_group;
+ 	st->indio_dev->dev_data = (void *)(st);
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = ade7754_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
++		goto error_free_dev;
+ 	regdone = 1;
+ 
+-	ret = ade7754_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_FALLING,
+-				"ade7754");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = ade7754_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
+-
+ 	/* Get the device into a sane initial state */
+ 	ret = ade7754_initial_setup(st);
+ 	if (ret)
+-		goto error_remove_trigger;
++		goto error_free_dev;
+ 	return 0;
+ 
+-error_remove_trigger:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		ade7754_remove_trigger(st->indio_dev);
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	ade7754_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	ade7754_unconfigure_ring(st->indio_dev);
+ error_free_dev:
+ 	if (regdone)
+ 		iio_device_unregister(st->indio_dev);
+@@ -711,14 +606,6 @@
+ 	if (ret)
+ 		goto err_ret;
+ 
+-	flush_scheduled_work();
+-
+-	ade7754_remove_trigger(indio_dev);
+-	if (spi->irq)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	ade7754_uninitialize_ring(indio_dev->ring);
+-	ade7754_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7754.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7754.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7754.h	2011-02-21 18:29:49.000000000 +0100
+@@ -78,84 +78,17 @@
+ /**
+  * struct ade7754_state - device instance specific data
+  * @us:			actual spi_device
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+  **/
+ struct ade7754_state {
+ 	struct spi_device		*us;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	struct mutex			buf_lock;
+ };
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum ade7754_scan {
+-	ADE7754_SCAN_PHA_V,
+-	ADE7754_SCAN_PHB_V,
+-	ADE7754_SCAN_PHC_V,
+-	ADE7754_SCAN_PHA_I,
+-	ADE7754_SCAN_PHB_I,
+-	ADE7754_SCAN_PHC_I,
+-};
+-
+-void ade7754_remove_trigger(struct iio_dev *indio_dev);
+-int ade7754_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t ade7754_read_data_from_ring(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf);
+-
+-
+-int ade7754_configure_ring(struct iio_dev *indio_dev);
+-void ade7754_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int ade7754_initialize_ring(struct iio_ring_buffer *ring);
+-void ade7754_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void ade7754_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7754_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-ade7754_read_data_from_ring(struct device *dev,
+-			      struct device_attribute *attr,
+-			      char *buf)
+-{
+-	return 0;
+-}
+-
+-static int ade7754_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-static inline void ade7754_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7754_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-static inline void ade7754_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ 
+ #endif
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7759.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7759.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7759.c	2011-02-21 18:29:49.000000000 +0100
+@@ -23,7 +23,7 @@
+ #include "meter.h"
+ #include "ade7759.h"
+ 
+-int ade7759_spi_write_reg_8(struct device *dev,
++static int ade7759_spi_write_reg_8(struct device *dev,
+ 		u8 reg_address,
+ 		u8 val)
+ {
+@@ -46,25 +46,14 @@
+ 		u16 value)
+ {
+ 	int ret;
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7759_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		}
+-	};
+ 
+ 	mutex_lock(&st->buf_lock);
+ 	st->tx[0] = ADE7759_WRITE_REG(reg_address);
+ 	st->tx[1] = (value >> 8) & 0xFF;
+ 	st->tx[2] = value & 0xFF;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
++	ret = spi_write(st->us, st->tx, 3);
+ 	mutex_unlock(&st->buf_lock);
+ 
+ 	return ret;
+@@ -74,73 +63,40 @@
+ 		u8 reg_address,
+ 		u8 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7759_state *st = iio_dev_get_devdata(indio_dev);
+ 	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 2,
+-		},
+-	};
+ 
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7759_READ_REG(reg_address);
+-	st->tx[1] = 0;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r8(st->us, ADE7759_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 8 bit register 0x%02X",
+ 				reg_address);
+-		goto error_ret;
++		return ret;
+ 	}
+-	*val = st->rx[1];
++	*val = ret;
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	return 0;
+ }
+ 
+ static int ade7759_spi_read_reg_16(struct device *dev,
+ 		u8 reg_address,
+ 		u16 *val)
+ {
+-	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7759_state *st = iio_dev_get_devdata(indio_dev);
+ 	int ret;
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.rx_buf = st->rx,
+-			.bits_per_word = 8,
+-			.len = 3,
+-		},
+-	};
+ 
+-	mutex_lock(&st->buf_lock);
+-	st->tx[0] = ADE7759_READ_REG(reg_address);
+-	st->tx[1] = 0;
+-	st->tx[2] = 0;
+-
+-	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
+-	ret = spi_sync(st->us, &msg);
+-	if (ret) {
++	ret = spi_w8r16(st->us, ADE7759_READ_REG(reg_address));
++	if (ret < 0) {
+ 		dev_err(&st->us->dev, "problem when reading 16 bit register 0x%02X",
+-				reg_address);
+-		goto error_ret;
++			reg_address);
++		return ret;
+ 	}
+-	*val = (st->rx[1] << 8) | st->rx[2];
+ 
+-error_ret:
+-	mutex_unlock(&st->buf_lock);
+-	return ret;
++	*val = ret;
++	*val = be16_to_cpup(val);
++
++	return 0;
+ }
+ 
+ static int ade7759_spi_read_reg_40(struct device *dev,
+@@ -354,27 +310,22 @@
+ 		irqen &= ~(1 << 3);
+ 
+ 	ret = ade7759_spi_write_reg_8(dev, ADE7759_IRQEN, irqen);
+-	if (ret)
+-		goto error_ret;
+ 
+ error_ret:
+ 	return ret;
+ }
+ 
+ /* Power down the device */
+-int ade7759_stop_device(struct device *dev)
++static int ade7759_stop_device(struct device *dev)
+ {
+-	int ret;
+ 	u16 val;
++
+ 	ade7759_spi_read_reg_16(dev,
+ 			ADE7759_MODE,
+ 			&val);
+ 	val |= 1 << 4;  /* AD converters can be turned off */
+-	ret = ade7759_spi_write_reg_16(dev,
+-			ADE7759_MODE,
+-			val);
+ 
+-	return ret;
++	return ade7759_spi_write_reg_16(dev, ADE7759_MODE, val);
+ }
+ 
+ static int ade7759_initial_setup(struct ade7759_state *st)
+@@ -404,7 +355,7 @@
+ 		struct device_attribute *attr,
+ 		char *buf)
+ {
+-	int ret, len = 0;
++	int ret;
+ 	u16 t;
+ 	int sps;
+ 	ret = ade7759_spi_read_reg_16(dev,
+@@ -416,8 +367,7 @@
+ 	t = (t >> 3) & 0x3;
+ 	sps = 27900 / (1 + t);
+ 
+-	len = sprintf(buf, "%d SPS\n", sps);
+-	return len;
++	return sprintf(buf, "%d\n", sps);
+ }
+ 
+ static ssize_t ade7759_write_frequency(struct device *dev,
+@@ -446,18 +396,14 @@
+ 	else
+ 		st->us->max_speed_hz = ADE7759_SPI_FAST;
+ 
+-	ret = ade7759_spi_read_reg_16(dev,
+-			ADE7759_MODE,
+-			&reg);
++	ret = ade7759_spi_read_reg_16(dev, ADE7759_MODE, &reg);
+ 	if (ret)
+ 		goto out;
+ 
+ 	reg &= ~(3 << 13);
+ 	reg |= t << 13;
+ 
+-	ret = ade7759_spi_write_reg_16(dev,
+-			ADE7759_MODE,
+-			reg);
++	ret = ade7759_spi_write_reg_16(dev, ADE7759_MODE, reg);
+ 
+ out:
+ 	mutex_unlock(&indio_dev->mlock);
+@@ -478,14 +424,6 @@
+ 
+ static IIO_CONST_ATTR(name, "ade7759");
+ 
+-static struct attribute *ade7759_event_attributes[] = {
+-	NULL
+-};
+-
+-static struct attribute_group ade7759_event_attribute_group = {
+-	.attrs = ade7759_event_attributes,
+-};
+-
+ static struct attribute *ade7759_attributes[] = {
+ 	&iio_dev_attr_temp_raw.dev_attr.attr,
+ 	&iio_const_attr_temp_offset.dev_attr.attr,
+@@ -517,7 +455,7 @@
+ 
+ static int __devinit ade7759_probe(struct spi_device *spi)
+ {
+-	int ret, regdone = 0;
++	int ret;
+ 	struct ade7759_state *st = kzalloc(sizeof *st, GFP_KERNEL);
+ 	if (!st) {
+ 		ret =  -ENOMEM;
+@@ -548,62 +486,27 @@
+ 
+ 	st->indio_dev->dev.parent = &spi->dev;
+ 	st->indio_dev->num_interrupt_lines = 1;
+-	st->indio_dev->event_attrs = &ade7759_event_attribute_group;
++
+ 	st->indio_dev->attrs = &ade7759_attribute_group;
+ 	st->indio_dev->dev_data = (void *)(st);
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = ade7759_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
+-	regdone = 1;
+-
+-	ret = ade7759_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
+-
+-	if (spi->irq) {
+-		ret = iio_register_interrupt_line(spi->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_FALLING,
+-				"ade7759");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = ade7759_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
++		goto error_free_dev;
+ 
+ 	/* Get the device into a sane initial state */
+ 	ret = ade7759_initial_setup(st);
+ 	if (ret)
+-		goto error_remove_trigger;
++		goto error_unreg_dev;
+ 	return 0;
+ 
+-error_remove_trigger:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		ade7759_remove_trigger(st->indio_dev);
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	ade7759_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	ade7759_unconfigure_ring(st->indio_dev);
++
++error_unreg_dev:
++	iio_device_unregister(st->indio_dev);
+ error_free_dev:
+-	if (regdone)
+-		iio_device_unregister(st->indio_dev);
+-	else
+-		iio_free_device(st->indio_dev);
++	iio_free_device(st->indio_dev);
+ error_free_tx:
+ 	kfree(st->tx);
+ error_free_rx:
+@@ -625,14 +528,6 @@
+ 	if (ret)
+ 		goto err_ret;
+ 
+-	flush_scheduled_work();
+-
+-	ade7759_remove_trigger(indio_dev);
+-	if (spi->irq && gpio_is_valid(irq_to_gpio(spi->irq)) > 0)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	ade7759_uninitialize_ring(indio_dev->ring);
+-	ade7759_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7759.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7759.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7759.h	2011-02-21 18:29:49.000000000 +0100
+@@ -41,82 +41,17 @@
+ /**
+  * struct ade7759_state - device instance specific data
+  * @us:			actual spi_device
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+  **/
+ struct ade7759_state {
+ 	struct spi_device		*us;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	struct mutex			buf_lock;
+ };
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum ade7759_scan {
+-	ADE7759_SCAN_ACTIVE_POWER,
+-	ADE7759_SCAN_CH1_CH2,
+-	ADE7759_SCAN_CH1,
+-	ADE7759_SCAN_CH2,
+-};
+-
+-void ade7759_remove_trigger(struct iio_dev *indio_dev);
+-int ade7759_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t ade7759_read_data_from_ring(struct device *dev,
+-		struct device_attribute *attr,
+-		char *buf);
+-
+-
+-int ade7759_configure_ring(struct iio_dev *indio_dev);
+-void ade7759_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int ade7759_initialize_ring(struct iio_ring_buffer *ring);
+-void ade7759_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void ade7759_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7759_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-ade7759_read_data_from_ring(struct device *dev,
+-		struct device_attribute *attr,
+-		char *buf)
+-{
+-	return 0;
+-}
+-
+-static int ade7759_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-static inline void ade7759_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7759_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-static inline void ade7759_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-#endif /* CONFIG_IIO_RING_BUFFER */
+ 
+ #endif
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7854.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854.c	2011-02-21 18:29:49.000000000 +0100
+@@ -61,7 +61,7 @@
+ 		char *buf)
+ {
+ 	int ret;
+-	u32 val = 0;
++	u32 val;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+ 	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+@@ -70,7 +70,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	return sprintf(buf, "%u\n", val & 0xFFFFFF);
++	return sprintf(buf, "%u\n", val);
+ }
+ 
+ static ssize_t ade7854_read_32bit(struct device *dev,
+@@ -178,15 +178,12 @@
+ {
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+-
+-	int ret;
+ 	u16 val;
+ 
+ 	st->read_reg_16(dev, ADE7854_CONFIG, &val);
+ 	val |= 1 << 7; /* Software Chip Reset */
+-	ret = st->write_reg_16(dev, ADE7854_CONFIG, val);
+ 
+-	return ret;
++	return st->write_reg_16(dev, ADE7854_CONFIG, val);
+ }
+ 
+ 
+@@ -477,14 +474,6 @@
+ 
+ static IIO_CONST_ATTR(name, "ade7854");
+ 
+-static struct attribute *ade7854_event_attributes[] = {
+-	NULL
+-};
+-
+-static struct attribute_group ade7854_event_attribute_group = {
+-	.attrs = ade7854_event_attributes,
+-};
+-
+ static struct attribute *ade7854_attributes[] = {
+ 	&iio_dev_attr_aigain.dev_attr.attr,
+ 	&iio_dev_attr_bigain.dev_attr.attr,
+@@ -564,7 +553,7 @@
+ 
+ int ade7854_probe(struct ade7854_state *st, struct device *dev)
+ {
+-	int ret, regdone = 0;
++	int ret;
+ 
+ 	/* Allocate the comms buffers */
+ 	st->rx = kzalloc(sizeof(*st->rx)*ADE7854_MAX_RX, GFP_KERNEL);
+@@ -586,71 +575,34 @@
+ 	}
+ 
+ 	st->indio_dev->dev.parent = dev;
+-	st->indio_dev->num_interrupt_lines = 1;
+-	st->indio_dev->event_attrs = &ade7854_event_attribute_group;
+ 	st->indio_dev->attrs = &ade7854_attribute_group;
+ 	st->indio_dev->dev_data = (void *)(st);
+ 	st->indio_dev->driver_module = THIS_MODULE;
+ 	st->indio_dev->modes = INDIO_DIRECT_MODE;
+ 
+-	ret = ade7854_configure_ring(st->indio_dev);
+-	if (ret)
+-		goto error_free_dev;
+-
+ 	ret = iio_device_register(st->indio_dev);
+ 	if (ret)
+-		goto error_unreg_ring_funcs;
+-	regdone = 1;
+-
+-	ret = ade7854_initialize_ring(st->indio_dev->ring);
+-	if (ret) {
+-		printk(KERN_ERR "failed to initialize the ring\n");
+-		goto error_unreg_ring_funcs;
+-	}
++		goto error_free_dev;
+ 
+-	if (st->irq) {
+-		ret = iio_register_interrupt_line(st->irq,
+-				st->indio_dev,
+-				0,
+-				IRQF_TRIGGER_FALLING,
+-				"ade7854");
+-		if (ret)
+-			goto error_uninitialize_ring;
+-
+-		ret = ade7854_probe_trigger(st->indio_dev);
+-		if (ret)
+-			goto error_unregister_line;
+-	}
+ 	/* Get the device into a sane initial state */
+ 	ret = ade7854_initial_setup(st);
+ 	if (ret)
+-		goto error_remove_trigger;
++		goto error_unreg_dev;
+ 
+ 	return 0;
+ 
+-error_remove_trigger:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		ade7854_remove_trigger(st->indio_dev);
+-error_unregister_line:
+-	if (st->indio_dev->modes & INDIO_RING_TRIGGERED)
+-		iio_unregister_interrupt_line(st->indio_dev, 0);
+-error_uninitialize_ring:
+-	ade7854_uninitialize_ring(st->indio_dev->ring);
+-error_unreg_ring_funcs:
+-	ade7854_unconfigure_ring(st->indio_dev);
++error_unreg_dev:
++	iio_device_unregister(st->indio_dev);
+ error_free_dev:
+-	if (regdone)
+-		iio_device_unregister(st->indio_dev);
+-	else
+-		iio_free_device(st->indio_dev);
++	iio_free_device(st->indio_dev);
+ error_free_tx:
+ 	kfree(st->tx);
+ error_free_rx:
+ 	kfree(st->rx);
+ error_free_st:
+ 	kfree(st);
+-	return ret;
+ 
++	return ret;
+ }
+ EXPORT_SYMBOL(ade7854_probe);
+ 
+@@ -658,14 +610,6 @@
+ {
+ 	struct iio_dev *indio_dev = st->indio_dev;
+ 
+-	flush_scheduled_work();
+-
+-	ade7854_remove_trigger(indio_dev);
+-	if (st->irq)
+-		iio_unregister_interrupt_line(indio_dev, 0);
+-
+-	ade7854_uninitialize_ring(indio_dev->ring);
+-	ade7854_unconfigure_ring(indio_dev);
+ 	iio_device_unregister(indio_dev);
+ 	kfree(st->tx);
+ 	kfree(st->rx);
+@@ -676,5 +620,5 @@
+ EXPORT_SYMBOL(ade7854_remove);
+ 
+ MODULE_AUTHOR("Barry Song <21cnbao@gmail.com>");
+-MODULE_DESCRIPTION("Analog Devices ADE7854/58/68/78 Polyphase Multifunction Energy Metering IC Driver");
++MODULE_DESCRIPTION("Analog Devices ADE7854/58/68/78 Polyphase Energy Meter");
+ MODULE_LICENSE("GPL v2");
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7854.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854.h	2011-02-21 18:29:49.000000000 +0100
+@@ -147,11 +147,7 @@
+ /**
+  * struct ade7854_state - device instance specific data
+  * @spi:			actual spi_device
+- * @work_trigger_to_ring: bh for triggered event handling
+- * @inter:		used to check if new interrupt has been triggered
+- * @last_timestamp:	passing timestamp from th to bh of interrupt handler
+  * @indio_dev:		industrial I/O device structure
+- * @trig:		data ready trigger registered with iio
+  * @tx:			transmit buffer
+  * @rx:			recieve buffer
+  * @buf_lock:		mutex to protect tx and rx
+@@ -159,10 +155,7 @@
+ struct ade7854_state {
+ 	struct spi_device		*spi;
+ 	struct i2c_client               *i2c;
+-	struct work_struct		work_trigger_to_ring;
+-	s64				last_timestamp;
+ 	struct iio_dev			*indio_dev;
+-	struct iio_trigger		*trig;
+ 	u8				*tx;
+ 	u8				*rx;
+ 	int				(*read_reg_8) (struct device *, u16, u8 *);
+@@ -180,66 +173,4 @@
+ extern int ade7854_probe(struct ade7854_state *st, struct device *dev);
+ extern int ade7854_remove(struct ade7854_state *st);
+ 
+-#if defined(CONFIG_IIO_RING_BUFFER) && defined(THIS_HAS_RING_BUFFER_SUPPORT)
+-/* At the moment triggers are only used for ring buffer
+- * filling. This may change!
+- */
+-
+-enum ade7854_scan {
+-	ADE7854_SCAN_PHA_V,
+-	ADE7854_SCAN_PHB_V,
+-	ADE7854_SCAN_PHC_V,
+-	ADE7854_SCAN_PHA_I,
+-	ADE7854_SCAN_PHB_I,
+-	ADE7854_SCAN_PHC_I,
+-};
+-
+-void ade7854_remove_trigger(struct iio_dev *indio_dev);
+-int ade7854_probe_trigger(struct iio_dev *indio_dev);
+-
+-ssize_t ade7854_read_data_from_ring(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf);
+-
+-
+-int ade7854_configure_ring(struct iio_dev *indio_dev);
+-void ade7854_unconfigure_ring(struct iio_dev *indio_dev);
+-
+-int ade7854_initialize_ring(struct iio_ring_buffer *ring);
+-void ade7854_uninitialize_ring(struct iio_ring_buffer *ring);
+-#else /* CONFIG_IIO_RING_BUFFER */
+-
+-static inline void ade7854_remove_trigger(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7854_probe_trigger(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline ssize_t
+-ade7854_read_data_from_ring(struct device *dev,
+-			      struct device_attribute *attr,
+-			      char *buf)
+-{
+-	return 0;
+-}
+-
+-static inline int ade7854_configure_ring(struct iio_dev *indio_dev)
+-{
+-	return 0;
+-}
+-
+-static inline void ade7854_unconfigure_ring(struct iio_dev *indio_dev)
+-{
+-}
+-static inline int ade7854_initialize_ring(struct iio_ring_buffer *ring)
+-{
+-	return 0;
+-}
+-static inline void ade7854_uninitialize_ring(struct iio_ring_buffer *ring)
+-{
+-}
+-#endif /* CONFIG_IIO_RING_BUFFER */
+-
+ #endif
+Index: linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854-spi.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/meter/ade7854-spi.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/meter/ade7854-spi.c	2011-02-21 18:29:49.000000000 +0100
+@@ -22,12 +22,10 @@
+ 	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 4,
+-		}
++	struct spi_transfer xfer = {
++		.tx_buf = st->tx,
++		.bits_per_word = 8,
++		.len = 4,
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -37,7 +35,7 @@
+ 	st->tx[3] = value & 0xFF;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfer, &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	mutex_unlock(&st->buf_lock);
+ 
+@@ -52,12 +50,10 @@
+ 	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 5,
+-		}
++	struct spi_transfer xfer = {
++		.tx_buf = st->tx,
++		.bits_per_word = 8,
++		.len = 5,
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -68,7 +64,7 @@
+ 	st->tx[4] = value & 0xFF;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfer, &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	mutex_unlock(&st->buf_lock);
+ 
+@@ -83,12 +79,10 @@
+ 	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 6,
+-		}
++	struct spi_transfer xfer = {
++		.tx_buf = st->tx,
++		.bits_per_word = 8,
++		.len = 6,
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -100,7 +94,7 @@
+ 	st->tx[5] = value & 0xFF;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfer, &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	mutex_unlock(&st->buf_lock);
+ 
+@@ -115,12 +109,10 @@
+ 	struct spi_message msg;
+ 	struct iio_dev *indio_dev = dev_get_drvdata(dev);
+ 	struct ade7854_state *st = iio_dev_get_devdata(indio_dev);
+-	struct spi_transfer xfers[] = {
+-		{
+-			.tx_buf = st->tx,
+-			.bits_per_word = 8,
+-			.len = 7,
+-		}
++	struct spi_transfer xfer = {
++		.tx_buf = st->tx,
++		.bits_per_word = 8,
++		.len = 7,
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -133,7 +125,7 @@
+ 	st->tx[6] = value & 0xFF;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfer, &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	mutex_unlock(&st->buf_lock);
+ 
+@@ -152,8 +144,12 @@
+ 		{
+ 			.tx_buf = st->tx,
+ 			.bits_per_word = 8,
+-			.len = 4,
+-		},
++			.len = 3,
++		}, {
++			.rx_buf = st->rx,
++			.bits_per_word = 8,
++			.len = 1,
++		}
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -161,17 +157,17 @@
+ 	st->tx[0] = ADE7854_READ_REG;
+ 	st->tx[1] = (reg_address >> 8) & 0xFF;
+ 	st->tx[2] = reg_address & 0xFF;
+-	st->tx[3] = 0;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfers[0], &msg);
++	spi_message_add_tail(&xfers[1], &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	if (ret) {
+ 		dev_err(&st->spi->dev, "problem when reading 8 bit register 0x%02X",
+ 				reg_address);
+ 		goto error_ret;
+ 	}
+-	*val = st->rx[3];
++	*val = st->rx[0];
+ 
+ error_ret:
+ 	mutex_unlock(&st->buf_lock);
+@@ -190,26 +186,29 @@
+ 		{
+ 			.tx_buf = st->tx,
+ 			.bits_per_word = 8,
+-			.len = 5,
+-		},
++			.len = 3,
++		}, {
++			.rx_buf = st->rx,
++			.bits_per_word = 8,
++			.len = 2,
++		}
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+ 	st->tx[0] = ADE7854_READ_REG;
+ 	st->tx[1] = (reg_address >> 8) & 0xFF;
+ 	st->tx[2] = reg_address & 0xFF;
+-	st->tx[3] = 0;
+-	st->tx[4] = 0;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfers[0], &msg);
++	spi_message_add_tail(&xfers[1], &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	if (ret) {
+ 		dev_err(&st->spi->dev, "problem when reading 16 bit register 0x%02X",
+ 				reg_address);
+ 		goto error_ret;
+ 	}
+-	*val = (st->rx[3] << 8) | st->rx[4];
++	*val = be16_to_cpup((const __be16 *)st->rx);
+ 
+ error_ret:
+ 	mutex_unlock(&st->buf_lock);
+@@ -228,8 +227,12 @@
+ 		{
+ 			.tx_buf = st->tx,
+ 			.bits_per_word = 8,
+-			.len = 6,
+-		},
++			.len = 3,
++		}, {
++			.rx_buf = st->rx,
++			.bits_per_word = 8,
++			.len = 3,
++		}
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -237,19 +240,17 @@
+ 	st->tx[0] = ADE7854_READ_REG;
+ 	st->tx[1] = (reg_address >> 8) & 0xFF;
+ 	st->tx[2] = reg_address & 0xFF;
+-	st->tx[3] = 0;
+-	st->tx[4] = 0;
+-	st->tx[5] = 0;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfers[0], &msg);
++	spi_message_add_tail(&xfers[1], &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	if (ret) {
+ 		dev_err(&st->spi->dev, "problem when reading 24 bit register 0x%02X",
+ 				reg_address);
+ 		goto error_ret;
+ 	}
+-	*val = (st->rx[3] << 16) | (st->rx[4] << 8) | st->rx[5];
++	*val = (st->rx[0] << 16) | (st->rx[1] << 8) | st->rx[2];
+ 
+ error_ret:
+ 	mutex_unlock(&st->buf_lock);
+@@ -268,8 +269,12 @@
+ 		{
+ 			.tx_buf = st->tx,
+ 			.bits_per_word = 8,
+-			.len = 7,
+-		},
++			.len = 3,
++		}, {
++			.rx_buf = st->rx,
++			.bits_per_word = 8,
++			.len = 4,
++		}
+ 	};
+ 
+ 	mutex_lock(&st->buf_lock);
+@@ -277,20 +282,17 @@
+ 	st->tx[0] = ADE7854_READ_REG;
+ 	st->tx[1] = (reg_address >> 8) & 0xFF;
+ 	st->tx[2] = reg_address & 0xFF;
+-	st->tx[3] = 0;
+-	st->tx[4] = 0;
+-	st->tx[5] = 0;
+-	st->tx[6] = 0;
+ 
+ 	spi_message_init(&msg);
+-	spi_message_add_tail(xfers, &msg);
++	spi_message_add_tail(&xfers[0], &msg);
++	spi_message_add_tail(&xfers[1], &msg);
+ 	ret = spi_sync(st->spi, &msg);
+ 	if (ret) {
+ 		dev_err(&st->spi->dev, "problem when reading 32 bit register 0x%02X",
+ 				reg_address);
+ 		goto error_ret;
+ 	}
+-	*val = (st->rx[3] << 24) | (st->rx[4] << 16) | (st->rx[5] << 8) | st->rx[6];
++	*val = be32_to_cpup((const __be32 *)st->rx);
+ 
+ error_ret:
+ 	mutex_unlock(&st->buf_lock);
+@@ -333,6 +335,13 @@
+ 
+ 	return 0;
+ }
++static const struct spi_device_id ade7854_id[] = {
++	{ "ade7854", 0 },
++	{ "ade7858", 0 },
++	{ "ade7868", 0 },
++	{ "ade7878", 0 },
++	{ }
++};
+ 
+ static struct spi_driver ade7854_driver = {
+ 	.driver = {
+@@ -341,6 +350,7 @@
+ 	},
+ 	.probe = ade7854_spi_probe,
+ 	.remove = __devexit_p(ade7854_spi_remove),
++	.id_table = ade7854_id,
+ };
+ 
+ static __init int ade7854_init(void)
+@@ -356,5 +366,5 @@
+ module_exit(ade7854_exit);
+ 
+ MODULE_AUTHOR("Barry Song <21cnbao@gmail.com>");
+-MODULE_DESCRIPTION("Analog Devices ADE7854/58/68/78 Polyphase Multifunction Energy Metering IC SPI Driver");
++MODULE_DESCRIPTION("Analog Devices ADE7854/58/68/78 SPI Driver");
+ MODULE_LICENSE("GPL v2");
+Index: linux-2.6.38-rc3/drivers/staging/iio/ring_generic.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/ring_generic.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/ring_generic.h	2011-02-21 18:29:49.000000000 +0100
+@@ -73,7 +73,7 @@
+ 	int (*read_last)(struct iio_ring_buffer *ring, u8 *data);
+ 	int (*rip_lots)(struct iio_ring_buffer *ring,
+ 			size_t count,
+-			u8 **data,
++			char __user *buf,
+ 			int *dead_offset);
+ 
+ 	int (*mark_param_change)(struct iio_ring_buffer *ring);
+Index: linux-2.6.38-rc3/drivers/staging/iio/ring_sw.c
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/ring_sw.c	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/ring_sw.c	2011-02-21 18:29:49.000000000 +0100
+@@ -12,6 +12,7 @@
+ #include <linux/module.h>
+ #include <linux/device.h>
+ #include <linux/workqueue.h>
++#include <linux/poll.h>
+ #include "ring_sw.h"
+ #include "trigger.h"
+ 
+@@ -152,11 +153,12 @@
+ }
+ 
+ int iio_rip_sw_rb(struct iio_ring_buffer *r,
+-		  size_t count, u8 **data, int *dead_offset)
++		  size_t count, char __user *buf, int *dead_offset)
+ {
+ 	struct iio_sw_ring_buffer *ring = iio_to_sw_ring(r);
+ 
+ 	u8 *initial_read_p, *initial_write_p, *current_read_p, *end_read_p;
++	u8 *data;
+ 	int ret, max_copied;
+ 	int bytes_to_rip;
+ 
+@@ -174,8 +176,8 @@
+ 	/* Limit size to whole of ring buffer */
+ 	bytes_to_rip = min((size_t)(ring->buf.bytes_per_datum*ring->buf.length), count);
+ 
+-	*data = kmalloc(bytes_to_rip, GFP_KERNEL);
+-	if (*data == NULL) {
++	data = kmalloc(bytes_to_rip, GFP_KERNEL);
++	if (data == NULL) {
+ 		ret = -ENOMEM;
+ 		goto error_ret;
+ 	}
+@@ -204,30 +206,30 @@
+ 	if (initial_write_p >= initial_read_p + bytes_to_rip) {
+ 		/* write_p is greater than necessary, all is easy */
+ 		max_copied = bytes_to_rip;
+-		memcpy(*data, initial_read_p, max_copied);
++		memcpy(data, initial_read_p, max_copied);
+ 		end_read_p = initial_read_p + max_copied;
+ 	} else if (initial_write_p > initial_read_p) {
+ 		/*not enough data to cpy */
+ 		max_copied = initial_write_p - initial_read_p;
+-		memcpy(*data, initial_read_p, max_copied);
++		memcpy(data, initial_read_p, max_copied);
+ 		end_read_p = initial_write_p;
+ 	} else {
+ 		/* going through 'end' of ring buffer */
+ 		max_copied = ring->data
+ 			+ ring->buf.length*ring->buf.bytes_per_datum - initial_read_p;
+-		memcpy(*data, initial_read_p, max_copied);
++		memcpy(data, initial_read_p, max_copied);
+ 		/* possible we are done if we align precisely with end */
+ 		if (max_copied == bytes_to_rip)
+ 			end_read_p = ring->data;
+ 		else if (initial_write_p
+ 			 > ring->data + bytes_to_rip - max_copied) {
+ 			/* enough data to finish */
+-			memcpy(*data + max_copied, ring->data,
++			memcpy(data + max_copied, ring->data,
+ 			       bytes_to_rip - max_copied);
+ 			max_copied = bytes_to_rip;
+ 			end_read_p = ring->data + (bytes_to_rip - max_copied);
+ 		} else {  /* not enough data */
+-			memcpy(*data + max_copied, ring->data,
++			memcpy(data + max_copied, ring->data,
+ 			       initial_write_p - ring->data);
+ 			max_copied += initial_write_p - ring->data;
+ 			end_read_p = initial_write_p;
+@@ -264,11 +266,16 @@
+ 	while (ring->read_p != end_read_p)
+ 		ring->read_p = end_read_p;
+ 
+-	return max_copied - *dead_offset;
++	ret = max_copied - *dead_offset;
+ 
++	if (copy_to_user(buf, data + *dead_offset, ret))  {
++		ret =  -EFAULT;
++		goto error_free_data_cpy;
++	}
+ error_free_data_cpy:
+-	kfree(*data);
++	kfree(data);
+ error_ret:
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(iio_rip_sw_rb);
+Index: linux-2.6.38-rc3/drivers/staging/iio/ring_sw.h
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/ring_sw.h	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/ring_sw.h	2011-02-21 18:29:49.000000000 +0100
+@@ -96,13 +96,13 @@
+  * iio_rip_sw_rb() - attempt to read data from the ring buffer
+  * @r:			ring buffer instance
+  * @count:		number of datum's to try and read
+- * @data:		where the data will be stored.
++ * @buf:		userspace buffer into which data is copied
+  * @dead_offset:	how much of the stored data was possibly invalidated by
+  *			the end of the copy.
+  **/
+ int iio_rip_sw_rb(struct iio_ring_buffer *r,
+ 		  size_t count,
+-		  u8 **data,
++		  char __user *buf,
+ 		  int *dead_offset);
+ 
+ /**
+Index: linux-2.6.38-rc3/drivers/staging/iio/trigger/iio-trig-sysfs.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.38-rc3/drivers/staging/iio/trigger/iio-trig-sysfs.c	2011-02-21 18:29:49.000000000 +0100
+@@ -0,0 +1,108 @@
++/*
++ * Copyright 2011 Analog Devices Inc.
++ *
++ * Licensed under the GPL-2.
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#include "../iio.h"
++#include "../trigger.h"
++
++static ssize_t iio_sysfs_trigger_poll(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct iio_trigger *trig = dev_get_drvdata(dev);
++	iio_trigger_poll(trig, 0);
++
++	return count;
++}
++
++static DEVICE_ATTR(trigger_now, S_IWUSR, NULL, iio_sysfs_trigger_poll);
++static IIO_TRIGGER_NAME_ATTR;
++
++static struct attribute *iio_sysfs_trigger_attrs[] = {
++	&dev_attr_trigger_now.attr,
++	&dev_attr_name.attr,
++	NULL,
++};
++
++static const struct attribute_group iio_sysfs_trigger_attr_group = {
++	.attrs = iio_sysfs_trigger_attrs,
++};
++
++static int __devinit iio_sysfs_trigger_probe(struct platform_device *pdev)
++{
++	struct iio_trigger *trig;
++	int ret;
++
++	trig = iio_allocate_trigger();
++	if (!trig) {
++		ret = -ENOMEM;
++		goto out1;
++	}
++
++	trig->control_attrs = &iio_sysfs_trigger_attr_group;
++	trig->owner = THIS_MODULE;
++	trig->name = kasprintf(GFP_KERNEL, "sysfstrig%d", pdev->id);
++	if (trig->name == NULL) {
++		ret = -ENOMEM;
++		goto out2;
++	}
++
++	ret = iio_trigger_register(trig);
++	if (ret)
++		goto out3;
++
++	platform_set_drvdata(pdev, trig);
++
++	return 0;
++out3:
++	kfree(trig->name);
++out2:
++	iio_put_trigger(trig);
++out1:
++
++	return ret;
++}
++
++static int __devexit iio_sysfs_trigger_remove(struct platform_device *pdev)
++{
++	struct iio_trigger *trig = platform_get_drvdata(pdev);
++
++	iio_trigger_unregister(trig);
++	kfree(trig->name);
++	iio_put_trigger(trig);
++
++	return 0;
++}
++
++static struct platform_driver iio_sysfs_trigger_driver = {
++	.driver = {
++		.name = "iio_sysfs_trigger",
++		.owner = THIS_MODULE,
++	},
++	.probe = iio_sysfs_trigger_probe,
++	.remove = __devexit_p(iio_sysfs_trigger_remove),
++};
++
++static int __init iio_sysfs_trig_init(void)
++{
++	return platform_driver_register(&iio_sysfs_trigger_driver);
++}
++module_init(iio_sysfs_trig_init);
++
++static void __exit iio_sysfs_trig_exit(void)
++{
++	platform_driver_unregister(&iio_sysfs_trigger_driver);
++}
++module_exit(iio_sysfs_trig_exit);
++
++MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
++MODULE_DESCRIPTION("Sysfs based trigger for the iio subsystem");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:iio-trig-sysfs");
+Index: linux-2.6.38-rc3/drivers/staging/iio/trigger/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/trigger/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/trigger/Kconfig	2011-02-21 18:29:49.000000000 +0100
+@@ -18,4 +18,14 @@
+ 	help
+ 	  Provides support for using GPIO pins as IIO triggers.
+ 
++config IIO_SYSFS_TRIGGER
++	tristate "SYSFS trigger"
++	depends on SYSFS
++	help
++	  Provides support for using SYSFS entry as IIO triggers.
++	  If unsure, say N (but it's safe to say "Y").
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called iio-trig-sysfs.
++
+ endif # IIO_TRIGGER
+Index: linux-2.6.38-rc3/drivers/staging/iio/trigger/Makefile
+===================================================================
+--- linux-2.6.38-rc3.orig/drivers/staging/iio/trigger/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/staging/iio/trigger/Makefile	2011-02-21 18:29:49.000000000 +0100
+@@ -4,3 +4,4 @@
+ 
+ obj-$(CONFIG_IIO_PERIODIC_RTC_TRIGGER) += iio-trig-periodic-rtc.o
+ obj-$(CONFIG_IIO_GPIO_TRIGGER) += iio-trig-gpio.o
++obj-$(CONFIG_IIO_SYSFS_TRIGGER) += iio-trig-sysfs.o

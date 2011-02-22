@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-18 10:13:10.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-18 10:33:41.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-22 15:08:04.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-22 17:49:07.000000000 +0100
 @@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -43,8 +43,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-18 10:13:10.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-18 10:33:03.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-22 15:08:04.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-22 17:49:07.000000000 +0100
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -56,8 +56,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-18 10:13:10.000000000 +0100
-@@ -0,0 +1,431 @@
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-22 17:25:43.000000000 +0100
+@@ -0,0 +1,438 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -90,6 +90,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#include <mach/ssi.h>
 +#include <linux/can/platform/mcp251x.h>
 +
++#include "../../../drivers/staging/iio/dac/mcp49x2.h"
 +#include "devices-imx51.h"
 +#include "devices.h"
 +
@@ -142,6 +143,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_CSPI1_SCLK__ECSPI1_SCLK,
 +	(_MX51_PAD_CSPI1_SS0__GPIO4_24 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +	(_MX51_PAD_CSPI1_SS1__GPIO4_25 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
++	(_MX51_PAD_CSPI1_RDY__GPIO4_26 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* LDAC for mcp4912 */
 +
 +	(_MX51_PAD_NANDF_D14__GPIO3_26 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* ADC_SSTRB */
 +
@@ -259,6 +261,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#define APF51DEV_ECSPI1_SS0	IMX_GPIO_NR(4, 24)
 +#define APF51DEV_ECSPI1_SS1	IMX_GPIO_NR(4, 25)
 +
++static struct mcp49x2_config mcp4912_dat = {
++	.ldac_pin = IMX_GPIO_NR(4, 26), /* GPIO4-26 */
++	.vref_mv = {3100, 3100},
++};
++
 +static struct spi_board_info apf51dev_spi1_board_info[] __initdata = {
 +	{
 +		.modalias = "as1531",
@@ -274,7 +281,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		.bus_num = 0,
 +		.chip_select = 1,
 +		.mode = SPI_MODE_0,
-+		.platform_data = NULL,
++		.platform_data = &mcp4912_dat,
 +	},
 +};
 +
@@ -303,7 +310,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +#define APF51DEV_ECSPI2_SS1	IMX_GPIO_NR(3, 28)
 +#define APF51DEV_ECSPI2_SS2	IMX_GPIO_NR(3, 27)
 +
-+static struct spi_board_info apf51dev_spi2_board_info[] __initdata = {
++static struct spi_board_info apf51dev_spi2_board_info[] = {
 +	{
 +		.modalias = "mcp2515",
 +		.max_speed_hz = 8000000,
@@ -319,7 +326,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		.bus_num = 1,
 +		.chip_select = 1,
 +		.mode = SPI_MODE_0,
-+		.platform_data = NULL,
++		.platform_data = &mcp4912_dat,
 +	},
 +};
 +
