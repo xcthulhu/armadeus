@@ -1,0 +1,11 @@
+Index: buildroot/linux/linux.mk
+===================================================================
+--- buildroot.orig/linux/linux.mk	2011-02-22 19:48:10.000000000 +0100
++++ buildroot/linux/linux.mk	2011-02-22 19:48:45.000000000 +0100
+@@ -188,3 +188,6 @@
+ endif
+ 
+ endif
++
++linux26-clean:
++	$(MAKE) $(LINUX26_MAKE_FLAGS) -C $(LINUX26_DIR) clean
