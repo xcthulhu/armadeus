@@ -1,0 +1,15 @@
+Add registration functions for SPI.
+diff -ru a/arch/arm/mach-imx/devices-imx1.h b/arch/arm/mach-imx/devices-imx1.h
+--- a/arch/arm/mach-imx/devices-imx1.h	2011-02-01 04:05:49.000000000 +0100
++++ b/arch/arm/mach-imx/devices-imx1.h	2011-02-07 06:53:23.000000000 +0100
+@@ -18,3 +18,10 @@
+ 	imx_add_imx_uart_3irq(&imx1_imx_uart_data[id], pdata)
+ #define imx1_add_imx_uart0(pdata)	imx1_add_imx_uart(0, pdata)
+ #define imx1_add_imx_uart1(pdata)	imx1_add_imx_uart(1, pdata)
++
++extern const struct imx_spi_imx_data imx1_cspi_data[] __initconst;
++#define imx1_add_cspi(id, pdata)   \
++	imx_add_spi_imx(&imx1_cspi_data[id], pdata)
++
++#define imx1_add_spi_imx0(pdata) imx1_add_cspi(0, pdata)
++#define imx1_add_spi_imx1(pdata) imx1_add_cspi(1, pdata)

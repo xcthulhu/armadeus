@@ -28,16 +28,17 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define AS_MAX1027_TYPE  0
-#define AS_AS1531_TYPE   1
+#define AS_MAX1027_NAME     "max1027"
+#define AS_AS1531_NAME      "as1531"
 
 /**
  * Store adc parameters
  */
 struct as_adc_device {
-    int device_type;
+    const char *device_type; /* Name of device type as1531 or max1027 */
     int device_num;
-    int vref; /* reference tension in millivolts */
+    int vref;         /* reference tension in millivolts */
+    void *chip_param; /* chip specific parameters */
 };
 
 /** @brief Initialize port access
@@ -48,7 +49,7 @@ struct as_adc_device {
  *
  * @return error if negative value
  */
-struct as_adc_device *as_adc_open(int aDeviceNum, int aAdcType, int aVRef);
+struct as_adc_device *as_adc_open(const char *aAdcType, int aDeviceNum, int aVRef);
 
 /** @brief get value in millivolts
  *

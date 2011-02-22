@@ -1,6 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Mon Nov  1 17:03:11 2010
+# Buildroot version: 2010.11-00354-g97b1b34-dirty
+# Mon Feb 21 17:54:45 2011
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2010.11-git"
@@ -264,6 +265,7 @@ BR2_PACKAGE_MAX5821CTRL=y
 BR2_PACKAGE_ARMADEUS_PPS_UTILITIES=y
 BR2_PACKAGE_ARMADEUS_PPS_TEST_SCRIPTS=y
 # BR2_PACKAGE_ARMADEUS_TESTSUITE is not set
+# BR2_PACKAGE_TFP410CTRL is not set
 
 #
 # Audio and video libraries and applications

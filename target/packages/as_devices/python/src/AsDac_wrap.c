@@ -18,50 +18,51 @@
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-#include "AsAdc_wrap.h"
-#include "as_adc.h"
-
+#include "AsDac_wrap.h"
+#include "as_dac.h"
 
 /* Methods definitions */
-static PyMethodDef AsAdc_wrap_methods[] = {
-    {"adc_open", adc_open, METH_VARARGS, "Initialize adc"},
-    {"getValueInMillivolts", getValueInMillivolts, METH_VARARGS, "Get Channel value in millivolts"},
-    {"adc_close", adc_close, METH_VARARGS, "Close adc"},
+static PyMethodDef AsDac_wrap_methods[] = {
+    {"dac_open", dac_open, METH_VARARGS, "Initialize dac"},
+    {"dac_setValueInMillivolts", dac_setValueInMillivolts, METH_VARARGS, "Set Channel value in millivolts"},
+    {"dac_close", dac_close, METH_VARARGS, "Close dac"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 /* Init module */
-void initAsAdc_wrap() /* called on first import */
+void initAsDac_wrap() /* called on first import */
 {                       /* name matter if called dynamically */
-    (void) Py_InitModule("AsAdc_wrap", AsAdc_wrap_methods); /* mod name, table ptr */
+    (void) Py_InitModule("AsDac_wrap", AsDac_wrap_methods); /* mod name, table ptr */
 }
 
 /** @brief Initialize pin port access
  * @return PyObject
  */
-static PyObject * adc_open(PyObject *self, PyObject *args)
+static PyObject * dac_open(PyObject *self, PyObject *args)
 {
     /* parameters */
-    char *aAdcType;
-    int aDeviceNum;
+    char *aDacType;
+    int aBusNumber;
+    int aAddress;
     int aVref;
 
-    struct as_adc_device *dev;
+    struct as_dac_device *dev;
     PyObject *ret;
     char buff[300];
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "sii", &aAdcType, &aDeviceNum, &aVref))
+    if (!PyArg_ParseTuple(args, "siii", &aDacType,
+                          &aBusNumber, &aAddress, &aVref))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
-    dev = as_adc_open(aAdcType, aDeviceNum, aVref);
+    dev = as_dac_open(aDacType, aBusNumber, aAddress, aVref);
     if (dev == NULL)
     {
         snprintf(buff, 300,
-                "Initialization error for ADC type %s bus %d. Is kernel module loaded ?",
-                aAdcType, aDeviceNum);
+                "Initialization error for DAC type %s bus %d. Is kernel module loaded ?",
+                aDacType, aBusNumber);
         PyErr_SetString(PyExc_IOError,buff);
         return NULL;
     }
@@ -71,23 +72,24 @@ static PyObject * adc_open(PyObject *self, PyObject *args)
     return ret;
 }
 
-static PyObject * getValueInMillivolts(PyObject *self, PyObject *args)
+static PyObject * dac_setValueInMillivolts(PyObject *self, PyObject *args)
 {
     /* parameters */
-    struct as_adc_device *aFdev;
+    struct as_dac_device *aDev;
     int aChannel;
+    int aValue;
 
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aChannel))
+    if (!PyArg_ParseTuple(args, "lii", (long *)&aDev, &aChannel, &aValue))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
 
-    ret = as_adc_get_value_in_millivolts(aFdev, aChannel);
+    ret = as_dac_set_value_in_millivolts(aDev, aChannel, aValue);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,
@@ -98,22 +100,22 @@ static PyObject * getValueInMillivolts(PyObject *self, PyObject *args)
     return Py_BuildValue("i", ret);
 }
 
-static PyObject * adc_close(PyObject *self, PyObject *args)
+static PyObject * dac_close(PyObject *self, PyObject *args)
 {
     /* parameters */
-    struct as_adc_device *aFdev;
+    struct as_dac_device *aDev;
 
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
+    if (!PyArg_ParseTuple(args, "l", (long *)&aDev))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
 
-    ret = as_adc_close(aFdev);
+    ret = as_dac_close(aDev);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_IOError,

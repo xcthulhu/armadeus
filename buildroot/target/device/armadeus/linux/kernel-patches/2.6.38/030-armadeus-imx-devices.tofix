@@ -46,17 +46,3 @@
  #endif
  
  #if defined(CONFIG_MACH_MX21) || defined(CONFIG_MACH_MX27)
---- a/arch/arm/mach-imx/devices-imx1.h	2010-10-20 22:30:22.000000000 +0200
-+++ b/arch/arm/mach-imx/devices-imx1.h	2010-11-22 18:41:14.000000000 +0100
-@@ -15,4 +15,10 @@
- #define imx1_add_imx_uart0(pdata)	\
- 	imx_add_imx_uart_3irq(0, MX1_UART1_BASE_ADDR, 0xd0, MX1_INT_UART1RX, MX1_INT_UART1TX, MX1_INT_UART1RTS, pdata)
- #define imx1_add_imx_uart1(pdata)	\
--	imx_add_imx_uart_3irq(0, MX1_UART2_BASE_ADDR, 0xd0, MX1_INT_UART2RX, MX1_INT_UART2TX, MX1_INT_UART2RTS, pdata)
-+	imx_add_imx_uart_3irq(1, MX1_UART2_BASE_ADDR, 0xd0, MX1_INT_UART2RX, MX1_INT_UART2TX, MX1_INT_UART2RTS, pdata)
-+
-+#define imx1_add_spi_imx0(pdata)	\
-+	imx_add_spi_imx(0, MX1_SPI1_BASE_ADDR, SZ_4K, MX1_CSPI_INT, pdata)
-+#define imx1_add_spi_imx1(pdata)	\
-+	imx_add_spi_imx(1, MX1_SPI2_BASE_ADDR, SZ_4K, MX1_SPI2_INT, pdata)
-+
