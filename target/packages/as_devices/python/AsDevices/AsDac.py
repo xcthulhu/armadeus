@@ -39,56 +39,25 @@ class AsDacError(Exception):
 class AsDac:
     """ Drive dac
     """
-
-    # Dictionary of dac multiton classes
-    __dac = {}
-
-    ################################################################
-    class __impl:
-        """ implementation
-        """
-        def __init__(self, aDacType, aBusNumber, aAddress, aVRef):
-            try:
-                self.__device = wrapper.dac_open(aDacType, aBusNumber, aAddress, aVRef)
-            except Exception, e:
-                raise AsDacError("Can't open dac port type "+str(aDacType)+\
-                                    " num "+str(aBusNumber))
-
-        def __del__(self):
-            try:
-                wrapper.dac_close(self.__device)
-            except Exception, e:
-                pass
-
-        def setValueInMillivolts(self, aChannel, aValue):
-            """ Get value in millivolts
-            """
-            try:
-                return wrapper.dac_setValueInMillivolts(self.__device, aChannel, aValue)
-            except Exception, e:
-                raise AsDacError(str(e))
-
-    ################################################################
-
-    @classmethod
-    def getInstance(cls, aDacType, aBusNumber, aAddress, aVRef):
+    def __init__(self, aDacType, aBusNumber, aAddress, aVRef):
         try:
-            return AsDac.__dac["%s:%d-0x%02x"%(aDacType, aBusNumber, aAddress)]
-        except KeyError:
-            AsDac.__dac["%s:%d-0x%02x"%(aDacType, aBusNumber, aAddress)] =\
-                                    cls.__impl(aDacType, aBusNumber, aAddress, aVRef)
+            self.__device = wrapper.dac_open(aDacType, aBusNumber, aAddress, aVRef)
+        except Exception, e:
+            raise AsDacError("Can't open dac port type "+str(aDacType)+\
+                                " num "+str(aBusNumber))
 
-        return AsDac.__dac["%s:%d-0x%02x"%(aDacType, aBusNumber, aAddress)]
+    def __del__(self):
+        try:
+            wrapper.dac_close(self.__device)
+        except Exception, e:
+            pass
 
-    def  __init__(self):
-        """ Initialize dac
+    def setValueInMillivolts(self, aChannel, aValue):
+        """ Get value in millivolts
         """
-        raise Exception("This constructor is private, to instanciate object do:"+\
-                        "AsDac.getInstance(dactype, busnumber, address, vref)")
+        try:
+            return wrapper.dac_setValueInMillivolts(self.__device, aChannel, aValue)
+        except Exception, e:
+            raise AsDacError(str(e))
 
-if __name__ == "__main__":
-   import os
-   def pressEnterToContinue():
-       print "Press enter to continue"
-       raw_input()
 

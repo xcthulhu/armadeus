@@ -45,56 +45,24 @@ class AsAdcError(Exception):
 class AsAdc:
     """ Drive adc
     """
-
-    # Dictionary of adc multiton classes
-    __adc = {}
-
-    ################################################################
-    class __impl:
-        """ implementation
-        """
-        def __init__(self, aAdcType, aDeviceNum, aVRef):
-            try:
-                self.__device = wrapper.adc_open(aAdcType, aDeviceNum, aVRef)
-            except Exception, e:
-                raise AsAdcError("Can't open adc port type "+str(aAdcType)+\
-                                    " num "+str(aDeviceNum))
-
-        def __del__(self):
-            try:
-                wrapper.adc_close(self.__device)
-            except Exception, e:
-                pass
-
-        def getValueInMillivolts(self, aChannel):
-            """ Get value in millivolts
-            """
-            try:
-                return wrapper.getValueInMillivolts(self.__device, aChannel)
-            except Exception, e:
-                raise AsAdcError(str(e))
-
-    ################################################################
-
-    @classmethod
-    def getInstance(cls, aAdcType, aDeviceNum, aVRef):
+    def __init__(self, aAdcType, aDeviceNum, aVRef):
         try:
-            return AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)]
-        except KeyError:
-            AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)] =\
-                                    cls.__impl(aAdcType, aDeviceNum, aVRef)
+            self.__device = wrapper.adc_open(aAdcType, aDeviceNum, aVRef)
+        except Exception, e:
+            raise AsAdcError("Can't open adc port type "+str(aAdcType)+\
+                                " num "+str(aDeviceNum))
 
-        return AsAdc.__adc["%s:%d"%(aAdcType, aDeviceNum)]
+    def __del__(self):
+        try:
+            wrapper.adc_close(self.__device)
+        except Exception, e:
+            pass
 
-    def  __init__(self):
-        """ Initialize adc
+    def getValueInMillivolts(self, aChannel):
+        """ Get value in millivolts
         """
-        raise Exception("This constructor is private, to instanciate object do:"+\
-                        "AsAdc.getInstance(adctype, deviceNum, vref)")
-
-if __name__ == "__main__":
-   import os
-   def pressEnterToContinue():
-       print "Press enter to continue"
-       raw_input()
+        try:
+            return wrapper.getValueInMillivolts(self.__device, aChannel)
+        except Exception, e:
+            raise AsAdcError(str(e))
 

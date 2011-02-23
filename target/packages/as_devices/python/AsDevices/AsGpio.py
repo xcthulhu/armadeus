@@ -40,145 +40,103 @@ class AsGpioError(Exception):
 class AsGpio:
     """ Drive GPIO
     """
-
-    # Dictionary of gpio multiton classes
-    __gpio = {}
-
-    ################################################################
-    class __impl:
-        """ implementation
-        """
-        def __init__(self, aPortLetter, aPinNum):
-            try:
-                self.__device = wrapper.gpio_open(aPortLetter, aPinNum)
-            except Exception, e:
-                raise AsGpioError("Can't open GPIO port "+str(aPortLetter)+\
-                                    " pin "+str(aPinNum)+": "+str(e))
-
-        def __del__(self):
-            try:
-                wrapper.gpio_close(self.__device)
-            except Exception, e:
-                pass
-
-        def setPinDirection(self, aDirection):
-            """ Set period in us
-                \param aDirection pin direction 0:input 1:output
-            """
-            try:
-                wrapper.setPinDirection(self.__device, aDirection)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def getPinDirection(self):
-            """ Set period in us
-                \param aDirection pin direction 0:input 1:output
-            """
-            try:
-                return wrapper.getPinDirection(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def setPinValue(self, aValue):
-            """ Set pin value
-                \param aValue value to write
-            """
-            try:
-                wrapper.setPinValue(self.__device, aValue)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def getPinValue(self):
-            """ Get pin value
-                \param return pin value
-            """
-            try:
-                return wrapper.getPinValue(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def blockingGetPinValue(self, aDelay_s, aDelay_us=0):
-            """ Get pin value (blocking mode)
-                \param return pin value
-            """
-            try:
-                return wrapper.blockingGetPinValue(self.__device,
-                                                aDelay_s,
-                                                aDelay_us)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def setIrqMode(self, aMode):
-            """ Set irq Mode
-                \param aMode.
-                    1:MODE_NOINT
-                    2:MODE_RISING
-                    3:MODE_FALLING
-                    4:MODE_BOTH
-            """
-            try:
-                return wrapper.setIrqMode(self.__device, aMode)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def getIrqMode(self):
-            """ get irq mode
-            """
-            try:
-                return wrapper.getIrqMode(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-
-        def getPinNumber(self):
-            """ Get pin number
-                \param return pin number
-            """
-            try:
-                return wrapper.getPinNumber(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-        def getPortLetter(self):
-            """ Get pin letter
-                \param return pin letter
-            """
-            try:
-                return wrapper.getPortLetter(self.__device)
-            except Exception, e:
-                raise AsGpioError(str(e))
-
-
-    ################################################################
-
-    @classmethod
-    def getInstance(cls, aPort_letter, aPinNumber):
-        if type(aPort_letter)!=str:
-            raise Exception("port letter must be a character")
-        if ((aPort_letter[0] < 'A') or (aPort_letter[0] > 'Z')):
-            raise Exception("Port letter must be an UPPER case letter")
-        if type(aPinNumber)!=int:
-            raise Exception("Pin number must be a int")
-        if aPinNumber < 0 or aPinNumber > 31:
-            raise Exception("Pin number must be between 0 and 31")
-
+    def __init__(self, aPortLetter, aPinNum):
         try:
-            return AsGpio.__gpio["%s%d"%(aPort_letter[0],aPinNumber)]
-        except KeyError:
-            AsGpio.__gpio["%s%d"%(aPort_letter[0],aPinNumber)] =\
-                                    cls.__impl(aPort_letter[0], aPinNumber)
+            self.__device = wrapper.gpio_open(aPortLetter, aPinNum)
+        except Exception, e:
+            raise AsGpioError("Can't open GPIO port "+str(aPortLetter)+\
+                                " pin "+str(aPinNum)+": "+str(e))
 
-        return AsGpio.__gpio["%s%d"%(aPort_letter[0],aPinNumber)]
+    def __del__(self):
+        try:
+            wrapper.gpio_close(self.__device)
+        except Exception, e:
+            pass
 
-    def  __init__(self):
-        """ Initialize pwm
+    def setPinDirection(self, aDirection):
+        """ Set period in us
+            \param aDirection pin direction 0:input 1:output
         """
-        raise Exception("This constructor is private, to instanciate object do:"+\
-                        "AsGpio.getInstance(port_letter, pin_number)")
+        try:
+            wrapper.setPinDirection(self.__device, aDirection)
+        except Exception, e:
+            raise AsGpioError(str(e))
 
-if __name__ == "__main__":
-   import os
-   def pressEnterToContinue():
-       print "Press enter to continue"
-       raw_input()
+    def getPinDirection(self):
+        """ Set period in us
+            \param aDirection pin direction 0:input 1:output
+        """
+        try:
+            return wrapper.getPinDirection(self.__device)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def setPinValue(self, aValue):
+        """ Set pin value
+            \param aValue value to write
+        """
+        try:
+            wrapper.setPinValue(self.__device, aValue)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def getPinValue(self):
+        """ Get pin value
+            \param return pin value
+        """
+        try:
+            return wrapper.getPinValue(self.__device)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def blockingGetPinValue(self, aDelay_s, aDelay_us=0):
+        """ Get pin value (blocking mode)
+            \param return pin value
+        """
+        try:
+            return wrapper.blockingGetPinValue(self.__device,
+                                            aDelay_s,
+                                            aDelay_us)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def setIrqMode(self, aMode):
+        """ Set irq Mode
+            \param aMode.
+                1:MODE_NOINT
+                2:MODE_RISING
+                3:MODE_FALLING
+                4:MODE_BOTH
+        """
+        try:
+            return wrapper.setIrqMode(self.__device, aMode)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def getIrqMode(self):
+        """ get irq mode
+        """
+        try:
+            return wrapper.getIrqMode(self.__device)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+
+    def getPinNumber(self):
+        """ Get pin number
+            \param return pin number
+        """
+        try:
+            return wrapper.getPinNumber(self.__device)
+        except Exception, e:
+            raise AsGpioError(str(e))
+
+    def getPortLetter(self):
+        """ Get pin letter
+            \param return pin letter
+        """
+        try:
+            return wrapper.getPortLetter(self.__device)
+        except Exception, e:
+            raise AsGpioError(str(e))
 
