@@ -146,7 +146,11 @@ linux26: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26
 
 linux26-clean: $(BUILDROOT_DIR)/.configured
+ifneq (,$(filter $(BUILDROOT_VERSION),20081103 2010.05))
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
+else
+	@$(MAKE) -C $(BUILDROOT_DIR) linux26-clean
+endif
 
 %_defconfig: $(BUILDROOT_DIR)/.patched
 	@if [ -e "$(ARMADEUS_CONFIG_DIR)/$@" ] || [ -e "$(ARMADEUS_CONFIG_DIR)/$(patsubst %_defconfig,%,$@)/$@" ]; then \
