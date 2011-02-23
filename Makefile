@@ -146,7 +146,7 @@ linux26: $(BUILDROOT_DIR)/.configured
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26
 
 linux26-clean: $(BUILDROOT_DIR)/.configured
-ifeq ($(BUILDROOT_VERSION),20081103)
+ifneq (,$(filter $(BUILDROOT_VERSION),20081103 2010.05))
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26clean
 else
 	@$(MAKE) -C $(BUILDROOT_DIR) linux26-clean
