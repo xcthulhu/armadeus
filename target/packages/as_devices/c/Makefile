@@ -13,14 +13,15 @@ OBJ += as_gpio_2_6_29.o
 else
 OBJ += as_gpio.o
 endif
+OBJ += as_dac.o
+OBJ += as_adc.o
+
 OBJ += as_93lcxx.o
 OBJ += as_spi.o
 OBJ += as_as1531.o
 OBJ += as_max1027.o
 OBJ += as_max5821.o
-OBJ += as_dac.o
 OBJ += as_helpers.o
-OBJ += as_adc.o
 
 LIBRARY=as_devices
 LIB_VERS=1

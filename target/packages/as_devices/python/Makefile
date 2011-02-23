@@ -18,6 +18,7 @@ LIBNAME=AsDevices
 WRAPPER_LIBS=AsGpio_wrap.so
 WRAPPER_LIBS+= AsAdc_wrap.so
 WRAPPER_LIBS+= AsDac_wrap.so
+WRAPPER_LIBS+= AsI2c_wrap.so
 WRAPPER_DIR=src
 
 PYTHON_VERS=2.4
