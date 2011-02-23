@@ -38,3 +38,4 @@ import wrappers
 from AsGpio import *
 from AsAdc  import *
 from AsDac  import *
+from AsI2c  import *
