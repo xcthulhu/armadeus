@@ -4,8 +4,8 @@ Signed-off-by: Jérémie Scheer <jeremie.scheer@armadeus.com>
 
 Index: buildroot/package/qt/Config.in
 ===================================================================
---- buildroot.orig/package/qt/Config.in	2010-11-08 10:24:59.000000000 +0100
-+++ buildroot/package/qt/Config.in	2011-01-03 14:04:23.000000000 +0100
+--- buildroot.orig/package/qt/Config.in	2010-11-30 16:52:43.000000000 +0100
++++ buildroot/package/qt/Config.in	2011-02-24 13:41:41.000000000 +0100
 @@ -17,7 +17,12 @@
  	  If unsure, say N.
  
@@ -20,11 +20,25 @@ Index: buildroot/package/qt/Config.in
  	help
  	  If unsure, say N.
  
+@@ -219,6 +224,13 @@
+ 	bool "Use Qt bundled libtiff"
+ endchoice
+ 
++config BR2_PACKAGE_QT_QWS_CURSOR
++	bool "QWS cursor"
++	default y
++	help
++	  Display a QWS cursor on the target GUI.
++
++
+ endif # BR2_PACKAGE_QT_GUI_MODULE
+ 
+ choice
 Index: buildroot/package/qt/qt.mk
 ===================================================================
---- buildroot.orig/package/qt/qt.mk	2010-11-08 10:24:59.000000000 +0100
-+++ buildroot/package/qt/qt.mk	2011-01-03 17:33:36.000000000 +0100
-@@ -49,10 +49,16 @@
+--- buildroot.orig/package/qt/qt.mk	2010-11-30 16:52:43.000000000 +0100
++++ buildroot/package/qt/qt.mk	2011-02-24 13:41:10.000000000 +0100
+@@ -49,11 +49,17 @@
  endif
  
  ifeq ($(BR2_PACKAGE_QT_DEMOS),y)
@@ -33,13 +47,24 @@ Index: buildroot/package/qt/qt.mk
  else
 -QT_CONFIGURE+= -nomake examples -nomake demos
 +QT_CONFIGURE+= -nomake demos
- endif
++endif
 +ifeq ($(BR2_PACKAGE_QT_EXAMPLES),y)
 +QT_CONFIGURE+= -examplesdir $(TARGET_DIR)/usr/share/qt/examples
 +else
 +QT_CONFIGURE+= -nomake examples
-+endif
-+
+ endif
  
++
  # ensure glib is built first if enabled for Qt's glib support
  ifeq ($(BR2_PACKAGE_LIBGLIB2),y)
+ QT_DEP_LIBS+=libglib2
+@@ -244,6 +250,9 @@
+ endif
+ endif
+ 
++ifneq ($(BR2_PACKAGE_QT_QWS_CURSOR),y)
++QT_CONFIGURE+= -DQT_NO_QWS_CURSOR
++endif
+ 
+ QT_FONTS = $(addprefix $(STAGING_DIR)/usr/lib/fonts/, $(addsuffix *.qpf, \
+ 	   $(if $(BR2_PACKAGE_QT_FONT_MICRO),micro) \

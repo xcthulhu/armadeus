@@ -1,6 +1,6 @@
 # Makefile for Armadeus
 #
-# Copyright (C) 2005-2009 by the Armadeus Team
+# Copyright (C) 2005-2011 by the Armadeus Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ ECHO_CONFIGURATION_NOT_DEFINED:= echo -en "\033[1m"; \
                 echo "                                                   "; \
                 echo " System not configured. Use make <board>_defconfig " >&2; \
                 echo " armadeus valid configurations are:                " >&2; \
-                echo "     "$(shell find $(ARMADEUS_CONFIG_DIR) -name "apf*_defconfig" | sed 's/.*\///');\
+                echo "     "$(shell find $(ARMADEUS_CONFIG_DIR) -name "[ap][fp][fs]*_defconfig" | sed 's/.*\///');\
                 echo "                                                   "; \
 		echo -en "\033[0m";
 
@@ -70,6 +70,7 @@ help:
 	@echo 'First, choose the platform:'
 	@echo '  apf9328_defconfig  - get default config for an APF9328 board'
 	@echo '  apf27_defconfig    - get default config for an APF27 board'
+	@echo '  pps_defconfig      - get default config for an APF27_PPS board'
 	@echo '  apf51_defconfig    - get default config for an APF51 board'
 	@echo ''
 	@echo 'Cleaning:'
