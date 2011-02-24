@@ -171,16 +171,46 @@ int32_t as_i2c_write_reg(struct as_i2c_device *aDev,
     return as_i2c_write(aDev, buf, sizeof(buf));
 }
 
-int32_t as_i2c_read_reg_byte(struct as_i2c_device *aDev, uint8_t aReg)
+int32_t as_i2c_read_msg(struct as_i2c_device *aDev,
+                          uint8_t *aWData, uint8_t aWriteSize,
+                          uint8_t *aRData, size_t aReadSize)
 {
-    uint8_t val;
-    int ret = as_i2c_read_reg(aDev, aReg, &val, 1);
+    /* write reg */
+    struct i2c_msg msg = { aDev->slave_addr, 0, aWriteSize, &aReadSize };
+    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
 
     if (aDev->slave_addr == 0) {
         ERROR("Slave address must be set before\n");
         return -1;
     }
 
+    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
+        ERROR("Can't write on i2c\n");
+        return -1;
+    }
+    /* read data */
+    msg.flags = I2C_M_RD;
+    msg.len = aReadSize;
+    msg.buf = aRData;
+
+    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
+        ERROR("Can't read on i2c\n");
+        return -2;
+    }
+
+    return 0;
+}
+
+int32_t as_i2c_read_reg_byte(struct as_i2c_device *aDev, uint8_t aReg)
+{
+    uint8_t val;
+    int ret;
+
+    if (aDev->slave_addr == 0) {
+        ERROR("Slave address must be set before\n");
+        return -1;
+    }
+    ret = as_i2c_read_reg(aDev, aReg, &val, 1);
     if (ret < 0)
         return ret;
 

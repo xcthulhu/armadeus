@@ -35,6 +35,7 @@ static PyMethodDef AsI2c_wrap_methods[] = {
     {"i2c_write_reg"     , i2c_write_reg     , METH_VARARGS, "as_i2c function wrapped"},
     {"i2c_read_reg_byte" , i2c_read_reg_byte , METH_VARARGS, "as_i2c function wrapped"},
     {"i2c_write_reg_byte", i2c_write_reg_byte, METH_VARARGS, "as_i2c function wrapped"},
+    {"i2c_read_msg"      , i2c_read_msg , METH_VARARGS, "as_i2c function wrapped"},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
@@ -281,6 +282,37 @@ static PyObject * i2c_read_reg_byte(PyObject *self, PyObject *args)
 
     return Py_BuildValue("i", ret);
 }
+
+static PyObject * i2c_read_msg(PyObject *self, PyObject *args)
+{
+    /* parameters */
+    struct as_i2c_device *aDev;
+    uint8_t *aWData;
+    int aWriteSize;
+    uint8_t RData[MAX_DATA_SIZE];
+    int aReadSize;
+
+    int ret;
+
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "ls#i", (long *)&aDev,
+                                        (unsigned char *)&aWData, &aWriteSize,
+                                        &aReadSize)) {
+        PyErr_SetString(PyExc_IOError,
+                        "Wrong parameters.");
+        return NULL;
+    }
+
+    ret = as_i2c_read_msg(aDev, aWData, aWriteSize, RData, aReadSize);
+    if (ret < 0) {
+        PyErr_SetString(PyExc_IOError,
+                        "Can't forge read message");
+        return NULL;
+    }
+
+    return Py_BuildValue("s#", (unsigned char *)RData, aReadSize);
+}
+
 
 static PyObject * i2c_write_reg_byte(PyObject *self, PyObject *args)
 {
