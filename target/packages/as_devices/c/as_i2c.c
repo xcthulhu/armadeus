@@ -3,19 +3,19 @@
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
  * Copyright (C) 2009  Benoît Ryder <benoit@ryder.fr>
- * Copyright (C) 2010, 2011  Fabien Marteau <fabien.marteau@armadeus.com> 
+ * Copyright (C) 2010, 2011  Fabien Marteau <fabien.marteau@armadeus.com>
  *
  */
 
@@ -171,36 +171,6 @@ int32_t as_i2c_write_reg(struct as_i2c_device *aDev,
     return as_i2c_write(aDev, buf, sizeof(buf));
 }
 
-int32_t as_i2c_read_msg(struct as_i2c_device *aDev,
-                          uint8_t *aWData, uint8_t aWriteSize,
-                          uint8_t *aRData, size_t aReadSize)
-{
-    /* write reg */
-    struct i2c_msg msg = { aDev->slave_addr, 0, aWriteSize, &aReadSize };
-    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
-
-    if (aDev->slave_addr == 0) {
-        ERROR("Slave address must be set before\n");
-        return -1;
-    }
-
-    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
-        ERROR("Can't write on i2c\n");
-        return -1;
-    }
-    /* read data */
-    msg.flags = I2C_M_RD;
-    msg.len = aReadSize;
-    msg.buf = aRData;
-
-    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
-        ERROR("Can't read on i2c\n");
-        return -2;
-    }
-
-    return 0;
-}
-
 int32_t as_i2c_read_reg_byte(struct as_i2c_device *aDev, uint8_t aReg)
 {
     uint8_t val;
@@ -229,4 +199,35 @@ int32_t as_i2c_write_reg_byte(struct as_i2c_device *aDev,
 
     return as_i2c_write(aDev, buf, 2);
 }
+
+int32_t as_i2c_read_msg(struct as_i2c_device *aDev,
+                          uint8_t *aWData, uint8_t aWriteSize,
+                          uint8_t *aRData, size_t aReadSize)
+{
+    int i;
+    /* write reg */
+    struct i2c_msg msg = { aDev->slave_addr, 0, aWriteSize, aWData };
+    struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };
+
+    if (aDev->slave_addr == 0) {
+        ERROR("Slave address must be set before\n");
+        return -1;
+    }
+    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
+        ERROR("Can't write on i2c\n");
+        return -1;
+    }
+    /* read data */
+    msg.flags = I2C_M_RD;
+    msg.len = aReadSize;
+    msg.buf = aRData;
+
+    if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
+        ERROR("Can't read on i2c\n");
+        return -2;
+    }
+
+    return 0;
+}
+
 
