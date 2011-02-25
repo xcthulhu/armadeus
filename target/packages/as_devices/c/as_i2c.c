@@ -102,6 +102,10 @@ int32_t as_i2c_read(struct as_i2c_device *aDev,
         ERROR("Slave address must be set before\n");
         return -1;
     }
+    if (n <= 0) {
+        ERROR("Size of data must be upper than 0\n");
+        return -1;
+    }
 
     if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0)
         return -1;
@@ -117,6 +121,10 @@ int32_t as_i2c_write(struct as_i2c_device *aDev,
 
     if (aDev->slave_addr == 0) {
         ERROR("Slave address must be set before\n");
+        return -1;
+    }
+    if (n <= 0) {
+        ERROR("Size of data must be upper than 0\n");
         return -1;
     }
 
@@ -135,6 +143,11 @@ int32_t as_i2c_read_reg(struct as_i2c_device *aDev,
 
     if (aDev->slave_addr == 0) {
         ERROR("Slave address must be set before\n");
+        return -1;
+    }
+
+    if (n <= 0) {
+        ERROR("Size of data must be upper than 0\n");
         return -1;
     }
 
@@ -162,6 +175,10 @@ int32_t as_i2c_write_reg(struct as_i2c_device *aDev,
 
     if (aDev->slave_addr == 0) {
         ERROR("Slave address must be set before\n");
+        return -1;
+    }
+    if (n <= 0) {
+        ERROR("Size of data must be upper than 0\n");
         return -1;
     }
 
@@ -213,6 +230,16 @@ int32_t as_i2c_read_msg(struct as_i2c_device *aDev,
         ERROR("Slave address must be set before\n");
         return -1;
     }
+
+    if (aWriteSize <= 0) {
+        ERROR("Write size must be upper than 0\n");
+        return -1;
+    }
+    if (aReadSize <= 0) {
+        ERROR("Read size must be upper than 0\n");
+        return -1;
+    }
+
     if (ioctl(aDev->fi2c, I2C_RDWR, &rdwr) < 0) {
         ERROR("Can't write on i2c\n");
         return -1;
