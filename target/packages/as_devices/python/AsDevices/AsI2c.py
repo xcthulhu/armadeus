@@ -130,4 +130,21 @@ class AsI2c:
             return wrapper.i2c_write_reg_byte(self.__device, aReg, aValue)
         except Exception, e:
             raise AsI2cError(str(e))
+    def readMsg(self, aWrList, aReadSize):
+        """ Write message wrote in aWrList, and read 
+            aReadSize of byte after a repeated start
+        """
+        aWString = ''
+        for character in aWrList:
+            aWString += chr(character)
+        try:
+            Rstring = wrapper.i2c_read_msg(self.__device, aWString, aReadSize) 
+        except Exception, e:
+            raise AsI2cError(str(e))
+        rList = []
+        for character in Rstring:
+            rList.append(ord(character))
+        return rList
+
+       
 

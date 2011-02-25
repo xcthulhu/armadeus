@@ -42,3 +42,5 @@ static PyObject * i2c_write_reg(PyObject *self, PyObject *args);
 
 static PyObject * i2c_read_reg_byte(PyObject *self, PyObject *args);
 static PyObject * i2c_write_reg_byte(PyObject *self, PyObject *args);
+
+static PyObject * i2c_read_msg(PyObject *self, PyObject *args);
