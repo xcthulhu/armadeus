@@ -172,7 +172,7 @@ static PyObject * i2c_read(PyObject *self, PyObject *args)
 
     if (aSize > MAX_DATA_SIZE) {
         PyErr_SetString(PyExc_IOError,
-                        "Size can't be upper than "+str(MAX_DATA_SIZE));
+                        "Size too high");
         return NULL;
     }
 
@@ -231,7 +231,7 @@ static PyObject * i2c_read_reg(PyObject *self, PyObject *args)
     }
     if (aSize > MAX_DATA_SIZE) {
         PyErr_SetString(PyExc_IOError,
-                        "Size can't be upper than "+str(MAX_DATA_SIZE));
+                        "Size too high");
         return NULL;
     }
 
@@ -318,7 +318,7 @@ static PyObject * i2c_read_msg(PyObject *self, PyObject *args)
     }
     if (aReadSize > MAX_DATA_SIZE) {
         PyErr_SetString(PyExc_IOError,
-                        "Read size can't be upper than "+str(MAX_DATA_SIZE));
+                        "Read size too high");
         return NULL;
     }
 
