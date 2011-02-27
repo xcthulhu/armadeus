@@ -9,6 +9,7 @@ source package/armadeus/imxregs/Config.in
 source package/armadeus/imxssi/Config.in
 source package/armadeus/max5821ctrl/Config.in
 source package/armadeus/pps/Config.in
+source package/armadeus/rxtx/Config.in
 source package/armadeus/testsuite/Config.in
 source package/armadeus/tfp410ctrl/Config.in
 

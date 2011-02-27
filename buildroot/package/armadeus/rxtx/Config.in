@@ -1,0 +1,12 @@
+config BR2_PACKAGE_RXTX
+    bool "rxtx"
+    depends on BR2_PACKAGE_CLASSPATH
+    help
+        RXTX is a Java library, providing serial and parallel communication.
+
+        RXTX is a Java library, using a native implementation (via JNI),
+	providing serial and parallel communication for the Java Development
+	Toolkit (JDK).
+
+
+        http://rxtx.qbang.org
