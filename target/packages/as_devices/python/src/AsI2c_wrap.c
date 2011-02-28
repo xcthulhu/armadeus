@@ -17,6 +17,9 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+* TODO:
+* - Suppress MAX_DATA_SIZE macro
 */
 #include "AsI2c_wrap.h"
 #include "as_i2c.h"
@@ -167,6 +170,12 @@ static PyObject * i2c_read(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (aSize > MAX_DATA_SIZE) {
+        PyErr_SetString(PyExc_IOError,
+                        "Size too high");
+        return NULL;
+    }
+
     ret = as_i2c_read(aDev, aData, aSize);
     if (ret < 0)
     {
@@ -218,6 +227,11 @@ static PyObject * i2c_read_reg(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "lii", (long *)&aDev, &aReg, &aSize)) {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
+        return NULL;
+    }
+    if (aSize > MAX_DATA_SIZE) {
+        PyErr_SetString(PyExc_IOError,
+                        "Size too high");
         return NULL;
     }
 
@@ -300,6 +314,11 @@ static PyObject * i2c_read_msg(PyObject *self, PyObject *args)
                                         &aReadSize)) {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
+        return NULL;
+    }
+    if (aReadSize > MAX_DATA_SIZE) {
+        PyErr_SetString(PyExc_IOError,
+                        "Read size too high");
         return NULL;
     }
 
