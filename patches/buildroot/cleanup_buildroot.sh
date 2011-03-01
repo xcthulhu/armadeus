@@ -48,3 +48,4 @@ rm -rf buildroot/package/urg/
 rm -rf buildroot/package/joysticktest/
 rm -rf buildroot/package/pickit2/
 rm -rf buildroot/package/qwt/
+rm -f buildroot/package/flex/flex-2.5.35-undefine_rpl_malloc_and_realloc.patch
