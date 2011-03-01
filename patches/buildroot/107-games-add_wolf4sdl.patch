@@ -5,7 +5,7 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Index: buildroot/package/games/wolf4sdl/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/Config.in	2010-06-07 16:17:18.000000000 +0200
++++ buildroot/package/games/wolf4sdl/Config.in	2011-03-01 12:05:15.000000000 +0100
 @@ -0,0 +1,11 @@
 +config BR2_PACKAGE_WOLF4SDL
 +	bool "Wolf4SDL"
@@ -21,7 +21,7 @@ Index: buildroot/package/games/wolf4sdl/Config.in
 Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2010-06-07 16:36:19.000000000 +0200
++++ buildroot/package/games/wolf4sdl/wolf4sdl.mk	2011-03-01 14:17:27.000000000 +0100
 @@ -0,0 +1,55 @@
 +#############################################################
 +#
@@ -30,7 +30,7 @@ Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 +#############################################################
 +WOLF4SDL_VERSION:=1.6
 +WOLF4SDL_SOURCE = Wolf4SDL-$(WOLF4SDL_VERSION)-src.zip
-+WOLF4SDL_SITE = http://www.stud.uni-karlsruhe.de/~uvaue/chaos/bins/
++WOLF4SDL_SITE = http://www.alice-dsl.net/mkroll/bins/
 +WOLF4SDL_TARGET_BIN:=/usr/local/bin/wolf3d
 +WOLF4SDL_DIR:=$(BUILD_DIR)/Wolf4SDL-$(WOLF4SDL_VERSION)-src
 +
@@ -40,7 +40,7 @@ Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 +#$(eval $(call AUTOTARGETS,package/games,wolf4sdl))
 +
 +$(DL_DIR)/$(WOLF4SDL_SOURCE):
-+	$(WGET) -P $(DL_DIR) $(WOLF4SDL_SITE)/$(WOLF4SDL_SOURCE)
++	$(call DOWNLOAD,$(WOLF4SDL_SITE),$(WOLF4SDL_SOURCE))
 +
 +wolf4sdl-source: $(DL_DIR)/$(WOLF4SDL_SOURCE)
 +
@@ -80,8 +80,8 @@ Index: buildroot/package/games/wolf4sdl/wolf4sdl.mk
 +endif
 Index: buildroot/package/games/Config.in
 ===================================================================
---- buildroot.orig/package/games/Config.in	2010-06-07 16:15:27.000000000 +0200
-+++ buildroot/package/games/Config.in	2010-06-07 16:18:33.000000000 +0200
+--- buildroot.orig/package/games/Config.in	2011-03-01 12:05:14.000000000 +0100
++++ buildroot/package/games/Config.in	2011-03-01 14:16:38.000000000 +0100
 @@ -15,5 +15,6 @@
  source "package/games/rubix/Config.in"
  source "package/games/sdlquake/Config.in"
