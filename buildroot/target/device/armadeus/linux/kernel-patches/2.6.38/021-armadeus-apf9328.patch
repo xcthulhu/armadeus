@@ -591,7 +591,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h
 ===================================================================
 --- /dev/null
 +++ linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h
-@@ -0,0 +1,329 @@
+@@ -0,0 +1,348 @@
 +/*
 + *
 + * Armadeus LCD configuration file
@@ -851,18 +851,17 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h
 +
 +	pr_debug("%s\n", __func__);
 +
-+# ifdef CONFIG_FB_IMX_OPTREX_F51900_CSTN
-+	gpio_set_value(OPTREX_F51900_POWER_DOWN, 1); /* Initializes it High */
-+	mxc_gpio_mode(OPTREX_F51900_POWER_DOWN | GPIO_OUT | GPIO_DR);
-+# endif
-+# ifdef CONFIG_FB_IMX_SHARP_LQ043_TFT
-+	/* ACD_OE (SHARP_LQ043_POWER_DOWN) used as power down signal */
-+	gpio_set_value(SHARP_LQ043_POWER_DOWN, 0); /* Initializes it Low */
-+	mxc_gpio_mode(SHARP_LQ043_POWER_DOWN | GPIO_OUT | GPIO_GPIO);//1<<16 | 3<<10);
-+# else
-+	/* otherwise use ACD_OE as standard LCD controller signal */
-+	mxc_gpio_mode(PD12_PF_ACD_OE);
-+# endif
++	if (!strcmp("Optrex-FS1900", lcd_name)) {
++		gpio_set_value(OPTREX_F51900_POWER_DOWN, 1); /* Initializes it High */
++		mxc_gpio_mode(OPTREX_F51900_POWER_DOWN | GPIO_OUT | GPIO_GPIO);
++	} else if (!strcmp("Sharp-LQ043", lcd_name)) {
++		/* ACD_OE (SHARP_LQ043_POWER_DOWN) used as power down signal */
++		gpio_set_value(SHARP_LQ043_POWER_DOWN, 0); /* Initializes it Low */
++		mxc_gpio_mode(SHARP_LQ043_POWER_DOWN | GPIO_OUT | GPIO_GPIO);//1<<16 | 3<<10);
++	} else {
++		/* otherwise use ACD_OE as standard LCD controller signal */
++		mxc_gpio_mode(PD12_PF_ACD_OE);
++	}
 +
 +	if (fb_inf->mode->pcr & PCR_TFT)
 +		width = 16;
@@ -914,7 +913,27 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf9328_lcd_config.h
 +
 +static void apf9328_init_lcd(void)
 +{
-+	mxc_register_device(&mxc_fb_device, &apf_fb_data);
++	char *opt, *name = NULL, *options = NULL;
++
++	if (fb_get_options("imxfb", &options))
++		goto end;
++
++	if (!options || !*options)
++		goto end;
++
++	while ((opt = strsep(&options, ",")) != NULL) {
++		if (!*opt)
++			continue;
++		else
++			name = opt;
++	}
++
++	apf_set_lcd_name(name);
++	apf_fb_set_default_contrast();
++
++	imx1_add_imx_fb(&apf_fb_data);
++end:
++	return;
 +}
 +#endif /* CONFIG_MACH_APF9328 */
 +

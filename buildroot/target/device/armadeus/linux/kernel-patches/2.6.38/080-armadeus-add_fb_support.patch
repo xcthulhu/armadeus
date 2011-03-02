@@ -1,0 +1,39 @@
+MX1: Add structure, registration functions for framebuffer and rename LCDC INT
+--- a/arch/arm/mach-imx/devices-imx1.h	2011-02-28 07:17:03.000000000 +0100
++++ b/arch/arm/mach-imx/devices-imx1.h	2011-02-25 07:12:52.000000000 +0100
+@@ -9,6 +9,10 @@
+ #include <mach/mx1.h>
+ #include <mach/devices-common.h>
+ 
++extern const struct imx_imx_fb_data imx1_imx_fb_data __initconst;
++#define imx1_add_imx_fb(pdata) \
++    imx_add_imx_fb(&imx1_imx_fb_data, pdata)
++
+ extern const struct imx_imx_i2c_data imx1_imx_i2c_data __initconst;
+ #define imx1_add_imx_i2c(pdata)		\
+ 	imx_add_imx_i2c(&imx1_imx_i2c_data, pdata)
+--- a/arch/arm/plat-mxc/devices/platform-imx-fb.c	2011-02-01 04:05:49.000000000 +0100
++++ b/arch/arm/plat-mxc/devices/platform-imx-fb.c	2011-02-25 06:56:46.000000000 +0100
+@@ -16,6 +16,11 @@
+ 		.irq = soc ## _INT_LCDC,				\
+ 	}
+ 
++#ifdef CONFIG_SOC_IMX1
++const struct imx_imx_fb_data imx1_imx_fb_data __initconst =
++	imx_imx_fb_data_entry_single(MX1, SZ_4K);
++#endif /* ifdef CONFIG_SOC_IMX1 */
++
+ #ifdef CONFIG_SOC_IMX21
+ const struct imx_imx_fb_data imx21_imx_fb_data __initconst =
+ 	imx_imx_fb_data_entry_single(MX21, SZ_4K);
+--- a/arch/arm/plat-mxc/include/mach/mx1.h	2011-02-28 07:17:03.000000000 +0100
++++ b/arch/arm/plat-mxc/include/mach/mx1.h	2011-02-25 07:13:30.000000000 +0100
+@@ -89,7 +89,7 @@
+ #define MX1_GPIO_INT_PORTA	11
+ #define MX1_GPIO_INT_PORTB	12
+ #define MX1_GPIO_INT_PORTC	13
+-#define MX1_LCDC_INT		14
++#define MX1_INT_LCDC		14
+ #define MX1_SIM_INT		15
+ #define MX1_SIM_DATA_INT	16
+ #define MX1_RTC_INT		17

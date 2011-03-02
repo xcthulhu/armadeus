@@ -18,18 +18,21 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 # 
 
-modprobe -r smsc95xx
 modprobe -r g_ether
 modprobe -r g_serial
 
-modprobe g_ether
+modprobe g_serial
 
-#   shutdown other ports
-ifconfig usb0   down 2>/dev/null
-ifconfig eth0   down 2>/dev/null
-ifconfig eth1   down 2>/dev/null
+if [ ! -f /dev/ttyGS0 ]; then
+	mknod /dev/ttyGS0 c 249 0
+fi
 
-ifconfig usb0  192.168.10.1
+sleep 4
 
-echo -e "\nTo check the USB Gadget port (usb0), please browse on 192.168.10.1\n"
+echo -e "\nTo test the RS232 Gadget device, you first have to load usbserial module on your host PC:
+sudo modprobe usbserial vendor=0x0525 product=0xA4A6
+Then you should be able to enter datas through /dev/ttyACM0 on your host PC:
+echo \"COUCOU\" > /dev/ttyACM0\n
+Listening for host:"
 
+cat /dev/ttyGS0
