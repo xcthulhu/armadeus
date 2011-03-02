@@ -1,6 +1,8 @@
---- a/arch/arm/mach-imx/Kconfig	2010-11-29 07:34:56.000000000 +0100
-+++ b/arch/arm/mach-imx/Kconfig	2010-11-27 14:51:34.000000000 +0100
-@@ -13,6 +13,9 @@
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
+===================================================================
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Kconfig
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
+@@ -37,6 +37,9 @@ comment "MX1 platforms:"
  config MACH_MXLADS
  	bool
  
@@ -10,7 +12,7 @@
  config ARCH_MX1ADS
  	bool "MX1ADS platform"
  	select MACH_MXLADS
-@@ -27,6 +30,53 @@
+@@ -51,6 +54,53 @@ config MACH_SCB9328
  	help
  	  Say Y here if you are using a Synertronixx scb9328 board
  
@@ -20,7 +22,7 @@
 +	select IMX_HAVE_PLATFORM_IMX_UART
 +	select IMX_HAVE_PLATFORM_IMX_I2C
 +	select IMX_HAVE_PLATFORM_SPI_IMX
-+	select HAVE_FB_IMX
++	select IMX_HAVE_PLATFORM_IMX_FB
 +	select SERIAL_IMX_UART1
 +	help
 +	  Say Yes here if you are using the Armadeus APF9328 development board
@@ -64,9 +66,11 @@
  endif
  
  if ARCH_MX2
---- a/arch/arm/mach-imx/Makefile	2010-11-29 07:34:56.000000000 +0100
-+++ b/arch/arm/mach-imx/Makefile	2010-11-22 18:41:14.000000000 +0100
-@@ -18,6 +18,8 @@
+Index: linux-2.6.38-rc3/arch/arm/mach-imx/Makefile
+===================================================================
+--- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Makefile
++++ linux-2.6.38-rc3/arch/arm/mach-imx/Makefile
+@@ -18,6 +18,8 @@ obj-$(CONFIG_MACH_MX27) += clock-imx27.o
  obj-$(CONFIG_MX1_VIDEO)	+= mx1-camera-fiq.o mx1-camera-fiq-ksym.o
  
  obj-$(CONFIG_ARCH_MX1ADS) += mach-mx1ads.o
