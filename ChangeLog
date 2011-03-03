@@ -1,5 +1,389 @@
 
-                ChangeLog file for Armadeus Project
+----
+
+Changes in release 3.4 (released on March 3rd 2011)
+
+* Wiki dump available here: http://www.armadeus.com/assos_downloads/wiki/armadeus-3.4_wiki_dump.tar.gz
+
+* Corrected Tickets/Bugs:
+    #85  	 APF9328 Uboot does not compile anymmore: error in tftp.c file
+    #66 & #80 	On APF27 ifconfig down then up makes Linux kernel angry (dump a oops)
+    #49 	Some French Wiki pages are outdated
+    #63 	Toolchain (ldconfig) crashes if Qt is selected at the first build
+    #65 	OABI compatibility needed (in Linux) otherwise system doesn't boot
+    #77 	uboot tftpboot failed if transfered file size is greater than 63Mbytes
+    #82 	USB key not recognized when plugged before power up
+    #83 	APF27 USB OTG PHY not recognized after Linux reboot
+    #86 	Add PPS platform support
+    #87 	[BR2010.11] make linux26-dirclean does not work.
+
+* Buildroot:
+    Current Buildroot version (20081103):
+      Main changes: UBI support, PPS support and rewritten board selection, better Qt & mysql integration, bug fixes.
+
+    List of all changes:
+    - Revert commit 2a49d808b9e8be5d52413af7a94031e56b3f9673 : restore S13portmap init script
+    - Fixes Wolf4SDL download
+    - Fixes Fbv download
+    - Add rxtx lib for java
+    - Updates apf9328_test config
+    - Add QWS Cursor option to Qt's Buildroot menuconfig.
+    - Updates default APF27 config
+    - [rootfs_skeleton] restore S13portmap init script
+    - Updates default APF9328 config
+    - Add package TFP410CTRL setting (not set) in PPS' Buildroot configs.
+    - [as_devices] Fix littles bugs in makefile
+    - [mysql_client] Backport mysql_client-5.1.53 from official buildroot git, and fix shared library link bug
+    - [mysql_client] Fix link bug
+    - [mysql_client] Update post install hooks according to new BR
+    - Cleanup pps/Config.in
+    - Update default configs
+    - Simplify Board/CPU/Memory selection/configuration (Target device menu)
+    - [ROOTFS] Add guest user with password to PPS board skeleton to allow SSH connections on it.
+    - [ROOTFS] Configure sshd configuration file to forbid SSH connections to root user.
+    - Add package PPS utilities to separate PPS' neccesary tools from PPS' test scripts.
+    - [ROOTFS] Split up PPS utilities and PPS test scripts in PPS skeleton.
+    - Create new patch for Qt's MySQL module configuration fix.
+    - Correct Qt configuration options for MySQL module to specify libraries and headers directories.
+    - Convert MySQL Makefile to old-style post-install hook : BR variables aren't recognized in new-style hooks.
+    - Removes warning in buildroot/package/armadeus/pps/Config.in
+    - target/device/armadeus/: re-create apf27-u-boot-1.3.4.h; now it is a link to apf27.h
+    - target/device/armadeus/: apf27-u-boot-1.3.4.h is the same file as apf27.h so remove it (apf27-u-boot-1.3.4.h).
+    - Convert grep package to DOWNLOAD helper
+    - Add PPS Test scripts option to apf27 and apf9328 Buildroot's configuration files.
+    - Convert tiff package to DOWNLOAD helper usage.
+    - Add target and board APF27 PPS in target/device/armadeus/Config.in and change APF27 target name to APF27 DEV in all Buildroot config files.
+    - Generates both UBI and UBIFS images
+    - Remove PPS package patch 135-pps-add_test_scripts_package.patch and manually add PPS Buildroot files to Armadeus package.
+    - Updates APF27 default config
+    - Add PPS network test scripts package to Armadeus package with patch 135-pps-add_test_scripts_package.patch.
+    - Changes in patch 132-qt-full_integration_with_cross_compiling.patch : name of demos directory & use of variable QT_DEMOS_DIR.
+    - Modifications in patch 132-qt-full_integration_with_cross_compiling.patch : Change Qt demos & examples directory on install and target. Use the variable QT_VERSION instead of the number in the Makefile.
+    - Bug corrected in patch 132-qt-full_integration_with_cross_compiling.patch : Qt demos and examples not erased if they already exist in rootfs
+    - Correct inversion of demos and examples directories in patch 132-qt-full_integration_with_cross_compiling.patch
+    - Bugs correction for patches 132-qt-full_integration_with_cross_compiling.patch and 133-qwt-add_package.patch : seek Qt fonts in /usr/lib/fonts
+    - Add new package QWT 5.2.1 to Buildroot with examples that can be added to rootfs.
+    - Add the possibility to build and install demos and examples in package Qt Embedded 4.6.2
+    - change linux and buildroot config to UBIFS
+    - Some minor changes when generating socketcan archive
+    - Updates apf27_test configs
+    - ed: bump version and convert to autotools
+    - Add network packages (OpenSSH, OpenSSL, WPA supplicant, Wifi chipsets) and UBI Rootfs & UBoot Tool Env options to old & new BR.
+    - Bump flex, IPSec and IPTables versions with patches 137, 138 and 139 to make them work together and along with Linux 2.6.29.
+    - Needed packages for OpenSSH, IPSec and IPTables set in PPS' Buildroot config file.
+    - [XENOMAI] Updates architecture detection in Makefile
+    - [mysql_client] Fix library link bug
+    - [mysql_client] Adding link to shared library under rootfs
+    - [uclibc] adding UCLIBC_SUSV3_LEGACY option to get time in ms
+
+    (Experimental) New Buildroot version (2010.xx):
+    - [2010.05] Run same command as for old BR in linux26-clean target.
+    - [2010.11] Add linux26-clean target
+    - 2010.11: updates default APF51 config
+    - cleanup tftp410ctrl after review
+    - [2010.11] Updates Linux firmware (libertas) to support latest kernel
+    - add tfp410ctrl user space program for APF51Dev
+    - Update config files for buildroot 2010.11 and kernel 2.6.38-rc3
+    - 2010.11: Updates tslib to BR mainline's state of the art
+    - 2010.11: Makes as_devices lib compile again
+    - 2010.11: Activates boot console selection in BR menuconfig
+    - Bug fix in BR 2010 for Qt examples installation: bad variable in Config.in.
+    - 2010.11: ncurses-5.7: allows compilation even with old ncurses host installations
+    - 2010.11:Support CONFIG_SYS prefix for macros as define and requested in U-Boot 2010.xx
+    - [2010.11] Add support for latest 2010.11 BR release (thanks krem)
+    - [2010.11] If U-Boot config file is a symbolic link, dereference it when copying it
+    - removes executable rights on apf27-u-boot-2010.03.h
+    - [2010.11] Updates to 2010.11-rc1
+    - Fix APF27 U-Boot build when using new BR 2010.11 : missing nand SPL
+    - securetty: be compatible with both ways of naming serial port on i.MX platforms: /dev/ttymxc & /dev/ttySMX
+    - 2010.11: cleanup 076-ubi-add_ubi_image_support.patch
+    - [2010.11] Add UBI image generation support
+    - [2010.11] remove add_packages_config_entry.pl
+    - Don't dereference symlinked Linux configs when copying them
+    - [2010.11] Add minimum infrastructure to compile for APF51
+    - [2010.11] Makes Linux image get the correct name when copied to ouput/images/
+    - [2010.11] Patch 052 wasn't right
+    - [2010.11] Add link for apf9328 Linux 2.6.29.6 config
+    - [2010.11] Makes ch70241ctrl compile OK
+    - [2010.11] Makes U-Boot & Linux version detected correctly in ARMADEUS_xx envt variables
+    - [2010.11] Removes unneeded patches 049 & 050
+    - [2010.11] u-boot: makes the resulting binary copied with the right name in output/images/
+    - [2010.11] u-boot: makes u-boot.mk use the right config file for apf* (apf memory config wasn't taken into account before this change)
+    - [2010.11] Merge 051i U-Boot patch into 051d. Both patches apply on the same purpose
+    - [2010.05] Upgrade to soon coming 2010.11 (part 4: update Armadeus main Makefile
+    - [2010.05] Upgrade to soon coming 2010.11 (part 3: rename patches dir)
+    - [2010.05] Upgrade to soon coming 2010.11 (part 2: correct faulty patches)
+    - [2010.05] Upgrade to soon coming 2010.11 (part 1)
+    - Create patch 134-jffs2-add_board_name_to_binary_rootfs_name.patch to add board name to jffs2 binary file name in BR 2010.
+    - [2010.05] Updates apf default configs
+
+* Linux:
+    Current Linux (2.6.29.6):
+      Main changes: Chimei LW700 is now the default LCD on APF27, PPS support, OV3640 support, AS1531 support, bug fixes
+
+    List of all changes:
+    - Makes Chimei LW700AT9003 the default LCD on APF27
+    - Add support for USB Gadget RS232 in PPS' Linux config.
+    - Adding driver for MCP4912 DAC chip, adding platform data for apf51dev
+    - Add renamed patch 365-pps-armadeus-add_pps_baseboard.patch.
+    - Change number of patch 500-pps-armadeus-add_pps_baseboard.patch to 365.
+    - Fixes comments in patches 090 & 091
+    - 2.6.29 patches cleanup
+    - Fix ethernet bug
+    - [spidev] Check if platform pointer is null before initialization in probe()
+    - Clean i2c-imx patch according to checkpatches.pl rules (bis)
+    - Clean i2c-imx patch according to checkpatches.pl rules
+    - Add Netfilter NAT modules in PPS Linux config. [BUILDROOT] Add NAT Traversal support for IPSec in PPS config.
+    - Fix bug in patch 359-as5011
+    - MAX1027 driver doesn't use IOCTLs so suppress them
+    - fpgaloader: driver doesn't use IOCTL so remove it.
+    - Add needed modules and drivers for OpenSSH, IPSec and IPTables set in PPS' Linux config file.
+    - Fix I2C_M_NOSTART bug in i2c-imx driver
+    - Fix mangling capability bug in i2c-imx driver
+    - Adding mangling capability on i2c-imx Part 3: adding mangling capability flag
+    - Adding mangling capability on i2c-imx Part 2
+    - [i2c-imx] Adding mangling capability part1: ignore Ack
+    - rename 337b-armadeus-imxfb-add_backlight_power_switch_capability.patch to 337b-armadeus-mx2fb-add_backlight_power_switch_capability.patch
+    - PPS: add missing patches to have a compiling kernel
+    - Updates APF27 default config
+    - Change PPS baseboard prompt message in 500-pps-armadeus-add_pps_baseboard.patch.
+    - Symbolic link for new BR PPS' Linux configuration file (pps-linux-2.6.29.6.config)
+    - Add Bluetooth modules to PPS Linux config file and put the new BR's Linux config file as symbolic link to old one.
+    - Last commit correction : leave PPS's Linux original configuration file for old Buildroot.
+    - Rename the PPS' Linux configuration file.
+    - Makes OV3640 starts in YUV mode by default
+    - Cleanup no more used Linux patches
+    - add support for spidev on apf9328
+    - apf9328: makes mach/gpio.h includable several times
+    - ov3640: makes the sensor detected correctly and initialized in a default mode compatible with apf27
+    - Fix gpio release bug under as1531 platform module
+    - update apf27 linux config file for as1531
+    - adding platform module for as1531
+    - Adding AS1531 Analog to Digital Converter driver in kernel
+    - fix bug #82 USB dongle not recognized if plugged before power up)
+    - use as5011 joystick in low power mode
+    - Updates apf27_test default config
+    - fix fec_old ifconfig up/down bug #66
+    - Split 030-armadeus-imx-devices.tofix SPI part in a dedicated patch and adds functions for SPI registration
+    - fix bug #83 (APF27 USB OTG PHY not recognized after Linux reboot
+
+    (Experimental) New Linux (2.6.36/8):
+    -[2.6.38][APF9328] Allow lcd selection through kernel commandline
+    -[2.6.38][APF9328] Adapt Select for framebuffer in Kconfig
+    -[2.6.38][APF9328] MX1: Add structure, registration functions for framebuffer and rename LCDC INT
+    -[2.6.38][APF9328] add data structure for SPI on IMX1.
+    -[2.6.38][APF9328] Adapt #define interrupt name  and base address for SPI .
+    -[2.6.38][APF9328] adapt 021-armadeus-apf9328.patch to 2.6.38-rc3 kernel
+    - 2.6.38: Makes APF51Dev default baseboard for APF51
+    - APF51Dev clean up and add CONTRAST line
+    - 2.6.38: Adds keypad support to APF51Dev
+    - 2.6.38: register serial ports of APF51Dev
+    - 2.6.38: Add Dynamic Frequency Scaling support to APF51
+    - add apf51DEv HDMI support
+    - 2.6.38: Updates APF27 default config
+    - change LW700 clock polarity on APF51dev
+    - change APF51Dev LW700 clock polarity
+    - 2.6.38: port patch 274 from 2.6.29
+    - 2.6.38: makes APW support compile again
+    - fix bug in ESDHC driver for apf51 when no platform data is provided
+    - add CAN, GPIO and SD corrections to apf51Dev board
+    - 2.6.38: Add preliminary audio support for APF51Dev
+    - add GPIO SD card detection for apf51
+    - 2.6.38: Now LCD type can be fully passed as boot parameters (tested on APF27)
+    - add IPU clock polarity support for iMX51
+    - Moves APF27 2.6.3x support from 2.6.36 to 2.6.38-rc3 (part 2)
+    - Moves APF27 2.6.3x support from 2.6.36 to 2.6.38-rc3 (part1)
+    - Moves APF51 to 2.6.38-rc3
+    - 2.6.38: Updates wm831x-ts to state of the art
+    - 2.6.38: improve GPIO declaration for APF51Dev
+    - 2.6.38: Updates wm831x-ts to state of the art
+    - Adding ADC as1531 drivers
+    - 2.6.38 Updates wm831x to state of the art (2)
+    - [2.6.38] Updates wm831x driver to state of the art
+    - 2.6.36: activates LCD on APF27 (init pb remains) and cleanup APF9328 part
+    - 2.6.36: Fixes patch 100
+    - 2.6.36: improves APF27 support with SPI & USB
+    - Updating as5011 drivers according to kernel developper comments
+    - [2.6.36][APF9328] 101 : avoid crash when clk_get is called by drivers selected as module
+    - [2.6.36][APF9328] 100 : correct mxc_decode_pll on imx1
+    - [2.6.36][APF9328] 075 : add clock for spi2
+    - [2.6.36][APF9328] adapt patch 075-armadeus-spi2-reg-defines.patch
+    - [2.6.36][APF9328] 072 : avoid compilation error when imxfb is selected
+    - fpgaloader: makes driver compatible with 2.6.3x kernels (on APF27)
+    - 2.6.38: Add (preliminary) support for the APF51Dev baseboard. APF51Proto is still used as default baseboard.
+    - 2.6.38: activates pressure measurement of wm8311 on APF51
+    - 2.6.38: Add driver for WM8311 touch feature
+    - Update default configuration file for linux kernel 2.6.36
+    - 2.6.38-alpha: APF51, cleanup USB code in platform support file
+    - 2.6.38: improves APF51 support (OTG, LCD, SPI)
+    - 2.6.38-alpha: adds v2 version of pengutronix ipuv3 patches (part 2: patches renaming)
+    - 2.6.38-alpha: adds v2 version of pengutronix ipuv3 patches
+    - [as5011] switch to threaded irq
+    - 2.6.38: Add (preliminary) APF51 support.
+    - [2.6.36] Convert patches 290, 291 & 319 from 2.6.29
+    - [2.6.36): refresh patches 074 & 282
+    - 2.6.36: adapt patch 074-armadeus-tsc2102-touchscreen.patch from 2.6.29
+    - 2.6.36: imx_udc: allows to get usb clock
+    - 2.6.36: import patches 037, 038, 063, 073, 074-armadeus-tsc2102-touchscreen-add_driver_to_linux_build_system.patch from 2.6.29
+    - 2.6.36: adapt patches 029 et 030 from 2.6.29
+    - 2.6.36: import patches 023, 024, 050, 072, 098 from 2.6.29
+    - apf51: avoid using nand bad block marker in free oob
+    - 2.6.36: Add USBH2 support and APF51Dev (preliminary) support. Update default APF51 config accordingly
+    - 2.6.36: Add support for USB Host 1, Ethernet and NAND for APF51
+    - 2.6.36: Import patches 341, 342, 345, 347c & 348 from 2.6.29
+    - add APF51 patch comments
+    - 2.6.36: Activates Ethernet on APF27
+    - 2.6.36: import patches 322 & 323 from 2.6.29
+    - 2.6.36: import patches 330, 331, 333 & 339 from 2.6.29
+    - [2.6.36] adding AS5011 driver in kernel 2.6.36
+    - 2.6.36: makes I2C usable on APF27 (module & baseboards)
+    - Better error label in as5011 joystick driver
+    - 2.6.36: Port of patches 301, 314 and 315 from 2.6.29 ones
+    - Correcting as5011 driver according to kernel developper advices.
+    - Clean as5011 patch according to checkpatch.pl kernel-2.6.36 script
+    - 2.6.36: Add minimum to boot APF51
+    - 2.6.36: Makes APF27 + APF27Dev compile and boot with minimum devices: serial port & NAND Flash
+    - 2.6.36 migration: add the minimum for apf27 migration
+    - 2.6.38: first commit for apf9328 support, CSI,SSI and FPGA not available. RTC not being tested
+    - add preliminary APF51 linux patches
+    - fix apf51 clocks
+
+* U-Boot:
+    Current U-Boot (1.3.4):
+      Main changes: UBIFS is now default rootfs format on APF27, PPS support, misc. fixes.
+
+    List of all changes:
+    - Revert part of commit 20c2ca77f88a91a04afd5f3e539b9ebbb31c630d. Otherwise FPGA loading on APF27 without SP_VISION is KO.
+    - Set NAND and SD outputs to high voltage
+    - Check new compatibility version of environment variables
+    - Fix default rootfs filename
+    - preload ethernet address to support linux current fec driver
+    - Use eth0 as default ethernet interface
+    - Adding second load operator for sp_vision spartan6 configuration (to be cleaned)
+    - Clean apf27 patch, suppressing trailling white spaces
+    - suppress useless mtest16 fonction
+    - Configure WEIM chip select register at boot time
+    - Adding 16bits access memory test program : mtest16
+    - Remove hardcoded MAC address
+    - envt variables: use apfxx-rootfs-arm.ubi instead of apfxx-rootfs-arm.ubifs as rootfs image
+    - Fix EMI clock computation when derived from AHB clock
+    - For PPS boards, correction in U-Boot config files to take UBI file as rootfs instead of UBIFS.
+    - Correction in patch 051i-u-boot-multi-version-support.patch to rename the config file according to BR2_TARGET_UBOOT_BOARDNAME instead of BR2_BOARD_NAME.
+    - fix error in tftp.c when compiling APF9328. bug#85
+    - Cleanup apf27.h
+    - use UBIFS instead of JFFS2 for APF27
+    - revert update_rootfs command to old version without nand option
+    - increase FPGA supply startup time. avoid fpga loading timeout
+    - add support for large nand file tftp download
+
+    (Experimental) New U-Boot (2010.03):
+    - Support patches for APF51 & config file
+    - Support imx51 IIM fuse
+    - APF51 fix contrast line state at startup
+    - Adding second spartan6 in apf27.h u-boot2010 config file
+    - [2010.03] fix second load operator patch for sp_vision extension card
+    - Adding patch to add spartan6 under u-boot-2010.03
+    - apf51: use mxc_nand instead of mxc_nand.0 as boot params
+    - Change Buildroot 2010's U-boot config file with correct rootfs image name.
+    - Suppress trailling white space for all patch in u-boot-2010.03
+    - cleaning apf51 patch, suppressing trailling white space and replace multiple space by TAB
+    - update apf51.h for weim registers configuration
+    - fix apf51 nand unlock and nand oob
+    - APF51: remove cleanmarker when using UBI images
+    - add fpga support
+
+* Firmware:
+    - top_testconfig.bit was wrong
+    - Adding minimum spartan3 design used to configure sp_vision spartan6 fpga
+
+* Demos:
+    - capture: add i.MX27 VPU support to stream captured video over IP (not fully functionnal yet)
+    - blink_led: update the demo to be according with the actual policy gpio's driver
+
+* Debug:
+    - Makes apf27_recover progress infos cutier
+    - Add apf51_recover tool (preliminary version)
+    - Correct imxregs compilation
+
+* Test:
+    - New PPS' test script for USB Gadget RS232.
+    - Add PPS' test scripts for bridged connection, OpenSSH tunnel and IPSec.
+    - Add IPSec configuration file to rootfs for PPS' IPSec test script.
+    - Add correct indentations and carriage returns to PPS test script init_wpa.sh.
+    - Makes test_wifi.sh more error proof
+    - Add e2fsprogs to apf27_test.config
+    - Rename buildroot/local/apf9328_test/linux-2.6.29.4.config -> buildroot/local/apf9328_test/linux-2.6.29.6.config
+    - Correct ttyGS0 device test in PPS' USB Gadget Serial test script.
+    - Updates apf27_test BR config
+    - buildroot/local/apf27_test/linux-2.6.29.4.config -> buildroot/local/apf27_test/linux-2.6.29.6.config
+    - Updates apf27_test default configs
+    - imxregs: i.MX51, adds I2C registers (not working (16 bits accesses))
+    - Fill GPL license year in PPS' test scripts. 
+    - Put command to run PPS' S80 gpios and IPSec config file to the top of the files.
+    - GPL licence added on PPS test scripts.
+    - Use script gpio_helpers.sh in reset_wi2wi.sh 
+    - Translate console messages in English for PPS test scripts.
+
+* Tools:
+    - imxregs: add support for i.MX51 (only CCM & GPT1 accesses are currently implemented)
+    - loadgpio.sh often needs to be overwritten by users, so change a little bit the way we install it
+
+* As_Devices:
+    - Don't mix python and C in i2c python wrapper ;)
+    - Check size of data for i2c functions
+    - Improvement to do in as_i2c python wrapper
+    - Fix a bug in i2c_read_msg
+    - Adding i2c_read_msg function
+    - Adding import AsI2c in AsDevices python init module
+    - Adding i2c python class wrapper
+    - Suppress multiton implementation under python classes
+    - Fix some bugs in dac C and Python class
+    - Adding Dac python class
+    - suppressing some warnings
+    - fix api bug in as_dac wrapper
+    - Change name of API for dac setting value
+    - Adding C wrapper for dac
+    - Change license for python wrappers (to GNU Lesser General License)
+    - Adding generic dac class
+    - Adding as1531 chip class for adc
+    - Return error if read fail
+    - Adding generic as_adc class, with specific calls to as1531 and max1027 chip
+    - Adding python dependency for wrapper
+    - Changes as_i2c API
+    - Make python wrapper compiling under BR2010
+    - Change helpers name
+    - increase version number
+    - helpers: add as_read_int()
+    - Indentation & beautifying
+    - add a helpers module to factorize methods used in other modules
+    - as_i2c.h: improves functions description
+    - AsGpio python wrapper functionnal
+    - fix bug in as_spi
+    - suppress as_gpio_set_pullup_value and as_gpio_get_pullup_value functions
+    - Compile as_gpio for 2.6.29 or upper
+    - Adding as_adc functions, and comment as_max1027
+    - Adding function to write string in as_helpers.c
+    - Adding setPinDirection function under AsGpio python wrapper and suppress setpullup
+    - Adding AsAdc wrapper for python
+
+* Other:
+    - [ROOTFS] Add GPL license to PPS init file S80gpios.
+    - [ROOTFS] Put the guest user's file .ssh/authorized_keys in PPS' skeleton instead of creating it during system boot.
+    - [ROOTFS] Correct file indentations and remove useless aliases in PPS' /etc/profile.
+    - [ROOTFS] Add PPS scripts path in PATH in /etc/profile when compiling a PPS board. [ROOTFS] Use generic script gpio_helpers.sh in PPS' S80gpios file to initialize GPIOs.
+    - [ROOTFS] Add the gpio init file S80gpios to the rootfs when compiling a PPS board. Corrects bugs with ethernet SMSC and WPA Supplicant
+    - Fixes patches/buildroot/cleanup_buildroot.sh
+    - Fixes warning in buildroot/package/armadeus/tfp410ctrl/Config.in
+    - Change main Makefile to detect PPS configs
+    - Fixes commit 9366157a494b4a6e5e636ddae2411d715c13cadf
+    - Fixes patches/buildroot/2010.11/cleanup_buildroot.sh
+    - [BUILD] ARMADEUS_ROOTFS_TAR wasn't correctly set for BR 2010
+    - Updates buildroot/package/.gitignore
+    - [SOFTWARE] Add warning comment in u-boot recover
+    - [BUILD] Add PPS board configs : Linux, Buildroot, UBoot & uClibc config files and PPS baseboard kernel patch.
+    - Updates apf9328 Linux default config
+    - Change securetty serial port to ttyGS0.
+    - Updates Changelog
 
 
 ----
