@@ -39,6 +39,10 @@ test_wifi()
 		exit_failed
 	fi
 	ifconfig eth1 up
+	if [ "$?" != 0 ]; then
+		echo "WLAN interface not available !!"
+		exit_failed
+	fi
 	#ifconfig eth0 down
 
 	# get available APs (remove hidden one)
