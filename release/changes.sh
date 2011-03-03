@@ -15,7 +15,7 @@ CHANGES_TOOLS=$TEMP_DIR/tools.log
 CHANGES_ASDEVICES=$TEMP_DIR/asdevices.log
 CHANGES_OTHER=$TEMP_DIR/other.log
 
-LATEST_RELEASE_DATE="2009-12-02"
+LATEST_RELEASE_DATE="2010-07-30"
 
 usage()
 {
@@ -84,7 +84,7 @@ cat $CHANGES_TEST | grep -v "^$" | sed 's/\[[Tt][Ee][Ss][Tt]\]/    -/g'
 echo "* Tools:"
 cat $CHANGES_TOOLS | grep -v "^$" | sed 's/\[[Tt][Oo][Oo][Ll][Ss]\]/    -/g'
 echo "* As_Devices:"
-cat $CHANGES_ASDEVICES | grep -v "^$" | sed 's/\[[Aa][Ss]_[Dd][Ee][Vv][Ii][Ce][Ee][Ss]\]/    -/g'
+cat $CHANGES_ASDEVICES | grep -v "^$" | sed 's/\[[Aa][Ss]_[Dd][Ee][Vv][Ii][Cc][Ee][Ss]\]/    -/g'
 echo "* Other:"
 cat $CHANGES_OTHER | grep -v "^$"
 echo
