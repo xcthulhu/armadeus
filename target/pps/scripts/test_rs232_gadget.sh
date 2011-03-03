@@ -23,11 +23,11 @@ modprobe -r g_serial
 
 modprobe g_serial
 
-if [ ! -f /dev/ttyGS0 ]; then
+sleep 4
+
+if [ ! -c /dev/ttyGS0 ]; then
 	mknod /dev/ttyGS0 c 249 0
 fi
-
-sleep 4
 
 echo -e "\nTo test the RS232 Gadget device, you first have to load usbserial module on your host PC:
 sudo modprobe usbserial vendor=0x0525 product=0xA4A6
