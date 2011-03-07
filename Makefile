@@ -27,17 +27,10 @@ ARMADEUS_TOPDIR:=$(shell pwd)
 export ARMADEUS_TOPDIR
 
 #--- User configurable stuff:
-ifeq ($(BUILDROOT_VERSION),)
-BUILDROOT_VERSION:=20081103
-BUILDROOT_SITE:=http://downloads.sourceforge.net/armadeus
-BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot
-ARMADEUS_CONFIG_DIR:=$(BUILDROOT_DIR)/target/device/armadeus
-else
 BUILDROOT_VERSION:=2010.11
 BUILDROOT_SITE:=http://buildroot.uclibc.org/downloads
 BUILDROOT_PATCH_DIR:=$(ARMADEUS_TOPDIR)/patches/buildroot/$(BUILDROOT_VERSION)
 ARMADEUS_CONFIG_DIR:=$(BUILDROOT_DIR)/configs
-endif
 #--- End of user conf (don't touch anything below unless you know what you're doing !! ;-) )
 
 BUILDROOT_SOURCE:=buildroot-$(BUILDROOT_VERSION).tar.bz2
