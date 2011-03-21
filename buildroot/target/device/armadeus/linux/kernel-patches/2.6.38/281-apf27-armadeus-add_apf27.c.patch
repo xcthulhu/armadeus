@@ -10,7 +10,7 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c	2011-02-09 14:47:31.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c	2011-03-21 11:56:54.000000000 +0100
 @@ -0,0 +1,745 @@
 + /*
 + * apf27.c
@@ -760,8 +760,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-02-09 14:47:31.000000000 +0100
-@@ -0,0 +1,933 @@
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-03-21 14:14:34.000000000 +0100
+@@ -0,0 +1,934 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -1656,6 +1656,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +
 +#ifdef CONFIG_SPI_MXC_SELECT1
 +	/* Optionnal ADC */
++	mxc_gpio_mode(GPIO_PORTD | 28 | GPIO_GPIO | GPIO_IN), /* 0: MAX1027 */
 +	imx27_add_spi_imx0(&apf27dev_spi0_data);
 +#endif
 +#ifdef CONFIG_SPI_MXC_SELECT2
@@ -1698,7 +1699,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-02-09 14:47:31.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-03-21 11:56:54.000000000 +0100
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1871,7 +1872,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-02-14 13:40:41.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-03-21 11:56:54.000000000 +0100
 @@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2051,7 +2052,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-14 16:29:30.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-21 14:25:38.000000000 +0100
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
