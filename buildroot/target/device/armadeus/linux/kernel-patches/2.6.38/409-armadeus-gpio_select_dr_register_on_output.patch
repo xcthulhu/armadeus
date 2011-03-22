@@ -1,0 +1,45 @@
+Index: linux-2.6.36/arch/arm/plat-mxc/gpio.c
+===================================================================
+--- linux-2.6.36.orig/arch/arm/plat-mxc/gpio.c	2011-02-02 11:35:55.000000000 +0100
++++ linux-2.6.36/arch/arm/plat-mxc/gpio.c	2011-02-02 11:35:55.000000000 +0100
+@@ -39,6 +39,13 @@
+ #define GPIO_IMR	(cpu_is_mx1_mx2() ? 0x30 : 0x14)
+ #define GPIO_ISR	(cpu_is_mx1_mx2() ? 0x34 : 0x18)
+ 
++#if cpu_is_mx1_mx2()
++#	define GPIO_OCR1	0x04
++#	define GPIO_OCR2	0x08
++#else
++/* TODO */
++#endif
++
+ #define GPIO_INT_LOW_LEV	(cpu_is_mx1_mx2() ? 0x3 : 0x0)
+ #define GPIO_INT_HIGH_LEV	(cpu_is_mx1_mx2() ? 0x2 : 0x1)
+ #define GPIO_INT_RISE_EDGE	(cpu_is_mx1_mx2() ? 0x0 : 0x2)
+@@ -257,6 +264,26 @@
+ static int mxc_gpio_direction_output(struct gpio_chip *chip,
+ 				     unsigned offset, int value)
+ {
++	struct mxc_gpio_port *port =
++		container_of(chip, struct mxc_gpio_port, chip);
++	void __iomem *reg_ocr1 = port->base + GPIO_OCR1;
++	void __iomem *reg_ocr2 = port->base + GPIO_OCR2;
++	u32 ocr1;
++	u32 ocr2;
++	unsigned long flags;
++
++	spin_lock_irqsave(&port->lock, flags);
++	ocr1 = __raw_readl(reg_ocr1);
++	ocr2 = __raw_readl(reg_ocr2);
++	if (offset < 16) {
++		ocr1 = ocr1 | (3 << (offset*2));
++		__raw_writel(ocr1, reg_ocr1);
++	} else {
++		ocr2 = ocr2 | (3 << ((offset-16)*2));
++		__raw_writel(ocr2, reg_ocr2);
++	}
++	spin_unlock_irqrestore(&port->lock, flags);
++
+ 	mxc_gpio_set(chip, offset, value);
+ 	_set_gpio_direction(chip, offset, 1);
+ 	return 0;
