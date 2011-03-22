@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Version: 0.9.30.2
-# Mon Feb  1 14:24:52 2010
+# Version: 0.9.30.3
+# Tue Mar 22 00:29:26 2011
 #
 # TARGET_alpha is not set
 TARGET_arm=y
@@ -71,7 +71,7 @@ UCLIBC_HAS_FLOATS=y
 UCLIBC_HAS_SOFT_FLOAT=y
 DO_C99_MATH=y
 # UCLIBC_HAS_FENV is not set
-KERNEL_HEADERS="/home/julien/workspace/Armadeus_SF/armadeus-git-new-buildroot/buildroot/output/toolchain/linux/include"
+KERNEL_HEADERS="/home/eric/arm/apf27testX/buildroot/output/toolchain/linux/include"
 HAVE_DOT_CONFIG=y
 
 #
@@ -107,7 +107,8 @@ UCLIBC_DYNAMIC_ATEXIT=y
 # UCLIBC_SUSV3_LEGACY_MACROS is not set
 # UCLIBC_HAS_STUBS is not set
 UCLIBC_HAS_SHADOW=y
-# UCLIBC_HAS_PROGRAM_INVOCATION_NAME is not set
+UCLIBC_HAS_PROGRAM_INVOCATION_NAME=y
+UCLIBC_HAS___PROGNAME=y
 UCLIBC_HAS_PTY=y
 ASSUME_DEVPTS=y
 # UNIX98PTY_ONLY is not set
@@ -164,8 +165,11 @@ UCLIBC_HAS_CTYPE_SIGNED=y
 UCLIBC_HAS_CTYPE_CHECKED=y
 # UCLIBC_HAS_CTYPE_ENFORCED is not set
 UCLIBC_HAS_WCHAR=y
-# UCLIBC_HAS_LOCALE is not set
+UCLIBC_HAS_LOCALE=y
+# UCLIBC_PREGENERATED_LOCALE_DATA is not set
+UCLIBC_HAS_XLOCALE=y
 UCLIBC_HAS_HEXADECIMAL_FLOATS=y
+# UCLIBC_HAS_GLIBC_DIGIT_GROUPING is not set
 UCLIBC_HAS_GLIBC_CUSTOM_PRINTF=y
 UCLIBC_PRINTF_SCANF_POSITIONAL_ARGS=9
 UCLIBC_HAS_SCANF_GLIBC_A_FLAG=y
@@ -227,7 +231,7 @@ UCLIBC_BUILD_NOW=y
 #
 # uClibc development/debugging options
 #
-CROSS_COMPILER_PREFIX="/home/julien/workspace/Armadeus_SF/armadeus-git-new-buildroot/buildroot/output/build/staging_dir/usr/bin/arm-linux-uclibcgnueabi-"
+CROSS_COMPILER_PREFIX="/home/eric/arm/apf27testX/buildroot/output/build/staging_dir/usr/bin/arm-unknown-linux-uclibcgnueabi-"
 UCLIBC_EXTRA_CFLAGS=""
 # DODEBUG is not set
 # DODEBUG_PT is not set
