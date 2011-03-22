@@ -38,6 +38,8 @@ if [ "$PS1" ]; then
     export TSLIB_TSEVENTTYPE=INPUT
     export TSLIB_CONFFILE=/etc/ts.conf
     export TSLIB_CALIBFILE=/etc/pointercal
+    # For X:
+    export DISPLAY=:0.0
 
     ### Some aliases
     alias ps2='ps facux '
