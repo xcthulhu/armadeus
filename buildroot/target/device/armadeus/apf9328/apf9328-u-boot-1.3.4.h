@@ -32,8 +32,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_ENV_VERSION 	"3.6"
-#define CONFIG_IDENT_STRING	" apf9328 patch 3.9"
+#define CONFIG_ENV_VERSION 	"4.0"
+#define CONFIG_IDENT_STRING	" apf9328 patch 4.0"
 
 #define CONFIG_ARM920T		1	/* this is an ARM920T CPU */
 #define CONFIG_IMX		1	/* in a Motorola MC9328MXL Chip */
@@ -195,7 +195,7 @@
 	"download_kernel=tftpboot ${loadaddr} "				\
 		" ${serverpath}${board_name}-linux.bin\0"		\
 	"download_rootfs=tftpboot ${loadaddr} "				\
-		" ${serverpath}${board_name}-rootfs.arm.jffs2\0"	\
+		" ${serverpath}${board_name}-rootfs.jffs2\0"	\
 	"update_uboot=run download_uboot flash_uboot\0"			\
 	"update_kernel=run download_kernel flash_kernel\0"		\
 	"update_rootfs=run download_rootfs flash_rootfs\0"		\
