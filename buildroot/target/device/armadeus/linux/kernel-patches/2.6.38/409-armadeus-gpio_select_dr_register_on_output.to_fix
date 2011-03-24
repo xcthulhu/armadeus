@@ -1,3 +1,5 @@
+Do not work on i.MX51... -> TO FIX !
+
 Index: linux-2.6.36/arch/arm/plat-mxc/gpio.c
 ===================================================================
 --- linux-2.6.36.orig/arch/arm/plat-mxc/gpio.c	2011-02-02 11:35:55.000000000 +0100
