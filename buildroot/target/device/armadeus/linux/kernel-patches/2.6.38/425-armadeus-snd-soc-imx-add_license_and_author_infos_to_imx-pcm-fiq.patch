@@ -1,0 +1,15 @@
+Otherwise driver is not usable as module.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38-rc3/sound/soc/imx/imx-pcm-fiq.c
+===================================================================
+--- linux-2.6.38-rc3.orig/sound/soc/imx/imx-pcm-fiq.c	2011-02-24 12:14:52.000000000 +0100
++++ linux-2.6.38-rc3/sound/soc/imx/imx-pcm-fiq.c	2011-02-24 13:58:17.000000000 +0100
+@@ -343,3 +343,6 @@
+ 	platform_driver_unregister(&imx_pcm_driver);
+ }
+ module_exit(snd_imx_pcm_exit);
++
++MODULE_AUTHOR("Sascha Hauer, Pengutronix");
++MODULE_LICENSE("GPL");

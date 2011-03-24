@@ -1,8 +1,8 @@
 Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c	2011-02-11 17:23:17.000000000 +0100
-@@ -0,0 +1,151 @@
++++ linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c	2011-03-16 23:07:40.000000000 +0100
+@@ -0,0 +1,166 @@
 +/*
 + * ASoC audio for APF51Dev (i.MX51 using Wolfson's WM8960)
 + *
@@ -34,7 +34,7 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +
 +#define FMT_PLAYBACK (SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | \
 +		SND_SOC_DAIFMT_CBM_CFM)
-+#define FMT_CAPTURE (SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_NB_NF | \
++#define FMT_CAPTURE (SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | \
 +		SND_SOC_DAIFMT_CBM_CFM)
 +
 +static int apf51dev_sound_hifi_hw_params(struct snd_pcm_substream *substream,
@@ -46,6 +46,14 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +	int ret;
 +
 +	/* TO BE CHECKED !! */
++
++	printk("--- %s %d\n", __func__, __LINE__);
++
++	ret = snd_soc_dai_set_pll(codec_dai, 0, 0, 16000000, 12280000);
++	if (ret) {
++		printk("APF51: Unable to set WM8960 PLL\n");
++		return ret;
++	}
 +
 +	/* set cpu DAI configuration */
 +	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
@@ -62,12 +70,12 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +		ret = snd_soc_dai_set_fmt(cpu_dai, FMT_CAPTURE);
 +		if (ret)
 +			return ret;
-+		ret = snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, 4, 32);
++/*		ret = snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, 4, 32);
 +		if (ret)
-+			return ret;
++			return ret;*/
 +	}
 +
-+	ret = snd_soc_dai_set_tdm_slot(cpu_dai, 0x0, 0xfffffffc, 4, 32);
++	ret = snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffffc, 0xfffffffc, 2, 0);
 +	if (ret)
 +		return ret;
 +
@@ -76,6 +84,7 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +
 +static int apf51dev_sound_hifi_hw_free(struct snd_pcm_substream *substream)
 +{
++	printk("--- %s %d\n", __func__, __LINE__);
 +	return 0;
 +}
 +
@@ -86,11 +95,13 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +
 +static int apf51dev_sound_probe(struct platform_device *pdev)
 +{
++	printk("--- %s %d\n", __func__, __LINE__);
 +	return 0;
 +}
 +
 +static int apf51dev_sound_remove(struct platform_device *pdev)
 +{
++	printk("--- %s %d\n", __func__, __LINE__);
 +	return 0;
 +}
 +
@@ -98,14 +109,18 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +	{
 +		.name = "WM8960 Playback",
 +		.stream_name	= "Playback",
++		.codec_name	= "wm8960-codec.1-001a",
++		.platform_name	= "imx-fiq-pcm-audio.0",
++		.cpu_dai_name	= "imx-ssi.0",
 +		.codec_dai_name	= "wm8960-hifi",
-+		.cpu_dai_name	= "imx-ssi-dai.0",
 +		.ops		= &apf51dev_sound_hifi_ops,
 +	}, {
 +		.name = "WM8960 Capture",
 +		.stream_name	= "Capture",
++		.codec_name	= "wm8960-codec.1-001a",
++		.platform_name	= "imx-fiq-pcm-audio.0",
++		.cpu_dai_name	= "imx-ssi.0",
 +		.codec_dai_name	= "wm8960-hifi",
-+		.cpu_dai_name	= "imx-ssi-dai.0",
 +		.ops		= &apf51dev_sound_hifi_ops,
 +	},
 +};
@@ -156,8 +171,8 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +MODULE_LICENSE("GPL");
 Index: linux-2.6.38-rc3/sound/soc/imx/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/sound/soc/imx/Kconfig	2011-02-11 16:53:17.000000000 +0100
-+++ linux-2.6.38-rc3/sound/soc/imx/Kconfig	2011-02-11 17:01:12.000000000 +0100
+--- linux-2.6.38-rc3.orig/sound/soc/imx/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/sound/soc/imx/Kconfig	2011-02-24 10:44:15.000000000 +0100
 @@ -52,4 +52,14 @@
  	  Enable I2S based access to the TLV320AIC23B codec attached
  	  to the SSI interface
@@ -175,8 +190,8 @@ Index: linux-2.6.38-rc3/sound/soc/imx/Kconfig
  endif	# SND_IMX_SOC
 Index: linux-2.6.38-rc3/sound/soc/imx/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/sound/soc/imx/Makefile	2011-02-11 16:57:38.000000000 +0100
-+++ linux-2.6.38-rc3/sound/soc/imx/Makefile	2011-02-11 17:01:26.000000000 +0100
+--- linux-2.6.38-rc3.orig/sound/soc/imx/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/sound/soc/imx/Makefile	2011-02-24 10:44:15.000000000 +0100
 @@ -8,10 +8,12 @@
  obj-$(CONFIG_SND_MXC_SOC_MX2) += snd-soc-imx-mx2.o
  
