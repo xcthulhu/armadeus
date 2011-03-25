@@ -1,0 +1,75 @@
+audmuxv2 debugfs can't work without the 2 last changes.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+diff --git a/arch/arm/plat-mxc/audmux-v2.c b/arch/arm/plat-mxc/audmux-v2.c
+index 175e364..3d9cf7f 100644
+--- a/arch/arm/plat-mxc/audmux-v2.c
++++ b/arch/arm/plat-mxc/audmux-v2.c
+@@ -44,18 +44,20 @@ static int audmux_open_file(struct inode *inode, struct file *file)
+ static const char *audmux_port_string(int port)
+ {
+ 	switch (port) {
+-	case MX31_AUDMUX_PORT1_SSI0:
+-		return "imx-ssi.0";
+-	case MX31_AUDMUX_PORT2_SSI1:
+-		return "imx-ssi.1";
+-	case MX31_AUDMUX_PORT3_SSI_PINS_3:
+-		return "SSI3";
+-	case MX31_AUDMUX_PORT4_SSI_PINS_4:
+-		return "SSI4";
+-	case MX31_AUDMUX_PORT5_SSI_PINS_5:
+-		return "SSI5";
+-	case MX31_AUDMUX_PORT6_SSI_PINS_6:
+-		return "SSI6";
++	case 0:
++		return "Port1 (imx-ssi.0)";
++	case 1:
++		return "Port2 (imx-ssi.1)";
++	case 2:
++		return "Port3";
++	case 3:
++		return "Port4";
++	case 4:
++		return "Port5";
++	case 5:
++		return "Port6";
++	case 6:
++		return "Port7";
+ 	default:
+ 		return "UNKNOWN";
+ 	}
+@@ -151,8 +153,8 @@ static void audmux_debugfs_init(void)
+ 		return;
+ 	}
+ 
+-	for (i = 1; i < 8; i++) {
+-		snprintf(buf, sizeof(buf), "ssi%d", i);
++	for (i = 0; i < 7; i++) {
++		snprintf(buf, sizeof(buf), "port%d", i+1);
+ 		if (!debugfs_create_file(buf, 0444, audmux_debugfs_root,
+ 					 (void *)i, &audmux_debugfs_fops))
+ 			pr_warning("Failed to create AUDMUX port %d debugfs file\n",
+@@ -186,12 +188,10 @@ EXPORT_SYMBOL_GPL(mxc_audmux_v2_configure_port);
+ 
+ static int mxc_audmux_v2_init(void)
+ {
+-	int ret;
++	int ret = 0;
+ #if defined(CONFIG_ARCH_MX5)
+ 	if (cpu_is_mx51()) {
+ 		audmux_base = MX51_IO_ADDRESS(MX51_AUDMUX_BASE_ADDR);
+-		ret = 0;
+-		return ret;
+ 	}
+ #endif
+ #if defined(CONFIG_ARCH_MX3)
+@@ -223,7 +223,7 @@ static int mxc_audmux_v2_init(void)
+ #endif /* if defined(CONFIG_SOC_IMX25) */
+ 	audmux_debugfs_init();
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ postcore_initcall(mxc_audmux_v2_init);

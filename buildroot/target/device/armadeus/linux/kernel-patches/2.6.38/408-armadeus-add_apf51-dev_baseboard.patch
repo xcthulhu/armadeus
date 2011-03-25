@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-22 15:08:04.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-02-22 17:49:07.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-24 10:44:15.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-03-23 17:10:35.000000000 +0100
 @@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -43,8 +43,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-22 15:08:04.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-02-22 17:49:07.000000000 +0100
+--- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-24 10:44:15.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-03-23 17:10:35.000000000 +0100
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -56,8 +56,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-02-22 17:25:43.000000000 +0100
-@@ -0,0 +1,438 @@
++++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-03-22 18:33:25.000000000 +0100
+@@ -0,0 +1,452 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -348,7 +348,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +};
 +
 +static struct imx_ssi_platform_data apf27dev_ssi_pdata = {
-+	.flags = IMX_SSI_DMA,
++	.flags = IMX_SSI_SYN | IMX_SSI_USE_I2S_SLAVE,
 +};
 +
 +/* I2C2 */
@@ -361,7 +361,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		I2C_BOARD_INFO("eeprom", 0x50),
 +	},
 +	{
-+		I2C_BOARD_INFO("wm8960", 0x36),
++		I2C_BOARD_INFO("wm8960", 0x1a),
 +		.platform_data = &apf51dev_wm8960_pdata,
 +	},
 +#if 0
@@ -490,6 +490,20 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +				ARRAY_SIZE(apf51dev_i2c2_devices));
 +
 +	imx51_add_ipuv3(&apf51dev_ipu_data);
++
++	/* AUDMUX Port 1 (SSI1/imx-ssi.0)) <-> Port3 */
++	mxc_audmux_v2_configure_port(MX51_AUDMUX_PORT3,
++			MXC_AUDMUX_V2_PTCR_SYN,
++			MXC_AUDMUX_V2_PDCR_RXDSEL(MX51_AUDMUX_PORT1_SSI0));
++
++	mxc_audmux_v2_configure_port(MX51_AUDMUX_PORT1_SSI0,
++			MXC_AUDMUX_V2_PTCR_SYN |
++			MXC_AUDMUX_V2_PTCR_TCSEL(MX51_AUDMUX_PORT3) |
++			MXC_AUDMUX_V2_PTCR_TCLKDIR |
++			MXC_AUDMUX_V2_PTCR_TFSEL(MX51_AUDMUX_PORT3) |
++			MXC_AUDMUX_V2_PTCR_TFSDIR,
++			MXC_AUDMUX_V2_PDCR_RXDSEL(MX51_AUDMUX_PORT3));
++
 +	imx51_add_imx_ssi(0, &apf27dev_ssi_pdata);
 +
 +#if defined(CONFIG_KEYBOARD_IMX) || defined(CONFIG_KEYBOARD_IMX_MODULE)
