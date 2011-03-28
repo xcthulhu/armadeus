@@ -371,7 +371,7 @@
 #define CONFIG_ARM_CLK_FREQ	800	/* MHZ CPU frequency from PLL1*/
 #define CONFIG_AXIA_CLK_FREQ	166	/* MHZ AXI A frequency from PLL2*/
 #define CONFIG_AXIB_CLK_FREQ	110	/* 110.8 133 MHZ AXI B frequency from PLL2*/
-#define CONFIG_EMI_CLK_FREQ	83	/* MHZ AHB frequency from PLL2*/
+#define CONFIG_EMI_CLK_FREQ	95	/* MHZ AHB frequency from PLL2*/
 #define CONFIG_AHB_CLK_FREQ	133	/* MHZ AHB frequency from PLL2*/
 #define CONFIG_IPG_CLK_FREQ	66	/* 66.5 MHZ IPG frequency from PLL2*/
 #define CONFIG_PERCLK_FREQ	55	/* 55.4 MHZ PERCLK frequency */
@@ -597,7 +597,7 @@
 #define	CONFIG_FPGA_RCR1_VALUE	0x04000010
 #define	CONFIG_FPGA_RCR2_VALUE	0x00000000
                                            
-#define	CONFIG_FPGA_WCR1_VALUE	0x03000008
+#define	CONFIG_FPGA_WCR1_VALUE	0x04000008
 #define	CONFIG_FPGA_WCR2_VALUE	0x00000000
 
 
