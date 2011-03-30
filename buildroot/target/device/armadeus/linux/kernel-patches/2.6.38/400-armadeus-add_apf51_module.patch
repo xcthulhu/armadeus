@@ -1,7 +1,7 @@
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
+Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-24 10:44:12.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-03-23 17:10:41.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-03-30 18:01:18.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-03-30 18:33:57.000000000 +0200
 @@ -162,4 +162,17 @@
  	  Include support for MX50 reference design platform (RDP) board. This
  	  includes specific configurations for the board and its peripherals.
@@ -20,10 +20,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 +	  includes specific configurations for the board and its peripherals.
 +
  endif
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
+Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-03-23 17:10:41.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-03-30 18:33:57.000000000 +0200
 @@ -7,6 +7,7 @@
  obj-$(CONFIG_SOC_IMX50) += mm-mx50.o
  
@@ -32,11 +32,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
  obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
  obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
  obj-$(CONFIG_MACH_MX53_EVK) += board-mx53_evk.o
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c
+Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c	2011-03-07 16:17:40.000000000 +0100
-@@ -0,0 +1,432 @@
++++ linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c	2011-03-30 18:33:36.000000000 +0200
+@@ -0,0 +1,443 @@
 +/*
 + * Support for APF51 System On Module
 + * Copyright (C) 2010-2011 Armadeus Systems
@@ -89,9 +89,15 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c
 +
 +
 +static iomux_v3_cfg_t apf51_pads[] = {
++#ifdef APF51_PROD
++	/* UART3 (Console) */
++	MX51_PAD_UART3_RXD__UART3_RXD,
++	MX51_PAD_UART3_TXD__UART3_TXD,
++#else
 +	/* UART2 (Console) */
 +	MX51_PAD_UART2_RXD__UART2_RXD,
 +	MX51_PAD_UART2_TXD__UART2_TXD,
++#endif
 +
 +	/* USB HOST1 */
 +	MX51_PAD_USBH1_CLK__USBH1_CLK,
@@ -423,7 +429,12 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c
 +	mxc_iomux_v3_setup_multiple_pads(apf51_pads,
 +					ARRAY_SIZE(apf51_pads));
 +
++#ifdef APF51_PROD
++	TODO
++	imx51_add_imx_uart(2, &uart_pdata);
++#else
 +	imx51_add_imx_uart(1, &uart_pdata);
++#endif
 +
 +	imx51_add_imx_i2c(1, &apf51_i2c_data);
 +	i2c_register_board_info(1, apf51_i2c1_devices, ARRAY_SIZE(apf51_i2c1_devices));
@@ -469,10 +480,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/board-apf51.c
 +	.timer = &apf51_timer,
 +MACHINE_END
 +
-Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
+Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-24 10:44:13.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-24 10:44:15.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-30 18:01:22.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-30 18:01:24.000000000 +0200
 @@ -63,6 +63,7 @@
  #define MX3X_UART1_BASE_ADDR	0x43F90000
  #define MX3X_UART2_BASE_ADDR	0x43F94000
@@ -481,7 +492,7 @@ Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
  #define MX50_UART1_BASE_ADDR	0x53fbc000
  #define MX53_UART1_BASE_ADDR	0x53fbc000
  
-@@ -111,6 +112,9 @@
+@@ -113,6 +114,9 @@
  	case MACH_TYPE_MX53_EVK:
  		uart_base = MX53_UART1_BASE_ADDR;
  		break;
@@ -491,10 +502,10 @@ Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
  	default:
  		break;
  	}
-Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h
+Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/irqs.h
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-24 10:44:14.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/irqs.h	2011-02-24 10:44:15.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-03-30 18:01:23.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/irqs.h	2011-03-30 18:01:24.000000000 +0200
 @@ -53,6 +53,8 @@
  #define MXC_BOARD_IRQS  80
  #elif defined CONFIG_MACH_APF27

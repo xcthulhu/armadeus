@@ -446,9 +446,11 @@ BR2_PACKAGE_STRACE=y
 # BR2_PACKAGE_CDRKIT is not set
 # BR2_PACKAGE_CRAMFS is not set
 # BR2_PACKAGE_CWIID is not set
+BR2_PACKAGE_DBUS=y
+BR2_DBUS_LIBXML2=y
 
 #
-# dbus not available (need expat or libxml2)
+# dbus-glib needs dbus to be compiled with expat support
 #
 # BR2_PACKAGE_DMRAID is not set
 # BR2_PACKAGE_DOSFSTOOLS is not set
@@ -679,7 +681,7 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 #
 # BR2_PACKAGE_EXPAT is not set
 # BR2_PACKAGE_EZXML is not set
-# BR2_PACKAGE_LIBXML2 is not set
+BR2_PACKAGE_LIBXML2=y
 # BR2_PACKAGE_LIBXSLT is not set
 # BR2_PACKAGE_XERCES is not set
 
@@ -695,11 +697,8 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 # BR2_PACKAGE_AVAHI is not set
 # BR2_PACKAGE_AXEL is not set
 # BR2_PACKAGE_BIND is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
-
-#
-# bluez-utils not available (need dbus)
-#
+BR2_PACKAGE_BLUEZ_LIBS=y
+BR2_PACKAGE_BLUEZ_UTILS=y
 # BR2_PACKAGE_BMON is not set
 # BR2_PACKAGE_BRIDGE is not set
 # BR2_PACKAGE_CTORRENT is not set
