@@ -18,11 +18,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 # 
 
-if [ -f /etc/wpa_supplicant/networkConfig ]; then
-
-source /etc/wpa_supplicant/networkConfig
-
-if [ "$SSID" != "" -a "$PSK" != "" ]; then
+if [ $# -eq 2 ]; then
 
 	#create WPA configuration
 	mkdir -p /etc/wpa_supplicant/
@@ -30,12 +26,12 @@ if [ "$SSID" != "" -a "$PSK" != "" ]; then
 echo "ctrl_interface=/var/run/wpa_supplicant
 ctrl_interface_group=wheel
 network={
-ssid=\"$SSID\"
+ssid=\"$1\"
 scan_ssid=1
 proto=WPA
 key_mgmt=WPA-PSK
 pairwise=TKIP
-psk=\"$PSK\"
+psk=\"$2\"
 }" > /etc/wpa_supplicant/wpa_supplicant.conf
 
 	#Hardware reset of wi2wi chip
@@ -60,15 +56,9 @@ psk=\"$PSK\"
 	echo -e "\nTo check the wifi port (eth1), please enter the command \"ping 192.168.0.251\" on the host PC\n"
 	echo -e "\nTo restart the WPA Supplicant, before entering the command \"sh init_wpa.sh\", or to stop it, run \"sh stop_wpa.sh\"\n"
 
-else #[ "$SSID" != "" -a "$PSK" != "" ]; print usage
+else #[ $# -eq 2 ]
 
-	echo -e '\nThe variables SSID and PSK are not initialized in /etc/wpa_supplicant/networkConfig.\nTo correctly run WPA Supplicant, you must fill these variables in like this:\nexport SSID=mon_ssid\nexport PSK=ma_passphrase\n'
-
-fi
-
-else #[ -f /etc/wpa_supplicant/networkConfig ]; print usage
-
-	echo -e '\nThe file /etc/wpa_supplicant/networkConfig doesnt exist.\nTo correctly run WPA Supplicant, you have to create this file and declare the variables SSID and PSK like this:\nexport SSID=mon_ssid\nexport PSK=ma_passphrase\n'
+	echo -e "\n$0: Bad arguments number\nUsage: $0 SSID PASSPHRASE\n"
 
 fi
 
