@@ -49,3 +49,5 @@ rm -rf buildroot/fs/ubi/
 rm -f buildroot/package/flex/flex-2.5.35-undefine_rpl_malloc_and_realloc.patch
 rm -f buildroot/package/ncurses/ncurses-5.7-allows_build_with_old_ncurses_host_installation.patch
 rm -rf buildroot/package/mysql_client/
+rm -rf buildroot/package/portmap/
+rm -rf buildroot/package/bluez3/

@@ -666,7 +666,7 @@ BR2_PACKAGE_NCURSES=y
 # BR2_PACKAGE_AXEL is not set
 BR2_PACKAGE_BOA=y
 # BR2_PACKAGE_BIND is not set
-# BR2_PACKAGE_BLUEZ_LIBS is not set
+# BR2_PACKAGE_BLUEZ3_LIBS is not set
 
 #
 # bluez-utils not available (need dbus)
