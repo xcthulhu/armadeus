@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2011-01-27 15:24:54.000000000 +0100
-+++ buildroot/package/Config.in	2011-01-27 15:24:56.000000000 +0100
+--- buildroot.orig/package/Config.in	2011-03-31 10:13:14.000000000 +0200
++++ buildroot/package/Config.in	2011-03-31 10:15:40.000000000 +0200
 @@ -380,6 +380,7 @@
  source "package/boa/Config.in"
  endif
@@ -14,3 +14,99 @@ Index: buildroot/package/Config.in
  source "package/bmon/Config.in"
  source "package/bridge-utils/Config.in"
  source "package/ctorrent/Config.in"
+Index: buildroot/package/bluez3/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/Config.in	2011-03-31 11:38:54.000000000 +0200
+@@ -0,0 +1,15 @@
++config BR2_PACKAGE_BLUEZ3_LIBS
++	bool "bluez (v3)"
++	select BR2_PACKAGE_PKGCONFIG
++	help
++	  Install the bluez v3 library
++
++config BR2_PACKAGE_BLUEZ3_UTILS
++	bool "bluez-utils (v3)"
++	depends on BR2_PACKAGE_DBUS
++	select BR2_PACKAGE_BLUEZ3_LIBS
++	help
++	  Install the bluez v3 utilities
++
++comment "bluez-utils not available (need dbus)"
++        depends on !BR2_PACKAGE_DBUS
+Index: buildroot/package/bluez3/bluez-libs.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/bluez-libs.mk	2011-03-31 11:40:46.000000000 +0200
+@@ -0,0 +1,13 @@
++#############################################################
++#
++# bluez-libs
++#
++#############################################################
++BLUEZ3_LIBS_VERSION:=3.36
++BLUEZ3_LIBS_SITE = http://bluez.sourceforge.net/download
++BLUEZ3_LIBS_SOURCE = bluez-libs-$(BLUEZ3_LIBS_VERSION).tar.gz
++BLUEZ3_LIBS_INSTALL_STAGING = YES
++BLUEZ3_LIBS_INSTALL_TARGET = YES
++
++$(eval $(call AUTOTARGETS,package,bluez3-libs))
++
+Index: buildroot/package/bluez3/bluez-utils.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/bluez-utils.mk	2011-03-31 11:42:10.000000000 +0200
+@@ -0,0 +1,53 @@
++#############################################################
++#
++# bluez-utils - User space programs for controling Bluetooth
++#
++#############################################################
++BLUEZ3_UTILS_VERSION:=3.36
++BLUEZ3_UTILS_SITE=http://bluez.sourceforge.net/download
++BLUEZ3_UTILS_SOURCE=bluez-utils-$(BLUEZ3_UTILS_VERSION).tar.gz
++
++ifeq ($(strip $(BR2_PACKAGE_ALSA-LIB)),y)
++ALSA_DEP=alsa
++WITH_ALSA=--with-alsa=$(STAGING_DIR)
++else
++WITH_ALSA=--without-alsa
++endif
++
++ifeq ($(strip $(BR2_PACKAGE_OPENOBEX)),y)
++OBEX_DEP=openobex
++WITH_OBEX=--with-openobex=$(STAGING_DIR)
++else
++OBEX_DEP=
++WITH_OBEX=--without-obex
++endif
++
++BLUEZ3_UTILS_CONF_OPT = \
++		$(WITH_OBEX) \
++		$(WITH_ALSA) \
++		--disable-pie \
++		--disable-expat \
++		--enable-network \
++		--enable-serial \
++		--enable-audio \
++		--enable-input \
++		--enable-sync \
++		--enable-hcid \
++		--enable-hidd \
++		--enable-pand \
++		--disable-test \
++		--enable-configfiles \
++		--disable-manpages \
++		--enable-initscripts \
++		--disable-pcmciarules \
++		--disable-bccmd \
++		--enable-avctrl \
++		--enable-hid2hci \
++		--disable-dfutool
++
++# --disable-pie: uClibc doesn't handle "position independent executables" (segfault at launching)
++
++BLUEZ3_UTILS_DEPENDENCIES = bluez3-libs dbus $(OBEX_DEP) $(ALSA_DEP)
++
++$(eval $(call AUTOTARGETS,package,bluez3-utils))
++

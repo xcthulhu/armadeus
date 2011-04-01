@@ -2,10 +2,10 @@ Add APF51Dev baseboard support.
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
+Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Kconfig	2011-02-24 10:44:15.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig	2011-03-23 17:10:35.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-03-30 18:01:24.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-03-30 18:33:48.000000000 +0200
 @@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -41,10 +41,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Kconfig
 +endchoice
 +
  endif
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
+Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-mx5/Makefile	2011-02-24 10:44:15.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile	2011-03-23 17:10:35.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-03-30 18:01:24.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-03-30 18:33:48.000000000 +0200
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -53,11 +53,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/Makefile
  obj-$(CONFIG_MACH_MX51_BABBAGE) += board-mx51_babbage.o
  obj-$(CONFIG_MACH_MX51_3DS) += board-mx51_3ds.o
  obj-$(CONFIG_MACH_MX53_EVK) += board-mx53_evk.o
-Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
+Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-03-22 18:33:25.000000000 +0100
-@@ -0,0 +1,452 @@
++++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-03-30 18:33:36.000000000 +0200
+@@ -0,0 +1,478 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -123,11 +123,18 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	(_MX51_PAD_EIM_EB2__GPIO2_22 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_PWRDN# */
 +	(_MX51_PAD_EIM_EB3__GPIO2_23 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_RESET# */
 +
++#ifdef APF51DEV_PROD
 +	/* UART2 (Bluetooth) */
 +	MX51_PAD_UART2_RXD__UART2_RXD,
 +	MX51_PAD_UART2_TXD__UART2_TXD,
 +	MX51_PAD_EIM_D25__UART2_CTS,
 +	MX51_PAD_EIM_D26__UART2_RTS,
++#else
++	/* UART3 (Bluetooth) - Protos */
++	MX51_PAD_UART3_RXD__UART3_RXD,
++	MX51_PAD_UART3_TXD__UART3_TXD,
++	/* RTS/CTS on Keypad */
++#endif
 +
 +	(_MX51_PAD_EIM_CS3__GPIO2_28 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* BT_RESET# */
 +
@@ -200,17 +207,22 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_KEY_COL1__KEY_COL1,
 +	MX51_PAD_KEY_COL2__KEY_COL2,
 +	MX51_PAD_KEY_COL3__KEY_COL3,
++#ifdef APF51DEV_PROD
 +	MX51_PAD_KEY_COL4__KEY_COL4,
 +	MX51_PAD_KEY_COL5__KEY_COL5,
++#else
++	MX51_PAD_KEY_COL4__UART3_RTS,
++	MX51_PAD_KEY_COL5__UART3_CTS,
++#endif
 +
 +	/* ONEWIRE */
 +
 +	/* KEYPAD */
 +
-+	/* led */
++	/* LED */
 +	(_MX51_PAD_GPIO1_2__GPIO1_2 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +
-+	/* user switch */
++	/* User switch */
 +	(_MX51_PAD_GPIO1_3__GPIO1_3 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
 +
 +
@@ -377,51 +389,60 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	.cd_gpio = ESDHC_CARD_DETECT,	/* card detect pin */
 +};
 +
-+static int initGPIO(void)
++static int init_gpio(void)
 +{
-+#define WIFI_PWRDN 		(GPIO_PORTB | 22)
-+#define WIFI_RESET 		(GPIO_PORTB | 23)
 +#define USER_LED_GPIO		(GPIO_PORTA | 2)
 +#define USER_SWITCH_GPIO	(GPIO_PORTA | 3)
++#define WIFI_PWRDN 		(GPIO_PORTB | 22)
++#define WIFI_RESET 		(GPIO_PORTB | 23)
++#define BT_RESET 		(GPIO_PORTB | 28)
 +#define HDMI_DETECT_GPIO	(GPIO_PORTD | 17)
 +
-+	int rc;
++	int ret;
 +
 +	/* WIFI */
-+	rc = gpio_request(WIFI_PWRDN, "WIFI");
-+	if (rc){
-+		pr_debug("failed to get WIFI_PWRDN GPIO: %d\n", rc);
-+		return rc;
++	ret = gpio_request(WIFI_PWRDN, "WIFI");
++	if (ret) {
++		pr_warn("failed to get WIFI_PWRDN GPIO: %d\n", ret);
++		return ret;
 +	}
-+	rc = gpio_request(WIFI_RESET, "WIFI");
-+	if (rc){
-+		pr_debug("failed to get WIFI_RESET GPIO: %d\n", rc);
-+		return rc;
++	ret = gpio_request(WIFI_RESET, "WIFI");
++	if (ret) {
++		pr_warn("failed to get WIFI_RESET GPIO: %d\n", ret);
++		return ret;
 +	}
 +	gpio_direction_output(WIFI_PWRDN, 1);
 +	udelay(1000);
 +	gpio_direction_output(WIFI_RESET, 1);
 +
++	/* BT */
++	ret = gpio_request(BT_RESET, "BT");
++	if (ret) {
++		pr_warn("failed to get BT_RESET GPIO: %d\n", ret);
++		return ret;
++	}
++	gpio_direction_output(BT_RESET, 1);
++
 +	/* USER */
-+	rc = gpio_request(USER_LED_GPIO, "USER_LED_GPIO");
-+	if (rc){
-+		pr_debug("failed to get User LED GPIO: %d\n", rc);
-+		return rc;
++	ret = gpio_request(USER_LED_GPIO, "USER_LED_GPIO");
++	if (ret) {
++		pr_warn("failed to get User LED GPIO: %d\n", ret);
++		return ret;
 +	}
 +	gpio_direction_output(USER_LED_GPIO, 1);
 +
-+	rc = gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
-+	if (rc){
-+		pr_debug("failed to get User Switch GPIO: %d\n", rc);
-+		return rc;
++	ret = gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
++	if (ret) {
++		pr_warn("failed to get User Switch GPIO: %d\n", ret);
++		return ret;
 +	}
 +	gpio_direction_input(USER_SWITCH_GPIO);
 +
 +	/* HDMI */
-+	rc = gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
-+	if (rc){
-+		pr_debug("failed to get HDMI detect GPIO: %d\n", rc);
-+		return rc;
++	ret = gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
++	if (ret) {
++		pr_warn("failed to get HDMI detect GPIO: %d\n", ret);
++		return ret;
 +	}
 +	gpio_direction_input(HDMI_DETECT_GPIO);
 +
@@ -471,9 +492,14 @@ Index: linux-2.6.38-rc3/arch/arm/mach-mx5/apf51dev-baseboard.c
 +					ARRAY_SIZE(apf51dev_pads));
 +
 +	imx51_add_imx_uart(0, &apf51dev_uart_pdata);
-+/*	imx51_add_imx_uart(1, &apf51dev_uart_pdata);*/
++#ifdef APF51DEV_PROD
++	TODO
++	imx51_add_imx_uart(1, &apf51dev_uart_pdata);
++#else
++	imx51_add_imx_uart(2, &apf51dev_uart_pdata);
++#endif
 +
-+	initGPIO();
++	init_gpio();
 +
 +	imx51_add_sdhci_esdhc_imx(0, &edshc0_pdata);
 +	imx51_add_sdhci_esdhc_imx(1, NULL);

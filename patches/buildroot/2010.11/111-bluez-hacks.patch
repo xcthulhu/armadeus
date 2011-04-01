@@ -1,0 +1,198 @@
+Index: buildroot/package/bluez3/bluez-utils.mk
+===================================================================
+--- buildroot.orig/package/bluez3/bluez-utils.mk	2011-03-31 11:51:14.000000000 +0200
++++ buildroot/package/bluez3/bluez-utils.mk	2011-03-31 11:52:23.000000000 +0200
+@@ -51,3 +51,40 @@
+ 
+ $(eval $(call AUTOTARGETS,package,bluez3-utils))
+ 
++# Hook to prevent link with Host asound and libusb
++# (seems not needed with recent BR)
++#$(BLUEZ_UTILS_HOOK_POST_CONFIGURE):
++#	@$(call MESSAGE,"Post configuring")
++#	$(SED) 's,^sys_lib_search_path_spec=.*,sys_lib_search_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib",' $(@D)/libtool
++#	touch $@
++
++#$(STAGING_DIR)/usr/lib/libbluetooth.so $(STAGING_DIR)/usr/lib/libbluetooth.a: $(BLUEZ_LIBS_BUILD_DIR)/src/libbluetooth.la
++#	$(MAKE) DESTDIR="$(STAGING_DIR)" -C $(BLUEZ_LIBS_BUILD_DIR) install
++#	$(SED) "s,^libdir=.*,libdir=\'$(STAGING_DIR)/usr/lib\',g" $(STAGING_DIR)/usr/lib/libbluetooth.la
++
++$(TARGET_DIR)/usr/sbin/hciattach: $(BLUEZ_UTILS_BUILD_DIR)/tools/hciattach
++	mkdir -p $(TARGET_DIR)/etc/bluetooth/pan $(TARGET_DIR)/etc/bluetooth/rfcomm
++	install -D -m 0644 package/bluez/hcid.conf $(TARGET_DIR)/etc/bluetooth/hcid.conf
++	install -D -m 0755 package/bluez/bluez-utils-bluepin.sh $(TARGET_DIR)/etc/bluetooth/bluepin
++	install -D -m 0755 package/bluez/bluez-pand-devup.sh $(TARGET_DIR)/etc/bluetooth/pan/dev-up
++	install -D -m 0755 package/bluez/rfcomm-getty $(TARGET_DIR)/etc/bluetooth/rfcomm/rfcomm-getty
++	echo "1234" > $(TARGET_DIR)/etc/bluetooth/pin
++	chmod 0600 $(TARGET_DIR)/etc/bluetooth/pin
++	install -D -m 0644 package/bluez/rfcomm.conf $(TARGET_DIR)/etc/bluetooth/rfcomm.conf
++	#install -D -m 0755 package/bluez/bluetooth.init $(TARGET_DIR)/etc/init.d/S30bluetooth   TBDJB
++	mkdir -p $(TARGET_DIR)/etc/default
++	install -D -m 0644 package/bluez/bluetooth.default $(TARGET_DIR)/etc/default/bluetooth
++
++
++#hcidump stuff:
++#BLUEZ_HCIDUMP_SOURCE=bluez-hcidump-1.39.tar.gz
++#BLUEZ_HCIDUMP_BUILD_DIR=$(BUILD_DIR)/bluez-hcidump-1.39
++
++$(BLUEZ_HCIDUMP_BUILD_DIR)/hcidump: $(BLUEZ_HCIDUMP_BUILD_DIR)/.configured
++	$(MAKE) -C $(BLUEZ_HCIDUMP_BUILD_DIR)
++
++$(TARGET_DIR)/usr/sbin/hcidump: $(BLUEZ_HCIDUMP_BUILD_DIR)/hcidump
++	$(MAKE) DESTDIR="$(TARGET_DIR)" -C $(BLUEZ_HCIDUMP_BUILD_DIR) install
++
++#bluez-hcidump: bluez-libs $(TARGET_DIR)/usr/sbin/hcidump
++
+Index: buildroot/package/bluez3/bluetooth.default
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/bluetooth.default	2011-03-31 11:54:16.000000000 +0200
+@@ -0,0 +1,37 @@
++# Bluetooth configuraton file
++
++# Start of hcid (allowed values are "true" and "false")
++HCID_ENABLE=true
++
++# Config file for hcid
++HCID_CONFIG="/etc/bluetooth/hcid.conf"
++
++# Start sdpd (allowed values are "true" and "false")
++SDPD_ENABLE=true
++
++# Start hidd (allowed values are "true" and "false")
++HIDD_ENABLE=true
++
++# Arguments to hidd
++HIDD_OPTIONS=""
++
++# Run hid2hci (allowed values are "true" and "false")
++HID2HCI_ENABLE=true
++
++# Bind rfcomm devices (allowed values are "true" and "false")
++RFCOMM_ENABLE=true
++
++# Config file for rfcomm
++RFCOMM_CONFIG="/etc/bluetooth/rfcomm.conf"
++
++# Start dund (allowed values are "true" and "false")
++DUND_ENABLE=false
++
++# Arguments to dund
++DUND_OPTIONS="--listen --persist"
++
++# Start pand (allowed values are "true" and "false")
++PAND_ENABLE=false
++
++# Arguments to pand
++PAND_OPTIONS="--listen --role NAP"
+Index: buildroot/package/bluez3/bluez-pand-devup.sh
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/bluez-pand-devup.sh	2011-03-31 11:55:21.000000000 +0200
+@@ -0,0 +1,2 @@
++#!/bin/sh
++/sbin/ifup $1
+Index: buildroot/package/bluez3/bluez-utils-bluepin.sh
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/bluez-utils-bluepin.sh	2011-03-31 11:55:48.000000000 +0200
+@@ -0,0 +1,2 @@
++#!/bin/sh
++echo "PIN:`/bin/cat /etc/bluetooth/pin`"
+Index: buildroot/package/bluez3/hcid.conf
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/hcid.conf	2011-03-31 11:56:57.000000000 +0200
+@@ -0,0 +1,57 @@
++#
++# HCI daemon configuration file.
++#
++
++# HCId options
++options {
++	# Automatically initialize new devices
++	autoinit yes;
++
++	# Security Manager mode
++	#   none - Security manager disabled
++	#   auto - Use local PIN for incoming connections
++	#   user - Always ask user for a PIN
++	#
++	security auto;
++
++	# Pairing mode
++	#   none  - Pairing disabled
++	#   multi - Allow pairing with already paired devices
++	#   once  - Pair once and deny successive attempts
++	pairing multi;
++
++	# Default PIN code for incoming connections
++	passkey "BlueZ";
++}
++
++# Default settings for HCI devices
++device {
++	# Local device name
++	#   %d - device id
++	#   %h - host name
++	name "%h (%d)";
++
++	# Local device class
++	class 0x820116;
++
++	# Default packet type
++	#pkt_type DH1,DM1,HV1;
++
++	# Inquiry and Page scan
++	iscan enable; pscan enable;
++
++	# Default link mode
++	#   none   - no specific policy
++	#   accept - always accept incoming connections
++	#   master - become master on incoming connections,
++	#            deny role switch on outgoing connections
++	lm accept;
++
++	# Default link policy
++	#   none    - no specific policy
++	#   rswitch - allow role switch
++	#   hold    - allow hold mode
++	#   sniff   - allow sniff mode
++	#   park    - allow park mode
++	lp rswitch,hold,sniff,park;
++}
+Index: buildroot/package/bluez3/rfcomm-getty
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/rfcomm-getty	2011-03-31 11:56:37.000000000 +0200
+@@ -0,0 +1,9 @@
++#!/bin/sh
++while true;
++	do
++	rfcomm show rfcomm0 > /dev/null 2> /dev/null
++	if [ "$?" != "1" ] ; then
++		/sbin/getty -w -L rfcomm0 115200 vt100;
++	fi
++	sleep 1;
++done
+Index: buildroot/package/bluez3/rfcomm.conf
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/bluez3/rfcomm.conf	2011-03-31 11:57:27.000000000 +0200
+@@ -0,0 +1,16 @@
++#
++# RFCOMM configuration file.
++#
++
++rfcomm0 {
++	bind yes;
++
++	# Bluetooth address of the device
++	device 11:22:33:44:55:66;
++
++	# RFCOMM channel for the connection
++	channel 1;
++
++	# Description of the connection
++	comment "Bluetooth Serial Console";
++}
