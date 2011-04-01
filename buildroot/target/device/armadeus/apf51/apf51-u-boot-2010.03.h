@@ -375,7 +375,7 @@
 #define CONFIG_AHB_CLK_FREQ	133	/* MHZ AHB frequency from PLL2*/
 #define CONFIG_IPG_CLK_FREQ	66	/* 66.5 MHZ IPG frequency from PLL2*/
 #define CONFIG_PERCLK_FREQ	55	/* 55.4 MHZ PERCLK frequency */
-#define CONFIG_NFC_FREQ		27	/* MHZ NFC Clock from EMI clk*/
+#define CONFIG_NFC_FREQ		23	/* MHZ NFC Clock from EMI clk*/
 #define CONFIG_USB_FREQ		54	/* external USB serial bus frequency PLL3 */
 #define CONFIG_ESDHC_FREQ 	54	/* MHz ESDHC controller frequency / PLL3 */
 #define CONFIG_UART_FREQ	66	/* 66.5 MHz UART controller frequency from PLL2*/
