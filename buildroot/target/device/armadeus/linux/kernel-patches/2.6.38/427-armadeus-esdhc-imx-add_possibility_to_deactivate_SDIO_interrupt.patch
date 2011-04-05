@@ -1,0 +1,56 @@
+Allows to deactivate SDIO interrupt usage.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38.1/include/linux/mmc/sdhci.h
+===================================================================
+--- linux-2.6.38.1.orig/include/linux/mmc/sdhci.h	2011-04-05 15:18:40.000000000 +0200
++++ linux-2.6.38.1/include/linux/mmc/sdhci.h	2011-04-05 15:19:26.000000000 +0200
+@@ -85,6 +85,8 @@
+ #define SDHCI_QUIRK_NO_HISPD_BIT			(1<<29)
+ /* Controller treats ADMA descriptors with length 0000h incorrectly */
+ #define SDHCI_QUIRK_BROKEN_ADMA_ZEROLEN_DESC		(1<<30)
++/* Controller do not handle SDIO interrupts correctly */
++#define SDHCI_QUIRK_NO_SDIO_IRQ				(1<<31)
+ 
+ 	int irq;		/* Device IRQ */
+ 	void __iomem *ioaddr;	/* Mapped address */
+Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/esdhc.h
+===================================================================
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/esdhc.h	2011-04-05 15:18:40.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/esdhc.h	2011-04-05 15:19:26.000000000 +0200
+@@ -13,5 +13,6 @@
+ struct esdhc_platform_data {
+ 	unsigned int wp_gpio;	/* write protect pin */
+ 	unsigned int cd_gpio;	/* card detect pin */
++	unsigned int no_sdio_irq;
+ };
+ #endif /* __ASM_ARCH_IMX_ESDHC_H */
+Index: linux-2.6.38.1/drivers/mmc/host/sdhci-esdhc-imx.c
+===================================================================
+--- linux-2.6.38.1.orig/drivers/mmc/host/sdhci-esdhc-imx.c	2011-04-05 15:22:09.000000000 +0200
++++ linux-2.6.38.1/drivers/mmc/host/sdhci-esdhc-imx.c	2011-04-05 15:23:48.000000000 +0200
+@@ -165,6 +165,9 @@
+ 
+ 			host->quirks &= ~SDHCI_QUIRK_BROKEN_CARD_DETECTION;
+ 		}
++
++		if (pdat->no_sdio_irq)
++			host->quirks |= SDHCI_QUIRK_NO_SDIO_IRQ;
+ 	}
+ 
+ 	clk = clk_get(mmc_dev(host->mmc), NULL);
+Index: linux-2.6.38.1/drivers/mmc/host/sdhci.c
+===================================================================
+--- linux-2.6.38.1.orig/drivers/mmc/host/sdhci.c	2011-04-05 15:24:22.000000000 +0200
++++ linux-2.6.38.1/drivers/mmc/host/sdhci.c	2011-04-05 15:26:07.000000000 +0200
+@@ -1879,7 +1879,8 @@
+ 		mmc->f_min = host->max_clk / SDHCI_MAX_DIV_SPEC_200;
+ 
+ 	mmc->f_max = host->max_clk;
+-	mmc->caps |= MMC_CAP_SDIO_IRQ;
++	if (!(host->quirks & SDHCI_QUIRK_NO_SDIO_IRQ))
++		mmc->caps |= MMC_CAP_SDIO_IRQ;
+ 
+ 	/*
+ 	 * A controller may support 8-bit width, but the board itself
