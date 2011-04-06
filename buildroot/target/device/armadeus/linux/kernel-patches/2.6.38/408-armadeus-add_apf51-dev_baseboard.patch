@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-03-30 18:01:24.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-03-30 18:33:48.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-04-05 18:28:35.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-04-05 22:56:58.000000000 +0200
 @@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -43,8 +43,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-03-30 18:01:24.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-03-30 18:33:48.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-04-05 18:28:35.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-04-05 22:56:58.000000000 +0200
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -56,8 +56,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-03-30 18:33:36.000000000 +0200
-@@ -0,0 +1,478 @@
++++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-04-05 23:04:25.000000000 +0200
+@@ -0,0 +1,481 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -385,8 +385,11 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +
 +#define ESDHC_CARD_DETECT	(GPIO_PORTB | 29)
 +static struct esdhc_platform_data edshc0_pdata = {
-+	.wp_gpio = 0,	/* write protect pin */
 +	.cd_gpio = ESDHC_CARD_DETECT,	/* card detect pin */
++};
++
++static struct esdhc_platform_data edshc1_pdata = {
++	.no_sdio_irq = 1,	/* Temporary ! (for Wi2Wi) */
 +};
 +
 +static int init_gpio(void)
@@ -502,7 +505,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	init_gpio();
 +
 +	imx51_add_sdhci_esdhc_imx(0, &edshc0_pdata);
-+	imx51_add_sdhci_esdhc_imx(1, NULL);
++	imx51_add_sdhci_esdhc_imx(1, &edshc1_pdata);
 +
 +	spi_register_board_info(apf51dev_spi1_board_info,
 +				ARRAY_SIZE(apf51dev_spi1_board_info));
