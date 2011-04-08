@@ -43,6 +43,10 @@
 #include <linux/circ_buf.h>
 #include <linux/platform_device.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)
+#include <linux/slab.h>
+#endif
+
 #include "pwm.h"
 
 #ifdef CONFIG_ARCH_MX2
@@ -109,7 +113,12 @@
 
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 #define DRIVER_NAME         "imx-pwm"
+#else
+#define DRIVER_NAME         "mxc_pwm"
+#endif
+
 #define DRIVER_VERSION      "0.8"
 
 
@@ -418,12 +427,19 @@ static int pwm_fasync(int fd, struct file *filp, int mode)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 int pwm_ioctl(struct inode * inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#else
+int pwm_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+#endif
 {
 	char *str=NULL;
 	int ret = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = dev_table[iminor(inode)];
-
+#else
+	struct pwm_device *pwm = dev_table[iminor(filp->f_dentry->d_inode)];
+#endif
 	switch (cmd) {
 		/* Set PWM Mode (Tone or Playback) */
 		case PWM_IOC_SMODE:
@@ -631,7 +647,11 @@ struct file_operations pwm_fops = {
 	release:        pwm_release,
 	read:           pwm_read,
 	write:          pwm_write,
-	ioctl:          pwm_ioctl,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+	ioctl:		pwm_ioctl,
+#else
+	unlocked_ioctl:	pwm_ioctl,
+#endif
 	fasync:         pwm_fasync
 };
 
@@ -850,10 +870,12 @@ static int imx_pwm_drv_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	if (!pdata) {
 		dev_err(&pdev->dev, "platform data not supplied\n");
 		return -ENOENT;
 	}
+#endif
 
 	pwm = kmalloc(sizeof(struct pwm_device), GFP_KERNEL);
 	if (!pwm) {
@@ -912,9 +934,11 @@ static int imx_pwm_drv_probe(struct platform_device *pdev)
 	init_waitqueue_head(&pwm->write_wait);
 	init_waitqueue_head(&pwm->exit_wait);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	/* init gpio */
 	if (pdata->init)
 		pdata->init();
+#endif
 
 	/* Create /dev */
 	pwm->dev = device_create(pwm_class, NULL, MKDEV(gMajor, pdev->id), NULL, "pwm%i", pdev->id);
@@ -955,8 +979,10 @@ error_file:
 error_dev_create:
 	device_destroy(pwm_class, MKDEV(gMajor, pdev->id));
 error_platform_init:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	if (pdata->exit)
 		pdata->exit();
+#endif
 	free_irq(pwm->irq, pwm);
 error_chrdev:
 	unregister_chrdev(gMajor, DRIVER_NAME);
@@ -982,7 +1008,11 @@ static inline void unregister_sys_file(struct pwm_device *pwm)
 static int imx_pwm_drv_remove(struct platform_device *pdev)
 {
 	struct resource *res;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+#else
+	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
+#endif
 	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	unregister_sys_file(pwm);
@@ -993,8 +1023,10 @@ static int imx_pwm_drv_remove(struct platform_device *pdev)
 	release_mem_region(res->start, res->end - res->start + 1);
 	kfree(pwm);
 	dev_table[pdev->id] = NULL;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	if (pdata->exit())
 		pdata->exit();
+#endif
 
 	return 0;
 }
@@ -1002,26 +1034,38 @@ static int imx_pwm_drv_remove(struct platform_device *pdev)
 #ifdef CONFIG_PM
 static int imx_pwm_drv_suspend(struct platform_device *pdev, pm_message_t state)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+#else
+	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
+#endif
 	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	clk_disable(pwm->clk);
 	dev_dbg(&pdev->dev, "suspended\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	if (pdata->exit())
 		pdata->exit();
+#endif
 
 	return 0;
 }
 
 static int imx_pwm_drv_resume(struct platform_device *pdev)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+#else
+	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
+#endif
 	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	clk_enable(pwm->clk);
 	dev_dbg(&pdev->dev, "resumed\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	if (pdata->init())
 		pdata->init();
+#endif
 
 	return 0;
 }
