@@ -1,12 +1,13 @@
 Adds a driver for Analog Devices AD9889 digital video encoder.
 
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
+Signed-off-by: Jeremie Scheer <jeremie.scheer@armadeus.com>
 
-Index: linux-2.6.36/drivers/media/video/Makefile
+Index: linux-2.6.38-rc3/drivers/media/video/Makefile
 ===================================================================
---- linux-2.6.36.orig/drivers/media/video/Makefile	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/drivers/media/video/Makefile	2010-11-25 11:05:40.000000000 +0100
-@@ -44,6 +44,7 @@
+--- linux-2.6.38-rc3.orig/drivers/media/video/Makefile	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/media/video/Makefile	2011-03-29 10:14:12.000000000 +0200
+@@ -37,6 +37,7 @@
  obj-$(CONFIG_VIDEO_SAA7127) += saa7127.o
  obj-$(CONFIG_VIDEO_SAA7185) += saa7185.o
  obj-$(CONFIG_VIDEO_SAA7191) += saa7191.o
@@ -14,11 +15,11 @@ Index: linux-2.6.36/drivers/media/video/Makefile
  obj-$(CONFIG_VIDEO_ADV7170) += adv7170.o
  obj-$(CONFIG_VIDEO_ADV7175) += adv7175.o
  obj-$(CONFIG_VIDEO_ADV7180) += adv7180.o
-Index: linux-2.6.36/drivers/media/video/Kconfig
+Index: linux-2.6.38-rc3/drivers/media/video/Kconfig
 ===================================================================
---- linux-2.6.36.orig/drivers/media/video/Kconfig	2010-10-20 22:30:22.000000000 +0200
-+++ linux-2.6.36/drivers/media/video/Kconfig	2010-11-25 11:05:40.000000000 +0100
-@@ -448,6 +448,16 @@
+--- linux-2.6.38-rc3.orig/drivers/media/video/Kconfig	2011-02-01 04:05:49.000000000 +0100
++++ linux-2.6.38-rc3/drivers/media/video/Kconfig	2011-03-29 10:14:12.000000000 +0200
+@@ -434,6 +434,16 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called saa7185.
  
@@ -35,11 +36,11 @@ Index: linux-2.6.36/drivers/media/video/Kconfig
  config VIDEO_ADV7170
  	tristate "Analog Devices ADV7170 video encoder"
  	depends on VIDEO_V4L2 && I2C
-Index: linux-2.6.36/drivers/media/video/ad9889.c
+Index: linux-2.6.38-rc3/drivers/media/video/ad9889.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/drivers/media/video/ad9889.c	2010-11-25 11:05:40.000000000 +0100
-@@ -0,0 +1,513 @@
++++ linux-2.6.38-rc3/drivers/media/video/ad9889.c	2011-03-29 10:13:25.000000000 +0200
+@@ -0,0 +1,515 @@
 +/*
 + * ad9889 - Analog Devices AD9889 video encoder driver
 + *
@@ -69,7 +70,7 @@ Index: linux-2.6.36/drivers/media/video/ad9889.c
 +#include <linux/videodev2.h>
 +#include <media/v4l2-common.h>
 +#include <media/v4l2-chip-ident.h>
-+#include <media/v4l2-i2c-drv.h>
++#include <media/v4l2-ctrls.h>
 +#include <media/ad9889.h>
 +#include <linux/interrupt.h>
 +#include <linux/delay.h>
@@ -546,17 +547,19 @@ Index: linux-2.6.36/drivers/media/video/ad9889.c
 +};
 +MODULE_DEVICE_TABLE(i2c, ad9889_id);
 +
-+static struct v4l2_i2c_driver_data v4l2_i2c_data = {
-+	.name = "ad9889",
-+	/*.command = ad9889_command,*/
++static struct i2c_driver ad9889_driver = {
++	.driver = {
++		.owner = THIS_MODULE,
++		.name = "ad9889",
++	},
 +	.probe = ad9889_probe,
 +	.remove = ad9889_remove,
 +	.id_table = ad9889_id,
 +};
-Index: linux-2.6.36/include/media/ad9889.h
+Index: linux-2.6.38-rc3/include/media/ad9889.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/include/media/ad9889.h	2010-11-25 11:05:40.000000000 +0100
++++ linux-2.6.38-rc3/include/media/ad9889.h	2011-03-28 18:12:54.000000000 +0200
 @@ -0,0 +1,34 @@
 +/*
 + * AD9889 driver
