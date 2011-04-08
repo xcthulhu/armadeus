@@ -1,9 +1,10 @@
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+Signed-off-by: Jeremie Scheer <jeremie.scheer@armadeus.com>
 
-Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h
+Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/board-apf27.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h	2010-12-22 14:34:38.000000000 +0100
++++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/board-apf27.h	2011-03-28 18:07:48.000000000 +0200
 @@ -0,0 +1,43 @@
 +/*
 + * Copyright (C) 2008-2010 Armadeus Systems
@@ -38,7 +39,7 @@ Index: linux-2.6.36/arch/arm/plat-mxc/include/mach/board-apf27.h
 +
 +/* FPGA addresses */
 +#define APF27_FPGA_VIRT (CS5_BASE_ADDR_VIRT)
-+#define APF27_FPGA_PHYS (CS5_BASE_ADDR)
++#define APF27_FPGA_PHYS (MX27_CS5_BASE_ADDR)
 +#define ARMADEUS_FPGA_BASE_ADDR_VIRT (APF27_FPGA_VIRT)
 +#define ARMADEUS_FPGA_BASE_ADDR_PHYS (APF27_FPGA_PHYS)
 +
