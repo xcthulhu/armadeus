@@ -1,11 +1,12 @@
 Add socketcan package to BR
 
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2011-01-27 15:23:59.000000000 +0100
-+++ buildroot/package/Config.in	2011-01-27 15:24:01.000000000 +0100
+--- buildroot.orig/package/Config.in	2011-04-11 17:20:44.237382997 +0200
++++ buildroot/package/Config.in	2011-04-11 17:21:39.009383007 +0200
 @@ -428,6 +428,7 @@
  source "package/samba/Config.in"
  source "package/ser2net/Config.in"
@@ -17,8 +18,8 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/socketcan/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/Config.in	2011-01-27 15:24:01.000000000 +0100
-@@ -0,0 +1,21 @@
++++ buildroot/package/socketcan/Config.in	2011-04-11 15:53:33.000000000 +0200
+@@ -0,0 +1,15 @@
 +config BR2_PACKAGE_SOCKETCAN
 +	bool "Socket CAN"
 +	help
@@ -34,71 +35,54 @@ Index: buildroot/package/socketcan/Config.in
 +	  as possible to the TCP/IP protocols to allow programmers, familiar
 +	  with network programming, to easily learn how to use CAN sockets.
 +
-+config BR2_PACKAGE_SOCKETCAN_TEST
-+        bool "install test tools"
-+        depends on BR2_PACKAGE_SOCKETCAN
-+        help
-+          Compile and install socketcan test tools too.
-+
 Index: buildroot/package/socketcan/socketcan.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/socketcan.mk	2011-01-27 15:24:01.000000000 +0100
-@@ -0,0 +1,68 @@
++++ buildroot/package/socketcan/socketcan.mk	2011-04-11 17:06:23.000000000 +0200
+@@ -0,0 +1,57 @@
 +#############################################################
 +#
 +# Socket CAN
 +#
 +#############################################################
 +SOCKETCAN_TRUNK:=http://svn.berlios.de/svnroot/repos/socketcan/trunk
-+SOCKETCAN_REVISION:=874
++SOCKETCAN_REVISION:=1235
 +SOCKETCAN_NAME:=socketcan-svn-rev$(SOCKETCAN_REVISION)
 +SOCKETCAN_DIR:=$(BUILD_DIR)/$(SOCKETCAN_NAME)
 +SOCKETCAN_SOURCE:=$(SOCKETCAN_NAME).tar.bz2
-+SOCKETCAN_CAT=$(BZCAT)
-+SOCKETCAN_EXE=candump
++SOCKETCAN_CAT:=$(BZCAT)
++PROGRAMS := can-calc-bit-timing candump cansniffer cansend canplayer cangen canbusload\
++
 +
 +$(DL_DIR)/$(SOCKETCAN_SOURCE):
 +	(cd $(BUILD_DIR); \
-+		$(SVN_CO) -r $(SOCKETCAN_REVISION) $(SOCKETCAN_TRUNK) $(SOCKETCAN_NAME); \
++		svn co -r $(SOCKETCAN_REVISION) $(SOCKETCAN_TRUNK) $(SOCKETCAN_NAME); \
 +		tar -cjvf $(SOCKETCAN_SOURCE) --exclude=.svn $(SOCKETCAN_NAME); \
 +		rm -rf $(SOCKETCAN_DIR); \
 +		mv $(SOCKETCAN_SOURCE) $(DL_DIR)/$(SOCKETCAN_SOURCE); \
 +	)
 +
 +$(SOCKETCAN_DIR)/.unpacked: $(DL_DIR)/$(SOCKETCAN_SOURCE)
-+	$(SOCKETCAN_CAT) $(DL_DIR)/$(SOCKETCAN_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
++	$(SOCKETCAN_CAT) $($(SOCKETCAN_EXE)DL_DIR)/$(SOCKETCAN_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 +	toolchain/patch-kernel.sh $(SOCKETCAN_DIR) package/socketcan $(SOCKETCAN_NAME)\*.patch
 +	touch $@
 +
-+$(SOCKETCAN_DIR)/.compiled: $(SOCKETCAN_DIR)/.unpacked
-+	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(SOCKETCAN_DIR)/can-utils
-+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
-+	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(SOCKETCAN_DIR)/test
-+endif
++
++$(SOCKETCAN_DIR)/can-utils/$(PROGRAMS): $(SOCKETCAN_DIR)/.unpacked
++	$(MAKE) -C $(SOCKETCAN_DIR)/can-utils CC="$(TARGET_CC)"
 +	touch $@
 +
-+$(TARGET_DIR)/usr/bin/$(SOCKETCAN_EXE): $(SOCKETCAN_DIR)/.compiled
-+	$(MAKE) STRIP_CMD="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" -C $(SOCKETCAN_DIR)/can-utils strip
-+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/can-utils install
-+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
-+	$(MAKE) STRIP_CMD="$(STRIPCMD) $(STRIP_STRIP_UNNEEDED)" -C $(SOCKETCAN_DIR)/test strip
-+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/test install
-+endif
++$(TARGET_DIR)/usr/local/bin/$(PROGRAMS): $(SOCKETCAN_DIR)/can-utils/$(PROGRAMS)
++	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(SOCKETCAN_DIR)/can-utils install
 +	touch $@
 +
-+SOCKETCAN socketcan: uclibc $(TARGET_DIR)/usr/bin/$(SOCKETCAN_EXE)
++SOCKETCAN socketcan: $(TARGET_DIR)/usr/local/bin/$(PROGRAMS)
 +
 +socketcan-source: $(DL_DIR)/$(SOCKETCAN_SOURCE)
 +
 +socketcan-clean:
 +	$(MAKE) -C $(SOCKETCAN_DIR)/can-utils clean
-+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/can-utils uninstall
-+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN_TEST)),y)
-+	$(MAKE) -C $(SOCKETCAN_DIR)/test distclean
-+	$(MAKE) INSTALL_DIR=$(TARGET_DIR)/usr/bin -C $(SOCKETCAN_DIR)/test clean
-+endif
-+	rm $(SOCKETCAN_DIR)/.compiled
++	rm -rf $(TARGET_DIR)/local/bin/$(PROGRAMS)
 +
 +socketcan-dirclean:
 +	rm -rf $(SOCKETCAN_DIR)
@@ -113,109 +97,3 @@ Index: buildroot/package/socketcan/socketcan.mk
 +TARGETS+=socketcan
 +endif
 +
-Index: buildroot/package/socketcan/socketcan-svn-rev810-cross-compile.patch
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/socketcan-svn-rev810-cross-compile.patch	2011-01-27 15:24:01.000000000 +0100
-@@ -0,0 +1,33 @@
-+diff -urN socketcan-svn-rev810.org/can-utils/Makefile socketcan-svn-rev810/can-utils/Makefile
-+--- socketcan-svn-rev810.org/can-utils/Makefile	2008-07-16 10:52:02.000000000 +0200
-++++ socketcan-svn-rev810/can-utils/Makefile	2008-07-16 11:19:21.000000000 +0200
-+@@ -40,6 +40,10 @@
-+ #
-+ #  Send feedback to <socketcan-users@lists.berlios.de>
-+ 
-++ifeq ($(INSTALL_DIR),)
-++	INSTALL_DIR=/usr/local/bin
-++endif
-++
-+ MAKEFLAGS = -k
-+ 
-+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
-+@@ -52,11 +56,17 @@
-+ 
-+ all: $(PROGRAMS)
-+ 
-++strip: all
-++	$(STRIP_CMD) $(PROGRAMS)
-++
-+ clean:
-+ 	rm -f $(PROGRAMS) *.o
-+ 
-+ install:
-+-	cp -f $(PROGRAMS) /usr/local/bin
-++	cp -f $(PROGRAMS) $(INSTALL_DIR)
-++
-++uninstall:
-++	cd $(INSTALL_DIR); rm -f $(PROGRAMS)
-+ 
-+ distclean:
-+ 	rm -f $(PROGRAMS) *.o *~
-Index: buildroot/package/socketcan/socketcan-svn-rev874-cross-compile.patch
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/socketcan-svn-rev874-cross-compile.patch	2011-01-27 15:24:01.000000000 +0100
-@@ -0,0 +1,63 @@
-+diff -urN socketcan-svn-rev810.org/can-utils/Makefile socketcan-svn-rev810/can-utils/Makefile
-+--- socketcan-svn-rev874.org/can-utils/Makefile	2008-07-16 10:52:02.000000000 +0200
-++++ socketcan-svn-rev874/can-utils/Makefile	2008-07-16 11:19:21.000000000 +0200
-+@@ -40,6 +40,10 @@
-+ #
-+ #  Send feedback to <socketcan-users@lists.berlios.de>
-+ 
-++ifeq ($(INSTALL_DIR),)
-++	INSTALL_DIR=/usr/local/bin
-++endif
-++
-+ MAKEFLAGS = -k
-+ 
-+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
-+@@ -52,11 +56,17 @@
-+ 
-+ all: $(PROGRAMS)
-+ 
-++strip: all
-++	$(STRIP_CMD) $(PROGRAMS)
-++
-+ clean:
-+ 	rm -f $(PROGRAMS) *.o
-+ 
-+ install:
-+-	cp -f $(PROGRAMS) /usr/local/bin
-++	cp -f $(PROGRAMS) $(INSTALL_DIR)
-++
-++uninstall:
-++	cd $(INSTALL_DIR); rm -f $(PROGRAMS)
-+ 
-+ distclean:
-+ 	rm -f $(PROGRAMS) *.o *~
-+--- socketcan-svn-rev874.org/test/Makefile	2008-12-06 22:22:28.000000000 +0100
-++++ socketcan-svn-rev874/test/Makefile	2008-12-06 22:33:10.000000000 +0100
-+@@ -40,6 +40,10 @@
-+ #
-+ #  Send feedback to <socketcan-users@lists.berlios.de>
-+ 
-++ifeq ($(INSTALL_DIR),)
-++        INSTALL_DIR=/usr/local/bin
-++endif
-++
-+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
-+ 	    -fno-strict-aliasing \
-+ 	    -DPF_CAN=29 \
-+@@ -64,11 +68,14 @@
-+ 
-+ all: $(PROGRAMS)
-+ 
-++strip: all
-++	$(STRIP_CMD) $(PROGRAMS)
-++
-+ install:
-+-	cp -f $(PROGRAMS) /usr/local/bin
-++	cp -f $(PROGRAMS) $(INSTALL_DIR)
-+ 
-+ clean:
-+-	rm -f $(PROGRAMS)
-++	cd $(INSTALL_DIR); rm -f $(PROGRAMS)
-+ 
-+ distclean:
-+ 	rm -f $(PROGRAMS) *~
