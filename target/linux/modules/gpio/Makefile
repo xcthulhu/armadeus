@@ -9,7 +9,7 @@ obj-$(CONFIG_ARMADEUS_GPIO_DRIVER)	+= gpio.o
 obj-$(CONFIG_ARMADEUS_PPDEV_DRIVER)	+= ppdev.o
 
 gpio-objs	:= core.o
-ppdev-objs  := ppdevemu.o
+ppdev-objs	:= ppdevemu.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

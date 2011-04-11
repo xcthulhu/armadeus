@@ -1,5 +1,5 @@
 #
-# Makefile for the i.MXL backlight driver
+# Makefile for the hx5116_display driver
 #
 
 # Part executed when called from kernel build system:

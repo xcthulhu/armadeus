@@ -22,8 +22,4 @@ PWD	:= $(shell pwd)
 # Armadeus custom drivers common targets (default, clean, etc...)
 include ../Makefile.in
 
-install:
-	echo "Installing Armadeus drivers..."
-	 $(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
-    
 endif

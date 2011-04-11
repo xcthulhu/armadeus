@@ -25,7 +25,7 @@ KDIR	:= $(LINUX_DIR)
 PWD	:= $(shell pwd)
 
 default:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) ARCH=arm CROSS_COMPILE=$(PWD)/$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux- modules
 
 DIRS	:= $(shell ls)
 clean:
