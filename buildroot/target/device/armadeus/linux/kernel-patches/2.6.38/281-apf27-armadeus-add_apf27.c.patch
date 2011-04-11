@@ -7,11 +7,12 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Signed-off-by: Jeremie Scheer <jeremie.scheer@armadeus.com>
+Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
 
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-04-08 14:10:00.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-04-11 18:32:16.857382999 +0200
 @@ -0,0 +1,728 @@
 + /*
 + * apf27.c
@@ -744,7 +745,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-04-08 13:48:21.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-04-11 18:32:16.857382999 +0200
 @@ -0,0 +1,938 @@
 + /*
 + * apf27-dev.c
@@ -1271,7 +1272,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 +#endif
 +#ifdef CONFIG_CAN_MCP251X
 +	{
-+		.modalias		= "mcp251x",
++		.modalias		= "mcp2515",
 +		.max_speed_hz		= 8000000, /* 8MHz */
 +		.bus_num		= 1, /* SPI2 */
 +		.mode			= 0,
@@ -1687,7 +1688,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-04-08 13:48:21.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-04-11 18:32:16.861382996 +0200
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1860,7 +1861,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-04-08 13:48:21.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-04-11 18:32:16.861382996 +0200
 @@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2040,7 +2041,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-04-08 14:09:01.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-04-11 18:35:22.017382998 +0200
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
