@@ -6,12 +6,13 @@ Signed-off-by: Fabien Marteau <fabien.marteau@armadeus.com>
 Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 Signed-off-by: Nicolas Colombain <nicolas.colombain@armadeus.com>
 Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
+Signed-off-by: Jeremie Scheer <jeremie.scheer@armadeus.com>
 
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
+Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c	2011-03-21 11:56:54.000000000 +0100
-@@ -0,0 +1,745 @@
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-04-08 14:10:00.000000000 +0200
+@@ -0,0 +1,728 @@
 + /*
 + * apf27.c
 + *
@@ -96,7 +97,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +#ifdef CONFIG_ARMADEUS_PWM_DRIVER_MODULE
 +#define CONFIG_PWM
 +#endif
++#ifdef CONFIG_ARMADEUS_PWM_DRIVER
++#define CONFIG_PWM
++#endif
 +
++extern const struct imx_mxc_pwm_data imx27_mxc_pwm_data __initconst;
 +
 +static int apf27_pins[] = {
 +	/* CONSOLE */
@@ -146,6 +151,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +	/* I2C2 */
 +	PC5_PF_I2C2_SDA,
 +	PC6_PF_I2C2_SCL,
++	/* PWM */
++	PE5_PF_PWM0,
 +};
 +
 +int lan8700_wakeup(struct phy_device *phydev)
@@ -159,29 +166,6 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +    udelay(1000);
 +    return 0;
 +}
-+
-+#ifdef CONFIG_PWM
-+static int mxc_pwm0_pins[] = {
-+	PE5_PF_PWM0
-+};
-+
-+static int apf27_pwm_0_init(void)
-+{
-+	return mxc_gpio_setup_multiple_pins(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins), "PWM0");
-+}
-+
-+static int apf27_pwm_0_exit(void)
-+{
-+	mxc_gpio_release_multiple_pins(mxc_pwm0_pins, ARRAY_SIZE(mxc_pwm0_pins));
-+	return 0;
-+}
-+
-+static struct imx_pwm_platform_data apf27_pwm_0_data = {
-+	.init = apf27_pwm_0_init,
-+	.exit = apf27_pwm_0_exit,
-+};
-+#endif
-+
 +
 +/* APF27 has a Micron 128MiB 1,8V NAND flash, 16 bits width */
 +static struct mxc_nand_platform_data apf27_nand_board_info __initconst = {
@@ -700,7 +684,7 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +	imx27_add_mxc_nand(&apf27_nand_board_info);
 +
 +#ifdef CONFIG_PWM
-+	mxc_register_device(&mxc_pwm_device0, &apf27_pwm_0_data);
++	imx_add_mxc_pwm(&imx27_mxc_pwm_data);
 +#endif
 +
 +	imx27_add_imx2_wdt(NULL);
@@ -757,11 +741,11 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27.c
 +	.init_machine   = apf27_init,
 +	.timer          = &apf27_timer,
 +MACHINE_END
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
+Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c	2011-03-21 14:14:34.000000000 +0100
-@@ -0,0 +1,934 @@
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-04-08 13:48:21.000000000 +0200
+@@ -0,0 +1,938 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -827,13 +811,14 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +#include <linux/can/platform/mcp251x.h>
 +#if 0
 +#include "../../../drivers/armadeus/pwm/pwm.h"
-+#include <media/ad9889.h>
 +#include <mach/imx_dam.h>
 +#include <mach/imx_sound.h>
 +#include <mach/imx-alsa.h>
 +#include <mach/imx_cam.h>
 +#endif
 +#include <mach/ssi.h>
++
++#include <media/ad9889.h>
 +
 +#include <media/soc_camera.h>
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
@@ -847,6 +832,9 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +
 +#include "devices-imx27.h"
 +//#include "crm_regs.h"
++
++#include <mach/mx27.h>
++#define VA_GPIO_BASE	MX27_IO_ADDRESS(MX27_GPIO_BASE_ADDR)
 +
 +#if defined(CONFIG_FB_MXC) || defined(CONFIG_FB_IMX)
 +extern void apf27_lcd_init(void);
@@ -1032,8 +1020,8 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +};
 +
 +static struct ad9889_fb_data apf27_ad9889_fb_data;
-+extern void acquire_console_sem(void);
-+extern void release_console_sem(void);
++extern void console_lock(void);
++extern void console_unlock(void);
 +
 +static void ad9889_display_connected(void)
 +{
@@ -1069,13 +1057,13 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +	temp_var.vmode = FB_VMODE_NONINTERLACED,
 +	temp_var.nonstd = 0;
 +
-+	acquire_console_sem();
++	console_lock();
 +	/* tel the FB client that params have been changed */
 +	info->flags |= FBINFO_MISC_USEREVENT;
 +	/* set new params */
 +	fb_set_var(info, &temp_var);
 +	info->flags &= ~FBINFO_MISC_USEREVENT;
-+	release_console_sem();
++	console_unlock();
 +}
 +
 +static void ad9889_display_disconnected(void)
@@ -1086,13 +1074,13 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +	if (apf27_ad9889_fb_data.PA31_GIUS_old_state)
 +		mxc_gpio_mode(GPIO_PORTA | 31 | GPIO_OUT| GPIO_GPIO);
 +
-+	acquire_console_sem();
++	console_lock();
 +	/* inform the console that the FB params have been changed */
 +	info->flags |= FBINFO_MISC_USEREVENT;
 +	/* restore old FB params */
 +	fb_set_var(info, &apf27_ad9889_fb_data.var);
 +	info->flags &= ~FBINFO_MISC_USEREVENT;
-+	release_console_sem();
++	console_unlock();
 +}
 +
 +static struct ad9889_config apf27_ad9889_config = {
@@ -1696,10 +1684,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev.c
 +#endif
 +}
 +
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
+Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c	2011-03-21 11:56:54.000000000 +0100
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-04-08 13:48:21.000000000 +0200
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1869,10 +1857,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-lcd.c
 +	return;
 +}
 +
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
+Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-03-21 11:56:54.000000000 +0100
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-04-08 13:48:21.000000000 +0200
 @@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2049,10 +2037,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/apf27-dev-ext-apw.c
 +	printk("done\n");
 +}
 +
-Index: linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h
+Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-21 14:25:38.000000000 +0100
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-04-08 14:09:01.000000000 +0200
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:

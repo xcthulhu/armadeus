@@ -116,7 +116,7 @@ class apf51Bootloader:
     def __displayProgress(self, text):
         sys.stdout.write(chr(13))
         print text,
-	sys.stdout.flush()
+        sys.stdout.flush()
 
 # addr: address to read
 # count: number of bytes to read 
@@ -208,7 +208,7 @@ class apf51Bootloader:
             data = f.read(16)
         self.__displayProgress("%d bytes transfered" % total)
         print ""
-        f.close()		
+        f.close()
         return
 
     def buildcmd(self, cmd, addr, ds, cnt, data, ft):
@@ -304,7 +304,7 @@ class apf51Bootloader:
         self.put("73FA88B8","00000006","l")
         # DDR_SR_A1
         self.put("73FA88BC","00000000","l")
-		
+
     def initSDRAM2(self):
         print "SDRAM INIT2 APF",
         #ESDCTL0: 13 ROW, 10 COL, 32Bit
@@ -326,7 +326,7 @@ class apf51Bootloader:
         self.put("83FD900C","C33574AA","l") 
         #ESDMISC: AP=10, Bank interleaving on, MIF3 en, RALAT=2
         self.put("83FD9010","000a1700","l")
-		
+
     def initSDRAM1(self, sdramType):
         print "SDRAM INIT1 APF",
         #ESDCTL0: 13 ROW, 10 COL, 32Bit
@@ -388,7 +388,7 @@ class UBoot:
         if not os.path.exists(BINARY):
             raise Error("file "+BINARY+" doesn't exit",0)
         fsize = "%08x" % os.path.getsize(BINARY) #os.stat(filesize)[6]
-	print "Loading %s, size = %d bytes" % (BINARY, os.path.getsize(BINARY))
+        print "Loading %s, size = %d bytes" % (BINARY, os.path.getsize(BINARY))
         self.bootstrap.download("90000000", BINARY, fsize, "AA")
         self.bootstrap.put("90000000", "90000004", "l")
         #self.bootstrap.download("1FFE2000",BINARY, "00000400", "AA")
@@ -428,7 +428,7 @@ if __name__ == "__main__":
         ser = serial.Serial(port, SPEED, timeout=2)
     except Exception, msg:
         print "unable to open serial port %s" % port
-	print msg
+        print msg
         sys.exit()
     ser.flush()
 
@@ -436,29 +436,29 @@ if __name__ == "__main__":
     uboot = UBoot(apfBootloader, ser)
 
     apfBootloader.getstatus()
-#    apfBootloader.get("CFFF0000","4", "l")	
-#    apfBootloader.get("CFFF0004","4", "l")	
-#    apfBootloader.get("CFFF0008","4", "l")	
-#    apfBootloader.get("CFFF000C","4", "l")	
-#    apfBootloader.get("CFFF0400","4", "l")	
-#    apfBootloader.get("CFFF0404","4", "l")	
-#    apfBootloader.get("CFFF0408","4", "l")	
-#    apfBootloader.get("CFFF040C","4", "l")	
-#    apfBootloader.get("1FFE1A98","4", "l")	
-#    apfBootloader.get("1FFE0800","4", "l")	
-#    apfBootloader.get("1FFE0804","4", "l")	
-#    apfBootloader.get("1FFE0808","4", "l")	
-#    apfBootloader.get("1FFE080C","4", "l")	
-#    apfBootloader.get("1FFE0810","4", "l")	
-#    apfBootloader.get("1FFE2000","4", "l")	
-#    apfBootloader.get("1FFE2004","4", "l")	
-#    apfBootloader.get("1FFE2008","4", "l")	
-#    apfBootloader.get("1FFE200C","4", "l")	
-#    apfBootloader.get("1FFE0810","4", "l")	
-#    apfBootloader.get("73FD0000","4", "l")	
-#    apfBootloader.get("73FD0004","4", "l")	
-#    apfBootloader.get("73FD0008","4", "l")	
-#    apfBootloader.get("73FD0014","4", "l")	
+#    apfBootloader.get("CFFF0000","4", "l")
+#    apfBootloader.get("CFFF0004","4", "l")
+#    apfBootloader.get("CFFF0008","4", "l")
+#    apfBootloader.get("CFFF000C","4", "l")
+#    apfBootloader.get("CFFF0400","4", "l")
+#    apfBootloader.get("CFFF0404","4", "l")
+#    apfBootloader.get("CFFF0408","4", "l")
+#    apfBootloader.get("CFFF040C","4", "l")
+#    apfBootloader.get("1FFE1A98","4", "l")
+#    apfBootloader.get("1FFE0800","4", "l")
+#    apfBootloader.get("1FFE0804","4", "l")
+#    apfBootloader.get("1FFE0808","4", "l")
+#    apfBootloader.get("1FFE080C","4", "l")
+#    apfBootloader.get("1FFE0810","4", "l")
+#    apfBootloader.get("1FFE2000","4", "l")
+#    apfBootloader.get("1FFE2004","4", "l")
+#    apfBootloader.get("1FFE2008","4", "l")
+#    apfBootloader.get("1FFE200C","4", "l")
+#    apfBootloader.get("1FFE0810","4", "l")
+#    apfBootloader.get("73FD0000","4", "l")
+#    apfBootloader.get("73FD0004","4", "l")
+#    apfBootloader.get("73FD0008","4", "l")
+#    apfBootloader.get("73FD0014","4", "l")
     apfBootloader.initIOMUX()
     apfBootloader.initSDRAM1("APF51")
 
@@ -499,7 +499,7 @@ if __name__ == "__main__":
     apfBootloader.put("90000024", "80000000", "l")
 
     time.sleep(1)
-	
+
     apfBootloader.get("90000000", "4", "l")
     apfBootloader.get("90000004", "4", "l")
     apfBootloader.get("90000008", "4", "l")
@@ -532,17 +532,17 @@ if __name__ == "__main__":
     apfBootloader.get("90000018", "4", "l")
     apfBootloader.get("9000001C", "4", "l")
     apfBootloader.get("90000024", "4", "l")
-	
+
     # configure iomux as gpio for NAND_RB1 et RB2
     # apfBootloader.put("73FA8120", "00000003", "l")
     # apfBootloader.put("73FA8124", "00000003", "l")
     # apfBootloader.put("73FA8128", "00000003", "l")
     print 'NFC'
-    apfBootloader.get("83FDB02C","4", "l")	
-    apfBootloader.get("83FDB024","4", "l")	
-    apfBootloader.get("83FDB02C","4", "l")	
+    apfBootloader.get("83FDB02C","4", "l")
+    apfBootloader.get("83FDB024","4", "l")
+    apfBootloader.get("83FDB02C","4", "l")
     print 'config3'
-    apfBootloader.get("83FDB028","4", "l")	
+    apfBootloader.get("83FDB028","4", "l")
     print 'SBMR'
     apfBootloader.get("73FD0004","4", "l")
 
@@ -554,7 +554,7 @@ if __name__ == "__main__":
 #    apfBootloader.put("73FC0080", "00000000", "l")
 
 #    apfBootloader.get("1FFE2000","4", "l")
-	
+
 #    apfBootloader.get("90000004","4", "l")
 #    apfBootloader.get("90000008","4", "l")
 #    apfBootloader.get("9000000C","4", "l")
@@ -563,7 +563,7 @@ if __name__ == "__main__":
 #    apfBootloader.get("90001140","4", "l")
 #    apfBootloader.get("90001148","4", "l")
 #    apfBootloader.get("9000114C","4", "l")
-	
+
     eraseAll = raw_input('Would you like to erase the environment variables ? y/N: ')
     if eraseAll == 'y':
         uboot.resetenv()

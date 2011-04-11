@@ -26,9 +26,23 @@
 #include <mach/imxfb.h>        /* Backlight machinfo struct is defined here */
 #include <mach/hardware.h>
 #endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 #ifdef CONFIG_ARCH_IMX
-#define LCDC_BASE_ADDR IMX_LCDC_BASE
-#endif
+#define LCDC_BASE_ADDR 		IMX_LCDC_BASE
+#define MXC_IO_ADDRESS		IO_ADDRESS
+#endif /* CONFIG_ARCH_IMX */
+#else
+#ifdef CONFIG_ARCH_MX1
+#include <mach/mx1.h>
+#define LCDC_BASE_ADDR		MX1_LCDC_BASE_ADDR
+#define MXC_IO_ADDRESS		MX1_IO_ADDRESS
+#else
+# include <mach/mx2x.h>
+#define LCDC_BASE_ADDR		MX27_LCDC_BASE_ADDR
+#define MXC_IO_ADDRESS		MX27_IO_ADDRESS
+#endif /* CONFIG_ARCH_MX1 */
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) */
 
 #define DRIVER_NAME    "imx-bl"
 #define DRIVER_VERSION "0.2"
@@ -61,10 +75,10 @@ static int imxbl_send_intensity(struct backlight_device *bd)
 	if( bl_machinfo->set_bl_intensity ) {
 		bl_machinfo->set_bl_intensity(intensity);
 	} else { /* Otherwise use this default one: */
-		shadow = readl(IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c); /* PWMR / LPCCR */
+		shadow = readl(MXC_IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c); /* PWMR / LPCCR */
 		shadow &= ~PWMR_PW(0xff);
 		shadow |= PWMR_PW(intensity);
-		writel(shadow, IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
+		writel(shadow, MXC_IO_ADDRESS(LCDC_BASE_ADDR) + 0x2c);
 		pr_debug("Setting backlight intensity to %d\n", intensity);
 	}
 
@@ -130,8 +144,23 @@ static int imxbl_probe(struct platform_device *pdev)
 	if (!machinfo->limit_mask)
 		machinfo->limit_mask = -1;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)
+	struct backlight_properties props;
+
+	memset(&props, 0, sizeof(struct backlight_properties));
+	props.max_brightness = machinfo->max_intensity;
+	props.power = FB_BLANK_UNBLANK;
+	props.brightness = machinfo->default_intensity;
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	imx_backlight_device = backlight_device_register(DRIVER_NAME,
 								&pdev->dev, NULL, &imxbl_ops);
+#else
+	imx_backlight_device = backlight_device_register(DRIVER_NAME,
+								&pdev->dev, NULL, &imxbl_ops, &props);
+#endif
+
 	if (IS_ERR (imx_backlight_device)) {
 		printk("can't register backlight device\n");
 		return PTR_ERR (imx_backlight_device);
@@ -139,9 +168,12 @@ static int imxbl_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, imx_backlight_device);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	imx_backlight_device->props.max_brightness = machinfo->max_intensity;
 	imx_backlight_device->props.power = FB_BLANK_UNBLANK;
 	imx_backlight_device->props.brightness = machinfo->default_intensity;
+#endif
+
 	backlight_update_status(imx_backlight_device);
 
 	printk("i.MX Backlight driver v" DRIVER_VERSION " initialized.\n");
