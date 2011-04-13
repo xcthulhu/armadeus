@@ -1,7 +1,7 @@
-Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
+Index: linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c	2011-03-16 23:07:40.000000000 +0100
++++ linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c	2011-04-08 11:05:28.000000000 +0200
 @@ -0,0 +1,166 @@
 +/*
 + * ASoC audio for APF51Dev (i.MX51 using Wolfson's WM8960)
@@ -114,7 +114,7 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +		.cpu_dai_name	= "imx-ssi.0",
 +		.codec_dai_name	= "wm8960-hifi",
 +		.ops		= &apf51dev_sound_hifi_ops,
-+	}, {
++	},/* {
 +		.name = "WM8960 Capture",
 +		.stream_name	= "Capture",
 +		.codec_name	= "wm8960-codec.1-001a",
@@ -122,7 +122,7 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +		.cpu_dai_name	= "imx-ssi.0",
 +		.codec_dai_name	= "wm8960-hifi",
 +		.ops		= &apf51dev_sound_hifi_ops,
-+	},
++	},*/
 +};
 +
 +static struct snd_soc_card apf51dev_soc_card = {
@@ -169,10 +169,10 @@ Index: linux-2.6.38-rc3/sound/soc/imx/apf51dev-wm8960.c
 +MODULE_AUTHOR("Julien Boibessot <julien.boibessot@armadeus.com>");
 +MODULE_DESCRIPTION("APF51Dev ALSA SoC driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.38-rc3/sound/soc/imx/Kconfig
+Index: linux-2.6.38.1/sound/soc/imx/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/sound/soc/imx/Kconfig	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/sound/soc/imx/Kconfig	2011-02-24 10:44:15.000000000 +0100
+--- linux-2.6.38.1.orig/sound/soc/imx/Kconfig	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/sound/soc/imx/Kconfig	2011-04-06 09:16:53.000000000 +0200
 @@ -52,4 +52,14 @@
  	  Enable I2S based access to the TLV320AIC23B codec attached
  	  to the SSI interface
@@ -188,10 +188,10 @@ Index: linux-2.6.38-rc3/sound/soc/imx/Kconfig
 +	  combo
 +
  endif	# SND_IMX_SOC
-Index: linux-2.6.38-rc3/sound/soc/imx/Makefile
+Index: linux-2.6.38.1/sound/soc/imx/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/sound/soc/imx/Makefile	2011-02-01 04:05:49.000000000 +0100
-+++ linux-2.6.38-rc3/sound/soc/imx/Makefile	2011-02-24 10:44:15.000000000 +0100
+--- linux-2.6.38.1.orig/sound/soc/imx/Makefile	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/sound/soc/imx/Makefile	2011-04-06 09:16:53.000000000 +0200
 @@ -8,10 +8,12 @@
  obj-$(CONFIG_SND_MXC_SOC_MX2) += snd-soc-imx-mx2.o
  

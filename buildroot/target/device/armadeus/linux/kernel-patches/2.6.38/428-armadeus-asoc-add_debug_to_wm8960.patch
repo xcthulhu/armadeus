@@ -1,0 +1,127 @@
+Index: linux-2.6.38.1/sound/soc/codecs/wm8960.c
+===================================================================
+--- linux-2.6.38.1.orig/sound/soc/codecs/wm8960.c	2011-04-06 11:06:59.000000000 +0200
++++ linux-2.6.38.1/sound/soc/codecs/wm8960.c	2011-04-13 14:48:47.000000000 +0200
+@@ -8,6 +8,8 @@
+  * published by the Free Software Foundation.
+  */
+ 
++#define DEBUG
++
+ #include <linux/module.h>
+ #include <linux/moduleparam.h>
+ #include <linux/init.h>
+@@ -16,6 +18,9 @@
+ #include <linux/i2c.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#ifdef DEBUG
++#include <linux/proc_fs.h>
++#endif
+ #include <sound/core.h>
+ #include <sound/pcm.h>
+ #include <sound/pcm_params.h>
+@@ -917,12 +922,81 @@
+ 	return 0;
+ }
+ 
++#ifdef DEBUG
++
++static u8 current_reg_addr;
++
++static int wm8960_proc_read_register( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
++{
++	int len;
++	char given_param[16];
++	u8 reg_addr;
++	u16 reg_val;
++	struct snd_soc_codec *codec = data;
++
++	if (count <= 0) {
++		printk("Empty string transmitted !\n");
++		return 0;
++	}
++	if (count > 4) {
++		len = 4;
++		printk("Only 4x[0-9] decimal values supported !\n");
++	} else {
++		len = count;
++	}
++
++	if (copy_from_user(given_param, buf, len)) {
++		return -EFAULT;
++	}
++
++	reg_addr = (u8)(simple_strtol(given_param, 0, 16));
++	current_reg_addr = reg_addr;
++	reg_val = snd_soc_read(codec, reg_addr);
++	printk("Read 0x%04x @ 0x%02x\n", reg_val, reg_addr);
++
++	return len;
++}
++
++static int wm8960_proc_write_register( __attribute__ ((unused)) struct file *file, const char *buf, unsigned long count, void *data)
++{
++	int len, ret;
++	char given_param[16];
++	u16 reg_val;
++	struct snd_soc_codec *codec = data;
++
++	if (count <= 0) {
++		printk("Empty string transmitted !\n");
++		return 0;
++	}
++	if (count > 4) {
++		len = 4;
++		printk("Only 4x[0-9] decimal values supported !\n");
++	} else {
++		len = count;
++	}
++
++	if (copy_from_user(given_param, buf, len)) {
++		return -EFAULT;
++	}
++
++	reg_val = (u16)(simple_strtol(given_param, 0, 16));
++	printk("Writing 0x%04x @ 0x%02x\n", reg_val, current_reg_addr);
++	snd_soc_write(codec, current_reg_addr, reg_val);
++	udelay(100);
++
++	return len;
++}
++#endif /* DEBUG */
++
+ static int wm8960_probe(struct snd_soc_codec *codec)
+ {
+ 	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
+ 	struct wm8960_data *pdata = dev_get_platdata(codec->dev);
+ 	int ret;
+ 	u16 reg;
++#ifdef DEBUG
++	struct proc_dir_entry *proc_read, *proc_write;
++#endif
+ 
+ 	wm8960->set_bias_level = wm8960_set_bias_level_out3;
+ 	codec->control_data = wm8960->control_data;
+@@ -979,6 +1053,21 @@
+ 				     ARRAY_SIZE(wm8960_snd_controls));
+ 	wm8960_add_widgets(codec);
+ 
++#ifdef DEBUG
++	/* create proc files */
++	proc_read = create_proc_entry("driver/wmread", S_IWUSR | S_IRGRP | S_IROTH, NULL);
++	proc_write = create_proc_entry("driver/wmwrite", S_IWUSR | S_IRGRP | S_IROTH, NULL);
++	if ((proc_read == NULL) || (proc_write == NULL)) {
++		printk(KERN_ERR "wm8960" ": Could not register one /proc file. Terminating\n");
++		return -ENOMEM;
++	} else {
++		proc_read->write_proc = wm8960_proc_read_register;
++		proc_read->data = codec;
++		proc_write->write_proc = wm8960_proc_write_register;
++		proc_write->data = codec;
++	}
++#endif
++
+ 	return 0;
+ }
+ 
