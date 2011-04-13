@@ -2,7 +2,7 @@
  * imxssi.c - Tool to send SSI data from Linux's userspace
  *
  * Maintainers: E. Jarrige, J. Boibessot
- * (c) Copyright 2008 by Armadeus Systems
+ * (c) Copyright 2008-2011 by Armadeus Systems
  * Derivated from pxaregs (c) Copyright 2002 by M&N Logistik-Loesungen Online GmbH
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,22 +34,26 @@
 #include <getopt.h>
 
 
-//#define DEBUG TRUE
-#ifdef DEBUG
-# define debug(fmt, arg...) printf(fmt, ##arg)
-#else
-# define debug(fmt, arg...) ({ if (0) printf(fmt, ##arg);})
-#endif
+#define debug(fmt, arg...) ({ if (show_debug) printf(fmt, ##arg);})
+
 #ifdef IMXL
 # include "imxregs.h"
 # define SSI_TRANSMIT_DATA_REG    0x00218000
 # define SSI_FIFO_STATUS_REGISTER 0x00218020
-#else
+#elif IMX27
 # include "imx27regs.h"
 # define SSI_TRANSMIT_DATA_REG    0x10010000	/* FIFO 0 */
 # define SSI_RECEIVE_DATA_REG     0x10010008
 # define SSI_FIFO_STATUS_REGISTER 0x1001002C
+#elif IMX51
+# include "imx51regs.h"
+# define SSI_TRANSMIT_DATA_REG    0x83fcc000	/* FIFO 0 */
+# define SSI_RECEIVE_DATA_REG     0x83fcc008
+# define SSI_FIFO_STATUS_REGISTER 0x83fcc02c
+#else
+#error "Undefined processor"
 #endif
+
 #define RFCNT_MASK               0xF000
 #define TFCNT_MASK               0x0F00		/* FIFO 0 for i.MX27 */
 #define RFCNT_SHIFT              12
@@ -62,7 +66,7 @@ static int fd = -1;
 #define TEST_SIGNAL_MAX_SAMPLES 130712
 static int *table;
 // static int ttable[130712];
-
+static int show_debug = 0;
 
 /* Get value of the register at the given address */
 static int getmem(u32 addr)
@@ -148,12 +152,18 @@ static void setreg(char *name, u32 val)
     putmem(regs[found].addr, mem);
 }
 
+int num_states = 8;
+char progress[8] = {
+    '|', '/', '-', ' ', '|', '/', '-', ' ',
+};
+
 static void audio(u32 type, u32 samples, float level)
 {
     volatile void *map, *STX0, *SRX0, *SFCSR, *dma;
     static int fd = -1;
     u32 counter = 0;
     u32 i;
+    int state = 0;
 
     debug("type %d samples %d level %f\n", type, samples, level);
 
@@ -171,14 +181,14 @@ static void audio(u32 type, u32 samples, float level)
          ttable[i] = 0; */
     
     if (type == TYPE_TRIANGLE) {
-        for (i=0; i<(samples/2); i++) {
+        for (i = 0; i < (samples/2); i++) {
             table[i] = roundf(-32768 + ((i*(65535/samples))*2*level));
             table[samples-1-i] = roundf(-32768 + ((i*(65535/samples))*2*level));
 //              printf("tab[%d]=%x tab[%d]=%x\n", i, table[i], samples-1-i, table[samples-1-i]);
         }
     } else if (type == TYPE_SINUS) {
         double cosx;
-        for (i=0; i<samples; i++) {
+        for (i = 0; i < samples; i++) {
             cosx = cos(((double)i/samples)*2*M_PI);
             table[i] = roundf(cosx*32767*level);
         }
@@ -237,7 +247,7 @@ static void audio(u32 type, u32 samples, float level)
         }
 #ifndef IMXL
     } else if (type == TYPE_LOOP) {
-    /* Loop audio in to audio out (only possible on APF27Dev) */
+    /* Loop audio in to audio out (only possible on APF27Dev & APF51Dev) */
         while (1) {
             /* Wait until Rx FIFO is half full */
             while (((*(volatile u32*)(SFCSR) & RFCNT_MASK) >> RFCNT_SHIFT) < 4);
@@ -255,6 +265,13 @@ static void audio(u32 type, u32 samples, float level)
             *(volatile u32*) STX0 = table[counter & 0x0FFFF];
             *(volatile u32*) STX0 = table[counter & 0x0FFFF];
             counter = (counter+1) % samples;
+            if (counter == 0) {
+                if (show_debug) {
+                    printf("\r%c", progress[state]);
+                    fflush(stdout);
+                }
+                state = (state + 1) % (num_states - 1);
+            }
         }
     }
 
@@ -273,8 +290,9 @@ static void usage(const char* prog_name)
 #endif
            "        -t type       0:triangular/ramp  1:sinusoid\n"
            "        -s samples    nb of samples per period\n"
-           "        -l level      0.0 .. 1.0 signal amplitude\n\n"
-           "    !! tsc210x has to be configured in master mode !!\n",
+           "        -l level      0.0 .. 1.0 signal amplitude\n"
+           "        -d, --debug   shows debug informations\n\n"
+           "    !! audio CODEC has to be configured in master mode !!\n",
         prog_name);
 
     exit(1);
@@ -291,6 +309,7 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
         {"help", 0, 0, 'h'},
         {"loop", 0, 0, 'L'},
+        {"debug", 0, 0, 'd'},
         {0, 0, 0, 0}
     };
 
@@ -300,7 +319,7 @@ int main(int argc, char *argv[])
     level = 0.2;
 
     opterr = 0;
-    while ((option = getopt_long(argc, argv, "hLt:s:l:", long_options, &option_index)) != -1)
+    while ((option = getopt_long(argc, argv, "hLt:s:l:d", long_options, &option_index)) != -1)
     {
         switch (option)
         {
@@ -324,6 +343,10 @@ int main(int argc, char *argv[])
                 type = TYPE_LOOP;
             break;
 
+            case 'd':
+                show_debug = 1;
+            break;
+
             case '?':
                 if ((optopt == 's') || (optopt == 't') || (optopt == 'l'))
                     fprintf(stderr, "Option -%c requires an argument.\n", optopt);
@@ -337,7 +360,8 @@ int main(int argc, char *argv[])
                 abort();
         }
     }
- 
+
+    /* Setup Audio Mux & SSI */
 #ifdef IMXL
     setreg("SFCSR", 0x0088);
     setreg("STCCR", 0x6103);
@@ -345,15 +369,27 @@ int main(int argc, char *argv[])
     setreg("STCR", 0x028D);
     setreg("SCSR", 0xDB41);
 #else
+# ifdef IMX27
+    /* Clock */
     setreg("PCCR0", 0xd5010013);
     setreg("PCCR1", 0xa21a0e30);
+    /* Audio Mux */
     setreg("PPCR1", 0x00001000);
     setreg("HPCR1", 0xcc007000);
+    /* SSI */
     setreg("STCR_1", 0x0000028d); /* I2S mode */
     setreg("SRCR_1", 0x0000028d); /* I2S mode */
     setreg("STCCR_1", 0x0000e000);
-    setreg("SCR_1", 0x00000057); /* I2S mode */
+# elif IMX51
+    /* Audio Mux (SSI1 <-> Port 3, synchronous) */
+    setreg("PTCR1", 0x94800800);
+    setreg("PDCR1", 0x00004000);
+    setreg("PTCR3", 0x00000800);
+    setreg("PDCR3", 0x00000000);
+# endif
+    setreg("SCR_1", 0x00000057); /* I2S mode, Tx & Rx on, SSI on */
 #endif
+
     audio(type, val, level);
 
     return 0;
