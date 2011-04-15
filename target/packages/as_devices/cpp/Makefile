@@ -1,20 +1,18 @@
 # to compile for arm : 
-# make CXX=../../bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++
-# make CXX=~/Projects/HMSDemo/software/bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++
-# make CXX=~/Projects/virgin_HMS/software/bsp/buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++
+# make CXX=../../../buildroot/build_armv5te/staging_dir/usr/bin/arm-linux-g++
 # 
+# Default values for local compiling:
+ARMADEUS_BASE_DIR=../../../../
+-include $(ARMADEUS_BASE_DIR)/Makefile.in
 CXXFLAGS=-Wall -g -O0
 LDFLAGS=
 
-OBJ=as_apf27_pwm.o
-OBJ+= as_i2c.o
-OBJ+= as_apf27_gpio.o 
-#OBJ+= as_max1027.o 
-#OBJ+= as_max5821.o 
-#OBJ+= as_adc.o 
-#OBJ+= as_dac.o 
-#OBJ+= as_ad5258.o
-#OBJ+= as_ds1374.o
+OBJS = as_i2c.o
+OBJS += as_gpio.o
+OBJS += as_dac.o
+OBJS += as_adc.o
+
+OBJS += as_spi.o
 
 LIBRARY=as_devices_cpp
 LIB_VERS=1
@@ -23,20 +21,22 @@ SONAME=lib${LIBRARY}.so
 LIBNAME=${SONAME}.${LIB_VERS}
 ARCHIVE_CMD=ar
 ARCHIVE_OPTS=-cvq
+
 C_INCLUDE=../c/
 C_LIB=../c/libas_devices.so.1
 
-${LIBNAME}: ${OBJ}
-	${CXX} -shared -Wl,-soname,${SONAME} -o ${SONAME} ${OBJ} ${C_LIB} -lc 
+${LIBNAME}: ${OBJS}
+	${CXX} -shared -Wl,-soname,${SONAME} -o ${SONAME} ${OBJS} ${C_LIB} -lc 
 	ln -s ${SONAME} ${LIBNAME} 
 
-${STAT_LIB}: ${OBJ} 
-	${ARCHIVE_CMD} ${ARCHIVE_OPTS} ${STAT_LIB} ${OBJ}
+${STAT_LIB}: ${OBJS} 
+	${ARCHIVE_CMD} ${ARCHIVE_OPTS} ${STAT_LIB} ${OBJS}
 
 %.o: %.cpp
-	$(CXX) -fPIC -o $@ -c $< ${CXXFLAGS} -I${C_INCLUDE}
+	$(CXX) -fPIC -o $@ -c $< ${CXXFLAGS} -I${C_INCLUDE} -D__cplusplus
 
 clean:
-	-rm ${OBJ} ${BINARY}
-	-rm ${LIBNAME} ${SONAME}
+	-rm ${OBJ} ${BINARY} ${STAT_LIB} ${LIBNAME}
+	-rm *.o
+	-rm *.so
 

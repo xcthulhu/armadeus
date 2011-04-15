@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -17,102 +17,44 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+**
 */
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "as_dac.hpp"
+#include <iostream>
 
-AsDac::AsDac()
+/** @brief Constructor: Open DAC
+ *
+ * @param aDacType type name of adc ("max5821" or "mcp4912")
+ * @param aBusNumber bus number used
+ * @param aAddress i2c address for i2c chip, and CS number for SPI chip
+ * @param aVRef voltage reference in milivolt
+ * @param aVDefault default voltage value at open
+ */
+AsDac::AsDac(const char *aDacType, int aBusNumber, int aAddress, int aVRef)
 {
-
+	mDev = as_dac_open(aDacType, aBusNumber, aAddress, aVRef);
 }
 
 AsDac::~AsDac()
 {
+	int ret;
+
+	ret = as_dac_close(mDev);
+	if (ret < 0)
+	{
+		std::cout<<"AsDac destruction error"<<std::endl;
+	}
 }
-
-/*------------------------------------------------------------------------------*/
-
-/** Connect dac to an object
+	
+/** @brief set a channel value.
  *
- * @param object to connect on dac
- * @param channel number
- * @return error
- */
-AsDac::AsDac_errors 
-AsDac::connect(void * aObject, char aChannel)
-{
-    int channel;
-
-    channel = aChannel - 'A';
-    if( channel >= mChannelNumber || channel < 0)
-    {
-        return AS_DAC_WRONGCHAN;
-    }
-    if (mChannelObject[channel] != NULL)
-    {
-        return AS_DAC_ALREADY_CONNECTED;
-    }
-    mChannelObject[channel] = aObject;
-    return AS_DAC_OK;
-}
-
-/*------------------------------------------------------------------------------*/
-
-/** Connect adc to an object
+ * @param aChannel channel number (A:0, B:1,...)
+ * @param aValue channel value in milivolt
  *
- * @param channel number
- * @return error
+ * @return negative value on error
  */
-AsDac::AsDac_errors 
-AsDac::disconnect(char aChannel)
+long AsDac::setValueInMillivolts(int aChannel, int aValue)
 {
-
-    int channel;
-
-    channel = aChannel - 'A';
-    if(channel >= mChannelNumber || channel < 0)
-    {
-        return AS_DAC_WRONGCHAN;
-    }
-    if(mChannelObject[channel] == NULL)
-    {
-        return AS_DAC_NOCONNECTION;
-    }
-    mChannelObject[channel] = NULL;
-    return AS_DAC_OK;
+	return as_dac_set_value_in_millivolts(mDev, aChannel, aValue);
 }
-/*------------------------------------------------------------------------------*/
-
-/** Connect adc to an object
- *
- * @param channel number
- * @return error
- */
-AsDac::AsDac_errors 
-AsDac::disconnect(void * aObject)
-{
-    return disconnect(getObjectChannel(aObject));
-}
-
-/*------------------------------------------------------------------------------*/
-
-/** Return channel number of an object
- *
- * @param object pointer
- * @return channel number
- */
-char
-AsDac::getObjectChannel(void * aObject)
-{
-    for (int i=0; i< mChannelNumber;i++)
-    {
-        if(aObject == mChannelObject[i])
-        {
-            return i+'A';
-        }
-    }
-    return (int)AS_DAC_NOCONNECTION;
-}
-

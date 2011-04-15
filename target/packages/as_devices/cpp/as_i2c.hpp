@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -17,55 +17,38 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+**
 */
 
-#ifndef __ASI2C_HPP__
-#define __ASI2C_HPP__
+#ifndef AS_I2C__HPP__
+#define AS_I2C__HPP__
+
+#include <cstring>
 
 #include "as_i2c.h"
-#define I2C_NUMBER NUMBER_OF_I2C
-#define DYNAMIC_TABLE_SIZE I2C_NUMBER
 
-#include "as_dynamic_table.hpp"
-
-/** AsI2c description
- *
- */
-class AsI2c {
+class AsI2c
+{
 public:
+	AsI2c(int aBusNumber);
+	virtual ~AsI2c();
 
-    static AsI2c * getInstance(int aBusNumber);
+	long setSlaveAddr(unsigned char aAddr);
+	long getSlaveAddr() const;
 
-    int readByteData(unsigned char aChipAddr, 
-                     unsigned char aReg, 
-                     unsigned char *aBuf );
+	long read(unsigned char *aData, size_t aSize) const;
+	long write(unsigned char *aData, size_t aSize);
 
-    int writeByteData(unsigned char aChipAddr,
-                      unsigned char aReg, 
-                      unsigned char aValue);
+	long readReg(unsigned char aReg, unsigned char *aData, size_t aSize) const;
+	long writeReg(unsigned char aReg, unsigned char *aData, size_t aSize);
 
-    int writeByte(unsigned char aChipAddr,
-                  unsigned char aValue);
+	long readMsg(unsigned char *aWData, unsigned char aWriteSize, unsigned char *aRData, size_t aReadSize);
 
-    int writeMultipleBytes(unsigned char aChipAddr,
-                          unsigned char *aBuff,
-                          int aSize);
-    int readMultipleBytes(unsigned char aChipAddr,
-                          unsigned char *aBuff,
-                          int aSize);
-
-    virtual ~AsI2c();
+	long readRegByte(unsigned char aReg) const;
+	long writeRegByte(unsigned char aReg, unsigned char aVal);
 
 protected:
-    AsI2c(int aBusNumber);
-
-    /* multiton objects */
-    static AsDynamicTable * mInstances;
-
-    int mI2cBusNumber;
-
+	mutable struct as_i2c_device *mDev;
 };
 
-#endif /* __ASI2C_HPP__ */
-
-
+#endif // AS_I2C__HPP__
