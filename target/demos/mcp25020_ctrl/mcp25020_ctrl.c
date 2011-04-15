@@ -22,13 +22,14 @@
 #endif
 
 #define SW2_MASK 0x01 /* Mask of the SW2 bit */
+#define LED_OFF 0x10
+#define LED_ON 0x00
 
-int listen_mode(int can_socket);
-int led_flash(int can_socket);
-int led_on(int can_socket);
-int led_off(int can_socket);
-int sw2_get(int can_socket);
-int read_config(int can_socket);
+void listen_mode(int can_socket);
+void led_flash(int can_socket, int interval);
+void set_led_state(int can_socket, int state);
+void sw2_get(int can_socket);
+void read_config(int can_socket);
 void display_help();
 void int_quit(int sig);
 
@@ -41,7 +42,7 @@ int main(int argc, char **argv)
     struct sockaddr_can addr;
     int can_socket;
 
-    quit=0;
+    quit = 0;
     signal(SIGINT, int_quit); /* Capture the ctrl+C sequence */
 
     /* If no arguments is given */
@@ -75,11 +76,34 @@ int main(int argc, char **argv)
     if (strcmp(argv[1], "listen") == 0) {
         listen_mode(can_socket);/* Entering in listen mode */
     } else if(strcmp(argv[1], "led-flash") == 0) {
-        led_flash(can_socket);/* Entering in led flashing mode */
-    } else if(strcmp(argv[1], "led-on") == 0) {
-        led_on(can_socket);/* Entering in led on mode */
-    } else if(strcmp(argv[1], "led-off") == 0) {
-        led_off(can_socket);/* Entering in led off mode */
+
+        if (argc < 3) {
+            printf("led-flash : Please specify the flashing interval in ms (1 to 10000)\n");
+            return EXIT_SUCCESS;
+        }
+
+        if ((atoi(argv[2]) < 1) || (atoi(argv[2]) > 10000)) {
+            printf("led-flash : Please specify the flashing interval in ms (1 to 10000)\n");
+            return EXIT_SUCCESS;
+        }
+
+        led_flash(can_socket, atoi(argv[2]));/* Entering in led flashing mode */
+    } else if(strcmp(argv[1], "led-state") == 0) {
+
+        if (argc < 3) {
+            printf("led-state : Please specify ON or OFF\n");
+            return EXIT_SUCCESS;
+        }
+
+        if (strcmp(argv[2], "ON") == 0) {
+            set_led_state(can_socket, LED_ON);
+        } else if (strcmp(argv[2], "OFF") == 0) {
+            set_led_state(can_socket, LED_OFF);
+        } else {
+            printf("led-state : Please specify ON or OFF\n");
+            return EXIT_SUCCESS;
+        }
+
     } else if(strcmp(argv[1], "sw2-get") == 0) {
         sw2_get(can_socket);/* Entering in get state of the SW2 switch mode */
     } else if(strcmp(argv[1], "config") == 0) {
@@ -93,16 +117,16 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
-int listen_mode(int can_socket)
+void listen_mode(int can_socket)
 {
     struct can_frame receivedCanFrame;
-    int i, size;
+    int i;
 
     while (quit != 1) {
         /* Read the data received by the interface */
-        if ((size = read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame))) < 0) {
+        if (read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame)) < 0) {
             perror("read");
-            return size;
+            return;
         }
 
         if (receivedCanFrame.can_id & CAN_RTR_FLAG) {/* If the last data received was a remote request frame */
@@ -116,14 +140,10 @@ int listen_mode(int can_socket)
         }
         printf("\n");
     }
-
-    return EXIT_SUCCESS;
 }
 
-int led_flash(int can_socket)
+void led_flash(int can_socket, int interval)
 {
-    int size;
-
     struct can_frame frameToSend;
 
     frameToSend.can_id = 0x500; /* ID */
@@ -135,21 +155,17 @@ int led_flash(int can_socket)
     while (quit != 1) {
         frameToSend.data[2] ^= 0x10; /* Invert the output bit of the LED */
 
-        if ((size = write(can_socket, &frameToSend, sizeof(frameToSend))) != sizeof(frameToSend)) {
+        if (write(can_socket, &frameToSend, sizeof(frameToSend)) != sizeof(frameToSend)) {
             perror("led_flash write");
-            return size;
+            return;
         }
 
-        usleep(200000); /* Wait 200ms ... */
+        usleep(interval * 1000); /* Wait... */
     }
-
-    return EXIT_SUCCESS;
 }
 
-int sw2_get(int can_socket)
+void sw2_get(int can_socket)
 {
-    int size;
-
     struct can_frame frameToSend;
     struct can_frame receivedCanFrame;
 
@@ -158,78 +174,49 @@ int sw2_get(int can_socket)
 
     while (quit != 1) {
         /* Send the RTR frame */
-        if ((size = write(can_socket, &frameToSend, sizeof(frameToSend))) != sizeof(frameToSend)) {
+        if (write(can_socket, &frameToSend, sizeof(frameToSend)) != sizeof(frameToSend)) {
             perror("sw2_get write");
-            return size;
+            return;
         }
 
         /* Read the frame containing the information */
-        if ((size = read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame))) < 0) {
+        if (read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame)) < 0) {
             perror("sw2_get read");
-            return size;
+            return;
         }
 
-
-        if ((receivedCanFrame.data[1] & SW2_MASK) == 1) /* If the SW2 bit is on, */
-            printf("SW2 is released\n"); /* the SW2 switch is released */
+        if ((receivedCanFrame.data[1] & SW2_MASK) == 1) /* If the SW2 bit is on */
+            printf("SW2 is released\n");
         else
-            printf("SW2 is pushed\n");/* the SW2 switch is pushed */
+            printf("SW2 is pushed\n");
 
-        /* Wait 1s */
         sleep(1);
     }
-
-    return EXIT_SUCCESS;
 }
 
-int led_on(int can_socket)
+void set_led_state(int can_socket, int state)
 {
-    int size;
-
     struct can_frame frameToSend;
 
     frameToSend.can_id = 0x500; /* ID */
     frameToSend.can_dlc = 3; /* We want to send 3 bytes */
     frameToSend.data[0] = 0x1E; /* Byte 1 */
     frameToSend.data[1] = 0x10; /* Byte 2 */
-    frameToSend.data[2] = 0x00; /* Byte 3 (bit 4 = 0 to turn the led ON) */
+    frameToSend.data[2] = state; /* Byte 3 (bit 4 = 0 to turn the led ON) */
 
     /* Send the frame */
-    if ((size = write(can_socket, &frameToSend, sizeof(frameToSend))) != sizeof(frameToSend)) {
+    if (write(can_socket, &frameToSend, sizeof(frameToSend)) != sizeof(frameToSend)) {
         perror("led_on write");
-        return size;
+        return;
     }
-
-    return EXIT_SUCCESS;
 }
 
-int led_off(int can_socket)
-{
-    int size;
-
-    struct can_frame frameToSend;
-
-    frameToSend.can_id = 0x500; /* ID */
-    frameToSend.can_dlc = 3; /* We want to send 3 bytes */
-    frameToSend.data[0] = 0x1E; /* Byte 1 */
-    frameToSend.data[1] = 0x10; /* Byte 2 */
-    frameToSend.data[2] = 0x10; /* Byte 3 (bit 4 = 1 to turn the led OFF) */
-
-    /* Send the frame */
-    if ((size = write(can_socket, &frameToSend, sizeof(frameToSend))) != sizeof(frameToSend)) {
-        perror("led_off write");
-        return size;
-    }
-
-    return EXIT_SUCCESS;
-}
-
-int read_config(int can_socket)
+void read_config(int can_socket)
 {
     struct can_frame frameToSend;
     struct can_frame receivedCanFrame;
 
-    int i,j, size;
+    int i,j;
 
     for (i = 0; i < 7; i++) {
 
@@ -257,15 +244,15 @@ int read_config(int can_socket)
         }
 
         /* Send the RTR frame */
-        if ((size = write(can_socket, &frameToSend, sizeof(frameToSend))) != sizeof(frameToSend)) {
+        if (write(can_socket, &frameToSend, sizeof(frameToSend)) != sizeof(frameToSend)) {
             perror("read_config write");
-            return size;
+            return;
         }
 
         /* Read the frame containing the information */
-        if ((size = read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame))) < 0) {
+        if (read(can_socket, &receivedCanFrame, sizeof(receivedCanFrame)) < 0) {
             perror("read_config read");
-            return size;
+            return;
         }
 
         printf("ID: 0x%X -> %d byte(s): ", receivedCanFrame.can_id, receivedCanFrame.can_dlc);
@@ -275,8 +262,6 @@ int read_config(int can_socket)
 
         printf("\n");
     }
-
-    return EXIT_SUCCESS;
 }
 
 
@@ -292,9 +277,8 @@ void display_help()
     printf("This sofware is a demonstration. It show how to communicate with a MICROCHIP MCP25020 using the can bus with socketCAN\n\n");
     printf("USE: can_mcp25020 [TEST]\nTEST are:\n");
     printf("\tlisten : Listen on the can bus\n");
-    printf("\tled-flash : flash the D6 led (interval: 200ms)\n");
-    printf("\tled-on : turn the D6 led on\n");
-    printf("\tled-off : turn the D6 led off\n");
+    printf("\tled-flash [INTERVAL]: flash the D6 led. You must specify the flashing interval in ms (1 to 10000 ms)\n");
+    printf("\tled-state [ON | OFF]: turn the D6 led on the specified state (ON or OFF)\n");
     printf("\tsw2-get : get the value of the switch SW2\n");
     printf("\tCONFIG : get the value of several config registers\n\n");
     printf("\tMore informations, please contact joly.kevin25@gmail.com\n");
@@ -304,5 +288,6 @@ void  int_quit(int sig)
 {
     signal(sig, SIG_IGN); /* Ignore the ctrl+c sequence for the system */
     printf("Exiting...\n");
-    quit=1;
+    quit = 1;
 }
+

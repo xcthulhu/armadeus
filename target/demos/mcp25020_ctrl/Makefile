@@ -11,21 +11,26 @@ STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 DEFINES=TARGET
 CFLAGS= -Wall
 
-default: mcp25020_ctrl
+EXEC=mcp25020_ctrl
 
-all: mcp25020_ctrl
+default: $(EXEC)
+
+all: $(EXEC)
 
 mcp25020_ctrl.o: mcp25020_ctrl.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
-install: mcp25020_ctrl
+$(EXEC): mcp25020_ctrl.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+install: $(EXEC)
 	mkdir -p $(INSTALL_DIR)
 	cp $^ $(INSTALL_DIR)
 	cp init_can.sh $(INIT_DIR)/S50init_can.sh
-	$(STRIP) $(INSTALL_DIR)/mcp25020_ctrl
+	$(STRIP) $(INSTALL_DIR)/$^
 
 uninstall:
-	rm -f $(INSTALL_DIR)/mcp25020_ctrl
+	rm -f $(INSTALL_DIR)/$(EXEC)
 	rm -f $(INIT_DIR)/S50init_can.sh
 
 clean: 
