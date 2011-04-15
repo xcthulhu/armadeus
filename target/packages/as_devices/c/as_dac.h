@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include "as_dac.h"
+#include <stdint.h>
 
 #define AS_MAX5821_TYPE "max5821"
 #define AS_MCP4912
