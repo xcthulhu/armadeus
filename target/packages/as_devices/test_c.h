@@ -29,8 +29,12 @@
 #include "as_gpio.h"
 #include "as_max1027.h"
 #include "as_max5821.h"
+#include "as_adc.h"
+#include "as_dac.h"
 
 #define PWM_NUM 0
+
+#define _STR(x) #x
 
 void pressEnterToContinue(void)
 {
@@ -144,8 +148,8 @@ void test_i2c(void)
     int value;
     int initialized = 0;
 
+    struct as_i2c_device *i2c_bus = 0;
     int i2c_id = 0;
-    int i2c_bus = -1;
 
     while(buffer[0] != 'q')
     {
@@ -179,9 +183,9 @@ void test_i2c(void)
                             }
                             pressEnterToContinue();
                             break;
-                case '2' :  printf("Give bus number (max %d): ", AS_I2C_DEV_COUNT-1);
+                case '2' :  printf("Give bus number (max %d): ", sizeof(_STR(AS_I2C_DEV_COUNT))-1);
                             scanf("%d",&value);
-                            if ((value >= AS_I2C_DEV_COUNT) || (value < 0))
+                            if ((value >= sizeof(_STR(AS_I2C_DEV_COUNT))) || (value < 0))
                             {
                                 printf(" Wrong value\n");
                             } else {
@@ -202,7 +206,6 @@ void test_i2c(void)
                                 initialized = 0;
                             }
                             pressEnterToContinue();
-                            printf("plop\n");
                             break;
                 default : break;
             }
@@ -439,7 +442,6 @@ void test_gpio()
     int pin_num = 13;
     int port_direction = 0;
     int port_value = 1;
-    int pullup=1;
 
     gpio_dev = as_gpio_open(port_letter, pin_num);
     if (gpio_dev == NULL)
@@ -467,11 +469,10 @@ void test_gpio()
         printf("Choose ('q' to quit):\n");
         printf(" 1) Change gpio (P%c%d)\n", as_gpio_get_port_letter(gpio_dev), 
                                             as_gpio_get_pin_num(gpio_dev));
-        printf(" 3) Change direction (%d)\n", as_gpio_get_pin_direction(gpio_dev));
-        printf(" 4) Change value (%d)\n", as_gpio_get_pin_value(gpio_dev));
-        printf(" 5) Read pin value\n");
-        printf(" 6) Change Pull-Up (%d)\n", as_gpio_get_pullup_value(gpio_dev));
-        printf(" 8) Set irq mode (%d)\n", as_gpio_get_irq_mode(gpio_dev));
+        printf(" 2) Change direction (%d)\n", as_gpio_get_pin_direction(gpio_dev));
+        printf(" 3) Change value (%d)\n", as_gpio_get_pin_value(gpio_dev));
+        printf(" 4) Read pin value\n");
+        printf(" 5) Set irq mode (%d)\n", as_gpio_get_irq_mode(gpio_dev));
         printf(" a) blocking read\n");
 
         printf("> ");
@@ -506,7 +507,7 @@ void test_gpio()
                         printf("Ok P%c%d is open\n", port_letter, pin_num);
                         pressEnterToContinue();
                         break;
-            case '3' :  printf("Give direction (0:in, 1:out) : ");
+            case '2' :  printf("Give direction (0:in, 1:out) : ");
                         scanf("%d", &value);
                         ret = as_gpio_set_pin_direction(gpio_dev, value);
                         if(ret < 0)
@@ -519,7 +520,7 @@ void test_gpio()
                         printf("Ok direction changed\n");
                         pressEnterToContinue();
                         break;
-            case '4' :  printf("Give value : ");
+            case '3' :  printf("Give value : ");
                         scanf("%d", &value);
                         ret = as_gpio_set_pin_value(gpio_dev, value);
                         if(ret < 0)
@@ -531,7 +532,7 @@ void test_gpio()
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
-            case '5' :  printf("Get value \n");
+            case '4' :  printf("Get value \n");
                         ret = as_gpio_get_pin_value(gpio_dev);
                         if (ret < 0)
                         {
@@ -543,20 +544,7 @@ void test_gpio()
                         port_value = ret;
                         pressEnterToContinue();
                         break;
-            case '6' :  printf("Give value : ");
-                        scanf("%d", &value);
-                        ret = as_gpio_set_pullup_value(gpio_dev, value);
-                        if(ret < 0)
-                        {
-                            printf("Error, can't change pull up value\n");
-                            pressEnterToContinue();
-                            break;
-                        }
-                        pullup = value;
-                        printf("Ok value changed\n");
-                        pressEnterToContinue();
-                        break;
-            case '8' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
+            case '5' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
                         printf("2)  GPIO_IRQ_MODE_RISING \n");
                         printf("3)  GPIO_IRQ_MODE_FALLING\n");
                         printf("4)  GPIO_IRQ_MODE_BOTH   \n");
@@ -587,22 +575,16 @@ void test_gpio()
                         printf("Value read %d\n",ret);
                         pressEnterToContinue();
                         break;
-
-
-
-
             default : break;
         }
     }
+    ret = as_gpio_close(gpio_dev);
+    if(ret < 0)
+    {
+        printf("Error, can't close gpio\n");
+        pressEnterToContinue();
+    }
 }
-
-#ifdef APF9328
-#   define MAX1027_SPI_NUM (1)
-#elif defined(APF27)
-#   define MAX1027_SPI_NUM (0)
-#else
-#error Error no platform defined
-#endif
 
 #define NUM_OF_CHANNEL (8)
 
@@ -610,24 +592,13 @@ void test_max1027()
 {
     char buffer[50];
     int ret;
-    char c_value[10];
     int value;
-    int averaging=1;
-    int temperature = 0;
-    int temp_read=0;
-    struct as_max1027_device *max1027_dev;
+    float fValue;
+    struct as_adc_device *max1027_dev;
     int channel=0;
-    AS_max1027_mode mode= AS_MAX1027_SLOW;
-
-
-    max1027_dev = as_max1027_open(MAX1027_SPI_NUM, mode);
-    if (max1027_dev == NULL)
-    {
-        printf("Error, can't open max1027. Is max1027 modprobed ?\n");
-        pressEnterToContinue();
-        return ;
-    }
-    pressEnterToContinue();
+    float vRef = 2500;
+    int devNumber = 0;
+    int initialized = 0;
 
     while(buffer[0] != 'q')
     {
@@ -636,92 +607,106 @@ void test_max1027()
         printf("   Testing max1027       *\n");
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
-        printf(" 1) Change mode (%s)\n",(mode == AS_MAX1027_SLOW)?"SLOW":"FAST");
-        printf(" 2) Select channel (%d)\n", channel);
-        printf(" 3) Set averaging (%d)\n", averaging);
-        printf(" 4) Read channel value\n");
-        printf(" 5) Read temperature\n");
+	
+	if (initialized == 0)
+	{
+	        printf(" 1) Open Max 1027 device\n");
+		printf(" 2) Change device number (%i)\n", devNumber);
+	}
+	else
+	{
+		printf(" 1) Close Max 1027 device\n");
+		printf(" 2) Change Vref (%fmV)\n",vRef);
+		printf(" 3) Select channel (%i)\n", channel);
+		printf(" 4) Read channel value\n");
+	}
 
         printf("> ");
         scanf("%s",buffer);
 
-        switch(buffer[0])
-        {
-            case '1' :  printf("Give mode wanted (s:SLOW, f:FAST): ");
-                        scanf("%s",c_value);
-                        if ((c_value[0]=='s') && (mode == AS_MAX1027_FAST)){
-                            as_max1027_close(max1027_dev);
-                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
-                                                          AS_MAX1027_SLOW);
-                            if (max1027_dev == NULL){
-                                printf("Error, can't open max1027 in slow mode\n");
-                                pressEnterToContinue();
-                                break;
+	if (initialized == 0)
+	{
+            switch(buffer[0])
+            {
+                case '1' :  printf("Open Max 1027 device\n");
+                            max1027_dev = as_adc_open(AS_MAX1027_NAME, devNumber, vRef);
+                            if (max1027_dev < 0)
+                            {
+                                printf("Error, can't open max1027. Is max1027 modprobed ?\n");
+                            } else {
+                                printf("Max 1027 device opened\n");
+                                initialized = 1;
                             }
-                            mode = AS_MAX1027_SLOW;
-                            printf("Mode changed to Slow\n");
-                        } else if((c_value[0] == 'f') && (mode == AS_MAX1027_SLOW)){
-                            as_max1027_close(max1027_dev);
-                            max1027_dev = as_max1027_open(MAX1027_SPI_NUM,
-                                                          AS_MAX1027_FAST);
-                            if (max1027_dev == NULL){
-                                printf("Error, can't open max1027 in fast mode\n");
-                                pressEnterToContinue();
-                                break;
-                            }
-                            mode = AS_MAX1027_FAST;
-                            printf("Mode changed to Fast\n");
-                        }
-                        pressEnterToContinue();
-                        break;
-            case '2' :  printf("Give channel you want to read (0-6): ");
-                        scanf("%d",&value);
-                        if ((value >= NUM_OF_CHANNEL) || (value < 0)){
-                            printf("Channel num wrong\n");
-                            break;
-                        }
-                        channel = value;
-                        break;
-            case '3' :  printf("Give averaging (1, 4, 8, 16, 32): ");
-                        scanf("%d", &value);
-                        ret = as_max1027_set_averaging(max1027_dev, value);
-                        if (ret < 0)
-                        {
-                            printf("Error, can't set averaging\n");
                             pressEnterToContinue();
                             break;
-                        }
-                        averaging = value;
-                        pressEnterToContinue();
-                        break;
-            case '4' :  ret = as_max1027_get_value_milliVolt(max1027_dev,
-                                                             channel,&value);
-                        if (ret < 0) {
-                            printf("Error reading temperature\n");
-                            pressEnterToContinue();
-                            break;
-                        }
-                        printf("Channel %d value read : %d\n", channel, value);
-                        pressEnterToContinue();
-                        break;
-            case '5' :  ret = as_max1027_read_temperature_mC(max1027_dev, &temp_read);
-                        if (ret < 0) {
-                            printf("Error reading temperature\n");
-                            pressEnterToContinue();
-                            break;
-                        }
-                        temperature = temp_read;
-                        printf("Temperature read in mili⁰C : %d\n", temperature);
-                        pressEnterToContinue();
-                        break;
-            default : break;
-        }
-    }
+                case '2' :  printf("Give device number:");
+                            scanf("%i",&value);
 
-    ret = as_max1027_close(max1027_dev);
-    if (ret < 0) {
-        printf("Error on closing max1027\n");
-        pressEnterToContinue();
+			    if (value < 0)
+			    {
+                                printf(" Wrong value\n");
+                            } else {
+                                devNumber = value;
+                            }
+                            pressEnterToContinue();
+                default : break;
+	    }
+	}
+	else
+	{
+            switch(buffer[0])
+            {
+                    case '1' :  printf("Close Max 1027 device\n");
+                            ret = as_adc_close(max1027_dev);
+                            if (ret < 0)
+                            {
+                                printf(" Error, can't close Max 1027 device\n");
+                            } else {
+                                initialized = 0;
+                            }
+                            pressEnterToContinue();
+                            break;
+		    case '2' :  printf("Give wanted Vref (mV): ");
+		                scanf("%f",&fValue);
+		                ret = as_adc_close(max1027_dev);
+				if (ret < 0)
+				{
+				    printf("Error, can't close max1027\n");
+				    pressEnterToContinue();
+				}
+			
+		                max1027_dev = as_adc_open(AS_MAX1027_NAME, devNumber, fValue);
+		                if (max1027_dev == NULL){
+		                    printf("Error, can't open max1027 with Vref = %fmV\n", fValue);
+		                    pressEnterToContinue();
+		                    break;
+		                }
+
+				vRef = fValue;
+		                printf("Vref changed to: %fmV\n", vRef);
+		                pressEnterToContinue();
+		                break;
+		    case '3' :  printf("Give channel you want to read (0-6): ");
+		                scanf("%d",&value);
+		                if ((value >= NUM_OF_CHANNEL) || (value < 0)){
+		                    printf("Channel num wrong\n");
+		                    break;
+		                }
+		                channel = value;
+		                break;
+		    case '4' :  ret = as_adc_get_value_in_millivolts(max1027_dev,
+		                                                     channel);
+		                if (ret < 0) {
+		                    printf("Error reading temperature\n");
+		                    pressEnterToContinue();
+		                    break;
+		                }
+		                printf("Channel %d value read : %dmV\n", channel, ret);
+		                pressEnterToContinue();
+		                break;
+		    default : break;
+	     }
+        }
     }
 }
 
@@ -730,12 +715,13 @@ void test_max5821()
     char buffer[50];
     int ret;
     int value;
-    struct as_max5821_device *max5821_dev;
+    struct as_dac_device *max5821_dev;
     int channelA=0;
     int channelB=0;
+    float vRef = 2500;
 
 
-    max5821_dev = as_max5821_open(0, 0x38);
+    max5821_dev = as_dac_open(AS_MAX5821_TYPE, 0, 0x38, vRef);
     if (max5821_dev == NULL)
     {
         printf("Error, can't open max5821.\n");
@@ -769,7 +755,7 @@ void test_max5821()
                         printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
                         printf("> ");
                         scanf("%d", &value);
-                        ret = as_max5821_power(max5821_dev, 'a', value);
+                        ret = as_dac_max5821_power(max5821_dev, 'A', value);
                         if (ret < 0)
                         {
                             printf("Error, can't select power mode\n");
@@ -783,7 +769,7 @@ void test_max5821()
                         printf(" 3) MAX5821_POWER_DOWN_MODE2\n");
                         printf("> ");
                         scanf("%d", &value);
-                        ret = as_max5821_power(max5821_dev, 'b', value);
+                        ret = as_dac_max5821_power(max5821_dev, 'B', value);
                         if (ret < 0)
                         {
                             printf("Error, can't select power mode\n");
@@ -793,7 +779,7 @@ void test_max5821()
             case '3' :  printf("Give value between 0-1023\n");
                         printf("> ");
                         scanf("%d", &value);
-                        ret = as_max5821_set_one_value(max5821_dev, 'a', value);
+                        ret = as_dac_set_value_in_millivolts(max5821_dev, 0, value);
                         if (ret < 0)
                         {
                             printf("Error, can't select value\n");
@@ -803,7 +789,7 @@ void test_max5821()
             case '4' :  printf("Give value between 0-1023\n");
                         printf("> ");
                         scanf("%d", &value);
-                        ret = as_max5821_set_one_value(max5821_dev, 'b', value);
+                        ret = as_dac_set_value_in_millivolts(max5821_dev, 1, value);
                         if (ret < 0)
                         {
                             printf("Error, can't select value\n");
@@ -824,11 +810,18 @@ void test_max5821()
         }
     }
 
-    ret = as_max5821_close(max5821_dev);
+    ret = as_dac_close(max5821_dev);
     if (ret < 0) {
         printf("Error on closing max5821_dev\n");
         pressEnterToContinue();
     }
+}
+
+/* AS1531 test */
+void test_as1531(void)
+{
+    printf("TODO\n");
+    pressEnterToContinue();
 }
 
 
