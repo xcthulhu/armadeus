@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -17,41 +17,36 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+**
 */
 
-#ifndef __ASDYNAMICTABLE_HPP_
-#define __ASDYNAMICTABLE_HPP_
+#ifndef AS_GPIO__HPP__
+#define AS_GPIO__HPP__
 
-#include <stdio.h>
+#include "as_gpio.h"
 
-class AsDynamicTable {
-    public:
-        AsDynamicTable()
-        {
-            int i;
-            for(i=0; i< DYNAMIC_TABLE_SIZE; i++)
-            {
-                mInst[i] = NULL;
-            }
-        }
+class AsGpio
+{
+public:
+	AsGpio(char aPortChar, int aPinNum);
+	virtual ~AsGpio();
 
-        void * getInstance(int aInstanceNum)
-        {
-            return mInst[aInstanceNum];
-        }
+	long setPinDirection(int aDirection);
+	long getPinDirection() const;
 
-        void setInstance(void * aInstance, int aInstanceNum)
-        {
-            mInst[aInstanceNum] = aInstance;
-        }
+	long setPinValue(int aValue);
+	long getPinValue() const;
+	long blockingGetPinValue(int aDelay_s, int aDelay_us) const;
+	
+	long setIrqMode(int aMode);
+	long getIrqMode() const;
 
-       
-        virtual ~AsDynamicTable()
-        {
-        }
+	long getPinNum() const;
 
-    private:
-        void * mInst[DYNAMIC_TABLE_SIZE];
+	long getPortLetter() const;
+
+protected:
+	mutable struct as_gpio_device *mDev;
 };
 
-#endif // __ASDYNAMICTABLE_HPP_
+#endif // AS_GPIO__HPP__

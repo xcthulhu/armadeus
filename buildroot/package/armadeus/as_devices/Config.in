@@ -4,13 +4,25 @@ config BR2_PACKAGE_AS_DEVICES
 	help
           Library that drives armadeus specific devices.
 
-#config BR2_PACKAGE_AS_DEVICES_CPP
-#    depends on BR2_PACKAGE_AS_DEVICES
-#    bool "wrapper C++"
-#    default n
-#    help
-#        C++ wrapper for as_devices library
-#
+config BR2_PACKAGE_AS_DEVICES_TESTS
+	bool "as_device test"
+	depends on BR2_PACKAGE_AS_DEVICES
+	help
+	  Executable that can test all as_devices
+
+config BR2_PACKAGE_AS_DEVICES_CPP
+    depends on BR2_PACKAGE_AS_DEVICES
+    bool "wrapper C++"
+    default n
+    help
+        C++ wrapper for as_devices library
+
+config BR2_PACKAGE_AS_DEVICES_TESTS_CPP
+	bool "as_device C++ wrappers test"
+	depends on BR2_PACKAGE_AS_DEVICES_CPP
+	help
+	  Executable that can test as_devices C++ wrappers
+
 config BR2_PACKAGE_AS_DEVICES_PYTHON
 	depends on BR2_PACKAGE_AS_DEVICES
 	depends on BR2_PACKAGE_PYTHON

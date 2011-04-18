@@ -44,6 +44,7 @@ int main(int argc, char ** argv)
         printf(" 5) Testing gpio\n");
         printf(" 6) Testing max1027\n");
         printf(" 7) Testing max5821\n");
+        printf(" 8) Testing as1531\n");
         printf("> ");
         scanf("%s",buffer);
         
@@ -62,7 +63,9 @@ int main(int argc, char ** argv)
             case '6' : test_max1027();
                        break;
             case '7' : test_max5821();
-
+                       break;
+            case '8' : test_as1531();
+                       break;
             default : break;
         }
     }

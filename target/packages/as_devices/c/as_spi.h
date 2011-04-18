@@ -52,7 +52,7 @@ int as_spi_open(const unsigned char *aSpidev_name);
  */
 int as_spi_set_lsb(int aFd, uint8_t aLsb);
 
-/** @brief Set bits order
+/** @brief Get bits order
  *
  * @param aFd spidev file handler
  *
@@ -79,15 +79,6 @@ int as_spi_set_mode(int aFd, uint8_t aMode);
  * TODO: test it
  */
 int as_spi_get_mode(int aFd);
-
-/** @brief Get bits order
- *
- * @param aFd spidev file handler
- *
- * @return lsb first if positive, msb first if 0, negative value on error
- *
- */
-int as_spi_get_lsb(int aFd);
 
 /** @brief Set clock bus speed
  *

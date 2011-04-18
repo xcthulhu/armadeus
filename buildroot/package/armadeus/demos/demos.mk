@@ -9,7 +9,7 @@ ARMADEUS-DEMOS_SOURCE:=$(TOPDIR)/../target/demos
 ARMADEUS-DEMOS_DIR:=$(BUILD_DIR)/armadeus-demos-$(ARMADEUS-DEMOS_VER)
 ARMADEUS-DEMOS_TARGET_DIR:=$(TARGET_DIR)/usr/local/bin
 ARMADEUS-DEMOS_TARGET_DATA_DIR:=$(TARGET_DIR)/usr/share
-
+ARMADEUS-DEMOS_TARGET_INIT_DIR:=$(TARGET_DIR)/etc/init.d
 
 ifeq ($(BR2_PACKAGE_ARMADEUS_DEMOS_ARMANOID),y)
 ARMADEUS-DEMOS_SUBDIRS+=armanoid
@@ -58,7 +58,6 @@ ARMADEUS-DEMOS_SUBDIRS+=test_lcd
 ARMADEUS-DEMOS_DEPS=sdl
 endif
 
-
 ifeq ($(BR2_PACKAGE_ARMADEUS_DEMOS_MUSIC_PLAYER),y)
 ARMADEUS-DEMOS_DEPS+=sdl_ttf sdl_mixer
 endif
@@ -66,6 +65,9 @@ ifeq ($(BR2_PACKAGE_ARMADEUS_DEMOS_SHOW_IMAGE),y)
 ARMADEUS-DEMOS_DEPS+=sdl_image
 endif
 
+ifeq ($(BR2_PACKAGE_ARMADEUS_DEMOS_MCP25020),y)
+ARMADEUS-DEMOS_SUBDIRS+=mcp25020_ctrl
+endif
 
 $(ARMADEUS-DEMOS_DIR)/.unpacked:
 	mkdir -p $(ARMADEUS-DEMOS_DIR)/
@@ -88,7 +90,7 @@ $(ARMADEUS-DEMOS_DIR)/.installed: $(ARMADEUS-DEMOS_DIR)/.compiled
 		dir=$(ARMADEUS-DEMOS_DIR)/$$dir ; \
                 if [ -d $$dir ] ; then \
                         (cd $$dir && $(MAKE) install INSTALL_DIR=$(ARMADEUS-DEMOS_TARGET_DIR) \
-                               INSTALL_DATA_DIR=$(ARMADEUS-DEMOS_TARGET_DATA_DIR) STRIP=$(TARGET_STRIP)) || exit 1 ; \
+                               INSTALL_DATA_DIR=$(ARMADEUS-DEMOS_TARGET_DATA_DIR) INIT_DIR=$(ARMADEUS-DEMOS_TARGET_INIT_DIR) STRIP=$(TARGET_STRIP)) || exit 1 ; \
                 fi \
         done
 	touch $@

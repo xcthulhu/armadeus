@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -17,41 +17,37 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+**
 */
 
-#ifndef __ASAPF27GPIO_HPP__
-#define __ASAPF27GPIO_HPP__
+#ifndef AS_SPI__HPP__
+#define AS_SPI__HPP__
 
-#include "as_apf27_gpio.h"
-#define DYNAMIC_TABLE_SIZE NUMBER_OF_PORTS
-#include "as_dynamic_table.hpp"
+#include <cstring>
 
-/** AsApf27Gpio description
- *
- */
-class AsApf27Gpio {
+#include "as_spi.h"
 
-public:
+class AsSpi
+{
+	AsSpi(const unsigned char *aSpidev_name);
+	virtual ~AsSpi();
 
-    static AsApf27Gpio * getInstance(char aPortLetter);
-    virtual ~AsApf27Gpio();
+	int setLsb(unsigned char aLsb);
+	int getLsb() const;
 
-    int setPinDirection(int aPinNum,int aDirection);
-    int setPinValue(int aPinNum, int aValue);
-    int getPinValue(int aPinNum);
+	int setMode(unsigned char aMode);
+	int getMode() const;
+
+	int setSpeed(unsigned char aSpeed);
+	int getSpeed() const;
+
+	int getBitsPerWord() const;
+	int setBitsPerWord(unsigned char aBits);
+
+	unsigned long long msg(unsigned long long aMsg, size_t aLen, unsigned long aSpeed);
 
 protected:
-    static AsDynamicTable * mInstances;
-
-    AsApf27Gpio(char aPortLetter);
-
-    int init();
-
-    char mPortLetter; /**> Port letter in upper case */
-
-    int mFileHandlerGpioPort;
+	int mFd;
 };
 
-#endif /* __ASAPF27GPIO_HPP__ */
-
-
+#endif // AS_SPI__HPP__

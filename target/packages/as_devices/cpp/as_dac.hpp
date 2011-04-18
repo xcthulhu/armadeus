@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -17,55 +17,24 @@
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+**
 */
 
-#ifndef __ASDAC_HPP__
-#define __ASDAC_HPP__
+#ifndef AS_DAC__HPP__
+#define AS_DAC__HPP__
 
-using namespace std;
+#include "as_dac.h"
 
-/** AsDac description
- *
- */
-class AsDac{
-    public:
-        enum AsDac_errors 
-        {
-            AS_DAC_NOCONNECTION = -7,
-            AS_DAC_ALREADY_CONNECTED = -6,
-            AS_DAC_IOCTL = -6,
-            AS_DAC_WRONGCHAN = -5,
-            AS_DAC_LSEEK = -4,
-            AS_DAC_READFILE = -3,
-            AS_DAC_WRITEFILE = -2,
-            AS_DAC_OPENFILE = -1,
-            AS_DAC_OK = 0
-        };
-    
-        AsDac();
-    
-        virtual ~AsDac();
-    
-        virtual AsDac_errors init(int aI2cNum)=0;
-        virtual AsDac_errors setDac(void * aObject, int aValue)=0;
-        virtual AsDac_errors setDacPercent(void * aObject, float aValueInPercent)=0;
-    
-        /* */
-        virtual AsDac_errors powerDown(void * aObject)=0;
-    
-        /* DAC connections */
-        AsDac_errors connect(void * aObject, char aChannel);
-        AsDac_errors disconnect(char aChannel);
-        AsDac_errors disconnect(void * aObject);
-    
-    protected:
-        char getObjectChannel(void * aObject);
-    
-        void ** mChannelObject; /**< object for each channel 'A' -> channel 0,
-                                  'B' -> channel 1*/
-        int mChannelNumber; /**< Channel number in component */
+class AsDac
+{
+public:
+	AsDac(const char *aDacType, int aBusNumber, int aAddress, int aVRef);
+	virtual ~AsDac();	
+	
+	long setValueInMillivolts(int aChannel, int aValue);
+
+protected:
+	mutable struct as_dac_device *mDev;
 };
 
-#endif /* __ASDAC_HPP__ */
-
-
+#endif // AS_DAC__HPP__

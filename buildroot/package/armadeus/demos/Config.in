@@ -1,4 +1,3 @@
-
 config BR2_PACKAGE_ARMADEUS_DEMOS
 	bool "Armadeus misc demos"
 	default n
@@ -64,5 +63,15 @@ config BR2_PACKAGE_ARMADEUS_DEMOS_TEST_LCD
 	select BR2_PACKAGE_SDL
 	help
 	  Test for LCD dead pixels. Needs SDL.
+
+config BR2_PACKAGE_ARMADEUS_DEMOS_MCP25020
+	bool "DEMOS_MCP25020"
+	depends on BR2_PACKAGE_IPROUTE2
+	help
+	  Test for CAN bus communication with MCP25020.
+	  Requires package iproute2.
+
+comment "DEMOS_MCP25020 requires package iproute2"
+	depends on !BR2_PACKAGE_IPROUTE2
 
 endmenu

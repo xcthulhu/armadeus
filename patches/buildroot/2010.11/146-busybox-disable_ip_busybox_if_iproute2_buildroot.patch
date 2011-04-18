@@ -1,0 +1,36 @@
+This patch disable the ip tools options of the busybox config when the iproute2 package is selected
+in buildroot config. It modify the makefile of the busybox package in buildroot.
+We need to disable ip from busybox if we choose to use iproute2 because by default,
+the binary used for ip is the ip of busybox (/bin/ip) and we need to use ip of iproute2
+(/sbin/ip). This patch fix the conflict with the two binaries.
+
+Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
+
+Index: buildroot/package/busybox/busybox.mk
+===================================================================
+--- buildroot.orig/package/busybox/busybox.mk	2011-04-14 15:30:09.765201003 +0200
++++ buildroot/package/busybox/busybox.mk	2011-04-14 15:21:00.000000000 +0200
+@@ -100,6 +100,15 @@
+ endef
+ endif
+ 
++# If IPROUTE2 is selected, disable all the ip tools of busybox
++ifeq ($(BR2_PACKAGE_IPROUTE2),y)
++define BUSYBOX_IPROUTE2
++	$(call KCONFIG_DISABLE_OPT,CONFIG_FEATURE_IFUPDOWN_IP,$(BUSYBOX_BUILD_CONFIG))
++	$(call KCONFIG_DISABLE_OPT,CONFIG_FEATURE_IFUPDOWN_IFCONFIG_BUILTIN,$(BUSYBOX_BUILD_CONFIG))
++	$(call KCONFIG_DISABLE_OPT,CONFIG_IP,$(BUSYBOX_BUILD_CONFIG))
++endef
++endif
++
+ define BUSYBOX_COPY_CONFIG
+ 	cp -f $(BUSYBOX_CONFIG_FILE) $(BUSYBOX_BUILD_CONFIG)
+ endef
+@@ -116,6 +125,7 @@
+ 	$(BUSYBOX_PREFER_STATIC)
+ 	$(BUSYBOX_NETKITBASE)
+ 	$(BUSYBOX_NETKITTELNET)
++	$(BUSYBOX_IPROUTE2)
+ 	@yes "" | $(MAKE) ARCH=$(KERNEL_ARCH) CROSS_COMPILE="$(TARGET_CROSS)" \
+ 		-C $(@D) oldconfig
+ endef

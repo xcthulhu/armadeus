@@ -62,12 +62,12 @@ int32_t as_adc_get_value_in_millivolts(struct as_adc_device *aDev, int aChannel)
 int32_t as_adc_close(struct as_adc_device *aDev) {
     int ret;
     if (strncmp(AS_MAX1027_NAME, aDev->device_type, strlen(AS_MAX1027_NAME)) == 0) {
-        ret = as_adc_close(aDev);
+        ret = as_adc_close_max1027(aDev);
         free(aDev);
         return ret;
     }
     if (strncmp(AS_AS1531_NAME, aDev->device_type, strlen(AS_AS1531_NAME)) == 0) {
-        ret = as_adc_close_max1027(aDev);
+        ret = as_adc_close_as1531(aDev);
         free(aDev);
         return ret;
     }

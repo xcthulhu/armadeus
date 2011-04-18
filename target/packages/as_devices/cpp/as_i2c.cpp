@@ -1,8 +1,8 @@
 /*
 **    THE ARMadeus Systems
 ** 
-**    Copyright (C) 2009  The armadeus systems team 
-**    Fabien Marteau <fabien.marteau@armadeus.com>
+**    Copyright (C) 2011  The armadeus systems team 
+**    Jérémie Scheer <jeremie.scheeer@armadeus.com>
 ** 
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -19,119 +19,134 @@
 ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **
 */
+
 #include "as_i2c.hpp"
 #include <iostream>
 
-AsDynamicTable * AsI2c::mInstances = new AsDynamicTable();
-
-/** Singleton constructor
- * @param aBusNumber bus number
+/** @brief Constructor: Open an I2C bus.
+ *
+ * @param aBusNumber	bus to open
  */
-AsI2c *
-AsI2c::getInstance(int aBusNumber)
-{
-    AsI2c * instance;
-    instance = (AsI2c *)mInstances->getInstance(aBusNumber);
-    if(instance == NULL)
-    {
-        instance = new AsI2c(aBusNumber);
-        mInstances->setInstance(instance,aBusNumber);
-    }
-    return instance;
-}
-
-/*------------------------------------------------------------------------------*/
-
 AsI2c::AsI2c(int aBusNumber)
 {
-    int ret;
-
-    mI2cBusNumber = aBusNumber;
-
-    ret = as_i2c_init(aBusNumber);
-    if (ret < 0)
-    {
-        std::cout << "AsI2C initialization error" << std::endl;
-    }
+	mDev = as_i2c_open(aBusNumber);
 }
-/*------------------------------------------------------------------------------*/
 
 AsI2c::~AsI2c()
 {
-    mInstances->setInstance(NULL,mI2cBusNumber);
+	int ret;
+
+	ret = as_i2c_close(mDev);
+	if (ret < 0)
+	{
+		std::cout<<"AsI2c destruction error"<<std::endl;
+	}
 }
 
-/*------------------------------------------------------------------------------*/
-/** read byte on i2c bus
- * @param aChipAddr chip address
- * @param aReg Register number
- * @param *aBuf char buffer
- * @return error return
+/** @brief Set chip's I2C slave address 
+ *
+ * @param aAddr		slave's address
+ *
+ * @return error if negative
  */
-int 
-AsI2c::readByteData(unsigned char aChipAddr, 
-                       unsigned char aReg, 
-                       unsigned char *aBuf )
+long AsI2c::setSlaveAddr(unsigned char aAddr)
 {
-    return as_read_byte_data(mI2cBusNumber, aChipAddr, aReg, aBuf);
+	return as_i2c_set_slave_addr(mDev, aAddr);
 }
 
-/*------------------------------------------------------------------------------*/
-/** write byte on i2c bus
- * @param aChipAddr chip address
- * @param aReg Register number
- * @param aBuf char value to write
- * @return error return
+/** @brief Get chip's I2C slave address 
+ *
+ * @return slave's address
  */
-int 
-AsI2c::writeByteData(unsigned char aChipAddr,
-                        unsigned char aReg, 
-                        unsigned char aValue)
+long AsI2c::getSlaveAddr() const
 {
-    return as_write_byte_data(mI2cBusNumber, aChipAddr, aReg, aValue);
+	return as_i2c_get_slave_addr(mDev);
 }
 
-/*------------------------------------------------------------------------------*/
-/** write byte on i2c bus
- * @param aChipAddr chip address
- * @param aBuf char value to write
- * @return error return
+/** @brief Read several bytes (ioctl() method) from given chip.
+ *
+ * @param aData		read data
+ * @param aSize		data size
+ *
+ * @return error if negative
  */
-int 
-AsI2c::writeByte(unsigned char aChipAddr,
-                 unsigned char aValue)
+long AsI2c::read(unsigned char *aData, size_t aSize) const
 {
-    return as_write_byte(mI2cBusNumber, aChipAddr, aValue);
+	return as_i2c_read(mDev, aData, aSize);
 }
 
-/*------------------------------------------------------------------------------*/
-/** Write several byte on I2C
- * @param aChipAddr Chip address
- * @param aBuff message
- * @param aSize size of message
- * @return error code
+/** @brief Write several bytes (ioctl() method) to given chip.
+ *
+ * @param aData		data to write
+ * @param aSize		data size
+ *
+ * @return error if negative
  */
-int 
-AsI2c::writeMultipleBytes(unsigned char aChipAddr,
-                          unsigned char *aBuff,
-                          int aSize)
+long AsI2c::write(unsigned char *aData, size_t aSize)
 {
-    return as_write_multiple_bytes(mI2cBusNumber, aChipAddr, aBuff, aSize);
+	return as_i2c_write(mDev, aData, aSize);
 }
 
-/*------------------------------------------------------------------------------*/
-/** read several bytes on I2C
- * @param aChipAddr Chip address
- * @param aBuff message
- * @param aSize size of message
- * @return error code
+/** @brief Read from given chip at a given register address (ioctl() method).
+ *
+ * @param aReg		register address
+ * @param aData		read data
+ * @param aSize		data size
+ *
+ * @return error if negative
  */
-int 
-AsI2c::readMultipleBytes(unsigned char aChipAddr,
-                         unsigned char *aBuff,
-                         int aSize)
+long AsI2c::readReg(unsigned char aReg, unsigned char *aData, size_t aSize) const
 {
-    return as_read_multiple_bytes(mI2cBusNumber, aChipAddr, aBuff, aSize);
+	return as_i2c_read_reg(mDev, aReg, aData, aSize);
 }
 
+/** @brief Write to given chip at a given register address (ioctl() method).
+ *
+ * @param aReg		register address
+ * @param aData		data to write
+ * @param aSize		data size
+ *
+ * @return error if negative
+ */
+long AsI2c::writeReg(unsigned char aReg, unsigned char *aData, size_t aSize)
+{
+	return as_i2c_write_reg(mDev, aReg, aData, aSize);
+}
 
+/** @brief forge a read message like this:
+ * S Addr[W] wdata0 [A] wdata1 [A] ... RS Addr R [rdata0] A [rdata1] A ... P
+ *
+ * @param aWData	data to write
+ * @param aSize		written data size
+ * @param aRData	read data
+ * @param aReadSize	read data size
+ *
+ * @return error if negative
+ */
+long AsI2c::readMsg(unsigned char *aWData, unsigned char aWriteSize, unsigned char *aRData, size_t aReadSize)
+{
+	return as_i2c_read_msg(mDev, aWData, aWriteSize, aRData, aReadSize);
+}
+
+/** @brief Read a byte from the given register.
+ *
+ * @param aReg		register address
+ *
+ * @return read byte
+ */
+long AsI2c::readRegByte(unsigned char aReg) const
+{
+	return as_i2c_read_reg_byte(mDev, aReg);
+}
+
+/** @brief Write a byte to the given register.
+ *
+ * @param aReg		register address
+ * @param aVal		byte to write
+ *
+ * @return error if negative
+ */
+long AsI2c::writeRegByte(unsigned char aReg, unsigned char aVal)
+{
+	return as_i2c_write_reg_byte(mDev, aReg, aVal);
+}	
