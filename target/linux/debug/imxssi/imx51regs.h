@@ -1,0 +1,1 @@
+../imxregs/imx51regs.h
