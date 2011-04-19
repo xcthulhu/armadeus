@@ -24,13 +24,8 @@ endif
 KDIR	:= $(LINUX_DIR)
 PWD	:= $(shell pwd)
 
-default:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) ARCH=arm CROSS_COMPILE=$(PWD)/$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux- modules
-
-DIRS	:= $(shell ls)
-clean:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) clean
-	for directory in $(DIRS); do if [ -d "$$directory" ] && [ ! -L "$$directory" ]; then $(MAKE) -C $$directory clean; fi ; done	
+# Armadeus custom drivers common targets (default, clean, etc...)
+include ./Makefile.in
 	
 install:
 	echo "Installing Armadeus drivers..."

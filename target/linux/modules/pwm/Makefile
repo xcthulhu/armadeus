@@ -6,12 +6,7 @@
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_ARMADEUS_PWM_DRIVER)	+= imx-pwm.o
-
-ifeq ($(KERNELVERSION),2.6.23.1)
-	imx-pwm-objs        := core.o
-else
-	imx-pwm-objs        := pwm.o
-endif
+imx-pwm-objs        := pwm.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

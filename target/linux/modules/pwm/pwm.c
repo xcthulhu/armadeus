@@ -860,7 +860,9 @@ static int imx_pwm_drv_probe(struct platform_device *pdev)
 	int err = -ENODEV;
 	struct resource *res;
 	struct pwm_device *pwm;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
+#endif
 
 	if (pdev->id >= PWM_MAX_DEV)
 		dev_err(&pdev->dev, "failed. Unknown module. Remember that this device only supports %d PWM\n", PWM_MAX_DEV);
@@ -1010,10 +1012,10 @@ static int imx_pwm_drv_remove(struct platform_device *pdev)
 	struct resource *res;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 #else
 	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
 #endif
-	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	unregister_sys_file(pwm);
 	device_destroy(pwm_class, MKDEV(gMajor, pdev->id));
@@ -1036,10 +1038,10 @@ static int imx_pwm_drv_suspend(struct platform_device *pdev, pm_message_t state)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 #else
 	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
 #endif
-	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	clk_disable(pwm->clk);
 	dev_dbg(&pdev->dev, "suspended\n");
@@ -1055,10 +1057,10 @@ static int imx_pwm_drv_resume(struct platform_device *pdev)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 	struct pwm_device *pwm = (struct pwm_device*)pdev->dev.driver_data;
+	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 #else
 	struct pwm_device *pwm = (struct pwm_device*)(dev_get_drvdata(&pdev->dev));
 #endif
-	struct imx_pwm_platform_data *pdata = pdev->dev.platform_data;
 
 	clk_enable(pwm->clk);
 	dev_dbg(&pdev->dev, "resumed\n");
