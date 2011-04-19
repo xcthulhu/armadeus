@@ -1,0 +1,48 @@
+Allows to use some usefull irq_chip registering/handling functions in modules.
+
+Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
+
+Index: linux-2.6.38.1/kernel/irq/chip.c
+===================================================================
+--- linux-2.6.38.1.orig/kernel/irq/chip.c	2011-04-18 20:43:15.000000000 +0200
++++ linux-2.6.38.1/kernel/irq/chip.c	2011-04-18 20:46:11.000000000 +0200
+@@ -663,6 +663,7 @@
+ out_unlock:
+ 	raw_spin_unlock(&desc->lock);
+ }
++EXPORT_SYMBOL_GPL(handle_edge_irq);
+ 
+ /**
+  *	handle_percpu_irq - Per CPU local irq handler
+@@ -748,6 +749,7 @@
+ 	set_irq_chip(irq, chip);
+ 	__set_irq_handler(irq, handle, 0, NULL);
+ }
++EXPORT_SYMBOL_GPL(set_irq_chip_and_handler);
+ 
+ void
+ set_irq_chip_and_handler_name(unsigned int irq, struct irq_chip *chip,
+Index: linux-2.6.38.1/arch/arm/kernel/irq.c
+===================================================================
+--- linux-2.6.38.1.orig/arch/arm/kernel/irq.c	2011-04-18 20:48:25.000000000 +0200
++++ linux-2.6.38.1/arch/arm/kernel/irq.c	2011-04-18 20:48:56.000000000 +0200
+@@ -163,6 +163,7 @@
+ 		desc->status &= ~IRQ_NOAUTOEN;
+ 	raw_spin_unlock_irqrestore(&desc->lock, flags);
+ }
++EXPORT_SYMBOL_GPL(set_irq_flags);
+ 
+ void __init init_IRQ(void)
+ {
+Index: linux-2.6.38.1/kernel/irq/irqdesc.c
+===================================================================
+--- linux-2.6.38.1.orig/kernel/irq/irqdesc.c	2011-04-18 21:02:58.000000000 +0200
++++ linux-2.6.38.1/kernel/irq/irqdesc.c	2011-04-18 21:19:39.000000000 +0200
+@@ -273,6 +273,7 @@
+ {
+ 	return (irq < NR_IRQS) ? irq_desc + irq : NULL;
+ }
++EXPORT_SYMBOL_GPL(irq_to_desc);
+ 
+ struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node)
+ {

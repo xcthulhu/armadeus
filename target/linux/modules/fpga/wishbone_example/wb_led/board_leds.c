@@ -20,17 +20,14 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+
 #ifdef CONFIG_MACH_APF27 /* to be removed when MX1 platform merged */
 #include <mach/fpga.h>
 #endif
-#include"led.h"
+#include "led.h"
 
 
 static struct plat_led_port plat_led0_data = {
@@ -42,8 +39,9 @@ static struct plat_led_port plat_led0_data = {
 };
 
 
-void plat_led_release(struct device *dev){
-	PDEBUG("device %s .released\n",dev->bus_id);
+void plat_led_release(struct device *dev)
+{
+	dev_dbg(dev, "released\n");
 }
 
 static struct platform_device plat_led0_device = {
@@ -51,8 +49,8 @@ static struct platform_device plat_led0_device = {
 	.id = 0,
 	.dev = {
 		.release = plat_led_release,
-		.platform_data=&plat_led0_data
-		},
+		.platform_data = &plat_led0_data
+	},
 };
 
 
@@ -71,6 +69,6 @@ module_init(sled_init);
 module_exit(sled_exit);
 
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
-MODULE_DESCRIPTION("Driver to blink blink some leds");
+MODULE_DESCRIPTION("Driver to blink some LEDs on FPGA");
 MODULE_LICENSE("GPL");
 
