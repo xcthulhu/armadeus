@@ -666,7 +666,6 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/* Ethernet PHY Reset */
 +	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,0);
 +	imx_gpio_pin_cfg_dir(CONFIG_SYS_PHY_RESET_GPIO, 1);
-+	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,1);
 +
 +	/* FEC TX_ER muxed with DI_GP3 */
 +	mxc_request_iomux(MX51_PIN_DI_GP3, IOMUX_CONFIG_ALT2);
@@ -753,6 +752,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	mxc_iomux_set_input(MUX_IN_FEC_FEC_RX_ER_SELECT_INPUT, INPUT_CTL_PATH1);
 +	mxc_iomux_set_input(MUX_IN_FEC_FEC_TX_CLK_SELECT_INPUT, INPUT_CTL_PATH1);
 +
++	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,1);
 +#endif
 +}
 +
