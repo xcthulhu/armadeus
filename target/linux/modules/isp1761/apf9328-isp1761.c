@@ -11,13 +11,8 @@
 #include <linux/interrupt.h>
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/hardware.h>
-#include <asm/arch/imx-regs.h>
-#else
 #include <mach/hardware.h>
 #include <mach/imx-regs.h>
-#endif
 
 
 int __init devfull_isp1761_init(void)

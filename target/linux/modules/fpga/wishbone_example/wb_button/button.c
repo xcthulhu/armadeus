@@ -21,6 +21,37 @@
  **********************************************************************
  */
 
+#include <linux/version.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/fs.h>
+#include <linux/cdev.h>
+#include <linux/semaphore.h>
+#include <linux/ioport.h>	/* request_mem_region */
+#include <linux/jiffies.h>
+#include <linux/interrupt.h>
+#include <linux/wait.h>
+
+#include <asm/uaccess.h>	/* copy_to_user function */
+#include <asm/io.h>		/* readw() writew() */
+#include <mach/hardware.h>
+#include <asm/irq.h>
+
+/*#define BUTTON_DEBUG*/
+
+#undef PDEBUG
+#ifdef BUTTON_DEBUG
+# ifdef __KERNEL__
+    /* for kernel spage */
+#   define PDEBUG(fmt,args...) printk(KERN_INFO "button : " fmt, ##args)
+# else
+    /* for user space */
+#   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
+# endif
+#else
+# define PDEBUG(fmt,args...) /* no debugging message */
+#endif
+
 #include "button.h"
 
 /* Internal read/write helpers */

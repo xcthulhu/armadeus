@@ -41,11 +41,7 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/arch/hardware.h>
-#else
 #include <mach/hardware.h>
-#endif
 
 MODULE_AUTHOR("Eric Jarrige");
 MODULE_DESCRIPTION("i.MXL keypad driver");
@@ -242,9 +238,6 @@ static int __init imxkeypad_init(void)
 	imxkeypad.input->keycode = imxkeypad.keycode;
 	imxkeypad.input->keycodesize = sizeof(unsigned short);
 	imxkeypad.input->keycodemax = ARRAY_SIZE(imxkeypad_keycode);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	imxkeypad.input->private = &imxkeypad; /* Usefull ? */
-#endif
 	imxkeypad.input->name = "imxkeypad";
 	imxkeypad.input->phys = imxkeypad.phys;
 	imxkeypad.input->id.bustype = BUS_HOST;

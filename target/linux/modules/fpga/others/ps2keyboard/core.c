@@ -18,14 +18,9 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/serio.h>
-/* For pr_debug: */
-#include <linux/kernel.h>
+#include <linux/kernel.h>	/* pr_debug */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/arch/imx-regs.h>
-#else
 #include <mach/imx-regs.h>
-#endif
 
 /* Linux Kernel uses virtual addresses linearly mapped to physical one, ex for CS1:
 #define IMX_CS1_PHYS        0x12000000
@@ -119,11 +114,7 @@ static void apf9328keyboard_interrupt(unsigned long arg)
 
 	return(IRQ_HANDLED);
 #else 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-		serio_interrupt(apf9328keyboard_port, gBuffer, 0, 0);
-# else
 		serio_interrupt(apf9328keyboard_port, gBuffer, 0);
-# endif
 		status = FPGA_PS2_STATUS_REGISTER;
 		pr_debug(DRIVER_NAME ": status read 0x%x\n", status);
 	}

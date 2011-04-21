@@ -22,12 +22,10 @@
 
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
+
 #include <asm/irq.h>
 #ifdef CONFIG_MACH_APF27
 #include <mach/fpga.h> /* To remove when MX1 platform merged*/

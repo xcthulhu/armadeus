@@ -24,40 +24,18 @@
 #define __LED_H__
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
-/* form module/drivers */
 #include <linux/init.h>
 #include <linux/module.h>
-
-/* for file  operations */
 #include <linux/fs.h>
 #include <linux/cdev.h>
-
-/* copy_to_user function */
-#include <asm/uaccess.h>
-
-/* request_mem_region */
-#include <linux/ioport.h>
-
-/* readw() writew() */
-#include <asm/io.h>
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-/* hardware addresses */
-#	include <asm/hardware.h>
-#else
-#	include <mach/hardware.h>
-#endif
-
-/* for platform device */
+#include <linux/ioport.h>	/* request_mem_region */
 #include <linux/platform_device.h>
 
-/* for debugging messages*/
-#define LED_DEBUG
+#include <asm/uaccess.h>	/* copy_to_user function */
+#include <asm/io.h>		/* readw() writew() */
+#include <mach/hardware.h>
 
+#define LED_DEBUG
 #undef PDEBUG
 #ifdef LED_DEBUG
 # ifdef __KERNEL__

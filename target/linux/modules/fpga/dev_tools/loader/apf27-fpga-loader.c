@@ -30,10 +30,6 @@
 #endif
 #include <mach/gpio.h>
 #include <mach/fpga.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
-#define mxc_gpio_setup_multiple_pins mxc_gpio_setup_multiple
-#define mxc_gpio_release_multiple_pins mxc_gpio_release_multiple
-#endif
 
 #include "xilinx-fpga-loader.h"
 

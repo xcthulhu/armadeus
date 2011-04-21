@@ -27,6 +27,8 @@
 #include <linux/fs.h>		/* for file  operations */
 #include <linux/cdev.h>
 #include <linux/ioport.h>	/* request_mem_region */
+#include <linux/platform_device.h>
+#include <linux/interrupt.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29)
 #include <linux/slab.h>		/* kmalloc */
 #endif
@@ -35,10 +37,6 @@
 #include <asm/io.h>		/* readw() writew() */
 #include <mach/hardware.h>
 
-/* for platform device */
-#include <linux/platform_device.h>
-
-/* button */
 #include "button.h"
 
 
