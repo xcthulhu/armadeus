@@ -22,13 +22,8 @@ LINUX_DIR:=$(ARMADEUS_LINUX_DIR)
 endif
 PWD:= $(shell pwd)
 
-default:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) zImage modules
-
-clean:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) clean
+# Armadeus custom drivers common targets (default, clean, etc...)
+include ../../Makefile.in
 
 install:
 	echo "Installing Armadeus drivers..."

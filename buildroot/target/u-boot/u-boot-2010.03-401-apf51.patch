@@ -2,7 +2,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-01-05 18:11:15.000000000 +0100
-@@ -0,0 +1,1109 @@
+@@ -0,0 +1,1151 @@
 +/*
 + * (C) Copyright 2010 Eric Jarrige, Armadeus Project
 + *
@@ -198,18 +198,21 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/*
 +	 * uart3
 +	 */
-+	mxc_request_iomux(MX51_PIN_UART3_RXD, IOMUX_CONFIG_ALT0);
-+	mxc_request_iomux(MX51_PIN_UART3_TXD, IOMUX_CONFIG_ALT0);
-+	mxc_request_iomux(MX51_PIN_EIM_D27, IOMUX_CONFIG_ALT3);
-+	mxc_request_iomux(MX51_PIN_EIM_D24, IOMUX_CONFIG_ALT3);
++#ifdef APF51_RECOVER  // temporary 
++	mxc_request_iomux(MX51_PIN_AUD3_BB_RXD, IOMUX_CONFIG_ALT1);
++	mxc_request_iomux(MX51_PIN_AUD3_BB_FS, IOMUX_CONFIG_ALT1);
++	mxc_iomux_set_pad(MX51_PIN_AUD3_BB_RXD, UART_PAD_CFG);
++	mxc_iomux_set_pad(MX51_PIN_AUD3_BB_FS, UART_PAD_CFG);
++	mxc_iomux_set_input(MUX_IN_UART3_IPP_UART_RXD_MUX_SELECT_INPUT,INPUT_CTL_PATH2);dddd
++#else
++	mxc_request_iomux(MX51_PIN_UART3_RXD, IOMUX_CONFIG_ALT1);
++	mxc_request_iomux(MX51_PIN_UART3_TXD, IOMUX_CONFIG_ALT1);
 +
 +	mxc_iomux_set_pad(MX51_PIN_UART3_RXD, UART_PAD_CFG);
 +	mxc_iomux_set_pad(MX51_PIN_UART3_TXD, UART_PAD_CFG);
-+	mxc_iomux_set_pad(MX51_PIN_EIM_D27, UART_PAD_CFG);
-+	mxc_iomux_set_pad(MX51_PIN_EIM_D24, UART_PAD_CFG);
 +
-+	mxc_iomux_set_input(MUX_IN_UART3_IPP_UART_RTS_B_SELECT_INPUT,INPUT_CTL_PATH3);
 +	mxc_iomux_set_input(MUX_IN_UART3_IPP_UART_RXD_MUX_SELECT_INPUT,INPUT_CTL_PATH4);
++#endif
 +}
 +
 +void setup_audio(void)
@@ -518,22 +521,61 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/*
 +	 * Configure iomux for NFC interface
 +	 */
++#define NAND_PAD47K_CFG		(PAD_CTL_DRV_VOT_HIGH | PAD_CTL_HYS_NONE |	\
++				 PAD_CTL_PKE_ENABLE | PAD_CTL_47K_PU | 		\
++				 PAD_CTL_DRV_HIGH)
++
++#define NAND_PAD100K_CFG	(PAD_CTL_DRV_VOT_HIGH | PAD_CTL_HYS_NONE |	\
++				 PAD_CTL_PKE_ENABLE | PAD_CTL_100K_PU | 	\
++				 PAD_CTL_DRV_HIGH)
++
 +	mxc_request_iomux(MX51_PIN_NANDF_WE_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_WE_B, NAND_PAD47K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_RE_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_RE_B, NAND_PAD47K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_ALE , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_ALE , NAND_PAD47K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_CLE , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_CLE , NAND_PAD47K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_WP_B, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_WP_B, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_RB0 , IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_RB0 , PAD_CTL_DRV_VOT_HIGH | 
++					PAD_CTL_HYS_NONE | PAD_CTL_PKE_ENABLE |
++					PAD_CTL_PUE_PULL | PAD_CTL_100K_PU);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_CS0, IOMUX_CONFIG_ALT0);
 +
++	/* MX51_PIN_NANDF_RDY_INT */
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D0, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D0, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D1, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D1, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D2, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D2, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D3, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D3, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D4, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D4, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D5, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D5, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D6, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D6, NAND_PAD100K_CFG);
++
 +	mxc_request_iomux(MX51_PIN_NANDF_D7, IOMUX_CONFIG_ALT0);
++        mxc_iomux_set_pad(MX51_PIN_NANDF_D7, NAND_PAD100K_CFG);
 +
 +	writel(0, NFC_IPC);
 +	NFC_SET_FW(1);
@@ -666,7 +708,6 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/* Ethernet PHY Reset */
 +	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,0);
 +	imx_gpio_pin_cfg_dir(CONFIG_SYS_PHY_RESET_GPIO, 1);
-+	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,1);
 +
 +	/* FEC TX_ER muxed with DI_GP3 */
 +	mxc_request_iomux(MX51_PIN_DI_GP3, IOMUX_CONFIG_ALT2);
@@ -753,6 +794,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	mxc_iomux_set_input(MUX_IN_FEC_FEC_RX_ER_SELECT_INPUT, INPUT_CTL_PATH1);
 +	mxc_iomux_set_input(MUX_IN_FEC_FEC_TX_CLK_SELECT_INPUT, INPUT_CTL_PATH1);
 +
++	imx_gpio_pin_set(CONFIG_SYS_PHY_RESET_GPIO,1);
 +#endif
 +}
 +

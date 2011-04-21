@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Buildroot version: 2010.11-00004-ge0d9cff
-# Tue Mar 22 00:22:47 2011
+# Buildroot version: 2010.11-00056-g54a6154
+# Mon Apr 18 09:30:00 2011
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_arm=y
@@ -667,7 +667,7 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 # BR2_PACKAGE_HOSTAPD is not set
 # BR2_PACKAGE_IFPLUGD is not set
 # BR2_PACKAGE_IPERF is not set
-# BR2_PACKAGE_IPROUTE2 is not set
+BR2_PACKAGE_IPROUTE2=y
 # BR2_PACKAGE_IPSEC_TOOLS is not set
 # BR2_PACKAGE_IPTABLES is not set
 # BR2_PACKAGE_IW is not set

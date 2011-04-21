@@ -774,11 +774,7 @@ pehci_hcd_urb_complete(phci_hcd *hcd,struct ehci_qh *qh, struct urb *urb,
         urb->status = 0;
 
     spin_unlock(&hcd->lock);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-    usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
-#else
     usb_hcd_giveback_urb (&hcd->usb_hcd, urb, urb->status);
-#endif
     spin_lock(&hcd->lock);
 
     /*lets handle to the remove case*/
@@ -1306,11 +1302,7 @@ void phcd_iso_handler(phci_hcd *hcd)
                 spin_unlock(&hcd->lock);
 
                 /* Perform URB cleanup */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-                usb_hcd_giveback_urb (&hcd->usb_hcd, urb);
-#else
                 usb_hcd_giveback_urb (&hcd->usb_hcd, urb, urb->status);
-#endif
                 spin_lock(&hcd->lock);
                 continue;
             }/* if( last_td == TRUE ) */
@@ -2505,11 +2497,7 @@ pehci_hcd_stop(struct usb_hcd *usb_hcd)
 
 /*submit urb , other than root hub*/
     static int
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct usb_host_endpoint *ep, struct urb *urb, gfp_t mem_flags)
-#else
 pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct urb *urb, gfp_t mem_flags)
-#endif
 {
 
     struct list_head    qtd_list;
@@ -2518,9 +2506,8 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct urb *urb, gfp_t mem_flags)
     int status  = 0;
     int temp = 0, max = 0,num_tds = 0,mult = 0;
     urb_priv_t   *urb_priv = NULL;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
     struct usb_host_endpoint *ep = urb->ep;
-#endif
+
     pehci_entry("++ %s: Entered\n",__FUNCTION__);
     INIT_LIST_HEAD(&qtd_list);
     urb->transfer_flags &= ~EHCI_STATE_UNLINK;
@@ -2662,17 +2649,9 @@ pehci_hcd_urb_enqueue(struct usb_hcd *usb_hcd, struct urb *urb, gfp_t mem_flags)
  *---------------------------------------------*/
 
 /*unlink urb*/
-    static int
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb)
-{
-
-    int status = 0;
-#else
+static int
 pehci_hcd_urb_dequeue(struct usb_hcd  *usb_hcd, struct urb *urb, int status)
 {
-
-#endif
     td_ptd_map_buff_t *td_ptd_buf;
     td_ptd_map_t        *td_ptd_map;
     struct ehci_qh *qh = 0;

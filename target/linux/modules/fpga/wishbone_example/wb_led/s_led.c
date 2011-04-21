@@ -22,56 +22,48 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
-/* form module/drivers */
 #include <linux/init.h>
 #include <linux/module.h>
-
-/* for platform device */
 #include <linux/platform_device.h>
 
 #include"led.h"
 
 
 static struct plat_led_port plat_led_data[] = {
-    {
-        .name    = "led0",
-        .num     = 0,
-        .membase = 0x04
-    },
-    {
-        .name    = "led1",
-        .num     = 1,
-        .membase = 0x06
-    },
-    { },
+	{
+		.name    = "led0",
+		.num     = 0,
+		.membase = 0x04
+	},
+	{
+		.name    = "led1",
+		.num     = 1,
+		.membase = 0x06
+	},
 };
 
 static struct platform_device plat_led_device = {
-    .name = "led",
-    .id   = 0,
-    .dev  = {
-        .platform_data = plat_led_data
-    },
+	.name = "led",
+	.id   = 0,
+	.dev  = {
+		.platform_data = plat_led_data
+	},
 };
 
 static int __init sled_init(void)
 {
-    return platform_device_register(&plat_led_device);
+	return platform_device_register(&plat_led_device);
 }
 
 static void __exit sled_exit(void)
 {
-    platform_device_unregister(&plat_led_device);
+	platform_device_unregister(&plat_led_device);
 }
 
 module_init(sled_init);
 module_exit(sled_exit);
 
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
-MODULE_DESCRIPTION("Driver to blink blink some leds");
+MODULE_DESCRIPTION("Driver to blink blink some LEDs");
 MODULE_LICENSE("GPL");
 

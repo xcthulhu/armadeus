@@ -5,8 +5,8 @@ Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2011-04-14 11:00:01.037201002 +0200
-+++ buildroot/package/Config.in	2011-04-14 11:01:48.489201004 +0200
+--- buildroot.orig/package/Config.in	2011-04-18 10:46:11.633201002 +0200
++++ buildroot/package/Config.in	2011-04-18 11:00:38.517201003 +0200
 @@ -428,6 +428,7 @@
  source "package/samba/Config.in"
  source "package/ser2net/Config.in"
@@ -18,7 +18,7 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/socketcan/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/Config.in	2011-04-14 11:00:01.061201003 +0200
++++ buildroot/package/socketcan/Config.in	2011-04-11 18:22:09.000000000 +0200
 @@ -0,0 +1,15 @@
 +config BR2_PACKAGE_SOCKETCAN
 +	bool "Socket CAN"
@@ -38,60 +38,38 @@ Index: buildroot/package/socketcan/Config.in
 Index: buildroot/package/socketcan/socketcan.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/socketcan/socketcan.mk	2011-04-14 11:02:47.957201006 +0200
-@@ -0,0 +1,55 @@
++++ buildroot/package/socketcan/socketcan.mk	2011-04-18 10:58:51.061201002 +0200
+@@ -0,0 +1,33 @@
 +#############################################################
 +#
 +# Socket CAN
 +#
 +#############################################################
-+SOCKETCAN_TRUNK:=http://svn.berlios.de/svnroot/repos/socketcan/trunk
-+SOCKETCAN_REVISION:=1235
-+SOCKETCAN_NAME:=socketcan-svn-rev$(SOCKETCAN_REVISION)
-+SOCKETCAN_DIR:=$(BUILD_DIR)/$(SOCKETCAN_NAME)
-+SOCKETCAN_SOURCE:=$(SOCKETCAN_NAME).tar.bz2
-+SOCKETCAN_CAT:=$(BZCAT)
 +PROGRAMS_ISOTP = isotpdump,isotprecv,isotpsend,isotpsniffer,isotptun,isotpserver
 +PROGRAMS_CANGW = cangw
 +PROGRAMS_SLCAN = slcan_attach,slcand
 +PROGRAMS_CAN_UTILS = can-calc-bit-timing,candump,cansniffer,cansend,canplayer,cangen,canbusload,log2long,log2asc,asc2log,canlogserver,bcmserver,slcanpty,canfdtest
 +PROGRAMS = {$(PROGRAMS_ISOTP),$(PROGRAMS_CANGW),$(PROGRAMS_SLCAN),$(PROGRAMS_CAN_UTILS)}
++SOCKETCAN_VERSION = 1235
++SOCKETCAN_SOURCE = socketcan-svn-rev$(SOCKETCAN_VERSION).tar.gz
++SOCKETCAN_SITE = http://svn.berlios.de/svnroot/repos/socketcan/trunk/
++SOCKETCAN_SITE_METHOD = svn
 +
-+$(DL_DIR)/$(SOCKETCAN_SOURCE):
-+	(cd $(BUILD_DIR); \
-+		svn co -r $(SOCKETCAN_REVISION) $(SOCKETCAN_TRUNK) $(SOCKETCAN_NAME); \
-+		tar -cjvf $(SOCKETCAN_SOURCE) --exclude=.svn $(SOCKETCAN_NAME); \
-+		rm -rf $(SOCKETCAN_DIR); \
-+		mv $(SOCKETCAN_SOURCE) $(DL_DIR)/$(SOCKETCAN_SOURCE); \
-+	)
-+
-+$(SOCKETCAN_DIR)/.unpacked: $(DL_DIR)/$(SOCKETCAN_SOURCE)
-+	$(SOCKETCAN_CAT) $(DL_DIR)/$(SOCKETCAN_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-+	toolchain/patch-kernel.sh $(SOCKETCAN_DIR) package/socketcan $(SOCKETCAN_NAME)\*.patch
-+	touch $@
-+
-+$(SOCKETCAN_DIR)/can-utils/$(PROGRAMS): $(SOCKETCAN_DIR)/.unpacked
++define SOCKETCAN_BUILD_CMDS
 +	$(MAKE) -C $(SOCKETCAN_DIR)/can-utils CC="$(TARGET_CC)"
++endef
 +
-+$(TARGET_DIR)/usr/local/bin/$(PROGRAMS): $(SOCKETCAN_DIR)/can-utils/$(PROGRAMS)
++define SOCKETCAN_INSTALL_TARGET_CMDS
 +	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(SOCKETCAN_DIR)/can-utils install
 +	$(TARGET_STRIP) $(TARGET_DIR)/usr/local/bin/$(PROGRAMS)
++endef
 +
-+SOCKETCAN socketcan: $(TARGET_DIR)/usr/local/bin/$(PROGRAMS)
-+
-+socketcan-source: $(DL_DIR)/$(SOCKETCAN_SOURCE)
-+
-+socketcan-clean:
++define SOCKETCAN_CLEAN_CMDS
 +	$(MAKE) -C $(SOCKETCAN_DIR)/can-utils clean
++endef
 +
-+socketcan-dirclean:
++define SOCKETCAN_UNINSTALL_TARGET_CMDS
 +	rm -rf $(SOCKETCAN_DIR)
++endef
 +
-+############################################################
-+#
-+# Toplevel Makefile options
-+#
-+############################################################
-+ifeq ($(strip $(BR2_PACKAGE_SOCKETCAN)),y)
-+TARGETS+=socketcan
-+endif
++$(eval $(call GENTARGETS,package,socketcan))

@@ -6,12 +6,7 @@
 ifneq ($(KERNELRELEASE),)
 
 obj-$(CONFIG_IMX_BACKLIGHT) += imx_bl.o
-
-ifeq ($(KERNELVERSION),2.6.18.1)
-	imx_bl-objs := imx_bl_2.6.1x.o
-else
-	imx_bl-objs := imx_bl_2.6.23.o
-endif
+imx_bl-objs := imx_bl_2.6.23.o
 
 # Part executed when called from standard make in this directory:
 # (preferably use Makefile in parent directory)

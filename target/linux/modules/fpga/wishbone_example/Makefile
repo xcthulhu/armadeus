@@ -12,13 +12,8 @@ obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_DRIVERS)   +=  wb_button/ wb_irq_mngr/ wb
 	
 else
 
-default:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) zImage modules
-
-clean:
-	echo "Your Linux source dir is: $(LINUX_DIR)"
-	$(MAKE) -C $(LINUX_DIR) SUBDIRS=$(PWD) clean
+# Armadeus custom drivers common targets (default, clean, etc...)
+include ../../../Makefile.in
 
 install:
 	echo "Installing Armadeus drivers..."

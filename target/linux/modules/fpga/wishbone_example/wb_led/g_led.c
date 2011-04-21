@@ -22,37 +22,21 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
 /* form module/drivers */
 #include <linux/init.h>
 #include <linux/module.h>
-
-/* for file  operations */
+/* for file operations */
 #include <linux/fs.h>
 #include <linux/cdev.h>
-
-/* copy_to_user function */
-#include <asm/uaccess.h>
-
-/* request_mem_region */
-#include <linux/ioport.h>
-
-/* readw() writew() */
-#include <asm/io.h>
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-/* hardware addresses */
-#	include <asm/hardware.h>
-#else
-#	include <mach/hardware.h>
+#include <linux/ioport.h>	/* request_mem_region */
+#include <linux/platform_device.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29)
+#include <linux/slab.h>		/* kmalloc */
 #endif
 
-
-/* for platform device */
-#include <linux/platform_device.h>
+#include <asm/uaccess.h>	/* copy_to_user function */
+#include <asm/io.h>		/* readw() writew() */
+#include <mach/hardware.h>
 
 /* led */
 #include "led.h"
@@ -77,7 +61,7 @@
 /*************************/
 /* main device structure */
 /*************************/
-struct led_dev{
+struct led_dev {
 	char *name;		/* the name of the instance */
 	int  loaded_led_num;/* number of the led, depends on load order*/
 	struct cdev cdev;/* Char device structure */
@@ -201,9 +185,7 @@ static int led_probe(struct platform_device *pdev)
 	PDEBUG("Led probing\n");
 	PDEBUG("Register %s num %d\n", dev->name, dev->num);
 
-	/**************************/
 	/* check if ID is correct */
-	/**************************/
 	data = ioread16(dev->membase+dev->idoffset);
 	if (data != dev->idnum) {
 		result = -1;
@@ -213,9 +195,7 @@ static int led_probe(struct platform_device *pdev)
 		goto error_id;
 	}
 
-	/********************************************/
-	/*	allocate memory for sdev structure	*/
-	/********************************************/
+	/* allocate memory for sdev structure */
 	sdev = kmalloc(sizeof(struct led_dev), GFP_KERNEL);
 	if (!sdev) {
 		result = -ENOMEM;
@@ -234,10 +214,7 @@ static int led_probe(struct platform_device *pdev)
 		goto error_name_copy;
 	}
 
-	/******************************************/
 	/* Get the major and minor device numbers */
-	/******************************************/
-
 	led_major = 252;
 	led_minor = dev->num ;/* num come from plat_led_port data structure */
 
@@ -252,9 +229,7 @@ static int led_probe(struct platform_device *pdev)
 		   MAJOR(sdev->devno),
 		   MINOR(sdev->devno));
 
-	/****************************/
 	/* Init the cdev structure  */
-	/****************************/
 	PDEBUG("Init the cdev structure\n");
 	cdev_init(&sdev->cdev, &led_fops);
 	sdev->cdev.owner = THIS_MODULE;
@@ -278,9 +253,7 @@ static int led_probe(struct platform_device *pdev)
 	printk(KERN_INFO "Led module %s insered\n", dev->name);
 	return 0;
 
-	/*********************/
 	/* Errors management */
-	/*********************/
 	/* delete the cdev structure */
 	cdev_del(&sdev->cdev);
 	PDEBUG("%s:cdev deleted\n", dev->name);

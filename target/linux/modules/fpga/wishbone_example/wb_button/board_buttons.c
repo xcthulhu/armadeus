@@ -20,10 +20,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>

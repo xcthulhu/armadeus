@@ -19,13 +19,8 @@
 #include <linux/fb.h>
 #include <linux/backlight.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <asm/arch/imxfb.h>    /* Backlight machinfo struct is defined here */
-#include <asm/arch/hardware.h>
-#else
 #include <mach/imxfb.h>        /* Backlight machinfo struct is defined here */
 #include <mach/hardware.h>
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
 #ifdef CONFIG_ARCH_IMX

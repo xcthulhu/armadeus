@@ -22,29 +22,21 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#include <linux/config.h>
-#endif
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/fs.h>		/* for file  operations */
 #include <linux/cdev.h>
-#include <asm/uaccess.h>	/* copy_to_user function */
 #include <linux/ioport.h>	/* request_mem_region */
-#include <asm/io.h>		/* readw() writew() */
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-/* hardware addresses */
-#	include <asm/hardware.h>
-#else
-#	include <mach/hardware.h>
+#include <linux/platform_device.h>
+#include <linux/interrupt.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29)
+#include <linux/slab.h>		/* kmalloc */
 #endif
 
-/* for platform device */
-#include <linux/platform_device.h>
+#include <asm/uaccess.h>	/* copy_to_user function */
+#include <asm/io.h>		/* readw() writew() */
+#include <mach/hardware.h>
 
-/* button */
 #include "button.h"
 
 
@@ -54,7 +46,7 @@
 #undef PDEBUG
 #ifdef BUTTON_DEBUG
 # ifdef __KERNEL__
-/* for kernel spage */
+/* for kernel space */
 #   define PDEBUG(fmt,args...) printk(KERN_DEBUG "BUTTON : " fmt, ##args)
 # else
 /* for user space */
@@ -171,9 +163,7 @@ static int button_probe(struct platform_device *pdev)
 	PDEBUG("Button probing\n");
 	PDEBUG("Register %s num %d\n",dev->name,dev->num);
 
-	/**************************/
 	/* check if ID is correct */
-	/**************************/
 	data = ioread16(dev->membase+BUTTON_ID_OFFSET);
 	if (data != dev->idnum) {
 		result = -1;
@@ -183,9 +173,7 @@ static int button_probe(struct platform_device *pdev)
 		goto error_id;
 	}
 
-	/********************************************/
-	/*	allocate memory for sdev structure	*/
-	/********************************************/
+	/* allocate memory for sdev structure */
 	sdev = kmalloc(sizeof(struct button_dev),GFP_KERNEL);
 	if (!sdev) {
 		result = -ENOMEM;
@@ -199,15 +187,12 @@ static int button_probe(struct platform_device *pdev)
 		printk("Kmalloc name space error\n");
 		goto error_name_alloc;
 	}
-	if (strncpy(sdev->name,dev->name,1+strlen(dev->name)) < 0) {
+	if (strncpy(sdev->name, dev->name, 1+strlen(dev->name)) < 0) {
 		printk("copy error");
 		goto error_name_copy;
 	}
 
-	/******************************************/
 	/* Get the major and minor device numbers */
-	/******************************************/
-
 	button_major = 251;
 	button_minor = dev->num;
 
@@ -225,11 +210,9 @@ static int button_probe(struct platform_device *pdev)
 
 	/* initiate mutex locked */
 	sdev->read_in_wait = 0;
-	init_MUTEX_LOCKED(&sdev->sem);
+	sema_init(&sdev->sem, 0);
 
-	/****************************/
 	/* Init the cdev structure  */
-	/****************************/
 	PDEBUG("Init the cdev structure\n");
 	cdev_init(&sdev->cdev,&button_fops);
 	sdev->cdev.owner = THIS_MODULE;
@@ -273,7 +256,7 @@ request_irq_error:
 error_cdev_add:
 	/* free major and minor number */
 	unregister_chrdev_region(sdev->devno, 1);
-	printk(KERN_INFO "%s: Led deleted\n", dev->name);
+	printk(KERN_INFO "%s: button deleted\n", dev->name);
 error_devno:
 error_name_copy:
 	kfree(sdev->name);
@@ -292,22 +275,19 @@ static int __devexit button_remove(struct platform_device *pdev)
 
 	/* freeing irq */
 	free_irq(dev->interrupt_number, sdev);
-//request_irq_error:
+
 	/* delete the cdev structure */
 	cdev_del(&sdev->cdev);
 	PDEBUG("%s:cdev deleted\n",dev->name);
-//error_cdev_add:
+
 	/* free major and minor number */
 	unregister_chrdev_region(sdev->devno, 1);
-	printk(KERN_INFO "%s: Led deleted\n", dev->name);
-//error_devno:
-//error_name_copy:
+	printk(KERN_INFO "%s: button deleted\n", dev->name);
+
 	kfree(sdev->name);
-//error_name_alloc:
 	kfree(sdev);
-//error_sdev_alloc:
 	printk(KERN_INFO "%s: deleted with success\n", dev->name);
-//error_id:
+
 	return 0;
 
 }

@@ -27,16 +27,9 @@
 #include <linux/fs.h>
 #include <linux/errno.h>
 #include <linux/types.h>
-#include <asm/uaccess.h>     /* copy_to_user */
 #include <linux/interrupt.h> /* request_irq */
 #include <linux/version.h>
 #include <linux/spi/max1027.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-#include <linux/cdev.h>      /* struct class_device */
-#include <asm/arch/gpio.h>
-#else
-#include <mach/gpio.h>
-#endif
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/sysfs.h>
@@ -47,6 +40,8 @@
 #include <linux/hwmon.h>
 #endif
 
+#include <mach/gpio.h>
+#include <asm/uaccess.h>     /* copy_to_user */
 
 #define DRIVER_NAME    "max1027"
 #define DRIVER_VERSION "0.71"
@@ -98,11 +93,7 @@ struct adc_channel {
 };
 
 struct max1027 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	struct class_device *cdev;
-#else
 	struct device *cdev;
-#endif
 	struct mutex update_lock;
 
 #define CONVERSION_RUNNING 0
