@@ -1,0 +1,41 @@
+Adding ngircd irc server package
+
+Signed-off-by : Fabien Marteau <fabien.marteau@armadeus.com>
+---
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2011-04-19 18:50:02.000000000 +0200
++++ buildroot/package/Config.in	2011-04-19 18:58:59.000000000 +0200
+@@ -431,6 +431,7 @@
+ source "package/netsnmp/Config.in"
+ source "package/netstat-nat/Config.in"
+ source "package/nfs-utils/Config.in"
++source "package/ngircd/Config.in"
+ source "package/ntp/Config.in"
+ source "package/nuttcp/Config.in"
+ source "package/olsr/Config.in"
+Index: buildroot/package/ngircd/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/ngircd/Config.in	2011-04-19 18:50:02.000000000 +0200
+@@ -0,0 +1,4 @@
++config BR2_PACKAGE_NGIRCD
++	bool "ngircd"
++	help
++		irc server deamon.
+Index: buildroot/package/ngircd/ngircd.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/ngircd/ngircd.mk	2011-04-19 19:07:52.000000000 +0200
+@@ -0,0 +1,11 @@
++#############################################################
++#
++# ngIRCd: Next Generation IRC Daemon
++#
++#############################################################
++NGIRCD_VERSION = 17.1
++NGIRCD_SOURCE = ngircd-17.1.tar.gz
++NGIRCD_SITE = ftp://ftp.berlios.de/pub/ngircd/
++NGIRCD_CONF_OPT =
++
++$(eval $(call AUTOTARGETS,package,ngircd))
