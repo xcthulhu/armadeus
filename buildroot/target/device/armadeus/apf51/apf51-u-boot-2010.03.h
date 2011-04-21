@@ -29,6 +29,9 @@
 #define CONFIG_ENV_VERSION 	"0.4"
 #define CONFIG_IDENT_STRING	" apf51 patch 0.4"
 
+//#define APF51_PROTO
+//#define APF51_RECOVER
+
  /* High Level Configuration Options */
 #define CONFIG_ARMV7		1	/* This is armv7 Cortex-A8 CPU	*/
 #define CONFIG_MX51		1	/* in a Freescale i.MX51 Chip */
@@ -59,7 +62,11 @@
  * Select serial console configuration
  */
 #define CONFIG_MXC_UART
+#ifdef APF51_PROTO
 #define CONFIG_SYS_MX51_UART2		/* use UART2 for console */
+#else
+#define CONFIG_SYS_MX51_UART3		/* use UART3 for console */
+#endif
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200, 230400 }
 #define CONFIG_BAUDRATE			115200
 
@@ -124,7 +131,7 @@
 #define CONFIG_BOOTARGS \
 	CONFIG_CONSOLE " root=/dev/mtdblock4 rootfstype=jffs2 " MTDPARTS_DEFAULT
 
-#define CONFIG_CONSOLE "console=ttymxc1,"MK_STR(CONFIG_BAUDRATE)
+#define CONFIG_CONSOLE "console=ttymxc2,"MK_STR(CONFIG_BAUDRATE)
 #define CONFIG_MTDMAP   "mxc_nand"
 #define MTDIDS_DEFAULT	"nand0=" CONFIG_MTDMAP
 #define MTDPARTS_DEFAULT "mtdparts=" CONFIG_MTDMAP ":1M(U-boot)ro,"	\
@@ -453,7 +460,7 @@
  * SDRAM Configs
  */
 #define CONFIG_SYS_NR_DRAM_BANKS 1
-#define CONFIG_SYS_SDRAM_MBYTE_SYZE 128
+#define CONFIG_SYS_SDRAM_MBYTE_SYZE 256
 #define CONFIG_SYS_SDRAM_TYPE_MDDR
 
 #define CONFIG_SYS_SDRAM_1_BASE	CSD0_BASE_ADDR		/* SDRAM bank #1 */
@@ -1132,3 +1139,7 @@
 
 #endif				/* __CONFIG_H */
 
+#ifdef CONFIG_BOARD_NAME
+#undef CONFIG_BOARD_NAME
+#endif
+#define CONFIG_BOARD_NAME apf51
