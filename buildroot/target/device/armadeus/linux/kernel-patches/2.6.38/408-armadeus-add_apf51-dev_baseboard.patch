@@ -57,7 +57,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-04-05 23:04:25.000000000 +0200
-@@ -0,0 +1,481 @@
+@@ -0,0 +1,480 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -123,17 +123,17 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	(_MX51_PAD_EIM_EB2__GPIO2_22 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_PWRDN# */
 +	(_MX51_PAD_EIM_EB3__GPIO2_23 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* WIFI_RESET# */
 +
-+#ifdef APF51DEV_PROD
++#ifdef APF51DEV_PROTO
++	/* UART3 (Bluetooth) - Protos */
++	MX51_PAD_UART3_RXD__UART3_RXD,
++	MX51_PAD_UART3_TXD__UART3_TXD,
++	/* RTS/CTS on Keypad */
++#else
 +	/* UART2 (Bluetooth) */
 +	MX51_PAD_UART2_RXD__UART2_RXD,
 +	MX51_PAD_UART2_TXD__UART2_TXD,
 +	MX51_PAD_EIM_D25__UART2_CTS,
 +	MX51_PAD_EIM_D26__UART2_RTS,
-+#else
-+	/* UART3 (Bluetooth) - Protos */
-+	MX51_PAD_UART3_RXD__UART3_RXD,
-+	MX51_PAD_UART3_TXD__UART3_TXD,
-+	/* RTS/CTS on Keypad */
 +#endif
 +
 +	(_MX51_PAD_EIM_CS3__GPIO2_28 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)), /* BT_RESET# */
@@ -207,12 +207,12 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +	MX51_PAD_KEY_COL1__KEY_COL1,
 +	MX51_PAD_KEY_COL2__KEY_COL2,
 +	MX51_PAD_KEY_COL3__KEY_COL3,
-+#ifdef APF51DEV_PROD
-+	MX51_PAD_KEY_COL4__KEY_COL4,
-+	MX51_PAD_KEY_COL5__KEY_COL5,
-+#else
++#ifdef APF51DEV_PROTO
 +	MX51_PAD_KEY_COL4__UART3_RTS,
 +	MX51_PAD_KEY_COL5__UART3_CTS,
++#else
++	MX51_PAD_KEY_COL4__KEY_COL4,
++	MX51_PAD_KEY_COL5__KEY_COL5,
 +#endif
 +
 +	/* ONEWIRE */
@@ -495,11 +495,10 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +					ARRAY_SIZE(apf51dev_pads));
 +
 +	imx51_add_imx_uart(0, &apf51dev_uart_pdata);
-+#ifdef APF51DEV_PROD
-+	TODO
-+	imx51_add_imx_uart(1, &apf51dev_uart_pdata);
-+#else
++#ifdef APF51DEV_PROTO
 +	imx51_add_imx_uart(2, &apf51dev_uart_pdata);
++#else
++	imx51_add_imx_uart(1, &apf51dev_uart_pdata);
 +#endif
 +
 +	init_gpio();
