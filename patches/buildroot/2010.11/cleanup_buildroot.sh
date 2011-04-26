@@ -51,3 +51,6 @@ rm -f buildroot/package/ncurses/ncurses-5.7-allows_build_with_old_ncurses_host_i
 rm -rf buildroot/package/mysql_client/
 rm -rf buildroot/package/portmap/
 rm -rf buildroot/package/bluez3/
+rm -rf buildroot/package/ngircd/
+rm -rf buildroot/package/can-utils/
+
