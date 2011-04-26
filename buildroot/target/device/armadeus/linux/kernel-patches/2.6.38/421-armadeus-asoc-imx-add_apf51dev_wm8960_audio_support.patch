@@ -1,8 +1,8 @@
 Index: linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c	2011-04-08 11:05:28.000000000 +0200
-@@ -0,0 +1,166 @@
++++ linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c	2011-04-26 15:42:46.000000000 +0200
+@@ -0,0 +1,162 @@
 +/*
 + * ASoC audio for APF51Dev (i.MX51 using Wolfson's WM8960)
 + *
@@ -45,11 +45,7 @@ Index: linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c
 +	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 +	int ret;
 +
-+	/* TO BE CHECKED !! */
-+
-+	printk("--- %s %d\n", __func__, __LINE__);
-+
-+	ret = snd_soc_dai_set_pll(codec_dai, 0, 0, 16000000, 12280000);
++	ret = snd_soc_dai_set_pll(codec_dai, 0, 0, 12000000, 12280000);
 +	if (ret) {
 +		printk("APF51: Unable to set WM8960 PLL\n");
 +		return ret;
@@ -172,7 +168,7 @@ Index: linux-2.6.38.1/sound/soc/imx/apf51dev-wm8960.c
 Index: linux-2.6.38.1/sound/soc/imx/Kconfig
 ===================================================================
 --- linux-2.6.38.1.orig/sound/soc/imx/Kconfig	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/sound/soc/imx/Kconfig	2011-04-06 09:16:53.000000000 +0200
++++ linux-2.6.38.1/sound/soc/imx/Kconfig	2011-04-26 13:49:48.000000000 +0200
 @@ -52,4 +52,14 @@
  	  Enable I2S based access to the TLV320AIC23B codec attached
  	  to the SSI interface
@@ -191,7 +187,7 @@ Index: linux-2.6.38.1/sound/soc/imx/Kconfig
 Index: linux-2.6.38.1/sound/soc/imx/Makefile
 ===================================================================
 --- linux-2.6.38.1.orig/sound/soc/imx/Makefile	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/sound/soc/imx/Makefile	2011-04-06 09:16:53.000000000 +0200
++++ linux-2.6.38.1/sound/soc/imx/Makefile	2011-04-26 13:49:48.000000000 +0200
 @@ -8,10 +8,12 @@
  obj-$(CONFIG_SND_MXC_SOC_MX2) += snd-soc-imx-mx2.o
  
