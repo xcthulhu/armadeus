@@ -1,0 +1,48 @@
+Backport can-utils from buildroot.
+can-utils contains several tools from socketcan to test
+a Controller Area Network.
+This patch replace 042-socketcan.patch.
+
+Signed-off-by : Kevin JOLY <joly.kevin25@gmail.com>
+---
+Index: buildroot/package/can-utils/can-utils.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/can-utils/can-utils.mk	2011-04-26 14:29:55.000000000 +0200
+@@ -0,0 +1,11 @@
++#############################################################
++#
++# can-utils
++#
++#############################################################
++
++CAN_UTILS_VERSION = 1235
++CAN_UTILS_SITE = svn://svn.berlios.de/socketcan/trunk/can-utils
++CAN_UTILS_AUTORECONF = YES
++
++$(eval $(call AUTOTARGETS,package,can-utils))
+Index: buildroot/package/can-utils/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ buildroot/package/can-utils/Config.in	2011-04-26 14:29:55.000000000 +0200
+@@ -0,0 +1,8 @@
++config BR2_PACKAGE_CAN_UTILS
++	bool "can-utils"
++	help
++	  SocketCAN is a set of open source CAN drivers and a
++	  networking stack.
++	  This package provides various tools for this stack.
++
++	  http://developer.berlios.de/projects/socketcan/
+Index: buildroot/package/Config.in
+===================================================================
+--- buildroot.orig/package/Config.in	2011-04-26 14:32:35.000000000 +0200
++++ buildroot/package/Config.in	2011-04-26 14:33:21.000000000 +0200
+@@ -392,6 +392,7 @@
+ source "package/bluez3/Config.in"
+ source "package/bmon/Config.in"
+ source "package/bridge-utils/Config.in"
++source "package/can-utils/Config.in"
+ source "package/ctorrent/Config.in"
+ source "package/cups/Config.in"
+ if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
