@@ -36,7 +36,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c	2011-04-18 10:20:41.000000000 +0200
-@@ -0,0 +1,444 @@
+@@ -0,0 +1,492 @@
 +/*
 + * Support for APF51 System On Module
 + * Copyright (C) 2010-2011 Armadeus Systems <support@armadeus.com>
@@ -160,6 +160,13 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 +	MX51_PAD_GPIO1_4__GPIO1_4,
 +	/* WM8311 TOUCH_EOC */
 +	MX51_PAD_GPIO1_6__GPIO1_6,
++
++	/* FPGA */
++	MX51_PAD_DI1_D0_CS__GPIO3_3, /* CONFIG_SYS_FPGA_PWR */
++	MX51_PAD_CSI2_D12__GPIO4_9,  /* CONFIG_SYS_FPGA_PRG */
++	MX51_PAD_CSI2_D18__GPIO4_11, /* CONFIG_SYS_FPGA_INIT */
++	MX51_PAD_CSI2_D13__GPIO4_10, /* CONFIG_SYS_FPGA_DONE */
++	MX51_PAD_DISPB2_SER_DIO__GPIO3_6, /* CONFIG_SYS_FPGA_SUSPEND */
 +};
 +
 +
@@ -422,6 +429,46 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 +	},
 +};
 +
++static int apf51_fpga_init(void)
++{
++#define	CONFIG_SYS_FPGA_PWR (2*32 + 3)
++#define	CONFIG_SYS_FPGA_PRG (3*32 + 9)
++#define	CONFIG_SYS_FPGA_INIT (3*32 + 11)
++#define	CONFIG_SYS_FPGA_DONE (3*32 + 10)
++#define	CONFIG_SYS_FPGA_SUSPEND (2*32 + 6)
++
++	int ret;
++
++	ret = gpio_request(CONFIG_SYS_FPGA_PRG, "FPGA");
++	if (ret) {
++		pr_warn("failed to get CONFIG_SYS_FPGA_PRG GPIO: %d\n", ret);
++		return ret;
++	}
++	ret = gpio_request(CONFIG_SYS_FPGA_PWR, "FPGA");
++	if (ret) {
++		pr_warn("failed to get CONFIG_SYS_FPGA_PWR GPIO: %d\n", ret);
++		return ret;
++	}
++	ret = gpio_request(CONFIG_SYS_FPGA_SUSPEND, "FPGA");
++	if (ret) {
++		pr_warn("failed to get CONFIG_SYS_FPGA_SUSPEND: %d\n", ret);
++		return ret;
++	}
++	ret = gpio_request(CONFIG_SYS_FPGA_DONE, "FPGA");
++	if (ret) {
++		pr_warn("failed to get CONFIG_SYS_FPGA_DONE: %d\n", ret);
++		return ret;
++	}
++	ret = gpio_request(CONFIG_SYS_FPGA_INIT, "FPGA");
++	if (ret) {
++		pr_warn("failed to get CONFIG_SYS_FPGA_INIT: %d\n", ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++
 +/*
 + * Board specific initialization.
 + */
@@ -457,6 +504,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 +		initialize_otg_port(NULL);
 +		mxc_register_device(&mxc_usbdr_udc_device, &apf51_usbdr_device_pdata);
 +	}
++	apf51_fpga_init();
 +
 +#ifdef CONFIG_MACH_APF51_HAS_BASEBOARD
 +	apf51_baseboard_init();

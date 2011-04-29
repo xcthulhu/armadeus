@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Buildroot version: 2010.11-00056-g54a6154
-# Mon Apr 18 09:30:00 2011
+# Buildroot version: 2010.11-00086-gfb98766-dirty
+# Fri Apr 29 14:06:28 2011
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_arm=y
@@ -659,6 +659,7 @@ BR2_PACKAGE_NCURSES_TARGET_MENU=y
 #
 # BR2_PACKAGE_BMON is not set
 # BR2_PACKAGE_BRIDGE is not set
+BR2_PACKAGE_CAN_UTILS=y
 # BR2_PACKAGE_CTORRENT is not set
 # BR2_PACKAGE_CUPS is not set
 # BR2_PACKAGE_DNSMASQ is not set
@@ -684,6 +685,7 @@ BR2_PACKAGE_IPROUTE2=y
 # BR2_PACKAGE_NETSNMP is not set
 # BR2_PACKAGE_NETSTAT_NAT is not set
 # BR2_PACKAGE_NFS_UTILS is not set
+# BR2_PACKAGE_NGIRCD is not set
 BR2_PACKAGE_NTP=y
 # BR2_PACKAGE_NTP_NTPD is not set
 # BR2_PACKAGE_NTP_SNTP is not set
@@ -707,7 +709,6 @@ BR2_PACKAGE_PORTMAP=y
 # BR2_PACKAGE_SAMBA is not set
 # BR2_PACKAGE_SER2NET is not set
 # BR2_PACKAGE_SOCAT is not set
-# BR2_PACKAGE_SOCKETCAN is not set
 # BR2_PACKAGE_SPAWN_FCGI is not set
 # BR2_PACKAGE_SQUID is not set
 # BR2_PACKAGE_TCPDUMP is not set
