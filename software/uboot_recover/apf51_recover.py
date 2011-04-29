@@ -29,6 +29,8 @@ import serial
 import thread
 import re
 
+import usb
+
 class Error(Exception):
     """ Manage specific error
 
@@ -59,6 +61,7 @@ class Error(Exception):
         self.level = int(str(level))
     def getLevel(self):
         return self.level
+
 
 class apf51Bootloader:
 
@@ -93,40 +96,43 @@ class apf51Bootloader:
                     0x66: 'write operation to register failed', 
                     0x88: 'Successful download completion' }
 
+    def __init__(self, serialDevice):
+        self.serdev = serialDevice
 
-    def __init__(self, serialport ):
-        self.port = serialport
-
-
-    def getstatus(self):
-        self.port.flushInput()
-        #print 'get Status'
-        self.port.write( self.buildcmd("0505" ,"00000000","l","00000000","00000000","0" ))
-        result = self.port.read(4)
+    def getStatus(self):
+        self.serdev.flushInput()
+        self.serdev.write(self.buildcmd("0505", "00000000", "l", "00000000", "00000000", "0"))
+        result = self.serdev.read(4)
         if len(result) > 0:
             try:
-                print self.statuscode[ord(result[0])]
-                for i in range(len(result)):
-                    print '%02x' % ord(result[i]),
+                if self.serdev.port == 'USB':
+                    status = result[0]
+                else:
+                    status = ord(result[0])
+
+                print "Status: %s" % self.statuscode[status]
+                #for i in range(len(result)):
+                #    print '%02x' % result[i],
             except KeyError,e:
-                print "Unknown status "+str(ord(result[0]))
+                print "Unknown status " + str(status)
         else:
-            print '\nread timeout' 
+            print '\nTimeout while asking for status'
 
     def __displayProgress(self, text):
         sys.stdout.write(chr(13))
         print text,
         sys.stdout.flush()
 
-# addr: address to read
-# count: number of bytes to read 
-# mode: b, w, l for byte, word, long
-
-    def get( self, addr, count, mode ):
+    def get(self, addr, count, mode):
+        """
+        addr: address to read
+        count: number of bytes to read
+        mode: b, w, l for byte, word, long
+        """
         assert len(addr) <= 8, 'address too long'
         assert int(count,16) > 0, 'zero length get'
         assert int(count,16) < 0xffffffff, 'Too long get, should be < 31 bytes'   
-        self.port.write( self.buildcmd("0101" ,addr,mode,count.zfill(9-len(count)),"00000000","0" ) )
+        self.serdev.write(self.buildcmd("0101" ,addr, mode, count.zfill(9-len(count)), "00000000", "0"))
 
         #nbbyte = 1
         #if mode == 'w':
@@ -135,7 +141,7 @@ class apf51Bootloader:
         #    nbbyte = 4
 
         #nbbyte = nbbyte * int(count)
-        temp = self.port.read(int(count)+4) # read n+4 char
+        temp = self.serdev.read(int(count)+4) # read n+4 char
         if len(temp) == 0:
             print 'read timeout'
             return
@@ -151,17 +157,16 @@ class apf51Bootloader:
         print ''.join(result)
         return ''.join(result)
 
-
-# addr: address where the data have to be written
-# data: data to write. must match the given mode
-
-# mode: b, w, l for byte, word, long
-
     def put(self, addr, data, mode):
+        """
+        addr: address where the data have to be written
+        data: data to write. must match the given mode
+        mode: b, w, l for byte, word, long
+        """
         assert len(data) > 0, 'zero length put'
         assert len(addr) == 8, 'address too long'
-        self.port.write( self.buildcmd("0202" ,addr,mode,"00000000",data,"0" ))
-        result = self.port.read(4) #ack
+        self.serdev.write(self.buildcmd("0202", addr,mode, "00000000", data, "0"))
+        result = self.serdev.read(4) #ack
         if len(result) == 0: 
             print 'read timeout'
             return
@@ -169,7 +174,7 @@ class apf51Bootloader:
     #    for i in range (len(result)):
     #        print '%02x' % ord(result[i]),
 
-        result = self.port.read(4)
+        result = self.serdev.read(4)
         if len(result) == 0:
             print 'read timeout'
             return
@@ -177,19 +182,19 @@ class apf51Bootloader:
         #print '\nwrite success:',
         #for i in range (len(result)):
             #print '%02x' % ord(result[i]),
-        
 
     def download(self, addr, data, size, type):
         assert size > 0, 'file empty'
-        f=open(data, 'rb')
-        self.port.write(self.buildcmd("0404" ,addr,"x", size, "00000000",type))
-        result = self.port.read(4) #ack
+        f = open(data, 'rb')
+        self.serdev.write(self.buildcmd("0404", addr, "x", size, "00000000", type))
+        result = self.serdev.read(4) #ack
         if len(result) == 0: 
             print '\nread timeout'
             return
 
         data = f.read(16)
         count = int(size,16)
+        oldcount = count
         total = 0
         b = 0
         print '\nTransfering:'
@@ -197,14 +202,15 @@ class apf51Bootloader:
             n = len(data)
             b = 16-n  # ensure always 4 bytes
             #tr = unpack('B'*n,data)
-            self.port.write(data)
+            self.serdev.write(data)
             count = count - 16
             if count < 16:
                 total = total + count
             else:
                 total = total + 16
-            if (count % 1024) == 0:
+            if (oldcount - count) >= 4096:
                 self.__displayProgress("%06d bytes" % total)
+                oldcount = count
             data = f.read(16)
         self.__displayProgress("%d bytes transfered" % total)
         print ""
@@ -310,15 +316,15 @@ class apf51Bootloader:
         #ESDCTL0: 13 ROW, 10 COL, 32Bit
         self.put("83FD9008","82220000","l")
         #ESDSCR: Precharge command 
-        self.put("83FD9014","0400800C","l") 
+        self.put("83FD9014","0400800C","l")
         #ESDSCR: Refresh command
-        self.put("83FD9014","00008014","l") 
+        self.put("83FD9014","00008014","l")
         #ESDSCR: Refresh command
-        self.put("83FD9014","00008014","l") 
+        self.put("83FD9014","00008014","l")
         #ESDSCR: LMR with CAS=3 and BL=3 (Burst Length = 8)
-        self.put("83FD9014","0033801C","l") 
+        self.put("83FD9014","0033801C","l")
         #ESDSCR: EMR with full Drive strength
-        self.put("83FD9014","0000801E","l") 
+        self.put("83FD9014","0000801E","l")
         #ESDCTL0: 13 ROW, 10 COL, 32Bit, SREF=4
         self.put("83FD9008","B2420000","l") 
         #ESDCFG0: tRFC:22clks, tXSR:28clks, tXP:3clks, tWTR:2clk, tRP:3clks, tMRD:2clks
@@ -337,20 +343,20 @@ class apf51Bootloader:
         #ESDSCR: Refresh command
         self.put("83FD9014","00008010","l") 
         #ESDSCR: Refresh command
-        self.put("83FD9014","00008010","l") 
+        self.put("83FD9014","00008010","l")
         #ESDSCR: LMR with CAS=3 and BL=3 (Burst Length = 8)
-        self.put("83FD9014","00338018","l") 
+        self.put("83FD9014","00338018","l")
         #ESDSCR: EMR with full Drive strength
-        self.put("83FD9014","0000801a","l") 
+        self.put("83FD9014","0000801a","l")
         #ESDCTL0: 13 ROW, 10 COL, 32Bit, SREF=4
-        self.put("83FD9000","B2420000","l") 
+        self.put("83FD9000","B2220000","l")
 #        self.put("83FD9000","D2120000","l") # 64MB
         #ESDCFG0: tRFC:22clks, tXSR:28clks, tXP:3clks, tWTR:2clk, tRP:3clks, tMRD:2clks
-        #tRAS:8clks, tRRD:2clks, tWR:3clks, tRCD:3clks, tRC:11clks 
-        self.put("83FD9004","00459429","l")
+        #tRAS:8clks, tRRD:2clks, tWR:3clks, tRCD:3clks, tRC:11clks
+        self.put("83FD9004","c33574aa","l")
 #        self.put("83FD9004","FFFFFFFF","l") # 64MB
         #ESDMISC: AP=10, Bank interleaving on, MIF3 en, RALAT=2
-        self.put("83FD9010","000a1120","l") 
+        self.put("83FD9010","c00a5680","l")
 
     def consoleDump(tid):
         while 1:
@@ -358,18 +364,57 @@ class apf51Bootloader:
     #        print '%s' % tid.read(1),
 
 
+class USBDevice:
+    """
+    """
+    def __init__(self, idVendor=0x15a2, idProduct=0x0041):
+        # find our device
+        dev = self.findDevice(idVendor, idProduct)
+        # was it found?
+        if dev is None:
+            raise ValueError('MX51 not found')
+        self.__dev = dev
+
+        handle = dev.open()
+        handle.setConfiguration(1) # choose the first configuration
+        handle.claimInterface(0)   # choose the first interface
+        print('Found i.MX51')
+
+        self.__devhandle = handle
+        self.__epBulkIn = 0x82
+        self.__epBulkOut = 1
+        self.port = 'USB'
+
+    def findDevice(self, idVendor, idProduct):
+        """Find a USB device by product and vendor id."""
+        for bus in usb.busses():
+            for device in bus.devices:
+                if device.idVendor == idVendor and device.idProduct == idProduct:
+                    return device
+        return None
+
+    def read(self, length):
+        data = self.__devhandle.bulkRead(self.__epBulkIn, length, 100)
+        return data
+
+    def write(self, data):
+        self.__devhandle.bulkWrite(self.__epBulkOut, data, 100)
+
+    def flushInput(self):
+        pass
+
+
 class UBoot:
     """
     """
-    def __init__(self, bootstrap, serial):
-        self.bootstrap = bootstrap
+    def __init__(self, serial):
         self.serial = serial
 
-    def __getOutput(self,error_msg=None):
-        """ This function waits for U-Boot response and return response"""
+    def __getOutput(self, error_msg=None):
+        """ This function waits for U-Boot answer and returns it"""
         #debugser = serial.Serial("/dev/tty0",115200,timeout=1)
         response = ""
-        while not re.search(r'BIOS>',response):
+        while not re.search(r'BIOS>', response):
             char = self.serial.read(1)
             if char == '':
                 raise Error(response)
@@ -383,18 +428,7 @@ class UBoot:
         #debugser.close()
         return response
  
-    def load(self):
-        BINARY = "apf51-u-boot.bin"
-        if not os.path.exists(BINARY):
-            raise Error("file "+BINARY+" doesn't exit",0)
-        fsize = "%08x" % os.path.getsize(BINARY) #os.stat(filesize)[6]
-        print "Loading %s, size = %d bytes" % (BINARY, os.path.getsize(BINARY))
-        self.bootstrap.download("90000000", BINARY, fsize, "AA")
-        self.bootstrap.put("90000000", "90000004", "l")
-        #self.bootstrap.download("1FFE2000",BINARY, "00000400", "AA")
-        self.bootstrap.getstatus()
-
-    def resetenv(self):
+    def resetEnv(self):
         self.serial.write("run flash_reset_env\n")
         return self.__getOutput()
 
@@ -404,7 +438,7 @@ class UBoot:
         return self.__getOutput()
 
     def flash(self):
-        """ flash uboot """
+        """ Ask U-Boot to flash itself """
         self.serial.write("run flash_uboot\n")
         try:
             ret = self.__getOutput()
@@ -418,157 +452,130 @@ class UBoot:
 
 if __name__ == "__main__":    
 
-    SPEED = 115200
+    def testRAM():
+        apfBootloader.put("90000000", "00000001", "l")
+        apfBootloader.put("90000004", "00000002", "l")
+        apfBootloader.put("90000008", "00000004", "l")
+        apfBootloader.put("90000010", "00000008", "l")
+        apfBootloader.put("90000020", "00000010", "l")
+        apfBootloader.put("9000002C", "00000020", "l")
+        apfBootloader.put("90000040", "00000040", "l")
+        apfBootloader.put("90000080", "00000080", "l")
+        apfBootloader.put("90000100", "00000100", "l")
+        apfBootloader.put("90000200", "00000200", "l")
+        apfBootloader.put("90000400", "00000400", "l")
+        apfBootloader.put("90000800", "00000800", "l")
+        apfBootloader.put("90001000", "00001000", "l")
+        apfBootloader.put("90001004", "00002000", "l")
+        apfBootloader.put("90002000", "00004000", "l")
+        apfBootloader.put("90004000", "00008000", "l")
+        apfBootloader.put("90010000", "00010000", "l")
+        apfBootloader.put("90020000", "00020000", "l")
+        apfBootloader.put("90040000", "00040000", "l")
+        apfBootloader.put("90080000", "00080000", "l")
+        apfBootloader.put("90100000", "00100000", "l")
+        apfBootloader.put("90200000", "00200000", "l")
+        apfBootloader.put("90400000", "00400000", "l")
+        apfBootloader.put("90800000", "00800000", "l")
+        apfBootloader.put("91000000", "01000000", "l")
+        apfBootloader.put("92000000", "02000000", "l")
+        apfBootloader.put("93000000", "04000000", "l")
+        apfBootloader.put("90000024", "08000000", "l")
+        apfBootloader.put("90000014", "10000000", "l")
+        apfBootloader.put("90000018", "20000000", "l")
+        apfBootloader.put("9000001C", "40000000", "l")
+        apfBootloader.put("90000024", "80000000", "l")
 
-    print "\nAPF51 Bootstrap Tool\n"
-    print "!!! Do not forget to put the bootstrap jumper and to reset your board !!!"
-    print "(be sure to have a u-boot.bin file in current dir too)\n"
-    port = raw_input('Enter serial port number or name to use (/dev/ttyUSBx under Linux or COMx under Windows): ')
+        time.sleep(1)
+
+        apfBootloader.get("90000000", "4", "l")
+        apfBootloader.get("90000004", "4", "l")
+        apfBootloader.get("90000008", "4", "l")
+        apfBootloader.get("90000010", "4", "l")
+        apfBootloader.get("90000020", "4", "l")
+        apfBootloader.get("9000002C", "4", "l")
+        apfBootloader.get("90000040", "4", "l")
+        apfBootloader.get("90000080", "4", "l")
+        apfBootloader.get("90000100", "4", "l")
+        apfBootloader.get("90000200", "4", "l")
+        apfBootloader.get("90000400", "4", "l")
+        apfBootloader.get("90000800", "4", "l")
+        apfBootloader.get("90001000", "4", "l")
+        apfBootloader.get("90001004", "4", "l")
+        apfBootloader.get("90002000", "4", "l")
+        apfBootloader.get("90004000", "4", "l")
+        apfBootloader.get("90010000", "4", "l")
+        apfBootloader.get("90020000", "4", "l")
+        apfBootloader.get("90040000", "4", "l")
+        apfBootloader.get("90080000", "4", "l")
+        apfBootloader.get("90100000", "4", "l")
+        apfBootloader.get("90200000", "4", "l")
+        apfBootloader.get("90400000", "4", "l")
+        apfBootloader.get("90800000", "4", "l")
+        apfBootloader.get("91000000", "4", "l")
+        apfBootloader.get("92000000", "4", "l")
+        apfBootloader.get("93000000", "4", "l")
+        apfBootloader.get("90000024", "4", "l")
+        apfBootloader.get("90000014", "4", "l")
+        apfBootloader.get("90000018", "4", "l")
+        apfBootloader.get("9000001C", "4", "l")
+        apfBootloader.get("90000024", "4", "l")
+
+
+    SPEED = 115200
+    BINARY = "apf51-u-boot.bin"
+
+    print "\n--- APF51 Bootstrap Tool ---\n"
+    print "Procedure to follow:"
+    print "1] Power off your board, close all serial terminal sessions, remove all USB cables"
+    print "2] Put bootstrap jumper"
+    print "3] Power on your board"
+    print "4] Connect a USB cable from your PC to the APF51Dev OTG miniUSB connector"
+    print "5] Connect a USB cable from your PC to the APF51Dev console miniUSB connector"
+    print "(be sure to have a %s image in current dir too)\n" % BINARY
+    port = raw_input('--- Enter serial port number or name to use for console (/dev/ttyACM0 under Linux (default) or COMx under Window$): ')
+    if port is '':
+        port = '/dev/ttyACM0'
+
+    usb = USBDevice()
+    apfBootloader = apf51Bootloader(usb)
+
+    apfBootloader.getStatus()
+    apfBootloader.initIOMUX()
+    apfBootloader.initSDRAM1("APF51")
+    #clear configuration request
+    apfBootloader.put("83FD9014","00000000","l")
+    #testRAM()
+
+    print "--- Successfully initialized APF51, now loading U-Boot"
+    if not os.path.exists(BINARY):
+        raise Error("file "+BINARY+" doesn't exit",0)
+    fsize = "%08x" % os.path.getsize(BINARY) #os.stat(filesize)[6]
+    print "Loading %s, size = %d bytes" % (BINARY, os.path.getsize(BINARY))
+    apfBootloader.download("90000000", BINARY, fsize, "AA")
+
     try:
         ser = serial.Serial(port, SPEED, timeout=2)
     except Exception, msg:
-        print "unable to open serial port %s" % port
-        print msg
+        print "unable to open serial port %s !" % port
+	print msg
         sys.exit()
     ser.flush()
 
-    apfBootloader = apf51Bootloader(ser)
-    uboot = UBoot(apfBootloader, ser)
+    uboot = UBoot(ser)
 
-    apfBootloader.getstatus()
-#    apfBootloader.get("CFFF0000","4", "l")
-#    apfBootloader.get("CFFF0004","4", "l")
-#    apfBootloader.get("CFFF0008","4", "l")
-#    apfBootloader.get("CFFF000C","4", "l")
-#    apfBootloader.get("CFFF0400","4", "l")
-#    apfBootloader.get("CFFF0404","4", "l")
-#    apfBootloader.get("CFFF0408","4", "l")
-#    apfBootloader.get("CFFF040C","4", "l")
-#    apfBootloader.get("1FFE1A98","4", "l")
-#    apfBootloader.get("1FFE0800","4", "l")
-#    apfBootloader.get("1FFE0804","4", "l")
-#    apfBootloader.get("1FFE0808","4", "l")
-#    apfBootloader.get("1FFE080C","4", "l")
-#    apfBootloader.get("1FFE0810","4", "l")
-#    apfBootloader.get("1FFE2000","4", "l")
-#    apfBootloader.get("1FFE2004","4", "l")
-#    apfBootloader.get("1FFE2008","4", "l")
-#    apfBootloader.get("1FFE200C","4", "l")
-#    apfBootloader.get("1FFE0810","4", "l")
-#    apfBootloader.get("73FD0000","4", "l")
-#    apfBootloader.get("73FD0004","4", "l")
-#    apfBootloader.get("73FD0008","4", "l")
-#    apfBootloader.get("73FD0014","4", "l")
-    apfBootloader.initIOMUX()
-    apfBootloader.initSDRAM1("APF51")
+    # execute loaded code:
+    apfBootloader.put("90000000", "90000004", "l")
+    #self.bootstrap.getStatus() ?
 
-    #clear configuration request
-    apfBootloader.put("83FD9014","00000000","l") 
-
-    apfBootloader.put("90000000", "00000001", "l")
-    apfBootloader.put("90000004", "00000002", "l")
-    apfBootloader.put("90000008", "00000004", "l")
-    apfBootloader.put("90000010", "00000008", "l")
-    apfBootloader.put("90000020", "00000010", "l")
-    apfBootloader.put("9000002C", "00000020", "l")
-    apfBootloader.put("90000040", "00000040", "l")
-    apfBootloader.put("90000080", "00000080", "l")
-    apfBootloader.put("90000100", "00000100", "l")
-    apfBootloader.put("90000200", "00000200", "l")
-    apfBootloader.put("90000400", "00000400", "l")
-    apfBootloader.put("90000800", "00000800", "l")
-    apfBootloader.put("90001000", "00001000", "l")
-    apfBootloader.put("90001004", "00002000", "l")
-    apfBootloader.put("90002000", "00004000", "l")
-    apfBootloader.put("90004000", "00008000", "l")
-    apfBootloader.put("90010000", "00010000", "l")
-    apfBootloader.put("90020000", "00020000", "l")
-    apfBootloader.put("90040000", "00040000", "l")
-    apfBootloader.put("90080000", "00080000", "l")
-    apfBootloader.put("90100000", "00100000", "l")
-    apfBootloader.put("90200000", "00200000", "l")
-    apfBootloader.put("90400000", "00400000", "l")
-    apfBootloader.put("90800000", "00800000", "l")
-    apfBootloader.put("91000000", "01000000", "l")
-    apfBootloader.put("92000000", "02000000", "l")
-    apfBootloader.put("93000000", "04000000", "l")
-    apfBootloader.put("90000024", "08000000", "l")
-    apfBootloader.put("90000014", "10000000", "l")
-    apfBootloader.put("90000018", "20000000", "l")
-    apfBootloader.put("9000001C", "40000000", "l")
-    apfBootloader.put("90000024", "80000000", "l")
-
-    time.sleep(1)
-
-    apfBootloader.get("90000000", "4", "l")
-    apfBootloader.get("90000004", "4", "l")
-    apfBootloader.get("90000008", "4", "l")
-    apfBootloader.get("90000010", "4", "l")
-    apfBootloader.get("90000020", "4", "l")
-    apfBootloader.get("9000002C", "4", "l")
-    apfBootloader.get("90000040", "4", "l")
-    apfBootloader.get("90000080", "4", "l")
-    apfBootloader.get("90000100", "4", "l")
-    apfBootloader.get("90000200", "4", "l")
-    apfBootloader.get("90000400", "4", "l")
-    apfBootloader.get("90000800", "4", "l")
-    apfBootloader.get("90001000", "4", "l")
-    apfBootloader.get("90001004", "4", "l")
-    apfBootloader.get("90002000", "4", "l")
-    apfBootloader.get("90004000", "4", "l")
-    apfBootloader.get("90010000", "4", "l")
-    apfBootloader.get("90020000", "4", "l")
-    apfBootloader.get("90040000", "4", "l")
-    apfBootloader.get("90080000", "4", "l")
-    apfBootloader.get("90100000", "4", "l")
-    apfBootloader.get("90200000", "4", "l")
-    apfBootloader.get("90400000", "4", "l")
-    apfBootloader.get("90800000", "4", "l")
-    apfBootloader.get("91000000", "4", "l")
-    apfBootloader.get("92000000", "4", "l")
-    apfBootloader.get("93000000", "4", "l")
-    apfBootloader.get("90000024", "4", "l")
-    apfBootloader.get("90000014", "4", "l")
-    apfBootloader.get("90000018", "4", "l")
-    apfBootloader.get("9000001C", "4", "l")
-    apfBootloader.get("90000024", "4", "l")
-
-    # configure iomux as gpio for NAND_RB1 et RB2
-    # apfBootloader.put("73FA8120", "00000003", "l")
-    # apfBootloader.put("73FA8124", "00000003", "l")
-    # apfBootloader.put("73FA8128", "00000003", "l")
-    print 'NFC'
-    apfBootloader.get("83FDB02C","4", "l")
-    apfBootloader.get("83FDB024","4", "l")
-    apfBootloader.get("83FDB02C","4", "l")
-    print 'config3'
-    apfBootloader.get("83FDB028","4", "l")
-    print 'SBMR'
-    apfBootloader.get("73FD0004","4", "l")
-
-    uboot.load()
     uboot.waitForPrompt()
-#    apfBootloader.getstatus()
-    #apfBootloader.put("73fb4010","00000000", "l")
-#    ser.flush()
-#    apfBootloader.put("73FC0080", "00000000", "l")
 
-#    apfBootloader.get("1FFE2000","4", "l")
-
-#    apfBootloader.get("90000004","4", "l")
-#    apfBootloader.get("90000008","4", "l")
-#    apfBootloader.get("9000000C","4", "l")
-#    apfBootloader.get("90000010","4", "l")
-#    apfBootloader.get("90000014","4", "l")
-#    apfBootloader.get("90001140","4", "l")
-#    apfBootloader.get("90001148","4", "l")
-#    apfBootloader.get("9000114C","4", "l")
-
-    eraseAll = raw_input('Would you like to erase the environment variables ? y/N: ')
+    eraseAll = raw_input('\n--- Would you like to erase the environment variables ? y/N: ')
     if eraseAll == 'y':
-        uboot.resetenv()
+        uboot.resetEnv()
     uboot.flash()
-    print "U-Boot successfully recovered !"
+    print "\n--- U-Boot successfully recovered !"
+    print "--- Now you can remove miniUSB OTG cable and bootstrap jumper. Then, restart your board"
 
     del ser
 
