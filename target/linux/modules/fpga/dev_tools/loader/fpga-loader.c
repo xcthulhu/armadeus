@@ -33,7 +33,7 @@
 #include "xilinx-fpga-loader.h"
 
 
-#define DRIVER_VERSION		"0.91"
+#define DRIVER_VERSION		"0.92"
 #define DRIVER_NAME		"fpgaloader"
 #define FPGA_PROC_DIRNAME	"driver/fpga"
 #define FPGA_PROC_FILENAME	FPGA_PROC_DIRNAME "/loader"

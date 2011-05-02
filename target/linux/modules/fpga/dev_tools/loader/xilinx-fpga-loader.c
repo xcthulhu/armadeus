@@ -290,12 +290,6 @@ static int spartan_parallel_finish(struct fpga_desc *desc)
 				return -ETIMEDOUT;
 			}
 		}
-		/* Spartan signals an error if INIT goes low (active) */
-		if (!(*fn->init)()) {
-			printk("** CRC error during FPGA load.\n");
-			(*fn->abort) ();	/* abort the burn */
-			return -ETIMEDOUT;
-		}
 		(*fn->cs) (0);	/* Deassert the chip select */
 		(*fn->wr) (0);	/* Deassert the write pin */
 		(*fn->post) (); /* release resources */

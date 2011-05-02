@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-04-05 18:28:35.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-04-05 22:56:58.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-04-26 13:49:47.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-05-02 14:03:00.000000000 +0200
 @@ -167,12 +167,32 @@
  	select SOC_IMX51
  	select IMX_HAVE_PLATFORM_IMX_UART
@@ -43,8 +43,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-04-05 18:28:35.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-04-05 22:56:58.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-04-26 13:49:47.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-05-02 14:03:00.000000000 +0200
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -56,8 +56,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-04-05 23:04:25.000000000 +0200
-@@ -0,0 +1,480 @@
++++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-05-02 13:59:05.000000000 +0200
+@@ -0,0 +1,468 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
 + *
@@ -217,14 +217,10 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +
 +	/* ONEWIRE */
 +
-+	/* KEYPAD */
-+
 +	/* LED */
 +	(_MX51_PAD_GPIO1_2__GPIO1_2 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
-+
 +	/* User switch */
 +	(_MX51_PAD_GPIO1_3__GPIO1_3 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),
-+
 +
 +	/* Other GPIOs ! TBDL ! */
 +	(_MX51_PAD_I2C1_CLK__GPIO4_16 | MUX_PAD_CTRL(APF51_GPIO_SPECIAL_PAD_CTRL)),	/* HDMI_RST# */
@@ -241,7 +237,6 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +};
 +
 +/* APF51Proto has a LCD connector for a 18 bits 800x480 Chimei TFT LCD */
-+
 +static struct fb_videomode apf51dev_modes[] = {
 +        {
 +		.name 		= "Chimei-LW700AT9003",
@@ -395,7 +390,6 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +static int init_gpio(void)
 +{
 +#define USER_LED_GPIO		(GPIO_PORTA | 2)
-+#define USER_SWITCH_GPIO	(GPIO_PORTA | 3)
 +#define WIFI_PWRDN 		(GPIO_PORTB | 22)
 +#define WIFI_RESET 		(GPIO_PORTB | 23)
 +#define BT_RESET 		(GPIO_PORTB | 28)
@@ -433,13 +427,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 +		return ret;
 +	}
 +	gpio_direction_output(USER_LED_GPIO, 1);
-+
-+	ret = gpio_request(USER_SWITCH_GPIO, "USER_SWITCH_GPIO");
-+	if (ret) {
-+		pr_warn("failed to get User Switch GPIO: %d\n", ret);
-+		return ret;
-+	}
-+	gpio_direction_input(USER_SWITCH_GPIO);
++	gpio_free(USER_LED_GPIO);
 +
 +	/* HDMI */
 +	ret = gpio_request(HDMI_DETECT_GPIO, "HDMI_DETECT_GPIO");
