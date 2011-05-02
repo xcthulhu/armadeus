@@ -1,8 +1,6 @@
 config BR2_PACKAGE_CH7024CTRL
-	bool "ch7024ctrl"
+	bool "ch7024 control"
 	depends on BR2_TARGET_ARMADEUS
-	default n
 	help
-	  Build CH7024 control tool. It allows you to configure the Svideo
-	  output of the DevFull directly from Linux userspace (command ch7024).
-
+	  Build "ch7024" control tool. It allows you to configure the S-Video
+	  output of the APF9328DevFull directly from Linux userspace.

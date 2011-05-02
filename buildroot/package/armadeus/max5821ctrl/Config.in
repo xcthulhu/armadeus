@@ -1,7 +1,6 @@
 config BR2_PACKAGE_MAX5821CTRL
-	bool "max5821ctrl"
-	default y
+	bool "max5821 control (setDAC)"
 	help
 	  This tool allows you to configure the MAX5821 I2C DAC directly 
-	  from Linux userspace (setDAC command).
-
+	  from Linux userspace ("setDAC" command) on your APF9328DevFull or
+	  on your APF27DevFull.
