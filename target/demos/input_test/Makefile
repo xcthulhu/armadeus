@@ -7,9 +7,9 @@ INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/local/bin/
 INSTALL_DATA_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/share
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-sstrip
-SDL_DIR:=$(ARMADEUS_SDL_DIR)
-CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags) -g
-LIBS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --libs)
+SDL_CONFIG:=$(STAGING_DIR)/usr/bin/sdl-config
+CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --cflags) -g
+LIBS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --libs)
 DEFINES=-DAPF
 
 ifeq ($(TARGET),x86)

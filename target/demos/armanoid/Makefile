@@ -2,16 +2,16 @@
 ARMADEUS_BASE_DIR=../../..
 -include $(ARMADEUS_BASE_DIR)/Makefile.in
 
-SDL_DIR:=$(ARMADEUS_BUILD_DIR)/SDL-$(ARMADEUS_SDL_VERSION)
 STAGING_DIR:=$(ARMADEUS_BUILD_DIR)/staging_dir/
+SDL_CONFIG:=$(STAGING_DIR)/usr/bin/sdl-config
 INSTALL_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/local/bin
 INSTALL_DATA_DIR:=$(ARMADEUS_ROOTFS_DIR)/usr/share
 CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)arm-linux-sstrip
 
 DEFINES=TARGET
-CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags) -g
-LIBS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --libs)
+CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --cflags) -g
+LIBS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --libs)
 
 ifeq ($(TARGET),x86)
 	INSTALL_DIR="/usr/games/"

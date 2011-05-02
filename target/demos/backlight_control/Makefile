@@ -8,9 +8,9 @@ CC:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-gcc
 STRIP:=$(ARMADEUS_TOOLCHAIN_PATH)/arm-linux-sstrip
 DEFINES=-DTARGET
 STAGING_DIR:=$(ARMADEUS_STAGING_DIR)
-SDL_DIR:=$(ARMADEUS_SDL_DIR)
-CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --cflags) -g
-LDFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_DIR)/sdl-config --libs) -lSDL_image
+SDL_CONFIG:=$(STAGING_DIR)/usr/bin/sdl-config
+CFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --cflags) -g
+LDFLAGS=$(shell STAGING_DIR=$(STAGING_DIR) sh $(SDL_CONFIG) --libs) -lSDL_image
 
 ifeq ($(TARGET),x86)
         INSTALL_DIR:=/usr/local/bin
