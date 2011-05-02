@@ -14,7 +14,7 @@ Index: u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ u-boot-2010.03/drivers/mtd/nand/mx51_nand.c	2011-01-05 18:11:47.000000000 +0100
-@@ -0,0 +1,979 @@
+@@ -0,0 +1,985 @@
 +/*
 + * Copyright (C) 2010 Eric Jarrige <jorasse@armadeus.org>
 + * Copyright 2004-2007 Freescale Semiconductor, Inc.
@@ -175,13 +175,19 @@ Index: u-boot-2010.03/drivers/mtd/nand/mx51_nand.c
 +
 +
 +static struct nand_ecclayout nand_hw_eccoob2k = {
-+	.eccbytes = 8,
++	.eccbytes = 4 * 8,
 +	.eccpos = {
 +		8, 9, 10, 11, 12, 13, 14, 15,
++		72, 73, 74, 75, 76, 77, 78, 79,
++		136, 137, 138, 139, 140, 141, 142, 143,
++		200, 201, 202, 203, 204, 205, 206, 207
 +	},
 +	.oobfree = {
-+			{.offset = 2, .length = 5},
-+			{.offset = 16, .length = 48}
++			{.offset = 2, .length = 4},
++			{.offset = 16, .length = 56},
++			{.offset = 80, .length = 56},
++			{.offset = 144, .length = 56},
++			{.offset = 208, .length = 48}
 +	},
 +};
 +

@@ -2,7 +2,7 @@
  *
  * Configuration settings for the Armadeus Project apf51 board.
  *
- * (C) Copyright 2010 Eric Jarrige, Armadeus Project 
+ * (C) Copyright 2010,2011 Eric Jarrige, Armadeus Project 
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,14 +20,16 @@
  * MA 02111-1307 USA
  *
  * 2010/03/31 Initial version based on apf27 configuration file
+ * 2011/05/02 patch V0.5 updates NAND OOB to be mx51 linux kernel compliant
+ *		(at least for the first 11 spare bytes..)
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
 #define CONFIG_VERSION_VARIABLE
-#define CONFIG_ENV_VERSION 	"0.4"
-#define CONFIG_IDENT_STRING	" apf51 patch 0.4"
+#define CONFIG_ENV_VERSION 	"0.5"
+#define CONFIG_IDENT_STRING	" apf51 patch 0.5"
 
 //#define APF51_PROTO
 //#define APF51_RECOVER
