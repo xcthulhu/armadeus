@@ -1,0 +1,60 @@
+From 34c56e014ff44329416b609e1be208fd8e2ad4bf Mon Sep 17 00:00:00 2001
+From: Gustavo Zacarias <gustavo@zacarias.com.ar>
+Date: Thu, 27 Jan 2011 16:24:10 +0000
+Subject: ntp: bump to version 4.2.6p3 and fix glibc build failure
+
+Bump to version 4.2.6p3 and fix a build failure with external toolchains
+that use certain glibc versions as point out by speakman on IRC.
+
+Signed-off-by: Gustavo Zacarias <gustavo@zacarias.com.ar>
+Acked-by: Daniel Nyström <daniel.nystrom@timeterminal.se>
+Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
+---
+diff --git a/package/ntp/ntp-4.2.6_p2-adjtimex.patch b/package/ntp/ntp-adjtimex.patch
+index 40625fa..40625fa 100644
+--- a/package/ntp/ntp-4.2.6_p2-adjtimex.patch
++++ b/package/ntp/ntp-adjtimex.patch
+diff --git a/package/ntp/ntp-nano.patch b/package/ntp/ntp-nano.patch
+new file mode 100644
+index 0000000..d16046c
+--- a/dev/null
++++ b/package/ntp/ntp-nano.patch
+@@ -0,0 +1,23 @@
++Fixes issues with glibc header files, see
++http://bugs.gentoo.org/show_bug.cgi?id=270483
++
++Signed-off-by: Gustavo Zacarias <gustavo@zacarias.com.ar>
++
++diff -Nura ntp-4.2.6p2.orig/include/ntp_syscall.h ntp-4.2.6p2/include/ntp_syscall.h
++--- ntp-4.2.6p2.orig/include/ntp_syscall.h	2009-12-09 04:36:37.000000000 -0300
+++++ ntp-4.2.6p2/include/ntp_syscall.h	2011-01-27 13:09:05.072336628 -0300
++@@ -14,6 +14,14 @@
++ # include <sys/timex.h>
++ #endif
++ 
+++#if defined(ADJ_NANO) && !defined(MOD_NANO)
+++#define MOD_NANO ADJ_NANO
+++#endif
+++
+++#if defined(ADJ_TAI) && !defined(MOD_TAI)
+++#define MOD_TAI ADJ_TAI
+++#endif
+++
++ #ifndef NTP_SYSCALLS_LIBC
++ #ifdef NTP_SYSCALLS_STD
++ # define ntp_adjtime(t)		syscall(SYS_ntp_adjtime, (t))
+diff --git a/package/ntp/ntp.mk b/package/ntp/ntp.mk
+index 51e3956..7e09b5e 100644
+--- a/package/ntp/ntp.mk
++++ b/package/ntp/ntp.mk
+@@ -3,7 +3,7 @@
+ # ntp
+ #
+ #############################################################
+-NTP_VERSION = 4.2.6p2
++NTP_VERSION = 4.2.6p3
+ NTP_SOURCE = ntp-$(NTP_VERSION).tar.gz
+ NTP_SITE = http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2
+ 
+--
+cgit v0.8.2.1

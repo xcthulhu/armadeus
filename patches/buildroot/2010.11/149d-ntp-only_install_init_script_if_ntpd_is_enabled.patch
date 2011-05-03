@@ -1,0 +1,52 @@
+From d0352edeea629349a0ce497e53cb6ce34feacac0 Mon Sep 17 00:00:00 2001
+From: Peter Korsgaard <jacmet@sunsite.dk>
+Date: Fri, 04 Feb 2011 19:00:35 +0000
+Subject: ntp: only install init script if ntpd is enabled
+
+Further more:
+- Rename to S49ntp to match other packages
+- Fix start target to run ntpd, and only try ntpdate if available
+
+Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
+---
+diff --git a/package/ntp/ntp.sysvinit b/package/ntp/S49ntp
+index 38e60b0..7b929e9 100755
+--- a/package/ntp/ntp.sysvinit
++++ b/package/ntp/S49ntp
+@@ -20,16 +20,15 @@ fi
+ 
+ case "$1" in
+   start)
+-	if test x$NTPDATE = xyes ; then
++	if [ -x $NTPDATE_BIN ] ; then
+ 		echo -n "Getting initial time via ntp"
+ 		$NTPDATE_BIN $NTPDATE_OPTS $NTPSERVERS > /dev/null 2>&1
+ 		echo "."
+ 	fi
+-	if test x$NTPD = xyes ; then
+-		echo -n "Starting $DESC: $NAME"
+-		start-stop-daemon -S -q -x $DAEMON
+-		echo "."
+-	fi
++
++	echo -n "Starting $DESC: $NAME"
++	start-stop-daemon -S -q -x $DAEMON
++	echo "."
+ 	;;
+   stop) echo -n "Stopping $DESC: $NAME"
+ 	start-stop-daemon -K -q -n $NAME
+diff --git a/package/ntp/ntp.mk b/package/ntp/ntp.mk
+index bca5d6e..72e462e 100644
+--- a/package/ntp/ntp.mk
++++ b/package/ntp/ntp.mk
+@@ -42,7 +42,7 @@ NTP_INSTALL_FILES_$(BR2_PACKAGE_NTP_TICKADJ) += util/tickadj
+ define NTP_INSTALL_TARGET_CMDS
+ 	$(if $(BR2_PACKAGE_NTP_NTPD), install -m 755 $(@D)/ntpd/ntpd $(TARGET_DIR)/usr/sbin/ntpd)
+ 	test -z "$(NTP_INSTALL_FILES_y)" || install -m 755 $(addprefix $(@D)/,$(NTP_INSTALL_FILES_y)) $(TARGET_DIR)/usr/bin/
+-	install -m 755 package/ntp/ntp.sysvinit $(TARGET_DIR)/etc/init.d/S49ntp
++	$(if $(BR2_PACKAGE_NTP_NTPD), install -m 755 package/ntp/S49ntp $(TARGET_DIR)/etc/init.d/S49ntp)
+ 	@if [ ! -f $(TARGET_DIR)/etc/default/ntpd ]; then \
+ 		install -m 755 -d $(TARGET_DIR)/etc/default ; \
+ 		install -m 644 package/ntp/ntpd.etc.default $(TARGET_DIR)/etc/default/ntpd ; \
+--
+cgit v0.8.2.1
