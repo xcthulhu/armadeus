@@ -21,6 +21,7 @@
 */
 
 #include "as_spi.hpp"
+#include <iostream>
 
 /** @brief Constructor: Open a SPI bus.
  *
@@ -33,7 +34,14 @@ AsSpi::AsSpi(const unsigned char *aSpidev_name)
 
 AsSpi::~AsSpi()
 {
-	as_spi_close(mFd);
+	if (mFd != 0)
+	{
+		as_spi_close(mFd);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+	}
 }
 
 /** @brief Set bits order
@@ -44,7 +52,15 @@ AsSpi::~AsSpi()
  */
 int AsSpi::setLsb(unsigned char aLsb)
 {
-	return as_spi_set_lsb(mFd, aLsb);
+	if (mFd != 0)
+	{
+		return as_spi_set_lsb(mFd, aLsb);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get bits order
@@ -53,7 +69,15 @@ int AsSpi::setLsb(unsigned char aLsb)
  */
 int AsSpi::getLsb() const
 {
-	return as_spi_get_lsb(mFd);
+	if (mFd != 0)
+	{
+		return as_spi_get_lsb(mFd);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Set spi bus mode
@@ -64,7 +88,15 @@ int AsSpi::getLsb() const
  */
 int AsSpi::setMode(unsigned char aMode)
 {
-	return as_spi_set_mode(mFd, aMode);
+	if (mFd != 0)
+	{
+		return as_spi_set_mode(mFd, aMode);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get spi bus mode
@@ -73,7 +105,15 @@ int AsSpi::setMode(unsigned char aMode)
  */
 int AsSpi::getMode() const
 {
-	return as_spi_get_mode(mFd);
+	if (mFd != 0)
+	{
+		return as_spi_get_mode(mFd);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Set clock bus speed
@@ -84,7 +124,15 @@ int AsSpi::getMode() const
  */
 int AsSpi::setSpeed(unsigned char aSpeed)
 {
-	return as_spi_set_speed(mFd, aSpeed);
+	if (mFd != 0)
+	{
+		return as_spi_set_speed(mFd, aSpeed);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get clock bus speed
@@ -93,7 +141,15 @@ int AsSpi::setSpeed(unsigned char aSpeed)
  */
 int AsSpi::getSpeed() const
 {
-	return as_spi_get_speed(mFd);
+	if (mFd != 0)
+	{
+		return as_spi_get_speed(mFd);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get bits per word
@@ -102,7 +158,15 @@ int AsSpi::getSpeed() const
  */
 int AsSpi::getBitsPerWord() const
 {
-	return as_spi_get_bits_per_word(mFd);
+	if (mFd != 0)
+	{
+		return as_spi_get_bits_per_word(mFd);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Set bits per word
@@ -113,7 +177,15 @@ int AsSpi::getBitsPerWord() const
  */
 int AsSpi::setBitsPerWord(unsigned char aBits)
 {
-	return as_spi_set_bits_per_word(mFd, aBits);
+	if (mFd != 0)
+	{
+		return as_spi_set_bits_per_word(mFd, aBits);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Forge arbitrary length message (31bits max) and send it
@@ -126,5 +198,13 @@ int AsSpi::setBitsPerWord(unsigned char aBits)
  */
 unsigned long long AsSpi::msg(unsigned long long aMsg, size_t aLen, unsigned long aSpeed)
 {
-	return as_spi_msg(mFd, aMsg, aLen, aSpeed);
+	if (mFd != 0)
+	{
+		return as_spi_msg(mFd, aMsg, aLen, aSpeed);
+	}
+	else
+	{
+		std::cerr<<"AsSpi file descriptor not initialized"<<std::endl;
+		return -1;
+	}
 }

@@ -40,10 +40,17 @@ AsDac::~AsDac()
 {
 	int ret;
 
-	ret = as_dac_close(mDev);
-	if (ret < 0)
+	if (mDev != NULL)
 	{
-		std::cout<<"AsDac destruction error"<<std::endl;
+		ret = as_dac_close(mDev);
+		if (ret < 0)
+		{
+			std::cout<<"AsDac destruction error"<<std::endl;
+		}
+	}
+	else
+	{
+		std::cerr<<"AsDac device structure not allocated"<<std::endl;
 	}
 }
 	
@@ -56,5 +63,13 @@ AsDac::~AsDac()
  */
 long AsDac::setValueInMillivolts(int aChannel, int aValue)
 {
-	return as_dac_set_value_in_millivolts(mDev, aChannel, aValue);
+	if (mDev != NULL)
+	{
+		return as_dac_set_value_in_millivolts(mDev, aChannel, aValue);
+	}
+	else
+	{
+		std::cerr<<"AsDac device structure not allocated"<<std::endl;
+		return -1;
+	}
 }

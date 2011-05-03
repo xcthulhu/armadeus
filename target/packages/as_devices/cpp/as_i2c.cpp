@@ -36,10 +36,17 @@ AsI2c::~AsI2c()
 {
 	int ret;
 
-	ret = as_i2c_close(mDev);
-	if (ret < 0)
+	if (mDev != NULL)
 	{
-		std::cout<<"AsI2c destruction error"<<std::endl;
+		ret = as_i2c_close(mDev);
+		if (ret < 0)
+		{
+			std::cout<<"AsI2c destruction error"<<std::endl;
+		}
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
 	}
 }
 
@@ -51,7 +58,15 @@ AsI2c::~AsI2c()
  */
 long AsI2c::setSlaveAddr(unsigned char aAddr)
 {
-	return as_i2c_set_slave_addr(mDev, aAddr);
+	if (mDev != NULL)
+	{
+		return as_i2c_set_slave_addr(mDev, aAddr);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get chip's I2C slave address 
@@ -60,7 +75,15 @@ long AsI2c::setSlaveAddr(unsigned char aAddr)
  */
 long AsI2c::getSlaveAddr() const
 {
-	return as_i2c_get_slave_addr(mDev);
+	if (mDev != NULL)
+	{
+		return as_i2c_get_slave_addr(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Read several bytes (ioctl() method) from given chip.
@@ -72,7 +95,15 @@ long AsI2c::getSlaveAddr() const
  */
 long AsI2c::read(unsigned char *aData, size_t aSize) const
 {
-	return as_i2c_read(mDev, aData, aSize);
+	if (mDev != NULL)
+	{
+		return as_i2c_read(mDev, aData, aSize);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Write several bytes (ioctl() method) to given chip.
@@ -84,7 +115,15 @@ long AsI2c::read(unsigned char *aData, size_t aSize) const
  */
 long AsI2c::write(unsigned char *aData, size_t aSize)
 {
-	return as_i2c_write(mDev, aData, aSize);
+	if (mDev != NULL)
+	{
+		return as_i2c_write(mDev, aData, aSize);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Read from given chip at a given register address (ioctl() method).
@@ -97,7 +136,15 @@ long AsI2c::write(unsigned char *aData, size_t aSize)
  */
 long AsI2c::readReg(unsigned char aReg, unsigned char *aData, size_t aSize) const
 {
-	return as_i2c_read_reg(mDev, aReg, aData, aSize);
+	if (mDev != NULL)
+	{
+		return as_i2c_read_reg(mDev, aReg, aData, aSize);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Write to given chip at a given register address (ioctl() method).
@@ -110,7 +157,15 @@ long AsI2c::readReg(unsigned char aReg, unsigned char *aData, size_t aSize) cons
  */
 long AsI2c::writeReg(unsigned char aReg, unsigned char *aData, size_t aSize)
 {
-	return as_i2c_write_reg(mDev, aReg, aData, aSize);
+	if (mDev != NULL)
+	{
+		return as_i2c_write_reg(mDev, aReg, aData, aSize);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief forge a read message like this:
@@ -125,7 +180,15 @@ long AsI2c::writeReg(unsigned char aReg, unsigned char *aData, size_t aSize)
  */
 long AsI2c::readMsg(unsigned char *aWData, unsigned char aWriteSize, unsigned char *aRData, size_t aReadSize)
 {
-	return as_i2c_read_msg(mDev, aWData, aWriteSize, aRData, aReadSize);
+	if (mDev != NULL)
+	{
+		return as_i2c_read_msg(mDev, aWData, aWriteSize, aRData, aReadSize);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Read a byte from the given register.
@@ -136,7 +199,15 @@ long AsI2c::readMsg(unsigned char *aWData, unsigned char aWriteSize, unsigned ch
  */
 long AsI2c::readRegByte(unsigned char aReg) const
 {
-	return as_i2c_read_reg_byte(mDev, aReg);
+	if (mDev != NULL)
+	{
+		return as_i2c_read_reg_byte(mDev, aReg);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Write a byte to the given register.
@@ -148,5 +219,13 @@ long AsI2c::readRegByte(unsigned char aReg) const
  */
 long AsI2c::writeRegByte(unsigned char aReg, unsigned char aVal)
 {
-	return as_i2c_write_reg_byte(mDev, aReg, aVal);
+	if (mDev != NULL)
+	{
+		return as_i2c_write_reg_byte(mDev, aReg, aVal);
+	}
+	else
+	{
+		std::cerr<<"AsI2c device structure not allocated"<<std::endl;
+		return -1;
+	}
 }	

@@ -37,10 +37,17 @@ AsGpio::~AsGpio()
 {
 	int ret;
 
-	ret = as_gpio_close(mDev);
-	if (ret < 0)
+	if (mDev != NULL)
 	{
-		std::cout<<"AsGpio destruction error"<<std::endl;
+		ret = as_gpio_close(mDev);
+		if (ret < 0)
+		{
+			std::cout<<"AsGpio destruction error"<<std::endl;
+		}
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
 	}
 }
 
@@ -52,7 +59,15 @@ AsGpio::~AsGpio()
  */
 long AsGpio::setPinDirection(int aDirection)
 {
-	return as_gpio_set_pin_direction(mDev, aDirection);
+	if (mDev != NULL)
+	{
+		return as_gpio_set_pin_direction(mDev, aDirection);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief  Get pin direction
@@ -61,7 +76,15 @@ long AsGpio::setPinDirection(int aDirection)
  */
 long AsGpio::getPinDirection() const
 {
-	return as_gpio_get_pin_direction(mDev);
+	if (mDev != NULL)
+	{
+		return as_gpio_get_pin_direction(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Set pin value
@@ -72,7 +95,15 @@ long AsGpio::getPinDirection() const
  */
 long AsGpio::setPinValue(int aValue)
 {
-	return as_gpio_set_pin_value(mDev, aValue);
+	if (mDev != NULL)
+	{
+		return as_gpio_set_pin_value(mDev, aValue);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get pin value
@@ -81,7 +112,15 @@ long AsGpio::setPinValue(int aValue)
  */
 long AsGpio::getPinValue() const
 {
-	return as_gpio_get_pin_value(mDev);
+	if (mDev != NULL)
+	{
+		return as_gpio_get_pin_value(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get pin value, blocking until interrupt occur
@@ -93,7 +132,15 @@ long AsGpio::getPinValue() const
  */
 long AsGpio::blockingGetPinValue(int aDelay_s, int aDelay_us) const
 {
-	return as_gpio_blocking_get_pin_value(mDev, aDelay_s, aDelay_us);
+	if (mDev != NULL)
+	{
+		return as_gpio_blocking_get_pin_value(mDev, aDelay_s, aDelay_us);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 	
 /** @brief Set pin irq mode
@@ -104,7 +151,15 @@ long AsGpio::blockingGetPinValue(int aDelay_s, int aDelay_us) const
  */
 long AsGpio::setIrqMode(int aMode)
 {
-	return as_gpio_set_irq_mode(mDev, aMode);
+	if (mDev != NULL)
+	{
+		return as_gpio_set_irq_mode(mDev, aMode);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get pin irq mode value
@@ -113,7 +168,15 @@ long AsGpio::setIrqMode(int aMode)
  */
 long AsGpio::getIrqMode() const
 {
-	return as_gpio_get_irq_mode(mDev);
+	if (mDev != NULL)
+	{
+		return as_gpio_get_irq_mode(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get pin number value
@@ -122,7 +185,15 @@ long AsGpio::getIrqMode() const
  */
 long AsGpio::getPinNum() const
 {
-	return as_gpio_get_pin_num(mDev);
+	if (mDev != NULL)
+	{
+		return as_gpio_get_pin_num(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
 
 /** @brief Get port letter
@@ -131,5 +202,13 @@ long AsGpio::getPinNum() const
  */
 long AsGpio::getPortLetter() const
 {
-	return as_gpio_get_port_letter(mDev);
+	if (mDev != NULL)
+	{
+		return as_gpio_get_port_letter(mDev);
+	}
+	else
+	{
+		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
+		return -1;
+	}
 }
