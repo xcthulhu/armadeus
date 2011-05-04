@@ -38,12 +38,20 @@ AsAdc::~AsAdc()
 {
 	int ret;
 
-	ret = as_adc_close(mDev);
-	if (ret < 0)
+	if (mDev != NULL)
 	{
-		std::cout<<"AsAdc destruction error"<<std::endl;
+		ret = as_adc_close(mDev);
+		if (ret < 0)
+		{
+			std::cout<<"AsAdc destruction error"<<std::endl;
+		}
+	}
+	else
+	{
+		std::cerr<<"AsAdc device structure not allocated"<<std::endl;
 	}
 }
+	
 
 /** @brief get value in millivolts
  *
@@ -53,5 +61,13 @@ AsAdc::~AsAdc()
  */
 long AsAdc::getValueInMillivolts(int aChannel) const
 {
-	return as_adc_get_value_in_millivolts(mDev, aChannel);
+	if (mDev != NULL)
+	{	
+		return as_adc_get_value_in_millivolts(mDev, aChannel);
+	}
+	else
+	{
+		std::cerr<<"AsAdc device structure not allocated"<<std::endl;
+		return -1;
+	}
 }

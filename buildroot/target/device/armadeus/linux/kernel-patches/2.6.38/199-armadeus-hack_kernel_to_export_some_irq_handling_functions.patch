@@ -4,8 +4,8 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38.1/kernel/irq/chip.c
 ===================================================================
---- linux-2.6.38.1.orig/kernel/irq/chip.c	2011-04-18 20:43:15.000000000 +0200
-+++ linux-2.6.38.1/kernel/irq/chip.c	2011-04-18 20:46:11.000000000 +0200
+--- linux-2.6.38.1.orig/kernel/irq/chip.c	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/kernel/irq/chip.c	2011-05-04 11:05:47.000000000 +0200
 @@ -663,6 +663,7 @@
  out_unlock:
  	raw_spin_unlock(&desc->lock);
@@ -24,8 +24,8 @@ Index: linux-2.6.38.1/kernel/irq/chip.c
  set_irq_chip_and_handler_name(unsigned int irq, struct irq_chip *chip,
 Index: linux-2.6.38.1/arch/arm/kernel/irq.c
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/kernel/irq.c	2011-04-18 20:48:25.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/kernel/irq.c	2011-04-18 20:48:56.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/kernel/irq.c	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/arch/arm/kernel/irq.c	2011-05-04 11:05:47.000000000 +0200
 @@ -163,6 +163,7 @@
  		desc->status &= ~IRQ_NOAUTOEN;
  	raw_spin_unlock_irqrestore(&desc->lock, flags);
@@ -36,8 +36,8 @@ Index: linux-2.6.38.1/arch/arm/kernel/irq.c
  {
 Index: linux-2.6.38.1/kernel/irq/irqdesc.c
 ===================================================================
---- linux-2.6.38.1.orig/kernel/irq/irqdesc.c	2011-04-18 21:02:58.000000000 +0200
-+++ linux-2.6.38.1/kernel/irq/irqdesc.c	2011-04-18 21:19:39.000000000 +0200
+--- linux-2.6.38.1.orig/kernel/irq/irqdesc.c	2011-03-23 21:04:47.000000000 +0100
++++ linux-2.6.38.1/kernel/irq/irqdesc.c	2011-05-04 11:05:47.000000000 +0200
 @@ -273,6 +273,7 @@
  {
  	return (irq < NR_IRQS) ? irq_desc + irq : NULL;
@@ -46,3 +46,15 @@ Index: linux-2.6.38.1/kernel/irq/irqdesc.c
  
  struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node)
  {
+Index: linux-2.6.38.1/include/linux/irqdesc.h
+===================================================================
+--- linux-2.6.38.1.orig/include/linux/irqdesc.h	2011-05-04 11:12:35.000000000 +0200
++++ linux-2.6.38.1/include/linux/irqdesc.h	2011-05-04 11:12:55.000000000 +0200
+@@ -85,6 +85,7 @@
+ #ifndef CONFIG_SPARSE_IRQ
+ extern struct irq_desc irq_desc[NR_IRQS];
+ #endif
++EXPORT_SYMBOL_GPL(irq_desc);
+ 
+ /* Will be removed once the last users in power and sh are gone */
+ extern struct irq_desc *irq_to_desc_alloc_node(unsigned int irq, int node);
