@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2008-2010 The Armadeus Project
+#  Copyright (C) 2008-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,18 @@ source ./test_helpers.sh
 
 SYS_DIR=/sys/class/backlight/imx-bl
 
+load_driver()
+{
+	if [ "$1" == "APF9328" ] || [ "$1" == "APF27" ]; then
+		modprobe imx_bl
+	elif [ "$1" == "APF51" ]; then
+		echo "Not supported yet"
+		exit 0
+	else
+		echo "Platform not supported by this test"
+	fi
+}
+
 test_backlight()
 {
 	show_test_banner "Backlight"
@@ -23,10 +35,10 @@ test_backlight()
 	clear > /dev/tty1
 	cat /dev/zero | tr '\0' '\377' | dd of=/dev/fb0 bs=1K count=750 2>/dev/null
 
-	modprobe imx_bl
+	execute_for_target load_driver
 	if [ "$?" != 0 ]; then
 		echo "module not found"
-		exit 1
+		exit_failed
 	fi
 	current=`cat $SYS_DIR/actual_brightness`
 	echo "Current brightness level: $current / 256"

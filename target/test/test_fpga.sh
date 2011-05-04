@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2008 The Armadeus Project
+#  Copyright (C) 2008-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,38 +15,47 @@ source ./test_helpers.sh
 source ./test_env.sh
 
 
-load_led_apf9328()
+load_led()
 {
-	load_fpga ./data/fpga/blinking_led_apf9328_200k.bit
-	RES=$?
+	if [ "$1" == "APF9328" ]; then
+		load_fpga ./data/fpga/blinking_led_apf9328_200k.bit
+		RES=$?
+	elif [ "$1" == "APF27" ]; then
+		ask_user "Please connect pins 1 & 39 of J20 connector (3,3V supply for FPGA bank)\nThen press enter"
+		load_fpga ./data/fpga/blinking_led_apf27_200k.bit
+		RES=$?
+	elif [ "$1" == "APF51" ]; then
+		ask_user "Please power on FPGA bank XXX\nThen press enter"
+		load_fpga ./data/fpga/blinking_led_apf51.bit
+		RES=$?
+	else
+		echo "Platform not supported by this test"
+	fi
 }
 
-load_led_apf27()
+load_button()
 {
-	ask_user "Please connect pins 1 & 39 of J20 connector (3,3V supply for FPGA bank)\nThen press enter"
-	load_fpga ./data/fpga/blinking_led_apf27_200k.bit
-	RES=$?
+	if [ "$1" == "APF9328" ]; then
+		load_fpga ./data/fpga/wishbone_example_apf9328_200k.bit
+		RES=$?
+	elif [ "$1" == "APF27" ]; then
+		echo "I hope you have connected pins 1 & 39 of J20"
+		load_fpga ./data/fpga/wishbone_example_apf27_200k.bit
+		RES=$?
+	elif [ "$1" == "APF51" ]; then
+		echo "I hope you have powered up Bank XXX"
+		load_fpga ./data/fpga/wishbone_example_apf51.bit
+		RES=$?
+	else
+		echo "Platform not supported by this test"
+	fi
 }
-
-load_button_apf9328()
-{
-	load_fpga ./data/fpga/wishbone_example_apf9328_200k.bit
-	RES=$?
-}
-
-load_button_apf27()
-{
-	echo "I hope you have connected pins 1 & 39 of J20"
-	load_fpga ./data/fpga/wishbone_example_apf27_200k.bit
-	RES=$?
-}
-
 
 test_fpga_load()
 {
 	show_test_banner "FPGA loading"
 
-	execute_for_target load_led_apf9328 load_led_apf27
+	execute_for_target load_led
 	
 	if [ "$RES" == 0 ]; then
 		ask_user "Did you see the FPGA's LED blinking ? (y/N)"
@@ -62,7 +71,7 @@ test_fpga_it()
 {
 	show_test_banner "FPGA interrupts"
 
-	execute_for_target load_button_apf9328 load_button_apf27
+	execute_for_target load_button
 	if [ "$RES" != 0 ]; then
 		exit_failed
 	fi

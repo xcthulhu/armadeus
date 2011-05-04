@@ -4,7 +4,7 @@
 #
 #############################################################
 
-ARMADEUS-TESTSUITE_VER:=1.0
+ARMADEUS-TESTSUITE_VER:=1.1
 ARMADEUS-TESTSUITE_SOURCE:=$(TOPDIR)/../target/test/
 ARMADEUS-TESTSUITE_DIR:=$(BUILD_DIR)/armadeus-testsuite-$(ARMADEUS-TESTSUITE_VER)
 ARMADEUS-TESTSUITE_CAT:=zcat

@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2008 The Armadeus Project
+#  Copyright (C) 2008-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

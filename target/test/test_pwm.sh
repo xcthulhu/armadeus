@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2010 The Armadeus Project
+#  Copyright (C) 2010-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,28 +25,41 @@ FREQUENCY="100 200 300 400 500 600 700 800"
 DUTY="001 250 333 500 666 750 999"
 SLEEP_TIME=4
 
-
-prepare_test_for_apf9328()
+load_driver()
 {
-	ask_user "Please connect your oscilloscope probe to pin 4 of X21/Timer connector (GND is on pin 8), then press ENTER when ready"
+	if [ "$1" == "APF9328" ] || [ "$1" == "APF27" ]; then
+		modprobe imx-pwm
+		if [ ! -d "$SYS_DIR" ]; then
+			echo "can't find /sys/ interface"
+			exit_failed
+		fi
+	elif [ "$1" == "APF51" ]; then
+		echo "TBDL"
+	else
+		echo "Platform not supported by this test"
+	fi
 }
 
-prepare_test_for_apf27()
+prepare_test()
 {
-	ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector (GND is on pin 6 or 40), then press ENTER when ready"
+	if [ "$1" == "APF9328" ]; then
+		ask_user "Please connect your oscilloscope probe to pin 4 of X21/Timer connector (GND is on pin 8), then press ENTER when ready"
+	elif [ "$1" == "APF27" ]; then
+		ask_user "Please connect your oscilloscope probe to pin 4 of J22 connector (GND is on pin 6 or 40), then press ENTER when ready"
+	elif [ "$1" == "APF51" ]; then
+		ask_user "Please connect your oscilloscope probe to pin 6 of J35 (Extension) connector (GND is on pin 9 or 10), then press ENTER when ready"
+	else
+		echo "Platform not supported by this test"
+	fi
 }
 
 test_pwm()
 {
 	show_test_banner "PWM"
 
-	modprobe imx-pwm
-	if [ ! -d "$SYS_DIR" ]; then
-		echo "can't find /sys/ interface"
-		exit_failed
-	fi
+	execute_for_target load_driver
 
-	execute_for_target prepare_test_for_apf9328 prepare_test_for_apf27
+	execute_for_target prepare_test
 
 	ask_user "Press ENTER when ready to check PWM output (frequencies starting at 100Hz)"
 	echo 1 > $SYS_DIR/active

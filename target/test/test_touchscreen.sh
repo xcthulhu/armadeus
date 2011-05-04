@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2008 The Armadeus Project
+#  Copyright (C) 2008-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,29 @@
 source ./test_helpers.sh
 source ./test_env.sh
 
+load_driver()
+{
+	if [ "$1" == "APF9328" ] || [ "$1" == "APF27" ]; then
+		modprobe tsc2102_ts
+		sleep 1
+		dmesg | tail | grep "TSC210x Touchscreen driver initialized"
+		RES="$?"
+	elif [ "$1" == "APF51" ]; then
+		modprobe wm831x-ts
+		dmesg | tail | grep WM831x
+		RES="$?"
+	else
+		echo "Platform not supported by this test"
+	fi
+}
 
 test_touchscreen()
 {
 	show_test_banner "Touchscreen"
 
-	modprobe tsc2102_ts
-	sleep 1
+	execute_for_target load_driver
 
-	dmesg | tail | grep "TSC210x Touchscreen driver initialized"
-	if [ "$?" != 0 ]; then
+	if [ "$RES" != 0 ]; then
 		echo "Hardware not found !"
 		exit_failed
 	fi

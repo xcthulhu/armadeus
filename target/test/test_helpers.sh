@@ -141,12 +141,15 @@ wake_up_lcd()
 execute_for_target()
 {
 	BOARD=`cat /etc/machine`
-	if [ "$BOARD" == "APF9328" ] && [ "$1" != "" ]; then
-                $1
-        fi
-        if [ "$BOARD" == "APF27" ] && [ "$2" != "" ]; then
-                $2
-        fi
+	if [ "$1" != "" ]; then
+		if [ "$BOARD" == "APF9328" ]; then
+	                $1 $BOARD
+	        elif [ "$BOARD" == "APF27" ]; then
+	                $1 $BOARD
+	        elif [ "$BOARD" == "APF51" ]; then
+	                $1 $BOARD
+	        fi
+	fi
 }
 
 # $1: name of the file in $TEMP_DIR

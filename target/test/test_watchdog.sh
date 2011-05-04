@@ -3,7 +3,7 @@
 #
 # Script to test Armadeus Software release
 #
-#  Copyright (C) 2008 The Armadeus Project
+#  Copyright (C) 2008-2011 The Armadeus Project - ARMadeus Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,21 @@ source ./test_env.sh
 WATCHDOG_DEV="/dev/watchdog"
 SEC=5
 
+load_driver()
+{
+	if [ "$1" == "APF9328" ]; then
+		modprobe imx-wdt timeout=$SEC
+		RES=$?
+		sleep 1
+	elif [ "$1" == "APF27" ] || [ "$1" == "APF51" ]; then
+		modprobe imx2_wdt timeout=$SEC
+		RES=$?
+		sleep 1
+	else
+		echo "Platform not supported by this test"
+	fi
+}
+
 test_watchdog()
 {
 	show_test_banner "Watchdog"
@@ -26,9 +41,7 @@ test_watchdog()
 		exit_failed
 	fi
 
-	modprobe imx-wdt timeout=$SEC
-	RES=$?
-	sleep 1
+	execute_for_target load_driver
 	if [ "$RES" != 0 ] || [ ! -c "$WATCHDOG_DEV" ] ; then
 		echo "Module failed to load"
 		exit_failed

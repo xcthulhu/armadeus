@@ -14,18 +14,6 @@ Also enable crypto when openssl is enabled.
 Signed-off-by: Gustavo Zacarias <gustavo@zacarias.com.ar>
 Signed-off-by: Peter Korsgaard <jacmet@sunsite.dk>
 ---
-diff --git a/CHANGES b/CHANGES
-index 61a51fb..ac5d45b 100644
---- a/CHANGES
-+++ b/CHANGES
-@@ -90,6 +90,7 @@
- 	#2893: Broken "make source" with external toolchain
- 	#2905: Qt: Speed up compilation, if gui-module isn't selected
- 	#2929: genext2fs: couldn't allocate a block (no free space)
-+	#2935: Ntpdate isn't installed
- 	#2965: Broken linkage to xkbcomp (blocking X server startup)
- 	#2983: xlib_libX11 build failed
- 	#3007: kexec doesn't build: Missing regdef.h file
 diff --git a/package/ntp/Config.in b/package/ntp/Config.in
 index afbf0d5..1b2ab4b 100644
 --- a/package/ntp/Config.in
