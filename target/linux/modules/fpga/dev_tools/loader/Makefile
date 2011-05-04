@@ -25,7 +25,7 @@ KDIR    := $(ARMADEUS_LINUX_DIR)
 PWD	:= $(shell pwd)
 
 # Armadeus custom drivers common targets (default, clean, etc...)
-include ../Makefile.in
+include ../../../Makefile.in
 
 endif
 
