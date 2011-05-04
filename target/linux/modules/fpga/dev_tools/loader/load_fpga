@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# Loads APFxx's FPGA by using fpgaloader driver
+#
 
 if [ "$1" == "" ] || [ ! -f "$1" ]; then
 	echo "Usage: `basename $0` <filename>"
@@ -24,7 +27,25 @@ while [ ! -c /dev/fpgaloader ]; do
 	fi
 done
 
-dd if=$1 of=/dev/fpgaloader
+PLATFORM=`cat /etc/machine`
+if [ "$PLATFORM" == "APF51" ]; then
+	# On APF51 FPGA loading shares NAND bus so it's safer to load
+	# firmware from RAM
+	BITFILE=/tmp/tmp_bitfile
+	cp $1 $BITFILE
+	if [ "$?" != 0 ]; then
+		echo "Error while making bitfile copy in RAM !"
+		exit 1
+	fi
+else
+	BITFILE=$1
+fi
+
+dd if=$BITFILE of=/dev/fpgaloader
+
+if [ "$PLATFORM" == "APF51" ]; then
+	rm $BITFILE	# delete copy in RAM
+fi
 
 exit 0
 
