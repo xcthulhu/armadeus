@@ -4,17 +4,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-04-26 13:49:47.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-05-02 14:03:00.000000000 +0200
-@@ -167,12 +167,32 @@
- 	select SOC_IMX51
- 	select IMX_HAVE_PLATFORM_IMX_UART
- 	select IMX_HAVE_PLATFORM_IMX_I2C
--	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
- 	select IMX_HAVE_PLATFORM_MXC_NAND
--	select IMX_HAVE_PLATFORM_SPI_IMX
- 	select MXC_ULPI
- 	help
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-05-03 16:37:52.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-05-03 16:42:37.000000000 +0200
+@@ -176,4 +176,26 @@
  	  Include support for Armadeus Systems APF51 System On Module. This
  	  includes specific configurations for the board and its peripherals.
  
@@ -43,8 +35,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-04-26 13:49:47.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-05-02 14:03:00.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-05-03 16:36:56.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-05-03 16:42:37.000000000 +0200
 @@ -8,6 +8,7 @@
  
  obj-$(CONFIG_CPU_FREQ_IMX)    += cpu_op-mx51.o
@@ -56,7 +48,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-05-02 13:59:05.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/apf51dev-baseboard.c	2011-05-03 16:42:37.000000000 +0200
 @@ -0,0 +1,468 @@
 + /*
 + * Support for APF51's official development baseboard (APF51Dev)
