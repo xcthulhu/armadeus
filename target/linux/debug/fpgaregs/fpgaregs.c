@@ -3,7 +3,7 @@
  * fpgaregs.c
  * a program to write/read 16/32 bits values on FPGA address map using mmap()
  *
- * (c) Copyright 2008 Armadeus project
+ * (c) Copyright 2008-2011 The Armadeus Project - ARMadeus Systems
  * Fabien Marteau <fabien.marteau@armadeus.com>
  * Modified by Sebastien Van Cauwenberghe <svancau@gmail.com>
  *
@@ -24,27 +24,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-/* file management */
-#include <sys/stat.h>
+#include <sys/stat.h>	/* file management */
 #include <fcntl.h>
-
-/* as name said */
 #include <signal.h>
-
-/* sleep, write(), read() */
-#include <unistd.h>
-
-/* converting string */
-#include <string.h>
-
-/* memory management */
-#include <sys/mman.h>
+#include <unistd.h>	/* sleep, write(), read() */
+#include <string.h>	/* converting string */
+#include <sys/mman.h>	/* memory management */
 
 #ifdef IMX27
-#	include "fpga27regs.h"
+# define PLATFORM "APF27"
+# define FPGA_ADDRESS 0xD6000000
+#elif IMX51
+# define PLATFORM "APF51"
+# define FPGA_ADDRESS 0xB8000000
 #else
-#	include "fpgaregs.h"
+# define PLATFORM "APF9328"
+# define FPGA_ADDRESS 0x12000000
 #endif
 
 #define WORD_ACCESS (2)

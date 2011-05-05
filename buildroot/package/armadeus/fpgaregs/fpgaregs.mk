@@ -4,14 +4,18 @@
 #
 #############################################################
 
-FPGAREGS_VER:=1.0
+FPGAREGS_VER:=1.1
 FPGAREGS_SOURCE:=$(TOPDIR)/../target/linux/debug/fpgaregs/
 FPGAREGS_DIR:=$(BUILD_DIR)/fpgaregs-$(FPGAREGS_VER)
 FPGAREGS_CAT:=zcat
 ifeq ($(BR2_CPU_NAME),"imx27")
 FPGAREGS_BINARY:=fpga27regs
 else
-FPGAREGS_BINARY:=fpgaregs
+ ifeq ($(BR2_CPU_NAME),"imx51")
+ FPGAREGS_BINARY:=fpga51regs
+ else
+ FPGAREGS_BINARY:=fpgaregs
+ endif
 endif
 FPGAREGS_TARGET_BINARY:=usr/bin/fpgaregs
 
