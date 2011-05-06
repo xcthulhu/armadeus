@@ -1,7 +1,7 @@
 /*
  ***********************************************************************
  *
- * (c) Copyright 2008    Armadeus project
+ * (c) Copyright 2008-2011    The Armadeus Project - ARMadeus Systems
  * Fabien Marteau <fabien.marteau@armadeus.com>
  * Generic driver for Wishbone button IP
  *
@@ -39,19 +39,11 @@
 
 #include "button.h"
 
-
 /* for debugging messages*/
 //#define BUTTON_DEBUG
-
 #undef PDEBUG
 #ifdef BUTTON_DEBUG
-# ifdef __KERNEL__
-/* for kernel space */
-#   define PDEBUG(fmt,args...) printk(KERN_DEBUG "BUTTON : " fmt, ##args)
-# else
-/* for user space */
-#   define PDEBUG(fmt,args...) printk(stderr, fmt, ##args)
-# endif
+# define PDEBUG(fmt,args...) printk(KERN_DEBUG "BUTTON : " fmt, ##args)
 #else
 # define PDEBUG(fmt,args...) /* no debbuging message */
 #endif
@@ -68,14 +60,11 @@ struct button_dev {
 	u8 read_in_wait;      /* user is waiting for value to read */
 };
 
-/***********************************
- * characters file /dev operations
- * *********************************/
 ssize_t button_read(struct file *fildes, char __user *buff, 
                     size_t count, loff_t *offp)
 {
 	struct button_dev *ldev = fildes->private_data;
-	u16 data=0;
+	u16 data = 0;
 	ssize_t retval = 0;
 
 	ldev->read_in_wait = 1;
@@ -83,12 +72,12 @@ ssize_t button_read(struct file *fildes, char __user *buff,
 	if (*offp + count >= 1)               /* Only one word can be read */
 		count = 1 - *offp;
 
-	if ((retval=down_interruptible(&ldev->sem)) < 0) {
+	if ((retval = down_interruptible(&ldev->sem)) < 0) {
 		goto out;
 	}
 
-	data=ioread16(ldev->membase+BUTTON_REG_OFFSET);
-	PDEBUG("Read %d at 0x%x\n",data,(unsigned int)ldev->membase+BUTTON_REG_OFFSET);
+	data = ioread16(ldev->membase + BUTTON_REG_OFFSET);
+	PDEBUG("Read %d at 0x%x\n", data, (unsigned int)ldev->membase+BUTTON_REG_OFFSET);
 
 	/* return data for user */
 	if (copy_to_user(buff, &data, 2)) {
@@ -105,11 +94,10 @@ out:
 	return retval;
 }
 
-
 int button_open(struct inode *inode, struct file *filp)
 {
 	/* Allocate and fill any data structure to be put in filp->private_data */
-	filp->private_data = container_of(inode->i_cdev,struct button_dev, cdev);
+	filp->private_data = container_of(inode->i_cdev, struct button_dev, cdev);
 
 	return 0;
 }
@@ -119,11 +107,10 @@ int button_release(struct inode *inode, struct file *filp)
 	struct button_dev *dev;
 
 	dev = container_of(inode->i_cdev, struct button_dev, cdev);
-	filp->private_data=NULL;
+	filp->private_data = NULL;
 
 	return 0;
 }
-
 
 static struct file_operations button_fops = {
 	.owner = THIS_MODULE,
@@ -136,7 +123,6 @@ static struct file_operations button_fops = {
  * irq management
  * awake read process
  * ********************************/
-
 static irqreturn_t button_interrupt(int irq, void *dev_id)
 {
 	struct button_dev *ldev = dev_id;
@@ -148,15 +134,12 @@ static irqreturn_t button_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-/**********************************
- * driver probe
- **********************************/
 static int button_probe(struct platform_device *pdev)
 {
 	struct plat_button_port *dev = pdev->dev.platform_data;
 
 	int result = 0;        /* error return */
-	int button_major,button_minor;
+	int button_major, button_minor;
 	u16 data;
 	struct button_dev *sdev;
 	
@@ -197,10 +180,10 @@ static int button_probe(struct platform_device *pdev)
 	button_minor = dev->num;
 
 	sdev->devno = MKDEV(button_major, button_minor);
-	result = alloc_chrdev_region(&(sdev->devno), button_minor, 1,dev->name);
+	result = alloc_chrdev_region(&(sdev->devno), button_minor, 1, dev->name);
 	if (result < 0) {
 		printk(KERN_WARNING "%s: can't get major %d\n",
-							dev->name,button_major);
+				dev->name, button_major);
 		goto error_devno;
 	}
 	printk(KERN_INFO "%s: MAJOR: %d MINOR: %d\n",
@@ -214,12 +197,12 @@ static int button_probe(struct platform_device *pdev)
 
 	/* Init the cdev structure  */
 	PDEBUG("Init the cdev structure\n");
-	cdev_init(&sdev->cdev,&button_fops);
+	cdev_init(&sdev->cdev, &button_fops);
 	sdev->cdev.owner = THIS_MODULE;
 	sdev->cdev.ops   = &button_fops;
 
 	PDEBUG("%s: Add the device to the kernel, "
-		   "connecting cdev to major/minor number \n",dev->name);
+		   "connecting cdev to major/minor number \n", dev->name);
 	result = cdev_add(&sdev->cdev, sdev->devno, 1);
 	if (result < 0) {
 		printk(KERN_WARNING "%s: can't add cdev\n", dev->name);
@@ -244,17 +227,11 @@ static int button_probe(struct platform_device *pdev)
 	printk(KERN_INFO "%s loaded\n", dev->name);
 	return 0;
 
-	/*********************/
-	/* Errors management */
-	/*********************/
-	/* freeing irq */
 	free_irq(dev->interrupt_number, sdev);
 request_irq_error:
-	/* delete the cdev structure */
 	cdev_del(&sdev->cdev);
 	PDEBUG("%s:cdev deleted\n", dev->name);
 error_cdev_add:
-	/* free major and minor number */
 	unregister_chrdev_region(sdev->devno, 1);
 	printk(KERN_INFO "%s: button deleted\n", dev->name);
 error_devno:
@@ -273,14 +250,11 @@ static int __devexit button_remove(struct platform_device *pdev)
 	struct plat_button_port *dev = pdev->dev.platform_data;
 	struct button_dev *sdev = (*dev).sdev;
 
-	/* freeing irq */
 	free_irq(dev->interrupt_number, sdev);
 
-	/* delete the cdev structure */
 	cdev_del(&sdev->cdev);
 	PDEBUG("%s:cdev deleted\n",dev->name);
 
-	/* free major and minor number */
 	unregister_chrdev_region(sdev->devno, 1);
 	printk(KERN_INFO "%s: button deleted\n", dev->name);
 
@@ -289,7 +263,6 @@ static int __devexit button_remove(struct platform_device *pdev)
 	printk(KERN_INFO "%s: deleted with success\n", dev->name);
 
 	return 0;
-
 }
 
 static struct platform_driver plat_button_driver = 
@@ -303,9 +276,6 @@ static struct platform_driver plat_button_driver =
 	},
 };
 
-/**********************************
- * Module management
- **********************************/
 static int __init button_init(void)
 {
 	int ret;
@@ -314,7 +284,7 @@ static int __init button_init(void)
 	ret = platform_driver_register(&plat_button_driver);
 	if (ret) {
 		printk(KERN_ERR "Platform driver register error\n");
-	return ret;
+		return ret;
 	}
 
 	return 0;
@@ -329,7 +299,6 @@ module_init(button_init);
 module_exit(button_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com> "
-			  "- ARMadeus Systems");
-MODULE_DESCRIPTION("button device generic driver");
+MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
+MODULE_DESCRIPTION("Wishbone button IP generic driver");
 
