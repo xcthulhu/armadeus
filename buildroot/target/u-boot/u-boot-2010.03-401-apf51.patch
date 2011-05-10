@@ -1390,7 +1390,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ u-boot-2010.03/board/armadeus/apf51/fpga.c	2011-01-05 18:11:15.000000000 +0100
-@@ -0,0 +1,270 @@
+@@ -0,0 +1,271 @@
 +/*
 + * (C) Copyright 2002-2010
 + * Nicolas Colombain <nicolas.colombain@armadeus.com>
@@ -1480,25 +1480,19 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 +{
 +#define EMI_CLK_SEL		1<<26
 +
-+	/* change emi_clk_sel to ensure blck smaller than 50MHz */
-+	temp_clk = __REG(CCM_BASE_ADDR + CLKCTL_CBCDR);
-+	__REG(CCM_BASE_ADDR + CLKCTL_CBCDR) = temp_clk | EMI_CLK_SEL;
-+
 +	temp_rcr1 = __REG(CONFIG_CS1RCR1_ADDR);
 +	__REG(CONFIG_CS1RCR1_ADDR) = 0x01000010;
 +
 +	temp_wcr1 = __REG(CONFIG_CS1WCR1_ADDR);
 +	__REG(CONFIG_CS1WCR1_ADDR) = 0x01000008;
 +
++	/* change emi_clk_sel to ensure blck smaller than 50MHz */
++	temp_clk = __REG(CCM_BASE_ADDR + CLKCTL_CBCDR);
++	__REG(CCM_BASE_ADDR + CLKCTL_CBCDR) = temp_clk | EMI_CLK_SEL;
++
 +	/* FPGA PROG */
 +	imx_gpio_pin_set(CONFIG_SYS_FPGA_PRG, 1);
 +	imx_gpio_pin_cfg_dir(CONFIG_SYS_FPGA_PRG, 1);
-+
-+	/* FPGA PWR */
-+	imx_gpio_pin_set(CONFIG_SYS_FPGA_PWR, 1);
-+	imx_gpio_pin_cfg_dir(CONFIG_SYS_FPGA_PWR, 1);
-+
-+	printf("Enable fpga power\n");
 +
 +	/* FPGA SUSPEND */
 +	imx_gpio_pin_set(CONFIG_SYS_FPGA_SUSPEND, 1);
@@ -1509,6 +1503,12 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 +
 +	/* FPGA INIT# */
 +	imx_gpio_pin_cfg_dir(CONFIG_SYS_FPGA_INIT, 0);
++
++	/* FPGA PWR */
++	imx_gpio_pin_set(CONFIG_SYS_FPGA_PWR, 1);
++	imx_gpio_pin_cfg_dir(CONFIG_SYS_FPGA_PWR, 1);
++
++	printf("Enable fpga power\n");
 +
 +	return cookie;
 +}
@@ -1627,6 +1627,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 +	PRINTF ("%s:%d: FPGA POST \n", __FUNCTION__, __LINE__);
 +	/* restore emi_clk_sel */
 +	__REG(CCM_BASE_ADDR + CLKCTL_CBCDR) = temp_clk;
++	udelay(10); /* wait a few us after emi_clk_sel change */
 +	__REG(CONFIG_CS1RCR1_ADDR) = temp_rcr1;
 +	__REG(CONFIG_CS1WCR1_ADDR) = temp_wcr1;
 +	return cookie;
