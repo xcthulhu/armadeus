@@ -12,7 +12,7 @@ Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-04-11 18:32:16.857382999 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-05-10 14:19:07.000000000 +0200
 @@ -0,0 +1,728 @@
 + /*
 + * apf27.c
@@ -649,7 +649,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 +static struct map_desc apf27_fpga_io_desc[] __initdata = {
 +	{
 +		.virtual = CS5_BASE_ADDR_VIRT,
-+		.pfn = __phys_to_pfn(CS5_BASE_ADDR),
++		.pfn = __phys_to_pfn(MX27_CS5_BASE_ADDR),
 +		.length = CS5_SIZE,
 +		.type = MT_DEVICE,
 +	},
@@ -745,7 +745,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-04-11 18:32:16.857382999 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-05-10 14:05:29.000000000 +0200
 @@ -0,0 +1,938 @@
 + /*
 + * apf27-dev.c
@@ -1688,7 +1688,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-04-11 18:32:16.861382996 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-05-10 14:05:29.000000000 +0200
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1861,7 +1861,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-04-11 18:32:16.861382996 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-05-10 14:05:29.000000000 +0200
 @@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2041,7 +2041,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-04-11 18:35:22.017382998 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-10 14:18:07.000000000 +0200
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
