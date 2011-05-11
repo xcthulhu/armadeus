@@ -52,21 +52,18 @@ int apf51_fpga_pre(void)
 {
 #define EMI_CLK_SEL		1<<26
 
-	/* change emi_clk_sel to ensure blck smaller than 50MHz */
-	temp_clk = __raw_readl( MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
-	__raw_writel( temp_clk | EMI_CLK_SEL, MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
-
 	temp_rcr1 =  __raw_readl( MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1RCR1_ADDR );
 	__raw_writel( 0x01000010, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1RCR1_ADDR );
 
 	temp_wcr1 = __raw_readl(MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1WCR1_ADDR);
 	__raw_writel( 0x01000008, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1WCR1_ADDR );
 
+	/* change emi_clk_sel to ensure blck smaller than 50MHz */
+	temp_clk = __raw_readl( MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
+	__raw_writel( temp_clk | EMI_CLK_SEL, MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
+
 	/* FPGA PROG */
 	gpio_direction_output(CONFIG_SYS_FPGA_PRG, 1);
-
-	/* FPGA PWR */
-	gpio_direction_output(CONFIG_SYS_FPGA_PWR, 1);
 
 	/* FPGA SUSPEND */
 	gpio_direction_output(CONFIG_SYS_FPGA_SUSPEND, 1);
@@ -76,6 +73,9 @@ int apf51_fpga_pre(void)
 
 	/* FPGA INIT# */
 	gpio_direction_input(CONFIG_SYS_FPGA_INIT);
+
+	/* FPGA PWR */
+	gpio_direction_output(CONFIG_SYS_FPGA_PWR, 1);
 
 	cs1_base = ioremap(MX51_CS1_BASE_ADDR, SZ_4K);
 
@@ -158,6 +158,7 @@ int apf51_fpga_post(void)
 {
 	/* restore emi_clk_sel */
 	__raw_writel( temp_clk, MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
+	udelay(10);
 	__raw_writel( temp_rcr1, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1RCR1_ADDR );
 	__raw_writel( temp_wcr1, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1WCR1_ADDR );
 
@@ -169,6 +170,7 @@ int apf51_fpga_post(void)
 int apf51_fpga_abort(void)
 {
 	__raw_writel( temp_clk, MX51_IO_ADDRESS(MX51_CCM_BASE_ADDR)+ MXC_CCM_CBCDR );
+	udelay(10);
 	__raw_writel( temp_rcr1, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1RCR1_ADDR );
 	__raw_writel( temp_wcr1, MX51_IO_ADDRESS(MX51_WEIM_BASE_ADDR) + MXC_CS1WCR1_ADDR );
 
