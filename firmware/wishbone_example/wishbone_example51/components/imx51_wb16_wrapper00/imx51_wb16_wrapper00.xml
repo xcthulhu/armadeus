@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component instance_name="imx51_wb16_wrapper00" name="imx51_wb16_wrapper" num="0" version="0.1">
+    <description>
+		Convert EIM i.mx51 bus into a Wishbone 16bits master bus.
+    </description>
+    <hdl_files>
+        <hdl_file filename="imx51_wb16_wrapper.vhd" istop="1" scope="spartan6" />
+    </hdl_files>
+    <interfaces>
+        <interface class="gls" name="eim">
+            <ports>
+                <port dir="inout" name="imx_da" size="16" type="EXPORT">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA0" />
+                    </pin>
+                    <pin num="1">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA1" />
+                    </pin>
+                    <pin num="2">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA2" />
+                    </pin>
+                    <pin num="3">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA3" />
+                    </pin>
+                    <pin num="4">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA4" />
+                    </pin>
+                    <pin num="5">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA5" />
+                    </pin>
+                    <pin num="6">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA6" />
+                    </pin>
+                    <pin num="7">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA7" />
+                    </pin>
+                    <pin num="8">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA8" />
+                    </pin>
+                    <pin num="9">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA9" />
+                    </pin>
+                    <pin num="10">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA10" />
+                    </pin>
+                    <pin num="11">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA11" />
+                    </pin>
+                    <pin num="12">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA12" />
+                    </pin>
+                    <pin num="13">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA13" />
+                    </pin>
+                    <pin num="14">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA14" />
+                    </pin>
+                    <pin num="15">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_DA15" />
+                    </pin>
+                </port>
+                <port dir="in" name="imx_cs_n" size="1" type="EXPORT">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_CS1" />
+                    </pin>
+                </port>
+                <port dir="in" name="imx_adv" size="1" type="EXPORT">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_LBA" />
+                    </pin>
+                </port>
+                <port dir="in" name="imx_rw" size="1" type="EXPORT">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="EIM_RW" />
+                    </pin>
+                </port>
+            </ports>
+        </interface>
+        <interface class="clk_rst" name="candr">
+            <ports>
+                <port dir="in" name="gls_reset" size="1" type="RST" />
+                <port dir="in" name="gls_clk" size="1" type="CLK" />
+            </ports>
+        </interface>
+        <interface bus="wishbone16" class="master" clockandreset="candr" name="mwb16">
+            <ports>
+                <port dir="out" name="wbm_address" size="16" type="ADR" />
+                <port dir="in" name="wbm_readdata" size="16" type="DAT_I" />
+                <port dir="out" name="wbm_writedata" size="16" type="DAT_O" />
+                <port dir="out" name="wbm_strobe" size="1" type="STB" />
+                <port dir="out" name="wbm_write" size="1" type="WE" />
+                <port dir="in" name="wbm_ack" size="1" type="ACK" />
+                <port dir="out" name="wbm_cycle" size="1" type="CYC" />
+            </ports>
+            <slaves>
+                <slave instancename="irq_mngr00" interfacename="swb16" />
+                <slave instancename="led00" interfacename="swb16" />
+                <slave instancename="button00" interfacename="swb16" />
+            </slaves>
+        </interface>
+    </interfaces>
+</component>

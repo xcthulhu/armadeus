@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component instance_name="button00" name="button" num="0" version="1.0">
+    <description>
+		A simple button ip
+    </description>
+    <driver_files>
+        <driver_templates architecture="armadeus">
+            <support version="3" />
+            <file name="Makefile" />
+            <file name="board_buttons.c" />
+            <file name="button.h" />
+            <file name="gbutton.c" />
+            <file name="testbutton.c" />
+        </driver_templates>
+    </driver_files>
+    <generics>
+        <generic destination="both" match="\d+" name="id" public="true" type="natural" value="3" />
+    </generics>
+    <hdl_files>
+        <hdl_file filename="button.vhd" istop="1" scope="both" />
+    </hdl_files>
+    <interrupts>
+        <interrupt interface="int_button" port="irq" />
+    </interrupts>
+    <interfaces>
+        <interface class="gls" name="int_button">
+            <ports>
+                <port dir="in" name="button" size="1" type="EXPORT" />
+                <port dir="out" name="irq" size="1" type="EXPORT" />
+            </ports>
+        </interface>
+        <interface class="clk_rst" name="candr">
+            <ports>
+                <port dir="in" name="gls_reset" size="1" type="RST" />
+                <port dir="in" name="gls_clk" size="1" type="CLK" />
+            </ports>
+        </interface>
+        <interface bus="wishbone16" class="slave" clockandreset="candr" name="swb16">
+            <registers base="0xc">
+                <register name="id" offset="0x00" rows="1" size="16" />
+                <register name="reg_button" offset="0x01" rows="1" size="16" />
+            </registers>
+            <ports>
+                <port dir="in" name="wbs_add" size="1" type="ADR" />
+                <port dir="out" name="wbs_readdata" size="16" type="DAT_O" />
+                <port dir="in" name="wbs_strobe" size="1" type="STB" />
+                <port dir="in" name="wbs_write" size="1" type="WE" />
+                <port dir="out" name="wbs_ack" size="1" type="ACK" />
+                <port dir="in" name="wbs_cycle" size="1" type="CYC" />
+            </ports>
+        </interface>
+    </interfaces>
+</component>
