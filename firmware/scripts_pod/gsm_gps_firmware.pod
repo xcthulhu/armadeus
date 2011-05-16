@@ -1,0 +1,23 @@
+project.create gsm_gps_firmware
+project.selectplatform standard.apf51
+project.addinstance components.uart16750 gsm_uart
+project.addinstance components.uart16750 gps_uart
+project.connectpin gsm_uart.interrupt.int_o.0 irq_mngr00.irq.irqport.0
+project.connectpin gps_uart.interrupt.int_o.0 irq_mngr00.irq.irqport.1
+project.connectpin gps_uart.uart.srx_pad_i.0 apf51.fpga.IO_L40P_M3DQ6_3
+project.connectpin gps_uart.uart.stx_pad_o.0 apf51.fpga.IO_L42N_GCLK24_M3LDM_3
+project.connectpin gsm_uart.uart.srx_pad_i.0 apf51.fpga.IO_L39P_M3LDQS_3
+project.connectpin gsm_uart.uart.stx_pad_o.0 apf51.fpga.IO_L41P_GCLK27_M3DQ4_3
+project.connectpin gsm_uart.uart.cts_pad_i.0 apf51.fpga.IO_L41N_GCLK26_M3DQ5_3
+project.connectpin gsm_uart.uart.rts_pad_o.0 apf51.fpga.IO_L39N_M3LDQSN_3
+project.autoconnectbus
+project.saveproject
+project.intercon imx51_wb16_wrapper00.mwb16
+project.top
+project.synthesis.selecttoolchain ise
+project.synthesis.generateproject
+project.driver.selecttoolchain armadeus
+#project.driver.selectprojecttree ../../target/linux/modules/fpga/POD/
+#project.driver.selectprojecttree >>>BSP_DIR<<</target/linux/modules/fpga/POD
+#project.driver.generateproject
+#project.driver.copydrivers
