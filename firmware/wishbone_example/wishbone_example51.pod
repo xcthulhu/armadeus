@@ -1,0 +1,14 @@
+project.create wishbone_example51
+project.selectplatform standard.apf51
+project.addinstance components.led.wb16
+project.addinstance components.button.wb16
+project.connectpin button00.int_button.irq irq_mngr00.irq.irqport.0
+project.connectpin button00.int_button.button apf51.fpga.IO_L41N_GCLK8_M1CASN_1
+project.connectpin led00.int_led.led apf51.fpga.IO_L41P_GCLK9_IRDY1_M1RASN_1
+project.autoconnectbus
+project.getmapping imx51_wb16_wrapper00
+project.getmapping imx51_wb16_wrapper00.mwb16
+project.intercon imx51_wb16_wrapper00.mwb16
+project.top
+project.synthesis.selecttoolchain ise
+project.synthesis.generateproject

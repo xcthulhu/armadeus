@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component instance_name="rstgen_syscon00" name="rstgen_syscon" num="0" version="1.0">
+    <description>
+		Generate a reset pulse and a manage clock.
+    </description>
+    <generics>
+        <generic match="&apos;0&apos;|&apos;1&apos;" name="invert_reset" public="true" type="std_logic" value="&apos;0&apos;" />
+    </generics>
+    <hdl_files>
+        <hdl_file filename="rstgen_syscon.vhd" istop="1" scope="spartan3" />
+    </hdl_files>
+    <interfaces>
+        <interface class="clk_rst" name="candr">
+            <ports>
+                <port dir="out" name="gls_clk" size="1" type="CLK" />
+                <port dir="out" name="gls_reset" size="1" type="RST" />
+            </ports>
+            <slaves>
+                <slave instancename="imx51_wb16_wrapper00" interfacename="mwb16" />
+            </slaves>
+        </interface>
+        <interface class="gls" name="clk_ext">
+            <ports>
+                <port dir="in" name="ext_clk" size="1" type="CLK">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="IO_L29P_GCLK3_2" />
+                    </pin>
+                </port>
+            </ports>
+        </interface>
+    </interfaces>
+</component>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component instance_name="irq_mngr00" name="irq_mngr" num="0" version="1.0">
+    <description>
+		Manage interruptions.
+    </description>
+    <interrupts>
+        <interrupt interface="ext_irq" port="gls_irq" />
+    </interrupts>
+    <driver_files>
+        <driver_templates architecture="armadeus">
+            <support version="3" />
+            <file name="main.c" />
+            <file name="Makefile" />
+            <file name="README" />
+        </driver_templates>
+    </driver_files>
+    <hdl_files>
+        <hdl_file filename="irq_mngr.vhd" istop="1" scope="both" />
+    </hdl_files>
+    <generics>
+        <generic destination="both" match="\d+" name="id" public="true" type="natural" value="1" />
+        <generic destination="fpga" match="&apos;0&apos;|&apos;1&apos;" name="irq_level" public="true" type="std_logic" value="&apos;1&apos;" />
+        <generic destination="fpga" name="irq_count" op="realsizeof" target="irq.irqport" type="integer" value="16" />
+    </generics>
+    <interfaces>
+        <interface class="clk_rst" name="candr">
+            <ports>
+                <port dir="in" name="gls_clk" size="1" type="CLK" />
+                <port dir="in" name="gls_reset" size="1" type="RST" />
+            </ports>
+        </interface>
+        <interface bus="wishbone16" class="slave" clockandreset="candr" name="swb16">
+            <registers base="0x0">
+                <register name="irq_mngr_mask" offset="0x00" rows="1" size="16" />
+                <register name="irq_mngr_pending_ack" offset="0x01" rows="1" size="16" />
+                <register name="id" offset="0x02" rows="1" size="16" />
+            </registers>
+            <ports>
+                <port dir="in" name="wbs_s1_address" size="2" type="ADR" />
+                <port dir="out" name="wbs_s1_readdata" size="16" type="DAT_O" />
+                <port dir="in" name="wbs_s1_writedata" size="16" type="DAT_I" />
+                <port dir="out" name="wbs_s1_ack" size="1" type="ACK" />
+                <port dir="in" name="wbs_s1_strobe" size="1" type="STB" />
+                <port dir="in" name="wbs_s1_cycle" size="1" type="CYC" />
+                <port dir="in" name="wbs_s1_write" size="1" type="WE" />
+            </ports>
+        </interface>
+        <interface class="gls" name="irq">
+            <ports>
+                <port dir="in" name="irqport" size="16" type="EXPORT" variable_size="1" />
+            </ports>
+        </interface>
+        <interface class="gls" name="ext_irq">
+            <ports>
+                <port dir="out" name="gls_irq" size="1" type="EXPORT">
+                    <pin num="0">
+                        <connect instance_dest="apf51" interface_dest="fpga" pin_dest="0" port_dest="FPGA_INITB" />
+                    </pin>
+                </port>
+            </ports>
+        </interface>
+    </interfaces>
+</component>

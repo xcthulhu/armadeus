@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component instance_name="imx51_wb16_wrapper00_mwb16_intercon" name="imx51_wb16_wrapper00_mwb16" num="0">
+    <description>Connect slaves to mwb16 from imx51_wb16_wrapper00
+    </description>
+    <interfaces>
+        <interface class="intercon" name="irq_mngr00_swb16">
+            <ports>
+                <port dir="out" name="irq_mngr00_wbs_s1_address" size="2" />
+                <port dir="in" name="irq_mngr00_wbs_s1_readdata" size="16" />
+                <port dir="out" name="irq_mngr00_wbs_s1_writedata" size="16" />
+                <port dir="in" name="irq_mngr00_wbs_s1_ack" size="1" />
+                <port dir="out" name="irq_mngr00_wbs_s1_strobe" size="1" />
+                <port dir="out" name="irq_mngr00_wbs_s1_cycle" size="1" />
+                <port dir="out" name="irq_mngr00_wbs_s1_write" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="irq_mngr00_candr">
+            <ports>
+                <port dir="out" name="irq_mngr00_gls_clk" size="1" />
+                <port dir="out" name="irq_mngr00_gls_reset" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="led00_swb16">
+            <ports>
+                <port dir="out" name="led00_wbs_add" size="1" />
+                <port dir="out" name="led00_wbs_writedata" size="16" />
+                <port dir="in" name="led00_wbs_readdata" size="16" />
+                <port dir="out" name="led00_wbs_strobe" size="1" />
+                <port dir="out" name="led00_wbs_cycle" size="1" />
+                <port dir="out" name="led00_wbs_write" size="1" />
+                <port dir="in" name="led00_wbs_ack" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="led00_candr">
+            <ports>
+                <port dir="out" name="led00_gls_reset" size="1" />
+                <port dir="out" name="led00_gls_clk" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="button00_swb16">
+            <ports>
+                <port dir="out" name="button00_wbs_add" size="1" />
+                <port dir="in" name="button00_wbs_readdata" size="16" />
+                <port dir="out" name="button00_wbs_strobe" size="1" />
+                <port dir="out" name="button00_wbs_write" size="1" />
+                <port dir="in" name="button00_wbs_ack" size="1" />
+                <port dir="out" name="button00_wbs_cycle" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="button00_candr">
+            <ports>
+                <port dir="out" name="button00_gls_reset" size="1" />
+                <port dir="out" name="button00_gls_clk" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="imx51_wb16_wrapper00_mwb16">
+            <ports>
+                <port dir="in" name="imx51_wb16_wrapper00_wbm_address" size="16" />
+                <port dir="out" name="imx51_wb16_wrapper00_wbm_readdata" size="16" />
+                <port dir="in" name="imx51_wb16_wrapper00_wbm_writedata" size="16" />
+                <port dir="in" name="imx51_wb16_wrapper00_wbm_strobe" size="1" />
+                <port dir="in" name="imx51_wb16_wrapper00_wbm_write" size="1" />
+                <port dir="out" name="imx51_wb16_wrapper00_wbm_ack" size="1" />
+                <port dir="in" name="imx51_wb16_wrapper00_wbm_cycle" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="imx51_wb16_wrapper00_candr">
+            <ports>
+                <port dir="out" name="imx51_wb16_wrapper00_gls_reset" size="1" />
+                <port dir="out" name="imx51_wb16_wrapper00_gls_clk" size="1" />
+            </ports>
+        </interface>
+        <interface class="intercon" name="rstgen_syscon00_imx51_wb16_wrapper00">
+            <ports>
+                <port dir="in" name="rstgen_syscon00_gls_clk" size="1" />
+                <port dir="in" name="rstgen_syscon00_gls_reset" size="1" />
+            </ports>
+        </interface>
+    </interfaces>
+    <hdl_files>
+        <hdl_file filename="imx51_wb16_wrapper00_mwb16_intercon.vhd" istop="1" scope="both" />
+    </hdl_files>
+</component>
