@@ -6,7 +6,7 @@ ifneq ($(KERNELRELEASE),)
 
 # Part executed when called from kernel build system:
 
-obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_IRQ_MNGR_DRIVER) += irq_ocore.o test.o
+obj-$(CONFIG_ARMADEUS_WISHBONE_EXAMPLE_IRQ_MNGR_DRIVER) += irq_ocore.o board_irq_mng.o test.o
 irq_ocore-objs	:= main.o 
 
 else

@@ -1,7 +1,7 @@
 /*
  * Driver to test OpenCore IRQ manager driver
  *
- * Copyright (C) 2008 Armadeus Systems 
+ * Copyright (C) 2008-2011 ARMadeus Systems
  * Author: Julien Boibessot <julien.boibessot@armadeus.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,15 +20,14 @@
  *
  */
 
-
 #include <linux/version.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 
 #include <asm/irq.h>
-#ifdef CONFIG_MACH_APF27
-#include <mach/fpga.h> /* To remove when MX1 platform merged*/
+#ifndef CONFIG_MACH_APF9328
+#include <mach/fpga.h> /* To remove when MX1 platform is merged*/
 #endif
 
 
@@ -73,7 +72,6 @@ static void __exit irq_mng_test_exit(void)
 	printk(DRIVER_NAME " unloaded\n");
 	free_irq(interrupt, 0); /* still a bug here ! */
 }
-
 
 module_init(irq_mng_test_init);
 module_exit(irq_mng_test_exit);
