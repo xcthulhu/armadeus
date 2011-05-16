@@ -1,7 +1,7 @@
 /*
- * Specific button driver for generic button driver
+ * Platform data for generic button IP driver
  *
- * (c) Copyright 2008    Armadeus project
+ * (c) Copyright 2008-2011    The Armadeus Project - ARMadeus Systems
  * Fabien Marteau <fabien.marteau@armadeus.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <mach/hardware.h>
-#ifdef CONFIG_MACH_APF27 /* To remove when MX1 platform merged */
+#ifndef CONFIG_MACH_APF9328 /* To remove when MX1 platform is merged */
 #include <mach/fpga.h>
 #endif
 
@@ -32,24 +32,35 @@
 
 #define BUTTON0_IRQ   IRQ_FPGA(0)
 
+static struct resource button0_resources[] = {
+	[0] = {
+		.start	= ARMADEUS_FPGA_BASE_ADDR + 0xc,
+		.end	= ARMADEUS_FPGA_BASE_ADDR + 0xc + 0x4,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= BUTTON0_IRQ,
+		.end	= BUTTON0_IRQ,
+		.flags	= IORESOURCE_IRQ,
+	}
+};
 
 static struct plat_button_port plat_button0_data = {
-	.name = "BUTTON0",
-	.interrupt_number = BUTTON0_IRQ,
-	.num = 0,
-	.membase = (void *)(ARMADEUS_FPGA_BASE_ADDR_VIRT + 0xc),
-	.idnum = 3,
-	.idoffset = 0x00 * (16 / 8)
+	.name		= "BUTTON0",
+	.num		= 0,
+	.idnum		= 3,
+	.idoffset	= 0x00 * (16 / 8)
 };
 
 static struct platform_device plat_button0_device = {
-	.name = "button",
-	.id = 0,
-	.dev = {
+	.name		= "button",
+	.id		= 0,
+	.dev		= {
 		.platform_data = &plat_button0_data
 	},
+	.num_resources	= ARRAY_SIZE(button0_resources),
+	.resource	= button0_resources,
 };
-
 
 static int __init board_button_init(void)
 {
@@ -67,4 +78,3 @@ module_exit(board_button_exit);
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
 MODULE_DESCRIPTION("Board specific button driver");
 MODULE_LICENSE("GPL");
-
