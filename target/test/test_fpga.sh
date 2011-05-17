@@ -25,9 +25,17 @@ load_led()
 		load_fpga ./data/fpga/blinking_led_apf27_200k.bit
 		RES=$?
 	elif [ "$1" == "APF51" ]; then
-		ask_user "Please power on FPGA bank XXX\nThen press enter"
-		load_fpga ./data/fpga/blinking_led_apf51.bit
+		ask_user "Please power on FPGA Bank 1\nThen press enter"
+		load_fpga ./data/fpga/top_wishbone_example51.bin
 		RES=$?
+		if [ "$RES" == 0 ]; then
+			for i in `seq 5`; do
+				fpgaregs w 0x08 0x01
+				usleep 500000
+				fpgaregs w 0x08 0x00
+				usleep 500000
+			done
+		fi
 	else
 		echo "Platform not supported by this test"
 	fi
@@ -43,8 +51,8 @@ load_button()
 		load_fpga ./data/fpga/wishbone_example_apf27_200k.bit
 		RES=$?
 	elif [ "$1" == "APF51" ]; then
-		echo "I hope you have powered up Bank XXX"
-		load_fpga ./data/fpga/wishbone_example_apf51.bit
+		echo "I hope you have powered up Bank 1 with corresponding jumper"
+		load_fpga ./data/fpga/top_wishbone_example51.bin
 		RES=$?
 	else
 		echo "Platform not supported by this test"
