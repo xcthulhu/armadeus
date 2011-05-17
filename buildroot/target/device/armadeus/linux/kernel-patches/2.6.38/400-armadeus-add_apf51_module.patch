@@ -1,7 +1,7 @@
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-05-03 16:22:02.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-05-03 16:49:55.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Kconfig	2011-05-17 14:45:14.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Kconfig	2011-05-17 15:22:10.000000000 +0200
 @@ -162,4 +162,16 @@
  	  Include support for MX50 reference design platform (RDP) board. This
  	  includes specific configurations for the board and its peripherals.
@@ -21,8 +21,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Kconfig
  endif
 Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-05-03 16:49:55.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-mx5/Makefile	2011-05-17 14:44:47.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/Makefile	2011-05-17 15:22:10.000000000 +0200
 @@ -7,6 +7,7 @@
  obj-$(CONFIG_SOC_IMX50) += mm-mx50.o
  
@@ -34,7 +34,7 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/Makefile
 Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c	2011-05-03 16:50:51.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c	2011-05-17 14:45:17.000000000 +0200
 @@ -0,0 +1,495 @@
 +/*
 + * Support for APF51 System On Module
@@ -533,8 +533,8 @@ Index: linux-2.6.38.1/arch/arm/mach-mx5/board-apf51.c
 +
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-03 16:22:04.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-03 16:22:05.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-17 14:45:16.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-17 14:45:17.000000000 +0200
 @@ -63,6 +63,7 @@
  #define MX3X_UART1_BASE_ADDR	0x43F90000
  #define MX3X_UART2_BASE_ADDR	0x43F94000
@@ -555,14 +555,14 @@ Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
  	}
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/irqs.h
 ===================================================================
---- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-05-03 16:22:05.000000000 +0200
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/irqs.h	2011-05-03 16:22:05.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/irqs.h	2011-05-17 14:45:16.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/irqs.h	2011-05-17 15:23:51.000000000 +0200
 @@ -53,6 +53,8 @@
  #define MXC_BOARD_IRQS  80
  #elif defined CONFIG_MACH_APF27
  #define MXC_BOARD_IRQS  32
 +#elif defined CONFIG_MACH_APF51
-+#define MXC_BOARD_IRQS	70	/* WM8311 eats a lot of them */
++#define MXC_BOARD_IRQS	80	/* WM8311 needs 64 of them and FPGA 16 */
  #else
  #define MXC_BOARD_IRQS	16
  #endif
