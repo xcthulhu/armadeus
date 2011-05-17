@@ -1,0 +1,8 @@
+To compile this driver from here:
+---------------------------------
+$ make
+
+To install this driver:
+-----------------------
+Copy resulting *.ko files on your target rootfs
+
