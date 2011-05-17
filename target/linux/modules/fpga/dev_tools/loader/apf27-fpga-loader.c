@@ -47,14 +47,16 @@ static int fpga_shared_pins[] = {
 	(CFG_FPGA_INIT | GPIO_IN | GPIO_PUEN | GPIO_GPIO),
 };
 
-
 /* Initialize GPIO port before download */
 int apf27_fpga_pre(void)
 {
 	int res = 0;
 
 	/* initialize common gpio "shared" with other apps */
-	res = mxc_gpio_setup_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins), "FPGA_LOADER");
+	res =
+	    mxc_gpio_setup_multiple_pins(fpga_shared_pins,
+					 ARRAY_SIZE(fpga_shared_pins),
+					 "FPGA_LOADER");
 	if (res) {
 		printk("FPGA prog pins already reserved !!\n");
 		return res;
@@ -83,7 +85,7 @@ int apf27_fpga_pre(void)
 
 	/* make sure the reset pin is active due to DLL start up */
 	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
-	gpio_set_value(CFG_FPGA_RESET,1);
+	gpio_set_value(CFG_FPGA_RESET, 1);
 
 	/* make sure the fpga is powered */
 	gpio_set_value(CFG_FPGA_PWR, 0);
@@ -106,7 +108,7 @@ int apf27_fpga_pgm(int assert)
  */
 int apf27_fpga_clk(int assert_clk)
 {
-	gpio_set_value( CFG_FPGA_CLK, !assert_clk);
+	gpio_set_value(CFG_FPGA_CLK, !assert_clk);
 
 	return assert_clk;
 }
@@ -149,7 +151,7 @@ int apf27_fpga_cs(int assert_cs)
 	return assert_cs;
 }
 
-int apf27_fpga_wdata( unsigned char data )
+int apf27_fpga_wdata(unsigned char data)
 {
 	__raw_writew(data, ARMADEUS_FPGA_BASE_ADDR_VIRT);
 
@@ -163,7 +165,8 @@ int apf27_fpga_busy(void)
 
 int apf27_fpga_post(void)
 {
-	mxc_gpio_release_multiple_pins(fpga_shared_pins, ARRAY_SIZE(fpga_shared_pins));
+	mxc_gpio_release_multiple_pins(fpga_shared_pins,
+				       ARRAY_SIZE(fpga_shared_pins));
 	/* reconfigure bus ctrl signals */
 	mxc_gpio_mode(CFG_FPGA_RW | GPIO_PF | GPIO_PUEN);
 	mxc_gpio_mode(CFG_FPGA_CS | GPIO_PF | GPIO_PUEN);
@@ -172,7 +175,7 @@ int apf27_fpga_post(void)
 	gpio_set_value(CFG_FPGA_PRG, 1);
 	/* reset off */
 	gpio_set_value(CFG_FPGA_RESET, 0);
- 	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
+	mxc_gpio_mode(CFG_FPGA_RESET | GPIO_OUT | GPIO_PUEN | GPIO_GPIO);
 
 	return 0;
 }
@@ -205,14 +208,14 @@ Xilinx_Spartan3_Slave_Parallel_fns fpga_fns = {
 struct fpga_desc apf27_fpga_desc = {
 	.family = Xilinx_Spartan,
 	.iface = slave_parallel,
-	.iface_fns = (void *) &fpga_fns
+	.iface_fns = (void *)&fpga_fns
 };
 
 static struct platform_device fpga_device = {
-	.name		= "fpgaloader",
-	.id		= 0,
+	.name = "fpgaloader",
+	.id = 0,
 	.dev = {
-		.platform_data	= &apf27_fpga_desc,
+		.platform_data = &apf27_fpga_desc,
 	},
 };
 
@@ -228,4 +231,3 @@ static int __init apf27_fpga_initialize(void)
 }
 
 device_initcall(apf27_fpga_initialize);
-
