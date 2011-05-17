@@ -38,20 +38,19 @@
 
 #include "button.h"
 
-
 struct button_dev {
-	char *name;           /* name of the instance */
-	struct cdev cdev;     /* char device structure */
-	struct semaphore sem; /* mutex */
-	void * membase;  /* base address for instance  */
-	dev_t devno;          /* to store Major and minor numbers */
-	u8 read_in_wait;      /* user is waiting for value to read */
+	char *name;		/* name of the instance */
+	struct cdev cdev;	/* char device structure */
+	struct semaphore sem;	/* mutex */
+	void *membase;		/* base address for instance  */
+	dev_t devno;		/* to store Major and minor numbers */
+	u8 read_in_wait;	/* user is waiting for value to read */
 	struct resource *mem_res;
 	struct resource *irq_res;
 };
 
-ssize_t button_read(struct file *fildes, char __user *buff, 
-                    size_t count, loff_t *offp)
+ssize_t button_read(struct file *fildes, char __user * buff,
+		    size_t count, loff_t * offp)
 {
 	struct button_dev *ldev = fildes->private_data;
 	u16 data = 0;
@@ -59,7 +58,7 @@ ssize_t button_read(struct file *fildes, char __user *buff,
 
 	ldev->read_in_wait = 1;
 
-	if (*offp + count >= 1)               /* Only one word can be read */
+	if (*offp + count >= 1)	/* Only one word can be read */
 		count = 1 - *offp;
 
 	if ((retval = down_interruptible(&ldev->sem)) < 0) {
@@ -67,7 +66,8 @@ ssize_t button_read(struct file *fildes, char __user *buff,
 	}
 
 	data = readw(ldev->membase + BUTTON_REG_OFFSET);
-	pr_debug("Read %d at 0x%x\n", data, (unsigned int)ldev->membase + BUTTON_REG_OFFSET);
+	pr_debug("Read %d at 0x%x\n", data,
+		 (unsigned int)ldev->membase + BUTTON_REG_OFFSET);
 
 	/* return data for user */
 	if (copy_to_user(buff, &data, 2)) {
@@ -87,7 +87,8 @@ out:
 int button_open(struct inode *inode, struct file *filp)
 {
 	/* Allocate and fill any data structure to be put in filp->private_data */
-	filp->private_data = container_of(inode->i_cdev, struct button_dev, cdev);
+	filp->private_data =
+	    container_of(inode->i_cdev, struct button_dev, cdev);
 
 	return 0;
 }
@@ -104,8 +105,8 @@ int button_release(struct inode *inode, struct file *filp)
 
 static struct file_operations button_fops = {
 	.owner = THIS_MODULE,
-	.read  = button_read,
-	.open  = button_open,
+	.read = button_read,
+	.open = button_open,
 	.release = button_release,
 };
 
@@ -150,7 +151,9 @@ static int button_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	mem_res = request_mem_region(mem_res->start, resource_size(mem_res), pdev->name);
+	mem_res =
+	    request_mem_region(mem_res->start, resource_size(mem_res),
+			       pdev->name);
 	if (!mem_res) {
 		dev_err(&pdev->dev, "iomem already in use\n");
 		return -EBUSY;
@@ -177,15 +180,15 @@ static int button_probe(struct platform_device *pdev)
 	if (ip_id != pdata->idnum) {
 		ret = -ENODEV;
 		dev_warn(&pdev->dev, "For %s id:%d doesn't match "
-			   "with id read %d,\n is device present ?\n",
-			   pdata->name, pdata->idnum, ip_id);
+			 "with id read %d,\n is device present ?\n",
+			 pdata->name, pdata->idnum, ip_id);
 		goto out_iounmap;
 	}
 
 	pdata->sdev = sdev;
 
-	sdev->name = (char *)kmalloc((1+strlen(pdata->name))*sizeof(char),
-								 GFP_KERNEL);
+	sdev->name = (char *)kmalloc((1 + strlen(pdata->name)) * sizeof(char),
+				     GFP_KERNEL);
 	if (sdev->name == NULL) {
 		dev_err(&pdev->dev, "Kmalloc name space error\n");
 		goto out_iounmap;
@@ -203,13 +206,11 @@ static int button_probe(struct platform_device *pdev)
 	ret = alloc_chrdev_region(&(sdev->devno), button_minor, 1, pdata->name);
 	if (ret < 0) {
 		dev_warn(&pdev->dev, "%s: can't get major %d\n",
-				pdata->name, button_major);
+			 pdata->name, button_major);
 		goto out_name_free;
 	}
 	dev_info(&pdev->dev, "%s: MAJOR: %d MINOR: %d\n",
-		   pdata->name,
-		   MAJOR(sdev->devno),
-		   MINOR(sdev->devno));
+		 pdata->name, MAJOR(sdev->devno), MINOR(sdev->devno));
 
 	/* initiate mutex locked */
 	sdev->read_in_wait = 0;
@@ -218,10 +219,10 @@ static int button_probe(struct platform_device *pdev)
 	/* Init the cdev structure  */
 	cdev_init(&sdev->cdev, &button_fops);
 	sdev->cdev.owner = THIS_MODULE;
-	sdev->cdev.ops   = &button_fops;
+	sdev->cdev.ops = &button_fops;
 
 	pr_debug("%s: Add the device to the kernel, "
-		   "connecting cdev to major/minor number \n", pdata->name);
+		 "connecting cdev to major/minor number \n", pdata->name);
 	ret = cdev_add(&sdev->cdev, sdev->devno, 1);
 	if (ret < 0) {
 		dev_warn(&pdev->dev, "%s: can't add cdev\n", pdata->name);
@@ -230,16 +231,14 @@ static int button_probe(struct platform_device *pdev)
 
 	/* irq registering */
 	ret = request_irq(sdev->irq_res->start,
-					button_interrupt,
-					IRQF_SAMPLE_RANDOM,
-					sdev->name,
-					sdev);
+			  button_interrupt,
+			  IRQF_SAMPLE_RANDOM, sdev->name, sdev);
 	if (ret < 0) {
 		printk(KERN_ERR "Can't register irq %d\n",
-			   sdev->irq_res->start);
+		       sdev->irq_res->start);
 		goto request_irq_error;
 	}
-   
+
 	/* OK driver ready ! */
 	printk(KERN_INFO "%s loaded\n", pdata->name);
 	return 0;
@@ -285,14 +284,13 @@ static int __devexit button_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver plat_button_driver = 
-{
-	.probe      = button_probe,
-	.remove     = __devexit_p(button_remove),
-	.driver     = {
-		.name    = "button",
-		.owner   = THIS_MODULE,
-	},
+static struct platform_driver plat_button_driver = {
+	.probe = button_probe,
+	.remove = __devexit_p(button_remove),
+	.driver = {
+		   .name = "button",
+		   .owner = THIS_MODULE,
+		   },
 };
 
 static int __init button_init(void)
@@ -320,4 +318,3 @@ module_exit(button_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Fabien Marteau <fabien.marteau@armadeus.com>");
 MODULE_DESCRIPTION("Wishbone button IP generic driver");
-
