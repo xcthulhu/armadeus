@@ -23,6 +23,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+
 #include <mach/hardware.h>
 #ifndef CONFIG_MACH_APF9328 /* To remove when MX1 platform is merged */
 #include <mach/fpga.h>
@@ -52,11 +53,17 @@ static struct plat_button_port plat_button0_data = {
 	.idoffset	= 0x00 * (16 / 8)
 };
 
+void plat_button_release(struct device *dev)
+{
+	dev_dbg(dev, "released\n");
+}
+
 static struct platform_device plat_button0_device = {
 	.name		= "button",
 	.id		= 0,
 	.dev		= {
-		.platform_data = &plat_button0_data
+		.release	= plat_button_release,
+		.platform_data	= &plat_button0_data
 	},
 	.num_resources	= ARRAY_SIZE(button0_resources),
 	.resource	= button0_resources,
