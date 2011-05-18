@@ -1,0 +1,43 @@
+Fix mcp251x's SPI module errata: use workaround preconized by Microchip, ie
+send the "SPI RTS" command to prevent the CAN message to be repeated if CS#
+stays low after a SPI command.
+
+Signed-off-by: Kevin JOLY <joly.kevin25@gmail.com>
+
+Index: linux-2.6.38.1/drivers/net/can/mcp251x.c
+===================================================================
+--- linux-2.6.38.1.orig/drivers/net/can/mcp251x.c	2011-05-16 09:49:26.751359999 +0200
++++ linux-2.6.38.1/drivers/net/can/mcp251x.c	2011-05-16 09:42:27.000000000 +0200
+@@ -83,6 +83,7 @@
+ #define INSTRUCTION_LOAD_TXB(n)	(0x40 + 2 * (n))
+ #define INSTRUCTION_READ_RXB(n)	(((n) == 0) ? 0x90 : 0x94)
+ #define INSTRUCTION_RESET	0xC0
++#define INSTRUCTION_RTS(n)	(0x80 + (1<<(n)))
+ 
+ /* MPC251x registers */
+ #define CANSTAT	      0x0e
+@@ -377,6 +378,15 @@
+ 	mcp251x_spi_trans(spi, 4);
+ }
+ 
++static void mcp251x_send_rts(struct spi_device *spi, int tx_buf_idx)
++{
++	struct mcp251x_priv *priv = dev_get_drvdata(&spi->dev);
++
++	priv->spi_tx_buf[0] = INSTRUCTION_RTS(tx_buf_idx);
++
++	mcp251x_spi_trans(spi, 1);
++}
++
+ static void mcp251x_hw_tx_frame(struct spi_device *spi, u8 *buf,
+ 				int len, int tx_buf_idx)
+ {
+@@ -418,7 +428,7 @@
+ 	buf[TXBDLC_OFF] = (rtr << DLC_RTR_SHIFT) | frame->can_dlc;
+ 	memcpy(buf + TXBDAT_OFF, frame->data, frame->can_dlc);
+ 	mcp251x_hw_tx_frame(spi, buf, frame->can_dlc, tx_buf_idx);
+-	mcp251x_write_reg(spi, TXBCTRL(tx_buf_idx), TXBCTRL_TXREQ);
++	mcp251x_send_rts(spi, tx_buf_idx);
+ }
+ 
+ static void mcp251x_hw_rx_frame(struct spi_device *spi, u8 *buf,
