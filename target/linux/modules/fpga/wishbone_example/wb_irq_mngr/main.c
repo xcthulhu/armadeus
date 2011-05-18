@@ -60,7 +60,7 @@ struct irq_mng {
 	struct resource *irq_res;
 };
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,36)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,36)
 struct irq_mng global_mng;
 #endif
 
@@ -78,6 +78,7 @@ static void imx_fpga_ack_irq(struct irq_data *data)
 #else
 static void imx_fpga_ack_irq(unsigned int irq)
 {
+	struct irq_mng *mng = &global_mng;
 #endif
 	int shadow;
 
@@ -94,7 +95,7 @@ static void imx_fpga_mask_irq(struct irq_data *data)
 #else
 static void imx_fpga_mask_irq(unsigned int irq)
 {
-	struct irq_mng *mng = global_mng;
+	struct irq_mng *mng = &global_mng;
 #endif
 	int shadow;
 
@@ -112,7 +113,7 @@ static void imx_fpga_unmask_irq(struct irq_data *data)
 #else
 static void imx_fpga_unmask_irq(unsigned int irq)
 {
-	struct irq_mng *mng = global_mng;
+	struct irq_mng *mng = &global_mng;
 #endif
 	int shadow;
 
@@ -222,7 +223,7 @@ static int __devinit ocore_irq_mng_probe(struct platform_device *pdev)
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,36)
 	mng = kmalloc(sizeof(struct irq_mng), GFP_KERNEL);
 #else
-	mng = global_mng;
+	mng = &global_mng;
 #endif
 	if (!mng) {
 		ret = -ENOMEM;

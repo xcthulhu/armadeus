@@ -43,6 +43,8 @@
 #define CFG_FPGA_SUSPEND	(GPIO_PORTF | 10)	/* FPGA done pin  */
 #define CFG_FPGA_RESET		(GPIO_PORTF |  7)	/* FPGA done pin  */
 
+void *fpga_membase;
+
 static int fpga_shared_pins[] = {
 	(CFG_FPGA_INIT | GPIO_IN | GPIO_PUEN | GPIO_GPIO),
 };
@@ -52,13 +54,20 @@ int apf27_fpga_pre(void)
 {
 	int res = 0;
 
+	fpga_membase = ioremap(ARMADEUS_FPGA_BASE_ADDR, 16);
+	if (!fpga_membase) {
+		printk(KERN_ERR "ioremap failed\n");
+		return -ENOMEM;
+	}
+
 	/* initialize common gpio "shared" with other apps */
 	res =
 	    mxc_gpio_setup_multiple_pins(fpga_shared_pins,
 					 ARRAY_SIZE(fpga_shared_pins),
 					 "FPGA_LOADER");
 	if (res) {
-		printk("FPGA prog pins already reserved !!\n");
+		printk(KERN_ERR "FPGA prog pins already reserved !!\n");
+		iounmap(fpga_membase);
 		return res;
 	}
 
@@ -153,7 +162,7 @@ int apf27_fpga_cs(int assert_cs)
 
 int apf27_fpga_wdata(unsigned char data)
 {
-	__raw_writew(data, ARMADEUS_FPGA_BASE_ADDR_VIRT);
+	__raw_writew(data, fpga_membase);
 
 	return data;
 }
@@ -165,6 +174,7 @@ int apf27_fpga_busy(void)
 
 int apf27_fpga_post(void)
 {
+	iounmap(fpga_membase);
 	mxc_gpio_release_multiple_pins(fpga_shared_pins,
 				       ARRAY_SIZE(fpga_shared_pins));
 	/* reconfigure bus ctrl signals */

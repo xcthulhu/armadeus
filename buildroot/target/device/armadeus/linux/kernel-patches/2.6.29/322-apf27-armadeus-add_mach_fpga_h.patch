@@ -1,10 +1,10 @@
-Index: linux-2.6.29.4/arch/arm/plat-mxc/include/mach/fpga.h
+Index: linux-2.6.29.6/arch/arm/plat-mxc/include/mach/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.4/arch/arm/plat-mxc/include/mach/fpga.h	2009-06-08 17:40:21.000000000 +0200
++++ linux-2.6.29.6/arch/arm/plat-mxc/include/mach/fpga.h	2011-05-18 10:01:49.000000000 +0200
 @@ -0,0 +1,43 @@
 +/*
-+ * Copyright (C) 2009 Armadeus Systems
++ * Copyright (C) 2009-2011 ARMadeus Systems
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -24,25 +24,25 @@ Index: linux-2.6.29.4/arch/arm/plat-mxc/include/mach/fpga.h
 +#ifndef __ASM_ARCH_ARMADEUS_FPGA_H__
 +#define __ASM_ARCH_ARMADEUS_FPGA_H__
 +
++#ifndef CONFIG_MACH_APF9328
++# include <mach/irqs.h>
++# include <mach/gpio.h>
++#endif
++#include <mach/iomux-mx1-mx2.h>
 +
-+#ifdef CONFIG_MACH_APF27
-+#include <mach/board-apf27.h> /* @ are here */
-+#include <mach/irqs.h>
++#if defined(CONFIG_MACH_APF27) /* */
++# define APF27_FPGA_BASE_ADDR		0xd6000000
++# define ARMADEUS_FPGA_BASE_ADDR	APF27_FPGA_BASE_ADDR
++# define APF27_FPGA_INT_PIN		(GPIO_PORTF | 12)
++# define APF27_FPGA_IRQ			(IRQ_GPIOF(12))
++# define ARMADEUS_FPGA_IRQ		APF27_FPGA_IRQ
++# define IRQ_FPGA_START			MXC_BOARD_IRQ_START
++#elif defined(CONFIG_MACH_APF9328) /* */
++# define APF9328_FPGA_BASE_ADDR		0x12000000
++# define ARMADEUS_FPGA_BASE_ADDR	APF9328_FPGA_BASE_ADDR
 +#else
-+/* To complete when MX1 platform merged */
++# error "Unsupported platform"
 +#endif
-+#include <linux/platform_device.h>
 +
-+/* FPGA interrupts number */
-+#ifdef CONFIG_MACH_APF27
-+#define IRQ_FPGA_START  (MXC_BOARD_IRQ_START)
-+#endif
 +#define IRQ_FPGA(x)     (IRQ_FPGA_START + x)
-+#define NR_IRQS_FPGA	(MXC_BOARD_IRQS)
-+
-+struct fpga_irq_mng_platform_data {
-+	int (*init)(struct platform_device*);
-+	void (*exit)(struct platform_device*);
-+};
-+
 +#endif /* __ASM_ARCH_ARMADEUS_FPGA_H__ */

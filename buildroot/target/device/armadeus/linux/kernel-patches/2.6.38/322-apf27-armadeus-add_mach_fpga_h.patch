@@ -1,8 +1,8 @@
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/fpga.h	2011-05-17 14:44:36.000000000 +0200
-@@ -0,0 +1,49 @@
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/fpga.h	2011-05-17 22:14:29.000000000 +0200
+@@ -0,0 +1,50 @@
 +/*
 + * Copyright (C) 2009-2011 ARMadeus Systems
 + *
@@ -37,6 +37,7 @@ Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/fpga.h
 +# define ARMADEUS_FPGA_IRQ		APF51_FPGA_IRQ
 +# define IRQ_FPGA_START			(MXC_BOARD_IRQ_START + 64)
 +#elif defined(CONFIG_MACH_APF27) /* */
++#include <mach/iomux-v1.h>
 +# define APF27_FPGA_BASE_ADDR		0xd6000000
 +# define ARMADEUS_FPGA_BASE_ADDR	APF27_FPGA_BASE_ADDR
 +# define APF27_FPGA_INT_PIN		(GPIO_PORTF | 12)

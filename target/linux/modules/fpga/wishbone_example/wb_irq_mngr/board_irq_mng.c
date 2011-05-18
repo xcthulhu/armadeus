@@ -2,7 +2,7 @@
  * Platform data for IRQ manager generic driver
  *
  * (c) Copyright 2011    The Armadeus Project - ARMadeus Systems
- * Author: Julien Bibessot <julien.boibessot@armadeus.com>
+ * Author: Julien Boibessot <julien.boibessot@armadeus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,15 +68,31 @@ static struct platform_device irq_mng0_device = {
 	.resource	= irq_mng0_resources,
 };
 
+#ifdef CONFIG_MACH_APF27
+static int fpga_pins[] = {
+	(APF27_FPGA_INT_PIN | GPIO_IN | GPIO_GPIO),
+};
+#endif
+
 static int __init board_irq_mng_init(void)
 {
-	set_irq_type(ARMADEUS_FPGA_IRQ, IRQF_TRIGGER_RISING);
+	int ret;
+
+#ifdef CONFIG_MACH_APF27
+	ret = mxc_gpio_setup_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
+	if (ret)
+		return -EINVAL;
+#endif
+	set_irq_type(ARMADEUS_FPGA_IRQ, IRQ_TYPE_EDGE_RISING);
 	return platform_device_register(&irq_mng0_device);
 }
 
 static void __exit board_irq_mng_exit(void)
 {
 	platform_device_unregister(&irq_mng0_device);
+#ifdef CONFIG_MACH_APF27
+	mxc_gpio_release_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins));
+#endif
 }
 
 module_init(board_irq_mng_init);

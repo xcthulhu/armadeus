@@ -1,8 +1,8 @@
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
+Index: linux-2.6.38.1/arch/arm/mach-imx/Kconfig
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Kconfig	2011-04-04 14:51:50.000000000 +0200
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig	2011-04-04 14:54:28.000000000 +0200
-@@ -350,4 +350,122 @@
+--- linux-2.6.38.1.orig/arch/arm/mach-imx/Kconfig	2011-05-17 22:35:01.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/Kconfig	2011-05-18 12:18:42.000000000 +0200
+@@ -350,4 +350,116 @@
  	  Include support for i-MXT (aka td60) platform. This
  	  includes specific configurations for the module and its peripherals.
  
@@ -22,12 +22,6 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
 +	help
 +	  Include support for APF27 platform. This includes specific
 +	  configurations for the module and its peripherals.
-+
-+config MACH_APF27_FPGA
-+	bool "board has a FPGA"
-+	depends on MACH_APF27
-+	help
-+	  Select this if your APF27 has an onboard FPGA.
 +
 +config MACH_APF27_HAS_BASEBOARD
 +        bool
@@ -125,10 +119,10 @@ Index: linux-2.6.38-rc3/arch/arm/mach-imx/Kconfig
 +	depends on MACH_APF27_DEV_EXT_WIRELESS_GPS
 +
  endif
-Index: linux-2.6.38-rc3/arch/arm/mach-imx/Makefile
+Index: linux-2.6.38.1/arch/arm/mach-imx/Makefile
 ===================================================================
---- linux-2.6.38-rc3.orig/arch/arm/mach-imx/Makefile	2011-04-04 14:51:50.000000000 +0200
-+++ linux-2.6.38-rc3/arch/arm/mach-imx/Makefile	2011-04-04 14:53:56.000000000 +0200
+--- linux-2.6.38.1.orig/arch/arm/mach-imx/Makefile	2011-05-17 22:35:00.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/Makefile	2011-05-17 22:35:11.000000000 +0200
 @@ -38,3 +38,7 @@
  obj-$(CONFIG_MACH_EUKREA_MBIMX27_BASEBOARD) += eukrea_mbimx27-baseboard.o
  obj-$(CONFIG_MACH_PCA100) += mach-pca100.o

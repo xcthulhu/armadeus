@@ -1,8 +1,8 @@
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2009-12-15 19:54:59.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2009-12-16 10:34:20.000000000 +0100
-@@ -10,6 +10,21 @@
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Kconfig	2011-05-18 11:28:48.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/Kconfig	2011-05-18 11:57:01.000000000 +0200
+@@ -10,6 +10,15 @@
  comment "MX2 Platforms"
  	depends on ARCH_MX2
  
@@ -15,16 +15,10 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +	  Include support for APF27 platform. This includes specific
 +	  configurations for the module and its peripherals.
 +
-+config MACH_APF27_FPGA
-+	bool "board has a FPGA"
-+	depends on MACH_APF27
-+	help
-+	  Select this if your APF27 has an onboard FPGA.
-+
  config MACH_MX27ADS
  	bool "MX27ADS platform"
  	depends on MACH_MX27
-@@ -26,15 +41,98 @@
+@@ -26,15 +35,98 @@
  
  choice
  	prompt "Baseboard"
@@ -126,8 +120,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/Kconfig
 +
 Index: linux-2.6.29.6/arch/arm/mach-mx2/Makefile
 ===================================================================
---- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2009-12-15 19:54:59.000000000 +0100
-+++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2009-12-16 10:19:31.000000000 +0100
+--- linux-2.6.29.6.orig/arch/arm/mach-mx2/Makefile	2011-05-18 11:28:48.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/Makefile	2011-05-18 11:56:17.000000000 +0200
 @@ -10,6 +10,10 @@
  obj-$(CONFIG_MACH_MX27) += clock_imx27.o
  obj-$(CONFIG_CPU_FREQ_IMX27) +=  cpufreq_imx27.o

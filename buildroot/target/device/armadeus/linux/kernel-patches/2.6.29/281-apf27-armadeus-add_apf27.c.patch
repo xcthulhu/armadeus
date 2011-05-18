@@ -9,14 +9,14 @@ Signed-off-by: Eric Jarrige <eric.jarrige@armadeus.org>
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2010-07-28 10:43:04.000000000 +0200
-@@ -0,0 +1,789 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27.c	2011-05-18 11:27:34.000000000 +0200
+@@ -0,0 +1,739 @@
 + /*
 + * apf27.c
 + *
 + * Support for the APF27 System On Module
 + *
-+ * Copyright (C) 2008 Armadeus Systems
++ * Copyright (C) 2008-2011 ARMadeus Systems
 + * Authors: Julien Boibessot <julien.boibessot@armadeus.com>
 + *          Eric Jarrige <eric.jarrige@armadeus.com>
 + *
@@ -40,7 +40,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +
 +#include <linux/platform_device.h>
 +#include <linux/mtd/physmap.h>
-+#include <asm/mach/flash.h>
 +#include <linux/i2c.h>
 +#include <linux/serial.h>
 +#include <linux/delay.h>
@@ -48,6 +47,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#include <linux/cpufreq.h>
 +#include <linux/clk.h>
 +#include <linux/dma-mapping.h>
++#include <linux/fsl_devices.h> /* USB device */
++
++#include <asm/mach/flash.h>
 +#include <asm/io.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach-types.h>
@@ -62,16 +64,13 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#include <mach/mxc_nand.h>
 +#include <mach/mxc_ehci.h>
 +#include <mach/ulpi.h>
-+#include <linux/fsl_devices.h> /* USB device */
 +#include "../../../drivers/armadeus/pwm/pwm.h"
 +#if defined(CONFIG_CPU_FREQ_IMX27) || defined(CONFIG_CPU_FREQ_IMX27_MODULE)
 +#include "cpufreq_imx.h"
 +#endif
 +#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
-+#ifdef CONFIG_MACH_APF27_FPGA
-+#include <mach/fpga.h>
-+#endif
++
 +#include "devices.h"
 +#include "crm_regs.h"
 +
@@ -686,41 +685,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +};
 +
 +
-+/* APF27 has an optional Spartan3A FPGA connected to i.MX27 address/data
-+   busses */
-+#ifdef CONFIG_MACH_APF27_FPGA
-+static int fpga_pins[] = {
-+	(APF27_FPGA_INT_PIN | GPIO_IN | GPIO_GPIO),
-+};
-+
-+static int apf27_fpga_irq_init(struct platform_device *pdev)
-+{
-+	int res;
-+
-+	res = mxc_gpio_setup_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
-+	if (!res)
-+		set_irq_type(APF27_FPGA_IRQ, IRQ_TYPE_EDGE_RISING);
-+
-+	return res;
-+}
-+
-+static void apf27_fpga_irq_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins));
-+}
-+
-+struct fpga_irq_mng_platform_data apf27_fpga_irq = {
-+	.init = apf27_fpga_irq_init,
-+	.exit = apf27_fpga_irq_exit,
-+};
-+
-+struct platform_device apf27_ocore_irq_mng_device = {
-+	.name = "ocore_irq_mng",
-+	.id = 0,
-+};
-+#endif /* CONFIG_MACH_APF27_FPGA */
-+
-+
 +static void __init apf27_init(void)
 +{
 +	sysdev_class_register(&apf27_pm_sysclass);
@@ -756,10 +720,6 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +#endif
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 +
-+#ifdef CONFIG_MACH_APF27_FPGA
-+	mxc_register_device(&apf27_ocore_irq_mng_device, &apf27_fpga_irq);
-+#endif
-+
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
 +
 +	apf27_baseboard_init();
@@ -775,19 +735,9 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 +	.init = apf27_timer_init,
 +};
 +
-+static struct map_desc apf27_io_desc[] __initdata = {
-+	{
-+		.virtual = CS5_BASE_ADDR_VIRT,
-+		.pfn = __phys_to_pfn(CS5_BASE_ADDR),
-+		.length = CS5_SIZE,
-+		.type = MT_DEVICE,
-+	},
-+};
-+
 +void __init apf27_map_io(void)
 +{
 +	mxc_map_io();
-+	iotable_init(apf27_io_desc, ARRAY_SIZE(apf27_io_desc));
 +}
 +
 +MACHINE_START(APF27, "Armadeus APF27")
@@ -803,8 +753,8 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2010-07-28 10:59:04.000000000 +0200
-@@ -0,0 +1,1139 @@
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c	2011-05-18 11:28:20.000000000 +0200
+@@ -0,0 +1,1138 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -839,6 +789,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#include <linux/cpufreq.h>
 +#include <linux/clk.h>
 +#include <linux/dma-mapping.h>
++
 +#include <asm/io.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach-types.h>
@@ -877,9 +828,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 +#endif
 +#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
-+#ifdef CONFIG_MACH_APF27_FPGA
-+#include <mach/fpga.h>
-+#endif
++
 +#include "devices.h"
 +#include "crm_regs.h"
 +
@@ -1947,7 +1896,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2010-07-28 10:43:04.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c	2011-05-18 11:27:34.000000000 +0200
 @@ -0,0 +1,220 @@
 +/*
 + * apf27-lcd.c
@@ -2172,7 +2121,7 @@ Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-lcd.c
 Index: linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2010-07-28 10:43:04.000000000 +0200
++++ linux-2.6.29.6/arch/arm/mach-mx2/apf27-dev-ext-apw.c	2011-05-18 11:27:34.000000000 +0200
 @@ -0,0 +1,190 @@
 + /*
 + * apf27-dev-ext-apw.c

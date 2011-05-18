@@ -12,8 +12,8 @@ Signed-off-by: Kevin Joly <joly.kevin25@gmail.com>
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-05-10 14:19:07.000000000 +0200
-@@ -0,0 +1,728 @@
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27.c	2011-05-17 22:34:43.000000000 +0200
+@@ -0,0 +1,675 @@
 + /*
 + * apf27.c
 + *
@@ -77,9 +77,6 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 +#endif
 +//#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
-+#ifdef CONFIG_MACH_APF27_FPGA
-+#include <mach/fpga.h>
-+#endif
 +#include <mach/mx27.h>
 +
 +#include "devices-imx27.h"
@@ -613,49 +610,6 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 +};
 +
 +
-+/* APF27 has an optional Spartan3A FPGA connected to i.MX27 address/data
-+   busses */
-+#ifdef CONFIG_MACH_APF27_FPGA
-+static int fpga_pins[] = {
-+	(APF27_FPGA_INT_PIN | GPIO_IN | GPIO_GPIO),
-+};
-+
-+static int apf27_fpga_irq_init(struct platform_device *pdev)
-+{
-+	int res;
-+
-+	res = mxc_gpio_setup_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins), "FPGA");
-+	if (!res)
-+		set_irq_type(APF27_FPGA_IRQ, IRQ_TYPE_EDGE_RISING);
-+
-+	return res;
-+}
-+
-+static void apf27_fpga_irq_exit(struct platform_device *pdev)
-+{
-+	mxc_gpio_release_multiple_pins(fpga_pins, ARRAY_SIZE(fpga_pins));
-+}
-+
-+struct fpga_irq_mng_platform_data apf27_fpga_irq = {
-+	.init = apf27_fpga_irq_init,
-+	.exit = apf27_fpga_irq_exit,
-+};
-+
-+struct platform_device apf27_ocore_irq_mng_device = {
-+	.name = "ocore_irq_mng",
-+	.id = 0,
-+};
-+
-+static struct map_desc apf27_fpga_io_desc[] __initdata = {
-+	{
-+		.virtual = CS5_BASE_ADDR_VIRT,
-+		.pfn = __phys_to_pfn(MX27_CS5_BASE_ADDR),
-+		.length = CS5_SIZE,
-+		.type = MT_DEVICE,
-+	},
-+};
-+#endif /* CONFIG_MACH_APF27_FPGA */
-+
 +static void __init apf27_init(void)
 +{
 +	int ret;
@@ -707,10 +661,6 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 +
 +	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 +
-+#ifdef CONFIG_MACH_APF27_FPGA
-+	mxc_register_device(&apf27_ocore_irq_mng_device, &apf27_fpga_irq);
-+#endif
-+
 +	printk("i.MX27 chip revision: %d\n", mx27_revision() );
 +#ifdef CONFIG_MACH_APF27_HAS_BASEBOARD
 +	apf27_baseboard_init();
@@ -729,9 +679,6 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 +void __init apf27_map_io(void)
 +{
 +	mx27_map_io();
-+#ifdef CONFIG_MACH_APF27_FPGA
-+	iotable_init(apf27_fpga_io_desc, ARRAY_SIZE(apf27_fpga_io_desc));
-+#endif
 +}
 +
 +MACHINE_START(APF27, "Armadeus APF27")
@@ -745,8 +692,8 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-05-10 14:05:29.000000000 +0200
-@@ -0,0 +1,938 @@
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c	2011-05-18 12:18:06.000000000 +0200
+@@ -0,0 +1,935 @@
 + /*
 + * apf27-dev.c
 + * Support for AFP27 module's development baseboard
@@ -827,9 +774,6 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 +#endif
 +//#include <mach/board-apf27.h>
 +#include <asm/mach/map.h>
-+#ifdef CONFIG_MACH_APF27_FPGA
-+#include <mach/fpga.h>
-+#endif
 +
 +#include "devices-imx27.h"
 +//#include "crm_regs.h"
@@ -1688,7 +1632,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-05-10 14:05:29.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c	2011-05-17 16:54:22.000000000 +0200
 @@ -0,0 +1,168 @@
 +/*
 + * apf27-lcd.c
@@ -1861,7 +1805,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-lcd.c
 Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-05-10 14:05:29.000000000 +0200
++++ linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c	2011-05-17 16:54:22.000000000 +0200
 @@ -0,0 +1,175 @@
 + /*
 + * apf27-dev-ext-apw.c
@@ -2041,7 +1985,7 @@ Index: linux-2.6.38.1/arch/arm/mach-imx/apf27-dev-ext-apw.c
 Index: linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h
 ===================================================================
 --- linux-2.6.38.1.orig/arch/arm/plat-mxc/include/mach/uncompress.h	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-10 14:18:07.000000000 +0200
++++ linux-2.6.38.1/arch/arm/plat-mxc/include/mach/uncompress.h	2011-05-18 12:20:17.000000000 +0200
 @@ -83,6 +83,7 @@
  	case MACH_TYPE_MX21ADS:
  	case MACH_TYPE_PCA100:
