@@ -84,7 +84,7 @@ static PyObject * gpio_open(PyObject *self, PyObject *args)
 /** @brief  Set pin direction
  *
  * @param aFdev as_gpio_device structure pointer
- * @param aDirection direction 0:input 1:output
+ * @param aDirection direction "in" / "out"
  *
  * @return error if negative value
  */
@@ -92,12 +92,12 @@ static PyObject * setPinDirection(PyObject *self, PyObject *args)
 {
     /* parameters */
     struct as_gpio_device *aFdev;
-    int aDirection;
+    char* aDirection;
 
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "li",
+    if (!PyArg_ParseTuple(args, "ls",
                           (long *)&aFdev,
                           &aDirection))
     {
@@ -122,7 +122,7 @@ static PyObject * getPinDirection(PyObject *self, PyObject *args)
     /* parameters */
     struct as_gpio_device *aFdev;
 
-    int ret;
+    const char* dir;
 
     /* Get arguments */
     if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
@@ -132,15 +132,15 @@ static PyObject * getPinDirection(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    ret = as_gpio_get_pin_direction(aFdev);
-    if (ret < 0)
+    dir = as_gpio_get_pin_direction(aFdev);
+    if (strcmp(dir, "??"))
     {
         PyErr_SetString(PyExc_IOError,
                         "Can't get pin direction");
         return NULL;
     }
 
-    return Py_BuildValue("i", ret);
+    return Py_BuildValue("s", dir);
 }
 
 /** @brief Set pin value
@@ -223,23 +223,21 @@ static PyObject * blockingGetPinValue(PyObject *self, PyObject *args)
 {
     /* parameters */
     struct as_gpio_device *aFdev;
-    int aDelay_s;
-    int aDelay_us;
+    int aDelay_ms;
 
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "lii",
+    if (!PyArg_ParseTuple(args, "li",
                           (long *)&aFdev,
-                          &aDelay_s,
-                          &aDelay_us))
+                          &aDelay_ms))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
         return NULL;
     }
 
-    ret = as_gpio_blocking_get_pin_value(aFdev, aDelay_s, aDelay_us);
+    ret = as_gpio_wait_event(aFdev, aDelay_ms);
     if (ret == -10)
     {
         PyErr_SetString(PyExc_IOError, "TIMEOUT");
@@ -266,12 +264,12 @@ static PyObject * setIrqMode(PyObject *self, PyObject *args)
 {
     /* parameters */
     struct as_gpio_device *aFdev;
-    int aMode;
+    char *aMode;
 
     int ret;
 
     /* Get arguments */
-    if (!PyArg_ParseTuple(args, "li", (long *)&aFdev, &aMode))
+    if (!PyArg_ParseTuple(args, "ls", (long *)&aFdev, &aMode))
     {
         PyErr_SetString(PyExc_IOError,
                         "Wrong parameters.");
@@ -293,14 +291,14 @@ static PyObject * setIrqMode(PyObject *self, PyObject *args)
  *
  * @param aFDev as_gpio_device pointer structure
  *
- * @return pin mode value if positive or null, error if negative
+ * @return pin mode ("falling"/"rising"/"both"/"none")
  */
 static PyObject * getIrqMode(PyObject *self, PyObject *args)
 {
     /* parameters */
     struct as_gpio_device *aFdev;
 
-    int ret;
+    const char *mode;
 
     /* Get arguments */
     if (!PyArg_ParseTuple(args, "l", (long *)&aFdev))
@@ -310,15 +308,15 @@ static PyObject * getIrqMode(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    ret = as_gpio_get_irq_mode(aFdev);
-    if (ret < 0)
+    mode = as_gpio_get_irq_mode(aFdev);
+    if (strcmp(mode, "??"))
     {
         PyErr_SetString(PyExc_IOError,
                         "Can't get pin value");
         return NULL;
     }
 
-    return Py_BuildValue("i", ret);
+    return Py_BuildValue("s", mode);
 }
 
 /** @brief Get pin number value

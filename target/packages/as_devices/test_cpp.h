@@ -146,14 +146,14 @@ void test_gpio()
     {
         system("clear");
         printf("**************************\n");
-        printf("   Testing GPIO  P%c%d \n", gpio_dev->getPortLetter(), gpio_dev->getPinNum());
+        printf("   Testing GPIO  Port%c%d \n", gpio_dev->getPortLetter(), gpio_dev->getPinNum());
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
         printf(" 1) Change gpio (P%c%d)\n", gpio_dev->getPortLetter(), gpio_dev->getPinNum());
-        printf(" 2) Change direction (%d)\n", gpio_dev->getPinDirection());
+        printf(" 2) Change direction (%s)\n", gpio_dev->getPinDirection());
         printf(" 3) Change value (%d)\n", gpio_dev->getPinValue());
         printf(" 4) Read pin value\n");
-        printf(" 5) Set irq mode (%d)\n", gpio_dev->getIrqMode());
+        printf(" 5) Set irq mode (%s)\n", gpio_dev->getIrqMode());
         printf(" a) blocking read\n");
 
         printf("> ");
@@ -182,10 +182,10 @@ void test_gpio()
                         printf("Ok P%c%d is open\n", port_letter, pin_num);
                         pressEnterToContinue();
                         break;
-            case '2' :  printf("Give direction (0:in, 1:out) : ");
-                        scanf("%d", &value);
-                        ret = gpio_dev->setPinDirection(value);
-                        if(ret < 0)
+            case '2' :  printf("Give direction (in / out) : ");
+                        scanf("%s", buffer);
+                        ret = gpio_dev->setPinDirection(buffer);
+                        if (ret < 0)
                         {
                             printf("Error, can't change direction\n");
                             pressEnterToContinue();
@@ -219,18 +219,12 @@ void test_gpio()
                         port_value = ret;
                         pressEnterToContinue();
                         break;
-            case '5' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
-                        printf("2)  GPIO_IRQ_MODE_RISING \n");
-                        printf("3)  GPIO_IRQ_MODE_FALLING\n");
-                        printf("4)  GPIO_IRQ_MODE_BOTH   \n");
-                        printf("Give value : ");
-                        scanf("%d", &value);
-                        if (value == 1)value = GPIO_IRQ_MODE_NOINT  ;
-                        if (value == 2)value = GPIO_IRQ_MODE_RISING ;
-                        if (value == 3)value = GPIO_IRQ_MODE_FALLING;
-                        if (value == 4)value = GPIO_IRQ_MODE_BOTH   ;
-                        ret = gpio_dev->setIrqMode(value);
-                        if(ret < 0)
+            case '5' :
+			printf("rising / falling / both / none\n");
+                        printf("Please choose a mode : ");
+                        scanf("%s", buffer);
+                        ret = gpio_dev->setIrqMode(buffer);
+                        if (ret < 0)
                         {
                             printf("Error, can't change irq value\n");
                             pressEnterToContinue();
@@ -239,8 +233,8 @@ void test_gpio()
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
-            case 'a' :  printf("Blocking read \n");
-                        ret = gpio_dev->blockingGetPinValue(10, 0);
+            case 'a' :  printf("Blocking read (10 sec timeout)\n");
+                        ret = gpio_dev->waitEvent(10000);
                         if (ret < 0)
                         {
                             printf("Error, can't read value\n");

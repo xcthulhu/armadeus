@@ -31,19 +31,19 @@ public:
 	AsGpio(char aPortChar, int aPinNum);
 	virtual ~AsGpio();
 
-	long setPinDirection(int aDirection);
-	long getPinDirection() const;
+	long setPinDirection(char* aDirection);
+	const char* getPinDirection() const;
 
 	long setPinValue(int aValue);
 	long getPinValue() const;
-	long blockingGetPinValue(int aDelay_s, int aDelay_us) const;
+	long waitEvent(int aDelay_ms) const;
 	
-	long setIrqMode(int aMode);
-	long getIrqMode() const;
+	long setIrqMode(char* aMode);
+	const char* getIrqMode() const;
 
 	long getPinNum() const;
 
-	long getPortLetter() const;
+	char getPortLetter() const;
 
 protected:
 	mutable struct as_gpio_device *mDev;

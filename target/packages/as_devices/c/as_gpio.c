@@ -1,7 +1,7 @@
 /*
- **    The ARMadeus Project
+ **    C wrapper for GPIOs usage.
  **
- **    Copyright (C) 2009, 2010, 2011  The armadeus systems team
+ **    Copyright (C) 2009, 2010, 2011  The Armadeus Project - ARMadeus Systems
  **    Fabien Marteau <fabien.marteau@armadeus.com>
  **
  ** This library is free software; you can redistribute it and/or
@@ -24,14 +24,15 @@
 #include <fcntl.h>
 #include <unistd.h> /* for close() */
 #include <sys/select.h>
+#include <poll.h>
+#include <errno.h>
 
 #include <sys/ioctl.h>
-#include <linux/ppdev.h>
 
 #include "as_helpers.h"
 #include "as_gpio.h"
 
-#define BUFF_SIZE (300)
+#define BUFF_SIZE 300
 
 #undef ERROR
 #define ERROR(fmt, ...) printf(fmt, ##__VA_ARGS__)
@@ -96,69 +97,53 @@ struct as_gpio_device *as_gpio_open(char aPortChar, int aPinNum)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev, int aDirection)
+int32_t as_gpio_set_pin_direction(struct as_gpio_device *gpio_dev, char *direction)
 {
-    char buf[BUFF_SIZE];
-    int pin_file;
-    int retval;
+	char buf[BUFF_SIZE];
+	int gpio_fd;
+	int ret = 0;
 
-    snprintf(buf, BUFF_SIZE, "/sys/class/gpio/gpio%d/direction", aDev->port_num);
-    pin_file = open(buf, O_WRONLY);
-    if (pin_file < 0) {
-        ERROR("Can't open gpio%d direction\n", aDev->port_num);
-        return -1;
-    }
+	snprintf(buf, BUFF_SIZE, "/sys/class/gpio/gpio%d/direction", gpio_dev->port_num);
+	gpio_fd = open(buf, O_WRONLY);
+	if (gpio_fd < 0) {
+		ERROR("Can't open gpio%d direction\n", gpio_dev->port_num);
+		return -EINVAL;
+	}
 
-    if (aDirection == 0) {
-        retval = as_write_buffer_string(pin_file, "in");
-        if (retval < 0) {
-            ERROR("Error writting direction\n");
-            close(pin_file);
-            return -1;
-        }
-    } else {
-        retval = as_write_buffer_string(pin_file, "out");
-        if (retval < 0) {
-            ERROR("Error writting direction\n");
-            close(pin_file);
-            return -1;
-        }
-    }
-    close(pin_file);
+	ret = as_write_buffer_string(gpio_fd, direction);
+	if (ret < 0)
+		ERROR("Error writing direction\n");
 
-    return aDirection;
+	close(gpio_fd);
+
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_pin_direction(struct as_gpio_device *aDev)
+const char* as_gpio_get_pin_direction(struct as_gpio_device *gpio_dev)
 {
-    char buf[BUFF_SIZE];
-    int pin_file;
-    int retval;
+	char buf[BUFF_SIZE];
+	static char direction[4];
+	FILE *gpio_file;
+	int ret = 0;
+	static const char none[] = "??";
 
-    snprintf(buf, BUFF_SIZE, "/sys/class/gpio/gpio%d/direction", aDev->port_num);
-    pin_file = open(buf, O_RDONLY);
-    if (pin_file < 0) {
-        ERROR("Can't open gpio%d direction\n", aDev->port_num);
-        return -1;
-    }
-    retval = as_read_buffer(pin_file, buf, 4);
-    if (retval < 0) {
-        ERROR("Can't read gpio%d direction file\n", aDev->port_num);
-        close(pin_file);
-        return -1;
-    }
-    close(pin_file);
+	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/direction",
+			gpio_dev->port_num);
+	gpio_file = fopen(buf, "r");
+	if (!gpio_file) {
+		ERROR("Can't open gpio%d direction\n", gpio_dev->port_num);
+		return none;
+	}
+	ret = fscanf(gpio_file, "%s", direction);
+	fclose(gpio_file);
+	if (ret < 0) {
+		ERROR("Can't get gpio%d direction\n", gpio_dev->port_num);
+		return none;
+	}
 
-    if ((buf[0] == 'i') && (buf[1] == 'n'))
-        return 0;
-    else if  ((buf[0] == 'o') && (buf[1] == 'u') && (buf[2] == 't'))
-        return 1;
-    else {
-        ERROR("Wrong value >%s< read in direction file\n", buf);
-        return -1;
-    }
+	return direction;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -199,7 +184,7 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev)
     snprintf(buf, BUFF_SIZE, "/sys/class/gpio/gpio%d/value", aDev->port_num);
     pin_file = open(buf, O_RDONLY);
     if (pin_file < 0) {
-        ERROR("Can't open gpio%d direction\n", aDev->port_num);
+        ERROR("Can't open gpio%d value\n", aDev->port_num);
         return -1;
     }
 
@@ -216,28 +201,85 @@ int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
-                                       int aDelay_s,
-                                       int aDelay_us)
+int32_t as_gpio_wait_event(struct as_gpio_device *gpio_dev, int delay_ms)
 {
-    printf("as_gpio_blocking_get_pin_value:TODO\n");
-    return -1;
+	char gpio_sys_name[BUFF_SIZE];
+	int gpio_fd;
+	struct pollfd poll_set[1];
+	int ret;
+	char tmp[16];
+
+	snprintf(gpio_sys_name, BUFF_SIZE, "/sys/class/gpio/gpio%d/value",
+				gpio_dev->port_num);
+	gpio_fd = open(gpio_sys_name, O_RDONLY);
+	if (gpio_fd < 0) {
+        	ERROR("Can't open gpio%d value\n", gpio_dev->port_num);
+		return -EINVAL;
+	}
+
+	/* flush pending event */
+	read(gpio_fd, tmp, sizeof(tmp));
+
+	poll_set[0].fd = gpio_fd;
+	poll_set[0].events = POLLPRI;
+	poll_set[0].revents = 0;
+	ret = poll(poll_set, 1, delay_ms);
+	if (ret > 0) {
+		printf("event received\n");
+		read(gpio_fd, tmp, sizeof(tmp));
+	}
+
+	return 0;
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev)
+const char* as_gpio_get_irq_mode(struct as_gpio_device *gpio_dev)
 {
-    printf("as_gpio_get_irq_mode:TODO\n");
-    return -1;
+	char buf[BUFF_SIZE];
+	static char mode[8];
+	FILE *gpio_file;
+	int ret = 0;
+	static const char unknown[] = "??";
+
+	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/edge", gpio_dev->port_num);
+	gpio_file = fopen(buf, "r");
+	if (!gpio_file) {
+		ERROR("Can't open gpio%d edge\n", gpio_dev->port_num);
+		return unknown;
+	}
+	ret = fscanf(gpio_file, "%s", mode);
+	fclose(gpio_file);
+	if (ret < 0) {
+		ERROR("Can't get gpio%d edge\n", gpio_dev->port_num);
+		return unknown;
+	}
+
+	return mode;
 }
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev, int aMode)
+int32_t as_gpio_set_irq_mode(struct as_gpio_device *gpio_dev, char *mode)
 {
-    printf("as_gpio_set_irq_mode:TODO\n");
-    return -1;
+	char buf[BUFF_SIZE];
+	int gpio_fd;
+	int ret = 0;
+
+	snprintf(buf, BUFF_SIZE, "/sys/class/gpio/gpio%d/edge", gpio_dev->port_num);
+	gpio_fd = open(buf, O_WRONLY);
+	if (gpio_fd < 0) {
+		ERROR("Can't open gpio%d edge\n", gpio_dev->port_num);
+		return -EINVAL;
+	}
+
+	ret = as_write_buffer_string(gpio_fd, mode);
+	if (ret < 0)
+		ERROR("Error writing mode\n");
+
+	close(gpio_fd);
+
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -249,7 +291,7 @@ int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev)
 
 /*------------------------------------------------------------------------------*/
 
-int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev)
+char as_gpio_get_port_letter(struct as_gpio_device *aDev)
 {
     return aDev->port_letter;
 }
@@ -260,5 +302,4 @@ int32_t as_gpio_close(struct as_gpio_device *aDev)
 {
     return 0;
 }
-
 

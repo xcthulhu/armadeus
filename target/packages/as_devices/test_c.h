@@ -1,7 +1,6 @@
 /*
- **    THE ARMadeus Systems
  **
- **    Copyright (C) 2009  The armadeus systems team
+ **    Copyright (C) 2009-2011  The Armadeus Project - ARMadeus Systems
  **    Fabien Marteau <fabien.marteau@armadeus.com>
  **
  ** This library is free software; you can redistribute it and/or
@@ -16,7 +15,7 @@
  **
  ** You should have received a copy of the GNU Lesser General Public
  ** License along with this library; if not, write to the Free Software
- ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ **** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include <stdio.h>
@@ -31,6 +30,7 @@
 #include "as_max5821.h"
 #include "as_adc.h"
 #include "as_dac.h"
+#include "as_helpers.h"
 
 #define PWM_NUM 0
 
@@ -442,7 +442,25 @@ void test_gpio()
     int pin_num = 13;
     int port_direction = 0;
     int port_value = 1;
+    int platform;
 
+    platform = as_helpers_get_platform();
+    switch (platform) {
+        case APF9328:
+            port_letter = 'X';
+            pin_num = 0x007;
+        break;
+        case APF27:
+            port_letter = 'F';
+            pin_num = 13;
+        break;
+        case APF51:
+            port_letter = 'A';
+            pin_num = 3;
+        break;
+        default:
+        break;
+    }
     gpio_dev = as_gpio_open(port_letter, pin_num);
     if (gpio_dev == NULL)
     {
@@ -463,22 +481,21 @@ void test_gpio()
     {
         system("clear");
         printf("**************************\n");
-        printf("   Testing GPIO  P%c%d \n", as_gpio_get_port_letter(gpio_dev), 
-                                            as_gpio_get_pin_num(gpio_dev));
+        printf("   Testing GPIO  Port%c%d \n", port_letter, pin_num);
         printf("**************************\n");
         printf("Choose ('q' to quit):\n");
         printf(" 1) Change gpio (P%c%d)\n", as_gpio_get_port_letter(gpio_dev), 
                                             as_gpio_get_pin_num(gpio_dev));
-        printf(" 2) Change direction (%d)\n", as_gpio_get_pin_direction(gpio_dev));
+        printf(" 2) Change direction (%s)\n", as_gpio_get_pin_direction(gpio_dev));
         printf(" 3) Change value (%d)\n", as_gpio_get_pin_value(gpio_dev));
         printf(" 4) Read pin value\n");
-        printf(" 5) Set irq mode (%d)\n", as_gpio_get_irq_mode(gpio_dev));
-        printf(" a) blocking read\n");
+        printf(" 5) Set irq/event mode (%s)\n", as_gpio_get_irq_mode(gpio_dev));
+        printf(" a) Wait an event\n");
 
         printf("> ");
         scanf("%s",buffer);
 
-        switch(buffer[0])
+        switch (buffer[0])
         {
             case '1' :  printf("Give letter of port in upper case : ");
                         scanf("%s", buffer);
@@ -498,7 +515,7 @@ void test_gpio()
                         scanf("%d", &pin_num);
                         
                         gpio_dev = as_gpio_open(port_letter,pin_num);
-                        if(gpio_dev == NULL)
+                        if (gpio_dev == NULL)
                         {
                             printf("Error, can't open P%c%d\n", port_letter, pin_num);
                             pressEnterToContinue();
@@ -507,10 +524,10 @@ void test_gpio()
                         printf("Ok P%c%d is open\n", port_letter, pin_num);
                         pressEnterToContinue();
                         break;
-            case '2' :  printf("Give direction (0:in, 1:out) : ");
-                        scanf("%d", &value);
-                        ret = as_gpio_set_pin_direction(gpio_dev, value);
-                        if(ret < 0)
+            case '2' :  printf("Give direction (in/out) : ");
+                        scanf("%s", buffer);
+                        ret = as_gpio_set_pin_direction(gpio_dev, buffer);
+                        if (ret < 0)
                         {
                             printf("Error, can't change direction\n");
                             pressEnterToContinue();
@@ -523,7 +540,7 @@ void test_gpio()
             case '3' :  printf("Give value : ");
                         scanf("%d", &value);
                         ret = as_gpio_set_pin_value(gpio_dev, value);
-                        if(ret < 0)
+                        if (ret < 0)
                         {
                             printf("Error, can't change pin value\n");
                             pressEnterToContinue();
@@ -544,18 +561,12 @@ void test_gpio()
                         port_value = ret;
                         pressEnterToContinue();
                         break;
-            case '5' :  printf("1)  GPIO_IRQ_MODE_NOINT  \n");
-                        printf("2)  GPIO_IRQ_MODE_RISING \n");
-                        printf("3)  GPIO_IRQ_MODE_FALLING\n");
-                        printf("4)  GPIO_IRQ_MODE_BOTH   \n");
-                        printf("Give value : ");
-                        scanf("%d", &value);
-                        if (value == 1)value = GPIO_IRQ_MODE_NOINT  ;
-                        if (value == 2)value = GPIO_IRQ_MODE_RISING ;
-                        if (value == 3)value = GPIO_IRQ_MODE_FALLING;
-                        if (value == 4)value = GPIO_IRQ_MODE_BOTH   ;
-                        ret = as_gpio_set_irq_mode(gpio_dev, value);
-                        if(ret < 0)
+            case '5':
+			printf("rising / falling / both / none\n");
+                        printf("Please choose a mode : ");
+                        scanf("%s", buffer);
+                        ret = as_gpio_set_irq_mode(gpio_dev, buffer);
+                        if (ret < 0)
                         {
                             printf("Error, can't change irq value\n");
                             pressEnterToContinue();
@@ -564,8 +575,8 @@ void test_gpio()
                         printf("Ok value changed\n");
                         pressEnterToContinue();
                         break;
-            case 'a' :  printf("Blocking read \n");
-                        ret = as_gpio_blocking_get_pin_value(gpio_dev, 10, 0);
+            case 'a' :  printf("Blocking read (10 sec timeout)\n");
+                        ret = as_gpio_wait_event(gpio_dev, 10000);
                         if (ret < 0)
                         {
                             printf("Error, can't read value\n");
@@ -628,7 +639,7 @@ void test_max1027()
 	{
             switch(buffer[0])
             {
-                case '1' :  printf("Open Max 1027 device\n");
+                case '1' :  printf("Open MAX1027 device\n");
                             max1027_dev = as_adc_open(AS_MAX1027_NAME, devNumber, vRef);
                             if (max1027_dev < 0)
                             {
@@ -656,7 +667,7 @@ void test_max1027()
 	{
             switch(buffer[0])
             {
-                    case '1' :  printf("Close Max 1027 device\n");
+                    case '1' :  printf("Close MAX1027 device\n");
                             ret = as_adc_close(max1027_dev);
                             if (ret < 0)
                             {
@@ -823,5 +834,4 @@ void test_as1531(void)
     printf("TODO\n");
     pressEnterToContinue();
 }
-
 

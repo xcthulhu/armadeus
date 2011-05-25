@@ -57,21 +57,21 @@ struct as_gpio_device *as_gpio_open(char aPortChar, int aPinNum);
 
 /** @brief  Set pin direction
  *
- * @param aDev as_gpio_device pointer structure
- * @param aDirection direction 0:input 1:output
+ * @param gpio_dev as_gpio_device pointer structure
+ * @param direction "in"/"out"
  *
  * @return error if negative value
  */
-int32_t as_gpio_set_pin_direction(struct as_gpio_device *aDev,
-                                  int aDirection);
+int32_t as_gpio_set_pin_direction(struct as_gpio_device *gpio_dev,
+                                  char *direction);
 
 /** @brief  Get pin direction
  *
- * @param aDev as_gpio_device pointer structure
+ * @param gpio_dev as_gpio_device pointer structure
  *
  * @return error if negative value
  */
-int32_t as_gpio_get_pin_direction(struct as_gpio_device *aDev);
+const char* as_gpio_get_pin_direction(struct as_gpio_device *gpio_dev);
 
 /** @brief Set pin value
  *
@@ -91,35 +91,31 @@ int32_t as_gpio_set_pin_value(struct as_gpio_device *aDev,
  */
 int32_t as_gpio_get_pin_value(struct as_gpio_device *aDev);
 
-/** @brief Get pin value, blocking until interrupt occur
+/** @brief Block until an event occur on that pin and return value
  *
  * @param aDev as_gpio_device pointer structure
- * @param aDelay_s waiting delay in seconds
- * @param aDelay_us waiting delay in useconds (plus delay in seconds)
+ * @param aDelay_ms timeout in milliseconds
  *
  * @return pin value if positive or null, read error if -1, timeout if -10
  */
-int32_t as_gpio_blocking_get_pin_value(struct as_gpio_device *aDev,
-                                       int aDelay_s,
-                                       int aDelay_us);
+int32_t as_gpio_wait_event(struct as_gpio_device *aDev, int aDelay_ms);
 
 /** @brief Set pin irq mode
  *
- * @param aDev as_gpio_device pointer structure
- * @param aMode irq mode
+ * @param gpio_dev as_gpio_device pointer structure
+ * @param mode irq mode (rising/falling/both/none)
  *
  * @return error if negative
  */
-int32_t as_gpio_set_irq_mode(struct as_gpio_device *aDev,
-                             int aMode);
+int32_t as_gpio_set_irq_mode(struct as_gpio_device *gpio_dev, char *mode);
 
 /** @brief Get pin irq mode value
  *
- * @param aDev as_gpio_device pointer structure
+ * @param gpio_dev as_gpio_device pointer structure
  *
- * @return pin mode value if positive or null, error if negative
+ * @return pin triggering mode: (rising/falling/both/none)
  */
-int32_t as_gpio_get_irq_mode(struct as_gpio_device *aDev);
+const char* as_gpio_get_irq_mode(struct as_gpio_device *gpio_dev);
 
 /** @brief Get pin number value
  *
@@ -135,7 +131,7 @@ int32_t as_gpio_get_pin_num(struct as_gpio_device *aDev);
  *
  * @return port letter, error if negative
  */
-int32_t as_gpio_get_port_letter(struct as_gpio_device *aDev);
+char as_gpio_get_port_letter(struct as_gpio_device *aDev);
 
 /** @brief Close port access
  *

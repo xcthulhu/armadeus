@@ -57,7 +57,7 @@ AsGpio::~AsGpio()
  *
  * @return error if negative value
  */
-long AsGpio::setPinDirection(int aDirection)
+long AsGpio::setPinDirection(char *aDirection)
 {
 	if (mDev != NULL)
 	{
@@ -74,7 +74,7 @@ long AsGpio::setPinDirection(int aDirection)
  *
  * @return pin direction if positive or null, error if negative
  */
-long AsGpio::getPinDirection() const
+const char* AsGpio::getPinDirection() const
 {
 	if (mDev != NULL)
 	{
@@ -83,7 +83,7 @@ long AsGpio::getPinDirection() const
 	else
 	{
 		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
-		return -1;
+		return NULL;
 	}
 }
 
@@ -123,18 +123,17 @@ long AsGpio::getPinValue() const
 	}
 }
 
-/** @brief Get pin value, blocking until interrupt occur
+/** @brief Get pin value, blocking until an interrupt/event occurs
  *
- * @param aDelay_s waiting delay in seconds
- * @param aDelay_us waiting delay in useconds (plus delay in seconds)
+ * @param aDelay_ms waiting delay in milliseconds
  *
  * @return pin value if positive or null, read error if -1, timeout if -10
  */
-long AsGpio::blockingGetPinValue(int aDelay_s, int aDelay_us) const
+long AsGpio::waitEvent(int aDelay_ms) const
 {
 	if (mDev != NULL)
 	{
-		return as_gpio_blocking_get_pin_value(mDev, aDelay_s, aDelay_us);
+		return as_gpio_wait_event(mDev, aDelay_ms);
 	}
 	else
 	{
@@ -149,7 +148,7 @@ long AsGpio::blockingGetPinValue(int aDelay_s, int aDelay_us) const
  *
  * @return error if negative
  */
-long AsGpio::setIrqMode(int aMode)
+long AsGpio::setIrqMode(char* aMode)
 {
 	if (mDev != NULL)
 	{
@@ -164,9 +163,9 @@ long AsGpio::setIrqMode(int aMode)
 
 /** @brief Get pin irq mode value
  *
- * @return pin mode value if positive or null, error if negative
+ * @return none/rising/falling/both
  */
-long AsGpio::getIrqMode() const
+const char* AsGpio::getIrqMode() const
 {
 	if (mDev != NULL)
 	{
@@ -175,7 +174,7 @@ long AsGpio::getIrqMode() const
 	else
 	{
 		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
-		return -1;
+		return '?';
 	}
 }
 
@@ -198,9 +197,9 @@ long AsGpio::getPinNum() const
 
 /** @brief Get port letter
  *
- * @return port letter, error if negative
+ * @return port letter
  */
-long AsGpio::getPortLetter() const
+char AsGpio::getPortLetter() const
 {
 	if (mDev != NULL)
 	{
@@ -209,6 +208,7 @@ long AsGpio::getPortLetter() const
 	else
 	{
 		std::cerr<<"AsGpio device structure not allocated"<<std::endl;
-		return -1;
+		return '?';
 	}
 }
+
