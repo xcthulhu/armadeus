@@ -68,5 +68,18 @@ int as_read_buffer(int fd, char *buf, int size);
  */
 int as_read_int(int fd, int *value_res);
 
+/** @brief return APF platform type
+ *
+ * @return APF_UNKNOWN/APF9328/APF27/APF51
+ */
+int as_helpers_get_platform(void);
+
+enum {
+	APF_UNKNOWN,
+	APF9328,
+	APF27,
+	APF51,
+};
+
 #endif /* __ASHELPERS_H__ */
 

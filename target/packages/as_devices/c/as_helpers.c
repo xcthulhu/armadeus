@@ -113,3 +113,25 @@ int as_read_int(int fd, int *value_res)
     return 0;
 }
 
+int as_helpers_get_platform(void)
+{
+	FILE *plat_file;
+	char name[8];
+	int ret;
+
+	plat_file = fopen("/etc/machine", "r");
+	if (!plat_file)
+		return APF_UNKNOWN;
+
+	ret = fscanf(plat_file, "%s", name);
+	fclose(plat_file);
+
+	if (!strcmp(name, "APF9328"))
+		return APF9328;
+	if (!strcmp(name, "APF27"))
+		return APF27;
+	if (!strcmp(name, "APF51"))
+		return APF51;
+
+	return APF_UNKNOWN;
+}
