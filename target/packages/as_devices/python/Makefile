@@ -23,8 +23,9 @@ WRAPPER_DIR=src
 
 PYTHON_VERS=2.4
 PYTHON_SUBVERS=5
+STAGING_DIR=$(ARMADEUS_STAGING_DIR)
 PYINC=$(STAGING_DIR)/usr/include/python2.4/
-PYLIB=../../../../buildroot/project_build_armv5te/apf27/root/usr/lib/python$(PYTHON_VERS)
+PYLIB=$(ARMADEUS_TARGET_DIR)/usr/lib/python$(PYTHON_VERS)
 
 .PHONY: all
 
