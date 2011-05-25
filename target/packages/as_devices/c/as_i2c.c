@@ -221,7 +221,6 @@ int32_t as_i2c_read_msg(struct as_i2c_device *aDev,
                           uint8_t *aWData, uint8_t aWriteSize,
                           uint8_t *aRData, size_t aReadSize)
 {
-    int i;
     /* write reg */
     struct i2c_msg msg = { aDev->slave_addr, 0, aWriteSize, aWData };
     struct i2c_rdwr_ioctl_data rdwr = { &msg, 1 };

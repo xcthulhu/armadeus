@@ -37,14 +37,14 @@ int main(int argc, char ** argv)
         printf("*   Testing program for as_devices library            *\n");
         printf("*******************************************************\n");
         printf("Choose a test ('q' to quit):\n");
-        printf(" 1) Testing pwm\n");
-        printf(" 2) Testing i2c\n");
-        printf(" 3) Testing spi\n");
-        printf(" 4) Testing 93LCxx eprom\n");
-        printf(" 5) Testing gpio\n");
-        printf(" 6) Testing max1027\n");
-        printf(" 7) Testing max5821\n");
-        printf(" 8) Testing as1531\n");
+        printf(" 1) pwm\n");
+        printf(" 2) i2c\n");
+        printf(" 3) spi\n");
+        printf(" 4) 93LCxx eprom\n");
+        printf(" 5) gpio\n");
+        printf(" 6) max1027\n");
+        printf(" 7) max5821\n");
+        printf(" 8) as1531\n");
         printf("> ");
         scanf("%s",buffer);
         
