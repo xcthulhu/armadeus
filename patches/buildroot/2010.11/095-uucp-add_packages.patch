@@ -6,9 +6,9 @@ Signed-off-by: Julien Boibessot <julien.boibessot@armadeus.com>
 
 Index: buildroot/package/Config.in
 ===================================================================
---- buildroot.orig/package/Config.in	2011-01-27 15:24:45.000000000 +0100
-+++ buildroot/package/Config.in	2011-01-27 15:24:47.000000000 +0100
-@@ -449,6 +449,7 @@
+--- buildroot.orig/package/Config.in	2011-05-27 15:32:05.000000000 +0200
++++ buildroot/package/Config.in	2011-05-27 16:47:49.000000000 +0200
+@@ -448,6 +448,7 @@
  source "package/tn5250/Config.in"
  source "package/ttcp/Config.in"
  source "package/udpcast/Config.in"
@@ -19,30 +19,36 @@ Index: buildroot/package/Config.in
 Index: buildroot/package/uucp/uucp.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/uucp/uucp.mk	2011-01-27 15:24:47.000000000 +0100
-@@ -0,0 +1,17 @@
++++ buildroot/package/uucp/uucp.mk	2011-05-27 16:47:39.000000000 +0200
+@@ -0,0 +1,23 @@
 +#############################################################
 +#
-+# uucp (cu, ...??)
++# uucp (uucico, uusched, uuxqt, uux, uucp, uustat, uulog,
++#       uuname, uuto, uupick, and cu)
 +#
 +#############################################################
 +
 +UUCP_VERSION:=1.07
 +UUCP_SOURCE:=uucp_$(UUCP_VERSION).orig.tar.gz
 +UUCP_SITE:=http://ftp.debian.org/debian/pool/main/u/uucp/
-+#UUCP_AUTORECONF:=no
-+UUCP_INSTALL_STAGING:=YES
-+UUCP_INSTALL_TARGET:=YES
++# or ftp://ftp.gnu.org/pub/gnu/uucp/uucp-1.07.tar.gz
++
++define UUCP_INSTALL_STRIP_FIXUP
++	$(SED) 's,INSTALL_SCRIPT = $${INSTALL_PROGRAM},INSTALL_SCRIPT = $${INSTALL},g' $(UUCP_DIR)/Makefile
++endef
++
++# Otherwise executables aren't installed stripped
 +ifeq ($(BR2_ENABLE_DEBUG),)
 +UUCP_INSTALL_TARGET_OPT:=DESTDIR=$(TARGET_DIR) STRIPPROG='$(STRIPCMD)' install-strip
++UUCP_POST_CONFIGURE_HOOKS += UUCP_INSTALL_STRIP_FIXUP
 +endif
 +
 +$(eval $(call AUTOTARGETS,package,uucp))
 Index: buildroot/package/uucp/Config.in
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ buildroot/package/uucp/Config.in	2011-01-27 15:24:47.000000000 +0100
-@@ -0,0 +1,11 @@
++++ buildroot/package/uucp/Config.in	2011-05-27 16:25:57.000000000 +0200
+@@ -0,0 +1,12 @@
 +config BR2_PACKAGE_UUCP
 +	bool "uucp"
 +	help
@@ -53,4 +59,5 @@ Index: buildroot/package/uucp/Config.in
 +	  can be made via modems, direct (hard-wired) serial connections or via an
 +	  IP connection.
 +
++	  http://www.airs.com/ian/uucp.html
 +	  http://packages.debian.org/lenny/uucp
