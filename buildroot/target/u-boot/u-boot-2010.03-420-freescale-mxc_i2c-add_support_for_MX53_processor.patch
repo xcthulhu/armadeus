@@ -1,0 +1,73 @@
+From: Liu Hui-R64343 <r64343@freescale.com>
+Date: Mon, 3 Jan 2011 22:27:39 +0000 (+0000)
+Subject: mxc_i2c: add support for MX53 processor
+X-Git-Tag: v2011.03-rc1~2^2~45
+X-Git-Url: http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot.git;a=commitdiff_plain;h=127cec1889c7a9bb3c3eab521779b08657043a9a
+
+mxc_i2c: add support for MX53 processor
+
+This patch add I2C support for Freescale MX53 processor
+
+Signed-off-by: Jason Liu <r64343@freescale.com>
+---
+
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index 8e10fbb..1ebec14 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -26,8 +26,14 @@
+ 
+ #if defined(CONFIG_HARD_I2C)
+ 
++#if defined(CONFIG_MX31)
+ #include <asm/arch/mx31.h>
+ #include <asm/arch/mx31-regs.h>
++#endif
++
++#if defined(CONFIG_MX53)
++#include <asm/arch/clock.h>
++#endif
+ 
+ #define IADR	0x00
+ #define IFDR	0x04
+@@ -47,7 +53,7 @@
+ #define I2SR_IIF	(1 << 1)
+ #define I2SR_RX_NO_AK	(1 << 0)
+ 
+-#ifdef CONFIG_SYS_I2C_MX31_PORT1
++#if defined(CONFIG_SYS_I2C_MX31_PORT1)
+ #define I2C_BASE	0x43f80000
+ #define I2C_CLK_OFFSET	26
+ #elif defined (CONFIG_SYS_I2C_MX31_PORT2)
+@@ -56,8 +62,12 @@
+ #elif defined (CONFIG_SYS_I2C_MX31_PORT3)
+ #define I2C_BASE	0x43f84000
+ #define I2C_CLK_OFFSET	30
++#elif defined(CONFIG_SYS_I2C_MX53_PORT1)
++#define I2C_BASE        I2C1_BASE_ADDR
++#elif defined(CONFIG_SYS_I2C_MX53_PORT2)
++#define I2C_BASE        I2C2_BASE_ADDR
+ #else
+-#error "define CONFIG_SYS_I2C_MX31_PORTx to use the mx31 I2C driver"
++#error "define CONFIG_SYS_I2C_MXxx_PORTx to use the I2C driver"
+ #endif
+ 
+ #ifdef DEBUG
+@@ -72,11 +82,16 @@ static u16 div[] = { 30, 32, 36, 42, 48, 52, 60, 72, 80, 88, 104, 128, 144,
+ 
+ void i2c_init(int speed, int unused)
+ {
+-	int freq = mx31_get_ipg_clk();
++	int freq;
+ 	int i;
+ 
++#if defined(CONFIG_MX31)
++	freq = mx31_get_ipg_clk();
+ 	/* start the required I2C clock */
+ 	__REG(CCM_CGR0) = __REG(CCM_CGR0) | (3 << I2C_CLK_OFFSET);
++#else
++	freq = mxc_get_clock(MXC_IPG_PERCLK);
++#endif
+ 
+ 	for (i = 0; i < 0x1f; i++)
+ 		if (freq / div[i] <= speed)

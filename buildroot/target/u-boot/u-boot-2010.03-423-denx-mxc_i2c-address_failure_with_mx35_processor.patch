@@ -1,0 +1,191 @@
+From: Stefano Babic <sbabic@denx.de>
+Date: Thu, 20 Jan 2011 07:51:31 +0000 (+0000)
+Subject: I2C: mxc_i2c: address failure with mx35 processor
+X-Git-Tag: v2011.03-rc1~2^2~32
+X-Git-Url: http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot.git;a=commitdiff_plain;h=81687212ee0b4fcb11f7d6700275b062c8f8d2b4
+
+I2C: mxc_i2c: address failure with mx35 processor
+
+There is sporadic failures when more as one I2C slave
+is on the bus and the processor tries to communicate
+with more as one slave.
+The problem was seen on a mx35pdk (two I2C slaves,
+PMIC controller and CAN/RTC chip).
+
+The current driver uses the IIF bit in the status register
+to check if the bus is busy or not. According to the manual,
+this is not correct, because the IIB bit should be checked.
+Not only, to check if a transfer is finished must be checked
+the ICF bit, and this is not tested at all.
+
+This patch comes from analyse with a corresponding driver
+provided by Freescale as part of the LTIB tool. Comparing
+the two drivers, it appears that the current u-boot driver checks
+the wrong bits, and depending on race condition, the transfer
+can be successful or not.
+
+The patch gets rid also of own debug function (DPRINTF),
+replaced with the general debug().
+
+Tested on Freescale mx35pdk.
+
+Signed-off-by: Stefano Babic <sbabic@denx.de>
+CC: Heiko Schocher <hs@denx.de>
+Acked-by: Heiko Schocher <hs@denx.de>
+---
+
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index fd6db18..c5ec486 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -72,11 +72,8 @@
+ #error "define CONFIG_SYS_I2C_MX<Processor>_PORTx to use the mx I2C driver"
+ #endif
+ 
+-#ifdef DEBUG
+-#define DPRINTF(args...)  printf(args)
+-#else
+-#define DPRINTF(args...)
+-#endif
++#define I2C_MAX_TIMEOUT		10000
++#define I2C_MAX_RETRIES		3
+ 
+ static u16 div[] = { 30, 32, 36, 42, 48, 52, 60, 72, 80, 88, 104, 128, 144,
+ 	             160, 192, 240, 288, 320, 384, 480, 576, 640, 768, 960,
+@@ -116,31 +113,61 @@ void i2c_init(int speed, int unused)
+ 	i2c_reset();
+ }
+ 
++static int wait_idle(void)
++{
++	int timeout = I2C_MAX_TIMEOUT;
++
++	while ((readw(I2C_BASE + I2SR) & I2SR_IBB) && --timeout) {
++		writew(0, I2C_BASE + I2SR);
++		udelay(1);
++	}
++	return timeout ? timeout : (!(readw(I2C_BASE + I2SR) & I2SR_IBB));
++}
++
+ static int wait_busy(void)
+ {
+-	int timeout = 10000;
++	int timeout = I2C_MAX_TIMEOUT;
+ 
+-	while (!(readw(I2C_BASE + I2SR) & I2SR_IIF) && --timeout)
++	while (!(readw(I2C_BASE + I2SR) & I2SR_IBB) && --timeout)
+ 		udelay(1);
+ 	writew(0, I2C_BASE + I2SR); /* clear interrupt */
+ 
+ 	return timeout;
+ }
+ 
++static int wait_complete(void)
++{
++	int timeout = I2C_MAX_TIMEOUT;
++
++	while ((!(readw(I2C_BASE + I2SR) & I2SR_ICF)) && (--timeout)) {
++		writew(0, I2C_BASE + I2SR);
++		udelay(1);
++	}
++	udelay(200);
++
++	writew(0, I2C_BASE + I2SR);	/* clear interrupt */
++
++	return timeout;
++}
++
++
+ static int tx_byte(u8 byte)
+ {
+ 	writew(byte, I2C_BASE + I2DR);
+ 
+-	if (!wait_busy() || readw(I2C_BASE + I2SR) & I2SR_RX_NO_AK)
++	if (!wait_complete() || readw(I2C_BASE + I2SR) & I2SR_RX_NO_AK)
+ 		return -1;
+ 	return 0;
+ }
+ 
+-static int rx_byte(void)
++static int rx_byte(int last)
+ {
+-	if (!wait_busy())
++	if (!wait_complete())
+ 		return -1;
+ 
++	if (last)
++		writew(I2CR_IEN, I2C_BASE + I2CR);
++
+ 	return readw(I2C_BASE + I2DR);
+ }
+ 
+@@ -160,21 +187,45 @@ int i2c_probe(uchar chip)
+ 
+ static int i2c_addr(uchar chip, uint addr, int alen)
+ {
+-	writew(0, I2C_BASE + I2SR);
+-	writew(I2CR_IEN |  I2CR_MSTA | I2CR_MTX, I2C_BASE + I2CR);
++	int i, retry = 0;
++	for (retry = 0; retry < 3; retry++) {
++		if (wait_idle())
++			break;
++		i2c_reset();
++		for (i = 0; i < I2C_MAX_TIMEOUT; i++)
++			udelay(1);
++	}
++	if (retry >= I2C_MAX_RETRIES) {
++		debug("%s:bus is busy(%x)\n",
++		       __func__, readw(I2C_BASE + I2SR));
++		return -1;
++	}
++	writew(I2CR_IEN | I2CR_MSTA | I2CR_MTX, I2C_BASE + I2CR);
+ 
+-	if (tx_byte(chip << 1))
++	if (!wait_busy()) {
++		debug("%s:trigger start fail(%x)\n",
++		       __func__, readw(I2C_BASE + I2SR));
+ 		return -1;
++	}
+ 
++	if (tx_byte(chip << 1) || (readw(I2C_BASE + I2SR) & I2SR_RX_NO_AK)) {
++		debug("%s:chip address cycle fail(%x)\n",
++		       __func__, readw(I2C_BASE + I2SR));
++		return -1;
++	}
+ 	while (alen--)
+-		if (tx_byte((addr >> (alen * 8)) & 0xff))
++		if (tx_byte((addr >> (alen * 8)) & 0xff) ||
++		    (readw(I2C_BASE + I2SR) & I2SR_RX_NO_AK)) {
++			debug("%s:device address cycle fail(%x)\n",
++			       __func__, readw(I2C_BASE + I2SR));
+ 			return -1;
++		}
+ 	return 0;
+ }
+ 
+ int i2c_read(uchar chip, uint addr, int alen, uchar *buf, int len)
+ {
+-	int timeout = 10000;
++	int timeout = I2C_MAX_TIMEOUT;
+ 	int ret;
+ 
+ 	debug("%s chip: 0x%02x addr: 0x%04x alen: %d len: %d\n",
+@@ -197,7 +248,8 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buf, int len)
+ 	ret = readw(I2C_BASE + I2DR);
+ 
+ 	while (len--) {
+-		if ((ret = rx_byte()) < 0)
++		ret = rx_byte(len == 0);
++		if (ret  < 0)
+ 			return -1;
+ 		*buf++ = ret;
+ 		if (len <= 1)
+@@ -206,8 +258,6 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buf, int len)
+ 				I2C_BASE + I2CR);
+ 	}
+ 
+-	wait_busy();
+-
+ 	writew(I2CR_IEN, I2C_BASE + I2CR);
+ 
+ 	while (readw(I2C_BASE + I2SR) & I2SR_IBB && --timeout)

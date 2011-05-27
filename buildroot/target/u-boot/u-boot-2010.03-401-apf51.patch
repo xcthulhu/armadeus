@@ -1,8 +1,8 @@
 Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-01-05 18:11:15.000000000 +0100
-@@ -0,0 +1,1151 @@
++++ u-boot-2010.03/board/armadeus/apf51/apf51.c	2011-05-27 11:22:10.000000000 +0200
+@@ -0,0 +1,1157 @@
 +/*
 + * (C) Copyright 2010 Eric Jarrige, Armadeus Project
 + *
@@ -198,7 +198,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	/*
 +	 * uart3
 +	 */
-+#ifdef APF51_RECOVER  // temporary 
++#ifdef APF51_RECOVER  /* temporary */
 +	mxc_request_iomux(MX51_PIN_AUD3_BB_RXD, IOMUX_CONFIG_ALT1);
 +	mxc_request_iomux(MX51_PIN_AUD3_BB_FS, IOMUX_CONFIG_ALT1);
 +	mxc_iomux_set_pad(MX51_PIN_AUD3_BB_RXD, UART_PAD_CFG);
@@ -545,7 +545,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +        mxc_iomux_set_pad(MX51_PIN_NANDF_WP_B, NAND_PAD100K_CFG);
 +
 +	mxc_request_iomux(MX51_PIN_NANDF_RB0 , IOMUX_CONFIG_ALT0);
-+        mxc_iomux_set_pad(MX51_PIN_NANDF_RB0 , PAD_CTL_DRV_VOT_HIGH | 
++        mxc_iomux_set_pad(MX51_PIN_NANDF_RB0 , PAD_CTL_DRV_VOT_HIGH |
 +					PAD_CTL_HYS_NONE | PAD_CTL_PKE_ENABLE |
 +					PAD_CTL_PUE_PULL | PAD_CTL_100K_PU);
 +
@@ -594,9 +594,9 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	 */
 +	mxc_request_iomux(MX51_PIN_CSPI1_MOSI, IOMUX_CONFIG_ALT0);
 +	mxc_request_iomux(MX51_PIN_CSPI1_MISO, IOMUX_CONFIG_ALT0);
-+	mxc_request_iomux(MX51_PIN_CSPI1_SS0 , IOMUX_CONFIG_ALT0);
-+	mxc_request_iomux(MX51_PIN_CSPI1_SS1 , IOMUX_CONFIG_ALT0);
-+	mxc_request_iomux(MX51_PIN_CSPI1_RDY , IOMUX_CONFIG_ALT0);
++	mxc_request_iomux(MX51_PIN_CSPI1_SS0, IOMUX_CONFIG_ALT0);
++	mxc_request_iomux(MX51_PIN_CSPI1_SS1, IOMUX_CONFIG_ALT0);
++	mxc_request_iomux(MX51_PIN_CSPI1_RDY, IOMUX_CONFIG_ALT0);
 +	mxc_request_iomux(MX51_PIN_CSPI1_SCLK, IOMUX_CONFIG_ALT0);
 +
 +	/*
@@ -618,7 +618,8 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	mxc_iomux_set_pad(MX51_PIN_NANDF_D14, CSPI_PAD_CFG);
 +	mxc_iomux_set_pad(MX51_PIN_NANDF_D15, CSPI_PAD_CFG);
 +
-+	mxc_iomux_set_input(MUX_IN_CSPI_IPP_IND_SS_B_1_SELECT_INPUT,INPUT_CTL_PATH1);
++	mxc_iomux_set_input(MUX_IN_CSPI_IPP_IND_SS_B_1_SELECT_INPUT,
++					INPUT_CTL_PATH1);
 +}
 +
 +#define GPIO_DR		0x00	/* Data Register */
@@ -677,19 +678,24 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 +	switch (module_base) {
 +	case I2C1_BASE_ADDR:
 +		/* SCL */
-+		mxc_request_iomux(MX51_PIN_I2C1_CLK, IOMUX_CONFIG_ALT0);
++		mxc_request_iomux(MX51_PIN_I2C1_CLK,
++					IOMUX_CONFIG_ALT0 | IOMUX_CONFIG_SION);
 +
 +		/* SDA */
-+		mxc_request_iomux(MX51_PIN_I2C1_DAT, IOMUX_CONFIG_ALT0);
++		mxc_request_iomux(MX51_PIN_I2C1_DAT,
++					IOMUX_CONFIG_ALT0 | IOMUX_CONFIG_SION);
 +		break;
 +
 +	case I2C2_BASE_ADDR: /* do not use without disabling UART3 first */
 +		/* SCL */
-+		mxc_request_iomux(MX51_PIN_I2C2_CLK, IOMUX_CONFIG_ALT4);
++		mxc_request_iomux(MX51_PIN_EIM_D24,
++					IOMUX_CONFIG_ALT4 | IOMUX_CONFIG_SION);
 +
 +		/* SDA */
-+		mxc_request_iomux(MX51_PIN_I2C2_DAT, IOMUX_CONFIG_ALT4);
-+		mxc_iomux_set_input(MUX_IN_I2C2_IPP_SDA_IN_SELECT_INPUT,INPUT_CTL_PATH0);
++		mxc_request_iomux(MX51_PIN_EIM_D27,
++					IOMUX_CONFIG_ALT4 | IOMUX_CONFIG_SION);
++		mxc_iomux_set_input(MUX_IN_I2C2_IPP_SDA_IN_SELECT_INPUT,
++					INPUT_CTL_PATH0);
 +		break;
 +
 +	default:
@@ -1157,14 +1163,14 @@ Index: u-boot-2010.03/board/armadeus/apf51/apf51.c
 Index: u-boot-2010.03/board/armadeus/apf51/config.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/config.mk	2011-01-05 18:11:15.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/config.mk	2011-05-26 17:46:17.000000000 +0200
 @@ -0,0 +1,2 @@
 +LDSCRIPT := $(SRCTREE)/board/$(BOARDDIR)/u-boot.lds
 +TEXT_BASE = 0x9FF00000
 Index: u-boot-2010.03/board/armadeus/apf51/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/Makefile	2011-01-05 18:11:15.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/Makefile	2011-05-26 17:46:17.000000000 +0200
 @@ -0,0 +1,50 @@
 +#
 +# Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
@@ -1219,7 +1225,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/Makefile
 Index: u-boot-2010.03/board/armadeus/apf51/u-boot.lds
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/u-boot.lds	2011-01-05 18:11:15.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/u-boot.lds	2011-05-26 17:46:17.000000000 +0200
 @@ -0,0 +1,64 @@
 +/*
 + * January 2004 - Changed to support H4 device
@@ -1287,8 +1293,8 @@ Index: u-boot-2010.03/board/armadeus/apf51/u-boot.lds
 +}
 Index: u-boot-2010.03/include/asm-arm/mach-types.h
 ===================================================================
---- u-boot-2010.03.orig/include/asm-arm/mach-types.h	2011-01-05 18:05:11.000000000 +0100
-+++ u-boot-2010.03/include/asm-arm/mach-types.h	2011-01-05 18:11:15.000000000 +0100
+--- u-boot-2010.03.orig/include/asm-arm/mach-types.h	2010-03-31 23:54:39.000000000 +0200
++++ u-boot-2010.03/include/asm-arm/mach-types.h	2011-05-26 17:46:17.000000000 +0200
 @@ -2699,6 +2699,7 @@
  #define MACH_TYPE_MX53_EVK             2716
  #define MACH_TYPE_IGEP0030             2717
@@ -1318,8 +1324,8 @@ Index: u-boot-2010.03/include/asm-arm/mach-types.h
   */
 Index: u-boot-2010.03/MAKEALL
 ===================================================================
---- u-boot-2010.03.orig/MAKEALL	2011-01-05 18:09:44.000000000 +0100
-+++ u-boot-2010.03/MAKEALL	2011-01-05 18:11:15.000000000 +0100
+--- u-boot-2010.03.orig/MAKEALL	2011-05-26 17:46:17.000000000 +0200
++++ u-boot-2010.03/MAKEALL	2011-05-26 17:46:17.000000000 +0200
 @@ -549,6 +549,7 @@
  	ap946es			\
  	ap966			\
@@ -1330,8 +1336,8 @@ Index: u-boot-2010.03/MAKEALL
  	cp926ejs		\
 Index: u-boot-2010.03/Makefile
 ===================================================================
---- u-boot-2010.03.orig/Makefile	2011-01-05 18:09:44.000000000 +0100
-+++ u-boot-2010.03/Makefile	2011-01-05 18:11:15.000000000 +0100
+--- u-boot-2010.03.orig/Makefile	2011-05-26 17:46:17.000000000 +0200
++++ u-boot-2010.03/Makefile	2011-05-26 17:46:17.000000000 +0200
 @@ -2735,6 +2735,9 @@
  apf27_config		:	unconfig
  	@$(MKCONFIG) $(@:_config=) arm arm926ejs apf27 armadeus mx27
@@ -1345,7 +1351,7 @@ Index: u-boot-2010.03/Makefile
 Index: u-boot-2010.03/board/armadeus/apf51/fpga.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/fpga.h	2011-01-05 18:11:15.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/fpga.h	2011-05-26 17:46:17.000000000 +0200
 @@ -0,0 +1,39 @@
 +/*
 + * (C) Copyright 2002-2010
@@ -1389,7 +1395,7 @@ Index: u-boot-2010.03/board/armadeus/apf51/fpga.h
 Index: u-boot-2010.03/board/armadeus/apf51/fpga.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-2010.03/board/armadeus/apf51/fpga.c	2011-01-05 18:11:15.000000000 +0100
++++ u-boot-2010.03/board/armadeus/apf51/fpga.c	2011-05-26 17:46:17.000000000 +0200
 @@ -0,0 +1,271 @@
 +/*
 + * (C) Copyright 2002-2010

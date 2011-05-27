@@ -1,0 +1,41 @@
+From: Stefano Babic <sbabic@denx.de>
+Date: Wed, 19 Jan 2011 22:46:26 +0000 (+0000)
+Subject: mxc_i2c: Add support for the i.MX35 processor
+X-Git-Tag: v2011.03-rc1~2^2~34
+X-Git-Url: http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot.git;a=commitdiff_plain;h=04220612f69a7148f7f6d045638c8046bd265b29
+
+mxc_i2c: Add support for the i.MX35 processor
+
+Signed-off-by: Stefano Babic <sbabic@denx.de>
+CC: Heiko Schocher <hs@denx.de>
+Acked-by: Heiko Schocher <hs@denx.de>
+---
+
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index 1ebec14..7f669ff 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -29,9 +29,8 @@
+ #if defined(CONFIG_MX31)
+ #include <asm/arch/mx31.h>
+ #include <asm/arch/mx31-regs.h>
+-#endif
+-
+-#if defined(CONFIG_MX53)
++#else
++#include <asm/arch/imx-regs.h>
+ #include <asm/arch/clock.h>
+ #endif
+ 
+@@ -66,8 +65,10 @@
+ #define I2C_BASE        I2C1_BASE_ADDR
+ #elif defined(CONFIG_SYS_I2C_MX53_PORT2)
+ #define I2C_BASE        I2C2_BASE_ADDR
++#elif defined(CONFIG_SYS_I2C_MX35_PORT1)
++#define I2C_BASE	I2C_BASE_ADDR
+ #else
+-#error "define CONFIG_SYS_I2C_MXxx_PORTx to use the I2C driver"
++#error "define CONFIG_SYS_I2C_MX<Processor>_PORTx to use the mx I2C driver"
+ #endif
+ 
+ #ifdef DEBUG

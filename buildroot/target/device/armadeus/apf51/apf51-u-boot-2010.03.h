@@ -92,7 +92,7 @@
 #define CONFIG_CMD_FAT		/* FAT support			*/
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #undef  CONFIG_CMD_FLASH	/* flinfo, erase, protect	*/
-//#define CONFIG_CMD_I2C		/* I2C serial bus support	*/
+#define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_IIM		/* imx iim fuse			*/
 #undef CONFIG_CMD_IMLS		/* List all found images	*/
 #define CONFIG_CMD_IMMAP	/* IMMR dump support		*/
@@ -711,11 +711,12 @@
 
 
 /**
- * I2C Configs TODO TODO TODO TODO
+ * I2C Configs
  */
-//#define	CONFIG_HARD_I2C			1	/* I2C with hardware support    */
-//#define CONFIG_I2C_MXC			1
+#define	CONFIG_HARD_I2C			1	/* I2C with hardware support    */
+#define CONFIG_I2C_MXC			1
 #define CONFIG_SYS_I2C_PORT		I2C2_BASE_ADDR
+#define CONFIG_SYS_I2C_MX51_PORT2
 #define CONFIG_SYS_I2C_SPEED		400000
 #define CONFIG_SYS_I2C_SLAVE		0xfe
 
