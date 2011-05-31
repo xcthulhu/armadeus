@@ -20,7 +20,7 @@ Index: buildroot/linux/linux.mk
 +++ buildroot/linux/linux.mk	2011-01-18 22:37:08.000000000 +0100
 @@ -117,6 +117,9 @@
  	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX26_DIR)/Makefile
- 	(cd $(LINUX26_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
+ 	(ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ $(LINUX26_DIR)/drivers/armadeus)
  endif
 +ifeq ($(BR2_PACKAGE_XENOMAI),y)
 +	make -C ../buildroot xenomai-patch-kernel

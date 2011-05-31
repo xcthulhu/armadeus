@@ -17,7 +17,7 @@ Index: buildroot/linux/linux.mk
  	$(call KCONFIG_ENABLE_OPT,CONFIG_INITRAMFS_COMPRESSION_GZIP,$(@D)/.config)
  endif
 +ifeq ($(strip $(BR2_TARGET_ARMADEUS)),y)
-+	(cd $(LINUX26_DIR)/drivers; ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ armadeus)
++	(ln -sf $(ARMADEUS_TOPDIR)/target/linux/modules/ $(LINUX26_DIR)/drivers/armadeus)
 +endif
  	$(TARGET_MAKE_ENV) $(MAKE) $(LINUX26_MAKE_FLAGS) -C $(@D) oldconfig
  	$(Q)touch $@
