@@ -131,7 +131,7 @@ buildauto: $(BUILDROOT_DIR)/.patched
 	$(MAKE) -C $(BUILDROOT_DIR)
 
 linux-menuconfig:
-	@if [ -e "$(ARMADEUS_LINUX_DIR)/.patched" ] ; then \
+	@if [ -e "$(ARMADEUS_LINUX_DIR)/.stamp_patched" ] ; then \
 		$(MAKE) -C $(BUILDROOT_DIR) linux26-menuconfig ; \
 	fi;
 
